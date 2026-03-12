@@ -159,7 +159,6 @@ static int SolVkPhysicalDevice()
     VkPhysicalDeviceProperties selectedProps;
     vkGetPhysicalDeviceProperties(physicalDevice, &selectedProps);
 
-    OutputDebugString(selectedProps.deviceName);
     printf(selectedProps.deviceName);
 
     return 0;

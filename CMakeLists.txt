@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 find_package(Vulkan REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
 
-add_executable(solvulk
+add_executable(solvulk WIN32
     ${SOURCES}
 )
 
@@ -28,9 +28,9 @@ target_link_libraries(solvulk PRIVATE
     gdi32
 )
 
-target_link_options(solvulk PRIVATE
-    #"-mwindows"
-)
+# target_link_options(solvulk PRIVATE
+#     "-mwindows"
+# )
 
 # compile shaders
 set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")

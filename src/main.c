@@ -8,8 +8,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
     const char CLASS_NAME[] = "HelloTriangle";
 
-    // AllocConsole();
-    // freopen("CONOUT$", "w", stdout);
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
 
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;

@@ -28,6 +28,10 @@ target_link_libraries(solvulk PRIVATE
     gdi32
 )
 
+target_link_options(solvulk PRIVATE
+    #"-mwindows"
+)
+
 # compile shaders
 set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/shaders")

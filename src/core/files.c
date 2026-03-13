@@ -1,4 +1,5 @@
-#include "includes/files.h"
+#include "files.h"
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,4 +22,26 @@ char* SolReadFile(const char* filename, size_t* outSize)
 
     *outSize = size;
     return buffer;
+}
+
+SolResource SolLoadResource(const char *resourceName)
+{
+    SolResource res = {0};
+
+    HRSRC hResource = FindResource(NULL, resourceName, RT_RCDATA);
+    if (!hResource) {
+        printf("Failed to find resource %s\n", resourceName);
+        return res;
+    }
+
+    HGLOBAL hLoaded = LoadResource(NULL, hResource);
+    if (!hLoaded) {
+        printf("Failed to load resource %s\n", resourceName);
+        return res;
+    }
+
+    res.data = LockResource(hLoaded);
+    res.size = SizeofResource(NULL, hResource);
+
+    return res;
 }

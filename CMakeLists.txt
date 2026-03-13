@@ -8,14 +8,17 @@ set(WIN32_EXECUTABLE true)
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
+set(RESOURCE_FILE "assets/resources.rc")
+set(SOL_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
 
 add_executable(solvulk
     ${SOURCES}
+    ${RESOURCE_FILE}
 )
 
 target_include_directories(solvulk PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    src
+    #${CMAKE_SOURCE_DIR}
+    ${SOL_INCLUDES}
     ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -30,14 +33,14 @@ target_link_libraries(solvulk PRIVATE
 )
 
 set_target_properties(solvulk PROPERTIES
-    WIN32_EXECUTABLE true
+    #WIN32_EXECUTABLE true
     C_STANDARD 11
     OUTPUT_NAME "Solvulk"
 )
 
 # compile shaders
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
-set(SHADER_OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/shaders")
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
+set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS

@@ -1,0 +1,4 @@
+//ID_NAME               TYPE            PATH
+ID_MODEL_WIZARD         RCDATA          "./models/Wizard.glb"
+ID_SHADER_TRIVERT       RCDATA          "./shaders/triangle.vert.spv"
+ID_SHADER_TRIFRAG       RCDATA          "./shaders/triangle.frag.spv"

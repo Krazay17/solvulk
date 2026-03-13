@@ -1,10 +1,10 @@
-#include "includes/render.h"
+#include "render.h"
+#include "files.h"
+
 #include <assert.h>
 #include <vulkan/vulkan.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#include "includes/files.h"
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
@@ -315,29 +315,26 @@ static int SolVkImageViews()
 static int SolVkPipeline()
 {
     // --- load shader bytecode ---
-    size_t vertSize, fragSize;
-    char *vertCode = SolReadFile("shaders/triangle.vert.spv", &vertSize);
-    char *fragCode = SolReadFile("shaders/triangle.frag.spv", &fragSize);
-    if (!vertCode || !fragCode)
+    SolResource vertRes = SolLoadResource("ID_SHADER_TRIVERT");
+    SolResource fragRes = SolLoadResource("ID_SHADER_TRIFRAG");
+    
+    if (!vertRes.data || !fragRes.data)
         return 1;
 
     // --- create shader modules ---
     VkShaderModuleCreateInfo vertModuleInfo = {0};
     vertModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    vertModuleInfo.codeSize = vertSize;
-    vertModuleInfo.pCode = (uint32_t *)vertCode;
+    vertModuleInfo.codeSize = vertRes.size;
+    vertModuleInfo.pCode = (uint32_t *)vertRes.data;
 
     VkShaderModuleCreateInfo fragModuleInfo = {0};
     fragModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    fragModuleInfo.codeSize = fragSize;
-    fragModuleInfo.pCode = (uint32_t *)fragCode;
+    fragModuleInfo.codeSize = fragRes.size;
+    fragModuleInfo.pCode = (uint32_t *)fragRes.data;
 
     VkShaderModule vertModule, fragModule;
     vkCreateShaderModule(device, &vertModuleInfo, NULL, &vertModule);
     vkCreateShaderModule(device, &fragModuleInfo, NULL, &fragModule);
-
-    free(vertCode);
-    free(fragCode);
 
     // --- shader stages ---
     VkPipelineShaderStageCreateInfo vertStage = {0};

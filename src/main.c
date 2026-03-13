@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
-#include "includes/render.h"
+#include "render.h"
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -8,8 +8,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
     const char CLASS_NAME[] = "HelloTriangle";
 
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
 
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;

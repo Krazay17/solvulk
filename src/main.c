@@ -28,7 +28,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ShowWindow(hwnd, nShowCmd);
 
     Sol_Init_Vulkan(hwnd, hInstance);
-    Sol_Draw_Frame();
 
     MSG msg = {0};
     while (msg.message != WM_QUIT)
@@ -40,7 +39,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         else
         {
-            Sol_Draw_Frame();
+            Sol_Begin_Draw();
+            Sol_DrawTriangle();
+            Sol_End_Draw();
+            
         }
     }
 

@@ -3,12 +3,13 @@ project(solvulk C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(WIN32_EXECUTABLE true)
 
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
 
-add_executable(solvulk WIN32
+add_executable(solvulk
     ${SOURCES}
 )
 
@@ -28,9 +29,11 @@ target_link_libraries(solvulk PRIVATE
     gdi32
 )
 
-# target_link_options(solvulk PRIVATE
-#     "-mwindows"
-# )
+set_target_properties(solvulk PROPERTIES
+    WIN32_EXECUTABLE true
+    C_STANDARD 11
+    OUTPUT_NAME "Solvulk"
+)
 
 # compile shaders
 set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")

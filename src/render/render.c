@@ -11,6 +11,7 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 
 static uint32_t currentFrame = 0;
+static uint32_t currentImageIndex = 0;
 
 static VkInstance instance = VK_NULL_HANDLE;
 static VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -42,6 +43,7 @@ static int SolVkImageViews();
 static int SolVkPipeline();
 static int SolVkCommandPool();
 static int SolVkSyncObjects();
+static VkCommandBuffer SolGetCmd();
 
 void Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
 {
@@ -493,50 +495,45 @@ static int SolVkSyncObjects()
     return 0;
 }
 
-void Sol_Draw_Frame()
+void Sol_Begin_Draw()
 {
-    // --- wait for this frame's previous work to finish ---
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-    // --- acquire the next image from the swapchain ---
-    uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
                           imageAvailableSemaphores[currentFrame],
-                          VK_NULL_HANDLE, &imageIndex);
+                          VK_NULL_HANDLE, &currentImageIndex);
 
-    // --- record commands ---
-    VkCommandBuffer cmd = commandBuffers[currentFrame];
-    vkResetCommandBuffer(cmd, 0);
+    VkCommandBuffer currentCmd = commandBuffers[currentFrame];
+    vkResetCommandBuffer(currentCmd, 0);
 
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkBeginCommandBuffer(cmd, &beginInfo);
+    vkBeginCommandBuffer(currentCmd, &beginInfo);
 
-    // transition image layout: undefined → color attachment
+    // transition → color attachment
     VkImageMemoryBarrier toRender = {0};
     toRender.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     toRender.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     toRender.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     toRender.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     toRender.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRender.image = swapchainImages[imageIndex];
+    toRender.image = swapchainImages[currentImageIndex];
     toRender.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     toRender.subresourceRange.levelCount = 1;
     toRender.subresourceRange.layerCount = 1;
     toRender.srcAccessMask = 0;
     toRender.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    vkCmdPipelineBarrier(cmd,
+    vkCmdPipelineBarrier(currentCmd,
                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          0, 0, NULL, 0, NULL, 1, &toRender);
 
-    // begin dynamic rendering
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
     VkRenderingAttachmentInfo colorAttachment = {0};
     colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    colorAttachment.imageView = swapchainImageViews[imageIndex];
+    colorAttachment.imageView = swapchainImageViews[currentImageIndex];
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -544,54 +541,53 @@ void Sol_Draw_Frame()
 
     VkRenderingInfo renderingInfo = {0};
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderingInfo.renderArea.offset = (VkOffset2D){0, 0};
     renderingInfo.renderArea.extent = swapchainExtent;
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
 
-    vkCmdBeginRendering(cmd, &renderingInfo);
+    vkCmdBeginRendering(currentCmd, &renderingInfo);
 
     // bind pipeline and set dynamic viewport/scissor
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+    vkCmdBindPipeline(currentCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
     VkViewport viewport = {0};
     viewport.width = (float)swapchainExtent.width;
     viewport.height = (float)swapchainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
+    vkCmdSetViewport(currentCmd, 0, 1, &viewport);
 
     VkRect2D scissor = {0};
     scissor.extent = swapchainExtent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    vkCmdSetScissor(currentCmd, 0, 1, &scissor);
+}
 
-    // draw 3 vertices, 1 instance
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+void Sol_End_Draw()
+{
+    VkCommandBuffer currentCmd = commandBuffers[currentFrame];
+    vkCmdEndRendering(currentCmd);
 
-    vkCmdEndRendering(cmd);
-
-    // transition image layout: color attachment → present
+    // transition → present
     VkImageMemoryBarrier toPresent = {0};
     toPresent.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     toPresent.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     toPresent.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     toPresent.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     toPresent.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toPresent.image = swapchainImages[imageIndex];
+    toPresent.image = swapchainImages[currentImageIndex];
     toPresent.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     toPresent.subresourceRange.levelCount = 1;
     toPresent.subresourceRange.layerCount = 1;
     toPresent.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     toPresent.dstAccessMask = 0;
-    vkCmdPipelineBarrier(cmd,
+    vkCmdPipelineBarrier(currentCmd,
                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                          0, 0, NULL, 0, NULL, 1, &toPresent);
 
-    vkEndCommandBuffer(cmd);
+    vkEndCommandBuffer(currentCmd);
 
-    // --- submit ---
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     VkSubmitInfo submitInfo = {0};
@@ -600,22 +596,31 @@ void Sol_Draw_Frame()
     submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame];
     submitInfo.pWaitDstStageMask = &waitStage;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd;
+    submitInfo.pCommandBuffers = &currentCmd;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
 
-    // --- present ---
     VkPresentInfoKHR presentInfo = {0};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &swapchain;
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pImageIndices = &currentImageIndex;
 
     vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Sol_DrawTriangle()
+{
+    vkCmdDraw(SolGetCmd(), 3, 1, 0, 0);
+}
+
+static VkCommandBuffer SolGetCmd()
+{
+    return commandBuffers[currentFrame];
 }

@@ -39,13 +39,14 @@ set_target_properties(solvulk PROPERTIES
 )
 
 # compile shaders
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS
-    ${SHADER_DIR}/triangle.vert
-    ${SHADER_DIR}/triangle.frag
+    ${SHADER_DIR}/basic2d.vert
+    ${SHADER_DIR}/basic3d.vert
+    ${SHADER_DIR}/basicfrag.frag
 )
 
 foreach(SHADER ${SHADERS})

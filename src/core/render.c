@@ -2,18 +2,41 @@
 #include "files.h"
 #include "model.h"
 
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
 
 // #include <vulkan/vulkan.h>
-#include <cglm/cglm.h>
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 #define MAX_FRAMES_IN_FLIGHT 2
+
+static SolCamera renderCam = {
+    .fov = 60.0f,
+    .nearClip = 0.1f,
+    .farClip = 100.0f,
+};
+
+static VkPipeline graphicsPipeline[PIPE_COUNT] = {VK_NULL_HANDLE};
+static VkPipelineLayout pipelineLayout[PIPE_COUNT] = {VK_NULL_HANDLE};
+
+static SolPipelineConfig pipes[PIPE_COUNT] =
+    {{
+         .vertResource = "ID_SHADER_BASIC3D",
+         .fragResource = "ID_SHADER_BASICFRAG",
+         .depthTest = 1,
+         .alphaBlend = 0,
+         .is2D = 0,
+     },
+     {
+         .vertResource = "ID_SHADER_BASIC2D",
+         .fragResource = "ID_SHADER_BASICFRAG",
+         .depthTest = 0,
+         .alphaBlend = 1,
+         .is2D = 1,
+     }};
 
 static uint32_t currentFrame = 0;
 static uint32_t currentImageIndex = 0;
@@ -30,16 +53,14 @@ static VkExtent2D swapchainExtent;
 static VkImage swapchainImages[8];
 static uint32_t swapchainImageCount;
 static VkImageView swapchainImageViews[8];
-static VkPipeline graphicsPipeline = VK_NULL_HANDLE;
-static VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 static VkCommandPool commandPool;
 static VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
 static VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
 static VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
 static VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
-
-static VkBuffer triangleVertexBuffer;
-static VkDeviceMemory triangleVertexMemory;
+static VkImage depthImage = VK_NULL_HANDLE;
+static VkDeviceMemory depthMemory = VK_NULL_HANDLE;
+static VkImageView depthImageView = VK_NULL_HANDLE;
 
 // forward declare static functions at the top
 static VkResult SolVkInstance();
@@ -48,9 +69,10 @@ static int SolVkPhysicalDevice();
 static int SolVkDevice();
 static int SolVkSwapchain();
 static int SolVkImageViews();
-static int SolVkPipeline();
+static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout);
 static int SolVkCommandPool();
 static int SolVkSyncObjects();
+static int SolVkDepthResources();
 static VkCommandBuffer SolGetCmd();
 static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -71,8 +93,16 @@ void Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
         return;
     if (SolVkImageViews() != 0)
         return;
-    if (SolVkPipeline() != 0)
+    if (SolVkDepthResources() != 0)
         return;
+    for (int i = 0; i < PIPE_COUNT; ++i)
+    {
+        if (SolVkPipeline(
+                pipes[i],
+                &graphicsPipeline[i],
+                &pipelineLayout[i]) != 0)
+            return;
+    }
     if (SolVkCommandPool() != 0)
         return;
     if (SolVkSyncObjects() != 0)
@@ -214,6 +244,56 @@ static int SolVkDevice()
     return 0;
 }
 
+static int SolVkDepthResources()
+{
+    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+
+    // 1. Create Image
+    VkImageCreateInfo imageInfo = {0};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = swapchainExtent.width;
+    imageInfo.extent.height = swapchainExtent.height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = depthFormat;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkCreateImage(device, &imageInfo, NULL, &depthImage);
+
+    // 2. Memory Requirements & Allocation
+    VkMemoryRequirements memReqs;
+    vkGetImageMemoryRequirements(device, depthImage, &memReqs);
+
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memReqs.size;
+    allocInfo.memoryTypeIndex = SolFindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkAllocateMemory(device, &allocInfo, NULL, &depthMemory);
+    vkBindImageMemory(device, depthImage, depthMemory, 0);
+
+    // 3. Create View
+    VkImageViewCreateInfo viewInfo = {0};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = depthImage;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = depthFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    vkCreateImageView(device, &viewInfo, NULL, &depthImageView);
+    return 0;
+}
+
 static int SolVkSwapchain()
 {
     // --- query what the surface supports ---
@@ -324,11 +404,12 @@ static int SolVkImageViews()
     return 0;
 }
 
-static int SolVkPipeline()
+static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout)
 {
+
     // --- load shader bytecode ---
-    SolResource vertRes = SolLoadResource("ID_SHADER_TRIVERT");
-    SolResource fragRes = SolLoadResource("ID_SHADER_TRIFRAG");
+    SolResource vertRes = SolLoadResource(pipeConfig.vertResource);
+    SolResource fragRes = SolLoadResource(pipeConfig.fragResource);
 
     if (!vertRes.data || !fragRes.data)
         return 1;
@@ -410,7 +491,7 @@ static int SolVkPipeline()
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.lineWidth = 1.0f;
 
     // --- multisampling (disabled) ---
@@ -422,6 +503,16 @@ static int SolVkPipeline()
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                           VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    if (pipeConfig.alphaBlend)
+    {
+        colorBlendAttachment.blendEnable = VK_TRUE;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {0};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -448,13 +539,25 @@ static int SolVkPipeline()
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushRange;
-    vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, &pipelineLayout);
+    vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, outLayout);
 
     // --- dynamic rendering info (replaces render pass) ---
     VkPipelineRenderingCreateInfo renderingInfo = {0};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachmentFormats = &swapchainImageFormat;
+    renderingInfo.depthAttachmentFormat = pipeConfig.depthTest
+                                              ? VK_FORMAT_D32_SFLOAT
+                                              : VK_FORMAT_UNDEFINED;
+
+    // ---- depth stencil ----
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = pipeConfig.depthTest ? VK_TRUE : VK_FALSE;
+    depthStencil.depthWriteEnable = pipeConfig.depthTest ? VK_TRUE : VK_FALSE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
 
     // --- create the pipeline ---
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
@@ -469,9 +572,10 @@ static int SolVkPipeline()
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.pDepthStencilState = &depthStencil;
+    pipelineInfo.layout = *outLayout;
 
-    VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &graphicsPipeline);
+    VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, outPipeline);
     if (result != VK_SUCCESS)
     {
         MessageBox(NULL, "Failed to create graphics pipeline", "Error", MB_OK);
@@ -554,6 +658,35 @@ void Sol_Begin_Draw()
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     vkBeginCommandBuffer(currentCmd, &beginInfo);
 
+    VkImageMemoryBarrier depthBarrier = {0};
+    depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    depthBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    depthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    depthBarrier.image = depthImage;
+    depthBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    depthBarrier.subresourceRange.levelCount = 1;
+    depthBarrier.subresourceRange.layerCount = 1;
+    depthBarrier.srcAccessMask = 0;
+    depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    vkCmdPipelineBarrier(currentCmd,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                         0, 0, NULL, 0, NULL, 1, &depthBarrier);
+
+    // clear depth
+    VkClearValue depthClear = {0};
+    depthClear.depthStencil.depth = 1.0f;
+
+    VkRenderingAttachmentInfo depthAttachment = {0};
+    depthAttachment.clearValue = depthClear;
+    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    depthAttachment.imageView = depthImageView;
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
     // transition → color attachment
     VkImageMemoryBarrier toRender = {0};
     toRender.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -588,15 +721,14 @@ void Sol_Begin_Draw()
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
+    renderingInfo.pDepthAttachment = &depthAttachment;
 
     vkCmdBeginRendering(currentCmd, &renderingInfo);
 
-    // bind pipeline and set dynamic viewport/scissor
-    vkCmdBindPipeline(currentCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
     VkViewport viewport = {0};
+    viewport.y = (float)swapchainExtent.height;
     viewport.width = (float)swapchainExtent.width;
-    viewport.height = (float)swapchainExtent.height;
+    viewport.height = -(float)swapchainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(currentCmd, 0, 1, &viewport);
@@ -805,106 +937,65 @@ SolGpuModel Sol_UploadModel(SolModel *model)
     return gpuModel;
 }
 
-void Sol_Init_Triangle()
+void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
 {
-    SolVertex vertices[3] = {
-        {{ 0.0f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.5f, 0.0f}},
-        {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    };
+    // 1. Model Matrix
+    mat4 modelMat;
+    glm_mat4_identity(modelMat);
+    glm_translate(modelMat, pos);
+    glm_rotate_y(modelMat, rotY, modelMat);
 
-    VkDeviceSize size = sizeof(vertices);
+    // 2. Combine into MVP (Proj * View * Model)
+    mat4 mvp;
+    glm_mat4_mul(renderCam.proj, renderCam.view, mvp);
+    glm_mat4_mul(mvp, modelMat, mvp);
 
-    // staging buffer
-    VkBuffer       staging;
-    VkDeviceMemory stagingMem;
-    SolCreateBuffer(size,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &staging, &stagingMem);
+    VkCommandBuffer cmd = commandBuffers[currentFrame];
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_3D_MESH]);
+    vkCmdPushConstants(cmd, pipelineLayout[PIPE_3D_MESH], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), mvp);
 
-    void *data;
-    vkMapMemory(device, stagingMem, 0, size, 0, &data);
-    memcpy(data, vertices, size);
-    vkUnmapMemory(device, stagingMem);
+    // 4. Draw each mesh
+    for (uint32_t i = 0; i < model->meshCount; i++)
+    {
+        SolGpuMesh *mesh = &model->meshes[i];
 
-    // gpu buffer
-    SolCreateBuffer(size,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        &triangleVertexBuffer, &triangleVertexMemory);
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->vertexBuffer, offsets);
+        vkCmdBindIndexBuffer(cmd, mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-    // copy staging → gpu
-    VkCommandBufferAllocateInfo allocInfo = {0};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool        = commandPool;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer copyCmd;
-    vkAllocateCommandBuffers(device, &allocInfo, &copyCmd);
-
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(copyCmd, &beginInfo);
-
-    VkBufferCopy region = {0, 0, size};
-    vkCmdCopyBuffer(copyCmd, staging, triangleVertexBuffer, 1, &region);
-
-    vkEndCommandBuffer(copyCmd);
-
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &copyCmd;
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-
-    vkFreeCommandBuffers(device, commandPool, 1, &copyCmd);
-    vkDestroyBuffer(device, staging, NULL);
-    vkFreeMemory(device, stagingMem, NULL);
+        // We use indexCount here, not vertexCount
+        vkCmdDrawIndexed(cmd, mesh->indexCount, 1, 0, 0, 0);
+    }
 }
 
-void Sol_DrawTriangle(SolCamera *cam, float rotation)
+void Sol_Draw_Rectangle(solrect rect)
 {
+    int x = rect[0];
+    int y = rect[1];
+    int w = rect[2];
+    int h = rect[3];
+
     VkCommandBuffer cmd = commandBuffers[currentFrame];
-
-    // model matrix - rotate around Y axis
-    mat4 model;
-    glm_mat4_identity(model);
-    glm_rotate_y(model, rotation, model);
-
-    // view matrix - camera looking at target
-    mat4 view;
-    vec3 pos    = {cam->position[0], cam->position[1], cam->position[2]};
-    vec3 target = {cam->target[0],   cam->target[1],   cam->target[2]};
-    vec3 up     = {0.0f, 1.0f, 0.0f};
-    glm_lookat(pos, target, up, view);
-
-    // projection matrix
-    mat4 proj;
-    float aspect = (float)swapchainExtent.width / (float)swapchainExtent.height;
-    glm_perspective(glm_rad(cam->fov), aspect, cam->nearClip, cam->farClip, proj);
-
-    // Vulkan clip space has Y flipped compared to OpenGL
-    proj[1][1] *= -1.0f;
-
-    // combine into MVP
-    mat4 mvp;
-    glm_mat4_mul(proj, view, mvp);
-    glm_mat4_mul(mvp, model, mvp);
-
-    vkCmdPushConstants(cmd, pipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT,
-                       0, sizeof(mat4), mvp);
-
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(cmd, 0, 1, &triangleVertexBuffer, &offset);
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_2D_BUTTON]);
+    // vkCmdPushConstants(cmd, pipelineLayout[PIPE_3D_MESH], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), mvp);
 }
 
 static VkCommandBuffer SolGetCmd()
 {
     return commandBuffers[currentFrame];
+}
+
+void Sol_Camera_Update(vec3 pos, vec3 target)
+{
+    // 1. Update vectors
+    glm_vec3_copy(pos, renderCam.position);
+    glm_vec3_copy(target, renderCam.target);
+
+    // 2. View Matrix
+    vec3 up = {0.0f, 1.0f, 0.0f};
+    glm_lookat(renderCam.position, renderCam.target, up, renderCam.view);
+
+    // 3. Projection Matrix
+    float aspect = (float)swapchainExtent.width / (float)swapchainExtent.height;
+    glm_perspective(glm_rad(renderCam.fov), aspect, renderCam.nearClip, renderCam.farClip, renderCam.proj);
 }

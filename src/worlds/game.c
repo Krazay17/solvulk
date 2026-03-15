@@ -25,27 +25,20 @@ World *GetGame()
 
 static void Init()
 {
-    Sol_Init_Triangle();
 }
 
 static void Tick(double dt, double time)
 {
     rotation += 5.0f * dt;
+
+    Sol_Camera_Update((vec3){0, 0, 5}, (vec3){0, 0, 0});
 }
 
 static void Draw()
 {
-    SolCamera cam = {
-        .position = {0.0f, 0.0f, 2.0f},
-        .target = {0.0f, 0.0f, 0.0f},
-        .fov = 60.0f,
-        .nearClip = 0.1f,
-        .farClip = 100.0f,
-    };
-
     Sol_Begin_Draw();
 
-    Sol_DrawTriangle(&cam, rotation);
+    Sol_DrawModel(&GetBank()->models.gpuWizard, (vec3){0, -1, 0}, rotation);
 
     Sol_End_Draw();
 }

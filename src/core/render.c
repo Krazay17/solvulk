@@ -1,10 +1,15 @@
 #include "render.h"
 #include "files.h"
+#include "model.h"
+
 
 #include <assert.h>
-#include <vulkan/vulkan.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stddef.h>
+
+// #include <vulkan/vulkan.h>
+#include <cglm/cglm.h>
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
@@ -33,6 +38,9 @@ static VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
 static VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
 static VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
 
+static VkBuffer triangleVertexBuffer;
+static VkDeviceMemory triangleVertexMemory;
+
 // forward declare static functions at the top
 static VkResult SolVkInstance();
 static int SolVkSurface(HWND hwnd, HINSTANCE hInstance);
@@ -44,6 +52,10 @@ static int SolVkPipeline();
 static int SolVkCommandPool();
 static int SolVkSyncObjects();
 static VkCommandBuffer SolGetCmd();
+static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                           VkMemoryPropertyFlags properties,
+                           VkBuffer *outBuffer, VkDeviceMemory *outMemory);
 
 void Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
 {
@@ -317,7 +329,7 @@ static int SolVkPipeline()
     // --- load shader bytecode ---
     SolResource vertRes = SolLoadResource("ID_SHADER_TRIVERT");
     SolResource fragRes = SolLoadResource("ID_SHADER_TRIFRAG");
-    
+
     if (!vertRes.data || !fragRes.data)
         return 1;
 
@@ -351,9 +363,36 @@ static int SolVkPipeline()
 
     VkPipelineShaderStageCreateInfo stages[] = {vertStage, fragStage};
 
-    // --- vertex input (empty - positions hardcoded in shader) ---
+    // binding — one buffer, per-vertex data
+    VkVertexInputBindingDescription binding = {0};
+    binding.binding = 0;
+    binding.stride = sizeof(SolVertex);
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    // attributes — position, normal, uv
+    VkVertexInputAttributeDescription attrs[3] = {0};
+    attrs[0].location = 0;
+    attrs[0].binding = 0;
+    attrs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attrs[0].offset = offsetof(SolVertex, position);
+
+    attrs[1].location = 1;
+    attrs[1].binding = 0;
+    attrs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attrs[1].offset = offsetof(SolVertex, normal);
+
+    attrs[2].location = 2;
+    attrs[2].binding = 0;
+    attrs[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attrs[2].offset = offsetof(SolVertex, uv);
+
+    // --- vertex input ---
     VkPipelineVertexInputStateCreateInfo vertexInput = {0};
     vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.vertexBindingDescriptionCount = 1;
+    vertexInput.pVertexBindingDescriptions = &binding;
+    vertexInput.vertexAttributeDescriptionCount = 3;
+    vertexInput.pVertexAttributeDescriptions = attrs;
 
     // --- input assembly (what shape to draw) ---
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
@@ -399,9 +438,16 @@ static int SolVkPipeline()
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
 
+    VkPushConstantRange pushRange = {0};
+    pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushRange.offset = 0;
+    pushRange.size = sizeof(float) * 16;
+
     // --- pipeline layout (no uniforms yet) ---
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushRange;
     vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, &pipelineLayout);
 
     // --- dynamic rendering info (replaces render pass) ---
@@ -612,9 +658,250 @@ void Sol_End_Draw()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Sol_DrawTriangle()
+static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
-    vkCmdDraw(SolGetCmd(), 3, 1, 0, 0);
+    VkPhysicalDeviceMemoryProperties memProps;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
+
+    for (uint32_t i = 0; i < memProps.memoryTypeCount; i++)
+    {
+        if ((typeFilter & (1 << i)) &&
+            (memProps.memoryTypes[i].propertyFlags & properties) == properties)
+        {
+            return i;
+        }
+    }
+
+    printf("Failed to find suitable memory type\n");
+    return 0;
+}
+
+static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                           VkMemoryPropertyFlags properties,
+                           VkBuffer *outBuffer, VkDeviceMemory *outMemory)
+{
+    VkBufferCreateInfo bufferInfo = {0};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &bufferInfo, NULL, outBuffer) != VK_SUCCESS)
+    {
+        printf("Failed to create buffer\n");
+        return 1;
+    }
+
+    VkMemoryRequirements memReqs;
+    vkGetBufferMemoryRequirements(device, *outBuffer, &memReqs);
+
+    VkMemoryAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memReqs.size;
+    allocInfo.memoryTypeIndex = SolFindMemoryType(memReqs.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(device, &allocInfo, NULL, outMemory) != VK_SUCCESS)
+    {
+        printf("Failed to allocate buffer memory\n");
+        return 1;
+    }
+
+    vkBindBufferMemory(device, *outBuffer, *outMemory, 0);
+    return 0;
+}
+
+SolGpuModel Sol_UploadModel(SolModel *model)
+{
+    SolGpuModel gpuModel = {0};
+    gpuModel.meshCount = model->meshCount;
+    gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
+    memset(gpuModel.meshes, 0, sizeof(SolGpuMesh) * model->meshCount);
+
+    for (uint32_t m = 0; m < model->meshCount; m++)
+    {
+        SolMesh *src = &model->meshes[m];
+        SolGpuMesh *dst = &gpuModel.meshes[m];
+
+        dst->indexCount = src->indexCount;
+
+        // --- vertex buffer ---
+        VkDeviceSize vertSize = sizeof(SolVertex) * src->vertexCount;
+
+        VkBuffer stagingVB;
+        VkDeviceMemory stagingVBMem;
+        SolCreateBuffer(vertSize,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &stagingVB, &stagingVBMem);
+
+        void *vertData;
+        vkMapMemory(device, stagingVBMem, 0, vertSize, 0, &vertData);
+        memcpy(vertData, src->vertices, vertSize);
+        vkUnmapMemory(device, stagingVBMem);
+
+        SolCreateBuffer(vertSize,
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        &dst->vertexBuffer, &dst->vertexMemory);
+
+        // --- index buffer ---
+        VkDeviceSize idxSize = sizeof(uint32_t) * src->indexCount;
+
+        VkBuffer stagingIB;
+        VkDeviceMemory stagingIBMem;
+        SolCreateBuffer(idxSize,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &stagingIB, &stagingIBMem);
+
+        void *idxData;
+        vkMapMemory(device, stagingIBMem, 0, idxSize, 0, &idxData);
+        memcpy(idxData, src->indices, idxSize);
+        vkUnmapMemory(device, stagingIBMem);
+
+        SolCreateBuffer(idxSize,
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        &dst->indexBuffer, &dst->indexMemory);
+
+        // --- copy staging → GPU via command buffer ---
+        VkCommandBufferAllocateInfo allocInfo = {0};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer copyCmd;
+        vkAllocateCommandBuffers(device, &allocInfo, &copyCmd);
+
+        VkCommandBufferBeginInfo beginInfo = {0};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(copyCmd, &beginInfo);
+
+        VkBufferCopy vertCopy = {0, 0, vertSize};
+        vkCmdCopyBuffer(copyCmd, stagingVB, dst->vertexBuffer, 1, &vertCopy);
+
+        VkBufferCopy idxCopy = {0, 0, idxSize};
+        vkCmdCopyBuffer(copyCmd, stagingIB, dst->indexBuffer, 1, &idxCopy);
+
+        vkEndCommandBuffer(copyCmd);
+
+        VkSubmitInfo submitInfo = {0};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &copyCmd;
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphicsQueue);
+
+        vkFreeCommandBuffers(device, commandPool, 1, &copyCmd);
+        vkDestroyBuffer(device, stagingVB, NULL);
+        vkFreeMemory(device, stagingVBMem, NULL);
+        vkDestroyBuffer(device, stagingIB, NULL);
+        vkFreeMemory(device, stagingIBMem, NULL);
+    }
+
+    printf("Model uploaded to GPU: %d meshes\n", gpuModel.meshCount);
+    return gpuModel;
+}
+
+void Sol_Init_Triangle()
+{
+    SolVertex vertices[3] = {
+        {{ 0.0f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.5f, 0.0f}},
+        {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    };
+
+    VkDeviceSize size = sizeof(vertices);
+
+    // staging buffer
+    VkBuffer       staging;
+    VkDeviceMemory stagingMem;
+    SolCreateBuffer(size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &staging, &stagingMem);
+
+    void *data;
+    vkMapMemory(device, stagingMem, 0, size, 0, &data);
+    memcpy(data, vertices, size);
+    vkUnmapMemory(device, stagingMem);
+
+    // gpu buffer
+    SolCreateBuffer(size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &triangleVertexBuffer, &triangleVertexMemory);
+
+    // copy staging → gpu
+    VkCommandBufferAllocateInfo allocInfo = {0};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool        = commandPool;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer copyCmd;
+    vkAllocateCommandBuffers(device, &allocInfo, &copyCmd);
+
+    VkCommandBufferBeginInfo beginInfo = {0};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(copyCmd, &beginInfo);
+
+    VkBufferCopy region = {0, 0, size};
+    vkCmdCopyBuffer(copyCmd, staging, triangleVertexBuffer, 1, &region);
+
+    vkEndCommandBuffer(copyCmd);
+
+    VkSubmitInfo submitInfo = {0};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &copyCmd;
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
+
+    vkFreeCommandBuffers(device, commandPool, 1, &copyCmd);
+    vkDestroyBuffer(device, staging, NULL);
+    vkFreeMemory(device, stagingMem, NULL);
+}
+
+void Sol_DrawTriangle(SolCamera *cam, float rotation)
+{
+    VkCommandBuffer cmd = commandBuffers[currentFrame];
+
+    // model matrix - rotate around Y axis
+    mat4 model;
+    glm_mat4_identity(model);
+    glm_rotate_y(model, rotation, model);
+
+    // view matrix - camera looking at target
+    mat4 view;
+    vec3 pos    = {cam->position[0], cam->position[1], cam->position[2]};
+    vec3 target = {cam->target[0],   cam->target[1],   cam->target[2]};
+    vec3 up     = {0.0f, 1.0f, 0.0f};
+    glm_lookat(pos, target, up, view);
+
+    // projection matrix
+    mat4 proj;
+    float aspect = (float)swapchainExtent.width / (float)swapchainExtent.height;
+    glm_perspective(glm_rad(cam->fov), aspect, cam->nearClip, cam->farClip, proj);
+
+    // Vulkan clip space has Y flipped compared to OpenGL
+    proj[1][1] *= -1.0f;
+
+    // combine into MVP
+    mat4 mvp;
+    glm_mat4_mul(proj, view, mvp);
+    glm_mat4_mul(mvp, model, mvp);
+
+    vkCmdPushConstants(cmd, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT,
+                       0, sizeof(mat4), mvp);
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(cmd, 0, 1, &triangleVertexBuffer, &offset);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
 }
 
 static VkCommandBuffer SolGetCmd()

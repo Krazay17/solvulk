@@ -3,21 +3,20 @@ project(solvulk C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(WIN32_EXECUTABLE true)
 
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
+find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
 set(RESOURCE_FILE "assets/resources.rc")
 set(SOL_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
 
-add_executable(solvulk
+add_executable(solvulk WIN32
     ${SOURCES}
     ${RESOURCE_FILE}
 )
 
 target_include_directories(solvulk PRIVATE
-    #${CMAKE_SOURCE_DIR}
     ${SOL_INCLUDES}
     ${Vulkan_INCLUDE_DIRS}
 )
@@ -28,6 +27,7 @@ target_compile_definitions(solvulk PRIVATE
 
 target_link_libraries(solvulk PRIVATE
     ${Vulkan_LIBRARIES}
+    cglm::cglm
     user32
     gdi32
 )

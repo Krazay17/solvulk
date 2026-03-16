@@ -1,11 +1,11 @@
 #include "solmath.h"
 
-bool Sol_Check_2d_Collision(Vec2 a, Rect b)
+bool Sol_Check_2d_Collision(vec2 a, SolRect b)
 {
-    return !((a.x < b.x) |
-             (a.x >= b.x + b.w) |
-             (a.y < b.y) |
-             (a.y >= b.y + b.h));
+    return !((a[0] < b.x) |
+             (a[0] >= b.x + b.w) |
+             (a[1] < b.y) |
+             (a[1] >= b.y + b.h));
 }
 
 float Lerp(float start, float end, float amount)

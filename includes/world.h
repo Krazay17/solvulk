@@ -5,12 +5,14 @@
 #define MAX_ENTS 100
 
 typedef void (*WorldInit)();
+typedef void (*WorldStep)(double dt, double time);
 typedef void (*WorldTick)(double dt, double time);
 typedef void (*WorldDraw)();
 
 typedef struct
 {
     WorldInit init;
+    WorldStep step;
     WorldTick tick;
     WorldDraw draw;
     void *state;

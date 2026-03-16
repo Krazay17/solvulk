@@ -1,7 +1,7 @@
 #pragma once
 #include <windows.h>
 #include <vulkan/vulkan.h>
-#include <cglm/cglm.h>
+#include <solmath.h>
 #include "soldef.h"
 #include "model.h"
 
@@ -31,19 +31,35 @@ typedef struct {
 typedef struct {
     const char *vertResource;
     const char *fragResource;
-    int         depthTest;
-    int         alphaBlend;
-    int         is2D;        // skips vertex input description
+    // rasterizer
+    int depthTest;
+    int alphaBlend;
+    int cullBackface;
+
+    // push constants
+    uint32_t pushRangeSize;
+
+    // descriptors (NULL if none)
+    VkDescriptorSetLayout *descLayouts;
+    uint32_t descLayoutCount;
 } SolPipelineConfig;
+
+typedef struct {
+    mat4 ortho;
+    float x, y, w, h;      // quad position in screen space
+    float u, v, uw, vh;    // UV rect in atlas
+    float r, g, b, a;      // color
+} SolTextPush;
 
 typedef enum
 {
-    PIPE_2D_BUTTON,
     PIPE_3D_MESH,
+    PIPE_2D_BUTTON,
+    PIPE_2D_TEXT,
     PIPE_COUNT
 } SolPipelines;
 
-void Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance);
+int Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance);
 void Sol_Begin_Draw();
 void Sol_End_Draw();
 void Sol_Render_Resize();
@@ -52,3 +68,5 @@ SolGpuModel Sol_UploadModel(SolModel *model);
 void Sol_Camera_Update(vec3 pos, vec3 target);
 void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY);
 void Sol_Draw_Rectangle(SolRect rect, SolColor color);
+
+void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);

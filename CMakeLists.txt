@@ -11,7 +11,7 @@ file(GLOB_RECURSE SOURCES "src/*.c")
 set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
 set(SOL_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
 
-add_executable(solvulk WIN32
+add_executable(solvulk #WIN32
     ${SOURCES}
     ${RESOURCE_FILE}
 )
@@ -48,6 +48,8 @@ set(SHADERS
     ${SHADER_DIR}/basicrect.vert
     ${SHADER_DIR}/basic3d.vert
     ${SHADER_DIR}/basicfrag.frag
+    ${SHADER_DIR}/basictext.vert
+    ${SHADER_DIR}/basictextfrag.frag
 )
 
 foreach(SHADER ${SHADERS})

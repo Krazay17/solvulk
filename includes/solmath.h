@@ -1,30 +1,16 @@
 #pragma once
 #include <stdbool.h>
-
-typedef struct
-{
-    float x, y;
-} Vec2;
-
-typedef struct
-{
-    float x, y, z;
-} Vec3;
-
-typedef struct
-{
-    float x, y, z, w;
-} Quat;
-
-typedef struct
-{
-    Vec3 pos;
-    Quat quat;
-} Xform;
+#include <math.h>
+#include <cglm/cglm.h>
 
 typedef struct
 {
     float x, y, w, h;
-} Rect;
+} SolRect;
 
-bool Sol_Check_2d_Collision(Vec2 a, Rect b);
+typedef struct
+{
+    float r, g, b, a;
+} SolColor;
+
+bool Sol_Check_2d_Collision(vec2 a, SolRect b);

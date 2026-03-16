@@ -40,5 +40,7 @@ static void Draw()
 
     Sol_DrawModel(&GetBank()->models.gpuWizard, (vec3){0, -1, 0}, rotation);
 
+    Sol_Draw_Rectangle((SolRect){0, 0, 100, 50}, (SolColor){255, 0, 0, 255});
+
     Sol_End_Draw();
 }

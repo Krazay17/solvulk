@@ -1,6 +1,7 @@
 #include "world.h"
 #include "loader.h"
 #include "render.h"
+#include "input.h"
 
 #include <windows.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@ void Sol_Init(HWND hwnd, HINSTANCE hInstance)
 
 void Sol_Tick(double dt, double time)
 {
+    SolInput_Update();
     printf("%f :: %f\n", dt, time);
 
     for (int i = 0; i < MAX_WORLDS; ++i)
@@ -35,4 +37,9 @@ void Sol_Tick(double dt, double time)
         if (worlds[i] && worlds[i]->draw)
             worlds[i]->draw();
     }
+}
+
+void Sol_On_Resize()
+{
+    Sol_Render_Resize();
 }

@@ -1,0 +1,6 @@
+//ID_NAME               TYPE            PATH
+ID_MODEL_WIZARD         RCDATA          "assets/models/Wizard.glb"
+ID_SHADER_BASIC2D       RCDATA          "assets/shaders/basic2d.vert.spv"
+ID_SHADER_BASICRECT     RCDATA          "assets/shaders/basicrect.vert.spv"
+ID_SHADER_BASIC3D       RCDATA          "assets/shaders/basic3d.vert.spv"
+ID_SHADER_BASICFRAG     RCDATA          "assets/shaders/basicfrag.frag.spv"

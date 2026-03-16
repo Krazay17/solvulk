@@ -24,18 +24,18 @@ static VkPipelineLayout pipelineLayout[PIPE_COUNT] = {VK_NULL_HANDLE};
 
 static SolPipelineConfig pipes[PIPE_COUNT] =
     {{
+         .vertResource = "ID_SHADER_BASICRECT",
+         .fragResource = "ID_SHADER_BASICFRAG",
+         .depthTest = 0,
+         .alphaBlend = 0,
+         .is2D = 1,
+     },
+     {
          .vertResource = "ID_SHADER_BASIC3D",
          .fragResource = "ID_SHADER_BASICFRAG",
          .depthTest = 1,
-         .alphaBlend = 0,
-         .is2D = 0,
-     },
-     {
-         .vertResource = "ID_SHADER_BASIC2D",
-         .fragResource = "ID_SHADER_BASICFRAG",
-         .depthTest = 0,
          .alphaBlend = 1,
-         .is2D = 1,
+         .is2D = 0,
      }};
 
 static uint32_t currentFrame = 0;
@@ -790,6 +790,28 @@ void Sol_End_Draw()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+void Sol_Render_Resize()
+{
+    if (swapchainExtent.width == 0 || swapchainExtent.height == 0)
+        return;
+    vkDeviceWaitIdle(device);
+
+    // destroy old
+    vkDestroyImageView(device, depthImageView, NULL);
+    vkDestroyImage(device, depthImage, NULL);
+    vkFreeMemory(device, depthMemory, NULL);
+
+    for (uint32_t i = 0; i < swapchainImageCount; i++)
+        vkDestroyImageView(device, swapchainImageViews[i], NULL);
+
+    vkDestroySwapchainKHR(device, swapchain, NULL);
+
+    // recreate
+    SolVkSwapchain();
+    SolVkImageViews();
+    SolVkDepthResources();
+}
+
 static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProps;
@@ -968,16 +990,27 @@ void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
     }
 }
 
-void Sol_Draw_Rectangle(solrect rect)
+void Sol_Draw_Rectangle(SolRect rect, SolColor color)
 {
-    int x = rect[0];
-    int y = rect[1];
-    int w = rect[2];
-    int h = rect[3];
-
     VkCommandBuffer cmd = commandBuffers[currentFrame];
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_2D_BUTTON]);
-    // vkCmdPushConstants(cmd, pipelineLayout[PIPE_3D_MESH], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), mvp);
+
+    struct
+    {
+        SolRect r;
+        SolColor c;
+        float screenW, screenH;
+    } push = {
+        .r = rect,
+        .c = color,
+        .screenW = swapchainExtent.width,
+        .screenH = swapchainExtent.height,
+    };
+
+    vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
+
+    vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
 static VkCommandBuffer SolGetCmd()

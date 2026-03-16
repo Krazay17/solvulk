@@ -46,8 +46,9 @@ typedef enum
 void Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance);
 void Sol_Begin_Draw();
 void Sol_End_Draw();
+void Sol_Render_Resize();
 SolGpuModel Sol_UploadModel(SolModel *model);
 
 void Sol_Camera_Update(vec3 pos, vec3 target);
 void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY);
-void Sol_Draw_Rectangle(solrect rect);
+void Sol_Draw_Rectangle(SolRect rect, SolColor color);

@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
-set(RESOURCE_FILE "assets/resources.rc")
+set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
 set(SOL_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
 
 add_executable(solvulk WIN32
@@ -45,6 +45,7 @@ file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS
     ${SHADER_DIR}/basic2d.vert
+    ${SHADER_DIR}/basicrect.vert
     ${SHADER_DIR}/basic3d.vert
     ${SHADER_DIR}/basicfrag.frag
 )

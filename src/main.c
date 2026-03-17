@@ -130,6 +130,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_RBUTTONUP:
         SolInput_OnMouseButton(SOL_MOUSE_RIGHT, false);
         return 0;
+    case WM_MBUTTONDOWN:
+        SolInput_OnMouseButton(SOL_MOUSE_MIDDLE, true);
+        return 0;
+    case WM_MBUTTONUP:
+        SolInput_OnMouseButton(SOL_MOUSE_MIDDLE, false);
+        return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

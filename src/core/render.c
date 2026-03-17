@@ -15,8 +15,14 @@
 
 typedef struct
 {
+    float l, b, r, t;
+} Bounds;
+typedef struct
+{
     float u, v, uw, vh; // UV coords in 0-1 space
     float xoffset;
+    float ytop;
+    float yoffset;
     float yadvance;
 } SolGlyph;
 
@@ -35,7 +41,7 @@ static SolPipelineConfig pipes[PIPE_COUNT] =
     {
         {
             .vertResource = "ID_SHADER_BASIC3D",
-            .fragResource = "ID_SHADER_BASICFRAG",
+            .fragResource = "ID_SHADER_BASIC3DFRAG",
             .depthTest = 1,
             .alphaBlend = 1,
             .cullBackface = 1,
@@ -45,9 +51,9 @@ static SolPipelineConfig pipes[PIPE_COUNT] =
         },
         {
             .vertResource = "ID_SHADER_BASICRECT",
-            .fragResource = "ID_SHADER_BASICFRAG",
+            .fragResource = "ID_SHADER_BASICRECTFRAG",
             .depthTest = 0,
-            .alphaBlend = 0,
+            .alphaBlend = 1,
             .cullBackface = 0,
             .pushRangeSize = sizeof(float) * 32,
             .descLayoutCount = 0,
@@ -168,77 +174,87 @@ int Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
     return 0;
 }
 
+static Bounds ParseBounds(const char *p, const char *end)
+{
+    Bounds bounds = {0};
+    const char *open = strchr(p, '{');
+    const char *close = open ? strchr(open, '}') : NULL;
+    if (!open || !close || open > end)
+        return bounds;
+
+    const char *kl = strstr(open, "\"left\":");
+    const char *kb = strstr(open, "\"bottom\":");
+    const char *kr = strstr(open, "\"right\":");
+    const char *kt = strstr(open, "\"top\":");
+
+    if (kl && kl < close)
+        bounds.l = strtof(kl + 7, NULL);
+    if (kb && kb < close)
+        bounds.b = strtof(kb + 9, NULL);
+    if (kr && kr < close)
+        bounds.r = strtof(kr + 8, NULL);
+    if (kt && kt < close)
+        bounds.t = strtof(kt + 6, NULL);
+    return bounds;
+}
+
 static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH)
 {
-    const char *p = json;
+    const char *p = strstr(json, "\"glyphs\":[");
+    if (!p)
+        return;
+    p += 10;
 
     while (*p)
     {
-        // find each glyph entry by unicode field
-        const char *uni = strstr(p, "\"unicode\":");
-        if (!uni)
+        const char *obj = strchr(p, '{');
+        if (!obj)
             break;
-        p = uni + 10;
+        p = obj + 1;
 
-        int charId = (int)strtol(p, NULL, 10);
+        // find end of glyph block
+        const char *end = p;
+        int depth = 1;
+        while (*end && depth > 0)
+        {
+            if (*end == '{')
+                depth++;
+            if (*end == '}')
+                depth--;
+            end++;
+        }
+
+        const char *uni = strstr(p, "\"unicode\":");
+        if (!uni || uni > end)
+        {
+            p = end;
+            continue;
+        }
+        int charId = (int)strtol(uni + 10, NULL, 10);
         if (charId < 0 || charId >= 128)
         {
-            p++;
+            p = end;
             continue;
         }
 
-        // advance is always present
         const char *adv = strstr(p, "\"advance\":");
-        if (!adv)
-            break;
-        float advance = strtof(adv + 10, NULL);
+        const char *plane = strstr(p, "\"planeBounds\":");
+        const char *atlas = strstr(p, "\"atlasBounds\":");
 
-        // atlasBounds may not exist for whitespace glyphs
-        const char *ab = strstr(p, "\"atlasBounds\":");
-        const char *next_uni = strstr(p + 1, "\"unicode\":");
+        Bounds pl = plane && plane < end ? ParseBounds(plane, end) : (Bounds){0};
+        Bounds ab = atlas && atlas < end ? ParseBounds(atlas, end) : (Bounds){0};
 
-        float al = 0, ab2 = 0, ar = 0, at = 0;
-        float pl = 0, pb = 0, pr = 0, pt = 0;
+        glyphs[charId].u = ab.l / atlasW;
+        glyphs[charId].v = ab.b / atlasH;
+        glyphs[charId].uw = (ab.r - ab.l) / atlasW;
+        glyphs[charId].vh = (ab.t - ab.b) / atlasH;
+        glyphs[charId].xoffset = pl.l;
+        glyphs[charId].ytop = pl.t;
+        glyphs[charId].yoffset = pl.b;
+        glyphs[charId].yadvance = adv ? strtof(adv + 10, NULL) : 0.0f;
 
-        if (ab && (!next_uni || ab < next_uni))
-        {
-            const char *left = strstr(ab, "\"left\":");
-            const char *bot = strstr(ab, "\"bottom\":");
-            const char *right = strstr(ab, "\"right\":");
-            const char *top = strstr(ab, "\"top\":");
-            if (left)
-                al = strtof(left + 7, NULL);
-            if (bot)
-                ab2 = strtof(bot + 9, NULL);
-            if (right)
-                ar = strtof(right + 8, NULL);
-            if (top)
-                at = strtof(top + 6, NULL);
-        }
-
-        const char *pb_ptr = strstr(p, "\"planeBounds\":");
-        if (pb_ptr && (!next_uni || pb_ptr < next_uni))
-        {
-            const char *left = strstr(pb_ptr, "\"left\":");
-            const char *bot = strstr(pb_ptr, "\"bottom\":");
-            if (left)
-                pl = strtof(left + 7, NULL);
-            if (bot)
-                pb = strtof(bot + 9, NULL);
-        }
-
-        glyphs[charId].u = al / atlasW;
-        glyphs[charId].v = ab2 / atlasH; // bottom in atlas space
-        glyphs[charId].uw = (ar - al) / atlasW;
-        glyphs[charId].vh = (at - ab2) / atlasH;
-        glyphs[charId].xoffset = pl;
-        glyphs[charId].yadvance = advance;
-
-        p = adv + 10;
+        p = end;
     }
-
-    printf("glyph T: u=%f v=%f uw=%f vh=%f adv=%f\n",
-           glyphs['T'].u, glyphs['T'].v, glyphs['T'].uw, glyphs['T'].vh, glyphs['T'].yadvance);
 }
 
 static void SetOrtho()
@@ -1336,7 +1352,7 @@ void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
     }
 }
 
-void Sol_Draw_Rectangle(SolRect rect, SolColor color)
+void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 {
     VkCommandBuffer cmd = commandBuffers[currentFrame];
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_2D_BUTTON]);
@@ -1344,13 +1360,18 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color)
     struct
     {
         mat4 o;
-        SolRect r;
-        SolColor c;
+        SolRect rec;
+        float r, g, b, a;
+        float thickness;
     } push;
 
     memcpy(push.o, ortho2d, sizeof(mat4));
-    push.r = rect;
-    push.c = color;
+    push.rec = rect;
+    push.r = SolColorF(color.r);
+    push.g = SolColorF(color.g);
+    push.b = SolColorF(color.b);
+    push.a = SolColorF(color.a);
+    push.thickness = thickness;
 
     vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
@@ -1407,28 +1428,41 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
 
         int col = ascii % COLS;
         int row = ascii / COLS;
+        float baseSize = size / 32.0f;
+        SolGlyph *g = &glyphs[(int)*c];
 
         SolTextPush push;
         memcpy(push.ortho, ortho2d, sizeof(mat4));
-        SolGlyph *g = &glyphs[(int)*c];
-        push.x = cursorX + g->xoffset * (size / 32.0f);
-        push.y = y; // this was missing entirely
-        push.w = g->uw * 224.0f * (size / 32.0f);
-        push.h = g->vh * 224.0f * (size / 32.0f);
-        push.r = color.r;
-        push.g = color.g;
-        push.b = color.b;
-        push.a = color.a;
+
+        float pad = 0.2f * baseSize * (224.0f / 32.0f);
+        push.x = cursorX + g->xoffset * size - pad;
+        push.y = y - g->ytop * size - pad;
+        push.w = g->uw * 224.0f * baseSize + pad * 2.0f;
+        push.h = g->vh * 224.0f * baseSize + pad * 2.0f;
+        push.r = SolColorF(color.r);
+        push.g = SolColorF(color.g);
+        push.b = SolColorF(color.b);
+        push.a = SolColorF(color.a);
         push.u = g->u;
         push.v = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
         push.uw = g->uw;
         push.vh = g->vh;
-        cursorX += g->yadvance * (size / 32.0f); // only advance once, remove the CHAR_W line
+        cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
 
         vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_TEXT],
                            VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SolTextPush), &push);
         vkCmdDraw(cmd, 6, 1, 0, 0);
-
-        cursorX += CHAR_W;
     }
+}
+
+float Sol_MeasureText(const char *str, float size)
+{
+    float width = 0.0f;
+    for (const char *c = str; *c; c++)
+    {
+        int id = (int)*c;
+        if (id < 0 || id >= 128) continue;
+        width += glyphs[id].yadvance * size;
+    }
+    return width;
 }

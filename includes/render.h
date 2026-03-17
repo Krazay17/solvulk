@@ -5,6 +5,8 @@
 #include "soldef.h"
 #include "model.h"
 
+static inline float SolColorF(uint8_t c) { return c / 255.0f; }
+
 typedef struct {
     VkBuffer       vertexBuffer;
     VkDeviceMemory vertexMemory;
@@ -67,6 +69,7 @@ SolGpuModel Sol_UploadModel(SolModel *model);
 
 void Sol_Camera_Update(vec3 pos, vec3 target);
 void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY);
-void Sol_Draw_Rectangle(SolRect rect, SolColor color);
+void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
 
 void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);
+float Sol_MeasureText(const char *str, float size);

@@ -8,9 +8,20 @@ typedef struct
     float x, y, w, h;
 } SolRect;
 
-typedef struct
-{
-    float r, g, b, a;
-} SolColor;
+typedef struct { uint8_t r, g, b, a; } SolColor;
+
+#define SOL_COLOR(hex) (SolColor){ \
+    .r = ((hex) >> 16) & 0xFF, \
+    .g = ((hex) >> 8)  & 0xFF, \
+    .b = ((hex))       & 0xFF, \
+    .a = 255 \
+}
+
+#define SOL_COLORA(hex, alpha) (SolColor){ \
+    .r = ((hex) >> 16) & 0xFF, \
+    .g = ((hex) >> 8)  & 0xFF, \
+    .b = ((hex))       & 0xFF, \
+    .a = (alpha) \
+}
 
 bool Sol_Check_2d_Collision(vec2 a, SolRect b);

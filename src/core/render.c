@@ -29,7 +29,7 @@ typedef struct
 static SolCamera renderCam = {
     .fov = 60.0f,
     .nearClip = 0.1f,
-    .farClip = 100.0f,
+    .farClip = 5000.0f,
 };
 static mat4 ortho2d;
 static SolGlyph glyphs[128] = {0};

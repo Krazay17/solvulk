@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "solmath.h"
 
-#define MAX_BUTTONS 100
+#define MAX_BUTTONS 200
 
 typedef enum
 {

@@ -1,11 +1,15 @@
 #include "world.h"
+#include "systems.h"
 #include "loader.h"
 #include "render.h"
 #include "button.h"
 
-#define BUTTON_COUNT 6
+#define BUTTON_COUNT 140
+#define MODEL_COUNT 1000
 
+static vec3 playerPos = {0, 4, 10};
 static float rotation = 0.0f;
+static float camPos = 10.0f;
 static SolButton buttons = {0};
 
 static void Init();
@@ -32,8 +36,14 @@ static void Init()
 {
     for (int i = 0; i < BUTTON_COUNT; ++i)
     {
-        int xOffset = 50;
-        buttons.rect[i] = (SolRect){0, i * 80 + xOffset, 100, 50};
+        int cols = 12;
+        int col = i % cols;
+        int row = i / cols;
+        float xOffset = col * 110; // 100 wide + 10 gap
+        float yOffset = row * 60;  // 50 tall + 10 gap
+        float startX = 100.0f;
+        float startY = 100.0f;
+        buttons.rect[i] = (SolRect){xOffset + startX, yOffset + startY, 100, 50};
         buttons.color[i] = (SolColor){255, 0, 0, 55};
         buttons.textColor[i] = (SolColor){255, 255, 0, 255};
         buttons.drawOrder[i] = i;
@@ -74,14 +84,27 @@ static void Tick(double dt, double time)
 {
     rotation += 5.0f * dt;
 
-    Sol_Camera_Update((vec3){0, 0, 5}, (vec3){0, 0, 0});
+    PlayerState *playerState = Sol_GetPlayerState();
+    if (playerState->actionState & ACTION_FWD)
+    {
+        playerPos[2] -= 10.0f * dt;
+    }
+    else if (playerState->actionState & ACTION_BWD)
+    {
+        playerPos[2] += 10.0f * dt;
+    }
+
+    Sol_Camera_Update((vec3){0, 7, playerPos[2]}, (vec3){0, 0, 0});
 
     Sol_Button_Update(&buttons, 0, BUTTON_COUNT, dt);
 }
 
 static void Draw()
 {
-    Sol_DrawModel(&GetBank()->models.gpuWizard, (vec3){0, -1, 0}, rotation);
+    for (int i = 0; i < MODEL_COUNT; ++i)
+    {
+        Sol_DrawModel(&GetBank()->models.gpuWizard, (vec3){sin(i), -1, -i}, rotation);
+    }
 
     Sol_Button_Draw(&buttons);
 

@@ -20,7 +20,7 @@ void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
     for (int i = offset; i < offset + count; ++i)
     {
         float clickTarget = 0.0f;
-        button->clickAnim[i] += (clickTarget - button->clickAnim[i]) * dt * 4.0f;
+        button->clickAnim[i] += (clickTarget - button->clickAnim[i]) * (float)dt * 4.0f;
 
         ButtonState prev = button->state[i];
         ButtonState next = BUTTON_IDLE;
@@ -64,7 +64,7 @@ void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
         float hoverTarget = hovered ? 1.0f : 0.0f;
         // float dir = target > button->hoverAnim[i] ? 1.0f : -1.0f;
         // button->hoverAnim[i] = fminf(fmaxf(button->hoverAnim[i] + dir * dt * speed, 0.0f), 1.0f);
-        button->hoverAnim[i] += (hoverTarget - button->hoverAnim[i]) * dt * 20.0f;
+        button->hoverAnim[i] += (hoverTarget - button->hoverAnim[i]) * (float)dt * 20.0f;
 
         // react to events
         if (next & BUTTON_JUST_ENTERED)
@@ -135,15 +135,13 @@ void Sol_Button_Draw(SolButton *button)
         Sol_Draw_Rectangle(button->rect[i], col, 0);
         if (button->state[i] & BUTTON_HOVERED)
         {
-            Sol_Draw_Rectangle(button->rect[i], (SolColor){1, 1, 1, 255}, 1.0f + c * 3);
+            Sol_Draw_Rectangle(button->rect[i], (SolColor){1, 1, 1, 255}, 1.0f + c * 3.0f);
         }
 
         float fontSize = 16.0f;
         float textX = button->rect[i].x + (button->rect[i].w - Sol_MeasureText(button->text[i], fontSize)) / 2.0f;
         float textY = button->rect[i].y + (button->rect[i].h / 2.0f) + (fontSize / 3.0f);
-        Sol_Draw_Text(button->text[i],
-                      textX,
-                      textY , fontSize, button->textColor[i]);
+        Sol_Draw_Text(button->text[i], textX, textY, fontSize, button->textColor[i]);
     }
 }
 

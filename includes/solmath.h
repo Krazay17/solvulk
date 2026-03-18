@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <math.h>
+#include <stdint.h>
 #include <cglm/cglm.h>
 
 typedef struct

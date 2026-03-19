@@ -4,10 +4,7 @@
 #include "input.h"
 #include "render.h"
 
-#define HELD_THRESHOLD 0.3f
-
 static int movingButton = -1;
-static float heldTime = 0.0f;
 
 static float FlashAnim(float dt, float value, float speed);
 static float PulseAnim(float dt, float value, float speed);
@@ -15,8 +12,6 @@ static float PulseAnim(float dt, float value, float speed);
 void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
 {
     SolMouse mouse = SolInput_GetMouse();
-
-    bool interacted = false;
 
     for (int i = offset; i < offset + count; ++i)
     {

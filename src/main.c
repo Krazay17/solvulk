@@ -1,13 +1,18 @@
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdatomic.h>
 
 #include "input.h"
+#include "solglobals.h"
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
 static atomic_bool g_needsResize = FALSE;
 
+static SolState solState = {.isRunning = true};
 static HWND g_hwnd = NULL;
 
 static LARGE_INTEGER g_startTime, g_frequency;
@@ -54,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Main thread is now 100% dedicated to pumping Windows messages.
     // It will never stall your game loop again.
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
+    while (solState.isRunning && GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -66,6 +71,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     CloseHandle(hGameThread);
 
     return (int)msg.wParam;
+}
+
+void Sol_Quit()
+{
+    PostMessage(g_hwnd, WM_CLOSE, 0, 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

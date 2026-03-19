@@ -2,6 +2,7 @@
 #include "systems.h"
 #include "loader.h"
 #include "render.h"
+#include "solglobals.h"
 
 #define BUTTON_COUNT 20
 #define MODEL_COUNT 5000
@@ -31,6 +32,11 @@ World *GetGame()
     return &game;
 }
 
+static void CallbackTest()
+{
+    printf("Callback Test!");
+}
+
 static void Init()
 {
     for (int i = 0; i < BUTTON_COUNT; ++i)
@@ -38,11 +44,11 @@ static void Init()
         int cols = 12;
         int col = i % cols;
         int row = i / cols;
-        float xOffset = col * 110; // 100 wide + 10 gap
-        float yOffset = row * 60;  // 50 tall + 10 gap
         float startX = 100.0f;
         float startY = 100.0f;
-        buttons.rect[i] = (SolRect){xOffset + startX, yOffset + startY, 100, 50};
+        float xOffset = col * 110 + startX;
+        float yOffset = row * 60 + startY;
+        buttons.rect[i] = (SolRect){xOffset, yOffset, 100, 50};
         buttons.color[i] = (SolColor){255, 0, 0, 55};
         buttons.textColor[i] = (SolColor){255, 255, 0, 255};
         buttons.drawOrder[i] = i;
@@ -52,24 +58,21 @@ static void Init()
         case 0:
             buttons.text[i] = "QUIT";
             buttons.action[i] = BUTTON_ACTION_QUIT;
+            buttons.callback[i] = Sol_Quit;
             break;
         case 1:
             buttons.text[i] = "Colin";
-            buttons.action[i] = BUTTON_ACTION_QUIT;
             buttons.color[i] = (SolColor){111, 255, 0, 255};
             buttons.textColor[i] = (SolColor){0, 123, 255, 255};
             break;
         case 2:
             buttons.text[i] = "Is";
-            buttons.action[i] = BUTTON_ACTION_QUIT;
             break;
         case 3:
             buttons.text[i] = "An";
-            buttons.action[i] = BUTTON_ACTION_QUIT;
             break;
         case 4:
             buttons.text[i] = "Idiot";
-            buttons.action[i] = BUTTON_ACTION_QUIT;
             buttons.textColor[i] = (SolColor){0, 5, 255, 255};
             break;
         default:
@@ -96,6 +99,26 @@ static void Tick(double dt, double time)
     Sol_Camera_Update((vec3){0, 7, playerPos[2]}, (vec3){0, 0, 0});
 
     Sol_Button_Update(&buttons, 0, BUTTON_COUNT, dt);
+    ButtonPressed();
+}
+
+static void ButtonPressed()
+{
+    for(int i=0;i<MAX_BUTTONS;++i)
+    {
+        if(buttons.state[i] & BUTTON_PRESSED)
+        {
+            switch(i)
+            {
+                case 0:
+                    printf("Button 0 pressed\n");
+                break;
+                case 1:
+                    printf("Button 1 pressed\n");
+                break;
+            }
+        }
+    }
 }
 
 static void Draw()

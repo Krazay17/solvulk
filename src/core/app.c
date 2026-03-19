@@ -1,11 +1,11 @@
+#include <windows.h>
+#include <stdio.h>
+
 #include "world.h"
-#include "button.h"
 #include "loader.h"
 #include "render.h"
 #include "input.h"
-
-#include <windows.h>
-#include <stdio.h>
+#include "solglobals.h"
 
 #define MAX_WORLDS 2
 

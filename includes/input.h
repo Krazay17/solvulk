@@ -38,5 +38,5 @@ void SolInput_Update();
 
 // query from game code
 bool SolInput_KeyDown(SolKey key);
-bool SolInput_KeyPressed(SolKey key);  // true only on frame of press
+bool SolInput_KeyPressed(SolKey key); // true only on frame of press
 SolMouse SolInput_GetMouse();

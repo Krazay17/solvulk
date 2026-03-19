@@ -2,10 +2,9 @@
 #include "systems.h"
 #include "loader.h"
 #include "render.h"
-#include "button.h"
 
-#define BUTTON_COUNT 140
-#define MODEL_COUNT 1000
+#define BUTTON_COUNT 20
+#define MODEL_COUNT 5000
 
 static vec3 playerPos = {0, 4, 10};
 static float rotation = 0.0f;
@@ -102,11 +101,7 @@ static void Tick(double dt, double time)
 static void Draw()
 {
     for (int i = 0; i < MODEL_COUNT; ++i)
-    {
-        Sol_DrawModel(&GetBank()->models.gpuWizard, (vec3){sin(i), -1, -i}, rotation);
-    }
+        Sol_DrawModel(GetBank()->models.wizard, (vec3){sin(i), -1, -i}, rotation);
 
     Sol_Button_Draw(&buttons);
-
-    // Sol_Draw_Text("TESTING!!", 0, 0, 32.0f, (SolColor){0, 255, 0, 255});
 }

@@ -1,5 +1,6 @@
-#include "soldef.h"
-#include <stdbool.h>
+#include "systems.h"
+#include <stdio.h>
+
 #include "input.h"
 #include "render.h"
 
@@ -19,69 +20,37 @@ void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
 
     for (int i = offset; i < offset + count; ++i)
     {
-        float clickTarget = 0.0f;
-        button->clickAnim[i] += (clickTarget - button->clickAnim[i]) * (float)dt * 4.0f;
-
         ButtonState prev = button->state[i];
-        ButtonState next = BUTTON_IDLE;
+        ButtonState next = 0;
 
         bool hovered = Sol_Check_2d_Collision((vec2){mouse.x, mouse.y}, button->rect[i]);
-        bool wasHovered = prev & BUTTON_HOVERED;
 
         if (hovered)
         {
             next |= BUTTON_HOVERED;
-            if (!wasHovered)
-                next |= BUTTON_JUST_ENTERED;
             if (mouse.buttonsPressed[SOL_MOUSE_LEFT])
-            {
-                next |= BUTTON_PRESSED | BUTTON_JUST_CLICKED;
-                button->clickAnim[i] = 1.0f;
-            }
+                next |= BUTTON_PRESSED;
             if (mouse.buttons[SOL_MOUSE_LEFT])
-            {
-                interacted = true;
-                heldTime += dt;
-                if (movingButton == -1 && heldTime >= HELD_THRESHOLD)
-                    movingButton = i;
                 next |= BUTTON_HELD;
-            }
-            if (mouse.buttons[SOL_MOUSE_MIDDLE])
+            if (mouse.buttons[SOL_MOUSE_MIDDLE] && movingButton == -1)
             {
-                interacted = true;
-                if (movingButton == -1)
-                    movingButton = i;
+                movingButton = i;
+                next |= BUTTON_MOVING;
             }
-        }
-        else if (wasHovered)
-        {
-            next |= BUTTON_JUST_LEFT;
         }
 
         button->state[i] = next;
 
-        float speed = 3.0f;
+        float clickTarget = 0.0f;
         float hoverTarget = hovered ? 1.0f : 0.0f;
-        // float dir = target > button->hoverAnim[i] ? 1.0f : -1.0f;
-        // button->hoverAnim[i] = fminf(fmaxf(button->hoverAnim[i] + dir * dt * speed, 0.0f), 1.0f);
         button->hoverAnim[i] += (hoverTarget - button->hoverAnim[i]) * (float)dt * 20.0f;
+        button->clickAnim[i] += (clickTarget - button->clickAnim[i]) * (float)dt * 4.0f;
 
-        // react to events
-        if (next & BUTTON_JUST_ENTERED)
-            printf("hover enter %d\n", i);
-        if (next & BUTTON_JUST_LEFT)
-            printf("hover leave %d\n", i);
-        if (next & BUTTON_JUST_CLICKED)
+        if (next & BUTTON_PRESSED)
         {
-            switch (button->action[i])
-            {
-            case BUTTON_ACTION_QUIT:
-                printf("quit\n");
-                break;
-            default:
-                printf("clicked %d\n", i);
-                break;
-            }
+            button->clickAnim[i] = 1.0f;
+            if (button->callback[i])
+                button->callback[i](i, button->userData);
         }
         if (movingButton == i)
         {
@@ -109,11 +78,8 @@ void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
         }
     }
 
-    if (!interacted)
-    {
-        heldTime = 0.0f;
+    if(!mouse.buttons[SOL_MOUSE_MIDDLE])
         movingButton = -1;
-    }
 }
 
 void Sol_Button_Draw(SolButton *button)

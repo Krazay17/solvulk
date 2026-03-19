@@ -14,7 +14,7 @@ typedef struct {
     uint32_t   indexCount;
 } SolMesh;
 
-typedef struct {
+typedef struct SolModel {
     SolMesh  *meshes;
     uint32_t  meshCount;
 } SolModel;

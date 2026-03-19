@@ -1,17 +1,45 @@
-#include "render.h"
-#include "files.h"
-#include "model.h"
 
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
 
-// #include <vulkan/vulkan.h>
+#include <cglm/cglm.h>
+
+#include "render.h"
+#include "solvk.h"
+#include "files.h"
+#include "model.h"
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 #define MAX_FRAMES_IN_FLIGHT 2
+#define MAX_GPU_MODELS 256
+
+typedef struct
+{
+    const char *vertResource;
+    const char *fragResource;
+    // rasterizer
+    int depthTest;
+    int alphaBlend;
+    int cullBackface;
+
+    // push constants
+    uint32_t pushRangeSize;
+
+    // descriptors (NULL if none)
+    VkDescriptorSetLayout *descLayouts;
+    uint32_t descLayoutCount;
+} SolPipelineConfig;
+
+typedef enum
+{
+    PIPE_3D_MESH,
+    PIPE_2D_BUTTON,
+    PIPE_2D_TEXT,
+    PIPE_COUNT
+} SolPipelines;
 
 typedef struct
 {
@@ -25,14 +53,23 @@ typedef struct
     float yoffset;
     float yadvance;
 } SolGlyph;
+typedef struct
+{
+    mat4 ortho;
+    float x, y, w, h;   // quad position in screen space
+    float u, v, uw, vh; // UV rect in atlas
+    float r, g, b, a;   // color
+} SolTextPush;
 
-static SolCamera renderCam = {
+SolCamera renderCam = {
     .fov = 60.0f,
     .nearClip = 0.1f,
     .farClip = 5000.0f,
 };
 static mat4 ortho2d;
 static SolGlyph glyphs[128] = {0};
+static SolGpuModel gpuModels[MAX_GPU_MODELS] = {0};
+static SolModelHandle modelCount = 0;
 
 static VkPipeline graphicsPipeline[PIPE_COUNT] = {VK_NULL_HANDLE};
 static VkPipelineLayout pipelineLayout[PIPE_COUNT] = {VK_NULL_HANDLE};
@@ -73,6 +110,7 @@ static SolPipelineConfig pipes[PIPE_COUNT] =
 
 static uint32_t currentFrame = 0;
 static uint32_t currentImageIndex = 0;
+static uint32_t currentBoundPipeline = -1;
 
 static VkInstance instance = VK_NULL_HANDLE;
 static VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -124,6 +162,8 @@ static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                            VkBuffer *outBuffer, VkDeviceMemory *outMemory);
 static void SetOrtho();
 static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH);
+
+static float SolColorF(uint8_t c) { return c / 255.0f; }
 
 int Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
 {
@@ -1006,6 +1046,7 @@ static int SolVkSyncObjects()
 
 void Sol_Begin_Draw()
 {
+    currentBoundPipeline = -1;
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
@@ -1226,8 +1267,9 @@ static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     return 0;
 }
 
-SolGpuModel Sol_UploadModel(SolModel *model)
+SolModelHandle Sol_UploadModel(SolModel *model)
 {
+    modelCount++;
     SolGpuModel gpuModel = {0};
     gpuModel.meshCount = model->meshCount;
     gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
@@ -1318,10 +1360,19 @@ SolGpuModel Sol_UploadModel(SolModel *model)
     }
 
     printf("Model uploaded to GPU: %d meshes\n", gpuModel.meshCount);
-    return gpuModel;
+    gpuModels[modelCount] = gpuModel;
+    return modelCount;
 }
 
-void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
+static void SolBindPipeline(VkCommandBuffer cmd, int pipeIndex)
+{
+    if (pipeIndex == currentBoundPipeline)
+        return;
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[pipeIndex]);
+    currentBoundPipeline = pipeIndex;
+}
+
+void Sol_DrawModel(SolModelHandle handle, vec3 pos, float rotY)
 {
     // 1. Model Matrix
     mat4 modelMat;
@@ -1335,13 +1386,13 @@ void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
     glm_mat4_mul(mvp, modelMat, mvp);
 
     VkCommandBuffer cmd = commandBuffers[currentFrame];
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_3D_MESH]);
+    SolBindPipeline(cmd, PIPE_3D_MESH);
     vkCmdPushConstants(cmd, pipelineLayout[PIPE_3D_MESH], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), mvp);
 
     // 4. Draw each mesh
-    for (uint32_t i = 0; i < model->meshCount; i++)
+    for (uint32_t i = 0; i < gpuModels[handle].meshCount; i++)
     {
-        SolGpuMesh *mesh = &model->meshes[i];
+        SolGpuMesh *mesh = &gpuModels[handle].meshes[i];
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->vertexBuffer, offsets);
@@ -1355,7 +1406,7 @@ void Sol_DrawModel(SolGpuModel *model, vec3 pos, float rotY)
 void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 {
     VkCommandBuffer cmd = commandBuffers[currentFrame];
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[PIPE_2D_BUTTON]);
+    SolBindPipeline(cmd, PIPE_2D_BUTTON);
 
     struct
     {
@@ -1411,8 +1462,7 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
     const float CHAR_H = size;
 
     VkCommandBuffer cmd = commandBuffers[currentFrame];
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      graphicsPipeline[PIPE_2D_TEXT]);
+    SolBindPipeline(cmd, PIPE_2D_TEXT);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout[PIPE_2D_TEXT], 0, 1, &fontDescSet, 0, NULL);
 
@@ -1461,7 +1511,8 @@ float Sol_MeasureText(const char *str, float size)
     for (const char *c = str; *c; c++)
     {
         int id = (int)*c;
-        if (id < 0 || id >= 128) continue;
+        if (id < 0 || id >= 128)
+            continue;
         width += glyphs[id].yadvance * size;
     }
     return width;

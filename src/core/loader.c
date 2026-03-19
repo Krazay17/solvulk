@@ -5,8 +5,8 @@ static SolBank bank = {0};
 void LoadModels()
 {
     SolModel cpu = SolLoadModel("ID_MODEL_WIZARD");
-    SolGpuModel gpu = Sol_UploadModel(&cpu);
-    bank.models.gpuWizard = gpu;
+    SolModelHandle handle = Sol_UploadModel(&cpu);
+    bank.models.wizard = handle;
     SolFreeModel(&cpu);
 }
 

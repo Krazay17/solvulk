@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <stdint.h>
-#include <cglm/cglm.h>
+#include <cglm/types.h>
 
 typedef struct
 {

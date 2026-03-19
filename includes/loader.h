@@ -4,13 +4,12 @@
 
 typedef struct
 {
-    SolModel wizard;
-    SolGpuModel gpuWizard;
-} Models;
+    SolModelHandle wizard;
+} BankedModels;
 
 typedef struct
 {
-    Models models;
+    BankedModels models;
 } SolBank;
 
 void LoadModels();

@@ -1,0 +1,2 @@
+// float dir = target > button->hoverAnim[i] ? 1.0f : -1.0f;
+// button->hoverAnim[i] = fminf(fmaxf(button->hoverAnim[i] + dir * dt * speed, 0.0f), 1.0f);

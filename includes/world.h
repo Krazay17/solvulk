@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include "model.h"
+#include "systems.h"
 
 #define MAX_ENTS 100
 

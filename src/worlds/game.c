@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "world.h"
 #include "systems.h"
 #include "loader.h"
@@ -27,14 +29,11 @@ static World game = {
     .state = &gameState,
 };
 
+static void ButtonPressed();
+
 World *GetGame()
 {
     return &game;
-}
-
-static void CallbackTest()
-{
-    printf("Callback Test!");
 }
 
 static void Init()
@@ -99,22 +98,22 @@ static void Tick(double dt, double time)
     Sol_Camera_Update((vec3){0, 7, playerPos[2]}, (vec3){0, 0, 0});
 
     Sol_Button_Update(&buttons, 0, BUTTON_COUNT, dt);
-    ButtonPressed();
 }
 
+//immediate mode buttons call after button update
 static void ButtonPressed()
 {
-    for(int i=0;i<MAX_BUTTONS;++i)
+    for (int i = 0; i < MAX_BUTTONS; ++i)
     {
-        if(buttons.state[i] & BUTTON_PRESSED)
+        if (buttons.state[i] & BUTTON_PRESSED)
         {
-            switch(i)
+            switch (i)
             {
-                case 0:
-                    printf("Button 0 pressed\n");
+            case 0:
+                printf("Button 0 pressed\n");
                 break;
-                case 1:
-                    printf("Button 1 pressed\n");
+            case 1:
+                printf("Button 1 pressed\n");
                 break;
             }
         }

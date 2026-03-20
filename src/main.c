@@ -12,7 +12,7 @@
 static atomic_bool g_running = TRUE;
 static atomic_bool g_needsResize = FALSE;
 
-static SolState solState = {.isRunning = true};
+SolState solState = {.isRunning = true};
 static HWND g_hwnd = NULL;
 
 static LARGE_INTEGER g_startTime, g_frequency;

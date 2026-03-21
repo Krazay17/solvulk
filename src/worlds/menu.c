@@ -3,7 +3,7 @@
 #include "render.h"
 #include "world.h"
 #include "systems.h"
-#include "solglobals.h"
+#include "sol.h"
 #include "input.h"
 
 #define BUTTON_COUNT 100

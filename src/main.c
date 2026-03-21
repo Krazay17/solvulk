@@ -6,7 +6,7 @@
 #include <stdatomic.h>
 
 #include "input.h"
-#include "solglobals.h"
+#include "sol.h"
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -116,7 +116,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     case WM_SIZE:
         if (wParam != SIZE_MINIMIZED)
+        {
             g_needsResize = TRUE;
+
+        }
         return 0;
     case WM_KEYDOWN:
         SolInput_OnKey((int)wParam, true);

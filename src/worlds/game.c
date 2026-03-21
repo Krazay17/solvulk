@@ -4,7 +4,7 @@
 #include "systems.h"
 #include "loader.h"
 #include "render.h"
-#include "solglobals.h"
+#include "sol.h"
 
 #define MODEL_COUNT 100
 

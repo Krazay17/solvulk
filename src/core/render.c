@@ -9,6 +9,7 @@
 #include "solvk.h"
 #include "files.h"
 #include "model.h"
+#include "sol.h"
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
@@ -1212,6 +1213,8 @@ void Sol_Render_Resize()
     SolVkImageViews();
     SolVkDepthResources();
     SetOrtho();
+    solState.windowWidth = swapchainExtent.width;
+    solState.windowHeight = swapchainExtent.height;
 }
 
 static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)

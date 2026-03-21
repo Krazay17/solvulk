@@ -4,9 +4,10 @@
 
 #include "input.h"
 #include "render.h"
-#include "solglobals.h"
 
 static SolButton *movingButton = NULL;
+static float dragOffsetX;
+static float dragOffsetY;
 
 static float FlashAnim(float dt, float value, float speed);
 static float PulseAnim(float dt, float value, float speed);
@@ -36,6 +37,8 @@ void Sol_Button_Update(SolButton *buttons, int offset, int count, float dt)
             if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingButton)
             {
                 movingButton = &buttons[i];
+                dragOffsetX = mouse.x - buttons[i].rect.x;
+                dragOffsetY = mouse.y - buttons[i].rect.y;
                 next |= BUTTON_MOVING;
                 Sol_Button_ToFront(buttons, i, offset, count);
             }
@@ -97,8 +100,8 @@ static void Sol_Button_Move()
         movingButton = NULL;
     if (movingButton)
     {
-        movingButton->rect.x = mouse.x - (movingButton->rect.w / 2.0f);
-        movingButton->rect.y = mouse.y - (movingButton->rect.h / 2.0f);
+        movingButton->rect.x = mouse.x - dragOffsetX;
+        movingButton->rect.y = mouse.y - dragOffsetY;
     }
 }
 

@@ -4,7 +4,7 @@
 #include "loader.h"
 #include "render.h"
 #include "input.h"
-#include "solglobals.h"
+#include "sol.h"
 #include "world.h"
 
 #define MAX_WORLDS 2

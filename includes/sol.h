@@ -4,7 +4,7 @@
 
 typedef struct
 {
-    bool isMovingButton;
+    float windowWidth, windowHeight;
 } SolState;
 
 extern SolState solState;

@@ -1,6 +1,5 @@
 #pragma once
 #include <stdbool.h>
-#include "model.h"
 #include "systems.h"
 
 #define MAX_ENTS 100
@@ -16,6 +15,7 @@ typedef struct
     WorldStep step;
     WorldTick tick;
     WorldDraw draw;
+    bool active;
     void *state;
 } World;
 
@@ -31,4 +31,5 @@ typedef struct
     int entCount;
 } GameState;
 
-World *GetGame(void);
+World *Sol_GetGame(void);
+World *Sol_GetMenu(void);

@@ -1,25 +1,31 @@
-#include "button.h"
 #include <stdio.h>
+
+#include "button.h"
 
 #include "input.h"
 #include "render.h"
+#include "solglobals.h"
 
-static int movingButton = -1;
+static SolButton *movingButton = NULL;
 
 static float FlashAnim(float dt, float value, float speed);
 static float PulseAnim(float dt, float value, float speed);
+static void Sol_Button_Move();
 
-void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
+void Sol_Button_Update(SolButton *buttons, int offset, int count, float dt)
 {
+    if (!buttons)
+        return;
     SolMouse mouse = SolInput_GetMouse();
 
     for (int i = offset; i < offset + count; ++i)
     {
-        ButtonState prev = button->state[i];
+        ButtonState prev = buttons[i].state;
         ButtonState next = 0;
 
-        bool hovered = Sol_Check_2d_Collision((vec2){mouse.x, mouse.y}, button->rect[i]);
-
+        bool hovered = Sol_Check_2d_Collision((vec2){mouse.x, mouse.y}, buttons[i].rect);
+        if (prev & BUTTON_MOVING && mouse.buttons[SOL_MOUSE_MIDDLE])
+            next |= BUTTON_MOVING;
         if (hovered)
         {
             next |= BUTTON_HOVERED;
@@ -27,64 +33,41 @@ void Sol_Button_Update(SolButton *button, int offset, int count, float dt)
                 next |= BUTTON_PRESSED;
             if (mouse.buttons[SOL_MOUSE_LEFT])
                 next |= BUTTON_HELD;
-            if (mouse.buttons[SOL_MOUSE_MIDDLE] && movingButton == -1)
+            if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingButton)
             {
-                movingButton = i;
+                movingButton = &buttons[i];
                 next |= BUTTON_MOVING;
+                Sol_Button_ToFront(buttons, i, offset, count);
             }
         }
 
-        button->state[i] = next;
+        buttons[i].state = next;
 
         float clickTarget = 0.0f;
         float hoverTarget = hovered ? 1.0f : 0.0f;
-        button->hoverAnim[i] += (hoverTarget - button->hoverAnim[i]) * (float)dt * 20.0f;
-        button->clickAnim[i] += (clickTarget - button->clickAnim[i]) * (float)dt * 4.0f;
+        buttons[i].hoverAnim += (hoverTarget - buttons[i].hoverAnim) * (float)dt * 20.0f;
+        buttons[i].clickAnim += (clickTarget - buttons[i].clickAnim) * (float)dt * 4.0f;
 
         if (next & BUTTON_PRESSED)
         {
-            button->clickAnim[i] = 1.0f;
-            if (button->callback[i])
-                button->callback[i](i, button->userData);
-        }
-        if (movingButton == i)
-        {
-            button->rect[i].x = mouse.x - (button->rect[i].w / 2.0f);
-            button->rect[i].y = mouse.y - (button->rect[i].h / 2.0f);
-
-            if (button->state[i] & ~BUTTON_MOVING)
-            {
-                button->state[i] |= BUTTON_MOVING;
-                int pos = -1;
-                for (int j = 0; j < MAX_BUTTONS; j++)
-                    if (button->drawOrder[j] == i)
-                    {
-                        pos = j;
-                        break;
-                    }
-
-                if (pos != -1)
-                {
-                    for (int j = pos; j < MAX_BUTTONS - 1; j++)
-                        button->drawOrder[j] = button->drawOrder[j + 1];
-                    button->drawOrder[MAX_BUTTONS - 1] = i;
-                }
-            }
+            buttons[i].clickAnim = 1.0f;
+            if (buttons[i].callback)
+                buttons[i].callback(i, buttons[i].userData);
         }
     }
-
-    if(!mouse.buttons[SOL_MOUSE_MIDDLE])
-        movingButton = -1;
+    Sol_Button_Move();
 }
 
-void Sol_Button_Draw(SolButton *button)
+void Sol_Button_Draw(SolButton *buttons, int offset, int count)
 {
-    for (int j = 0; j < MAX_BUTTONS; ++j)
+    if (!buttons)
+        return;
+    for (int j = 0; j < offset + count; ++j)
     {
-        int i = button->drawOrder[j];
-        SolColor base = button->color[i];
-        float h = button->hoverAnim[i];
-        float c = button->clickAnim[i];
+        int i = buttons[j].drawOrder;
+        SolColor base = buttons[i].color;
+        float h = buttons[i].hoverAnim;
+        float c = buttons[i].clickAnim;
 
         // brighten on hover, flash white on click
         SolColor col = {
@@ -93,21 +76,61 @@ void Sol_Button_Draw(SolButton *button)
             .b = (uint8_t)fminf(base.b + h * 100 + c * 100, 255),
             .a = base.a,
         };
-        Sol_Draw_Rectangle(button->rect[i], col, 0);
-        if (button->state[i] & BUTTON_HOVERED)
+        Sol_Draw_Rectangle(buttons[i].rect, col, 0);
+        if (buttons[i].state & BUTTON_HOVERED)
         {
-            Sol_Draw_Rectangle(button->rect[i], (SolColor){1, 1, 1, 255}, 1.0f + c * 3.0f);
+            Sol_Draw_Rectangle(buttons[i].rect, (SolColor){1, 1, 1, 255}, 1.0f + c * 3.0f);
         }
-
-        float fontSize = 16.0f;
-        float textX = button->rect[i].x + (button->rect[i].w - Sol_MeasureText(button->text[i], fontSize)) / 2.0f;
-        float textY = button->rect[i].y + (button->rect[i].h / 2.0f) + (fontSize / 3.0f);
-        Sol_Draw_Text(button->text[i], textX, textY, fontSize, button->textColor[i]);
+        if (!buttons[i].text)
+            continue;
+        float fontSize = buttons[i].fontSize;
+        float textX = buttons[i].rect.x + (buttons[i].rect.w * 0.5f) - (buttons[i].textWidth * 0.5f);
+        float textY = buttons[i].rect.y + (buttons[i].rect.h / 2.0f) + (fontSize / 3.0f);
+        Sol_Draw_Text(buttons[i].text, textX, textY, fontSize, buttons[i].textColor);
     }
 }
 
-void Sol_Button_Reset(SolButton *button)
+static void Sol_Button_Move()
 {
+    SolMouse mouse = SolInput_GetMouse();
+    if (!mouse.buttons[SOL_MOUSE_MIDDLE])
+        movingButton = NULL;
+    if (movingButton)
+    {
+        movingButton->rect.x = mouse.x - (movingButton->rect.w / 2.0f);
+        movingButton->rect.y = mouse.y - (movingButton->rect.h / 2.0f);
+    }
+}
+
+void Sol_Button_Reset(SolButton *buttons)
+{
+}
+
+void Sol_Button_ToFront(SolButton *buttons, int i, int offset, int count)
+{
+    int pos = -1;
+    for (int j = 0; j < offset + count; j++)
+        if (buttons[j].drawOrder == i)
+        {
+            pos = j;
+            break;
+        }
+
+    if (pos != -1)
+    {
+        for (int j = pos; j < offset + count - 1; j++)
+            buttons[j].drawOrder = buttons[j + 1].drawOrder;
+        buttons[count - 1].drawOrder = i;
+    }
+}
+
+void Sol_Button_InitText(SolButton *button, SolColor color, const char *text, float fontSize)
+{
+    button->textColor = color;
+    const char *buttonText = text;
+    button->fontSize = fontSize;
+    button->text = buttonText;
+    button->textWidth = Sol_MeasureText(buttonText, fontSize);
 }
 
 static float FlashAnim(float dt, float value, float speed)

@@ -11,11 +11,10 @@
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
 static atomic_bool g_needsResize = FALSE;
-
-SolState solState = {.isRunning = true};
+static LARGE_INTEGER g_startTime, g_frequency;
 static HWND g_hwnd = NULL;
 
-static LARGE_INTEGER g_startTime, g_frequency;
+SolState solState = {0};
 
 // --- Forward declarations ---
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
@@ -59,7 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Main thread is now 100% dedicated to pumping Windows messages.
     // It will never stall your game loop again.
     MSG msg = {0};
-    while (solState.isRunning && GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
+    while (GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);

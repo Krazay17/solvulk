@@ -1,9 +1,10 @@
 #pragma once
+#include <stdbool.h>
 #include <stdatomic.h>
 
 typedef struct
 {
-    atomic_bool isRunning;
+    bool isMovingButton;
 } SolState;
 
 extern SolState solState;

@@ -1,8 +1,6 @@
 #pragma once
 #include "solmath.h"
 
-#define MAX_BUTTONS 200
-
 typedef void (*SolButtonCallback)(int index, void* userData);
 
 typedef enum
@@ -21,18 +19,22 @@ typedef enum
 
 typedef struct
 {
-    SolRect rect[MAX_BUTTONS];
-    SolColor color[MAX_BUTTONS];
-    SolColor textColor[MAX_BUTTONS];
-    const char *text[MAX_BUTTONS];
-    float clickAnim[MAX_BUTTONS];
-    float hoverAnim[MAX_BUTTONS];
-    ButtonState state[MAX_BUTTONS];
-    ButtonAction action[MAX_BUTTONS];
-    int drawOrder[MAX_BUTTONS];
-    SolButtonCallback callback[MAX_BUTTONS];
-    void* userData[MAX_BUTTONS]; // To pass things like "World*" or "GameState*"
+    SolRect rect;
+    SolColor color;
+    SolColor textColor;
+    const char *text;
+    float fontSize;
+    float textWidth;
+    float clickAnim;
+    float hoverAnim;
+    ButtonState state;
+    ButtonAction action;
+    int drawOrder;
+    SolButtonCallback callback;
+    void* userData;
 } SolButton;
 
-void Sol_Button_Update(SolButton *button, int offset, int count, float dt);
-void Sol_Button_Draw(SolButton *button);
+void Sol_Button_Update(SolButton *buttons, int offset, int count, float dt);
+void Sol_Button_Draw(SolButton *buttons, int offset, int count);
+void Sol_Button_ToFront(SolButton *buttons,int i, int offset, int count);
+void Sol_Button_InitText(SolButton *button, SolColor color, const char *text, float fontSize);

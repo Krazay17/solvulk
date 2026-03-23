@@ -1413,23 +1413,43 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
     struct
     {
         mat4 o;
-        SolRect rec;
-        float r, g, b, a;
-        float thickness;
-    } push;
-
+        vec4 rec;
+        vec4 c;
+        vec4 extras;
+    } push = {
+        .rec = {rect.x, rect.y, rect.w, rect.h},
+        .c = {SolColorF(color.r), SolColorF(color.g), SolColorF(color.b), SolColorF(color.a)},
+        .extras = {thickness, 0, 0, 0},
+    };
     memcpy(push.o, ortho2d, sizeof(mat4));
-    push.rec = rect;
-    push.r = SolColorF(color.r);
-    push.g = SolColorF(color.g);
-    push.b = SolColorF(color.b);
-    push.a = SolColorF(color.a);
-    push.thickness = thickness;
 
     vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
 
     vkCmdDraw(cmd, 6, 1, 0, 0);
+}
+
+void Sol_Draw_Batch_Rectangle(BatchedRects *rects)
+{
+    //     if (count == 0 || count > MAX_RECT_INSTANCES)
+    //     return;
+ 
+    // // 1. Upload all instance data in one memcpy
+    // memcpy(rectInstanceMapped, instances, count * sizeof(SolRectInstance));
+ 
+    // // 2. Bind pipeline + descriptor set (once)
+    // VkCommandBuffer cmd = commandBuffers[currentFrame];
+    // SolBindPipeline(cmd, PIPE_2D_BUTTON);
+    // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                         pipelineLayout[PIPE_2D_BUTTON], 0, 1,
+    //                         &rectDescSet, 0, NULL);
+ 
+    // // 3. Push ortho matrix (shared across all rects)
+    // vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
+    //                    VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), ortho2d);
+ 
+    // // 4. ONE draw call — 6 verts per quad, `count` instances
+    // vkCmdDraw(cmd, 6, count, 0, 0);
 }
 
 static VkCommandBuffer SolGetCmd()

@@ -10,9 +10,9 @@
 #define MAX_WORLDS 2
 
 static World *worlds[MAX_WORLDS] = {0};
+static double timeStep = 1.0f / 120.0f;
 static float smoothedFps = 120.0f;
 static float accumulator = 0.0f;
-static float timeStep = 1.0f / 120.0f;
 
 void Sol_Init(HWND hwnd, HINSTANCE hInstance)
 {
@@ -47,7 +47,7 @@ void Sol_Tick(double dt, double time)
         for (int i = 0; i < MAX_WORLDS; ++i)
         {
             if (worlds[i] && worlds[i]->active && worlds[i]->step)
-                worlds[i]->step(dt, time);
+                worlds[i]->step(timeStep, time);
         }
         accumulator -= timeStep;
     }

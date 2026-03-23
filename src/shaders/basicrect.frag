@@ -6,18 +6,18 @@ layout(location=0)out vec4 outColor;
 
 layout(push_constant)uniform Push{
     mat4 ortho;
-    float x,y,w,h;
-    float r,g,b,a;
-    float thickness;
+    vec4 rect;// x, y, z, w
+    vec4 color;// r, g, b, a
+    vec4 extra;// thickness, 0, 0, 0
 }push;
 
 void main()
 {
-    float t=push.thickness;
-    bool inside=fragPos.x>t&&fragPos.x<push.w-t&&
-    fragPos.y>t&&fragPos.y<push.h-t;
+    float t=push.extra[0];
+    bool inside=fragPos.x>t&&fragPos.x<push.rect[2]-t&&
+    fragPos.y>t&&fragPos.y<push.rect[3]-t;
     
-    if(push.thickness>0.&&inside)discard;
+    if(push.extra[0]>0.&&inside)discard;
     
     outColor=fragColor;
 }

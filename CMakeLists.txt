@@ -46,6 +46,7 @@ file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 set(SHADERS
     ${SHADER_DIR}/basic3d.vert
     ${SHADER_DIR}/basic3d.frag
+    ${SHADER_DIR}/batched_rect.vert
     ${SHADER_DIR}/basicrect.vert
     ${SHADER_DIR}/basicrect.frag
     ${SHADER_DIR}/basictext.vert

@@ -1,9 +1,9 @@
 #pragma once
-#include <windows.h>
-#include <solmath.h>
+#include "solmath.h"
+#include "sol_load_types.h"
 
 typedef struct SolModel SolModel;
-typedef int SolModelHandle;
+
 typedef struct
 {
     vec3 position;
@@ -25,7 +25,7 @@ typedef struct
 
 extern SolCamera renderCam;
 
-int Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance);
+int Sol_Init_Vulkan(void* hwnd, void* hInstance);
 
 SolModelHandle Sol_UploadModel(SolModel *model);
 

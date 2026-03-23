@@ -1,7 +1,6 @@
 #include <stdio.h>
 
-#include "button.h"
-
+#include "sol_ui.h"
 #include "input.h"
 #include "render.h"
 

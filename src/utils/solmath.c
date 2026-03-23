@@ -8,7 +8,7 @@ bool Sol_Check_2d_Collision(vec2 a, SolRect b)
              (a[1] >= b.y + b.h));
 }
 
-float Lerp(float start, float end, float amount)
+float Sol_Lerp(float start, float end, float amount)
 {
     return start + amount * (end - start);
 }

@@ -1,7 +1,8 @@
-#include "input.h"
 #include <windows.h>
 #include <stdatomic.h>
 #include <string.h>
+
+#include "input.h"
 
 // maps SolKey to Windows virtual key codes
 static int keyMap[SOL_KEY_COUNT] = {

@@ -1,12 +1,22 @@
 #pragma once
-#include <stdbool.h>
-#include <stdatomic.h>
+#include <stdio.h>
+
+#include "solmath.h"
+#include "world.h"
+#include "sol_load_types.h"
+
+#include "render.h"
+#include "input.h"
+#include "controller/playercontroller.h"
 
 typedef struct
 {
-    float windowWidth, windowHeight;
-} SolState;
+    World **worlds;
+    uint16_t worldCount;
+} SolConfig;
 
-extern SolState solState;
+void Sol_Init(void *hwnd, void *hInstance, SolConfig config);
+void Sol_Tick(double dt, double time);
+void Sol_Shutdown();
 
-void Sol_Quit();
+SolBank *Sol_Loader_GetBank(void);

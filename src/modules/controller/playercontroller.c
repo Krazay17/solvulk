@@ -1,8 +1,9 @@
-#include "playercontroller.h"
 #include <stdio.h>
-#include "input.h"
 #include <math.h>
 #include <stdint.h>
+
+#include "playercontroller.h"
+#include "input.h"
 
 static PlayerState playerState = {0};
 

@@ -4,12 +4,10 @@
 #include <stddef.h>
 
 #include <cglm/cglm.h>
+#include "vk_init_types.h"
 
+#include "sol_core.h"
 #include "render.h"
-#include "solvk.h"
-#include "files.h"
-#include "model.h"
-#include "sol.h"
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
@@ -165,9 +163,9 @@ static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH);
 
 static float SolColorF(uint8_t c) { return c / 255.0f; }
 
-int Sol_Init_Vulkan(HWND hwnd, HINSTANCE hInstance)
+int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 {
-    SolResource metrics = SolLoadResource("ID_FONT_METRICS");
+    SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
     if (metrics.data)
     {
         printf("JSON preview:\n%.500s\n", (const char *)metrics.data);
@@ -569,7 +567,7 @@ static int SolVkSwapchain()
 
 static int SolVkFontTexture()
 {
-    SolResource res = SolLoadResource("ID_FONT_ATLAS");
+    SolResource res = Sol_LoadResource("ID_FONT_ATLAS");
 
     printf("font atlas load: data=%p size=%zu\n", res.data, res.size);
     if (!res.data)
@@ -806,10 +804,9 @@ static int SolVkImageViews()
 
 static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout)
 {
-
     // --- load shader bytecode ---
-    SolResource vertRes = SolLoadResource(pipeConfig.vertResource);
-    SolResource fragRes = SolLoadResource(pipeConfig.fragResource);
+    SolResource vertRes = Sol_LoadResource(pipeConfig.vertResource);
+    SolResource fragRes = Sol_LoadResource(pipeConfig.fragResource);
 
     if (!vertRes.data || !fragRes.data)
         return 1;
@@ -1433,21 +1430,21 @@ void Sol_Draw_Batch_Rectangle(BatchedRects *rects)
 {
     //     if (count == 0 || count > MAX_RECT_INSTANCES)
     //     return;
- 
+
     // // 1. Upload all instance data in one memcpy
     // memcpy(rectInstanceMapped, instances, count * sizeof(SolRectInstance));
- 
+
     // // 2. Bind pipeline + descriptor set (once)
     // VkCommandBuffer cmd = commandBuffers[currentFrame];
     // SolBindPipeline(cmd, PIPE_2D_BUTTON);
     // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
     //                         pipelineLayout[PIPE_2D_BUTTON], 0, 1,
     //                         &rectDescSet, 0, NULL);
- 
+
     // // 3. Push ortho matrix (shared across all rects)
     // vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
     //                    VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), ortho2d);
- 
+
     // // 4. ONE draw call — 6 verts per quad, `count` instances
     // vkCmdDraw(cmd, 6, count, 0, 0);
 }

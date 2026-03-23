@@ -5,22 +5,15 @@
 #include <stdio.h>
 #include <stdatomic.h>
 
-#include "input.h"
-#include "sol.h"
+#include "app.h"
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
-static atomic_bool g_needsResize = FALSE;
 static LARGE_INTEGER g_startTime, g_frequency;
 static HWND g_hwnd = NULL;
 
-SolState solState = {0};
-
 // --- Forward declarations ---
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
-void Sol_Init(HWND hwnd, HINSTANCE hInstance);
-void Sol_Tick(double dt, double time);
-void Sol_On_Resize();
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -50,7 +43,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceFrequency(&g_frequency);
     QueryPerformanceCounter(&g_startTime);
 
-    Sol_Init(g_hwnd, hInstance);
+    World *worlds[] = {
+        &menu,
+        &game,
+    };
+    SolConfig solConfig = {
+        .worlds = worlds,
+        .worldCount = 2,
+    };
+    Sol_Init(g_hwnd, hInstance, solConfig);
 
     // Spin up the game loop on its own thread BEFORE entering the message pump
     HANDLE hGameThread = CreateThread(NULL, 0, GameThreadProc, NULL, 0, NULL);
@@ -72,11 +73,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return (int)msg.wParam;
 }
 
-void Sol_Quit()
-{
-    PostMessage(g_hwnd, WM_CLOSE, 0, 0);
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Game loop – runs on its own thread, completely independent of Windows events
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,12 +83,6 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
 
     while (g_running)
     {
-        if (g_needsResize)
-        {
-            g_needsResize = FALSE;
-            Sol_On_Resize();
-        }
-
         QueryPerformanceCounter(&currentTime);
         double dt = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)g_frequency.QuadPart;
         double runTime = (double)(currentTime.QuadPart - g_startTime.QuadPart) / (double)g_frequency.QuadPart;
@@ -115,11 +105,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0); // tell the message loop to exit
         return 0;
     case WM_SIZE:
-        if (wParam != SIZE_MINIMIZED)
-        {
-            g_needsResize = TRUE;
 
-        }
         return 0;
     case WM_KEYDOWN:
         SolInput_OnKey((int)wParam, true);

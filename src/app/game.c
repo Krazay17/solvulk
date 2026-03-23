@@ -1,10 +1,6 @@
-#include <stdio.h>
+#include "app.h"
 
-#include "world.h"
-#include "systems.h"
-#include "loader.h"
-#include "render.h"
-#include "sol.h"
+#include "ui/sol_ui.h"
 
 #define MODEL_COUNT 100
 
@@ -30,12 +26,13 @@ static SolButton buttons[GAME_BUTTON_COUNT] = {0};
 static void Init();
 static void Tick(double dt, double time);
 static void Draw();
+
 static GameState gameState = {
     .entities = {0},
     .entCount = 0,
 };
 
-static World game = {
+World game = {
     .init = Init,
     .tick = Tick,
     .draw = Draw,
@@ -69,7 +66,7 @@ static void Init()
         case GAME_BUTTON_QUIT:
             Sol_Button_InitText(&buttons[i], (SolColor){0, 255, 255, 255}, "QUIT", 16.0f);
             buttons[i].color = (SolColor){255, 0, 0, 255};
-            buttons[i].callback = Sol_Quit;
+            buttons[i].callback = Sol_Shutdown;
             break;
         default:
             Sol_Button_InitText(&buttons[i], (SolColor){0, 255, 255, 255}, "BUTTON", 16.0f);
@@ -99,7 +96,7 @@ static void Tick(double dt, double time)
 static void Draw()
 {
     for (int i = 0; i < MODEL_COUNT; ++i)
-        Sol_DrawModel(GetBank()->models.wizard, (vec3){sin(i), -1, -i}, rotation);
+        Sol_DrawModel(Sol_Loader_GetBank()->models.wizard, (vec3){sin(i), -1, -i}, rotation);
 
     Sol_Button_Draw(buttons, 0, GAME_BUTTON_COUNT);
 }

@@ -9,16 +9,24 @@ find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
 set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
-set(SOL_INCLUDES "${CMAKE_SOURCE_DIR}/includes" "${CMAKE_SOURCE_DIR}/src/modules")
+set(SOL_PUBLIC_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
+set(SOL_PRIVATE_INCLUDES  
+    "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/src/core"
+    "${CMAKE_SOURCE_DIR}/src/modules"
+)
 
 add_executable(solvulk #WIN32
     ${SOURCES}
     ${RESOURCE_FILE}
 )
 
-target_include_directories(solvulk PRIVATE
-    ${SOL_INCLUDES}
-    ${Vulkan_INCLUDE_DIRS}
+target_include_directories(solvulk
+    PUBLIC
+        ${SOL_PUBLIC_INCLUDES}
+    PRIVATE
+        ${SOL_PRIVATE_INCLUDES}
+        ${Vulkan_INCLUDE_DIRS}
 )
 
 target_compile_definitions(solvulk PRIVATE

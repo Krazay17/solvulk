@@ -1,10 +1,6 @@
-#include <stdio.h>
+#include "app.h"
 
-#include "render.h"
-#include "world.h"
-#include "systems.h"
-#include "sol.h"
-#include "input.h"
+#include "ui/sol_ui.h"
 
 #define BUTTON_COUNT 100
 
@@ -16,7 +12,7 @@ static void ButtonPressed();
 
 SolButton buttons[BUTTON_COUNT] = {0};
 static GameState state = {0};
-static World world = {
+World menu = {
     .init = Init,
     .tick = Tick,
     .draw = Draw,
@@ -25,7 +21,7 @@ static World world = {
 
 World *Sol_GetMenu(void)
 {
-    return &world;
+    return &menu;
 }
 
 static void Init()
@@ -47,7 +43,7 @@ static void Init()
         {
         case 0:
             Sol_Button_InitText(&buttons[i], (SolColor){0, 255, 255, 55}, "QUIT", 16.0f);
-            buttons[i].callback = Sol_Quit;
+            buttons[i].callback = Sol_Shutdown;
             break;
         case 1:
             Sol_Button_InitText(&buttons[i], (SolColor){0, 255, 255, 55}, "Colin", 16.0f);

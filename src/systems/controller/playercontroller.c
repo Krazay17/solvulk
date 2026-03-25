@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "playercontroller.h"
-#include "input.h"
+#include "singles/input.h"
 
 static PlayerState playerState = {0};
 

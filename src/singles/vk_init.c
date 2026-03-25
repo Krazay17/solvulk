@@ -167,10 +167,7 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 {
     SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
     if (metrics.data)
-    {
-        printf("JSON preview:\n%.500s\n", (const char *)metrics.data);
         Sol_ParseFontMetrics((const char *)metrics.data, 224.0f, 224.0f);
-    }
 
     if (SolVkInstance() != 0)
         return 1;

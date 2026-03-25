@@ -13,7 +13,8 @@ set(SOL_PUBLIC_INCLUDES "${CMAKE_SOURCE_DIR}/includes")
 set(SOL_PRIVATE_INCLUDES  
     "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/src/core"
-    "${CMAKE_SOURCE_DIR}/src/modules"
+    "${CMAKE_SOURCE_DIR}/src/systems"
+    "${CMAKE_SOURCE_DIR}/src/singles"
 )
 
 add_executable(solvulk #WIN32

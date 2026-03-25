@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdatomic.h>
 
-#include "app.h"
+#include "sol.h"
+#include "ui/sol_ui.h"
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -32,7 +33,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_hwnd = CreateWindowEx(
         0, CLASS_NAME, "Sol Vulkan",
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
+        CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800,
         NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
         return 1;
@@ -43,15 +44,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceFrequency(&g_frequency);
     QueryPerformanceCounter(&g_startTime);
 
+    //------------------------------------------
+    // Init Sol App
+    //------------------------------------------
+    World *menu = World_Create();
+    World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
+    int id1 = Entity_Create(menu);
+    Entity_Add_Xform(menu, id1, (Xform){.pos = {0, 0, 0}});
+    Entity_Add_Veloc(menu, id1, (Veloc){.vel = {0, 1, 0}});
+    Entity_Add_Rect(menu, id1, (CompRect){.rect = {20, 50, 150, 50}});
+
+    World *game = World_Create();
+
     World *worlds[] = {
-        &menu,
-        &game,
+        menu,
+        game,
     };
     SolConfig solConfig = {
         .worlds = worlds,
         .worldCount = 2,
     };
+
     Sol_Init(g_hwnd, hInstance, solConfig);
+
+    //------------------------------------------
 
     // Spin up the game loop on its own thread BEFORE entering the message pump
     HANDLE hGameThread = CreateThread(NULL, 0, GameThreadProc, NULL, 0, NULL);
@@ -105,7 +121,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0); // tell the message loop to exit
         return 0;
     case WM_SIZE:
-
+        Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_KEYDOWN:
         SolInput_OnKey((int)wParam, true);

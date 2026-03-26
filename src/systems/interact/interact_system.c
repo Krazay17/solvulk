@@ -1,11 +1,42 @@
 #include "sol_core.h"
 
-Sol_System_Interact_Ui(World *world, double dt, double time)
+void Sol_System_Interact_Ui(World *world, double dt, double time)
 {
-    int required = HAS_INTERACT;
+    int required = HAS_INTERACT | HAS_XFORM | HAS_SHAPE;
     SolMouse mouse = SolInput_GetMouse();
-    FOREACH_ENT(world, required, id)
+
+    for (int i = 0; i < world->activeCount; i++)
     {
-        
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) == required)
+        {
+            CompInteractable *interact = &world->interactables[id];
+            CompXform *xform = &world->xforms[id];
+            CompShape *shape = &world->shapes[id];
+            
+            bool wasPressed = interact->isPressed;
+            interact->isClicked = false;
+
+            interact->isHovered = Sol_Check_2d_Collision(
+                (vec2){mouse.x, mouse.y},
+                (SolRect){xform->pos[0], xform->pos[1], shape->width, shape->height});
+
+            if (interact->isHovered)
+            {
+                if (mouse.buttons[SOL_MOUSE_LEFT])
+                {
+                    interact->isPressed = true;
+                }
+                else if (wasPressed)
+                {
+                    interact->isClicked = true;
+                    interact->isPressed = false;
+                }
+            }
+            else
+            {
+                interact->isPressed = false;
+            }
+        }
     }
 }

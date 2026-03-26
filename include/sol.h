@@ -14,10 +14,14 @@
 #include "controller/playercontroller.h"
 #include "ui/sol_ui.h"
 
-#ifdef SOL_BUILD_DLL
-    #define SOLAPI __declspec(dllexport)
+#ifdef SOL_STATIC
+    #define SOLAPI // Just empty for static linking
 #else
-    #define SOLAPI __declspec(dllimport)
+    #ifdef SOL_BUILD_DLL
+        #define SOLAPI __declspec(dllexport)
+    #else
+        #define SOLAPI __declspec(dllimport)
+    #endif
 #endif
 
 typedef struct
@@ -25,7 +29,6 @@ typedef struct
     World **worlds;
     uint16_t worldCount;
 } SolConfig;
-
 
 typedef struct
 {
@@ -37,46 +40,54 @@ typedef struct
 
 extern SolState solState;
 
-typedef struct {
+typedef struct
+{
     const void *data;
     size_t size;
 } SolResource;
 
-typedef struct {
+typedef struct
+{
     float position[3];
     float normal[3];
     float uv[2];
 } SolVertex;
 
-typedef struct {
+typedef struct
+{
     SolVertex *vertices;
-    uint32_t   vertexCount;
-    uint32_t  *indices;
-    uint32_t   indexCount;
+    uint32_t vertexCount;
+    uint32_t *indices;
+    uint32_t indexCount;
 } SolMesh;
 
-typedef struct SolModel {
-    SolMesh  *meshes;
-    uint32_t  meshCount;
+typedef struct SolModel
+{
+    SolMesh *meshes;
+    uint32_t meshCount;
 } SolModel;
 
 SOLAPI void Sol_Init(void *hwnd, void *hInstance, SolConfig config);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Shutdown();
-SOLAPI void Sol_Window_Resize(float width, float);
 
+SOLAPI void Sol_Window_Resize(float width, float);
 SOLAPI SolBank *Sol_Loader_GetBank(void);
 
 SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
+SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
+SOLAPI void Sol_System_Update_View(World *world, double dt, double time);
 
 
-//Needs free
-SOLAPI char* Sol_ReadFile(const char* filename, size_t* outSize);
+// Needs free
+SOLAPI char *Sol_ReadFile(const char *filename, size_t *outSize);
 // No free needed - memory is owned by the exe
 SOLAPI SolResource Sol_LoadResource(const char *resourceName);
 
 // loads from embedded resource
 SOLAPI SolModel Sol_LoadModel(const char *resourceName);
 SOLAPI void Sol_FreeModel(SolModel *model);
-
 SOLAPI void Sol_Loader_LoadModels();
+
+SOLAPI int Sol_Prefab_Button(World *world, float pos[]);
+SOLAPI int Sol_Prefab_Wizard(World *world, float pos[]);

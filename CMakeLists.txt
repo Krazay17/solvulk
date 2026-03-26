@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
-list(FILTER SOURCES EXCLUDE REGEX "src/app/.*")
+#list(FILTER SOURCES EXCLUDE REGEX "src/app/.*")
 set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
 set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
 set(SOL_PRIVATE_INCLUDE  
@@ -20,14 +20,14 @@ set(SOL_PRIVATE_INCLUDE
     "${CMAKE_SOURCE_DIR}/src/world"
 )
 
-#add_executable(solvulk #WIN32
-#    ${SOURCES}
-#    ${RESOURCE_FILE}
-#)
-add_library(solvulk SHARED 
-    ${SOURCES}
-    ${RESOURCE_FILE}
+add_executable(solvulk #WIN32
+   ${SOURCES}
+   ${RESOURCE_FILE}
 )
+# add_library(solvulk SHARED 
+#     ${SOURCES}
+#     ${RESOURCE_FILE}
+# )
 
 
 target_include_directories(solvulk
@@ -40,7 +40,8 @@ target_include_directories(solvulk
 
 target_compile_definitions(solvulk PRIVATE
     VK_USE_PLATFORM_WIN32_KHR
-    SOL_BUILD_DLL
+    SOL_STATIC
+    #SOL_BUILD_DLL
 )
 
 target_link_libraries(solvulk PRIVATE
@@ -53,23 +54,19 @@ target_link_libraries(solvulk PRIVATE
 set_target_properties(solvulk PROPERTIES
     #WIN32_EXECUTABLE true
     C_STANDARD 11
-    OUTPUT_NAME "Solvulk"
+    OUTPUT_NAME "solvulk"
 )
 
 #--------------------------------------
 # Test Exe link to .dll
 #--------------------------------------
-add_executable(test1
-    "${CMAKE_SOURCE_DIR}/src/app/main.c"
-)
+# add_executable(test1
+#     "${CMAKE_SOURCE_DIR}/src/app/main.c"
+# )
 
-target_link_libraries(test1 PRIVATE
-    solvulk
-    cglm::cglm
-)
-target_include_directories(test1 PRIVATE 
-    ${SOL_PUBLIC_INCLUDE}
-)
+# target_link_libraries(test1 PRIVATE
+#     solvulk
+# )
 #--------------------------------------
 # compile shaders
 #--------------------------------------

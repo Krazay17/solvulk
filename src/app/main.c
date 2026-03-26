@@ -47,12 +47,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Init Sol App
     //------------------------------------------
     World *menu = World_Create();
+    World_System_Add(menu, Sol_System_Interact_Ui, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
-    int id1 = Entity_Create(menu);
-    Entity_Add_Xform(menu, id1, (CompXform){.pos = {0, 50, 0}});
-    Entity_Add_Body(menu, id1, (CompBody){.vel = {0, 1, 0}});
-    Entity_Add_Shape(menu, id1, (CompShape){.type = SHAPE_RECTANGLE, .width = 150, .height = 50});
-    Entity_Add_Interact(menu, id1, (CompInteractable){0});
+    World_System_Add(menu, Sol_System_Update_View, SYSTEM_DRAW);
+
+    Sol_Prefab_Button(menu, (float[]){10,20,0});
 
     World *game = World_Create();
 

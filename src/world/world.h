@@ -3,7 +3,11 @@
 
 #define MAX_ENTS 2048
 #define MAX_SYSTEMS 64
-
+#define FOREACH_ENT(world, required, id_var)\
+    for(int i = 0; i < (world)->activeCount;i++){\
+        int id = (world)->activeEntities[i];\
+        if(((world)->masks[id_var] & (required)) == (required))
+     
 typedef enum
 {
     SYSTEM_STEP,

@@ -6,7 +6,6 @@
 #include <stdatomic.h>
 
 #include "sol.h"
-#include "ui/sol_ui.h"
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -50,9 +49,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     World *menu = World_Create();
     World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
     int id1 = Entity_Create(menu);
-    Entity_Add_Xform(menu, id1, (Xform){.pos = {0, 0, 0}});
-    Entity_Add_Veloc(menu, id1, (Veloc){.vel = {0, 1, 0}});
-    Entity_Add_Rect(menu, id1, (CompRect){.rect = {20, 50, 150, 50}});
+    Entity_Add_Xform(menu, id1, (CompXform){.pos = {0, 50, 0}});
+    Entity_Add_Body(menu, id1, (CompBody){.vel = {0, 1, 0}});
+    Entity_Add_Shape(menu, id1, (CompShape){.type = SHAPE_RECTANGLE, .width = 150, .height = 50});
+    Entity_Add_Interact(menu, id1, (CompInteractable){0});
 
     World *game = World_Create();
 

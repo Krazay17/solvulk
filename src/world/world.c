@@ -1,7 +1,6 @@
 #include <assert.h>
 
-#include "world.h"
-#include "stdlib.h"
+#include "sol_core.h"
 
 World *World_Create(void)
 {
@@ -47,12 +46,12 @@ void World_Draw(World *world, double dt, double time)
     }
 }
 
-void World_System_Add(World *world, SystemFunc func, SystemType type)
+void World_System_Add(World *world, SystemFunc func, SystemKind kind)
 {
     if (!world || !func)
         return;
 
-    switch (type)
+    switch (kind)
     {
     case SYSTEM_STEP:
         if (world->stepCount < MAX_SYSTEMS)
@@ -108,21 +107,27 @@ void Entity_Destroy(World *world, int id)
     }
 }
 
-void Entity_Add_Xform(World *world, int id, Xform xform)
+void Entity_Add_Xform(World *world, int id, CompXform xform)
 {
     world->xforms[id] = xform;
     world->masks[id] |= HAS_XFORM;
 }
 
-void Entity_Add_Veloc(World *world, int id, Veloc veloc)
+void Entity_Add_Body(World *world, int id, CompBody body)
 {
-    world->velocs[id] = veloc;
+    world->bodies[id] = body;
     world->masks[id] |= HAS_BODY;
 }
 
-void Entity_Add_Rect(World *world, int id, CompRect rect)
+void Entity_Add_Shape(World *world, int id, CompShape shape)
 {
-    world->rects[id] = rect;
-    world->masks[id] |= HAS_BUTTON;
+    world->shapes[id] = shape;
+    world->masks[id] |= HAS_SHAPE;
+}
+
+void Entity_Add_Interact(World *world, int id, CompInteractable interact)
+{
+    world->interactables[id] = interact;
+    world->masks[id] |= HAS_INTERACT;
 }
 

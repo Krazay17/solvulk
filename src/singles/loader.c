@@ -2,7 +2,6 @@
 #include "cgltf.h"
 
 #include "sol_core.h"
-#include "sol.h"
 
 #define TOTAL_MODELS 2
 

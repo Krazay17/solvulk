@@ -9,14 +9,16 @@ typedef enum
     SYSTEM_STEP,
     SYSTEM_TICK,
     SYSTEM_DRAW,
-} SystemType;
+} SystemKind;
 
 typedef enum
 {
     HAS_NONE        = 0,
     HAS_XFORM       = (1 << 0),
     HAS_BODY        = (1 << 1),
-    HAS_BUTTON      = (1 << 2),
+    HAS_SHAPE       = (1 << 2),
+    HAS_INTERACT    = (1 << 3),
+    HAS_MODEL       = (1 << 4),
 } CompBits;
 
 typedef bool Active;
@@ -25,17 +27,36 @@ typedef uint32_t Mask;
 typedef struct
 {
     vec3 pos;
-} Xform;
+    vec3 rot;
+    vec3 scale;
+} CompXform;
 
 typedef struct
 {
     vec3 vel;
-} Veloc;
+    float width, height, mass;
+} CompBody;
+
+typedef enum
+{
+    SHAPE_RECTANGLE,
+    SHAPE_TRIANGLE,
+} ShapeType;
+typedef struct
+{
+    ShapeType type;
+    float width, height;
+} CompShape;
 
 typedef struct
 {
-    vec4 rect;
-} CompRect;
+    bool isHovered, isPressed, isClicked;
+} CompInteractable;
+
+typedef struct
+{
+    uint32_t gpuHandle;
+} CompModel;
 
 typedef struct World World;
 typedef void (*SystemFunc)(World *world, double dt, double time);
@@ -54,9 +75,11 @@ struct World
 
     Active actives[MAX_ENTS];
     Mask masks[MAX_ENTS];
-    Xform xforms[MAX_ENTS];
-    Veloc velocs[MAX_ENTS];
-    CompRect rects[MAX_ENTS];
+
+    CompXform xforms[MAX_ENTS];
+    CompBody bodies[MAX_ENTS];
+    CompShape shapes[MAX_ENTS];
+    CompInteractable interactables[MAX_ENTS];
 
     bool worldActive;
 };
@@ -68,11 +91,12 @@ void World_Step(World *world, double dt, double time);
 void World_Tick(World *world, double dt, double time);
 void World_Draw(World *world, double dt, double time);
 
-void World_System_Add(World *world, SystemFunc func, SystemType type);
+void World_System_Add(World *world, SystemFunc func, SystemKind kind);
 
 int Entity_Create(World *world);
 void Entity_Destroy(World *world, int id);
 
-void Entity_Add_Xform(World *world, int id, Xform xform);
-void Entity_Add_Veloc(World *world, int id, Veloc veloc);
-void Entity_Add_Rect(World *world, int id, CompRect rect);
+void Entity_Add_Xform(World *world, int id, CompXform xform);
+void Entity_Add_Body(World *world, int id, CompBody body);
+void Entity_Add_Shape(World *world, int id, CompShape shape);
+void Entity_Add_Interact(World *world, int id, CompInteractable interact);

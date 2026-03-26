@@ -1,6 +1,6 @@
 #pragma once
 #include "solmath.h"
-#include "sol_load_types.h"
+#include "loader.h"
 
 typedef struct SolModel SolModel;
 

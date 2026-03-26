@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "sol_core.h"
-#include "sol.h"
 
 SolState solState = {0};
 static World **worlds;
@@ -65,7 +64,7 @@ static void DebugFPS(double dt)
 
 void Sol_Shutdown()
 {
-    PostMessage(solState.g_hwnd, WM_CLOSE, 0, 0);
+    PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
 }
 
 void Sol_Window_Resize(float width, float height)

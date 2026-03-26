@@ -1,9 +1,10 @@
 #include <stdio.h>
 
 #include "sol_ui.h"
-#include "singles/input.h"
+#include "world.h"
+#include "input.h"
+
 #include "render.h"
-#include "sol.h"
 
 static SolButton *movingButton = NULL;
 static float dragOffsetX;
@@ -16,13 +17,13 @@ static void Sol_Button_Move();
 void Sol_System_Button_Update(World *world, double dt, double time)
 {
     SolMouse mouse = SolInput_GetMouse();
-    uint32_t required = HAS_BUTTON;
+    uint32_t required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) == required)
         {
-            world->rects[id].rect;
+            world->shapes[id].height;
         }
     }
 }

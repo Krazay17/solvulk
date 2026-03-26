@@ -2,12 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
-
 #include <cglm/cglm.h>
-#include "vk_init_types.h"
 
+#include "vk_init.h"
 #include "sol_core.h"
-#include "render.h"
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16

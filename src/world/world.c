@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "sol_core.h"
+#include "world.h"
 
 World *World_Create(void)
 {
@@ -115,6 +116,7 @@ void Entity_Add_Xform(World *world, int id, CompXform xform)
 
 void Entity_Add_Body(World *world, int id, CompBody body)
 {
+    
     world->bodies[id] = body;
     world->masks[id] |= HAS_BODY;
 }
@@ -131,3 +133,8 @@ void Entity_Add_Interact(World *world, int id, CompInteractable interact)
     world->masks[id] |= HAS_INTERACT;
 }
 
+void Entity_Add_Info(World *world, int id, CompInfo info)
+{
+    world->infos[id] = info;
+    world->masks[id] |= HAS_INFO;
+}

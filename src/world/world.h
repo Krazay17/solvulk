@@ -3,7 +3,7 @@
 
 #define MAX_ENTS 2048
 #define MAX_SYSTEMS 64
-     
+
 typedef enum
 {
     SYSTEM_STEP,
@@ -13,12 +13,13 @@ typedef enum
 
 typedef enum
 {
-    HAS_NONE        = 0,
-    HAS_XFORM       = (1 << 0),
-    HAS_BODY        = (1 << 1),
-    HAS_SHAPE       = (1 << 2),
-    HAS_INTERACT    = (1 << 3),
-    HAS_MODEL       = (1 << 4),
+    HAS_NONE = 0,
+    HAS_XFORM = (1 << 0),
+    HAS_BODY = (1 << 1),
+    HAS_SHAPE = (1 << 2),
+    HAS_INTERACT = (1 << 3),
+    HAS_MODEL = (1 << 4),
+    HAS_INFO = (1<<5),
 } CompBits;
 
 typedef bool Active;
@@ -26,14 +27,14 @@ typedef uint32_t Mask;
 
 typedef struct
 {
-    vec3 pos;
-    vec3 rot;
-    vec3 scale;
+    vec3s pos;
+    vec3s rot;
+    vec3s scale;
 } CompXform;
 
 typedef struct
 {
-    vec3 vel;
+    vec3s vel;
     float width, height, mass;
 } CompBody;
 
@@ -58,6 +59,12 @@ typedef struct
     uint32_t gpuHandle;
 } CompModel;
 
+typedef struct
+{
+    char name[24];
+    
+} CompInfo;
+
 typedef struct World World;
 typedef void (*SystemFunc)(World *world, double dt, double time);
 
@@ -79,7 +86,9 @@ struct World
     CompXform xforms[MAX_ENTS];
     CompBody bodies[MAX_ENTS];
     CompShape shapes[MAX_ENTS];
+    CompModel models[MAX_ENTS];
     CompInteractable interactables[MAX_ENTS];
+    CompInfo infos[MAX_ENTS];
 
     bool worldActive;
 };
@@ -100,3 +109,4 @@ void Entity_Add_Xform(World *world, int id, CompXform xform);
 void Entity_Add_Body(World *world, int id, CompBody body);
 void Entity_Add_Shape(World *world, int id, CompShape shape);
 void Entity_Add_Interact(World *world, int id, CompInteractable interact);
+void Entity_Add_Info(World *world, int id, CompInfo info);

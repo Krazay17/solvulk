@@ -98,3 +98,15 @@ endforeach()
 
 add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 add_dependencies(solvulk shaders)
+
+#---- Server App ----
+add_executable(solvulk_server server/main.c)
+
+target_include_directories(solvulk_server PRIVATE
+    "server"
+    "vendored/enet/include"
+)
+
+if(WIN32)
+    target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
+endif()

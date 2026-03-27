@@ -46,18 +46,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //------------------------------------------
     // Init Sol App
     //------------------------------------------
+
     World *menu = World_Create();
     World_System_Add(menu, Sol_System_Interact_Ui, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
+    World_System_Add(menu, Sol_System_Info_Tick, SYSTEM_TICK);
+
+    World_System_Add(menu, Sol_System_Step_Physx_2d, SYSTEM_STEP);
+    World_System_Add(menu, Sol_System_Step_Physx_3d, SYSTEM_STEP);
+
     World_System_Add(menu, Sol_System_Update_View, SYSTEM_DRAW);
 
-    Sol_Prefab_Button(menu, (float[]){10,20,0});
+    int button = Sol_Prefab_Button(menu, (vec3s){10, 400, 0});
+    Entity_Add_Body(menu, button, (CompBody){
+                                      .vel = {0, -20.0f, 0},
+                                      .height = menu->shapes[button].height,
+                                      .width = menu->shapes[button].width,
+                                  });
+    Entity_Add_Info(menu, button, (CompInfo){.name = "BUTTON1"});
+
+    int wizard = Sol_Prefab_Wizard(menu, (vec3s){20, 2, 0});
+    // int wizard = Entity_Create(menu);
+    // Entity_Add_Body(menu, wizard, (CompBody){.height = 5, .mass = 5, .vel = {0, 5, 0}});
+
+    World *evansWorld = World_Create();
+    evansWorld->worldActive = false;
 
     World *game = World_Create();
 
     World *worlds[] = {
         menu,
         game,
+        evansWorld,
     };
     SolConfig solConfig = {
         .worlds = worlds,

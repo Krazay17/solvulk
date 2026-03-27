@@ -13,13 +13,13 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
             CompInteractable *interact = &world->interactables[id];
             CompXform *xform = &world->xforms[id];
             CompShape *shape = &world->shapes[id];
-            
+
             bool wasPressed = interact->isPressed;
             interact->isClicked = false;
 
             interact->isHovered = Sol_Check_2d_Collision(
                 (vec2){mouse.x, mouse.y},
-                (SolRect){xform->pos[0], xform->pos[1], shape->width, shape->height});
+                (SolRect){xform->pos.x, xform->pos.y, shape->width, shape->height});
 
             if (interact->isHovered)
             {

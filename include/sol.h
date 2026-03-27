@@ -11,18 +11,26 @@
 #include "render.h"
 #include "input.h"
 
-#include "controller/playercontroller.h"
-#include "ui/sol_ui.h"
-
 #ifdef SOL_STATIC
-    #define SOLAPI // Just empty for static linking
+#define SOLAPI // Just empty for static linking
 #else
-    #ifdef SOL_BUILD_DLL
-        #define SOLAPI __declspec(dllexport)
-    #else
-        #define SOLAPI __declspec(dllimport)
-    #endif
+#ifdef SOL_BUILD_DLL
+#define SOLAPI __declspec(dllexport)
+#else
+#define SOLAPI __declspec(dllimport)
 #endif
+#endif
+
+typedef enum
+{
+    ACTION_NONE     = 0,
+    ACTION_FWD      = (1 << 0),
+    ACTION_BWD      = (1 << 1),
+    ACTION_LEFT     = (1 << 2),
+    ACTION_RIGHT    = (1 << 3),
+    ACTION_JUMP     = (1 << 4),
+    ACTION_COUNT    = (1 << 5),
+} PlayerActionStates;
 
 typedef struct
 {
@@ -74,14 +82,6 @@ SOLAPI void Sol_Shutdown();
 SOLAPI void Sol_Window_Resize(float width, float);
 SOLAPI SolBank *Sol_Loader_GetBank(void);
 
-SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
-SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
-SOLAPI void Sol_System_Update_View(World *world, double dt, double time);
-SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
-SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
-SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
-
-
 // Needs free
 SOLAPI char *Sol_ReadFile(const char *filename, size_t *outSize);
 // No free needed - memory is owned by the exe
@@ -91,6 +91,3 @@ SOLAPI SolResource Sol_LoadResource(const char *resourceName);
 SOLAPI SolModel Sol_LoadModel(const char *resourceName);
 SOLAPI void Sol_FreeModel(SolModel *model);
 SOLAPI void Sol_Loader_LoadModels();
-
-SOLAPI int Sol_Prefab_Button(World *world, vec3s pos);
-SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);

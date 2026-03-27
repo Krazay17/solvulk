@@ -32,6 +32,9 @@ void Sol_Tick(double dt, double time)
     if (solState.needsResize)
         Sol_OnResize();
 
+    for (int i = 0; i < g_worldCount; ++i)
+        World_Tick(worlds[i], dt, time);
+
     accumulator = accumulator > 0.25f ? 0.25f : accumulator + dt;
     while (accumulator >= timeStep)
     {
@@ -39,8 +42,6 @@ void Sol_Tick(double dt, double time)
             World_Step(worlds[i], timeStep, time);
         accumulator -= timeStep;
     }
-    for (int i = 0; i < g_worldCount; ++i)
-        World_Tick(worlds[i], dt, time);
 
     Sol_Begin_Draw();
 

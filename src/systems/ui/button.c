@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "sol_ui.h"
+#include "system_ui.h"
 #include "world.h"
 #include "input.h"
 
@@ -40,7 +40,12 @@ void Sol_Button_Update(SolButton *buttons, int offset, int count, float dt)
         ButtonState prev = buttons[i].state;
         ButtonState next = 0;
 
-        bool hovered = Sol_Check_2d_Collision((vec2){mouse.x, mouse.y}, buttons[i].rect);
+        bool hovered = Sol_Check_2d_Collision((vec2s){mouse.x, mouse.y}, (vec4s){
+                                                                             buttons[i].rect.x,
+                                                                             buttons[i].rect.y,
+                                                                             buttons[i].rect.w,
+                                                                             buttons[i].rect.h,
+                                                                         });
         if (prev & BUTTON_MOVING && mouse.buttons[SOL_MOUSE_MIDDLE])
             next |= BUTTON_MOVING;
         if (hovered)

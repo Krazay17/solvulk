@@ -114,11 +114,18 @@ void Entity_Add_Xform(World *world, int id, CompXform xform)
     world->masks[id] |= HAS_XFORM;
 }
 
-void Entity_Add_Body(World *world, int id, CompBody body)
+void Entity_Add_Body2(World *world, int id, CompBody body)
 {
     
     world->bodies[id] = body;
-    world->masks[id] |= HAS_BODY;
+    world->masks[id] |= HAS_BODY2;
+}
+
+void Entity_Add_Body3(World *world, int id, CompBody body)
+{
+    
+    world->bodies[id] = body;
+    world->masks[id] |= HAS_BODY3;
 }
 
 void Entity_Add_Shape(World *world, int id, CompShape shape)
@@ -137,4 +144,27 @@ void Entity_Add_Info(World *world, int id, CompInfo info)
 {
     world->infos[id] = info;
     world->masks[id] |= HAS_INFO;
+}
+
+void Entity_Add_UiElement(World *world, int id, CompUiElement uiElement)
+{
+    world->uiElements[id] = uiElement;
+    world->masks[id] |= HAS_UI_ELEMENT;
+}
+
+void Entity_Add_Movement(World *world, int id, CompMovement movement)
+{
+    world->movements[id] = movement;
+    world->masks[id] |= HAS_MOVEMENT;
+}
+
+void Entity_Add_Controller(World *world, int id, CompController controller)
+{
+    world->controllers[id] = controller;
+    world->masks[id] |= HAS_CONTROLLER;
+}
+
+CompUiElement Entity_Get_UiElement(World *world, int id)
+{
+    return world->uiElements[id];
 }

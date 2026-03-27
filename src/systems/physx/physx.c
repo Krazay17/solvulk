@@ -1,13 +1,11 @@
-#include "sol.h"
-#include <stdlib.h>
-#include <cglm/cglm.h>
+#include "sol_core.h"
 
 #define SOL_GRAVITY 9.81f
 
 void Sol_System_Step_Physx_2d(World *world, double dt, double time)
 {
     float fdt = (float)dt;
-    int required = HAS_BODY | HAS_XFORM;
+    int required = HAS_BODY2 | HAS_XFORM;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
@@ -32,7 +30,7 @@ void Sol_System_Step_Physx_2d(World *world, double dt, double time)
 void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 {
     float fdt = (float)dt;
-    int required = HAS_BODY | HAS_XFORM | HAS_MODEL;
+    int required = HAS_BODY3 | HAS_XFORM | HAS_MODEL;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];

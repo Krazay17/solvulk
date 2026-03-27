@@ -18,8 +18,8 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
             interact->isClicked = false;
 
             interact->isHovered = Sol_Check_2d_Collision(
-                (vec2){mouse.x, mouse.y},
-                (SolRect){xform->pos.x, xform->pos.y, shape->width, shape->height});
+                (vec2s){mouse.x, mouse.y},
+                (vec4s){xform->pos.x, xform->pos.y, shape->width, shape->height});
 
             if (interact->isHovered)
             {
@@ -31,6 +31,7 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
                 {
                     interact->isClicked = true;
                     interact->isPressed = false;
+                    interact->callback();
                 }
             }
             else

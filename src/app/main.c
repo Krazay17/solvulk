@@ -7,6 +7,8 @@
 
 #include "sol.h"
 
+static char testText[5] = "test";
+
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
 static LARGE_INTEGER g_startTime, g_frequency;
@@ -16,6 +18,8 @@ static HWND g_hwnd = NULL;
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+static void QuitApp();
 
 // ─────────────────────────────────────────────────────────────────────────────
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -48,22 +52,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //------------------------------------------
 
     World *menu = World_Create();
+    World_System_Add(menu, Sol_System_Controller_Tick, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Interact_Ui, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Info_Tick, SYSTEM_TICK);
 
-    World_System_Add(menu, Sol_System_Step_Physx_2d, SYSTEM_STEP);
-    World_System_Add(menu, Sol_System_Step_Physx_3d, SYSTEM_STEP);
+    World_System_Add(menu, Sol_System_Movement_2d_Step, SYSTEM_TICK);
+    World_System_Add(menu, Sol_System_Step_Physx_2d, SYSTEM_TICK);
+    World_System_Add(menu, Sol_System_Step_Physx_3d, SYSTEM_TICK);
 
-    World_System_Add(menu, Sol_System_Update_View, SYSTEM_DRAW);
+    // World_System_Add(menu, Sol_System_Update_View, SYSTEM_DRAW);
+    World_System_Add(menu, Sol_System_UI_Draw, SYSTEM_DRAW);
 
     int button = Sol_Prefab_Button(menu, (vec3s){10, 400, 0});
-    Entity_Add_Body(menu, button, (CompBody){
-                                      .vel = {0, -20.0f, 0},
-                                      .height = menu->shapes[button].height,
-                                      .width = menu->shapes[button].width,
-                                  });
-    Entity_Add_Info(menu, button, (CompInfo){.name = "BUTTON1"});
+    Entity_Add_Interact(menu, button, (CompInteractable){.callback = QuitApp});
+    for (int i = 0; i < 25000; i++)
+    {
+        int id = Sol_Prefab_Boxman(menu, (vec3s){250.0f, i * -24.0f, 0});
+        sprintf(menu->uiElements[id].text, "%d", i);
+        
+    }
 
     int wizard = Sol_Prefab_Wizard(menu, (vec3s){20, 2, 0});
     // int wizard = Entity_Create(menu);
@@ -171,4 +179,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void QuitApp()
+{
+    PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }

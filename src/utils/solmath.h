@@ -1,9 +1,7 @@
 #pragma once
-#include <stdbool.h>
-#include <math.h>
 #include <stdint.h>
-#include <cglm/types.h>
 #include <cglm/struct.h>
+#include <cglm/cglm.h>
 
 typedef struct
 {
@@ -40,6 +38,10 @@ typedef struct
         .a = (alpha)               \
     }
 
-bool Sol_Check_2d_Collision(vec2 a, SolRect b);
+bool Sol_Check_2d_Collision(vec2s a, vec4s b);
 
-SolVec3 Sol_Vec_Add(vec3 a, vec3 b);
+SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
+
+vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
+
+SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);

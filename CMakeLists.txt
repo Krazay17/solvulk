@@ -8,7 +8,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
-#list(FILTER SOURCES EXCLUDE REGEX "src/app/.*")
+list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/singles/loader.c")
+
 set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
 set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
 set(SOL_PRIVATE_INCLUDE  
@@ -20,14 +21,14 @@ set(SOL_PRIVATE_INCLUDE
     "${CMAKE_SOURCE_DIR}/src/world"
 )
 
-add_executable(solvulk #WIN32
-   ${SOURCES}
-   ${RESOURCE_FILE}
+#add_executable(solvulk #WIN32
+#   ${SOURCES}
+#   ${RESOURCE_FILE}
+#)
+add_library(solvulk SHARED 
+    ${SOURCES}
+    ${RESOURCE_FILE}
 )
-# add_library(solvulk SHARED 
-#     ${SOURCES}
-#     ${RESOURCE_FILE}
-# )
 
 
 target_include_directories(solvulk
@@ -37,19 +38,30 @@ target_include_directories(solvulk
         ${SOL_PRIVATE_INCLUDE}
         ${Vulkan_INCLUDE_DIRS}
 )
+if(WIN32)
+    target_compile_definitions(solvulk PRIVATE
+        VK_USE_PLATFORM_WIN32_KHR
+        SOL_STATIC
+        #SOL_BUILD_DLL
+    )
 
-target_compile_definitions(solvulk PRIVATE
-    VK_USE_PLATFORM_WIN32_KHR
-    SOL_STATIC
-    #SOL_BUILD_DLL
-)
+    target_link_libraries(solvulk PRIVATE
+        Vulkan::Vulkan
+        cglm::cglm
+        user32
+        gdi32
+    )
+else()
+    target_compile_definitions(solvulk PRIVATE
+        VK_USE_PLATFORM_XLIB_KHR
+        SOL_STATIC
+    )
 
-target_link_libraries(solvulk PRIVATE
-    Vulkan::Vulkan
-    cglm::cglm
-    user32
-    gdi32
-)
+    target_link_libraries(solvulk PRIVATE
+        Vulkan::Vulkan
+        cglm::cglm
+    )
+endif()
 
 set_target_properties(solvulk PROPERTIES
     #WIN32_EXECUTABLE true
@@ -60,13 +72,19 @@ set_target_properties(solvulk PROPERTIES
 #--------------------------------------
 # Test Exe link to .dll
 #--------------------------------------
-# add_executable(test1
-#     "${CMAKE_SOURCE_DIR}/src/app/main.c"
-# )
+if(WIN32)
+    add_executable(test1
+        "${CMAKE_SOURCE_DIR}/app/main.c"
+    )
+else()
+    add_executable(test1
+        "${CMAKE_SOURCE_DIR}/app/linmain.c"
+    )
+endif()
 
-# target_link_libraries(test1 PRIVATE
-#     solvulk
-# )
+target_link_libraries(test1 PRIVATE
+    solvulk
+)
 #--------------------------------------
 # compile shaders
 #--------------------------------------
@@ -83,13 +101,18 @@ set(SHADERS
     ${SHADER_DIR}/basictext.vert
     ${SHADER_DIR}/basictext.frag
 )
+if(WIN32)
+set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")
+else()
+set(GLSLC_PATH "glslc")
+endif()
 
 foreach(SHADER ${SHADERS})
     get_filename_component(SHADER_NAME ${SHADER} NAME)
     set(SHADER_OUTPUT "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv")
     add_custom_command(
         OUTPUT ${SHADER_OUTPUT}
-        COMMAND "$ENV{VULKAN_SDK}/Bin/glslc.exe" ${SHADER} -o ${SHADER_OUTPUT}
+        COMMAND ${GLSLC_PATH} ${SHADER} -o ${SHADER_OUTPUT}
         DEPENDS ${SHADER}
         COMMENT "Compiling shader: ${SHADER_NAME}"
     )

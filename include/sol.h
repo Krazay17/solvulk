@@ -11,6 +11,8 @@
 #include "render.h"
 #include "input.h"
 
+#define SOL_VERSION 1.0
+
 #ifdef SOL_STATIC
 #define SOLAPI // Just empty for static linking
 #else

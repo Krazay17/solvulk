@@ -1,4 +1,3 @@
-#include <windows.h>
 #include <stdio.h>
 
 #include "sol_core.h"
@@ -65,7 +64,7 @@ static void DebugFPS(double dt)
 
 void Sol_Shutdown()
 {
-    PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
+    //PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
 }
 
 void Sol_Window_Resize(float width, float height)

@@ -1,3 +1,6 @@
+
+#include <cglm/struct.h>
+
 #include "sol_core.h"
 
 #define SOL_GRAVITY 9.81f

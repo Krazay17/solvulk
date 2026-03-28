@@ -1,6 +1,8 @@
 #pragma once
 #include <stdbool.h>
 
+#include "sol_common.h"
+
 typedef enum
 {
     SOL_KEY_W,
@@ -29,14 +31,14 @@ typedef struct
 } SolMouse;
 
 // called from WindowProc on main thread
-void SolInput_OnKey(int vkCode, bool down);
-void SolInput_OnMouseMove(int x, int y);
-void SolInput_OnMouseButton(SolMouseButton btn, bool down);
+SOLAPI void SolInput_OnKey(int vkCode, bool down);
+SOLAPI void SolInput_OnMouseMove(int x, int y);
+SOLAPI void SolInput_OnMouseButton(SolMouseButton btn, bool down);
 
 // called at start of each game frame to snapshot state
-void SolInput_Update();
+SOLAPI void SolInput_Update();
 
 // query from game code
-bool SolInput_KeyDown(SolKey key);
-bool SolInput_KeyPressed(SolKey key); // true only on frame of press
-SolMouse SolInput_GetMouse();
+SOLAPI bool SolInput_KeyDown(SolKey key);
+SOLAPI bool SolInput_KeyPressed(SolKey key); // true only on frame of press
+SOLAPI SolMouse SolInput_GetMouse();

@@ -1,7 +1,9 @@
 #pragma once
 #include <stdint.h>
-#include <cglm/struct.h>
-#include <cglm/cglm.h>
+#include <stdbool.h>
+#include <math.h>
+#include <cglm/types.h>
+#include <cglm/types-struct.h>
 
 typedef struct
 {

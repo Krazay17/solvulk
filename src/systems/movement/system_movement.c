@@ -1,3 +1,5 @@
+#include <cglm/struct.h>
+
 #include "sol_core.h"
 
 static vec3s GetWishDir(uint32_t action, vec3s lookdir, vec3s updir)

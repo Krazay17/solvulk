@@ -1,4 +1,6 @@
 #include "solmath.h"
+#include <cglm/struct.h>
+#include <cglm/cglm.h>
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b)
 {

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 project(solvulk C)
 
+option(BUILD_SHARED_LIBS "Build shared libs" OFF)
+option(HOT_RELOAD "Build for hot reload" OFF)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
@@ -8,7 +11,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.c")
-list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/singles/loader.c")
 
 set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
 set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
@@ -21,15 +23,14 @@ set(SOL_PRIVATE_INCLUDE
     "${CMAKE_SOURCE_DIR}/src/world"
 )
 
-#add_executable(solvulk #WIN32
-#   ${SOURCES}
-#   ${RESOURCE_FILE}
-#)
-add_library(solvulk SHARED 
-    ${SOURCES}
-    ${RESOURCE_FILE}
-)
-
+add_library(solvulk ${SOURCES} ${RESOURCE_FILE})
+if(BUILD_SHARED_LIBS)
+    # Tell the header we are in "Shared Mode"
+    target_compile_definitions(solvulk PUBLIC SOL_VULK_SHARED)
+    
+    # Tell the header that THIS specific target is the one EXPORTING
+    target_compile_definitions(solvulk PRIVATE SOL_BUILD_DLL)
+endif()
 
 target_include_directories(solvulk
     PUBLIC
@@ -38,53 +39,41 @@ target_include_directories(solvulk
         ${SOL_PRIVATE_INCLUDE}
         ${Vulkan_INCLUDE_DIRS}
 )
-if(WIN32)
-    target_compile_definitions(solvulk PRIVATE
-        VK_USE_PLATFORM_WIN32_KHR
-        SOL_STATIC
-        #SOL_BUILD_DLL
-    )
 
-    target_link_libraries(solvulk PRIVATE
+if(WIN32)
+    target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+    target_link_libraries(solvulk PUBLIC
         Vulkan::Vulkan
         cglm::cglm
         user32
         gdi32
     )
 else()
-    target_compile_definitions(solvulk PRIVATE
-        VK_USE_PLATFORM_XLIB_KHR
-        SOL_STATIC
-    )
-
+    target_compile_definitions(solvulk PRIVATE VK_USE_PLATFORM_XLIB_KHR)
     target_link_libraries(solvulk PRIVATE
         Vulkan::Vulkan
         cglm::cglm
     )
 endif()
 
-set_target_properties(solvulk PROPERTIES
-    #WIN32_EXECUTABLE true
-    C_STANDARD 11
-    OUTPUT_NAME "solvulk"
-)
+set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 
 #--------------------------------------
-# Test Exe link to .dll
+# BUILD APP
 #--------------------------------------
 if(WIN32)
-    add_executable(test1
-        "${CMAKE_SOURCE_DIR}/app/main.c"
-    )
+    add_executable(solapp WIN32 "${CMAKE_SOURCE_DIR}/app/main.c" ${RESOURCE_FILE})
 else()
-    add_executable(test1
-        "${CMAKE_SOURCE_DIR}/app/linmain.c"
-    )
+    add_executable(solapp "${CMAKE_SOURCE_DIR}/app/linmain.c")
 endif()
 
-target_link_libraries(test1 PRIVATE
-    solvulk
-)
+if(HOT_RELOAD)
+    target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
+else()
+    target_link_libraries(solapp PRIVATE solvulk)
+endif()
+
+set_target_properties(solapp PROPERTIES OUTPUT_NAME "SolApp")
 #--------------------------------------
 # compile shaders
 #--------------------------------------

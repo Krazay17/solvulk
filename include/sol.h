@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdatomic.h>
 
+#include "sol_common.h"
 #include "solmath.h"
 #include "world.h"
 #include "loader.h"
@@ -12,16 +13,6 @@
 #include "input.h"
 
 #define SOL_VERSION 1.0
-
-#ifdef SOL_STATIC
-#define SOLAPI // Just empty for static linking
-#else
-#ifdef SOL_BUILD_DLL
-#define SOLAPI __declspec(dllexport)
-#else
-#define SOLAPI __declspec(dllimport)
-#endif
-#endif
 
 typedef enum
 {
@@ -81,7 +72,7 @@ SOLAPI void Sol_Init(void *hwnd, void *hInstance, SolConfig config);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Shutdown();
 
-SOLAPI void Sol_Window_Resize(float width, float);
+SOLAPI void Sol_Window_Resize(float width, float height);
 SOLAPI SolBank *Sol_Loader_GetBank(void);
 
 // Needs free

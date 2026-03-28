@@ -7,17 +7,26 @@
 
 #include "sol.h"
 
-static char testText[5] = "test";
+// define function pointers for hot reload
+#define SOL_FUNC(ret, name, ...)           \
+    typedef ret (*name##_fn)(__VA_ARGS__); \
+    name##_fn pfn_##name;
+#include "sol_functions.h"
+#undef SOL_FUNC
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
 static LARGE_INTEGER g_startTime, g_frequency;
 static HWND g_hwnd = NULL;
 
+HMODULE current_engine_lib = NULL;
+
 // --- Forward declarations ---
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+void load_api(const char *path);
+FILETIME get_last_write_time(const char* path);
 
 static void QuitApp();
 
@@ -50,7 +59,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //------------------------------------------
     // Init Sol App
     //------------------------------------------
-
+    // load hot reload api
+    // load_api("libsolvulk.dll");
     World *menu = World_Create();
     World_System_Add(menu, Sol_System_Controller_Tick, SYSTEM_TICK);
     World_System_Add(menu, Sol_System_Interact_Ui, SYSTEM_TICK);
@@ -70,7 +80,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         int id = Sol_Prefab_Boxman(menu, (vec3s){250.0f, i * -24.0f, 0});
         sprintf(menu->uiElements[id].text, "%d", i);
-        
     }
 
     int wizard = Sol_Prefab_Wizard(menu, (vec3s){20, 2, 0});
@@ -184,4 +193,34 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void QuitApp()
 {
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
+}
+
+void load_api(const char* path) {
+    // 1. If we already have a lib open, free it
+    if (current_engine_lib) FreeLibrary(current_engine_lib);
+
+    // 2. Copy the DLL so the original isn't locked by the OS
+    // FALSE means "allow overwrite"
+    CopyFile(path, "solvulk_live.dll", FALSE);
+
+    // 3. Load the COPY
+    current_engine_lib = LoadLibraryA("solvulk_live.dll");
+    if (!current_engine_lib) {
+        printf("FAILED TO LOAD ENGINE DLL!\n");
+        return;
+    }
+
+    // 4. Map the pointers
+    #define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
+    #include "sol_functions.h"
+    #undef SOL_FUNC
+}
+
+FILETIME get_last_write_time(const char* path) {
+    FILETIME lastWriteTime = {0};
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesExA(path, GetFileExInfoStandard, &data)) {
+        lastWriteTime = data.ftLastWriteTime;
+    }
+    return lastWriteTime;
 }

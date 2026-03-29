@@ -55,11 +55,12 @@ typedef struct
     float width, height;
 } CompShape;
 
-typedef void (*InteractCallback)();
+typedef void (*InteractCallback)(void *data);
 typedef struct
 {
     bool isHovered, isPressed, isClicked;
     InteractCallback callback;
+    void *callbackData;
 } CompInteractable;
 
 typedef struct
@@ -186,9 +187,9 @@ SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
 
 // Draw Systems
-SOLAPI void Sol_System_Update_View(World *world, double dt, double time);
+SOLAPI void Sol_System_View_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
 
-SOLAPI int Sol_Prefab_Button(World *world, vec3s pos);
+SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
 SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);

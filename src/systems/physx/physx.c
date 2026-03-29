@@ -43,7 +43,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             CompXform *xform = &world->xforms[id];
             CompModel *model = &world->models[id];
             
-            body->vel.y += SOL_GRAVITY * fdt;
+            //body->vel.y += SOL_GRAVITY * fdt;
             vec3s finalVel = glms_vec3_scale(body->vel, fdt);
             xform->pos = glms_vec3_add(xform->pos, finalVel);
         }

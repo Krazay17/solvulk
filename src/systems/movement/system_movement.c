@@ -4,6 +4,8 @@
 
 void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 {
+    float fdt = (float)dt;
+
     int required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3 | HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; ++i)
     {
@@ -16,7 +18,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 
             vec3s wishdir = controller->wishdir;
 
-            body->vel = glms_vec3_add(body->vel, glms_vec3_scale(wishdir, movement->gAccell));
+            body->vel = glms_vec3_add(body->vel, glms_vec3_scale(wishdir, movement->gAccell * fdt));
         }
     }
 }

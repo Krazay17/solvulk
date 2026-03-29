@@ -14,6 +14,7 @@
 #include "debug.h"
 
 #define SOL_VERSION 1.0
+#define MAX_WORLDS 4
 
 typedef enum
 {
@@ -38,6 +39,9 @@ typedef struct
     atomic_bool needsResize;
     float windowWidth, windowHeight;
     void *g_hwnd;
+
+    World *worlds[MAX_WORLDS];
+    uint16_t worldCount;
 } SolState;
 
 extern SolState solState;
@@ -69,7 +73,8 @@ typedef struct SolModel
     uint32_t meshCount;
 } SolModel;
 
-SOLAPI void Sol_Init(void *hwnd, void *hInstance, SolConfig config);
+SOLAPI void Sol_Init(void *hwnd, void *hInstance);
+SOLAPI void Sol_Config_Set(SolConfig *config);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Shutdown();
 

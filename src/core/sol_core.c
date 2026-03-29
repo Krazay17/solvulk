@@ -3,8 +3,7 @@
 #include "sol_core.h"
 
 SolState solState = {0};
-static World **worlds;
-static uint16_t g_worldCount;
+
 static double timeStep = 1.0f / 120.0f;
 static float smoothedFps = 120.0f;
 static float accumulator = 0.0f;
@@ -12,41 +11,38 @@ static float accumulator = 0.0f;
 static void DebugFPS(double dt);
 static void Sol_OnResize();
 
-void Sol_Init(void *hwnd, void *hInstance, SolConfig config)
+void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd = hwnd;
-    g_worldCount = config.worldCount;
-    worlds = config.worlds;
     int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
     Sol_Loader_LoadModels();
-
 }
 
 void Sol_Tick(double dt, double time)
 {
     SolInput_Update();
     if (SolInput_KeyPressed(SOL_KEY_ESCAPE))
-        worlds[0]->worldActive ^= 1;
+        solState.worlds[0]->worldActive ^= 1;
 
     if (solState.needsResize)
         Sol_OnResize();
 
-    for (int i = 0; i < g_worldCount; ++i)
-        World_Tick(worlds[i], dt, time);
+    for (int i = 0; i < solState.worldCount; ++i)
+        World_Tick(solState.worlds[i], dt, time);
 
     accumulator = accumulator > 0.25f ? 0.25f : accumulator + dt;
     while (accumulator >= timeStep)
     {
-        for (int i = 0; i < g_worldCount; ++i)
-            World_Step(worlds[i], timeStep, time);
+        for (int i = 0; i < solState.worldCount; ++i)
+            World_Step(solState.worlds[i], timeStep, time);
         accumulator -= timeStep;
     }
 
     Sol_Begin_Draw();
 
-    for (int i = g_worldCount - 1; i >= 0; --i)
-        World_Draw(worlds[i], dt, time);
+    for (int i = solState.worldCount - 1; i >= 0; --i)
+        World_Draw(solState.worlds[i], dt, time);
 
     Sol_Debug_Draw();
 
@@ -67,7 +63,7 @@ static void DebugFPS(double dt)
 
 void Sol_Shutdown()
 {
-    //PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
+    // PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
 }
 
 void Sol_Window_Resize(float width, float height)

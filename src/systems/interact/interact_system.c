@@ -31,7 +31,10 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
                 {
                     interact->isClicked = true;
                     interact->isPressed = false;
-                    interact->callback();
+                    if (interact->callbackData)
+                        interact->callback(interact->callbackData);
+                    else if (interact->callback)
+                        interact->callback(NULL);
                 }
             }
             else

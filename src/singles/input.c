@@ -1,6 +1,7 @@
 #include <stdatomic.h>
 #include <string.h>
 
+#include "sol_core.h"
 #include "input.h"
 
 // maps SolKey to Windows virtual key codes
@@ -9,6 +10,7 @@ static int keyMap[SOL_KEY_COUNT] = {
     'A',
     'S',
     'D',
+    32,
 };
 
 static atomic_bool rawKeys[SOL_KEY_COUNT];

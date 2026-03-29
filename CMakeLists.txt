@@ -61,14 +61,18 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 # BUILD APP
 #--------------------------------------
+set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
     add_executable(solapp #WIN32 
-        "${CMAKE_SOURCE_DIR}/app/main.c" 
+        "${CMAKE_SOURCE_DIR}/app/main.c"
+        "${CMAKE_SOURCE_DIR}/app/game.c"
         ${RESOURCE_FILE}
     )
 else()
     add_executable(solapp "${CMAKE_SOURCE_DIR}/app/linmain.c")
 endif()
+
+target_include_directories(solapp PRIVATE ${SOLAPP_INCLUDE})
 
 if(HOT_RELOAD)
     target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})

@@ -6,6 +6,7 @@
 #include <stdatomic.h>
 
 #include "sol.h"
+#include "game.h"
 
 // define function pointers for hot reload
 #define SOL_FUNC(ret, name, ...)           \
@@ -28,8 +29,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void load_api(const char *path);
 FILETIME get_last_write_time(const char *path);
 
-static void QuitApp();
-
+// ─────────────────────────────────────────────────────────────────────────────
+// WINDOWS Entry point
 // ─────────────────────────────────────────────────────────────────────────────
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -69,41 +70,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //------------------------------------------
     // Init Sol App
     //------------------------------------------
+    Sol_Init(g_hwnd, hInstance);
     // load hot reload api
     // load_api("libsolvulk.dll");
-    World *menu = World_Create_Default();
 
-    int button = Sol_Prefab_Button(menu, (vec3s){10, 400, 0});
-    Entity_Add_Interact(menu, button, (CompInteractable){.callback = QuitApp});
-
-    Sol_Prefab_Wizard(menu, (vec3s){0, 0, 0});
-
-    for (int i = 0; i < 5; i++)
-    {
-        int id = Sol_Prefab_Boxman(menu, (vec3s){250.0f, i * -24.0f, 0});
-        sprintf(menu->uiElements[id].text, "%d", i);
-    }
-
-    int wizard = Sol_Prefab_Wizard(menu, (vec3s){20, 2, 0});
-    // int wizard = Entity_Create(menu);
-    // Entity_Add_Body(menu, wizard, (CompBody){.height = 5, .mass = 5, .vel = {0, 5, 0}});
-
-    World *evansWorld = World_Create();
-    evansWorld->worldActive = false;
-
-    World *game = World_Create();
-
-    World *worlds[] = {
-        menu,
-        game,
-        evansWorld,
-    };
-    SolConfig solConfig = {
-        .worlds = worlds,
-        .worldCount = 2,
-    };
-
-    Sol_Init(g_hwnd, hInstance, solConfig);
+    Create_Sol_Game();
 
     //------------------------------------------
 
@@ -190,7 +161,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SolInput_OnKey((int)wParam, false);
         return 0;
     case WM_MOUSEMOVE:
-        //SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+        SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_LBUTTONDOWN:
         SolInput_OnMouseButton(SOL_MOUSE_LEFT, true);
@@ -213,6 +184,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+
 
 void QuitApp()
 {

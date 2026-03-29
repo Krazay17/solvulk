@@ -19,6 +19,9 @@ static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
 
     if (action & ACTION_LEFT)
         wishdir = glms_vec3_sub(wishdir, rightdir);
+
+    if (action & ACTION_JUMP)
+        wishdir = glms_vec3_add(wishdir, updir);
     return wishdir;
 }
 
@@ -35,9 +38,6 @@ static vec2s GetWishDir2(uint32_t action)
 void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 {
     SolMouse mouse = SolInput_GetMouse();
-    // static int rawMouseX;
-    // rawMouseX += mouse.dx;
-    // Sol_Debug_Add("Mouse Delta", rawMouseX);
     int required = HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; ++i)
     {
@@ -46,8 +46,12 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
         {
             CompController *controller = &world->controllers[id];
             CompMovement *movement = &world->movements[id];
-            controller->yaw += mouse.dx * lookSens;
-            controller->pitch += mouse.dy * lookSens;
+
+            if (mouse.buttons[SOL_MOUSE_RIGHT])
+            {
+                controller->yaw -= mouse.dx * lookSens;
+                controller->pitch -= mouse.dy * lookSens;
+            }
 
             if (SolInput_KeyDown(SOL_KEY_W))
                 controller->actionState |= ACTION_FWD;
@@ -69,6 +73,11 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
             else
                 controller->actionState &= ~ACTION_RIGHT;
 
+            if (SolInput_KeyDown(SOL_KEY_SPACE))
+                controller->actionState |= ACTION_JUMP;
+            else
+                controller->actionState &= ~ACTION_JUMP;
+
             vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
             vec3s updir = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});
             vec3s wishdir = GetWishDir3(controller->actionState, lookdir, updir);
@@ -77,9 +86,10 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
             controller->wishdir = wishdir;
             controller->wishdir2 = GetWishDir2(controller->actionState);
 
-            Sol_Debug_Add("Look", controller->lookdir.x);
-            Sol_Debug_Add("Move", controller->wishdir.x);
-                }
+            Sol_Debug_Add("LookX", controller->lookdir.x);
+            Sol_Debug_Add("LookY", controller->lookdir.y);
+            Sol_Debug_Add("LookZ", controller->lookdir.z);
+        }
     }
 }
 

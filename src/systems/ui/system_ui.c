@@ -36,7 +36,7 @@ void Sol_System_UI_Draw(World *world, double dt, double time)
 
         // Border
         if (ui->borderThickness > 0 || isHovered) {
-            float thickness = ui->borderThickness + (ui->clickAnim * 4.0f);
+            float thickness = ui->borderThickness + (ui->clickAnim * 4.0f) + (ui->hoverAnim * 2.0f);
             Sol_Draw_Rectangle(rect, ui->borderColor, thickness);
         }
 

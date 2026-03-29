@@ -98,7 +98,7 @@ typedef struct
 
 typedef struct
 {
-    vec3s wishdir;
+    vec3s lookdir, wishdir;
     vec2s wishdir2;
     uint32_t actionState;
     float yaw, pitch;

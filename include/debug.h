@@ -3,7 +3,6 @@
 
 #define MAX_DEBUGS 12
 #define MAX_STR_LEN 64
-// #define SOL_DEBUG_ADD(text, ...) 
 
 typedef struct
 {

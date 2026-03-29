@@ -56,6 +56,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceFrequency(&g_frequency);
     QueryPerformanceCounter(&g_startTime);
 
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = 0;
+    rid.hwndTarget = g_hwnd;
+    if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == false)
+    {
+        printf("Raw input register failed!");
+    }
+
     //------------------------------------------
     // Init Sol App
     //------------------------------------------
@@ -65,7 +75,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     int button = Sol_Prefab_Button(menu, (vec3s){10, 400, 0});
     Entity_Add_Interact(menu, button, (CompInteractable){.callback = QuitApp});
-    
+
     Sol_Prefab_Wizard(menu, (vec3s){0, 0, 0});
 
     for (int i = 0; i < 5; i++)
@@ -144,6 +154,28 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    case WM_INPUT:
+    {
+        UINT dwSize = sizeof(RAWINPUT);
+        static BYTE lpb[sizeof(RAWINPUT)]; // Static buffer for performance
+
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+
+        RAWINPUT *raw = (RAWINPUT *)lpb;
+
+        if (raw->header.dwType == RIM_TYPEMOUSE)
+        {
+            LONG mouseX = raw->data.mouse.lLastX;
+            LONG mouseY = raw->data.mouse.lLastY;
+
+            // Check if movement is relative (most mice)
+            if (!(raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE))
+            {
+                Sol_Input_OnRawMouse(mouseX, mouseY);
+            }
+        }
+        return 0;
+    }
     case WM_DESTROY:
         g_running = FALSE;  // tell the game thread to exit
         PostQuitMessage(0); // tell the message loop to exit
@@ -158,7 +190,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SolInput_OnKey((int)wParam, false);
         return 0;
     case WM_MOUSEMOVE:
-        SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+        //SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_LBUTTONDOWN:
         SolInput_OnMouseButton(SOL_MOUSE_LEFT, true);

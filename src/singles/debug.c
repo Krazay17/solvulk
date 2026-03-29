@@ -4,7 +4,6 @@ static DebugLines lines = {0};
 
 void Sol_Debug_Add(const char *text, float value)
 {
-    printf("DEBUG ADD\n");
     for(int i = 0; i < lines.count;++i)
     {
         if(strncmp(text, lines.text[i], MAX_STR_LEN) == 0)
@@ -29,8 +28,8 @@ void Sol_Debug_Draw()
     float spacing = 24.0f;
     for (int i = 0; i < lines.count; ++i)
     {
-        const char *buffer;
-        //sprintf(buffer, )
-        Sol_Draw_Text(lines.text[i], 24.0f, i * spacing + 48.0f, 16.0f, (SolColor){255,0,122,255});
+        char buffer[MAX_STR_LEN];
+        sprintf(buffer, "%s: %.4f", lines.text[i], lines.value[i]);
+        Sol_Draw_Text(buffer, 24.0f, i * spacing + 48.0f, 16.0f, (SolColor){255,0,122,255});
     }
 }

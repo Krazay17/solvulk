@@ -15,14 +15,12 @@ void Sol_System_Camera_Tick(World *world, double dt, double time)
             CompXform *xform = &world->xforms[id];
             CompController *controller = &world->controllers[id];
 
-            vec3s targetS = glms_vec3_add(xform->pos, controller->wishdir);
-            vec3 finalTarget = {targetS.x, targetS.y, targetS.z};
             vec3s pos = glms_vec3_sub(xform->pos, glms_vec3_scale(controller->wishdir, 10.0f));
             vec3 finalPos = {pos.x, pos.y, pos.z};
+            vec3s targetS = glms_vec3_add(pos, controller->wishdir);
+            vec3 finalTarget = {targetS.x, targetS.y, targetS.z};
 
             Sol_Camera_Update(finalPos, finalTarget);
-
-            Sol_Debug_Add("MouseX:", controller->wishdir.x);
 
             break;
         }

@@ -34,6 +34,7 @@ typedef struct
 SOLAPI void SolInput_OnKey(int vkCode, bool down);
 SOLAPI void SolInput_OnMouseMove(int x, int y);
 SOLAPI void SolInput_OnMouseButton(SolMouseButton btn, bool down);
+SOLAPI void Sol_Input_OnRawMouse(int x, int y);
 
 // called at start of each game frame to snapshot state
 SOLAPI void SolInput_Update();

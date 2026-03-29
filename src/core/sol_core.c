@@ -21,7 +21,6 @@ void Sol_Init(void *hwnd, void *hInstance, SolConfig config)
     printf("Vulkan Init code: %d\n", vulkInit);
     Sol_Loader_LoadModels();
 
-    Sol_Debug_Add("TEST", 25.0f);
 }
 
 void Sol_Tick(double dt, double time)

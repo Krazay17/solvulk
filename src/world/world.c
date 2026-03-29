@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 
 #include "sol_core.h"
 #include "world.h"
@@ -8,6 +9,43 @@ World *World_Create(void)
     World *world = calloc(1, sizeof(World));
     if (world)
         world->worldActive = true;
+    return world;
+}
+
+SOLAPI World *World_Create_Default(void)
+{
+    World *world = World_Create();
+    if (world)
+    {
+        SystemFunc stepSystemInit[] = {
+        };
+        int stepSystemCount = 0;
+        world->stepCount = stepSystemCount;
+        memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
+
+        SystemFunc tickSystemInit[] = {
+            Sol_System_Movement_2d_Step,
+            Sol_System_Step_Physx_2d,
+            Sol_System_Step_Physx_3d,
+            Sol_System_Controller_Local_Tick,
+            Sol_System_Controller_Ai_Tick,
+            Sol_System_Info_Tick,
+            Sol_System_Button_Update,
+            Sol_System_Interact_Ui,
+            Sol_System_Camera_Tick,
+        };
+        int tickSystemCount = 9;
+        world->tickCount = tickSystemCount;
+        memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
+
+        SystemFunc drawSystemInit[] = {
+            Sol_System_Update_View,
+            Sol_System_UI_Draw,
+        };
+        int drawSystemCount = 2;
+        world->drawCount = drawSystemCount;
+        memcpy(world->drawSystems, drawSystemInit, sizeof(SystemFunc) * drawSystemCount);
+    }
     return world;
 }
 
@@ -116,14 +154,12 @@ void Entity_Add_Xform(World *world, int id, CompXform xform)
 
 void Entity_Add_Body2(World *world, int id, CompBody body)
 {
-    
     world->bodies[id] = body;
     world->masks[id] |= HAS_BODY2;
 }
 
 void Entity_Add_Body3(World *world, int id, CompBody body)
 {
-    
     world->bodies[id] = body;
     world->masks[id] |= HAS_BODY3;
 }
@@ -158,10 +194,25 @@ void Entity_Add_Movement(World *world, int id, CompMovement movement)
     world->masks[id] |= HAS_MOVEMENT;
 }
 
-void Entity_Add_Controller(World *world, int id, CompController controller)
+void Entity_Add_Controller_Local(World *world, int id, CompController controller)
 {
     world->controllers[id] = controller;
     world->masks[id] |= HAS_CONTROLLER;
+}
+
+SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController controller)
+{
+
+}
+
+SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller)
+{
+}
+
+SOLAPI void Entity_Add_Model(World *world, int id, CompModel model)
+{
+    world->models[id] = model;
+    world->masks[id] |= HAS_MODEL;
 }
 
 CompUiElement Entity_Get_UiElement(World *world, int id)

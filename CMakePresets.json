@@ -29,7 +29,7 @@
             }
         },
         {
-            "name": "release",
+            "name": "shared",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/shared",
             "architecture": {

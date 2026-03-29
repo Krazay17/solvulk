@@ -26,7 +26,7 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 void load_api(const char *path);
-FILETIME get_last_write_time(const char* path);
+FILETIME get_last_write_time(const char *path);
 
 static void QuitApp();
 
@@ -61,22 +61,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //------------------------------------------
     // load hot reload api
     // load_api("libsolvulk.dll");
-    World *menu = World_Create();
-    World_System_Add(menu, Sol_System_Controller_Tick, SYSTEM_TICK);
-    World_System_Add(menu, Sol_System_Interact_Ui, SYSTEM_TICK);
-    World_System_Add(menu, Sol_System_Button_Update, SYSTEM_TICK);
-    World_System_Add(menu, Sol_System_Info_Tick, SYSTEM_TICK);
-
-    World_System_Add(menu, Sol_System_Movement_2d_Step, SYSTEM_TICK);
-    World_System_Add(menu, Sol_System_Step_Physx_2d, SYSTEM_TICK);
-    World_System_Add(menu, Sol_System_Step_Physx_3d, SYSTEM_TICK);
-
-    // World_System_Add(menu, Sol_System_Update_View, SYSTEM_DRAW);
-    World_System_Add(menu, Sol_System_UI_Draw, SYSTEM_DRAW);
+    World *menu = World_Create_Default();
 
     int button = Sol_Prefab_Button(menu, (vec3s){10, 400, 0});
     Entity_Add_Interact(menu, button, (CompInteractable){.callback = QuitApp});
-    for (int i = 0; i < 25000; i++)
+    
+    Sol_Prefab_Wizard(menu, (vec3s){0, 0, 0});
+
+    for (int i = 0; i < 5; i++)
     {
         int id = Sol_Prefab_Boxman(menu, (vec3s){250.0f, i * -24.0f, 0});
         sprintf(menu->uiElements[id].text, "%d", i);
@@ -195,9 +187,11 @@ void QuitApp()
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }
 
-void load_api(const char* path) {
+void load_api(const char *path)
+{
     // 1. If we already have a lib open, free it
-    if (current_engine_lib) FreeLibrary(current_engine_lib);
+    if (current_engine_lib)
+        FreeLibrary(current_engine_lib);
 
     // 2. Copy the DLL so the original isn't locked by the OS
     // FALSE means "allow overwrite"
@@ -205,21 +199,24 @@ void load_api(const char* path) {
 
     // 3. Load the COPY
     current_engine_lib = LoadLibraryA("solvulk_live.dll");
-    if (!current_engine_lib) {
+    if (!current_engine_lib)
+    {
         printf("FAILED TO LOAD ENGINE DLL!\n");
         return;
     }
 
-    // 4. Map the pointers
-    #define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
-    #include "sol_functions.h"
-    #undef SOL_FUNC
+// 4. Map the pointers
+#define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
+#include "sol_functions.h"
+#undef SOL_FUNC
 }
 
-FILETIME get_last_write_time(const char* path) {
+FILETIME get_last_write_time(const char *path)
+{
     FILETIME lastWriteTime = {0};
     WIN32_FILE_ATTRIBUTE_DATA data;
-    if (GetFileAttributesExA(path, GetFileExInfoStandard, &data)) {
+    if (GetFileAttributesExA(path, GetFileExInfoStandard, &data))
+    {
         lastWriteTime = data.ftLastWriteTime;
     }
     return lastWriteTime;

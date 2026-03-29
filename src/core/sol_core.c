@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include "render.h"
 #include "sol_core.h"
 
 SolState solState = {0};
@@ -20,6 +20,8 @@ void Sol_Init(void *hwnd, void *hInstance, SolConfig config)
     int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
     Sol_Loader_LoadModels();
+
+    Sol_Debug_Add("TEST", 25.0f);
 }
 
 void Sol_Tick(double dt, double time)
@@ -46,6 +48,8 @@ void Sol_Tick(double dt, double time)
 
     for (int i = g_worldCount - 1; i >= 0; --i)
         World_Draw(worlds[i], dt, time);
+
+    Sol_Debug_Draw();
 
     DebugFPS(dt);
 

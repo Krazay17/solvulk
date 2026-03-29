@@ -11,6 +11,7 @@
 #include "loader.h"
 #include "render.h"
 #include "input.h"
+#include "debug.h"
 
 #define SOL_VERSION 1.0
 

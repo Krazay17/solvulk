@@ -25,6 +25,7 @@ typedef enum
     HAS_UI_ELEMENT = (1 << 7),
     HAS_MOVEMENT = (1 << 8),
     HAS_CONTROLLER = (1 << 9),
+    HAS_CAMERA = (1 << 10),
 } CompBits;
 
 typedef bool Active;
@@ -64,6 +65,7 @@ typedef struct
 typedef struct
 {
     uint32_t gpuHandle;
+
 } CompModel;
 
 typedef struct
@@ -96,6 +98,8 @@ typedef struct
 
 typedef struct
 {
+    vec3s wishdir;
+    vec2s wishdir2;
     uint32_t actionState;
     float yaw, pitch;
 } CompController;
@@ -132,6 +136,7 @@ struct World
 };
 
 SOLAPI World *World_Create(void);
+SOLAPI World *World_Create_Default(void);
 SOLAPI void World_Destroy(World *world);
 
 SOLAPI void World_Step(World *world, double dt, double time);
@@ -151,7 +156,11 @@ SOLAPI void Entity_Add_Interact(World *world, int id, CompInteractable interact)
 SOLAPI void Entity_Add_Info(World *world, int id, CompInfo info);
 SOLAPI void Entity_Add_UiElement(World *world, int id, CompUiElement uiElement);
 SOLAPI void Entity_Add_Movement(World *world, int id, CompMovement movement);
-SOLAPI void Entity_Add_Controller(World *world, int id, CompController controller);
+SOLAPI void Entity_Add_Controller_Local(World *world, int id, CompController controller);
+SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController controller);
+SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller);
+SOLAPI void Entity_Add_Model(World *world, int id, CompModel model);
+//SOLAPI void Entity_Add_Camera(World *world, int id, )
 
 SOLAPI CompXform Entity_Get_Xform(World *world, int id);
 SOLAPI CompBody Entity_Get_Body2(World *world, int id);
@@ -163,15 +172,22 @@ SOLAPI CompUiElement Entity_Get_UiElement(World *world, int id);
 SOLAPI CompMovement Entity_Get_Movement(World *world, int id);
 SOLAPI CompController Entity_Get_Controller(World *world, int id);
 
-SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
-SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
-SOLAPI void Sol_System_Update_View(World *world, double dt, double time);
+// Step Systems
+SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
+SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
+// Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
+SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
+SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
+
+// Draw Systems
+SOLAPI void Sol_System_Update_View(World *world, double dt, double time);
 SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
-SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
-SOLAPI void Sol_System_Controller_Tick(World *world, double dt, double time);
 
 SOLAPI int Sol_Prefab_Button(World *world, vec3s pos);
 SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);

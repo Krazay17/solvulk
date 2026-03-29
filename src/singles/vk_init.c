@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <cglm/cglm.h>
+#include <cglm/struct.h>
 
 #include "vk_init.h"
 #include "sol_core.h"

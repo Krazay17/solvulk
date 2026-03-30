@@ -154,6 +154,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
         return 0;
+    case WM_SETCURSOR:
+        SolMouse mouse = SolInput_GetMouse();
+        if (mouse.locked)
+        {
+            SetCursor(NULL);
+            return true;
+        }
+        break;
     case WM_KEYDOWN:
         SolInput_OnKey((int)wParam, true);
         return 0;
@@ -184,7 +192,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-
 
 void QuitApp()
 {

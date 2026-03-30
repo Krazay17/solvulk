@@ -10,8 +10,10 @@ void Sol_System_View_Draw(World *world, double dt, double time)
         {
             CompXform *xform = &world->xforms[id];
             CompModel *model = &world->models[id];
+            CompController * controller = &world->controllers[id];
 
-            Sol_DrawModel(model->gpuHandle, (vec3){xform->pos.x, xform->pos.y, xform->pos.z}, 0);
+            float rot = controller && controller->yaw ? controller->yaw : 0;
+            Sol_DrawModel(model->gpuHandle, (vec3){xform->pos.x, xform->pos.y, xform->pos.z}, rot);
         }
     }
 }

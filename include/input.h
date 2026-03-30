@@ -26,6 +26,7 @@ typedef struct
 {
     int x, y;
     int dx, dy;
+    bool locked;
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];
 } SolMouse;
@@ -43,3 +44,5 @@ SOLAPI void SolInput_Update();
 SOLAPI bool SolInput_KeyDown(SolKey key);
 SOLAPI bool SolInput_KeyPressed(SolKey key); // true only on frame of press
 SOLAPI SolMouse SolInput_GetMouse();
+
+void Sol_Platform_LockCursor(bool lock);

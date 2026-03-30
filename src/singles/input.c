@@ -4,13 +4,17 @@
 #include "sol_core.h"
 #include "input.h"
 
+#define SOL_KEYCODE_SPACE 32
+#define SOL_KEYCODE_ESCAPE 27
+
 // maps SolKey to Windows virtual key codes
 static int keyMap[SOL_KEY_COUNT] = {
     'W',
     'A',
     'S',
     'D',
-    32,
+    SOL_KEYCODE_SPACE,
+    SOL_KEYCODE_ESCAPE,
 };
 
 static atomic_bool rawKeys[SOL_KEY_COUNT];
@@ -19,6 +23,7 @@ static atomic_int rawMouseX, rawMouseY;
 static atomic_int rawMouseDeltaX, rawMouseDeltaY;
 
 // snapshot read by game thread
+static bool mouseLocked;
 static bool keys[SOL_KEY_COUNT];
 static bool keysPrev[SOL_KEY_COUNT];
 static bool mouseButtons[SOL_MOUSE_COUNT];
@@ -28,6 +33,7 @@ static int mouseDeltaX, mouseDeltaY;
 
 void SolInput_OnKey(int vkCode, bool down)
 {
+    Sol_Debug_Add("KeyCode", vkCode);
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (keyMap[i] == vkCode)
@@ -70,6 +76,13 @@ void SolInput_Update()
     mouseY = rawMouseY;
     mouseDeltaX = atomic_exchange(&rawMouseDeltaX, 0);
     mouseDeltaY = atomic_exchange(&rawMouseDeltaY, 0);
+
+    if(mouseButtons[SOL_MOUSE_RIGHT])
+    mouseLocked = true;
+    else
+    mouseLocked = false;
+    
+    Sol_Platform_LockCursor(mouseLocked);
 }
 
 bool SolInput_KeyDown(SolKey key)
@@ -94,5 +107,6 @@ SolMouse SolInput_GetMouse()
         m.buttons[i] = mouseButtons[i];
         m.buttonsPressed[i] = mouseButtons[i] && !mouseButtonsPrev[i];
     }
+    m.locked = mouseLocked;
     return m;
 }

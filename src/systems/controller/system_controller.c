@@ -3,6 +3,7 @@
 #include "sol_core.h"
 
 float lookSens = 0.001f;
+static bool mouseLocked = false;
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
 {
@@ -47,11 +48,29 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
             CompController *controller = &world->controllers[id];
             CompMovement *movement = &world->movements[id];
 
-            if (mouse.buttons[SOL_MOUSE_RIGHT])
+            if (mouse.locked)
             {
+                // 1. Apply movement
                 controller->yaw -= mouse.dx * lookSens;
+
+                // 2. Wrap to [0, 2pi]
+                controller->yaw = fmodf(controller->yaw, 2.0f * GLM_PI);
+
+                // 3. Offset to [-pi, pi]
+                if (controller->yaw > GLM_PI)
+                    controller->yaw -= 2.0f * GLM_PI;
+                else if (controller->yaw < -GLM_PI)
+                    controller->yaw += 2.0f * GLM_PI;
+                    
                 controller->pitch -= mouse.dy * lookSens;
+                float maxPitch = GLM_PI_2 - 0.1f;
+                if (controller->pitch > maxPitch)
+                    controller->pitch = maxPitch;
+                if (controller->pitch < -maxPitch)
+                    controller->pitch = -maxPitch;
             }
+            Sol_Debug_Add("Yaw", controller->yaw);
+            Sol_Debug_Add("Pitch", controller->pitch);
 
             if (SolInput_KeyDown(SOL_KEY_W))
                 controller->actionState |= ACTION_FWD;

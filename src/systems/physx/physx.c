@@ -16,12 +16,12 @@ void Sol_System_Step_Physx_2d(World *world, double dt, double time)
         {
             CompBody *body = &world->bodies[id];
             CompXform *xform = &world->xforms[id];
-            
+
             body->vel.y += SOL_GRAVITY * fdt;
             vec3s finalVel = glms_vec3_scale(body->vel, fdt * 20.0f);
             xform->pos = glms_vec3_add(xform->pos, finalVel);
 
-            if(xform->pos.y + body->height >= solState.windowHeight)
+            if (xform->pos.y + body->height >= solState.windowHeight)
             {
                 xform->pos.y = solState.windowHeight - body->height;
                 body->vel.y = 0;
@@ -42,10 +42,12 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             CompBody *body = &world->bodies[id];
             CompXform *xform = &world->xforms[id];
             CompModel *model = &world->models[id];
-            
-            //body->vel.y += SOL_GRAVITY * fdt;
+
+            body->vel.y -= SOL_GRAVITY * fdt;
             vec3s finalVel = glms_vec3_scale(body->vel, fdt);
             xform->pos = glms_vec3_add(xform->pos, finalVel);
+            if (xform->pos.y < 0)
+                xform->pos.y = 0;
         }
     }
 }

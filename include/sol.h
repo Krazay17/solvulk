@@ -12,6 +12,7 @@
 #include "render.h"
 #include "input.h"
 #include "debug.h"
+#include "sol_movement.h"
 
 #define SOL_VERSION 1.0
 #define MAX_WORLDS 4

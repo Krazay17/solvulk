@@ -90,11 +90,31 @@ typedef struct
     SolColor borderColor;
 } CompUiElement;
 
+
+typedef enum
+{
+    MOVE_CONFIG_PLAYER,
+    MOVE_CONFIG_WIZARD,
+    MOVE_CONFIG_COUNT,
+} MoveConfigId;
 typedef struct
 {
-    vec3s wishdir, updir;
-    float gSpeed, gAccell, gFriction;
-    float aSpeed, aAccell, aFriction;
+  float speed, accell, friction;  
+} MoveConfig;
+
+typedef enum
+{
+    MOVE_IDLE,
+    MOVE_WALK,
+    MOVE_FALL,
+    MOVE_SLIDE,
+    MOVE_FLY,
+} MoveState;
+typedef struct
+{
+    vec3s wishdir, updir;    
+    MoveState moveState;
+    MoveConfigId configId;
 } CompMovement;
 
 typedef struct

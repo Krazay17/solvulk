@@ -2,6 +2,11 @@
 
 #include "sol_core.h"
 
+static const MoveConfig MOVE_CONFIGS[MOVE_CONFIG_COUNT] = {
+    [MOVE_CONFIG_PLAYER] = {.speed = 5.0f, .accell = 10.0f, .fritction = 5.0f},
+    [MOVE_CONFIG_WIZARD] = {.speed = 3.5f, .accell =  6.0f, .fritction = 5.0f},
+}
+
 void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 {
     float fdt = (float)dt;
@@ -15,10 +20,18 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             CompMovement *movement = &world->movements[id];
             CompBody *body = &world->bodies[id];
             CompController *controller = &world->controllers[id];
+            MoveConfig *cfg = &MOVE_CONFIGS[movement.configId];
 
             vec3s wishdir = controller->wishdir;
-
-            body->vel = glms_vec3_add(body->vel, glms_vec3_scale(wishdir, movement->gAccell * fdt));
+            vec3s vel = body->vel;
+            
+            switch(movement.moveState)
+            {
+                default:
+                    vel = glms_vec3_add(vel, glms_vec3_scale(wishdir, cfg->accell * fdt));
+            }
+    
+            body->vel = vel;
         }
     }
 }

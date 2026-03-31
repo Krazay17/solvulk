@@ -42,7 +42,7 @@ typedef struct
 typedef struct
 {
     vec3s vel;
-    bool grounded;
+    float grounded, airtime;
     float width, height, mass;
 } CompBody;
 

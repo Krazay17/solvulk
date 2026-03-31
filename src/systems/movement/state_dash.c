@@ -2,6 +2,8 @@
 
 #include "sol_core.h"
 
+#define DASH_DURATION 0.3f
+
 void Sol_Movement_Dash_Update(World *world, int id, float dt)
 {
     CompMovement *movement = &world->movements[id];
@@ -11,13 +13,14 @@ void Sol_Movement_Dash_Update(World *world, int id, float dt)
 
     vec3s vel = body->vel;
     vec3s wishdir = controller->wishdir;
-    movement->stateTimer -= dt;
+    movement->stateTimer += dt;
+    float alpha = 1.5 - (movement->stateTimer / DASH_DURATION);
 
-    if(movement->stateTimer <= 0)
-        if(Sol_Movement_SetState(world, id, MOVE_IDLE))
+    if (movement->stateTimer >= DASH_DURATION)
+        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
 
-    vel = ApplyAccel3(movement->lockdir, vel, forces->speed, forces->accell, dt);
+    vel = glms_vec3_scale(movement->lockdir, alpha * 32.0f);
 
     body->vel = vel;
 }
@@ -25,8 +28,14 @@ void Sol_Movement_Dash_Update(World *world, int id, float dt)
 void Sol_Movement_Dash_Enter(World *world, int id)
 {
     CompMovement *movement = &world->movements[id];
-    movement->stateTimer = 0.5f;
-    movement->lockdir = movement->wishdir;
+    CompController *controller = &world->controllers[id];
+
+    vec3s dashdir = Sol_Vec3_FromYawPitch(controller->yaw, 0);
+    if (glms_vec3_norm(movement->wishdir) > 0)
+        dashdir = movement->wishdir;
+
+    movement->lockdir = dashdir;
+    movement->stateTimer = 0;
 }
 
 void Sol_Movement_Dash_Exit(World *world, int id)

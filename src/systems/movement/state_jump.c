@@ -25,7 +25,7 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id)
 {
     CompBody *body = &world->bodies[id];
     
-    return body->grounded;
+    return body->grounded > 0.1f;
 }
 
 bool Sol_Movement_Jump_CanExit(World *world, int id)

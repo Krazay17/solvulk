@@ -23,18 +23,28 @@ vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float 
     vec3s latvel = prevvel;
     const float prevY = latvel.y;
     latvel.y = 0;
+    if (glms_vec3_norm(wishdir) == 0)
+        return prevvel;
+    const float dotdir = glms_vec3_dot(wishdir, glms_vec3_normalize(latvel));
+    float lerpalpha = (1.0f - dotdir) * 0.5f;
+    
+    
+    vec3s projected = glms_vec3_proj(latvel, wishdir);
+    float steerStrength = fminf(1.0f, accel * dt);
+    latvel = glms_vec3_lerp(latvel, projected, lerpalpha * steerStrength);
 
     const float dirspeed = glms_vec3_dot(latvel, wishdir);
     const float addspeed = speed - dirspeed;
-    if (addspeed <= 0)
-        return prevvel;
-    const float accelspeed = accel * speed * dt;
-    const float final = fminf(accelspeed, addspeed);
-    latvel = glms_vec3_add(latvel, glms_vec3_scale(wishdir, final));
-    const float overspeed = glms_vec3_norm(latvel);
-    Sol_Debug_Add("Overspeed", overspeed);
-    if (overspeed > speed)
-        latvel = glms_vec3_scale(latvel, speed / overspeed);
+    if(addspeed > 0)
+    {
+        const float accelspeed = accel * speed * dt;
+        const float finaladd = fminf(accelspeed, addspeed);
+        latvel = glms_vec3_add(latvel, glms_vec3_scale(wishdir, finaladd));
+    }
+
+    // const float overspeed = glms_vec3_norm(latvel);
+    // if (overspeed > speed)
+    //     latvel = glms_vec3_scale(latvel, speed / overspeed);
     latvel.y = prevY;
     return latvel;
 }

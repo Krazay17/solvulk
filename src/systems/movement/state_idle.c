@@ -18,6 +18,9 @@ void Sol_Movement_Idle_Update(World *world, int id, float dt)
     if (glms_vec3_norm(wishdir) > 0)
         if (Sol_Movement_SetState(world, id, MOVE_WALK))
             return;
+    if (controller->actionState & ACTION_DASH)
+        if (Sol_Movement_SetState(world, id, MOVE_DASH))
+            return;
 
     vel = ApplyFriction3((vec3s){0, 0, 0}, vel, forces->friction, dt);
 

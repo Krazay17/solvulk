@@ -50,10 +50,14 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             {
                 xform->pos.y = 0;
                 body->vel.y = 0;
-                body->grounded = true;
+                body->grounded = fminf(99999.0f, body->grounded + dt);
+                body->airtime = 0;
             }
             else
-            body->grounded = false;
+            {
+                body->grounded = 0;
+                body->airtime =  fminf(99999.0f, body->airtime + dt);
+            }
         }
     }
 }

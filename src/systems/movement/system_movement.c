@@ -67,7 +67,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
         [MOVE_IDLE]         = {.speed =  0,      .accell = 0,        .friction = 15.0f,  .gravity = 0        },
         [MOVE_WALK]         = {.speed =  6.0f,   .accell = 20.0f,    .friction =  5.0f,  .gravity = 9.81f    },
         [MOVE_FALL]         = {.speed =  6.0f,   .accell =  5.0f,    .friction =  0.0f,  .gravity = 9.81f    },
-        [MOVE_DASH]         = {.speed = 32.0f,   .accell = 32.0f,    .friction =  0.0f,  .gravity = 0        },
+        [MOVE_DASH]         = {.speed = 24.0f,   .accell = 32.0f,    .friction =  0.0f,  .gravity = 0        },
         [MOVE_JUMP]         = {.speed =  6.0f,   .accell =  5.0f,    .friction =  0.0f,  .gravity = 9.81f    },
         [MOVE_SLIDE]        = {.speed =  6.0f,   .accell =  5.0f,    .friction =  1.0f,  .gravity = 9.81f    },
         [MOVE_FLY]          = {.speed =  6.0f,   .accell =  5.0f,    .friction =  1.0f,  .gravity = 0        },

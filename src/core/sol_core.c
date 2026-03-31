@@ -58,7 +58,7 @@ static void DebugFPS(double dt)
     smoothedFps = (alpha * currentFps) + (1.0f - alpha) * smoothedFps;
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "Fps: %.0f", smoothedFps);
-    Sol_Draw_Text(buffer, 0, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
+    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
 }
 
 void Sol_Shutdown()

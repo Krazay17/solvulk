@@ -6,6 +6,7 @@
 
 #define SOL_KEYCODE_SPACE 32
 #define SOL_KEYCODE_ESCAPE 27
+#define SOL_KEYCODE_SHIFT 16
 
 // maps SolKey to Windows virtual key codes
 static int keyMap[SOL_KEY_COUNT] = {
@@ -15,6 +16,7 @@ static int keyMap[SOL_KEY_COUNT] = {
     'D',
     SOL_KEYCODE_SPACE,
     SOL_KEYCODE_ESCAPE,
+    SOL_KEYCODE_SHIFT,
 };
 
 static atomic_bool rawKeys[SOL_KEY_COUNT];
@@ -77,11 +79,11 @@ void SolInput_Update()
     mouseDeltaX = atomic_exchange(&rawMouseDeltaX, 0);
     mouseDeltaY = atomic_exchange(&rawMouseDeltaY, 0);
 
-    if(mouseButtons[SOL_MOUSE_RIGHT])
-    mouseLocked = true;
+    if (mouseButtons[SOL_MOUSE_RIGHT])
+        mouseLocked = true;
     else
-    mouseLocked = false;
-    
+        mouseLocked = false;
+
     Sol_Platform_LockCursor(mouseLocked);
 }
 

@@ -25,7 +25,7 @@ typedef enum
     ACTION_LEFT     = (1 << 2),
     ACTION_RIGHT    = (1 << 3),
     ACTION_JUMP     = (1 << 4),
-    ACTION_COUNT    = (1 << 5),
+    ACTION_DASH     = (1 << 5),
 } PlayerActionStates;
 
 typedef struct

@@ -34,7 +34,7 @@ static vec2s GetWishDir2(uint32_t action)
         wishdir.x += 1;
     if (action & ACTION_LEFT)
         wishdir.x -= 1;
-        
+
     return glms_vec2_normalize(wishdir);
 }
 
@@ -63,7 +63,7 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
                     controller->yaw -= 2.0f * GLM_PI;
                 else if (controller->yaw < -GLM_PI)
                     controller->yaw += 2.0f * GLM_PI;
-                    
+
                 controller->pitch -= mouse.dy * lookSens;
                 float maxPitch = GLM_PI_2 - 0.1f;
                 if (controller->pitch > maxPitch)
@@ -98,6 +98,11 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
                 controller->actionState |= ACTION_JUMP;
             else
                 controller->actionState &= ~ACTION_JUMP;
+
+            if (SolInput_KeyDown(SOL_KEY_SHIFT))
+                controller->actionState |= ACTION_DASH;
+            else
+                controller->actionState &= ~ACTION_DASH;
 
             vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
             vec3s updir = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});

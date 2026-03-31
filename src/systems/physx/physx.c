@@ -47,7 +47,13 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             vec3s finalVel = glms_vec3_scale(body->vel, fdt);
             xform->pos = glms_vec3_add(xform->pos, finalVel);
             if (xform->pos.y < 0)
+            {
                 xform->pos.y = 0;
+                body->vel.y = 0;
+                body->grounded = true;
+            }
+            else
+            body->grounded = false;
         }
     }
 }

@@ -518,10 +518,15 @@ static int SolVkSwapchain()
     VkPresentModeKHR chosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     for (uint32_t i = 0; i < presentModeCount; i++)
     {
+        if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
+        {
+            chosenPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+            break;
+        }
+        // Mailbox is the best of both worlds if Immediate isn't there
         if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
         {
             chosenPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-            break;
         }
     }
 

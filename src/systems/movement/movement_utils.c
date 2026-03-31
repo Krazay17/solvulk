@@ -1,7 +1,8 @@
-#include "sol_movement.h"
 #include <cglm/struct.h>
 
-static vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
+#include "sol_core.h"
+
+vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
     vec3s latvel = prevvel;
     const float prevY = latvel.y;
@@ -17,35 +18,41 @@ static vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float 
     return latvel;
 }
 
-static vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
+vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
 {
     vec3s latvel = prevvel;
     const float prevY = latvel.y;
     latvel.y = 0;
 
-    const float dirspeed = glms_vec3_norm(glms_vec3_mul(latvel, wishdir));
+    const float dirspeed = glms_vec3_dot(latvel, wishdir);
     const float addspeed = speed - dirspeed;
     if (addspeed <= 0)
         return prevvel;
     const float accelspeed = accel * speed * dt;
     const float final = fminf(accelspeed, addspeed);
     latvel = glms_vec3_add(latvel, glms_vec3_scale(wishdir, final));
+    const float overspeed = glms_vec3_norm(latvel);
+    Sol_Debug_Add("Overspeed", overspeed);
+    if (overspeed > speed)
+        latvel = glms_vec3_scale(latvel, speed / overspeed);
     latvel.y = prevY;
     return latvel;
 }
 
-void Sol_Movement_SetState(World *world, int id, MoveState nextState)
+bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
 {
-    CompMovement *movement = &world->movements;
+    CompMovement *movement = &world->movements[id];
     if (movement->moveState == nextState)
-        return;
-    MoveStateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
-    if (!prevfunc->canExit)
-        return;
-    MoveStateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
-    if (!nextfunc->canEnter)
-        return;
+        return false;
+    const MoveStateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
+    if (!prevfunc->canExit(world, id))
+        return false;
+    const MoveStateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
+    if (!nextfunc->canEnter(world, id))
+        return false;
     prevfunc->exit(world, id);
     movement->moveState = nextState;
     nextfunc->enter(world, id);
+    Sol_Debug_Add("state", movement->moveState);
+    return true;
 }

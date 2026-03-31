@@ -42,6 +42,7 @@ typedef struct
 typedef struct
 {
     vec3s vel;
+    bool grounded;
     float width, height, mass;
 } CompBody;
 
@@ -93,7 +94,8 @@ typedef struct
 
 typedef struct
 {
-    vec3s wishdir, updir;
+    vec3s wishdir, updir, lockdir;
+    float stateTimer;
     MoveState moveState;
     MoveConfigId configId;
 } CompMovement;
@@ -162,7 +164,6 @@ SOLAPI void Entity_Add_Controller_Local(World *world, int id, CompController con
 SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController controller);
 SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller);
 SOLAPI void Entity_Add_Model(World *world, int id, CompModel model);
-//SOLAPI void Entity_Add_Camera(World *world, int id, )
 
 SOLAPI CompXform Entity_Get_Xform(World *world, int id);
 SOLAPI CompBody Entity_Get_Body2(World *world, int id);

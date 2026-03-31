@@ -6,6 +6,7 @@ typedef struct
     char test[24];
     int testInt;
 } TestData;
+
 static void TestFunc(void *data)
 {
     TestData *testData = (TestData *)data;
@@ -26,7 +27,7 @@ void Create_Sol_Game()
     int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
     Entity_Add_Interact(menu, button2, (CompInteractable){.callback = MakeAWizard, .callbackData = menu});
 
-    int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 100, 0});
+    int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 0, 0});
     Entity_Add_Controller_Local(game, player3d, (CompController){0});
 
     int player2d = Sol_Prefab_Boxman(game, (vec3s){250.0f, -24.0f, 0});
@@ -42,7 +43,6 @@ void Create_Sol_Game()
     Entity_Add_Xform(game, floor2, (CompXform){.pos = (vec3s){0, -25, 0}, .scale = (vec3s){5, 2, 25}});
     Entity_Add_Model(game, floor2, (CompModel){.gpuHandle = Sol_Loader_GetBank()->models.world0});
 }
-
 
 void MakeAWizard(void *data)
 {

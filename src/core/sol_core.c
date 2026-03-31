@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "render.h"
+
 #include "sol_core.h"
 
 SolState solState = {0};

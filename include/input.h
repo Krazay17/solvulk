@@ -11,6 +11,7 @@ typedef enum
     SOL_KEY_D,
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
+    SOL_KEY_SHIFT,
     SOL_KEY_COUNT
 } SolKey;
 

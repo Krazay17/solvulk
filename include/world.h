@@ -32,12 +32,13 @@ typedef enum
 typedef bool Active;
 typedef uint32_t Mask;
 
-typedef struct
+typedef struct CompXform CompXform;
+struct CompXform
 {
     vec3s pos;
-    vec3s rot;
+    vec4s rot;
     vec3s scale;
-} CompXform;
+};
 
 typedef struct
 {
@@ -60,7 +61,7 @@ typedef struct
 typedef void (*InteractCallback)(void *data);
 typedef struct
 {
-    bool isHovered, isPressed, isClicked;
+    bool isHovered, isPressed, isClicked, onHold;
     InteractCallback callback;
     void *callbackData;
 } CompInteractable;
@@ -189,7 +190,7 @@ SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
 
 // Draw Systems
-SOLAPI void Sol_System_View_Draw(World *world, double dt, double time);
+SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
 
 SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);

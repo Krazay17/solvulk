@@ -6,30 +6,20 @@
 
 #include "sol_core.h"
 
-#define TOTAL_MODELS 2
-
 static SolBank bank = {0};
 
-static const char *models[TOTAL_MODELS] = {
+// name of the resource linked in the resources.rc
+static const char *models[SOL_MODEL_COUNT] = {
     "ID_MODEL_WIZARD",
-    "ID_MODEL_WORLD0"
+    "ID_MODEL_WORLD0",
 };
 
 void Sol_Loader_LoadModels()
 {
-    for(int i = 0; i < TOTAL_MODELS;++i)
+    for (int i = 0; i < SOL_MODEL_COUNT; ++i)
     {
         SolModel cpu = Sol_LoadModel(models[i]);
-        SolModelHandle handle = Sol_UploadModel(&cpu);
-        switch(i)
-        {
-            case 0:
-            bank.models.wizard = handle;
-            break;
-            case 1:
-            bank.models.world0 = handle;
-            break;
-        }
+        Sol_UploadModel(&cpu, i);
         Sol_FreeModel(&cpu);
     }
 }
@@ -124,6 +114,29 @@ SolModel Sol_LoadModel(const char *resourceName)
         cgltf_primitive *prim = &srcMesh->primitives[0];
 
         SolMesh *dstMesh = &model.meshes[m];
+        dstMesh->material.baseColor[0] = 1.0f;
+        dstMesh->material.baseColor[1] = 1.0f;
+        dstMesh->material.baseColor[2] = 1.0f;
+        dstMesh->material.baseColor[3] = 1.0f;
+        dstMesh->material.metallic = 0.0f;
+        dstMesh->material.roughness = 1.0f;
+
+        // if (prim->material)
+        // {
+        //     cgltf_material *srcMat = prim->material;
+
+        //     if (srcMat->has_pbr_metallic_roughness)
+        //     {
+        //         cgltf_pbr_metallic_roughness *pbr = &srcMat->has_pbr_metallic_roughness;
+
+        //         dstMesh->material.baseColor[0] = pbr->base_color_factor[0];
+        //         dstMesh->material.baseColor[1] = pbr->base_color_factor[1];
+        //         dstMesh->material.baseColor[2] = pbr->base_color_factor[2];
+        //         dstMesh->material.baseColor[3] = pbr->base_color_factor[3];
+        //         dstMesh->material.metallic = pbr->metallic_factor;
+        //         dstMesh->material.roughness = pbr->roughness_factor;
+        //     }
+        // }
 
         // --- read indices ---
         if (prim->indices)

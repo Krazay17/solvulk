@@ -3,8 +3,8 @@
 int Sol_Prefab_Wizard(World *world, vec3s pos)
 {
     int id = Entity_Create(world);
-    Entity_Add_Xform(world, id, (CompXform){.pos = pos});
-    Entity_Add_Model(world, id, (CompModel){.gpuHandle = Sol_Loader_GetBank()->models.wizard});
+    Entity_Add_Xform(world, id, (CompXform){.pos = pos,.rot=(vec4s){0.0f,0.0f,0.0f,1.0f,}});
+    Entity_Add_Model(world, id, (CompModel){.gpuHandle = SOL_MODEL_WIZARD});
     Entity_Add_Movement(world, id, (CompMovement){
                                        .configId = MOVE_CONFIG_PLAYER
                                    });

@@ -40,10 +40,10 @@ typedef struct
         .a = (alpha)               \
     }
 
-bool Sol_Check_2d_Collision(vec2s a, vec4s b);
-
-SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
+    SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
+    SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
+    
+    bool Sol_Check_2d_Collision(vec2s a, vec4s b);
 
 vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
-
-SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
+vec4s Sol_Quat_FromYawPitch(float yaw, float pitch);

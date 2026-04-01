@@ -1,11 +1,9 @@
 #pragma once
 
-typedef int SolModelHandle;
-
 typedef struct
 {
-    SolModelHandle wizard;
-    SolModelHandle world0;
+    int wizard;
+    int world0;
 } BankedModels;
 
 typedef struct SolBank

@@ -30,12 +30,6 @@ typedef enum
 
 typedef struct
 {
-    World **worlds;
-    uint16_t worldCount;
-} SolConfig;
-
-typedef struct
-{
     atomic_bool isRunning;
     atomic_bool needsResize;
     float windowWidth, windowHeight;
@@ -53,29 +47,7 @@ typedef struct
     size_t size;
 } SolResource;
 
-typedef struct
-{
-    float position[3];
-    float normal[3];
-    float uv[2];
-} SolVertex;
-
-typedef struct
-{
-    SolVertex *vertices;
-    uint32_t vertexCount;
-    uint32_t *indices;
-    uint32_t indexCount;
-} SolMesh;
-
-typedef struct SolModel
-{
-    SolMesh *meshes;
-    uint32_t meshCount;
-} SolModel;
-
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
-SOLAPI void Sol_Config_Set(SolConfig *config);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Shutdown();
 

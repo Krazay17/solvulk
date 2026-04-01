@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <cglm/types-struct.h>
 
+typedef struct World World;
+
 typedef enum
 {
     MOVE_CONFIG_PLAYER,
@@ -26,7 +28,6 @@ typedef struct
     float speed, accell, friction, gravity;
 } MoveStateForce;
 
-typedef struct World World;
 typedef void (*StateUpdate)(World *world, int id, float dt);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);

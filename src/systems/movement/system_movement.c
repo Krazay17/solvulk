@@ -14,10 +14,13 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) == required)
         {
             CompMovement *movement = &world->movements[id];
+            CompXform *xform = &world->xforms[id];
             CompBody *body = &world->bodies[id];
             const MoveStateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
             CompController *controller = &world->controllers[id];
             
+            xform->rot = Sol_Quat_FromYawPitch(controller->yaw, -controller->pitch);
+
             vec3s latwishdir = controller->wishdir;
             latwishdir.y = 0;
             latwishdir = glms_vec3_normalize(latwishdir);

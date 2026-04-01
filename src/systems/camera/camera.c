@@ -21,6 +21,7 @@ void Sol_System_Camera_Tick(World *world, double dt, double time)
             vec3 finalTarget = {target.x, target.y, target.z};
 
             Sol_Camera_Update(finalPos, finalTarget);
+            
             Sol_Debug_Add("CamPosX", pos.x);
             Sol_Debug_Add("CamPosY", pos.y);
             Sol_Debug_Add("CamPosZ", pos.z);

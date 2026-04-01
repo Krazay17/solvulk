@@ -44,7 +44,7 @@ SOLAPI World *World_Create_Default(void)
         memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
 
         SystemFunc drawSystemInit[] = {
-            Sol_System_View_Draw,
+            Sol_System_Model_Draw,
             Sol_System_UI_Draw,
         };
         int drawSystemCount = 2;

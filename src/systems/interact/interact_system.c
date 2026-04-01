@@ -26,6 +26,13 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
                 if (mouse.buttons[SOL_MOUSE_LEFT])
                 {
                     interact->isPressed = true;
+                    if (interact->onHold)
+                    {
+                        if (interact->callbackData)
+                            interact->callback(interact->callbackData);
+                        else if (interact->callback)
+                            interact->callback(NULL);
+                    }
                 }
                 else if (wasPressed)
                 {

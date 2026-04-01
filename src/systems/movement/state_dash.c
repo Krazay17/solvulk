@@ -2,6 +2,8 @@
 
 #include "sol_core.h"
 
+#define DASH_VEL 28.0f
+#define DASH_ALPHAMOD 1.5f
 #define DASH_DURATION 0.3f
 
 void Sol_Movement_Dash_Update(World *world, int id, float dt)
@@ -14,13 +16,13 @@ void Sol_Movement_Dash_Update(World *world, int id, float dt)
     vec3s vel = body->vel;
     vec3s wishdir = controller->wishdir;
     movement->stateTimer += dt;
-    float alpha = 1.5 - (movement->stateTimer / DASH_DURATION);
+    float alpha = DASH_ALPHAMOD - (movement->stateTimer / DASH_DURATION);
 
     if (movement->stateTimer >= DASH_DURATION)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
 
-    vel = glms_vec3_scale(movement->lockdir, alpha * 32.0f);
+    vel = glms_vec3_scale(movement->lockdir, alpha * DASH_VEL);
 
     body->vel = vel;
 }

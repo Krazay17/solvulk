@@ -1,20 +1,25 @@
 #include "sol_core.h"
 
+#define JUMP_VEL 11.0f
+#define JUMP_ALPHAMOD 1.66f
+#define JUMP_TIMER 0.13f
+
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
     CompMovement *movement = &world->movements[id];
     CompBody *body = &world->bodies[id];
-    movement->stateTimer -= dt;
-    if (movement->stateTimer <= 0)
+    movement->stateTimer += dt;
+    float alpha = JUMP_ALPHAMOD - (movement->stateTimer / JUMP_TIMER);
+    if (movement->stateTimer >= JUMP_TIMER)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
-    body->vel.y = 7.0f;
+    body->vel.y = JUMP_VEL * alpha;
 }
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
     CompMovement *movement = &world->movements[id];
-    movement->stateTimer = 0.1f;
+    movement->stateTimer = 0;
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)
@@ -24,7 +29,7 @@ void Sol_Movement_Jump_Exit(World *world, int id)
 bool Sol_Movement_Jump_CanEnter(World *world, int id)
 {
     CompBody *body = &world->bodies[id];
-    
+
     return body->grounded > 0.1f;
 }
 

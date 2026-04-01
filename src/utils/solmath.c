@@ -43,3 +43,25 @@ vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch)
     float z = cosf(pitch) * cosf(yaw);
     return (vec3s){x, y, z};
 }
+
+// In your Movement System or Controller
+vec4s Sol_Quat_FromYawPitch(float yaw, float pitch)
+{
+    versor q;
+    glm_quat_identity(q);
+
+    // Create quats for each axis
+    versor q_yaw, q_pitch;
+    glm_quatv(q_yaw, yaw, (vec3){0.0f, 1.0f, 0.0f});     // Y-Axis
+    glm_quatv(q_pitch, pitch, (vec3){1.0f, 0.0f, 0.0f}); // X-Axis
+
+    // Combine them: q = q_yaw * q_pitch
+    glm_quat_mul(q_yaw, q_pitch, q);
+
+    return (vec4s){
+        q[0],
+        q[1],
+        q[2],
+        q[3],
+    };
+}

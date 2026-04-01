@@ -8,56 +8,14 @@
 
 #include "vk_init.h"
 #include "sol_core.h"
+#include "render.h"
 
-#define MAX_DEVICE_QUERY 8
-#define MAX_QUEUE_FAMILIES 16
-#define MAX_FRAMES_IN_FLIGHT 2
-#define MAX_GPU_MODELS 256
-
-typedef struct
-{
-    const char *vertResource;
-    const char *fragResource;
-    // rasterizer
-    int depthTest;
-    int alphaBlend;
-    int cullBackface;
-
-    // push constants
-    uint32_t pushRangeSize;
-
-    // descriptors (NULL if none)
-    VkDescriptorSetLayout *descLayouts;
-    uint32_t descLayoutCount;
-} SolPipelineConfig;
-
-typedef enum
-{
-    PIPE_3D_MESH,
-    PIPE_2D_BUTTON,
-    PIPE_2D_TEXT,
-    PIPE_COUNT
-} SolPipelines;
-
-typedef struct
-{
-    float l, b, r, t;
-} Bounds;
-typedef struct
-{
-    float u, v, uw, vh; // UV coords in 0-1 space
-    float xoffset;
-    float ytop;
-    float yoffset;
-    float yadvance;
-} SolGlyph;
-typedef struct
-{
-    mat4 ortho;
-    float x, y, w, h;   // quad position in screen space
-    float u, v, uw, vh; // UV rect in atlas
-    float r, g, b, a;   // color
-} SolTextPush;
+void *instanceDataPtr[MAX_FRAMES_IN_FLIGHT];
+static VkBuffer instanceBuffer[MAX_FRAMES_IN_FLIGHT];
+static VkDeviceMemory instanceMemory[MAX_FRAMES_IN_FLIGHT];
+static VkDescriptorSetLayout instanceDescLayout = VK_NULL_HANDLE;
+static VkDescriptorPool instanceDescPool = VK_NULL_HANDLE;
+static VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT] = {VK_NULL_HANDLE};
 
 SolCamera renderCam = {
     .fov = 60.0f,
@@ -67,7 +25,6 @@ SolCamera renderCam = {
 static mat4 ortho2d;
 static SolGlyph glyphs[128] = {0};
 static SolGpuModel gpuModels[MAX_GPU_MODELS] = {0};
-static SolModelHandle modelCount = 0;
 
 static VkPipeline graphicsPipeline[PIPE_COUNT] = {VK_NULL_HANDLE};
 static VkPipelineLayout pipelineLayout[PIPE_COUNT] = {VK_NULL_HANDLE};
@@ -81,8 +38,8 @@ static SolPipelineConfig pipes[PIPE_COUNT] =
             .alphaBlend = 1,
             .cullBackface = 1,
             .pushRangeSize = sizeof(float) * 32,
-            .descLayoutCount = 0,
             .descLayouts = NULL,
+            .descLayoutCount = 1,
         },
         {
             .vertResource = "ID_SHADER_BASICRECT",
@@ -106,7 +63,7 @@ static SolPipelineConfig pipes[PIPE_COUNT] =
         },
 };
 
-static uint32_t currentFrame = 0;
+uint32_t currentFrame = 0;
 static uint32_t currentImageIndex = 0;
 static uint32_t currentBoundPipeline = -1;
 
@@ -149,6 +106,7 @@ static int SolVkSwapchain();
 static int SolVkImageViews();
 static int SolVkFontTexture();
 static int SolVkFontDescriptors();
+static int SolVkSSBO();
 static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout);
 static int SolVkCommandPool();
 static int SolVkSyncObjects();
@@ -185,12 +143,13 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
         return 7;
     if (SolVkCommandPool() != 0)
         return 8;
-
     if (SolVkFontTexture() != 0)
         return 9;
     if (SolVkFontDescriptors() != 0)
         return 10;
-
+        if(SolVkSSBO() != 0)
+        return 12;
+    pipes[PIPE_3D_MESH].descLayouts = &instanceDescLayout;
     pipes[PIPE_2D_TEXT].descLayouts = &fontDescLayout;
 
     for (int i = 0; i < PIPE_COUNT; ++i)
@@ -199,11 +158,11 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
                 pipes[i],
                 &graphicsPipeline[i],
                 &pipelineLayout[i]) != 0)
-            return 11;
+            return 13;
     }
 
     if (SolVkSyncObjects() != 0)
-        return 12;
+        return 14;
 
     SetOrtho();
     return 0;
@@ -1043,6 +1002,76 @@ static int SolVkSyncObjects()
     return 0;
 }
 
+static int SolVkSSBO() {
+    // 1. Create Descriptor Set Layout for the SSBO
+    VkDescriptorSetLayoutBinding binding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &binding
+    };
+    vkCreateDescriptorSetLayout(device, &layoutInfo, NULL, &instanceDescLayout);
+
+    // 2. Create Descriptor Pool
+    VkDescriptorPoolSize poolSize = {
+        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = MAX_FRAMES_IN_FLIGHT
+    };
+
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = MAX_FRAMES_IN_FLIGHT,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize
+    };
+    vkCreateDescriptorPool(device, &poolInfo, NULL, &instanceDescPool);
+
+    // 3. Allocate and Update Sets for each frame
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        // Create the Buffer for this frame
+        SolCreateBuffer(
+            sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &instanceBuffer[i], &instanceMemory[i]); // Note: Should probably use separate memory handles or offsets
+
+        vkMapMemory(device, instanceMemory[i], 0, VK_WHOLE_SIZE, 0, &instanceDataPtr[i]);
+
+        VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = instanceDescPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &instanceDescLayout
+        };
+        
+        // You'll need an array: VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT];
+        vkAllocateDescriptorSets(device, &allocInfo, &instanceDescSets[i]);
+
+        VkDescriptorBufferInfo bufferInfo = {
+            .buffer = instanceBuffer[i],
+            .offset = 0,
+            .range = sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES
+        };
+
+        VkWriteDescriptorSet write = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = instanceDescSets[i],
+            .dstBinding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount = 1,
+            .pBufferInfo = &bufferInfo
+        };
+        vkUpdateDescriptorSets(device, 1, &write, 0, NULL);
+    }
+    return 0;
+}
+
 void Sol_Begin_Draw()
 {
     currentBoundPipeline = -1;
@@ -1268,9 +1297,8 @@ static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     return 0;
 }
 
-SolModelHandle Sol_UploadModel(SolModel *model)
+void Sol_UploadModel(SolModel *model, SolModelId modelId)
 {
-    modelCount++;
     SolGpuModel gpuModel = {0};
     gpuModel.meshCount = model->meshCount;
     gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
@@ -1361,8 +1389,7 @@ SolModelHandle Sol_UploadModel(SolModel *model)
     }
 
     printf("Model uploaded to GPU: %d meshes\n", gpuModel.meshCount);
-    gpuModels[modelCount] = gpuModel;
-    return modelCount;
+    gpuModels[modelId] = gpuModel;
 }
 
 static void SolBindPipeline(VkCommandBuffer cmd, int pipeIndex)
@@ -1373,7 +1400,7 @@ static void SolBindPipeline(VkCommandBuffer cmd, int pipeIndex)
     currentBoundPipeline = pipeIndex;
 }
 
-void Sol_DrawModel(SolModelHandle handle, vec3 pos, float rotY)
+void Sol_DrawModel(SolModelId handle, vec3 pos, float rotY)
 {
     // 1. Model Matrix
     mat4 modelMat;
@@ -1401,6 +1428,38 @@ void Sol_DrawModel(SolModelHandle handle, vec3 pos, float rotY)
 
         // We use indexCount here, not vertexCount
         vkCmdDrawIndexed(cmd, mesh->indexCount, 1, 0, 0, 0);
+    }
+}
+
+void Sol_Begin_3D()
+{
+    mat4 viewProj;
+    glm_mat4_mul(renderCam.proj, renderCam.view, viewProj);
+
+    vkCmdPushConstants(SolGetCmd(),
+                       pipelineLayout[PIPE_3D_MESH],
+                       VK_SHADER_STAGE_VERTEX_BIT,
+                       0,
+                       sizeof(mat4),
+                       viewProj);
+}
+
+void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance) {
+    VkCommandBuffer cmd = SolGetCmd();
+    
+    SolBindPipeline(cmd, PIPE_3D_MESH);
+    
+    // Bind the SSBO for the CURRENT frame
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                            pipelineLayout[PIPE_3D_MESH], 0, 1, 
+                            &instanceDescSets[currentFrame], 0, NULL);
+
+    SolGpuModel *model = &gpuModels[handle];
+    for (uint32_t m = 0; m < model->meshCount; m++) {
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
+        vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
     }
 }
 

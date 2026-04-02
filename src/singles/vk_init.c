@@ -1,174 +1,43 @@
-#include <assert.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stddef.h>
 #include <cglm/cglm.h>
 #include <cglm/struct.h>
 
-#include "vk_init.h"
 #include "sol_core.h"
-#include "render.h"
+#include "render_internal.h"
 
-void *instanceDataPtr[MAX_FRAMES_IN_FLIGHT];
-static VkBuffer instanceBuffer[MAX_FRAMES_IN_FLIGHT];
-static VkDeviceMemory instanceMemory[MAX_FRAMES_IN_FLIGHT];
-static VkDescriptorSetLayout instanceDescLayout = VK_NULL_HANDLE;
-static VkDescriptorPool instanceDescPool = VK_NULL_HANDLE;
-static VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT] = {VK_NULL_HANDLE};
-
-SolCamera renderCam = {
-    .fov = 60.0f,
-    .nearClip = 0.1f,
-    .farClip = 5000.0f,
-};
-static mat4 ortho2d;
-static SolGlyph glyphs[128] = {0};
-static SolGpuModel gpuModels[MAX_GPU_MODELS] = {0};
-
-static VkPipeline graphicsPipeline[PIPE_COUNT] = {VK_NULL_HANDLE};
-static VkPipelineLayout pipelineLayout[PIPE_COUNT] = {VK_NULL_HANDLE};
-
-static SolPipelineConfig pipes[PIPE_COUNT] =
-    {
-        {
-            .vertResource = "ID_SHADER_BASIC3D",
-            .fragResource = "ID_SHADER_BASIC3DFRAG",
-            .depthTest = 1,
-            .alphaBlend = 1,
-            .cullBackface = 1,
-            .pushRangeSize = sizeof(float) * 32,
-            .descLayouts = NULL,
-            .descLayoutCount = 1,
-        },
-        {
-            .vertResource = "ID_SHADER_BASICRECT",
-            .fragResource = "ID_SHADER_BASICRECTFRAG",
-            .depthTest = 0,
-            .alphaBlend = 1,
-            .cullBackface = 0,
-            .pushRangeSize = sizeof(float) * 32,
-            .descLayoutCount = 0,
-            .descLayouts = NULL,
-        },
-        {
-            .vertResource = "ID_SHADER_BASICTEXT",
-            .fragResource = "ID_SHADER_BASICTEXTFRAG",
-            .depthTest = 0,
-            .alphaBlend = 0,
-            .cullBackface = 0,
-            .pushRangeSize = sizeof(float) * 32,
-            .descLayoutCount = 1,
-            .descLayouts = NULL,
-        },
+SolPipelineConfig pipelineConfigs[PIPE_COUNT] = {
+    [PIPE_3D_MESH] = {
+        .vertResource = "ID_SHADER_BASIC3D",
+        .fragResource = "ID_SHADER_BASIC3DFRAG",
+        .depthTest = 1,
+        .alphaBlend = 1,
+        .cullBackface = 1,
+        .pushRangeSize = sizeof(float) * 32,
+        .descLayouts = NULL,
+        .descLayoutCount = 1,
+    },
+    [PIPE_2D_BUTTON] = {
+        .vertResource = "ID_SHADER_BASICRECT",
+        .fragResource = "ID_SHADER_BASICRECTFRAG",
+        .depthTest = 0,
+        .alphaBlend = 1,
+        .cullBackface = 0,
+        .pushRangeSize = sizeof(float) * 32,
+        .descLayoutCount = 0,
+        .descLayouts = NULL,
+    },
+    [PIPE_2D_TEXT] = {
+        .vertResource = "ID_SHADER_BASICTEXT",
+        .fragResource = "ID_SHADER_BASICTEXTFRAG",
+        .depthTest = 0,
+        .alphaBlend = 0,
+        .cullBackface = 0,
+        .pushRangeSize = sizeof(float) * 32,
+        .descLayoutCount = 1,
+        .descLayouts = NULL,
+    },
 };
 
-uint32_t currentFrame = 0;
-static uint32_t currentImageIndex = 0;
-static uint32_t currentBoundPipeline = -1;
-
-static VkInstance instance = VK_NULL_HANDLE;
-static VkSurfaceKHR surface = VK_NULL_HANDLE;
-static VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-static uint32_t graphicsQueueFamily = 0;
-static VkDevice device = VK_NULL_HANDLE;
-static VkQueue graphicsQueue = VK_NULL_HANDLE;
-static VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-static VkFormat swapchainImageFormat;
-static VkExtent2D swapchainExtent;
-static VkImage swapchainImages[8];
-static uint32_t swapchainImageCount;
-static VkImageView swapchainImageViews[8];
-static VkCommandPool commandPool;
-static VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
-static VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
-static VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
-static VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
-static VkImage depthImage = VK_NULL_HANDLE;
-static VkDeviceMemory depthMemory = VK_NULL_HANDLE;
-static VkImageView depthImageView = VK_NULL_HANDLE;
-
-// font
-static VkImage fontImage = VK_NULL_HANDLE;
-static VkDeviceMemory fontMemory = VK_NULL_HANDLE;
-static VkImageView fontImageView = VK_NULL_HANDLE;
-static VkSampler fontSampler = VK_NULL_HANDLE;
-static VkDescriptorSetLayout fontDescLayout = VK_NULL_HANDLE;
-static VkDescriptorPool fontDescPool = VK_NULL_HANDLE;
-static VkDescriptorSet fontDescSet = VK_NULL_HANDLE;
-
-// forward declare static functions at the top
-static VkResult SolVkInstance();
-static int SolVkSurface(HWND hwnd, HINSTANCE hInstance);
-static int SolVkPhysicalDevice();
-static int SolVkDevice();
-static int SolVkSwapchain();
-static int SolVkImageViews();
-static int SolVkFontTexture();
-static int SolVkFontDescriptors();
-static int SolVkSSBO();
-static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout);
-static int SolVkCommandPool();
-static int SolVkSyncObjects();
-static int SolVkDepthResources();
-static VkCommandBuffer SolGetCmd();
-static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                           VkMemoryPropertyFlags properties,
-                           VkBuffer *outBuffer, VkDeviceMemory *outMemory);
-static void SetOrtho();
-static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH);
-
-static float SolColorF(uint8_t c) { return c / 255.0f; }
-
-int Sol_Init_Vulkan(void *hwnd, void *hInstance)
-{
-    SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
-    if (metrics.data)
-        Sol_ParseFontMetrics((const char *)metrics.data, 224.0f, 224.0f);
-
-    if (SolVkInstance() != 0)
-        return 1;
-    if (SolVkSurface(hwnd, hInstance) != 0)
-        return 2;
-    if (SolVkPhysicalDevice() != 0)
-        return 3;
-    if (SolVkDevice() != 0)
-        return 4;
-    if (SolVkSwapchain() != 0)
-        return 5;
-    if (SolVkImageViews() != 0)
-        return 6;
-    if (SolVkDepthResources() != 0)
-        return 7;
-    if (SolVkCommandPool() != 0)
-        return 8;
-    if (SolVkFontTexture() != 0)
-        return 9;
-    if (SolVkFontDescriptors() != 0)
-        return 10;
-        if(SolVkSSBO() != 0)
-        return 12;
-    pipes[PIPE_3D_MESH].descLayouts = &instanceDescLayout;
-    pipes[PIPE_2D_TEXT].descLayouts = &fontDescLayout;
-
-    for (int i = 0; i < PIPE_COUNT; ++i)
-    {
-        if (SolVkPipeline(
-                pipes[i],
-                &graphicsPipeline[i],
-                &pipelineLayout[i]) != 0)
-            return 13;
-    }
-
-    if (SolVkSyncObjects() != 0)
-        return 14;
-
-    SetOrtho();
-    return 0;
-}
-
-static Bounds ParseBounds(const char *p, const char *end)
+Bounds ParseBounds(const char *p, const char *end)
 {
     Bounds bounds = {0};
     const char *open = strchr(p, '{');
@@ -192,7 +61,7 @@ static Bounds ParseBounds(const char *p, const char *end)
     return bounds;
 }
 
-static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH)
+void Sol_ParseFontMetrics(SolVkState *vkstate, const char *json, float atlasW, float atlasH)
 {
     const char *p = strstr(json, "\"glyphs\":[");
     if (!p)
@@ -251,12 +120,7 @@ static void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH)
     }
 }
 
-static void SetOrtho()
-{
-    glm_ortho(0.0f, swapchainExtent.width, 0.0f, swapchainExtent.height, -1.0f, 1.0f, ortho2d);
-}
-
-static VkResult SolVkInstance()
+VkResult SolVkInstance(SolVkState *vkstate)
 {
     const char *extensions[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -265,6 +129,7 @@ static VkResult SolVkInstance()
 
     VkApplicationInfo appInfo = {0};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pNext = NULL;
     appInfo.pApplicationName = "Sol Vulk";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_4;
@@ -275,44 +140,44 @@ static VkResult SolVkInstance()
     createInfo.enabledExtensionCount = 2;
     createInfo.ppEnabledExtensionNames = extensions;
 
-    VkResult result = vkCreateInstance(&createInfo, NULL, &instance);
+    VkResult result = vkCreateInstance(&createInfo, NULL, &vkstate->instance);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create Vulkan instance", "Error", MB_OK);
+        Sol_MessageBox("Failed to create Vulkan instance", "Error");
     }
     return 0;
 }
 
-static int SolVkSurface(HWND hwnd, HINSTANCE hInstance)
+int SolVkSurface(SolVkState *vkstate, HWND hwnd, HINSTANCE hInstance)
 {
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {0};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.hwnd = hwnd;
     surfaceCreateInfo.hinstance = hInstance;
 
-    VkResult result = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, NULL, &surface);
+    VkResult result = vkCreateWin32SurfaceKHR(vkstate->instance, &surfaceCreateInfo, NULL, &vkstate->surface);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create Vulkan surface", "Error", MB_OK);
+        Sol_MessageBox("Failed to create Vulkan surface", "Error");
         return 1;
     }
     return 0;
 }
 
-static int SolVkPhysicalDevice()
+int SolVkPhysicalDevice(SolVkState *vkstate)
 {
     // get count first
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, NULL);
+    vkEnumeratePhysicalDevices(vkstate->instance, &deviceCount, NULL);
     if (deviceCount == 0)
     {
-        MessageBox(NULL, "No Vulkan capable GPU found", "Error", MB_OK);
+        Sol_MessageBox("No Vulkan capable GPU found", "Error");
         return 1;
     }
     assert(deviceCount <= MAX_DEVICE_QUERY);
     // get the actual devices
     VkPhysicalDevice devices[8]; // 8 is plenty
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
+    vkEnumeratePhysicalDevices(vkstate->instance, &deviceCount, devices);
 
     // pick the first discrete GPU we find, fallback to first device
     for (uint32_t i = 0; i < deviceCount; i++)
@@ -321,47 +186,44 @@ static int SolVkPhysicalDevice()
         vkGetPhysicalDeviceProperties(devices[i], &props);
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
-            physicalDevice = devices[i];
+            vkstate->physicalDevice = devices[i];
             break;
         }
     }
-    if (physicalDevice == VK_NULL_HANDLE)
+    if (vkstate->physicalDevice == VK_NULL_HANDLE)
     {
-        physicalDevice = devices[0]; // fallback
+        vkstate->physicalDevice = devices[0]; // fallback
     }
 
     // find a queue family that supports graphics
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, NULL);
-
-    assert(queueFamilyCount <= MAX_QUEUE_FAMILIES);
     VkQueueFamilyProperties queueFamilies[16];
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies);
+    vkGetPhysicalDeviceQueueFamilyProperties(vkstate->physicalDevice, &queueFamilyCount, queueFamilies);
 
     for (uint32_t i = 0; i < queueFamilyCount; i++)
     {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
-            graphicsQueueFamily = i;
+            vkstate->graphicsQueueFamily = i;
             break;
         }
     }
 
     VkPhysicalDeviceProperties selectedProps;
-    vkGetPhysicalDeviceProperties(physicalDevice, &selectedProps);
+    vkGetPhysicalDeviceProperties(vkstate->physicalDevice, &selectedProps);
 
     printf("%s\n", selectedProps.deviceName);
 
     return 0;
 }
 
-static int SolVkDevice()
+int SolVkDevice(SolVkState *vkstate)
 {
     float queuePriority = 1.0f;
 
     VkDeviceQueueCreateInfo queueCreateInfo = {0};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = graphicsQueueFamily;
+    queueCreateInfo.queueFamilyIndex = vkstate->graphicsQueueFamily;
     queueCreateInfo.queueCount = 1;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
@@ -380,18 +242,19 @@ static int SolVkDevice()
     createInfo.ppEnabledExtensionNames = deviceExtensions;
     createInfo.pNext = &dynamicRenderingFeature;
 
-    VkResult result = vkCreateDevice(physicalDevice, &createInfo, NULL, &device);
+    VkResult result = vkCreateDevice(vkstate->physicalDevice, &createInfo, NULL, &vkstate->device);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create logical device", "Error", MB_OK);
+        Sol_MessageBox("Failed to create logical device", "Error");
+        // MessageBox(NULL, "Failed to create logical device", "Error", MB_OK);
         return 1;
     }
 
-    vkGetDeviceQueue(device, graphicsQueueFamily, 0, &graphicsQueue);
+    vkGetDeviceQueue(vkstate->device, vkstate->graphicsQueueFamily, 0, &vkstate->graphicsQueue);
     return 0;
 }
 
-static int SolVkDepthResources()
+int SolVkDepthResources(SolVkState *vkstate)
 {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
 
@@ -399,8 +262,8 @@ static int SolVkDepthResources()
     VkImageCreateInfo imageInfo = {0};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = swapchainExtent.width;
-    imageInfo.extent.height = swapchainExtent.height;
+    imageInfo.extent.width = vkstate->swapchainExtent.width;
+    imageInfo.extent.height = vkstate->swapchainExtent.height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
     imageInfo.arrayLayers = 1;
@@ -411,24 +274,26 @@ static int SolVkDepthResources()
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    vkCreateImage(device, &imageInfo, NULL, &depthImage);
+    vkCreateImage(vkstate->device, &imageInfo, NULL, &vkstate->depthImage);
 
     // 2. Memory Requirements & Allocation
     VkMemoryRequirements memReqs;
-    vkGetImageMemoryRequirements(device, depthImage, &memReqs);
+    vkGetImageMemoryRequirements(vkstate->device, vkstate->depthImage, &memReqs);
 
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice,
+                                                  memReqs.memoryTypeBits,
+                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkAllocateMemory(device, &allocInfo, NULL, &depthMemory);
-    vkBindImageMemory(device, depthImage, depthMemory, 0);
+    vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->depthMemory);
+    vkBindImageMemory(vkstate->device, vkstate->depthImage, vkstate->depthMemory, 0);
 
     // 3. Create View
     VkImageViewCreateInfo viewInfo = {0};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = depthImage;
+    viewInfo.image = vkstate->depthImage;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = depthFormat;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -437,22 +302,22 @@ static int SolVkDepthResources()
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    vkCreateImageView(device, &viewInfo, NULL, &depthImageView);
+    vkCreateImageView(vkstate->device, &viewInfo, NULL, &vkstate->depthImageView);
     return 0;
 }
 
-static int SolVkSwapchain()
+int SolVkSwapchain(SolVkState *vkstate)
 {
     // --- query what the surface supports ---
     VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkstate->physicalDevice, vkstate->surface, &capabilities);
 
     // --- choose surface format (color format + color space) ---
     uint32_t formatCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, NULL);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkstate->physicalDevice, vkstate->surface, &formatCount, NULL);
     assert(formatCount <= 16);
     VkSurfaceFormatKHR formats[16];
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkstate->physicalDevice, vkstate->surface, &formatCount, formats);
 
     // prefer BGRA8 + sRGB, fallback to first available
     VkSurfaceFormatKHR chosenFormat = formats[0];
@@ -468,10 +333,10 @@ static int SolVkSwapchain()
 
     // --- choose present mode (vsync behavior) ---
     uint32_t presentModeCount = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, NULL);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkstate->physicalDevice, vkstate->surface, &presentModeCount, NULL);
     assert(presentModeCount <= 8);
     VkPresentModeKHR presentModes[8];
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkstate->physicalDevice, vkstate->surface, &presentModeCount, presentModes);
 
     // prefer mailbox (triple buffering), fallback to FIFO (vsync, always available)
     VkPresentModeKHR chosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
@@ -491,18 +356,18 @@ static int SolVkSwapchain()
 
     // --- choose extent (resolution) ---
     // use the current window size
-    swapchainExtent = capabilities.currentExtent;
+    vkstate->swapchainExtent = capabilities.currentExtent;
 
     // --- create the swapchain ---
-    swapchainImageFormat = chosenFormat.format;
+    vkstate->swapchainImageFormat = chosenFormat.format;
 
     VkSwapchainCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
+    createInfo.surface = vkstate->surface;
     createInfo.minImageCount = capabilities.minImageCount + 1; // one extra to avoid waiting
     createInfo.imageFormat = chosenFormat.format;
     createInfo.imageColorSpace = chosenFormat.colorSpace;
-    createInfo.imageExtent = swapchainExtent;
+    createInfo.imageExtent = vkstate->swapchainExtent;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -511,24 +376,29 @@ static int SolVkSwapchain()
     createInfo.presentMode = chosenPresentMode;
     createInfo.clipped = VK_TRUE;
 
-    VkResult result = vkCreateSwapchainKHR(device, &createInfo, NULL, &swapchain);
+    VkResult result = vkCreateSwapchainKHR(vkstate->device, &createInfo, NULL, &vkstate->swapchain);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create swapchain", "Error", MB_OK);
+        Sol_MessageBox("Failed to create swapchain", "Error");
+        // MessageBox(NULL, "Failed to create swapchain", "Error", MB_OK);
         return 1;
     }
 
     // --- retrieve the images ---
-    vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, NULL);
-    assert(swapchainImageCount <= 8);
-    vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages);
+    vkGetSwapchainImagesKHR(vkstate->device, vkstate->swapchain, &vkstate->swapchainImageCount, NULL);
+    assert(vkstate->swapchainImageCount <= 8);
+    vkGetSwapchainImagesKHR(vkstate->device, vkstate->swapchain, &vkstate->swapchainImageCount, vkstate->swapchainImages);
 
     return 0;
 }
 
-static int SolVkFontTexture()
+int SolVkFontTexture(SolVkState *vkstate)
 {
     SolResource res = Sol_LoadResource("ID_FONT_ATLAS");
+
+    SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
+    if (metrics.data)
+        Sol_ParseFontMetrics(vkstate, (const char *)metrics.data, 224.0f, 224.0f);
 
     printf("font atlas load: data=%p size=%zu\n", res.data, res.size);
     if (!res.data)
@@ -540,15 +410,15 @@ static int SolVkFontTexture()
     // --- staging buffer ---
     VkBuffer staging;
     VkDeviceMemory stagingMem;
-    SolCreateBuffer(res.size,
+    SolCreateBuffer(vkstate,res.size,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                     &staging, &stagingMem);
 
     void *mapped;
-    vkMapMemory(device, stagingMem, 0, res.size, 0, &mapped);
+    vkMapMemory(vkstate->device, stagingMem, 0, res.size, 0, &mapped);
     memcpy(mapped, res.data, res.size);
-    vkUnmapMemory(device, stagingMem);
+    vkUnmapMemory(vkstate->device, stagingMem);
 
     // --- create image ---
     VkImageCreateInfo imageInfo = {0};
@@ -565,25 +435,26 @@ static int SolVkFontTexture()
     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkCreateImage(device, &imageInfo, NULL, &fontImage);
+    vkCreateImage(vkstate->device, &imageInfo, NULL, &vkstate->fontImage);
 
     VkMemoryRequirements memReqs;
-    vkGetImageMemoryRequirements(device, fontImage, &memReqs);
+    vkGetImageMemoryRequirements(vkstate->device, vkstate->fontImage, &memReqs);
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(memReqs.memoryTypeBits,
+    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice,
+                                                  memReqs.memoryTypeBits,
                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vkAllocateMemory(device, &allocInfo, NULL, &fontMemory);
-    vkBindImageMemory(device, fontImage, fontMemory, 0);
+    vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->fontMemory);
+    vkBindImageMemory(vkstate->device, vkstate->fontImage, vkstate->fontMemory, 0);
 
     // --- transition + copy via one-time command buffer ---
     VkCommandPool transferPool;
     VkCommandPoolCreateInfo transferPoolInfo = {0};
     transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    transferPoolInfo.queueFamilyIndex = graphicsQueueFamily;
+    transferPoolInfo.queueFamilyIndex = vkstate->graphicsQueueFamily;
     transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    vkCreateCommandPool(device, &transferPoolInfo, NULL, &transferPool);
+    vkCreateCommandPool(vkstate->device, &transferPoolInfo, NULL, &transferPool);
 
     VkCommandBufferAllocateInfo cmdAlloc = {0};
     cmdAlloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -591,7 +462,7 @@ static int SolVkFontTexture()
     cmdAlloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdAlloc.commandBufferCount = 1;
     VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(device, &cmdAlloc, &cmd);
+    vkAllocateCommandBuffers(vkstate->device, &cmdAlloc, &cmd);
 
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -605,7 +476,7 @@ static int SolVkFontTexture()
     toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toTransfer.image = fontImage;
+    toTransfer.image = vkstate->fontImage;
     toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     toTransfer.subresourceRange.levelCount = 1;
     toTransfer.subresourceRange.layerCount = 1;
@@ -623,7 +494,7 @@ static int SolVkFontTexture()
     region.imageExtent.width = texW;
     region.imageExtent.height = texH;
     region.imageExtent.depth = 1;
-    vkCmdCopyBufferToImage(cmd, staging, fontImage,
+    vkCmdCopyBufferToImage(cmd, staging, vkstate->fontImage,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     // transition to shader read
@@ -633,7 +504,7 @@ static int SolVkFontTexture()
     toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     toRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     toRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRead.image = fontImage;
+    toRead.image = vkstate->fontImage;
     toRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     toRead.subresourceRange.levelCount = 1;
     toRead.subresourceRange.layerCount = 1;
@@ -649,23 +520,23 @@ static int SolVkFontTexture()
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd;
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueSubmit(vkstate->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
-    vkQueueWaitIdle(graphicsQueue);
-    vkDestroyBuffer(device, staging, NULL);
-    vkFreeMemory(device, stagingMem, NULL);
-    vkDestroyCommandPool(device, transferPool, NULL); // frees cmd implicitly
+    vkQueueWaitIdle(vkstate->graphicsQueue);
+    vkDestroyBuffer(vkstate->device, staging, NULL);
+    vkFreeMemory(vkstate->device, stagingMem, NULL);
+    vkDestroyCommandPool(vkstate->device, transferPool, NULL); // frees cmd implicitly
 
     // --- image view ---
     VkImageViewCreateInfo viewInfo = {0};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = fontImage;
+    viewInfo.image = vkstate->fontImage;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.layerCount = 1;
-    vkCreateImageView(device, &viewInfo, NULL, &fontImageView);
+    vkCreateImageView(vkstate->device, &viewInfo, NULL, &vkstate->fontImageView);
 
     // --- sampler ---
     VkSamplerCreateInfo samplerInfo = {0};
@@ -675,12 +546,12 @@ static int SolVkFontTexture()
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    vkCreateSampler(device, &samplerInfo, NULL, &fontSampler);
+    vkCreateSampler(vkstate->device, &samplerInfo, NULL, &vkstate->fontSampler);
 
     return 0;
 }
 
-static int SolVkFontDescriptors()
+int SolVkFontDescriptors(SolVkState *vkstate)
 {
     // --- layout ---
     VkDescriptorSetLayoutBinding binding = {0};
@@ -693,7 +564,7 @@ static int SolVkFontDescriptors()
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &binding;
-    vkCreateDescriptorSetLayout(device, &layoutInfo, NULL, &fontDescLayout);
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->fontDescLayout);
 
     // --- pool ---
     VkDescriptorPoolSize poolSize = {0};
@@ -705,43 +576,43 @@ static int SolVkFontDescriptors()
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
-    vkCreateDescriptorPool(device, &poolInfo, NULL, &fontDescPool);
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->fontDescPool);
 
     // --- allocate set ---
     VkDescriptorSetAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = fontDescPool;
+    allocInfo.descriptorPool = vkstate->fontDescPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &fontDescLayout;
-    vkAllocateDescriptorSets(device, &allocInfo, &fontDescSet);
+    allocInfo.pSetLayouts = &vkstate->fontDescLayout;
+    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->fontDescSet);
 
     // --- write ---
     VkDescriptorImageInfo imageInfo = {0};
-    imageInfo.sampler = fontSampler;
-    imageInfo.imageView = fontImageView;
+    imageInfo.sampler = vkstate->fontSampler;
+    imageInfo.imageView = vkstate->fontImageView;
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkWriteDescriptorSet write = {0};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = fontDescSet;
+    write.dstSet = vkstate->fontDescSet;
     write.dstBinding = 0;
     write.descriptorCount = 1;
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write.pImageInfo = &imageInfo;
-    vkUpdateDescriptorSets(device, 1, &write, 0, NULL);
+    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
 
     return 0;
 }
 
-static int SolVkImageViews()
+int SolVkImageViews(SolVkState *vkstate)
 {
-    for (uint32_t i = 0; i < swapchainImageCount; i++)
+    for (uint32_t i = 0; i < vkstate->swapchainImageCount; i++)
     {
         VkImageViewCreateInfo createInfo = {0};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = swapchainImages[i];
+        createInfo.image = vkstate->swapchainImages[i];
         createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = swapchainImageFormat;
+        createInfo.format = vkstate->swapchainImageFormat;
         createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -752,10 +623,11 @@ static int SolVkImageViews()
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        VkResult result = vkCreateImageView(device, &createInfo, NULL, &swapchainImageViews[i]);
+        VkResult result = vkCreateImageView(vkstate->device, &createInfo, NULL, &vkstate->swapchainImageViews[i]);
         if (result != VK_SUCCESS)
         {
-            MessageBox(NULL, "Failed to create image view", "Error", MB_OK);
+            Sol_MessageBox("Failed to create image view", "Error");
+            // MessageBox(NULL, "Failed to create image view", "Error", MB_OK);
             return 1;
         }
     }
@@ -763,7 +635,10 @@ static int SolVkImageViews()
     return 0;
 }
 
-static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, VkPipelineLayout *outLayout)
+int SolVkPipeline(SolVkState *vkstate,
+                  SolPipelineConfig pipeConfig,
+                  VkPipeline *outPipeline,
+                  VkPipelineLayout *outLayout)
 {
     // --- load shader bytecode ---
     SolResource vertRes = Sol_LoadResource(pipeConfig.vertResource);
@@ -784,8 +659,8 @@ static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, 
     fragModuleInfo.pCode = (uint32_t *)fragRes.data;
 
     VkShaderModule vertModule, fragModule;
-    vkCreateShaderModule(device, &vertModuleInfo, NULL, &vertModule);
-    vkCreateShaderModule(device, &fragModuleInfo, NULL, &fragModule);
+    vkCreateShaderModule(vkstate->device, &vertModuleInfo, NULL, &vertModule);
+    vkCreateShaderModule(vkstate->device, &fragModuleInfo, NULL, &fragModule);
 
     // --- shader stages ---
     VkPipelineShaderStageCreateInfo vertStage = {0};
@@ -899,13 +774,13 @@ static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, 
     pipelineLayoutInfo.pSetLayouts = pipeConfig.descLayouts;
     pipelineLayoutInfo.pushConstantRangeCount = pipeConfig.pushRangeSize > 0 ? 1 : 0;
     pipelineLayoutInfo.pPushConstantRanges = pipeConfig.pushRangeSize > 0 ? &pushRange : NULL;
-    vkCreatePipelineLayout(device, &pipelineLayoutInfo, NULL, outLayout);
+    vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, outLayout);
 
     // --- dynamic rendering info (replaces render pass) ---
     VkPipelineRenderingCreateInfo renderingInfo = {0};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachmentFormats = &swapchainImageFormat;
+    renderingInfo.pColorAttachmentFormats = &vkstate->swapchainImageFormat;
     renderingInfo.depthAttachmentFormat = pipeConfig.depthTest
                                               ? VK_FORMAT_D32_SFLOAT
                                               : VK_FORMAT_UNDEFINED;
@@ -935,51 +810,53 @@ static int SolVkPipeline(SolPipelineConfig pipeConfig, VkPipeline *outPipeline, 
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.layout = *outLayout;
 
-    VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, outPipeline);
+    VkResult result = vkCreateGraphicsPipelines(vkstate->device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, outPipeline);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create graphics pipeline", "Error", MB_OK);
+        Sol_MessageBox("Failed to create graphics pipeline", "Error");
         return 1;
     }
 
     // shader modules no longer needed after pipeline creation
-    vkDestroyShaderModule(device, vertModule, NULL);
-    vkDestroyShaderModule(device, fragModule, NULL);
+    vkDestroyShaderModule(vkstate->device, vertModule, NULL);
+    vkDestroyShaderModule(vkstate->device, fragModule, NULL);
 
     return 0;
 }
 
-static int SolVkCommandPool()
+int SolVkCommandPool(SolVkState *vkstate)
 {
     VkCommandPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = graphicsQueueFamily;
+    poolInfo.queueFamilyIndex = vkstate->graphicsQueueFamily;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    VkResult result = vkCreateCommandPool(device, &poolInfo, NULL, &commandPool);
+    VkResult result = vkCreateCommandPool(vkstate->device, &poolInfo, NULL, &vkstate->commandPool);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to create command pool", "Error", MB_OK);
+        Sol_MessageBox("Failed to create command pool", "Error");
+        // MessageBox(NULL, "Failed to create command pool", "Error", MB_OK);
         return 1;
     }
 
     VkCommandBufferAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = vkstate->commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-    result = vkAllocateCommandBuffers(device, &allocInfo, commandBuffers);
+    result = vkAllocateCommandBuffers(vkstate->device, &allocInfo, vkstate->commandBuffers);
     if (result != VK_SUCCESS)
     {
-        MessageBox(NULL, "Failed to allocate command buffers", "Error", MB_OK);
+        Sol_MessageBox("Failed to allocate command buffers", "Error");
+        // MessageBox(NULL, "Failed to allocate command buffers", "Error", MB_OK);
         return 1;
     }
 
     return 0;
 }
 
-static int SolVkSyncObjects()
+int SolVkSyncObjects(SolVkState *vkstate)
 {
     VkSemaphoreCreateInfo semaphoreInfo = {0};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -990,11 +867,16 @@ static int SolVkSyncObjects()
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        if (vkCreateSemaphore(device, &semaphoreInfo, NULL, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, NULL, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device, &fenceInfo, NULL, &inFlightFences[i]) != VK_SUCCESS)
+        if (vkCreateSemaphore(vkstate->device,
+                              &semaphoreInfo, NULL,
+                              &vkstate->imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(vkstate->device,
+                              &semaphoreInfo, NULL,
+                              &vkstate->renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(vkstate->device, &fenceInfo, NULL, &vkstate->inFlightFences[i]) != VK_SUCCESS)
         {
-            MessageBox(NULL, "Failed to create sync objects", "Error", MB_OK);
+            Sol_MessageBox("Failed to create sync objects", "Error");
+            // MessageBox(NULL, "Failed to create sync objects", "Error", MB_OK);
             return 1;
         }
     }
@@ -1002,250 +884,74 @@ static int SolVkSyncObjects()
     return 0;
 }
 
-static int SolVkSSBO() {
+int SolVkSSBO(SolVkState *vkstate)
+{
     // 1. Create Descriptor Set Layout for the SSBO
     VkDescriptorSetLayoutBinding binding = {
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-    };
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = 1,
-        .pBindings = &binding
-    };
-    vkCreateDescriptorSetLayout(device, &layoutInfo, NULL, &instanceDescLayout);
+        .pBindings = &binding};
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->modelDescLayout);
 
     // 2. Create Descriptor Pool
     VkDescriptorPoolSize poolSize = {
         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = MAX_FRAMES_IN_FLIGHT
-    };
+        .descriptorCount = MAX_FRAMES_IN_FLIGHT};
 
     VkDescriptorPoolCreateInfo poolInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .maxSets = MAX_FRAMES_IN_FLIGHT,
         .poolSizeCount = 1,
-        .pPoolSizes = &poolSize
-    };
-    vkCreateDescriptorPool(device, &poolInfo, NULL, &instanceDescPool);
+        .pPoolSizes = &poolSize};
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->modelDescPool);
 
     // 3. Allocate and Update Sets for each frame
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
         // Create the Buffer for this frame
-        SolCreateBuffer(
+        SolCreateBuffer(vkstate,
             sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES,
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &instanceBuffer[i], &instanceMemory[i]); // Note: Should probably use separate memory handles or offsets
+            &vkstate->modelBuffer[i], &vkstate->modelMemory[i]); // Note: Should probably use separate memory handles or offsets
 
-        vkMapMemory(device, instanceMemory[i], 0, VK_WHOLE_SIZE, 0, &instanceDataPtr[i]);
+        vkMapMemory(vkstate->device, vkstate->modelMemory[i], 0, VK_WHOLE_SIZE, 0, &vkstate->modelDataPtr[i]);
 
         VkDescriptorSetAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = instanceDescPool,
+            .descriptorPool = vkstate->modelDescPool,
             .descriptorSetCount = 1,
-            .pSetLayouts = &instanceDescLayout
-        };
-        
+            .pSetLayouts = &vkstate->modelDescLayout};
+
         // You'll need an array: VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT];
-        vkAllocateDescriptorSets(device, &allocInfo, &instanceDescSets[i]);
+        vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->modelDescSet[i]);
 
         VkDescriptorBufferInfo bufferInfo = {
-            .buffer = instanceBuffer[i],
+            .buffer = vkstate->modelBuffer[i],
             .offset = 0,
-            .range = sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES
-        };
+            .range = sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES};
 
         VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = instanceDescSets[i],
+            .dstSet = vkstate->modelDescSet[i],
             .dstBinding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .descriptorCount = 1,
-            .pBufferInfo = &bufferInfo
-        };
-        vkUpdateDescriptorSets(device, 1, &write, 0, NULL);
+            .pBufferInfo = &bufferInfo};
+        vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
     }
     return 0;
 }
 
-void Sol_Begin_Draw()
-{
-    currentBoundPipeline = -1;
-    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
-    vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
-                          imageAvailableSemaphores[currentFrame],
-                          VK_NULL_HANDLE, &currentImageIndex);
-
-    VkCommandBuffer currentCmd = commandBuffers[currentFrame];
-    vkResetCommandBuffer(currentCmd, 0);
-
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkBeginCommandBuffer(currentCmd, &beginInfo);
-
-    VkImageMemoryBarrier depthBarrier = {0};
-    depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    depthBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    depthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    depthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    depthBarrier.image = depthImage;
-    depthBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    depthBarrier.subresourceRange.levelCount = 1;
-    depthBarrier.subresourceRange.layerCount = 1;
-    depthBarrier.srcAccessMask = 0;
-    depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    vkCmdPipelineBarrier(currentCmd,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                         0, 0, NULL, 0, NULL, 1, &depthBarrier);
-
-    // clear depth
-    VkClearValue depthClear = {0};
-    depthClear.depthStencil.depth = 1.0f;
-
-    VkRenderingAttachmentInfo depthAttachment = {0};
-    depthAttachment.clearValue = depthClear;
-    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    depthAttachment.imageView = depthImageView;
-    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    // transition → color attachment
-    VkImageMemoryBarrier toRender = {0};
-    toRender.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    toRender.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    toRender.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    toRender.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRender.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRender.image = swapchainImages[currentImageIndex];
-    toRender.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    toRender.subresourceRange.levelCount = 1;
-    toRender.subresourceRange.layerCount = 1;
-    toRender.srcAccessMask = 0;
-    toRender.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    vkCmdPipelineBarrier(currentCmd,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         0, 0, NULL, 0, NULL, 1, &toRender);
-
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-    VkRenderingAttachmentInfo colorAttachment = {0};
-    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    colorAttachment.imageView = swapchainImageViews[currentImageIndex];
-    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue = clearColor;
-
-    VkRenderingInfo renderingInfo = {0};
-    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderingInfo.renderArea.extent = swapchainExtent;
-    renderingInfo.layerCount = 1;
-    renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachments = &colorAttachment;
-    renderingInfo.pDepthAttachment = &depthAttachment;
-
-    vkCmdBeginRendering(currentCmd, &renderingInfo);
-
-    VkViewport viewport = {0};
-    viewport.width = (float)swapchainExtent.width;
-    viewport.height = (float)swapchainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(currentCmd, 0, 1, &viewport);
-
-    VkRect2D scissor = {0};
-    scissor.extent = swapchainExtent;
-    vkCmdSetScissor(currentCmd, 0, 1, &scissor);
-}
-
-void Sol_End_Draw()
-{
-    VkCommandBuffer currentCmd = commandBuffers[currentFrame];
-    vkCmdEndRendering(currentCmd);
-
-    // transition → present
-    VkImageMemoryBarrier toPresent = {0};
-    toPresent.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    toPresent.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    toPresent.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    toPresent.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toPresent.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toPresent.image = swapchainImages[currentImageIndex];
-    toPresent.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    toPresent.subresourceRange.levelCount = 1;
-    toPresent.subresourceRange.layerCount = 1;
-    toPresent.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    toPresent.dstAccessMask = 0;
-    vkCmdPipelineBarrier(currentCmd,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                         0, 0, NULL, 0, NULL, 1, &toPresent);
-
-    vkEndCommandBuffer(currentCmd);
-
-    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame];
-    submitInfo.pWaitDstStageMask = &waitStage;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &currentCmd;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-
-    VkPresentInfoKHR presentInfo = {0};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &swapchain;
-    presentInfo.pImageIndices = &currentImageIndex;
-
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
-
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-void Sol_Render_Resize()
-{
-    if (swapchainExtent.width == 0 || swapchainExtent.height == 0)
-        return;
-    vkDeviceWaitIdle(device);
-
-    // destroy old
-    vkDestroyImageView(device, depthImageView, NULL);
-    vkDestroyImage(device, depthImage, NULL);
-    vkFreeMemory(device, depthMemory, NULL);
-
-    for (uint32_t i = 0; i < swapchainImageCount; i++)
-        vkDestroyImageView(device, swapchainImageViews[i], NULL);
-
-    vkDestroySwapchainKHR(device, swapchain, NULL);
-
-    // recreate
-    SolVkSwapchain();
-    SolVkImageViews();
-    SolVkDepthResources();
-    SetOrtho();
-    solState.windowWidth = swapchainExtent.width;
-    solState.windowHeight = swapchainExtent.height;
-}
-
-static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t SolFindMemoryType(VkPhysicalDevice physicalDevice,
+                           uint32_t typeFilter,
+                           VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProps;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -1263,9 +969,10 @@ static uint32_t SolFindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pro
     return 0;
 }
 
-static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                           VkMemoryPropertyFlags properties,
-                           VkBuffer *outBuffer, VkDeviceMemory *outMemory)
+int SolCreateBuffer(SolVkState *vkstate,
+                    VkDeviceSize size, VkBufferUsageFlags usage,
+                    VkMemoryPropertyFlags properties,
+                    VkBuffer *outBuffer, VkDeviceMemory *outMemory)
 {
     VkBufferCreateInfo bufferInfo = {0};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1273,327 +980,42 @@ static int SolCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(device, &bufferInfo, NULL, outBuffer) != VK_SUCCESS)
+    if (vkCreateBuffer(vkstate->device, &bufferInfo, NULL, outBuffer) != VK_SUCCESS)
     {
         printf("Failed to create buffer\n");
         return 1;
     }
 
     VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(device, *outBuffer, &memReqs);
+    vkGetBufferMemoryRequirements(vkstate->device, *outBuffer, &memReqs);
 
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(memReqs.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice, memReqs.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(device, &allocInfo, NULL, outMemory) != VK_SUCCESS)
+    if (vkAllocateMemory(vkstate->device, &allocInfo, NULL, outMemory) != VK_SUCCESS)
     {
         printf("Failed to allocate buffer memory\n");
         return 1;
     }
 
-    vkBindBufferMemory(device, *outBuffer, *outMemory, 0);
+    vkBindBufferMemory(vkstate->device, *outBuffer, *outMemory, 0);
     return 0;
 }
 
-void Sol_UploadModel(SolModel *model, SolModelId modelId)
+int Sol_Pipeline_BuildAll(SolVkState *vkstate)
 {
-    SolGpuModel gpuModel = {0};
-    gpuModel.meshCount = model->meshCount;
-    gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
-    memset(gpuModel.meshes, 0, sizeof(SolGpuMesh) * model->meshCount);
+    pipelineConfigs[PIPE_3D_MESH].descLayouts = &vkstate->modelDescLayout;
+    pipelineConfigs[PIPE_2D_TEXT].descLayouts = &vkstate->fontDescLayout;
 
-    for (uint32_t m = 0; m < model->meshCount; m++)
+    for (int i = 0; i < PIPE_COUNT; ++i)
     {
-        SolMesh *src = &model->meshes[m];
-        SolGpuMesh *dst = &gpuModel.meshes[m];
-
-        dst->indexCount = src->indexCount;
-
-        // --- vertex buffer ---
-        VkDeviceSize vertSize = sizeof(SolVertex) * src->vertexCount;
-
-        VkBuffer stagingVB;
-        VkDeviceMemory stagingVBMem;
-        SolCreateBuffer(vertSize,
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        &stagingVB, &stagingVBMem);
-
-        void *vertData;
-        vkMapMemory(device, stagingVBMem, 0, vertSize, 0, &vertData);
-        memcpy(vertData, src->vertices, vertSize);
-        vkUnmapMemory(device, stagingVBMem);
-
-        SolCreateBuffer(vertSize,
-                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        &dst->vertexBuffer, &dst->vertexMemory);
-
-        // --- index buffer ---
-        VkDeviceSize idxSize = sizeof(uint32_t) * src->indexCount;
-
-        VkBuffer stagingIB;
-        VkDeviceMemory stagingIBMem;
-        SolCreateBuffer(idxSize,
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        &stagingIB, &stagingIBMem);
-
-        void *idxData;
-        vkMapMemory(device, stagingIBMem, 0, idxSize, 0, &idxData);
-        memcpy(idxData, src->indices, idxSize);
-        vkUnmapMemory(device, stagingIBMem);
-
-        SolCreateBuffer(idxSize,
-                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        &dst->indexBuffer, &dst->indexMemory);
-
-        // --- copy staging → GPU via command buffer ---
-        VkCommandBufferAllocateInfo allocInfo = {0};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer copyCmd;
-        vkAllocateCommandBuffers(device, &allocInfo, &copyCmd);
-
-        VkCommandBufferBeginInfo beginInfo = {0};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(copyCmd, &beginInfo);
-
-        VkBufferCopy vertCopy = {0, 0, vertSize};
-        vkCmdCopyBuffer(copyCmd, stagingVB, dst->vertexBuffer, 1, &vertCopy);
-
-        VkBufferCopy idxCopy = {0, 0, idxSize};
-        vkCmdCopyBuffer(copyCmd, stagingIB, dst->indexBuffer, 1, &idxCopy);
-
-        vkEndCommandBuffer(copyCmd);
-
-        VkSubmitInfo submitInfo = {0};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &copyCmd;
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphicsQueue);
-
-        vkFreeCommandBuffers(device, commandPool, 1, &copyCmd);
-        vkDestroyBuffer(device, stagingVB, NULL);
-        vkFreeMemory(device, stagingVBMem, NULL);
-        vkDestroyBuffer(device, stagingIB, NULL);
-        vkFreeMemory(device, stagingIBMem, NULL);
+        if (SolVkPipeline(vkstate,
+                          pipelineConfigs[i],
+                          &vkstate->pipeline[i],
+                          &vkstate->pipelineLayout[i]) != 0)
+            return 1;
     }
-
-    printf("Model uploaded to GPU: %d meshes\n", gpuModel.meshCount);
-    gpuModels[modelId] = gpuModel;
-}
-
-static void SolBindPipeline(VkCommandBuffer cmd, int pipeIndex)
-{
-    if (pipeIndex == currentBoundPipeline)
-        return;
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline[pipeIndex]);
-    currentBoundPipeline = pipeIndex;
-}
-
-void Sol_DrawModel(SolModelId handle, vec3 pos, float rotY)
-{
-    // 1. Model Matrix
-    mat4 modelMat;
-    glm_mat4_identity(modelMat);
-    glm_translate(modelMat, pos);
-    glm_rotate_y(modelMat, rotY, modelMat);
-
-    // 2. Combine into MVP (Proj * View * Model)
-    mat4 mvp;
-    glm_mat4_mul(renderCam.proj, renderCam.view, mvp);
-    glm_mat4_mul(mvp, modelMat, mvp);
-
-    VkCommandBuffer cmd = commandBuffers[currentFrame];
-    SolBindPipeline(cmd, PIPE_3D_MESH);
-    vkCmdPushConstants(cmd, pipelineLayout[PIPE_3D_MESH], VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), mvp);
-
-    // 4. Draw each mesh
-    for (uint32_t i = 0; i < gpuModels[handle].meshCount; i++)
-    {
-        SolGpuMesh *mesh = &gpuModels[handle].meshes[i];
-
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->vertexBuffer, offsets);
-        vkCmdBindIndexBuffer(cmd, mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-        // We use indexCount here, not vertexCount
-        vkCmdDrawIndexed(cmd, mesh->indexCount, 1, 0, 0, 0);
-    }
-}
-
-void Sol_Begin_3D()
-{
-    mat4 viewProj;
-    glm_mat4_mul(renderCam.proj, renderCam.view, viewProj);
-
-    vkCmdPushConstants(SolGetCmd(),
-                       pipelineLayout[PIPE_3D_MESH],
-                       VK_SHADER_STAGE_VERTEX_BIT,
-                       0,
-                       sizeof(mat4),
-                       viewProj);
-}
-
-void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance) {
-    VkCommandBuffer cmd = SolGetCmd();
-    
-    SolBindPipeline(cmd, PIPE_3D_MESH);
-    
-    // Bind the SSBO for the CURRENT frame
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                            pipelineLayout[PIPE_3D_MESH], 0, 1, 
-                            &instanceDescSets[currentFrame], 0, NULL);
-
-    SolGpuModel *model = &gpuModels[handle];
-    for (uint32_t m = 0; m < model->meshCount; m++) {
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
-        vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
-    }
-}
-
-void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
-{
-    VkCommandBuffer cmd = commandBuffers[currentFrame];
-    SolBindPipeline(cmd, PIPE_2D_BUTTON);
-
-    struct
-    {
-        mat4 o;
-        vec4 rec;
-        vec4 c;
-        vec4 extras;
-    } push = {
-        .rec = {rect.x, rect.y, rect.w, rect.h},
-        .c = {SolColorF(color.r), SolColorF(color.g), SolColorF(color.b), SolColorF(color.a)},
-        .extras = {thickness, 0, 0, 0},
-    };
-    memcpy(push.o, ortho2d, sizeof(mat4));
-
-    vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
-                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
-
-    vkCmdDraw(cmd, 6, 1, 0, 0);
-}
-
-void Sol_Draw_Batch_Rectangle(BatchedRects *rects)
-{
-    //     if (count == 0 || count > MAX_RECT_INSTANCES)
-    //     return;
-
-    // // 1. Upload all instance data in one memcpy
-    // memcpy(rectInstanceMapped, instances, count * sizeof(SolRectInstance));
-
-    // // 2. Bind pipeline + descriptor set (once)
-    // VkCommandBuffer cmd = commandBuffers[currentFrame];
-    // SolBindPipeline(cmd, PIPE_2D_BUTTON);
-    // vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                         pipelineLayout[PIPE_2D_BUTTON], 0, 1,
-    //                         &rectDescSet, 0, NULL);
-
-    // // 3. Push ortho matrix (shared across all rects)
-    // vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_BUTTON],
-    //                    VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mat4), ortho2d);
-
-    // // 4. ONE draw call — 6 verts per quad, `count` instances
-    // vkCmdDraw(cmd, 6, count, 0, 0);
-}
-
-static VkCommandBuffer SolGetCmd()
-{
-    return commandBuffers[currentFrame];
-}
-
-void Sol_Camera_Update(vec3 pos, vec3 target)
-{
-    // 1. Update vectors
-    glm_vec3_copy(pos, renderCam.position);
-    glm_vec3_copy(target, renderCam.target);
-
-    // 2. View Matrix
-    vec3 up = {0.0f, 1.0f, 0.0f};
-    glm_lookat(renderCam.position, renderCam.target, up, renderCam.view);
-
-    // 3. Projection Matrix
-    float aspect = (float)swapchainExtent.width / (float)swapchainExtent.height;
-    glm_perspective(glm_rad(renderCam.fov), aspect, renderCam.nearClip, renderCam.farClip, renderCam.proj);
-    renderCam.proj[1][1] *= -1;
-}
-
-void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color)
-{
-    // atlas layout constants — match your exported atlas
-    const int COLS = 16;
-    const int ROWS = 6;
-    const float CELL_W = 1.0f / COLS;
-    const float CELL_H = 1.0f / ROWS;
-    const float CHAR_W = size * 0.6f; // aspect ratio of one glyph
-    const float CHAR_H = size;
-
-    VkCommandBuffer cmd = commandBuffers[currentFrame];
-    SolBindPipeline(cmd, PIPE_2D_TEXT);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout[PIPE_2D_TEXT], 0, 1, &fontDescSet, 0, NULL);
-
-    float cursorX = x;
-    for (const char *c = str; *c; c++)
-    {
-        int ascii = (int)(*c) - 32;
-        if (ascii < 0 || ascii >= COLS * ROWS)
-        {
-            cursorX += CHAR_W;
-            continue;
-        }
-
-        int col = ascii % COLS;
-        int row = ascii / COLS;
-        float baseSize = size / 32.0f;
-        SolGlyph *g = &glyphs[(int)*c];
-
-        SolTextPush push;
-        memcpy(push.ortho, ortho2d, sizeof(mat4));
-
-        float pad = 0.2f * baseSize * (224.0f / 32.0f);
-        push.x = cursorX + g->xoffset * size - pad;
-        push.y = y - g->ytop * size - pad;
-        push.w = g->uw * 224.0f * baseSize + pad * 2.0f;
-        push.h = g->vh * 224.0f * baseSize + pad * 2.0f;
-        push.r = SolColorF(color.r);
-        push.g = SolColorF(color.g);
-        push.b = SolColorF(color.b);
-        push.a = SolColorF(color.a);
-        push.u = g->u;
-        push.v = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
-        push.uw = g->uw;
-        push.vh = g->vh;
-        cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
-
-        vkCmdPushConstants(cmd, pipelineLayout[PIPE_2D_TEXT],
-                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SolTextPush), &push);
-        vkCmdDraw(cmd, 6, 1, 0, 0);
-    }
-}
-
-float Sol_MeasureText(const char *str, float size)
-{
-    float width = 0.0f;
-    for (const char *c = str; *c; c++)
-    {
-        int id = (int)*c;
-        if (id < 0 || id >= 128)
-            continue;
-        width += glyphs[id].yadvance * size;
-    }
-    return width;
+    return 0;
 }

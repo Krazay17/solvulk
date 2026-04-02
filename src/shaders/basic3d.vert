@@ -6,13 +6,13 @@ layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
 
-struct InstanceData {
+struct ModelData {
     mat4 modelMatrix;
     vec4 color;
 };
 
-layout(std430, set = 0, binding = 0) readonly buffer InstanceBuffer {
-    InstanceData instances[];
+layout(std430, set = 0, binding = 0) readonly buffer ModelBuffer {
+    ModelData instances[];
 };
 
 layout(push_constant) uniform Scene {

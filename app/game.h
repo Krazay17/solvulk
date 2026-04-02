@@ -1,5 +1,5 @@
 #pragma once
-#include "sol.h"
+#include "sol/sol.h"
 
 void Create_Sol_Game();
 

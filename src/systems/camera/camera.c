@@ -1,7 +1,6 @@
 #include <cglm/struct.h>
 
 #include "sol_core.h"
-#include "render.h"
 
 void Sol_System_Camera_Tick(World *world, double dt, double time)
 {
@@ -29,9 +28,4 @@ void Sol_System_Camera_Tick(World *world, double dt, double time)
             break;
         }
     }
-}
-
-void Sol_Fov_Set(float fov)
-{
-    renderCam.fov = fov;
 }

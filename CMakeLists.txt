@@ -7,23 +7,33 @@ option(HOT_RELOAD "Build for hot reload" OFF)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
+set(SOL_PRIVATE_INCLUDE  
+    "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/src/include"
+)
+
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
+
 file(GLOB_RECURSE SOURCES "src/*.c")
+list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
 
-set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
-set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
-set(SOL_PRIVATE_INCLUDE  
-    "${CMAKE_SOURCE_DIR}/src/core"
-    "${CMAKE_SOURCE_DIR}/src/include"
-    "${CMAKE_SOURCE_DIR}/src/systems"
-    "${CMAKE_SOURCE_DIR}/src/singles"
-    "${CMAKE_SOURCE_DIR}/src/utils"
-    "${CMAKE_SOURCE_DIR}/src/world"
-)
+if(WIN32)
+    file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
+    set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
+    set(PLATFORM_DEFS VK_USE_PLATFORM_WIN32_KHR)
+    list(APPEND PLATFORM_LIBS user32 gdi32)
+else()
+    file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
+    set(RESOURCE_FILE "")
+    set(PLATFORM_DEFS VK_USE_PLATFORM_XLIB_KHR)
+    list(APPEND PLATFORM_LIBS)
+endif()
 
-add_library(solvulk ${SOURCES} ${RESOURCE_FILE})
+add_library(solvulk ${SOURCES} ${RESOURCE_FILE} ${PLATFORM_SOURCES})
+
 if(BUILD_SHARED_LIBS)
     # Tell the header we are in "Shared Mode"
     target_compile_definitions(solvulk PUBLIC SOL_VULK_SHARED)
@@ -40,21 +50,15 @@ target_include_directories(solvulk
         ${Vulkan_INCLUDE_DIRS}
 )
 
-if(WIN32)
-    target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-    target_link_libraries(solvulk PUBLIC
+target_compile_definitions(solvulk PUBLIC ${PLATFORM_DEFS})
+
+target_link_libraries(solvulk
+    PUBLIC 
         Vulkan::Vulkan
         cglm::cglm
-        user32
-        gdi32
-    )
-else()
-    target_compile_definitions(solvulk PRIVATE VK_USE_PLATFORM_XLIB_KHR)
-    target_link_libraries(solvulk PRIVATE
-        Vulkan::Vulkan
-        cglm::cglm
-    )
-endif()
+    PRIVATE
+        ${PLATFORM_LIBS}
+)
 
 set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 
@@ -116,7 +120,9 @@ foreach(SHADER ${SHADERS})
 endforeach()
 
 add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
+
 add_dependencies(solvulk shaders)
+add_dependencies(solapp shaders)
 
 #---- Server App ----
 add_executable(solvulk_server server/main.c)

@@ -1,8 +1,4 @@
-#include <stdatomic.h>
-#include <string.h>
-
 #include "sol_core.h"
-#include "input.h"
 
 #define SOL_KEYCODE_SPACE 32
 #define SOL_KEYCODE_ESCAPE 27

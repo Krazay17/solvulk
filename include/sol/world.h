@@ -1,7 +1,7 @@
 #pragma once
-#include "solmath.h"
-#include "sol_common.h"
-#include "sol_movement.h"
+#include "sol/math.h"
+#include "sol/common.h"
+#include "sol/movement.h"
 
 #define MAX_ENTS 50000
 #define MAX_SYSTEMS 64

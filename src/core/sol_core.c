@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "sol_core.h"
 
 SolState solState = {0};
@@ -61,9 +59,8 @@ static void DebugFPS(double dt)
     Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
 }
 
-void Sol_Shutdown()
+void Sol_Destroy()
 {
-    // PostMessage((HWND)solState.g_hwnd, WM_CLOSE, 0, 0);
 }
 
 void Sol_Window_Resize(float width, float height)

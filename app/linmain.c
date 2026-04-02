@@ -1,4 +1,4 @@
-#include "sol.h"
+#include "sol/sol.h"
 
 int main()
 {

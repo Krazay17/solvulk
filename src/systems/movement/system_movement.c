@@ -1,5 +1,4 @@
 #include <cglm/struct.h>
-#include <math.h>
 
 #include "sol_core.h"
 

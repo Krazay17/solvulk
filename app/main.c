@@ -5,15 +5,9 @@
 #include <stdio.h>
 #include <stdatomic.h>
 
-#include "sol.h"
+#include "sol/sol.h"
 #include "game.h"
 
-// define function pointers for hot reload
-#define SOL_FUNC(ret, name, ...)           \
-    typedef ret (*name##_fn)(__VA_ARGS__); \
-    name##_fn pfn_##name;
-#include "sol_functions.h"
-#undef SOL_FUNC
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -26,6 +20,12 @@ HMODULE current_engine_lib = NULL;
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+// HOT REALOAD
+#define SOL_FUNC(ret, name, ...)           \
+    typedef ret (*name##_fn)(__VA_ARGS__); \
+    name##_fn pfn_##name;
+#include "sol/functions.inc"
+#undef SOL_FUNC
 void load_api(const char *path);
 FILETIME get_last_write_time(const char *path);
 
@@ -216,10 +216,10 @@ void load_api(const char *path)
         return;
     }
 
-// 4. Map the pointers
-#define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
-#include "sol_functions.h"
-#undef SOL_FUNC
+    // 4. Map the pointers
+    #define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
+    #include "sol/functions.inc"
+    #undef SOL_FUNC
 }
 
 FILETIME get_last_write_time(const char *path)

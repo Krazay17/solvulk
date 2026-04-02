@@ -1,5 +1,5 @@
 #include "game.h"
-#include "sol.h"
+#include "sol/sol.h"
 
 typedef struct
 {

@@ -1,9 +1,10 @@
-#include "sol_core.h"
 #include <cglm/cglm.h>
+
+#include "sol_core.h"
 
 void Sol_System_Model_Draw(World *world, double dt, double time)
 {
-    ModelInstanceData *gpuData = (ModelInstanceData *)instanceDataPtr[currentFrame];
+    ModelInstanceData *gpuData = (ModelInstanceData*)Sol_ModelBuffer_Get();
     int required = HAS_XFORM | HAS_MODEL;
 
     // 1. Count per model

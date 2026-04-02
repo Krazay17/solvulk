@@ -1,6 +1,7 @@
-#include "solmath.h"
 #include <cglm/struct.h>
 #include <cglm/cglm.h>
+
+#include "sol/math.h"
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b)
 {
@@ -64,4 +65,22 @@ vec4s Sol_Quat_FromYawPitch(float yaw, float pitch)
         q[2],
         q[3],
     };
+}
+
+
+float FlashAnim(float dt, float value, float speed)
+{
+    speed = (speed > 0.0f) ? speed : 4.0f;
+    value -= dt * speed;
+    if (value < 0.0f)
+        value = 0.0f;
+    return value;
+}
+
+float PulseAnim(float dt, float value, float speed)
+{
+    speed = (speed > 0.0f) ? speed : 4.0f;
+    value += dt * speed;
+    value = (sinf(value) * 0.5f) + 0.5f;
+    return value;
 }

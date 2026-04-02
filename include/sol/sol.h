@@ -4,15 +4,18 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdatomic.h>
+#include <string.h>
+#include <assert.h>
 
-#include "sol_common.h"
-#include "solmath.h"
-#include "world.h"
-#include "loader.h"
-#include "render.h"
-#include "input.h"
-#include "debug.h"
-#include "sol_movement.h"
+#include "sol/platform.h"
+#include "sol/common.h"
+#include "sol/math.h"
+#include "sol/world.h"
+#include "sol/loader.h"
+#include "sol/render.h"
+#include "sol/input.h"
+#include "sol/debug.h"
+#include "sol/movement.h"
 
 #define SOL_VERSION 1.0
 #define MAX_WORLDS 4
@@ -39,17 +42,17 @@ typedef struct
     uint16_t worldCount;
 } SolState;
 
-extern SolState solState;
-
 typedef struct
 {
     const void *data;
     size_t size;
 } SolResource;
 
+extern SolState solState;
+
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
-SOLAPI void Sol_Shutdown();
+SOLAPI void Sol_Destroy();
 
 SOLAPI void Sol_Window_Resize(float width, float height);
 SOLAPI SolBank *Sol_Loader_GetBank(void);

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 
-#include "sol_common.h"
+#include "sol/common.h"
 
 typedef enum
 {

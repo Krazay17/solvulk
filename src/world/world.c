@@ -1,8 +1,4 @@
-#include <assert.h>
-#include <string.h>
-
 #include "sol_core.h"
-#include "world.h"
 
 World *World_Create(void)
 {
@@ -35,11 +31,10 @@ SOLAPI World *World_Create_Default(void)
             Sol_System_Controller_Local_Tick,
             Sol_System_Controller_Ai_Tick,
             Sol_System_Interact_Ui,
-            Sol_System_Button_Update,
             Sol_System_Info_Tick,
             Sol_System_Camera_Tick,
         };
-        int tickSystemCount = 10;
+        int tickSystemCount = 9;
         world->tickCount = tickSystemCount;
         memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
 

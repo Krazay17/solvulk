@@ -5,7 +5,7 @@
 void Sol_System_Model_Draw(World *world, double dt, double time)
 {
     // shader data
-    ModelInstanceData *gpuData = (ModelInstanceData*)Sol_ModelBuffer_Get();
+    ModelSSBO *gpuData = (ModelSSBO *)Sol_ModelBuffer_Get();
 
     int required = HAS_XFORM | HAS_MODEL;
 
@@ -34,34 +34,20 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
             continue;
 
         CompXform *xform = &world->xforms[id];
-        uint32_t handle = world->models[id].gpuHandle;
-        uint32_t slot = cursors[handle]++;
+        uint32_t slot = cursors[world->models[id].gpuHandle]++;
 
-        mat4 m;
-        glm_mat4_identity(m);
-        glm_translate(m, (vec3){xform->pos.x, xform->pos.y, xform->pos.z});
+        ModelSSBO *inst = &gpuData[slot];
 
-        mat4 rotM;
-        versor q = {xform->rot.x, xform->rot.y, xform->rot.z, xform->rot.w};
-        if (glm_quat_norm(q) < 0.1f)
-            glm_quat_identity(q);
-        glm_quat_mat4(q, rotM);
-        glm_mat4_mul(m, rotM, m);
+        memcpy(inst->position, &xform->pos, sizeof(float) * 3);
+        inst->position[3] = xform->scale.x;
 
-        vec3 scale = {1, 1, 1};
-        scale[0] = xform->scale.x ? xform->scale.x : 1.0f;
-        scale[1] = xform->scale.y ? xform->scale.y : 1.0f;
-        scale[2] = xform->scale.z ? xform->scale.z : 1.0f;
-        glm_scale(m, scale);
+        memcpy(inst->rotation, &xform->rot, sizeof(float) * 4);
 
-        memcpy(gpuData[slot].modelMatrix, m, sizeof(mat4));
-
-        gpuData[slot].color[0] = 1.0f;
-        gpuData[slot].color[1] = 1.0f;
-        gpuData[slot].color[2] = 1.0f;
-        gpuData[slot].color[3] = 1.0f;
+        // vec4 whiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
+        // memcpy(inst->color, &whiteColor, sizeof(float) * 4);
+        // memcpy(inst->material, &whiteColor, sizeof(float) * 4);
     }
-    
+
     Sol_Begin_3D();
     for (int b = 0; b < SOL_MODEL_COUNT; b++)
     {

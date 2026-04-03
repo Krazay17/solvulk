@@ -10,6 +10,18 @@ typedef enum
     SOL_MODEL_COUNT,
 } SolModelId;
 
+typedef enum
+{
+    SOL_FONT_ICE,
+    SOL_FONT_COUNT,
+} SolFontId;
+
+typedef enum
+{
+    SOL_TEX_REDSKY,
+    SOL_TEX_COUNT,
+} SolTexId;
+
 typedef struct
 {
     vec3 position;
@@ -53,7 +65,6 @@ typedef struct SolModel
 extern SolCamera renderCam;
 
 int Sol_Init_Vulkan(void *hwnd, void *hInstance);
-void SolBindPipeline(int pipeIndex);
 
 void Sol_Begin_Draw();
 void Sol_Begin_3D();
@@ -63,7 +74,7 @@ void Sol_Render_Resize();
 void Sol_SetOrtho(uint32_t width, uint32_t height);
 void Sol_Camera_Update(vec3 pos, vec3 target);
 
-void Sol_DrawModel(SolModelId handle, vec3 pos, float rotY);
+//void Sol_DrawModel(SolModelId handle, vec3 pos, float rotY);
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 
 void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);

@@ -4,42 +4,42 @@
 #include "sol_core.h"
 #include "render_internal.h"
 
-SolPipelineConfig pipelineConfigs[PIPE_COUNT] = {
-    [PIPE_3D_MESH] = {
-        .vertResource = "ID_SHADER_BASIC3D",
-        .fragResource = "ID_SHADER_BASIC3DFRAG",
-        .depthTest = 1,
-        .alphaBlend = 1,
-        .cullBackface = 1,
-        .pushRangeSize = sizeof(float) * 32,
-        .descLayoutCount = 2,
-        .descLayouts = NULL,
-    },
-    [PIPE_2D_BUTTON] = {
-        .vertResource = "ID_SHADER_BASICRECT",
-        .fragResource = "ID_SHADER_BASICRECTFRAG",
-        .depthTest = 0,
-        .alphaBlend = 1,
-        .cullBackface = 0,
-        .pushRangeSize = sizeof(float) * 32,
-        .descLayoutCount = 0,
-        .descLayouts = NULL,
-    },
-    [PIPE_2D_TEXT] = {
-        .vertResource = "ID_SHADER_BASICTEXT",
-        .fragResource = "ID_SHADER_BASICTEXTFRAG",
-        .depthTest = 0,
-        .alphaBlend = 0,
-        .cullBackface = 0,
-        .pushRangeSize = sizeof(float) * 32,
-        .descLayoutCount = 1,
-        .descLayouts = NULL,
-    },
-};
+// SolPipelineConfig pipelineConfigs[PIPE_COUNT] = {
+//     [PIPE_3D_MESH] = {
+//         .vertResource = "ID_SHADER_BASIC3D",
+//         .fragResource = "ID_SHADER_BASIC3DFRAG",
+//         .depthTest = 1,
+//         .alphaBlend = 1,
+//         .cullBackface = 1,
+//         .pushRangeSize = sizeof(float) * 32,
+//         .descLayoutCount = 2,
+//         .descLayouts = NULL,
+//     },
+//     [PIPE_2D_BUTTON] = {
+//         .vertResource = "ID_SHADER_BASICRECT",
+//         .fragResource = "ID_SHADER_BASICRECTFRAG",
+//         .depthTest = 0,
+//         .alphaBlend = 1,
+//         .cullBackface = 0,
+//         .pushRangeSize = sizeof(float) * 32,
+//         .descLayoutCount = 0,
+//         .descLayouts = NULL,
+//     },
+//     [PIPE_2D_TEXT] = {
+//         .vertResource = "ID_SHADER_BASICTEXT",
+//         .fragResource = "ID_SHADER_BASICTEXTFRAG",
+//         .depthTest = 0,
+//         .alphaBlend = 0,
+//         .cullBackface = 0,
+//         .pushRangeSize = sizeof(float) * 32,
+//         .descLayoutCount = 1,
+//         .descLayouts = NULL,
+//     },
+// };
 
-Bounds ParseBounds(const char *p, const char *end)
+TextBounds ParseBounds(const char *p, const char *end)
 {
-    Bounds bounds = {0};
+    TextBounds bounds = {0};
     const char *open = strchr(p, '{');
     const char *close = open ? strchr(open, '}') : NULL;
     if (!open || !close || open > end)
@@ -61,7 +61,7 @@ Bounds ParseBounds(const char *p, const char *end)
     return bounds;
 }
 
-void Sol_ParseFontMetrics(SolVkState *vkstate, const char *json, float atlasW, float atlasH)
+void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs)
 {
     const char *p = strstr(json, "\"glyphs\":[");
     if (!p)
@@ -104,8 +104,8 @@ void Sol_ParseFontMetrics(SolVkState *vkstate, const char *json, float atlasW, f
         const char *plane = strstr(p, "\"planeBounds\":");
         const char *atlas = strstr(p, "\"atlasBounds\":");
 
-        Bounds pl = plane && plane < end ? ParseBounds(plane, end) : (Bounds){0};
-        Bounds ab = atlas && atlas < end ? ParseBounds(atlas, end) : (Bounds){0};
+        TextBounds pl = plane && plane < end ? ParseBounds(plane, end) : (TextBounds){0};
+        TextBounds ab = atlas && atlas < end ? ParseBounds(atlas, end) : (TextBounds){0};
 
         glyphs[charId].u = ab.l / atlasW;
         glyphs[charId].v = ab.b / atlasH;
@@ -395,219 +395,219 @@ int SolVkSwapchain(SolVkState *vkstate)
     return 0;
 }
 
-int SolVkFontTexture(SolVkState *vkstate)
-{
-    SolResource res = Sol_LoadResource("ID_FONT_ATLAS");
+// int SolVkFontTexture(SolVkState *vkstate)
+// {
+//     SolResource res = Sol_LoadResource("ID_FONT_ATLAS");
 
-    SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
-    if (metrics.data)
-        Sol_ParseFontMetrics(vkstate, (const char *)metrics.data, 224.0f, 224.0f);
+//     SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
+//     if (metrics.data)
+//         Sol_ParseFontMetrics(vkstate, (const char *)metrics.data, 224.0f, 224.0f);
 
-    printf("font atlas load: data=%p size=%zu\n", res.data, res.size);
-    if (!res.data)
-        return 1;
+//     printf("font atlas load: data=%p size=%zu\n", res.data, res.size);
+//     if (!res.data)
+//         return 1;
 
-    // we need to know width/height — hardcode or store in resource
-    uint32_t texW = 224, texH = 224;
+//     // we need to know width/height — hardcode or store in resource
+//     uint32_t texW = 224, texH = 224;
 
-    // --- staging buffer ---
-    VkBuffer staging;
-    VkDeviceMemory stagingMem;
-    SolCreateBuffer(vkstate, res.size,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    &staging, &stagingMem);
+//     // --- staging buffer ---
+//     VkBuffer staging;
+//     VkDeviceMemory stagingMem;
+//     SolCreateBuffer(vkstate, res.size,
+//                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+//                     &staging, &stagingMem);
 
-    void *mapped;
-    vkMapMemory(vkstate->device, stagingMem, 0, res.size, 0, &mapped);
-    memcpy(mapped, res.data, res.size);
-    vkUnmapMemory(vkstate->device, stagingMem);
+//     void *mapped;
+//     vkMapMemory(vkstate->device, stagingMem, 0, res.size, 0, &mapped);
+//     memcpy(mapped, res.data, res.size);
+//     vkUnmapMemory(vkstate->device, stagingMem);
 
-    // --- create image ---
-    VkImageCreateInfo imageInfo = {0};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageInfo.extent.width = texW;
-    imageInfo.extent.height = texH;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkCreateImage(vkstate->device, &imageInfo, NULL, &vkstate->fontImage);
+//     // --- create image ---
+//     VkImageCreateInfo imageInfo = {0};
+//     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+//     imageInfo.imageType = VK_IMAGE_TYPE_2D;
+//     imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+//     imageInfo.extent.width = texW;
+//     imageInfo.extent.height = texH;
+//     imageInfo.extent.depth = 1;
+//     imageInfo.mipLevels = 1;
+//     imageInfo.arrayLayers = 1;
+//     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+//     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+//     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+//     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+//     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//     vkCreateImage(vkstate->device, &imageInfo, NULL, &vkstate->fontImage);
 
-    VkMemoryRequirements memReqs;
-    vkGetImageMemoryRequirements(vkstate->device, vkstate->fontImage, &memReqs);
-    VkMemoryAllocateInfo allocInfo = {0};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memReqs.size;
-    if (SolFindMemoryType(vkstate->physicalDevice,
-                          memReqs.memoryTypeBits,
-                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                          &allocInfo.memoryTypeIndex) != 0)
-        return 1;
-    vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->fontMemory);
-    vkBindImageMemory(vkstate->device, vkstate->fontImage, vkstate->fontMemory, 0);
+//     VkMemoryRequirements memReqs;
+//     vkGetImageMemoryRequirements(vkstate->device, vkstate->fontImage, &memReqs);
+//     VkMemoryAllocateInfo allocInfo = {0};
+//     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+//     allocInfo.allocationSize = memReqs.size;
+//     if (SolFindMemoryType(vkstate->physicalDevice,
+//                           memReqs.memoryTypeBits,
+//                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+//                           &allocInfo.memoryTypeIndex) != 0)
+//         return 1;
+//     vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->fontMemory);
+//     vkBindImageMemory(vkstate->device, vkstate->fontImage, vkstate->fontMemory, 0);
 
-    // --- transition + copy via one-time command buffer ---
-    VkCommandPool transferPool;
-    VkCommandPoolCreateInfo transferPoolInfo = {0};
-    transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    transferPoolInfo.queueFamilyIndex = vkstate->graphicsQueueFamily;
-    transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    vkCreateCommandPool(vkstate->device, &transferPoolInfo, NULL, &transferPool);
+//     // --- transition + copy via one-time command buffer ---
+//     VkCommandPool transferPool;
+//     VkCommandPoolCreateInfo transferPoolInfo = {0};
+//     transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+//     transferPoolInfo.queueFamilyIndex = vkstate->graphicsQueueFamily;
+//     transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+//     vkCreateCommandPool(vkstate->device, &transferPoolInfo, NULL, &transferPool);
 
-    VkCommandBufferAllocateInfo cmdAlloc = {0};
-    cmdAlloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmdAlloc.commandPool = transferPool; // use transferPool not commandPool
-    cmdAlloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cmdAlloc.commandBufferCount = 1;
-    VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(vkstate->device, &cmdAlloc, &cmd);
+//     VkCommandBufferAllocateInfo cmdAlloc = {0};
+//     cmdAlloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+//     cmdAlloc.commandPool = transferPool; // use transferPool not commandPool
+//     cmdAlloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+//     cmdAlloc.commandBufferCount = 1;
+//     VkCommandBuffer cmd;
+//     vkAllocateCommandBuffers(vkstate->device, &cmdAlloc, &cmd);
 
-    VkCommandBufferBeginInfo beginInfo = {0};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cmd, &beginInfo);
+//     VkCommandBufferBeginInfo beginInfo = {0};
+//     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+//     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+//     vkBeginCommandBuffer(cmd, &beginInfo);
 
-    // transition to transfer dst
-    VkImageMemoryBarrier toTransfer = {0};
-    toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toTransfer.image = vkstate->fontImage;
-    toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    toTransfer.subresourceRange.levelCount = 1;
-    toTransfer.subresourceRange.layerCount = 1;
-    toTransfer.srcAccessMask = 0;
-    toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vkCmdPipelineBarrier(cmd,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         0, 0, NULL, 0, NULL, 1, &toTransfer);
+//     // transition to transfer dst
+//     VkImageMemoryBarrier toTransfer = {0};
+//     toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//     toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//     toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+//     toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//     toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//     toTransfer.image = vkstate->fontImage;
+//     toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//     toTransfer.subresourceRange.levelCount = 1;
+//     toTransfer.subresourceRange.layerCount = 1;
+//     toTransfer.srcAccessMask = 0;
+//     toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+//     vkCmdPipelineBarrier(cmd,
+//                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+//                          VK_PIPELINE_STAGE_TRANSFER_BIT,
+//                          0, 0, NULL, 0, NULL, 1, &toTransfer);
 
-    // copy buffer to image
-    VkBufferImageCopy region = {0};
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.layerCount = 1;
-    region.imageExtent.width = texW;
-    region.imageExtent.height = texH;
-    region.imageExtent.depth = 1;
-    vkCmdCopyBufferToImage(cmd, staging, vkstate->fontImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+//     // copy buffer to image
+//     VkBufferImageCopy region = {0};
+//     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//     region.imageSubresource.layerCount = 1;
+//     region.imageExtent.width = texW;
+//     region.imageExtent.height = texH;
+//     region.imageExtent.depth = 1;
+//     vkCmdCopyBufferToImage(cmd, staging, vkstate->fontImage,
+//                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    // transition to shader read
-    VkImageMemoryBarrier toRead = {0};
-    toRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    toRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    toRead.image = vkstate->fontImage;
-    toRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    toRead.subresourceRange.levelCount = 1;
-    toRead.subresourceRange.layerCount = 1;
-    toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    vkCmdPipelineBarrier(cmd,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         0, 0, NULL, 0, NULL, 1, &toRead);
+//     // transition to shader read
+//     VkImageMemoryBarrier toRead = {0};
+//     toRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//     toRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+//     toRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//     toRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//     toRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//     toRead.image = vkstate->fontImage;
+//     toRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//     toRead.subresourceRange.levelCount = 1;
+//     toRead.subresourceRange.layerCount = 1;
+//     toRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+//     toRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+//     vkCmdPipelineBarrier(cmd,
+//                          VK_PIPELINE_STAGE_TRANSFER_BIT,
+//                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+//                          0, 0, NULL, 0, NULL, 1, &toRead);
 
-    vkEndCommandBuffer(cmd);
-    VkSubmitInfo submitInfo = {0};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd;
-    vkQueueSubmit(vkstate->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+//     vkEndCommandBuffer(cmd);
+//     VkSubmitInfo submitInfo = {0};
+//     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+//     submitInfo.commandBufferCount = 1;
+//     submitInfo.pCommandBuffers = &cmd;
+//     vkQueueSubmit(vkstate->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
-    vkQueueWaitIdle(vkstate->graphicsQueue);
-    vkDestroyBuffer(vkstate->device, staging, NULL);
-    vkFreeMemory(vkstate->device, stagingMem, NULL);
-    vkDestroyCommandPool(vkstate->device, transferPool, NULL); // frees cmd implicitly
+//     vkQueueWaitIdle(vkstate->graphicsQueue);
+//     vkDestroyBuffer(vkstate->device, staging, NULL);
+//     vkFreeMemory(vkstate->device, stagingMem, NULL);
+//     vkDestroyCommandPool(vkstate->device, transferPool, NULL); // frees cmd implicitly
 
-    // --- image view ---
-    VkImageViewCreateInfo viewInfo = {0};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = vkstate->fontImage;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.layerCount = 1;
-    vkCreateImageView(vkstate->device, &viewInfo, NULL, &vkstate->fontImageView);
+//     // --- image view ---
+//     VkImageViewCreateInfo viewInfo = {0};
+//     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+//     viewInfo.image = vkstate->fontImage;
+//     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+//     viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+//     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//     viewInfo.subresourceRange.levelCount = 1;
+//     viewInfo.subresourceRange.layerCount = 1;
+//     vkCreateImageView(vkstate->device, &viewInfo, NULL, &vkstate->fontImageView);
 
-    // --- sampler ---
-    VkSamplerCreateInfo samplerInfo = {0};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    vkCreateSampler(vkstate->device, &samplerInfo, NULL, &vkstate->fontSampler);
+//     // --- sampler ---
+//     VkSamplerCreateInfo samplerInfo = {0};
+//     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+//     samplerInfo.magFilter = VK_FILTER_LINEAR;
+//     samplerInfo.minFilter = VK_FILTER_LINEAR;
+//     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+//     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+//     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+//     vkCreateSampler(vkstate->device, &samplerInfo, NULL, &vkstate->fontSampler);
 
-    return 0;
-}
+//     return 0;
+// }
 
-int SolVkFontDescriptors(SolVkState *vkstate, VkDescriptorSetLayout *outlayout)
-{
-    // --- layout ---
-    VkDescriptorSetLayoutBinding binding = {0};
-    binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+// int SolVkFontDescriptors(SolVkState *vkstate, VkDescriptorSetLayout *outlayout)
+// {
+//     // --- layout ---
+//     VkDescriptorSetLayoutBinding binding = {0};
+//     binding.binding = 0;
+//     binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//     binding.descriptorCount = 1;
+//     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &binding;
-    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, outlayout);
+//     VkDescriptorSetLayoutCreateInfo layoutInfo = {0};
+//     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//     layoutInfo.bindingCount = 1;
+//     layoutInfo.pBindings = &binding;
+//     vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, outlayout);
 
-    // --- pool ---
-    VkDescriptorPoolSize poolSize = {0};
-    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = 1;
+//     // --- pool ---
+//     VkDescriptorPoolSize poolSize = {0};
+//     poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//     poolSize.descriptorCount = 1;
 
-    VkDescriptorPoolCreateInfo poolInfo = {0};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.maxSets = 1;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->fontDescPool);
+//     VkDescriptorPoolCreateInfo poolInfo = {0};
+//     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+//     poolInfo.maxSets = 1;
+//     poolInfo.poolSizeCount = 1;
+//     poolInfo.pPoolSizes = &poolSize;
+//     vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->fontDescPool);
 
-    // --- allocate set ---
-    VkDescriptorSetAllocateInfo allocInfo = {0};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vkstate->fontDescPool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &vkstate->fontDescLayout;
-    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->fontDescSet);
+//     // --- allocate set ---
+//     VkDescriptorSetAllocateInfo allocInfo = {0};
+//     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+//     allocInfo.descriptorPool = vkstate->fontDescPool;
+//     allocInfo.descriptorSetCount = 1;
+//     allocInfo.pSetLayouts = &vkstate->fontDescLayout;
+//     vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->fontDescSet);
 
-    // --- write ---
-    VkDescriptorImageInfo imageInfo = {0};
-    imageInfo.sampler = vkstate->fontSampler;
-    imageInfo.imageView = vkstate->fontImageView;
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//     // --- write ---
+//     VkDescriptorImageInfo imageInfo = {0};
+//     imageInfo.sampler = vkstate->fontSampler;
+//     imageInfo.imageView = vkstate->fontImageView;
+//     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkWriteDescriptorSet write = {0};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = vkstate->fontDescSet;
-    write.dstBinding = 0;
-    write.descriptorCount = 1;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.pImageInfo = &imageInfo;
-    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+//     VkWriteDescriptorSet write = {0};
+//     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//     write.dstSet = vkstate->fontDescSet;
+//     write.dstBinding = 0;
+//     write.descriptorCount = 1;
+//     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//     write.pImageInfo = &imageInfo;
+//     vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
 
-    return 0;
-}
+//     return 0;
+// }
 
 int SolVkImageViews(SolVkState *vkstate)
 {
@@ -640,14 +640,15 @@ int SolVkImageViews(SolVkState *vkstate)
     return 0;
 }
 
-int SolVkPipeline(SolVkState *vkstate,
-                  SolPipelineConfig pipeConfig,
-                  VkPipeline *outPipeline,
-                  VkPipelineLayout *outLayout)
+int Sol_BuildPipeline(SolVkState *vkstate,
+                      SolPipelineConfig *config,
+                      VkDescriptorSetLayout *descLayouts,
+                      uint32_t descLayoutCount,
+                      SolPipeline *out)
 {
     // --- load shader bytecode ---
-    SolResource vertRes = Sol_LoadResource(pipeConfig.vertResource);
-    SolResource fragRes = Sol_LoadResource(pipeConfig.fragResource);
+    SolResource vertRes = Sol_LoadResource(config->vertResource);
+    SolResource fragRes = Sol_LoadResource(config->fragResource);
 
     if (!vertRes.data || !fragRes.data)
         return 1;
@@ -728,7 +729,7 @@ int SolVkPipeline(SolVkState *vkstate,
     VkPipelineRasterizationStateCreateInfo rasterizer = {0};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.cullMode = pipeConfig.cullBackface ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
+    rasterizer.cullMode = config->cullBackface ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.lineWidth = 1.0f;
 
@@ -741,7 +742,7 @@ int SolVkPipeline(SolVkState *vkstate,
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                           VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    if (pipeConfig.alphaBlend)
+    if (config->alphaBlend)
     {
         colorBlendAttachment.blendEnable = VK_TRUE;
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -770,31 +771,31 @@ int SolVkPipeline(SolVkState *vkstate,
     VkPushConstantRange pushRange = {0};
     pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     pushRange.offset = 0;
-    pushRange.size = pipeConfig.pushRangeSize;
+    pushRange.size = config->pushRangeSize;
 
     // layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = pipeConfig.descLayoutCount;
-    pipelineLayoutInfo.pSetLayouts = pipeConfig.descLayouts;
-    pipelineLayoutInfo.pushConstantRangeCount = pipeConfig.pushRangeSize > 0 ? 1 : 0;
-    pipelineLayoutInfo.pPushConstantRanges = pipeConfig.pushRangeSize > 0 ? &pushRange : NULL;
-    vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, outLayout);
+    pipelineLayoutInfo.setLayoutCount = descLayoutCount;
+    pipelineLayoutInfo.pSetLayouts = descLayouts;
+    pipelineLayoutInfo.pushConstantRangeCount = config->pushRangeSize > 0 ? 1 : 0;
+    pipelineLayoutInfo.pPushConstantRanges = config->pushRangeSize > 0 ? &pushRange : NULL;
+    vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, &out->layout);
 
     // --- dynamic rendering info (replaces render pass) ---
     VkPipelineRenderingCreateInfo renderingInfo = {0};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachmentFormats = &vkstate->swapchainImageFormat;
-    renderingInfo.depthAttachmentFormat = pipeConfig.depthTest
+    renderingInfo.depthAttachmentFormat = config->depthTest
                                               ? VK_FORMAT_D32_SFLOAT
                                               : VK_FORMAT_UNDEFINED;
 
     // ---- depth stencil ----
     VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = pipeConfig.depthTest ? VK_TRUE : VK_FALSE;
-    depthStencil.depthWriteEnable = pipeConfig.depthTest ? VK_TRUE : VK_FALSE;
+    depthStencil.depthTestEnable = config->depthTest ? VK_TRUE : VK_FALSE;
+    depthStencil.depthWriteEnable = config->depthTest ? VK_TRUE : VK_FALSE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
@@ -813,9 +814,9 @@ int SolVkPipeline(SolVkState *vkstate,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.layout = *outLayout;
+    pipelineInfo.layout = out->layout;
 
-    VkResult result = vkCreateGraphicsPipelines(vkstate->device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, outPipeline);
+    VkResult result = vkCreateGraphicsPipelines(vkstate->device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, &out->pipeline);
     if (result != VK_SUCCESS)
     {
         Sol_MessageBox("Failed to create graphics pipeline", "Error");
@@ -886,87 +887,87 @@ int SolVkSyncObjects(SolVkState *vkstate)
     return 0;
 }
 
-int SolVkSSBO(SolVkState *vkstate)
-{
-    // 1. Create Descriptor Set Layout for the SSBO
-    VkDescriptorSetLayoutBinding binding = {
-        .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
+// int SolVkSSBO(SolVkState *vkstate)
+// {
+//     // 1. Create Descriptor Set Layout for the SSBO
+//     VkDescriptorSetLayoutBinding binding = {
+//         .binding = 0,
+//         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+//         .descriptorCount = 1,
+//         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = 1,
-        .pBindings = &binding};
-    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->modelDescLayout);
+//     VkDescriptorSetLayoutCreateInfo layoutInfo = {
+//         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+//         .bindingCount = 1,
+//         .pBindings = &binding};
+//     vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->modelDescLayout);
 
-    // 2. Create Descriptor Pool
-    VkDescriptorPoolSize poolSize = {
-        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = MAX_FRAMES_IN_FLIGHT};
+//     // 2. Create Descriptor Pool
+//     VkDescriptorPoolSize poolSize = {
+//         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+//         .descriptorCount = MAX_FRAMES_IN_FLIGHT};
 
-    VkDescriptorPoolCreateInfo poolInfo = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets = MAX_FRAMES_IN_FLIGHT,
-        .poolSizeCount = 1,
-        .pPoolSizes = &poolSize};
-    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->modelDescPool);
+//     VkDescriptorPoolCreateInfo poolInfo = {
+//         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+//         .maxSets = MAX_FRAMES_IN_FLIGHT,
+//         .poolSizeCount = 1,
+//         .pPoolSizes = &poolSize};
+//     vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &vkstate->modelDescPool);
 
-    // 3. Allocate and Update Sets for each frame
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        // Create the Buffer for this frame
-        SolCreateBuffer(vkstate,
-                        sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES,
-                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        &vkstate->modelBuffer[i], &vkstate->modelMemory[i]); // Note: Should probably use separate memory handles or offsets
+//     // 3. Allocate and Update Sets for each frame
+//     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+//     {
+//         // Create the Buffer for this frame
+//         SolCreateBuffer(vkstate,
+//                         sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+//                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+//                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+//                         &vkstate->modelBuffer[i], &vkstate->modelMemory[i]); // Note: Should probably use separate memory handles or offsets
 
-        vkMapMemory(vkstate->device, vkstate->modelMemory[i], 0, VK_WHOLE_SIZE, 0, &vkstate->modelDataPtr[i]);
+//         vkMapMemory(vkstate->device, vkstate->modelMemory[i], 0, VK_WHOLE_SIZE, 0, &vkstate->modelDataPtr[i]);
 
-        VkDescriptorSetAllocateInfo allocInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = vkstate->modelDescPool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &vkstate->modelDescLayout};
+//         VkDescriptorSetAllocateInfo allocInfo = {
+//             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+//             .descriptorPool = vkstate->modelDescPool,
+//             .descriptorSetCount = 1,
+//             .pSetLayouts = &vkstate->modelDescLayout};
 
-        // You'll need an array: VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT];
-        vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->modelDescSet[i]);
+//         // You'll need an array: VkDescriptorSet instanceDescSets[MAX_FRAMES_IN_FLIGHT];
+//         vkAllocateDescriptorSets(vkstate->device, &allocInfo, &vkstate->modelDescSet[i]);
 
-        VkDescriptorBufferInfo bufferInfo = {
-            .buffer = vkstate->modelBuffer[i],
-            .offset = 0,
-            .range = sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES};
+//         VkDescriptorBufferInfo bufferInfo = {
+//             .buffer = vkstate->modelBuffer[i],
+//             .offset = 0,
+//             .range = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES};
 
-        VkWriteDescriptorSet write = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = vkstate->modelDescSet[i],
-            .dstBinding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .pBufferInfo = &bufferInfo};
-        vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
-    }
-    return 0;
-}
+//         VkWriteDescriptorSet write = {
+//             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+//             .dstSet = vkstate->modelDescSet[i],
+//             .dstBinding = 0,
+//             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+//             .descriptorCount = 1,
+//             .pBufferInfo = &bufferInfo};
+//         vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+//     }
+//     return 0;
+// }
 
-int SolVkUBO(SolVkState *vkstate)
-{
-    VkDescriptorSetLayoutBinding binding = {
-        .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
+// int SolVkUBO(SolVkState *vkstate)
+// {
+//     VkDescriptorSetLayoutBinding binding = {
+//         .binding = 0,
+//         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//         .descriptorCount = 1,
+//         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = 1,
-        .pBindings = &binding};
-    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->sceneUBOLayout);
+//     VkDescriptorSetLayoutCreateInfo layoutInfo = {
+//         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+//         .bindingCount = 1,
+//         .pBindings = &binding};
+//     vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->sceneUBOLayout);
 
-    return 0;
-}
+//     return 0;
+// }
 
 int SolFindMemoryType(VkPhysicalDevice physicalDevice,
                       uint32_t typeFilter,
@@ -1162,36 +1163,162 @@ int Sol_CreateDescriptorImage(SolVkState *vkstate,
     return 0;
 }
 
-int Sol_Pipeline_BuildAll(SolVkState *vkstate)
+int Sol_UploadImage(SolVkState *vkstate,
+                    const void *pixels,
+                    uint32_t width,
+                    uint32_t height,
+                    VkFormat format,
+                    SolGpuImage *out)
 {
-    SolDescriptorBuffer sceneDesc;
-    Sol_CreateDescriptorBuffer(vkstate, sizeof(SceneUBO),
-                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                               VK_SHADER_STAGE_VERTEX_BIT, &sceneDesc);
+    VkDeviceSize imageSize = width * height * 4; // assumes 4 bytes per pixel
 
-    SolDescriptorBuffer modelDesc;
-    Sol_CreateDescriptorBuffer(vkstate, sizeof(ModelInstanceData),
-                               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                               VK_SHADER_STAGE_VERTEX_BIT, &modelDesc);
+    // 1. Staging buffer
+    VkBuffer staging;
+    VkDeviceMemory stagingMem;
+    if (SolCreateBuffer(vkstate, imageSize,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &staging, &stagingMem) != 0)
+        return 1;
 
-    VkDescriptorSetLayout fontDescLayout;
-    SolVkFontDescriptors(vkstate, &fontDescLayout);
+    void *mapped;
+    vkMapMemory(vkstate->device, stagingMem, 0, imageSize, 0, &mapped);
+    memcpy(mapped, pixels, imageSize);
+    vkUnmapMemory(vkstate->device, stagingMem);
 
-    VkDescriptorSetLayout sceneLayouts[] = {
-        sceneDesc.layout,
-        modelDesc.layout,
+    // 2. Create image
+    VkImageCreateInfo imageInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent = {width, height, 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
+    vkCreateImage(vkstate->device, &imageInfo, NULL, &out->image);
 
-    pipelineConfigs[PIPE_3D_MESH].descLayouts = sceneLayouts;
-    pipelineConfigs[PIPE_2D_TEXT].descLayouts = fontDescLayout;
+    // 3. Allocate and bind memory
+    VkMemoryRequirements memReqs;
+    vkGetImageMemoryRequirements(vkstate->device, out->image, &memReqs);
 
-    for (int i = 0; i < PIPE_COUNT; ++i)
+    uint32_t memIndex;
+    if (SolFindMemoryType(vkstate->physicalDevice, memReqs.memoryTypeBits,
+                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memIndex) != 0)
     {
-        if (SolVkPipeline(vkstate,
-                          pipelineConfigs[i],
-                          &vkstate->pipeline[i],
-                          &vkstate->pipelineLayout[i]) != 0)
-            return 1;
+        vkDestroyImage(vkstate->device, out->image, NULL);
+        vkDestroyBuffer(vkstate->device, staging, NULL);
+        vkFreeMemory(vkstate->device, stagingMem, NULL);
+        return 1;
     }
+
+    VkMemoryAllocateInfo allocInfo = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memReqs.size,
+        .memoryTypeIndex = memIndex,
+    };
+    vkAllocateMemory(vkstate->device, &allocInfo, NULL, &out->memory);
+    vkBindImageMemory(vkstate->device, out->image, out->memory, 0);
+
+    // 4. Transfer via one-time command buffer
+    VkCommandBufferAllocateInfo cmdAlloc = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = vkstate->commandPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+    VkCommandBuffer cmd;
+    vkAllocateCommandBuffers(vkstate->device, &cmdAlloc, &cmd);
+
+    VkCommandBufferBeginInfo beginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    };
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    // Transition: undefined → transfer dst
+    VkImageMemoryBarrier toTransfer = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = out->image,
+        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+    };
+    vkCmdPipelineBarrier(cmd,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         0, 0, NULL, 0, NULL, 1, &toTransfer);
+
+    // Copy buffer → image
+    VkBufferImageCopy region = {
+        .imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+        .imageExtent = {width, height, 1},
+    };
+    vkCmdCopyBufferToImage(cmd, staging, out->image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    // Transition: transfer dst → shader read
+    VkImageMemoryBarrier toRead = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = out->image,
+        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+    };
+    vkCmdPipelineBarrier(cmd,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0, 0, NULL, 0, NULL, 1, &toRead);
+
+    vkEndCommandBuffer(cmd);
+
+    VkSubmitInfo submitInfo = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &cmd,
+    };
+    vkQueueSubmit(vkstate->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(vkstate->graphicsQueue);
+
+    // 5. Cleanup staging
+    vkFreeCommandBuffers(vkstate->device, vkstate->commandPool, 1, &cmd);
+    vkDestroyBuffer(vkstate->device, staging, NULL);
+    vkFreeMemory(vkstate->device, stagingMem, NULL);
+
+    // 6. Image view
+    VkImageViewCreateInfo viewInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = out->image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = format,
+        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+    };
+    vkCreateImageView(vkstate->device, &viewInfo, NULL, &out->view);
+
+    // 7. Sampler
+    VkSamplerCreateInfo samplerInfo = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+    };
+    vkCreateSampler(vkstate->device, &samplerInfo, NULL, &out->sampler);
+
     return 0;
 }
+
+

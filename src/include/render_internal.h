@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan/vulkan.h>
-
 #include "sol/render.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
@@ -8,23 +7,10 @@
 #define MAX_QUEUE_FAMILIES 16
 #define MAX_GPU_MODELS 256
 #define MAX_MODEL_INSTANCES 500000
-#define MAX_BONES 64
 
-typedef enum
-{
-    PIPE_3D_MESH,
-    PIPE_2D_BUTTON,
-    PIPE_2D_TEXT,
-    PIPE_COUNT
-} SolPipelineId;
+// ─── Reusable resource types ─────────────────────────────────────
 
-typedef struct
-{
-    mat4 viewProjection;
-} SceneUBO;
-
-typedef struct
-{
+typedef struct {
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet sets[MAX_FRAMES_IN_FLIGHT];
@@ -33,187 +19,195 @@ typedef struct
     void *mapped[MAX_FRAMES_IN_FLIGHT];
 } SolDescriptorBuffer;
 
-typedef struct
-{
+typedef struct {
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet set;
 } SolDescriptorImage;
 
-typedef struct
-{
-    mat4 modelMatrix;
-    vec4 color;
-    vec4 material;
-} ModelInstanceData;
+typedef struct {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkImageView view;
+    VkSampler sampler;
+} SolGpuImage;
 
-typedef struct
-{
+// ─── GPU model data ──────────────────────────────────────────────
+
+typedef struct {
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexMemory;
     uint32_t indexCount;
-    SolMaterial *material;
+    SolMaterial material;
 } SolGpuMesh;
 
-typedef struct SolGpuModel
-{
+typedef struct {
     SolGpuMesh *meshes;
     uint32_t meshCount;
 } SolGpuModel;
 
-typedef struct
-{
-    const char *vertResource;
-    const char *fragResource;
-    // rasterizer
-    int depthTest;
-    int alphaBlend;
-    int cullBackface;
+// ─── Shader data (matches GLSL layouts) ──────────────────────────
 
-    // push constants
-    uint32_t pushRangeSize;
+typedef struct {
+    mat4 viewProjection;
+    mat4 view;
+    mat4 proj;
+    vec4 cameraPos;
+} SceneUBO;
 
-    VkDescriptorSetLayout *descLayouts;
-    uint32_t descLayoutCount;
-} SolPipelineConfig;
+typedef struct {
+    vec4 position;
+    vec4 rotation;
+    vec4 color;
+    vec4 material;
+} ModelSSBO;
 
-typedef struct
-{
-    float l, b, r, t;
-} Bounds;
-typedef struct
-{
-    float u, v, uw, vh; // UV coords in 0-1 space
+typedef struct {
+    mat4 ortho;
+    float x, y, w, h;
+    float u, v, uw, vh;
+    float r, g, b, a;
+} SolTextPush;
+
+// ─── Font data ───────────────────────────────────────────────────
+
+typedef struct {
+    float u, v, uw, vh;
     float xoffset;
     float ytop;
     float yoffset;
     float yadvance;
 } SolGlyph;
-typedef struct
-{
-    mat4 ortho;
-    float x, y, w, h;   // quad position in screen space
-    float u, v, uw, vh; // UV rect in atlas
-    float r, g, b, a;   // color
-} SolTextPush;
 
-struct SolVkState
-{
-    uint32_t currentFrame;
-    VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
-    VkQueue graphicsQueue;
-    uint32_t currentImageIndex;
-    uint32_t currentBoundPipeline;
+typedef struct {
+    float l, b, r, t;
+} TextBounds;
 
-    SolGpuModel gpuModels[MAX_GPU_MODELS];
+// ─── Pipeline + resource groupings ───────────────────────────────
 
-    VkPipeline pipeline[PIPE_COUNT];
-    VkPipelineLayout pipelineLayout[PIPE_COUNT];
+typedef struct {
+    VkPipeline pipeline;
+    VkPipelineLayout layout;
+} SolPipeline;
 
-    // view
-    VkBuffer sceneUBO[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory sceneUBOMemory[MAX_FRAMES_IN_FLIGHT];
-    VkDescriptorSetLayout sceneUBOLayout;
-    VkDescriptorSet sceneUBODescSet[MAX_FRAMES_IN_FLIGHT];
-    void *sceneUBOPtr[MAX_FRAMES_IN_FLIGHT];
+typedef struct {
+    SolPipeline pipe;
+    SolDescriptorBuffer sceneUBO;
+    SolDescriptorBuffer modelSSBO;
+} SolPipe3D;
 
-    // model
-    VkBuffer modelBuffer[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory modelMemory[MAX_FRAMES_IN_FLIGHT];
-    VkDescriptorSetLayout modelDescLayout;
-    VkDescriptorPool modelDescPool;
-    VkDescriptorSet modelDescSet[MAX_FRAMES_IN_FLIGHT];
-    void *modelDataPtr[MAX_FRAMES_IN_FLIGHT];
+typedef struct {
+    SolPipeline pipe;
+} SolPipe2DRect;
 
+typedef struct {
+    SolPipeline pipe;
+    SolGpuImage fontAtlas;
+    SolDescriptorImage fontDesc;
+    SolGlyph glyphs[128];
+} SolPipeText;
+
+// ─── Pipeline build configs ──────────────────────────────────────
+
+typedef struct {
+    const char *vertResource;
+    const char *fragResource;
+    int depthTest;
+    int alphaBlend;
+    int cullBackface;
+    uint32_t pushRangeSize;
+    VkShaderStageFlags pushStageFlags;
+} SolPipelineConfig;
+
+// ─── Vulkan plumbing (exists once) ───────────────────────────────
+
+struct SolVkState {
     VkInstance instance;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
+    VkQueue graphicsQueue;
+    uint32_t graphicsQueueFamily;
+    VkCommandPool commandPool;
 
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
-
-    uint32_t graphicsQueueFamily;
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
     VkImage swapchainImages[8];
-    uint32_t swapchainImageCount;
     VkImageView swapchainImageViews[8];
-    VkCommandPool commandPool;
-    VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
+    uint32_t swapchainImageCount;
 
     VkImage depthImage;
     VkDeviceMemory depthMemory;
     VkImageView depthImageView;
 
-    // font
-    VkImage fontImage;
-    VkDeviceMemory fontMemory;
-    VkImageView fontImageView;
-    VkSampler fontSampler;
-    VkDescriptorSetLayout fontDescLayout;
-    VkDescriptorPool fontDescPool;
-    VkDescriptorSet fontDescSet;
+    uint32_t currentFrame;
+    uint32_t currentImageIndex;
+    VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
 };
 
-extern SolPipelineConfig pipelineConfigs[PIPE_COUNT];
-extern SolGlyph glyphs[128];
-extern float solAspectRatio;
+// ─── Vulkan init functions ───────────────────────────────────────
 
-VkCommandBuffer Sol_CommandBuffer();
-VkResult SolVkInstance(SolVkState *vkstate);
-int SolVkSurface(SolVkState *vkstate, HWND hwnd, HINSTANCE hInstance);
-int SolVkPhysicalDevice(SolVkState *vkstate);
-int SolVkDevice(SolVkState *vkstate);
-int SolVkSwapchain(SolVkState *vkstate);
-int SolVkImageViews(SolVkState *vkstate);
-int SolVkFontTexture(SolVkState *vkstate);
-int SolVkSSBO(SolVkState *vkstate);
-int SolVkUBO(SolVkState *vkstate);
-int SolVkPipeline(SolVkState *vkstate,
-                  SolPipelineConfig pipeConfig,
-                  VkPipeline *outPipeline,
-                  VkPipelineLayout *outLayout);
-int SolVkCommandPool(SolVkState *vkstate);
-int SolVkSyncObjects(SolVkState *vkstate);
-int SolVkDepthResources(SolVkState *vkstate);
+VkResult SolVkInstance(SolVkState *vk);
+int SolVkSurface(SolVkState *vk, HWND hwnd, HINSTANCE hInstance);
+int SolVkPhysicalDevice(SolVkState *vk);
+int SolVkDevice(SolVkState *vk);
+int SolVkSwapchain(SolVkState *vk);
+int SolVkImageViews(SolVkState *vk);
+int SolVkDepthResources(SolVkState *vk);
+int SolVkCommandPool(SolVkState *vk);
+int SolVkSyncObjects(SolVkState *vk);
 
-int SolFindMemoryType(
-    VkPhysicalDevice physicalDevice,
-    uint32_t typeFilter,
-    VkMemoryPropertyFlags properties,
-    uint32_t *outIndex);
+// ─── Resource creation helpers ───────────────────────────────────
 
-int SolCreateBuffer(
-    SolVkState *vkstate,
-    VkDeviceSize size,
-    VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags properties,
-    VkBuffer *outBuffer,
-    VkDeviceMemory *outMemory);
+int SolFindMemoryType(VkPhysicalDevice physicalDevice,
+                      uint32_t typeFilter,
+                      VkMemoryPropertyFlags properties,
+                      uint32_t *outIndex);
 
-int Sol_CreateDescriptorBuffer(
-    SolVkState *vkstate,
-    VkDeviceSize size,             // size of data in buffer
-    VkDescriptorType type,         // UNIFORM_BUFFER or STORAGE_BUFFER
-    VkShaderStageFlags stageFlags, // VERTEX, FRAGMENT, or both
-    SolDescriptorBuffer *out);
+int SolCreateBuffer(SolVkState *vk,
+                    VkDeviceSize size,
+                    VkBufferUsageFlags usage,
+                    VkMemoryPropertyFlags properties,
+                    VkBuffer *outBuffer,
+                    VkDeviceMemory *outMemory);
 
-int Sol_CreateDescriptorImage(
-    SolVkState *vkstate,
-    VkImageView imageView,
-    VkSampler sampler,
-    VkShaderStageFlags stageFlags,
-    SolDescriptorImage *out);
+int Sol_CreateDescriptorBuffer(SolVkState *vk,
+                               VkDeviceSize size,
+                               VkDescriptorType type,
+                               VkShaderStageFlags stageFlags,
+                               SolDescriptorBuffer *out);
 
-int Sol_Pipeline_BuildAll(SolVkState *vkstate);
+int Sol_CreateDescriptorImage(SolVkState *vk,
+                              VkImageView imageView,
+                              VkSampler sampler,
+                              VkShaderStageFlags stageFlags,
+                              SolDescriptorImage *out);
 
-int SolVkFontDescriptors(SolVkState *vkstate, VkDescriptorSetLayout *outlayout);
-Bounds ParseBounds(const char *p, const char *end);
-void Sol_ParseFontMetrics(SolVkState *vkstate, const char *json, float atlasW, float atlasH);
+int Sol_UploadImage(SolVkState *vkstate,
+                    const void *pixels,
+                    uint32_t width,
+                    uint32_t height,
+                    VkFormat format,
+                    SolGpuImage *out);
 
+int Sol_BuildPipeline(SolVkState *vk,
+                      SolPipelineConfig *config,
+                      VkDescriptorSetLayout *descLayouts,
+                      uint32_t descLayoutCount,
+                      SolPipeline *out);
+
+// ─── Render API (internal) ───────────────────────────────────────
+
+VkCommandBuffer Sol_CommandBuffer(void);
+void SolBindPipeline(VkCommandBuffer cmd, VkPipeline pipeline);
 void Sol_UploadModel(SolModel *model, SolModelId modelId);
-void *Sol_ModelBuffer_Get();
+void *Sol_ModelBuffer_Get(void);
+void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
+TextBounds ParseBounds(const char *p, const char *end);
+int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate);

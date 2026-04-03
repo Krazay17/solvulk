@@ -13,7 +13,13 @@ SolCamera renderCam = {
     .farClip = 5000.0f,
 };
 mat4 ortho2d;
-SolGlyph glyphs[128];
+
+static SolPipe3D pipe3D;
+static SolPipe2DRect pipeRect;
+static SolPipeText pipeText;
+static SolGpuModel gpuModels[MAX_GPU_MODELS];
+
+static VkPipeline currentBoundPipeline = VK_NULL_HANDLE;
 
 int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 {
@@ -33,18 +39,11 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
         return 7;
     if (SolVkCommandPool(&solvkstate) != 0)
         return 8;
-    if (SolVkFontTexture(&solvkstate) != 0)
-        return 9;
-    // if (SolVkFontDescriptors(&solvkstate) != 0)
-    //     return 10;
-    // if (SolVkSSBO(&solvkstate) != 0)
-    //     return 12;
-        
-    if (Sol_Pipeline_BuildAll(&solvkstate) != 0)
-        return 13;
 
+    if (Sol_Pipeline_BuildAllDefault(&solvkstate) != 0)
+        return 9;
     if (SolVkSyncObjects(&solvkstate) != 0)
-        return 14;
+        return 10;
 
     uint32_t width = solvkstate.swapchainExtent.width;
     uint32_t height = solvkstate.swapchainExtent.height;
@@ -59,12 +58,12 @@ VkCommandBuffer Sol_CommandBuffer()
     return solvkstate.commandBuffers[solvkstate.currentFrame];
 }
 
-void SolBindPipeline(int pipeIndex)
+void SolBindPipeline(VkCommandBuffer cmd, VkPipeline pipeline)
 {
-    if (pipeIndex == solvkstate.currentBoundPipeline)
+    if (pipeline == currentBoundPipeline)
         return;
-    vkCmdBindPipeline(Sol_CommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, solvkstate.pipeline[pipeIndex]);
-    solvkstate.currentBoundPipeline = pipeIndex;
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    currentBoundPipeline = pipeline;
 }
 
 static float SolColorF(uint8_t c) { return c / 255.0f; }
@@ -117,10 +116,90 @@ void Sol_Camera_Update(vec3 pos, vec3 target)
     renderCam.proj[1][1] *= -1;
 }
 
+int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
+{
+    // ─── Text Pipeline ──────────────────────────────────────────
+    SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
+    if (metrics.data)
+        Sol_ParseFontMetrics((const char *)metrics.data, 224.0f, 224.0f, pipeText.glyphs);
+
+    SolResource fontRes = Sol_LoadResource("ID_FONT_ATLAS");
+    if (!fontRes.data)
+        return 1;
+
+    if (Sol_UploadImage(vkstate, fontRes.data, 224, 224,
+                        VK_FORMAT_R8G8B8A8_UNORM, &pipeText.fontAtlas) != 0)
+        return 1;
+
+    if (Sol_CreateDescriptorImage(vkstate, pipeText.fontAtlas.view, pipeText.fontAtlas.sampler,
+                                  VK_SHADER_STAGE_FRAGMENT_BIT, &pipeText.fontDesc) != 0)
+        return 1;
+
+    SolPipelineConfig textConfig = {
+        .vertResource = "ID_SHADER_BASICTEXT",
+        .fragResource = "ID_SHADER_BASICTEXTFRAG",
+        .depthTest = 0,
+        .alphaBlend = 0,
+        .cullBackface = 0,
+        .pushRangeSize = sizeof(SolTextPush),
+        .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+    };
+
+    if (Sol_BuildPipeline(vkstate, &textConfig, &pipeText.fontDesc.layout, 1, &pipeText.pipe) != 0)
+        return 1;
+
+    // ─── 3D Mesh Pipeline ───────────────────────────────────────
+    if (Sol_CreateDescriptorBuffer(vkstate, sizeof(SceneUBO),
+                                   VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                   &pipe3D.sceneUBO) != 0)
+        return 1;
+
+    if (Sol_CreateDescriptorBuffer(vkstate, sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+                                   VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                   VK_SHADER_STAGE_VERTEX_BIT,
+                                   &pipe3D.modelSSBO) != 0)
+        return 1;
+
+    VkDescriptorSetLayout meshLayouts[] = {
+        pipe3D.sceneUBO.layout,
+        pipe3D.modelSSBO.layout,
+    };
+
+    SolPipelineConfig meshConfig = {
+        .vertResource = "ID_SHADER_BASIC3D",
+        .fragResource = "ID_SHADER_BASIC3DFRAG",
+        .depthTest = 1,
+        .alphaBlend = 1,
+        .cullBackface = 0,
+        .pushRangeSize = sizeof(SolMaterial),
+        .pushStageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
+
+    if (Sol_BuildPipeline(vkstate, &meshConfig, meshLayouts, 2, &pipe3D.pipe) != 0)
+        return 1;
+
+    // ─── 2D Rect Pipeline ───────────────────────────────────────
+    SolPipelineConfig rectConfig = {
+        .vertResource = "ID_SHADER_BASICRECT",
+        .fragResource = "ID_SHADER_BASICRECTFRAG",
+        .depthTest = 0,
+        .alphaBlend = 1,
+        .cullBackface = 0,
+        .pushRangeSize = sizeof(float) * 32,
+        .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+    };
+
+    if (Sol_BuildPipeline(vkstate, &rectConfig, NULL, 0, &pipeRect.pipe) != 0)
+        return 1;
+
+    return 0;
+}
+
 void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 {
     VkCommandBuffer cmd = Sol_CommandBuffer();
-    SolBindPipeline(PIPE_2D_BUTTON);
+    SolBindPipeline(cmd, pipeRect.pipe.pipeline);
 
     struct
     {
@@ -135,7 +214,7 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
     };
     memcpy(push.o, ortho2d, sizeof(mat4));
 
-    vkCmdPushConstants(cmd, solvkstate.pipelineLayout[PIPE_2D_BUTTON],
+    vkCmdPushConstants(cmd, pipeRect.pipe.layout,
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
 
     vkCmdDraw(cmd, 6, 1, 0, 0);
@@ -143,36 +222,42 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 
 void Sol_Begin_3D()
 {
-    mat4 viewProj;
-    glm_mat4_mul(renderCam.proj, renderCam.view, viewProj);
+    SceneUBO *ubo = (SceneUBO *)pipe3D.sceneUBO.mapped[solvkstate.currentFrame];
+    glm_mat4_mul(renderCam.proj, renderCam.view, ubo->viewProjection);
+    memcpy(ubo->view, renderCam.view, sizeof(mat4));
+    memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
+    memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
 
-    vkCmdPushConstants(Sol_CommandBuffer(),
-                       solvkstate.pipelineLayout[PIPE_3D_MESH],
-                       VK_SHADER_STAGE_VERTEX_BIT,
-                       0,
-                       sizeof(mat4),
-                       viewProj);
+    // vkCmdPushConstants(Sol_CommandBuffer(),
+    //                    solvkstate.pipelineLayout[PIPE_3D_MESH],
+    //                    VK_SHADER_STAGE_VERTEX_BIT,
+    //                    0,
+    //                    sizeof(mat4),
+    //                    viewProj);
 }
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Sol_CommandBuffer();
+    SolBindPipeline(cmd, pipe3D.pipe.pipeline);
 
-    SolBindPipeline(PIPE_3D_MESH);
-
+    VkDescriptorSet sets[2] = {
+        pipe3D.sceneUBO.sets[solvkstate.currentFrame],
+        pipe3D.modelSSBO.sets[solvkstate.currentFrame]};
     // Bind the SSBO for the CURRENT frame
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            solvkstate.pipelineLayout[PIPE_3D_MESH], 0, 1,
-                            &solvkstate.modelDescSet[solvkstate.currentFrame], 0, NULL);
+                            pipe3D.pipe.layout, 0, 2,
+                            sets, 0, NULL);
 
-    SolGpuModel *model = &solvkstate.gpuModels[handle];
+    SolGpuModel *model = &gpuModels[handle];
     for (uint32_t m = 0; m < model->meshCount; m++)
     {
+        vkCmdPushConstants(cmd, pipe3D.pipe.layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                           0, sizeof(SolMaterial), &model->meshes[m].material);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
-        //vkCmdPushConstants(cmd, solvkstate.pipelineLayout[PIPE_3D_MESH], 0, )
     }
 }
 
@@ -187,9 +272,10 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
     const float CHAR_H = size;
 
     VkCommandBuffer cmd = Sol_CommandBuffer();
-    SolBindPipeline(PIPE_2D_TEXT);
+    SolBindPipeline(cmd, pipeText.pipe.pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            solvkstate.pipelineLayout[PIPE_2D_TEXT], 0, 1, &solvkstate.fontDescSet, 0, NULL);
+                            pipeText.pipe.layout, 0, 1,
+                            &pipeText.fontDesc.set, 0, NULL);
 
     float cursorX = x;
     for (const char *c = str; *c; c++)
@@ -204,7 +290,7 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
         int col = ascii % COLS;
         int row = ascii / COLS;
         float baseSize = size / 32.0f;
-        SolGlyph *g = &glyphs[(int)*c];
+        SolGlyph *g = &pipeText.glyphs[(int)*c];
 
         SolTextPush push;
         memcpy(push.ortho, ortho2d, sizeof(mat4));
@@ -224,7 +310,7 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
         push.vh = g->vh;
         cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
 
-        vkCmdPushConstants(cmd, solvkstate.pipelineLayout[PIPE_2D_TEXT],
+        vkCmdPushConstants(cmd, pipeText.pipe.layout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SolTextPush), &push);
         vkCmdDraw(cmd, 6, 1, 0, 0);
     }
@@ -238,15 +324,14 @@ float Sol_MeasureText(const char *str, float size)
         int id = (int)*c;
         if (id < 0 || id >= 128)
             continue;
-        width += glyphs[id].yadvance * size;
+        width += pipeText.glyphs[id].yadvance * size;
     }
     return width;
 }
 
-
 void Sol_Begin_Draw()
 {
-    solvkstate.currentBoundPipeline = -1;
+    // solvkstate.currentBoundPipeline = -1;
     vkWaitForFences(solvkstate.device, 1, &solvkstate.inFlightFences[solvkstate.currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(solvkstate.device, 1, &solvkstate.inFlightFences[solvkstate.currentFrame]);
 
@@ -395,18 +480,20 @@ void Sol_End_Draw()
 void Sol_UploadModel(SolModel *model, SolModelId modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
-    if (solvkstate.gpuModels[modelId].meshes != NULL) {
+    if (gpuModels[modelId].meshes != NULL)
+    {
         // You should eventually implement a Sol_FreeGpuModel function here
-        free(solvkstate.gpuModels[modelId].meshes);
+        free(gpuModels[modelId].meshes);
     }
 
     SolGpuModel gpuModel = {0};
     gpuModel.meshCount = model->meshCount;
     gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
-    
+
     // 2. Calculate total memory needed for a single staging allocation
     VkDeviceSize totalSize = 0;
-    for (uint32_t m = 0; m < model->meshCount; m++) {
+    for (uint32_t m = 0; m < model->meshCount; m++)
+    {
         totalSize += (sizeof(SolVertex) * model->meshes[m].vertexCount);
         totalSize += (sizeof(uint32_t) * model->meshes[m].indexCount);
     }
@@ -414,23 +501,24 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     // 3. Create a single staging buffer for all data
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
-    SolCreateBuffer(&solvkstate,totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    SolCreateBuffer(&solvkstate, totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                     &stagingBuffer, &stagingMemory);
 
     // 4. Map once and copy everything
     void *data;
     vkMapMemory(solvkstate.device, stagingMemory, 0, totalSize, 0, &data);
-    
+
     VkDeviceSize currentOffset = 0;
-    for (uint32_t m = 0; m < model->meshCount; m++) {
+    for (uint32_t m = 0; m < model->meshCount; m++)
+    {
         SolMesh *src = &model->meshes[m];
         VkDeviceSize vSize = sizeof(SolVertex) * src->vertexCount;
         VkDeviceSize iSize = sizeof(uint32_t) * src->indexCount;
 
-        memcpy((uint8_t*)data + currentOffset, src->vertices, vSize);
+        memcpy((uint8_t *)data + currentOffset, src->vertices, vSize);
         currentOffset += vSize;
-        memcpy((uint8_t*)data + currentOffset, src->indices, iSize);
+        memcpy((uint8_t *)data + currentOffset, src->indices, iSize);
         currentOffset += iSize;
     }
     vkUnmapMemory(solvkstate.device, stagingMemory);
@@ -440,39 +528,39 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandPool = solvkstate.commandPool,
-        .commandBufferCount = 1
-    };
+        .commandBufferCount = 1};
     VkCommandBuffer copyCmd;
     vkAllocateCommandBuffers(solvkstate.device, &allocInfo, &copyCmd);
 
     VkCommandBufferBeginInfo beginInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-    };
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT};
     vkBeginCommandBuffer(copyCmd, &beginInfo);
 
     // 6. Create GPU buffers and record copy commands
     currentOffset = 0;
-    for (uint32_t m = 0; m < model->meshCount; m++) {
+    for (uint32_t m = 0; m < model->meshCount; m++)
+    {
         SolMesh *src = &model->meshes[m];
         SolGpuMesh *dst = &gpuModel.meshes[m];
         dst->indexCount = src->indexCount;
 
         VkDeviceSize vSize = sizeof(SolVertex) * src->vertexCount;
         VkDeviceSize iSize = sizeof(uint32_t) * src->indexCount;
+        dst->material = src->material;
 
         // Create Device Local Buffers
-        SolCreateBuffer(&solvkstate,vSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        SolCreateBuffer(&solvkstate, vSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &dst->vertexBuffer, &dst->vertexMemory);
-        SolCreateBuffer(&solvkstate,iSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        SolCreateBuffer(&solvkstate, iSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &dst->indexBuffer, &dst->indexMemory);
 
         // Record Copies
-        VkBufferCopy vCopy = { .srcOffset = currentOffset, .dstOffset = 0, .size = vSize };
+        VkBufferCopy vCopy = {.srcOffset = currentOffset, .dstOffset = 0, .size = vSize};
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->vertexBuffer, 1, &vCopy);
         currentOffset += vSize;
 
-        VkBufferCopy iCopy = { .srcOffset = currentOffset, .dstOffset = 0, .size = iSize };
+        VkBufferCopy iCopy = {.srcOffset = currentOffset, .dstOffset = 0, .size = iSize};
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->indexBuffer, 1, &iCopy);
         currentOffset += iSize;
     }
@@ -483,8 +571,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     VkSubmitInfo submitInfo = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
-        .pCommandBuffers = &copyCmd
-    };
+        .pCommandBuffers = &copyCmd};
     vkQueueSubmit(solvkstate.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(solvkstate.graphicsQueue);
 
@@ -493,11 +580,11 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkDestroyBuffer(solvkstate.device, stagingBuffer, NULL);
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
-    solvkstate.gpuModels[modelId] = gpuModel;
+    gpuModels[modelId] = gpuModel;
     printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.meshCount);
 }
 
 void *Sol_ModelBuffer_Get()
 {
-    return solvkstate.modelDataPtr[solvkstate.currentFrame];
+    return pipe3D.modelSSBO.mapped[solvkstate.currentFrame];
 }

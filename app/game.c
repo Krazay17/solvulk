@@ -25,7 +25,7 @@ void Create_Sol_Game()
     Entity_Add_Interact(menu, button, (CompInteractable){.callback = QuitApp});
 
     int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
-    Entity_Add_Interact(menu, button2, (CompInteractable){.callback = MakeAWizard, .callbackData = game, .onHold=true});
+    Entity_Add_Interact(menu, button2, (CompInteractable){.callback = MakeAWizard, .callbackData = game, .onHold = true});
 
     int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 0, 0});
     Entity_Add_Controller_Local(game, player3d, (CompController){0});
@@ -42,6 +42,9 @@ void Create_Sol_Game()
     int floor2 = Entity_Create(game);
     Entity_Add_Xform(game, floor2, (CompXform){.pos = (vec3s){0, -25, 0}, .scale = (vec3s){1, 1, 1}});
     Entity_Add_Model(game, floor2, (CompModel){.gpuHandle = SOL_MODEL_WORLD0});
+
+    // for (int i = 0; i < 1000; i++)
+    //     MakeAWizard(game);
 }
 
 void MakeAWizard(void *data)

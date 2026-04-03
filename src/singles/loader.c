@@ -121,22 +121,22 @@ SolModel Sol_LoadModel(const char *resourceName)
         dstMesh->material.metallic = 0.0f;
         dstMesh->material.roughness = 1.0f;
 
-        // if (prim->material)
-        // {
-        //     cgltf_material *srcMat = prim->material;
+        if (prim->material)
+        {
+            cgltf_material *srcMat = prim->material;
 
-        //     if (srcMat->has_pbr_metallic_roughness)
-        //     {
-        //         cgltf_pbr_metallic_roughness *pbr = &srcMat->has_pbr_metallic_roughness;
+            if (srcMat->has_pbr_metallic_roughness)
+            {
+                cgltf_pbr_metallic_roughness *pbr = &srcMat->pbr_metallic_roughness;
 
-        //         dstMesh->material.baseColor[0] = pbr->base_color_factor[0];
-        //         dstMesh->material.baseColor[1] = pbr->base_color_factor[1];
-        //         dstMesh->material.baseColor[2] = pbr->base_color_factor[2];
-        //         dstMesh->material.baseColor[3] = pbr->base_color_factor[3];
-        //         dstMesh->material.metallic = pbr->metallic_factor;
-        //         dstMesh->material.roughness = pbr->roughness_factor;
-        //     }
-        // }
+                dstMesh->material.baseColor[0] = pbr->base_color_factor[0];
+                dstMesh->material.baseColor[1] = pbr->base_color_factor[1];
+                dstMesh->material.baseColor[2] = pbr->base_color_factor[2];
+                dstMesh->material.baseColor[3] = pbr->base_color_factor[3];
+                dstMesh->material.metallic = pbr->metallic_factor;
+                dstMesh->material.roughness = pbr->roughness_factor;
+            }
+        }
 
         // --- read indices ---
         if (prim->indices)

@@ -35,12 +35,11 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
         return 8;
     if (SolVkFontTexture(&solvkstate) != 0)
         return 9;
-    if (SolVkFontDescriptors(&solvkstate) != 0)
-        return 10;
-    if (SolVkSSBO(&solvkstate) != 0)
-        return 12;
+    // if (SolVkFontDescriptors(&solvkstate) != 0)
+    //     return 10;
+    // if (SolVkSSBO(&solvkstate) != 0)
+    //     return 12;
         
-
     if (Sol_Pipeline_BuildAll(&solvkstate) != 0)
         return 13;
 
@@ -49,9 +48,9 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 
     uint32_t width = solvkstate.swapchainExtent.width;
     uint32_t height = solvkstate.swapchainExtent.height;
+    solAspectRatio = (float)width / (float)height;
     Sol_SetOrtho(width, height);
 
-    solAspectRatio = (float)width / (float)height;
     return 0;
 }
 
@@ -173,6 +172,7 @@ void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
+        //vkCmdPushConstants(cmd, solvkstate.pipelineLayout[PIPE_3D_MESH], 0, )
     }
 }
 

@@ -1,8 +1,9 @@
 #include "sol_core.h"
 
-#define JUMP_VEL 11.0f
+#define JUMP_VEL 9.0f
 #define JUMP_ALPHAMOD 1.66f
-#define JUMP_TIMER 0.13f
+#define JUMP_TIMER 0.1f
+#define JUMP_GROUND_COOLDOWN 0.1f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
@@ -30,7 +31,7 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id)
 {
     CompBody *body = &world->bodies[id];
 
-    return body->grounded > 0.1f;
+    return body->grounded > JUMP_GROUND_COOLDOWN;
 }
 
 bool Sol_Movement_Jump_CanExit(World *world, int id)

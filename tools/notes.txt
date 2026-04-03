@@ -111,3 +111,8 @@ static void Size(float width, float height)
 World *menu = Sol_GetMenu();
 menu->active = !menu->active;
 worlds[0]->active ^= 1;
+
+SolCreateBuffer gives you the memory. 
+Descriptors tell the shader where that memory is. 
+That's what Sol_CreateDescriptorBuffer does — it calls SolCreateBuffer to get the memory, 
+then creates a descriptor that points the shader to it.

@@ -36,6 +36,8 @@ void Sol_Movement_Dash_Enter(World *world, int id)
     if (glms_vec3_norm(movement->wishdir) > 0)
         dashdir = movement->wishdir;
 
+    dashdir.y = 0;
+    dashdir = glms_vec3_normalize(dashdir);
     movement->lockdir = dashdir;
     movement->stateTimer = 0;
 }

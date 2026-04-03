@@ -12,8 +12,8 @@ SolPipelineConfig pipelineConfigs[PIPE_COUNT] = {
         .alphaBlend = 1,
         .cullBackface = 1,
         .pushRangeSize = sizeof(float) * 32,
+        .descLayoutCount = 2,
         .descLayouts = NULL,
-        .descLayoutCount = 1,
     },
     [PIPE_2D_BUTTON] = {
         .vertResource = "ID_SHADER_BASICRECT",
@@ -197,6 +197,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
 
     // find a queue family that supports graphics
     uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(vkstate->physicalDevice, &queueFamilyCount, NULL);
     VkQueueFamilyProperties queueFamilies[16];
     vkGetPhysicalDeviceQueueFamilyProperties(vkstate->physicalDevice, &queueFamilyCount, queueFamilies);
 
@@ -283,9 +284,11 @@ int SolVkDepthResources(SolVkState *vkstate)
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice,
-                                                  memReqs.memoryTypeBits,
-                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (SolFindMemoryType(vkstate->physicalDevice,
+                          memReqs.memoryTypeBits,
+                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                          &allocInfo.memoryTypeIndex) != 0)
+        return 1;
 
     vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->depthMemory);
     vkBindImageMemory(vkstate->device, vkstate->depthImage, vkstate->depthMemory, 0);
@@ -410,7 +413,7 @@ int SolVkFontTexture(SolVkState *vkstate)
     // --- staging buffer ---
     VkBuffer staging;
     VkDeviceMemory stagingMem;
-    SolCreateBuffer(vkstate,res.size,
+    SolCreateBuffer(vkstate, res.size,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                     &staging, &stagingMem);
@@ -442,9 +445,11 @@ int SolVkFontTexture(SolVkState *vkstate)
     VkMemoryAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice,
-                                                  memReqs.memoryTypeBits,
-                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (SolFindMemoryType(vkstate->physicalDevice,
+                          memReqs.memoryTypeBits,
+                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                          &allocInfo.memoryTypeIndex) != 0)
+        return 1;
     vkAllocateMemory(vkstate->device, &allocInfo, NULL, &vkstate->fontMemory);
     vkBindImageMemory(vkstate->device, vkstate->fontImage, vkstate->fontMemory, 0);
 
@@ -551,7 +556,7 @@ int SolVkFontTexture(SolVkState *vkstate)
     return 0;
 }
 
-int SolVkFontDescriptors(SolVkState *vkstate)
+int SolVkFontDescriptors(SolVkState *vkstate, VkDescriptorSetLayout *outlayout)
 {
     // --- layout ---
     VkDescriptorSetLayoutBinding binding = {0};
@@ -564,7 +569,7 @@ int SolVkFontDescriptors(SolVkState *vkstate)
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &binding;
-    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->fontDescLayout);
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, outlayout);
 
     // --- pool ---
     VkDescriptorPoolSize poolSize = {0};
@@ -835,7 +840,6 @@ int SolVkCommandPool(SolVkState *vkstate)
     if (result != VK_SUCCESS)
     {
         Sol_MessageBox("Failed to create command pool", "Error");
-        // MessageBox(NULL, "Failed to create command pool", "Error", MB_OK);
         return 1;
     }
 
@@ -849,7 +853,6 @@ int SolVkCommandPool(SolVkState *vkstate)
     if (result != VK_SUCCESS)
     {
         Sol_MessageBox("Failed to allocate command buffers", "Error");
-        // MessageBox(NULL, "Failed to allocate command buffers", "Error", MB_OK);
         return 1;
     }
 
@@ -876,7 +879,6 @@ int SolVkSyncObjects(SolVkState *vkstate)
             vkCreateFence(vkstate->device, &fenceInfo, NULL, &vkstate->inFlightFences[i]) != VK_SUCCESS)
         {
             Sol_MessageBox("Failed to create sync objects", "Error");
-            // MessageBox(NULL, "Failed to create sync objects", "Error", MB_OK);
             return 1;
         }
     }
@@ -916,10 +918,10 @@ int SolVkSSBO(SolVkState *vkstate)
     {
         // Create the Buffer for this frame
         SolCreateBuffer(vkstate,
-            sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES,
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &vkstate->modelBuffer[i], &vkstate->modelMemory[i]); // Note: Should probably use separate memory handles or offsets
+                        sizeof(ModelInstanceData) * MAX_MODEL_INSTANCES,
+                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &vkstate->modelBuffer[i], &vkstate->modelMemory[i]); // Note: Should probably use separate memory handles or offsets
 
         vkMapMemory(vkstate->device, vkstate->modelMemory[i], 0, VK_WHOLE_SIZE, 0, &vkstate->modelDataPtr[i]);
 
@@ -949,9 +951,27 @@ int SolVkSSBO(SolVkState *vkstate)
     return 0;
 }
 
-uint32_t SolFindMemoryType(VkPhysicalDevice physicalDevice,
-                           uint32_t typeFilter,
-                           VkMemoryPropertyFlags properties)
+int SolVkUBO(SolVkState *vkstate)
+{
+    VkDescriptorSetLayoutBinding binding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT};
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &binding};
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &vkstate->sceneUBOLayout);
+
+    return 0;
+}
+
+int SolFindMemoryType(VkPhysicalDevice physicalDevice,
+                      uint32_t typeFilter,
+                      VkMemoryPropertyFlags properties,
+                      uint32_t *outIndex)
 {
     VkPhysicalDeviceMemoryProperties memProps;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -961,42 +981,50 @@ uint32_t SolFindMemoryType(VkPhysicalDevice physicalDevice,
         if ((typeFilter & (1 << i)) &&
             (memProps.memoryTypes[i].propertyFlags & properties) == properties)
         {
-            return i;
+            *outIndex = i;
+            return 0;
         }
     }
 
-    printf("Failed to find suitable memory type\n");
-    return 0;
+    return 1;
 }
 
 int SolCreateBuffer(SolVkState *vkstate,
-                    VkDeviceSize size, VkBufferUsageFlags usage,
+                    VkDeviceSize size,
+                    VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties,
-                    VkBuffer *outBuffer, VkDeviceMemory *outMemory)
+                    VkBuffer *outBuffer,
+                    VkDeviceMemory *outMemory)
 {
-    VkBufferCreateInfo bufferInfo = {0};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBufferCreateInfo bufferInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = usage,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+    };
 
     if (vkCreateBuffer(vkstate->device, &bufferInfo, NULL, outBuffer) != VK_SUCCESS)
-    {
-        printf("Failed to create buffer\n");
         return 1;
-    }
 
     VkMemoryRequirements memReqs;
     vkGetBufferMemoryRequirements(vkstate->device, *outBuffer, &memReqs);
 
-    VkMemoryAllocateInfo allocInfo = {0};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = SolFindMemoryType(vkstate->physicalDevice, memReqs.memoryTypeBits, properties);
+    uint32_t memIndex;
+    if (SolFindMemoryType(vkstate->physicalDevice, memReqs.memoryTypeBits, properties, &memIndex) != 0)
+    {
+        vkDestroyBuffer(vkstate->device, *outBuffer, NULL);
+        return 1;
+    }
+
+    VkMemoryAllocateInfo allocInfo = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memReqs.size,
+        .memoryTypeIndex = memIndex,
+    };
 
     if (vkAllocateMemory(vkstate->device, &allocInfo, NULL, outMemory) != VK_SUCCESS)
     {
-        printf("Failed to allocate buffer memory\n");
+        vkDestroyBuffer(vkstate->device, *outBuffer, NULL);
         return 1;
     }
 
@@ -1004,10 +1032,158 @@ int SolCreateBuffer(SolVkState *vkstate,
     return 0;
 }
 
+int Sol_CreateDescriptorBuffer(SolVkState *vkstate,
+                               VkDeviceSize size,
+                               VkDescriptorType type,
+                               VkShaderStageFlags stageFlags,
+                               SolDescriptorBuffer *out)
+{
+    // 1. Descriptor set layout
+    VkDescriptorSetLayoutBinding binding = {
+        .binding = 0,
+        .descriptorType = type,
+        .descriptorCount = 1,
+        .stageFlags = stageFlags,
+    };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &out->layout);
+
+    // 2. Descriptor pool
+    VkDescriptorPoolSize poolSize = {
+        .type = type,
+        .descriptorCount = MAX_FRAMES_IN_FLIGHT,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = MAX_FRAMES_IN_FLIGHT,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize,
+    };
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &out->pool);
+
+    // 3. Per-frame: buffer + memory + map + descriptor set + write
+    VkBufferUsageFlags usage = (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                                   ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                   : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        SolCreateBuffer(vkstate, size, usage,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &out->buffers[i], &out->memory[i]);
+
+        vkMapMemory(vkstate->device, out->memory[i], 0, VK_WHOLE_SIZE, 0, &out->mapped[i]);
+
+        VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = out->pool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &out->layout,
+        };
+        vkAllocateDescriptorSets(vkstate->device, &allocInfo, &out->sets[i]);
+
+        VkDescriptorBufferInfo bufInfo = {
+            .buffer = out->buffers[i],
+            .offset = 0,
+            .range = size,
+        };
+        VkWriteDescriptorSet write = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = out->sets[i],
+            .dstBinding = 0,
+            .descriptorType = type,
+            .descriptorCount = 1,
+            .pBufferInfo = &bufInfo,
+        };
+        vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+    }
+
+    return 0;
+}
+
+int Sol_CreateDescriptorImage(SolVkState *vkstate,
+                              VkImageView imageView,
+                              VkSampler sampler,
+                              VkShaderStageFlags stageFlags,
+                              SolDescriptorImage *out)
+{
+    VkDescriptorSetLayoutBinding binding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .stageFlags = stageFlags,
+    };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &out->layout);
+
+    VkDescriptorPoolSize poolSize = {
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize,
+    };
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &out->pool);
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = out->pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &out->layout,
+    };
+    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &out->set);
+
+    VkDescriptorImageInfo imageInfo = {
+        .sampler = sampler,
+        .imageView = imageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = out->set,
+        .dstBinding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .pImageInfo = &imageInfo,
+    };
+    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+
+    return 0;
+}
+
 int Sol_Pipeline_BuildAll(SolVkState *vkstate)
 {
-    pipelineConfigs[PIPE_3D_MESH].descLayouts = &vkstate->modelDescLayout;
-    pipelineConfigs[PIPE_2D_TEXT].descLayouts = &vkstate->fontDescLayout;
+    SolDescriptorBuffer sceneDesc;
+    Sol_CreateDescriptorBuffer(vkstate, sizeof(SceneUBO),
+                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                               VK_SHADER_STAGE_VERTEX_BIT, &sceneDesc);
+
+    SolDescriptorBuffer modelDesc;
+    Sol_CreateDescriptorBuffer(vkstate, sizeof(ModelInstanceData),
+                               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                               VK_SHADER_STAGE_VERTEX_BIT, &modelDesc);
+
+    VkDescriptorSetLayout fontDescLayout;
+    SolVkFontDescriptors(vkstate, &fontDescLayout);
+
+    VkDescriptorSetLayout sceneLayouts[] = {
+        sceneDesc.layout,
+        modelDesc.layout,
+    };
+
+    pipelineConfigs[PIPE_3D_MESH].descLayouts = sceneLayouts;
+    pipelineConfigs[PIPE_2D_TEXT].descLayouts = fontDescLayout;
 
     for (int i = 0; i < PIPE_COUNT; ++i)
     {

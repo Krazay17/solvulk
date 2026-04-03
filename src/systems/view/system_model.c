@@ -4,7 +4,9 @@
 
 void Sol_System_Model_Draw(World *world, double dt, double time)
 {
+    // shader data
     ModelInstanceData *gpuData = (ModelInstanceData*)Sol_ModelBuffer_Get();
+
     int required = HAS_XFORM | HAS_MODEL;
 
     // 1. Count per model
@@ -53,11 +55,13 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         glm_scale(m, scale);
 
         memcpy(gpuData[slot].modelMatrix, m, sizeof(mat4));
+
         gpuData[slot].color[0] = 1.0f;
         gpuData[slot].color[1] = 1.0f;
         gpuData[slot].color[2] = 1.0f;
         gpuData[slot].color[3] = 1.0f;
     }
+    
     Sol_Begin_3D();
     for (int b = 0; b < SOL_MODEL_COUNT; b++)
     {

@@ -20,8 +20,31 @@ typedef enum
 
 typedef struct
 {
+    mat4 viewProjection;
+} SceneUBO;
+
+typedef struct
+{
+    VkDescriptorSetLayout layout;
+    VkDescriptorPool pool;
+    VkDescriptorSet sets[MAX_FRAMES_IN_FLIGHT];
+    VkBuffer buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
+    void *mapped[MAX_FRAMES_IN_FLIGHT];
+} SolDescriptorBuffer;
+
+typedef struct
+{
+    VkDescriptorSetLayout layout;
+    VkDescriptorPool pool;
+    VkDescriptorSet set;
+} SolDescriptorImage;
+
+typedef struct
+{
     mat4 modelMatrix;
     vec4 color;
+    vec4 material;
 } ModelInstanceData;
 
 typedef struct
@@ -31,6 +54,7 @@ typedef struct
     VkBuffer indexBuffer;
     VkDeviceMemory indexMemory;
     uint32_t indexCount;
+    SolMaterial *material;
 } SolGpuMesh;
 
 typedef struct SolGpuModel
@@ -88,6 +112,14 @@ struct SolVkState
     VkPipeline pipeline[PIPE_COUNT];
     VkPipelineLayout pipelineLayout[PIPE_COUNT];
 
+    // view
+    VkBuffer sceneUBO[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory sceneUBOMemory[MAX_FRAMES_IN_FLIGHT];
+    VkDescriptorSetLayout sceneUBOLayout;
+    VkDescriptorSet sceneUBODescSet[MAX_FRAMES_IN_FLIGHT];
+    void *sceneUBOPtr[MAX_FRAMES_IN_FLIGHT];
+
+    // model
     VkBuffer modelBuffer[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory modelMemory[MAX_FRAMES_IN_FLIGHT];
     VkDescriptorSetLayout modelDescLayout;
@@ -140,6 +172,7 @@ int SolVkSwapchain(SolVkState *vkstate);
 int SolVkImageViews(SolVkState *vkstate);
 int SolVkFontTexture(SolVkState *vkstate);
 int SolVkSSBO(SolVkState *vkstate);
+int SolVkUBO(SolVkState *vkstate);
 int SolVkPipeline(SolVkState *vkstate,
                   SolPipelineConfig pipeConfig,
                   VkPipeline *outPipeline,
@@ -147,17 +180,38 @@ int SolVkPipeline(SolVkState *vkstate,
 int SolVkCommandPool(SolVkState *vkstate);
 int SolVkSyncObjects(SolVkState *vkstate);
 int SolVkDepthResources(SolVkState *vkstate);
-uint32_t SolFindMemoryType(VkPhysicalDevice physicalDevice,
-                           uint32_t typeFilter,
-                           VkMemoryPropertyFlags properties);
-int SolCreateBuffer(SolVkState *vkstate,
-                    VkDeviceSize size, VkBufferUsageFlags usage,
-                    VkMemoryPropertyFlags properties,
-                    VkBuffer *outBuffer, VkDeviceMemory *outMemory);
+
+int SolFindMemoryType(
+    VkPhysicalDevice physicalDevice,
+    uint32_t typeFilter,
+    VkMemoryPropertyFlags properties,
+    uint32_t *outIndex);
+
+int SolCreateBuffer(
+    SolVkState *vkstate,
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties,
+    VkBuffer *outBuffer,
+    VkDeviceMemory *outMemory);
+
+int Sol_CreateDescriptorBuffer(
+    SolVkState *vkstate,
+    VkDeviceSize size,             // size of data in buffer
+    VkDescriptorType type,         // UNIFORM_BUFFER or STORAGE_BUFFER
+    VkShaderStageFlags stageFlags, // VERTEX, FRAGMENT, or both
+    SolDescriptorBuffer *out);
+
+int Sol_CreateDescriptorImage(
+    SolVkState *vkstate,
+    VkImageView imageView,
+    VkSampler sampler,
+    VkShaderStageFlags stageFlags,
+    SolDescriptorImage *out);
 
 int Sol_Pipeline_BuildAll(SolVkState *vkstate);
 
-int SolVkFontDescriptors(SolVkState *vkstate);
+int SolVkFontDescriptors(SolVkState *vkstate, VkDescriptorSetLayout *outlayout);
 Bounds ParseBounds(const char *p, const char *end);
 void Sol_ParseFontMetrics(SolVkState *vkstate, const char *json, float atlasW, float atlasH);
 

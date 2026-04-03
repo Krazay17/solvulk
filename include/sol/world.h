@@ -69,7 +69,7 @@ typedef struct
 typedef struct
 {
     uint32_t gpuHandle;
-
+    
 } CompModel;
 
 typedef struct

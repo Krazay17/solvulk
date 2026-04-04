@@ -27,6 +27,8 @@ void Create_Sol_Game()
     int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
     Entity_Add_Interact(menu, button2, (CompInteractable){.callback = MakeAWizard, .callbackData = game, .onHold = true});
 
+    int button3 = Sol_Prefab_Button(menu, (vec3s){0, 660, 0}, "BUTTON");
+
     int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 0, 0});
     Entity_Add_Controller_Local(game, player3d, (CompController){0});
 

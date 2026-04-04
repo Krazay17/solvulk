@@ -5,24 +5,24 @@
 vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
     vec3s latvel = prevvel;
-    const float prevY = latvel.y;
-    latvel.y = 0;
+    //const float prevY = latvel.y;
+    //latvel.y = 0;
 
     const float speed = glms_vec3_norm(latvel);
     if (speed < 0.01)
-        return (vec3s){0, prevY, 0};
+        return prevvel;
     const float drop = speed * friction * dt;
     const float newspeed = fmaxf(0.0f, speed - drop);
     latvel = glms_vec3_scale(latvel, newspeed / speed);
-    latvel.y = prevY;
+    //latvel.y = prevY;
     return latvel;
 }
 
 vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
 {
     vec3s latvel = prevvel;
-    const float prevY = latvel.y;
-    latvel.y = 0;
+    //const float prevY = latvel.y;
+    //latvel.y = 0;
     if (glms_vec3_norm(wishdir) == 0)
         return prevvel;
     const float dotdir = glms_vec3_dot(wishdir, glms_vec3_normalize(latvel));
@@ -44,7 +44,7 @@ vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float 
     // const float overspeed = glms_vec3_norm(latvel);
     // if (overspeed > speed)
     //     latvel = glms_vec3_scale(latvel, speed / overspeed);
-    latvel.y = prevY;
+    //latvel.y = prevY;
     return latvel;
 }
 

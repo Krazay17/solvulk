@@ -67,10 +67,10 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
         [MOVE_IDLE]         = {.speed =  0,      .accell = 0,        .friction = 15.0f,  .gravity = 0        },
         [MOVE_WALK]         = {.speed =  6.0f,   .accell = 20.0f,    .friction =  5.0f,  .gravity = 9.81f    },
         [MOVE_FALL]         = {.speed =  6.0f,   .accell =  5.0f,    .friction =  0.0f,  .gravity = 9.81f    },
-        [MOVE_DASH]         = {.speed = 24.0f,   .accell = 32.0f,    .friction =  0.0f,  .gravity = 0        },
         [MOVE_JUMP]         = {.speed =  6.0f,   .accell =  5.0f,    .friction =  0.0f,  .gravity = 9.81f    },
+        [MOVE_DASH]         = {.speed = 24.0f,   .accell = 32.0f,    .friction =  0.0f,  .gravity = 0        },
         [MOVE_SLIDE]        = {.speed =  6.0f,   .accell =  5.0f,    .friction =  1.0f,  .gravity = 9.81f    },
-        [MOVE_FLY]          = {.speed =  6.0f,   .accell =  5.0f,    .friction =  1.0f,  .gravity = 0        },
+        [MOVE_FLY]          = {.speed =  6.0f,   .accell = 10.0f,    .friction =  1.0f,  .gravity = 0        },
     },
     [MOVE_CONFIG_WIZARD]    = {
         [MOVE_IDLE]         = {.speed = 0,      .accell = 0,        .friction = 15.0f,  .gravity = 0        },
@@ -119,6 +119,13 @@ const MoveStateFunc MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
             .update = Sol_Movement_Dash_Update,
             .canExit = Sol_Movement_Dash_CanExit,
             .canEnter = Sol_Movement_Dash_CanEnter,
+        },
+        [MOVE_FLY] = {
+            .enter = Sol_Movement_Fly_Enter,
+            .exit = Sol_Movement_Fly_Exit,
+            .update = Sol_Movement_Fly_Update,
+            .canExit = Sol_Movement_Fly_CanExit,
+            .canEnter = Sol_Movement_Fly_CanEnter,
         },
     },
     [MOVE_CONFIG_WIZARD] = {

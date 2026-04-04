@@ -12,11 +12,14 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
     vec3s vel = body->vel;
     vec3s wishdir = controller->wishdir;
 
-    if(body->grounded)
-        if(Sol_Movement_SetState(world, id, MOVE_IDLE))
+    if (body->grounded)
+        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
     if (controller->actionState & ACTION_DASH)
         if (Sol_Movement_SetState(world, id, MOVE_DASH))
+            return;
+    if (controller->actionState & ACTION_JUMP)
+        if (Sol_Movement_SetState(world, id, MOVE_FLY))
             return;
 
     vec3s latwishdir = wishdir;
@@ -30,12 +33,10 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
 
 void Sol_Movement_Fall_Enter(World *world, int id)
 {
-
 }
 
 void Sol_Movement_Fall_Exit(World *world, int id)
 {
-
 }
 
 bool Sol_Movement_Fall_CanEnter(World *world, int id)

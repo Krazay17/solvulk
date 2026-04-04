@@ -128,7 +128,6 @@ SolModel Sol_LoadModel(const char *resourceName)
             if (srcMat->has_pbr_metallic_roughness)
             {
                 cgltf_pbr_metallic_roughness *pbr = &srcMat->pbr_metallic_roughness;
-                //printf("Material Color: %f", pbr->base_color_factor[0]);
                 dstMesh->material.baseColor[0] = pbr->base_color_factor[0];
                 dstMesh->material.baseColor[1] = pbr->base_color_factor[1];
                 dstMesh->material.baseColor[2] = pbr->base_color_factor[2];

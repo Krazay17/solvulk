@@ -80,3 +80,10 @@ void Sol_Movement_Dash_Enter(World *world, int id);
 void Sol_Movement_Dash_Exit(World *world, int id);
 bool Sol_Movement_Dash_CanEnter(World *world, int id);
 bool Sol_Movement_Dash_CanExit(World *world, int id);
+
+void Sol_Movement_Fly_Update(World *world, int id, float dt);
+void Sol_Movement_Fly_Enter(World *world, int id);
+void Sol_Movement_Fly_Exit(World *world, int id);
+bool Sol_Movement_Fly_CanEnter(World *world, int id);
+bool Sol_Movement_Fly_CanExit(World *world, int id);
+

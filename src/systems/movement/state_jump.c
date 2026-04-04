@@ -9,11 +9,15 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
     CompMovement *movement = &world->movements[id];
     CompBody *body = &world->bodies[id];
+    CompController *controller = &world->controllers[id];
     movement->stateTimer += dt;
     float alpha = JUMP_ALPHAMOD - (movement->stateTimer / JUMP_TIMER);
+
     if (movement->stateTimer >= JUMP_TIMER)
+    {
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
+    }
     body->vel.y = JUMP_VEL * alpha;
 }
 

@@ -15,9 +15,12 @@ void Sol_System_Step_Physx_2d(World *world, double dt, double time)
         if ((world->masks[id] & required) == required)
         {
             CompBody *body = &world->bodies[id];
+            CompMovement *movement = &world->movements[id];
             CompXform *xform = &world->xforms[id];
-
-            body->vel.y += SOL_GRAVITY * fdt;
+            
+            float moveGrav = MOVE_STATE_FORCES[movement->configId][movement->moveState].gravity;
+            body->vel.y = moveGrav ? body->vel.y + moveGrav * fdt
+                                   : body->vel.y + SOL_GRAVITY * fdt;
             vec3s finalVel = glms_vec3_scale(body->vel, fdt * 20.0f);
             xform->pos = glms_vec3_add(xform->pos, finalVel);
 
@@ -56,7 +59,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             else
             {
                 body->grounded = 0;
-                body->airtime =  fminf(99999.0f, body->airtime + dt);
+                body->airtime = fminf(99999.0f, body->airtime + dt);
             }
         }
     }

@@ -67,7 +67,6 @@ vec4s Sol_Quat_FromYawPitch(float yaw, float pitch)
     };
 }
 
-
 float FlashAnim(float dt, float value, float speed)
 {
     speed = (speed > 0.0f) ? speed : 4.0f;

@@ -1,5 +1,6 @@
 
 #include <cglm/struct.h>
+#include <immintrin.h>
 
 #include "sol_core.h"
 
@@ -53,14 +54,25 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             {
                 xform->pos.y = 0;
                 body->vel.y = 0;
-                body->grounded = fminf(99999.0f, body->grounded + dt);
+                body->grounded = fminf(99999.9f, body->grounded + dt);
                 body->airtime = 0;
             }
             else
             {
                 body->grounded = 0;
-                body->airtime = fminf(99999.0f, body->airtime + dt);
+                body->airtime = fminf(99999.9f, body->airtime + dt);
             }
         }
     }
+}
+
+typedef struct
+{
+    float min[4];
+    float max[4];
+} AABB3D;
+
+bool Collision3d(AABB3D *a)
+{
+    //__m128
 }

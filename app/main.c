@@ -2,12 +2,9 @@
 #define NOGDI
 
 #include <windows.h>
-#include <stdio.h>
-#include <stdatomic.h>
 
 #include "sol/sol.h"
 #include "game.h"
-
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -26,6 +23,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     name##_fn pfn_##name;
 #include "sol/functions.inc"
 #undef SOL_FUNC
+
 void load_api(const char *path);
 FILETIME get_last_write_time(const char *path);
 
@@ -57,6 +55,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceFrequency(&g_frequency);
     QueryPerformanceCounter(&g_startTime);
 
+    // Raw input device for accurate mouse
     RAWINPUTDEVICE rid;
     rid.usUsagePage = 0x01;
     rid.usUsage = 0x02;
@@ -82,7 +81,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HANDLE hGameThread = CreateThread(NULL, 0, GameThreadProc, NULL, 0, NULL);
 
     // Main thread is now 100% dedicated to pumping Windows messages.
-    // It will never stall your game loop again.
     MSG msg = {0};
     while (GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
     {
@@ -125,6 +123,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    case WM_DESTROY:
+        g_running = FALSE;  // tell the game thread to exit
+        PostQuitMessage(0); // tell the message loop to exit
+        return 0;
+        
     case WM_INPUT:
     {
         UINT dwSize = sizeof(RAWINPUT);
@@ -147,10 +150,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     }
-    case WM_DESTROY:
-        g_running = FALSE;  // tell the game thread to exit
-        PostQuitMessage(0); // tell the message loop to exit
-        return 0;
     case WM_SIZE:
         Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
         return 0;
@@ -198,6 +197,7 @@ void QuitApp()
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }
 
+// HOT RELOAD LOGIC
 void load_api(const char *path)
 {
     // 1. If we already have a lib open, free it
@@ -216,10 +216,10 @@ void load_api(const char *path)
         return;
     }
 
-    // 4. Map the pointers
-    #define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
-    #include "sol/functions.inc"
-    #undef SOL_FUNC
+// 4. Map the pointers
+#define SOL_FUNC(ret, name, ...) pfn_##name = (name##_fn)GetProcAddress(current_engine_lib, #name);
+#include "sol/functions.inc"
+#undef SOL_FUNC
 }
 
 FILETIME get_last_write_time(const char *path)

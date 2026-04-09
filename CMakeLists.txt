@@ -16,6 +16,7 @@ set(SOL_PRIVATE_INCLUDE
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
+find_package(CURL REQUIRED)
 
 file(GLOB_RECURSE SOURCES "src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
@@ -56,6 +57,7 @@ target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
         cglm::cglm
+        CURL::libcurl
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -67,7 +69,7 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
-    add_executable(solapp #WIN32 
+    add_executable(solapp WIN32 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
         ${RESOURCE_FILE}
@@ -125,13 +127,13 @@ add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
 
 #---- Server App ----
-add_executable(solvulk_server server/main.c)
+# add_executable(solvulk_server server/main.c)
 
-target_include_directories(solvulk_server PRIVATE
-    "server"
-    "vendored/enet/include"
-)
+# target_include_directories(solvulk_server PRIVATE
+#     "server"
+#     "vendored/enet/include"
+# )
 
-if(WIN32)
-    target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
-endif()
+# if(WIN32)
+#     target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
+# endif()

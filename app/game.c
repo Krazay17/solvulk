@@ -1,5 +1,6 @@
 #include "game.h"
 #include "sol/sol.h"
+#include <curl/curl.h>
 
 typedef struct
 {
@@ -18,6 +19,7 @@ static void TestFunc(void *data)
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
+    CURL *curl = curl_easy_init();
     World *menu = World_Create_Default();
     World *game = World_Create_Default();
 

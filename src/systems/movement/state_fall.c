@@ -11,6 +11,7 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
 
     vec3s vel = body->vel;
     vec3s wishdir = controller->wishdir;
+    float prevY = vel.y;
 
     if (body->grounded)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
@@ -25,9 +26,11 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
     vec3s latwishdir = wishdir;
     latwishdir.y = 0;
     latwishdir = glms_vec3_normalize(latwishdir);
+
     vel = ApplyFriction3(latwishdir, vel, forces->friction, dt);
     vel = ApplyAccel3(latwishdir, vel, forces->speed, forces->accell, dt);
-
+    vel.y = prevY;
+    
     body->vel = vel;
 }
 

@@ -1,4 +1,3 @@
-
 #include <cglm/struct.h>
 #include <immintrin.h>
 
@@ -75,4 +74,5 @@ typedef struct
 bool Collision3d(AABB3D *a)
 {
     //__m128
+    return false;
 }

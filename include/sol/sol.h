@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdatomic.h>

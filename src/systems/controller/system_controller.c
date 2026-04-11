@@ -2,7 +2,15 @@
 
 #include "sol_core.h"
 
+#define MAX_PITCH (GLM_PI_2 - 0.1f)
+
+typedef struct
+{
+    float yaw, pitch;
+} LocalController;
+static LocalController localController = {0};
 float lookSens = 0.001f;
+// float maxPitch = GLM_PI_2 - 0.1f;
 static bool mouseLocked = false;
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
@@ -41,6 +49,22 @@ static vec2s GetWishDir2(uint32_t action)
 void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 {
     SolMouse mouse = SolInput_GetMouse();
+    if (mouse.locked)
+    {
+        localController.yaw -= mouse.dx * lookSens;
+        localController.pitch -= mouse.dy * lookSens;
+
+        localController.yaw = fmodf(localController.yaw, 2.0f * GLM_PI);
+        if (localController.yaw > GLM_PI)
+            localController.yaw -= 2.0f * GLM_PI;
+        else if (localController.yaw < -GLM_PI)
+            localController.yaw += 2.0f * GLM_PI;
+
+        if (localController.pitch > MAX_PITCH)
+        localController.pitch = MAX_PITCH;
+        if (localController.pitch < -MAX_PITCH)
+        localController.pitch = -MAX_PITCH;
+    }
     int required = HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; ++i)
     {
@@ -50,29 +74,8 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
             CompController *controller = &world->controllers[id];
             CompMovement *movement = &world->movements[id];
 
-            if (mouse.locked)
-            {
-                // 1. Apply movement
-                controller->yaw -= mouse.dx * lookSens;
-
-                // 2. Wrap to [0, 2pi]
-                controller->yaw = fmodf(controller->yaw, 2.0f * GLM_PI);
-
-                // 3. Offset to [-pi, pi]
-                if (controller->yaw > GLM_PI)
-                    controller->yaw -= 2.0f * GLM_PI;
-                else if (controller->yaw < -GLM_PI)
-                    controller->yaw += 2.0f * GLM_PI;
-
-                controller->pitch -= mouse.dy * lookSens;
-                float maxPitch = GLM_PI_2 - 0.1f;
-                if (controller->pitch > maxPitch)
-                    controller->pitch = maxPitch;
-                if (controller->pitch < -maxPitch)
-                    controller->pitch = -maxPitch;
-            }
-            Sol_Debug_Add("Yaw", controller->yaw);
-            Sol_Debug_Add("Pitch", controller->pitch);
+            controller->yaw = localController.yaw;
+            controller->pitch = localController.pitch;
 
             if (SolInput_KeyDown(SOL_KEY_W))
                 controller->actionState |= ACTION_FWD;

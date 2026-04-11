@@ -57,10 +57,8 @@ components.
 components.
  */
 void resolve_collision(
-    const Xform* xform_a, const Body* body_a, const
-PhysicsState* state_a,
-    const Xform* xform_b, const Body* body_b, const
-PhysicsState* state_b)
+    const Xform* xform_a, const Body* body_a, const PhysicsState* state_a,
+    const Xform* xform_b, const Body* body_b, const PhysicsState* state_b)
 {
     // 1. Collision Detection (Sphere approximation)
     vec3 delta = {
@@ -92,19 +90,13 @@ delta.z*delta.z;
     // 3. Position Correction (Separation)
     // Move objects apart proportional to their inverse mass
 (or equally if masses are equal)
-    float total_inv_mass = (1.0f / state_a->mass) + (1.0f /
-state_b->mass);
-    float separation_a = (1.0f / state_a->mass) /
-total_inv_mass * penetration * 0.5f;
-    float separation_b = (1.0f / state_b->mass) /
-total_inv_mass * penetration * 0.5f;
+    float total_inv_mass = (1.0f / state_a->mass) + (1.0f / state_b->mass);
+    float separation_a = (1.0f / state_a->mass) / total_inv_mass * penetration * 0.5f;
+    float separation_b = (1.0f / state_b->mass) / total_inv_mass * penetration * 0.5f;
 
-    // Apply separation (Requires mutable access to Xform
-positions)
-    // NOTE: In a real ECS, this would write back to the
-component array.
-    // For this function signature, we assume the caller
-handles the write-back.
+    // Apply separation (Requires mutable access to Xform positions)
+    // NOTE: In a real ECS, this would write back to the component array.
+    // For this function signature, we assume the caller handles the write-back.
     // xform_a->pos.x += normal.x * separation_a;
     // xform_a->pos.y += normal.y * separation_a;
     // xform_a->pos.z += normal.z * separation_a;
@@ -116,12 +108,9 @@ handles the write-back.
 
     // 4. Impulse Calculation (Velocity change)
     // Relative velocity along the normal
-    float relative_velocity = (state_a.vel.x - state_b.vel.x)
-* normal.x +
-                              (state_a.vel.y - state_b.vel.y)
-* normal.y +
-                              (state_a.vel.z - state_b.vel.z)
-* normal.z;
+    float relative_velocity = (state_a.vel.x - state_b.vel.x) * normal.x +
+                              (state_a.vel.y - state_b.vel.y) * normal.y +
+                              (state_a.vel.z - state_b.vel.z) * normal.z;
 
     // Only apply impulse if objects are moving towards each
 other
@@ -131,8 +120,7 @@ other
     float e = 0.8f;
 
     // Calculate impulse magnitude (J)
-    float j = -(1.0f + e) * relative_velocity / (1.0f /
-state_a.mass + 1.0f / state_b.mass);
+    float j = -(1.0f + e) * relative_velocity / (1.0f / state_a.mass + 1.0f / state_b.mass);
 
     // Apply impulse (Change in velocity)
     // state_a.vel += j * normal / state_a.mass;

@@ -5,4 +5,4 @@ void Create_Sol_Game();
 
 void MakeAWizard(void *data);
 
-void QuitApp();
+void QuitApp(void *data);

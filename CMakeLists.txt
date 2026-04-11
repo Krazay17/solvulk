@@ -13,10 +13,10 @@ set(SOL_PRIVATE_INCLUDE
     "${CMAKE_SOURCE_DIR}/src/include"
 )
 
-# Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenMP REQUIRED)
 
 file(GLOB_RECURSE SOURCES "src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
@@ -31,6 +31,10 @@ else()
     set(RESOURCE_FILE "")
     set(PLATFORM_DEFS VK_USE_PLATFORM_XLIB_KHR)
     list(APPEND PLATFORM_LIBS)
+endif()
+
+if(MSVC)
+    add_compile_options(/std:c11 /experimental:c11atomics)
 endif()
 
 add_library(solvulk ${SOURCES} ${RESOURCE_FILE} ${PLATFORM_SOURCES})
@@ -58,6 +62,7 @@ target_link_libraries(solvulk
         Vulkan::Vulkan
         cglm::cglm
         CURL::libcurl
+        OpenMP::OpenMP_C
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -69,7 +74,7 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
-    add_executable(solapp WIN32 
+    add_executable(solapp #WIN32 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
         ${RESOURCE_FILE}
@@ -86,7 +91,10 @@ else()
     target_link_libraries(solapp PRIVATE solvulk)
 endif()
 
-set_target_properties(solapp PROPERTIES OUTPUT_NAME "SolApp")
+set_target_properties(solapp PROPERTIES 
+    OUTPUT_NAME "SolApp"
+    LINK_FLAGS "/SUBSYSTEM:CONSOLE" # "/NODEFAULTLIB:MSVCRT"
+)
 #--------------------------------------
 # compile shaders
 #--------------------------------------

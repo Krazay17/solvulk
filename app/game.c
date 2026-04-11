@@ -34,10 +34,10 @@ void Create_Sol_Game()
     int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 0, 0});
     Entity_Add_Controller_Local(game, player3d, (CompController){0});
 
-    int player2d = Sol_Prefab_Boxman(game, (vec3s){250.0f, -24.0f, 0});
-    Entity_Add_Controller_Local(game, player2d, (CompController){0});
-    static TestData testData = {"TESTING %d", 524};
-    Entity_Add_Interact(game, player2d, (CompInteractable){.callback = TestFunc, .callbackData = &testData});
+    // int player2d = Sol_Prefab_Boxman(game, (vec3s){250.0f, -24.0f, 0});
+    // Entity_Add_Controller_Local(game, player2d, (CompController){0});
+    // static TestData testData = {"TESTING %d", 524};
+    // Entity_Add_Interact(game, player2d, (CompInteractable){.callback = TestFunc, .callbackData = &testData});
 
     int floor = Entity_Create(game);
     Entity_Add_Xform(game, floor, (CompXform){.pos = (vec3s){0, 0, 0}});
@@ -56,7 +56,8 @@ void MakeAWizard(void *data)
     static int posInc;
     World *world = (World *)data;
 
-    Sol_Prefab_Wizard(world, (vec3s){0, posInc, 0});
+    int wiz = Sol_Prefab_Wizard(world, (vec3s){0, posInc, 0});
+    //Entity_Add_Controller_Local(world, wiz, (CompController){0});
     posInc++;
     Sol_Debug_Add("Entities", world->activeCount);
 }

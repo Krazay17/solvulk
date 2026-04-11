@@ -2,27 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch SolVulk",
-            "type": "cppdbg",
+            "name": "Launch SolVulk (MSVC)",
+            "type": "cppvsdbg",         // Changed from cppdbg
             "request": "launch",
-            // Point this to where CMake puts your exe
             "program": "${workspaceFolder}/build/debug/bin/SolApp.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build/debug/bin", // Important for finding shaders/assets
+            "cwd": "${workspaceFolder}/build/debug/bin",
             "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            // Path to your MSYS64 gdb
-            "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "preLaunchTask": "CMake: build" // Automatically builds before debugging
+            "console": "integratedTerminal",
+            "preLaunchTask": "CMake: build"
         }
     ]
 }

@@ -1,10 +1,15 @@
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOGDI
-
 #include <windows.h>
+#define IS_WINDOWS 1
+#else
+#define IS_WINDOWS 0
+#endif
 
 #include "sol/sol.h"
 #include "game.h"
+#include <stdatomic.h>
 
 // --- Shared state between threads ---
 static atomic_bool g_running = TRUE;
@@ -28,12 +33,18 @@ void load_api(const char *path);
 FILETIME get_last_write_time(const char *path);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WINDOWS Entry point
+// Entry point
 // ─────────────────────────────────────────────────────────────────────────────
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int main(int argc, char *argv[])
 {
-    const char CLASS_NAME[] = "SolVulk";
+    void *platform_handle = NULL;
 
+#ifdef IS_WINDOWS
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    int nShowCmd = SW_SHOWDEFAULT;
+#endif
+
+    const char CLASS_NAME[] = "SolVulk";
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
@@ -50,6 +61,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
 
     ShowWindow(g_hwnd, nShowCmd);
+
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
 
     // Timing init on the main thread so Sol_Init can use g_frequency/g_startTime
     QueryPerformanceFrequency(&g_frequency);
@@ -127,7 +141,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         g_running = FALSE;  // tell the game thread to exit
         PostQuitMessage(0); // tell the message loop to exit
         return 0;
-        
+
     case WM_INPUT:
     {
         UINT dwSize = sizeof(RAWINPUT);
@@ -192,7 +206,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void QuitApp()
+void QuitApp(void *data)
 {
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }

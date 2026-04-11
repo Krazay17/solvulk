@@ -18,7 +18,7 @@ SOLAPI World *World_Create_Default(void)
     World *world = World_Create();
     if (world)
     {
-        SystemFunc stepSystemInit[] = {};
+        SystemFunc stepSystemInit[] = {0};
         int stepSystemCount = 0;
         world->stepCount = stepSystemCount;
         memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
@@ -206,6 +206,7 @@ SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController co
 
 SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller)
 {
+    
 }
 
 SOLAPI void Entity_Add_Model(World *world, int id, CompModel model)

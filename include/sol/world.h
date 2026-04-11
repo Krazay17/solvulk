@@ -39,12 +39,18 @@ struct CompXform
     vec4s rot;
     vec3s scale;
 };
-
+typedef enum
+{
+    BODY_STATIC,
+    BODY_DYNAMIC,
+}BodyType;
 typedef struct
 {
-    vec3s vel;
+    vec3s vel, impulse, force;
+    BodyType type;
     float grounded, airtime;
-    float width, height, mass;
+    float radius, height;
+    float mass, restitution;
 } CompBody;
 
 typedef enum

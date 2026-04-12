@@ -38,10 +38,10 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
 
         ModelSSBO *inst = &gpuData[slot];
 
-        memcpy(inst->position, &xform->pos, sizeof(float) * 3);
+        memcpy(inst->position, &xform->drawPos, sizeof(float) * 3);
         inst->position[3] = xform->scale.x;
 
-        memcpy(inst->rotation, &xform->rot, sizeof(float) * 4);
+        memcpy(inst->rotation, &xform->drawRot, sizeof(float) * 4);
 
         // vec4 whiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
         // memcpy(inst->color, &whiteColor, sizeof(float) * 4);

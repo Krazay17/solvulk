@@ -6,7 +6,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 {
     float fdt = (float)dt;
 
-    int required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3 | HAS_CONTROLLER;
+    int required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
@@ -15,15 +15,16 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             CompMovement *movement = &world->movements[id];
             CompXform *xform = &world->xforms[id];
             CompBody *body = &world->bodies[id];
+
             CompController *controller = &world->controllers[id];
-            
-            // -controller->pitch
-            xform->rot = Sol_Quat_FromYawPitch(controller->yaw, 0);
-            movement->wishdir = controller->wishdir;
-            
+            if (controller)
+                movement->wishdir = controller->wishdir;
+
+            xform->rot = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+
             const MoveStateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
             funcs->update(world, id, dt);
-            
+
             Sol_Debug_Add("Velocity", glms_vec3_norm(body->vel));
         }
     }

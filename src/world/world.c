@@ -18,23 +18,24 @@ SOLAPI World *World_Create_Default(void)
     World *world = World_Create();
     if (world)
     {
-        SystemFunc stepSystemInit[] = {0};
-        int stepSystemCount = 0;
-        world->stepCount = stepSystemCount;
-        memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
-
-        SystemFunc tickSystemInit[] = {
+        SystemFunc stepSystemInit[] = {
             Sol_System_Movement_2d_Step,
             Sol_System_Movement_3d_Step,
             Sol_System_Step_Physx_2d,
             Sol_System_Step_Physx_3d,
+        };
+        int stepSystemCount = 4;
+        world->stepCount = stepSystemCount;
+        memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
+
+        SystemFunc tickSystemInit[] = {
             Sol_System_Controller_Local_Tick,
             Sol_System_Controller_Ai_Tick,
             Sol_System_Interact_Ui,
             Sol_System_Info_Tick,
             Sol_System_Camera_Tick,
         };
-        int tickSystemCount = 9;
+        int tickSystemCount = 5;
         world->tickCount = tickSystemCount;
         memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
 
@@ -160,6 +161,7 @@ void Entity_Add_Body2(World *world, int id, CompBody body)
 
 void Entity_Add_Body3(World *world, int id, CompBody body)
 {
+    Sol_Component_Init_Body(&body);
     world->bodies[id] = body;
     world->masks[id] |= HAS_BODY3;
 }
@@ -206,7 +208,8 @@ SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController co
 
 SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller)
 {
-    
+    world->controllers[id] = controller;
+    world->masks[id] |= HAS_CONTROLLER_AI;
 }
 
 SOLAPI void Entity_Add_Model(World *world, int id, CompModel model)

@@ -17,6 +17,7 @@ find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE SOURCES "src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
@@ -34,6 +35,7 @@ else()
 endif()
 
 if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options(/std:c11 /experimental:c11atomics)
 endif()
 
@@ -63,6 +65,7 @@ target_link_libraries(solvulk
         cglm::cglm
         CURL::libcurl
         OpenMP::OpenMP_C
+        Threads::Threads
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -74,7 +77,7 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
-    add_executable(solapp #WIN32 
+    add_executable(solapp WIN32 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
         ${RESOURCE_FILE}
@@ -93,7 +96,7 @@ endif()
 
 set_target_properties(solapp PROPERTIES 
     OUTPUT_NAME "SolApp"
-    LINK_FLAGS "/SUBSYSTEM:CONSOLE" # "/NODEFAULTLIB:MSVCRT"
+    LINK_FLAGS "/ENTRY:mainCRTStartup"
 )
 #--------------------------------------
 # compile shaders

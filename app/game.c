@@ -32,6 +32,7 @@ void Create_Sol_Game()
     int button3 = Sol_Prefab_Button(menu, (vec3s){0, 660, 0}, "BUTTON");
 
     int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 0, 0});
+    game->playerID = player3d;
     Entity_Add_Controller_Local(game, player3d, (CompController){0});
 
     // int player2d = Sol_Prefab_Boxman(game, (vec3s){250.0f, -24.0f, 0});
@@ -58,6 +59,7 @@ void MakeAWizard(void *data)
 
     int wiz = Sol_Prefab_Wizard(world, (vec3s){0, posInc, 0});
     //Entity_Add_Controller_Local(world, wiz, (CompController){0});
+    Entity_Add_Controller_Ai(world, wiz, (CompController){0});
     posInc++;
     Sol_Debug_Add("Entities", world->activeCount);
 }

@@ -2,9 +2,9 @@
 
 SolState solState = {0};
 
-static double timeStep = 1.0f / 120.0f;
-static float smoothedFps = 120.0f;
-static float accumulator = 0.0f;
+static double timeStep = 1.0f / 60.0f;
+static double accumulator = 0.0f;
+static float smoothedFps = 60.0f;
 
 static void DebugFPS(double dt);
 static void Sol_OnResize();
@@ -29,13 +29,18 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
         World_Tick(solState.worlds[i], dt, time);
 
-    accumulator = accumulator > 0.25f ? 0.25f : accumulator + dt;
+    for (int i = 0; i < solState.worldCount; ++i)
+        Sol_System_Xform_Snapshot(solState.worlds[i]);
+    accumulator = accumulator > timeStep * 4 ? timeStep * 4 : accumulator + dt;
     while (accumulator >= timeStep)
     {
+        accumulator -= timeStep;
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], timeStep, time);
-        accumulator -= timeStep;
     }
+    float alpha = (float)(accumulator / timeStep);
+    for (int i = 0; i < solState.worldCount; ++i)
+        Sol_System_Xform_Interpolate(solState.worlds[i], alpha);
 
     Sol_Begin_Draw();
 

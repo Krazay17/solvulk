@@ -27,6 +27,7 @@ typedef enum
     HAS_MOVEMENT = (1 << 8),
     HAS_CONTROLLER = (1 << 9),
     HAS_CAMERA = (1 << 10),
+    HAS_CONTROLLER_AI = (1 << 11),
 } CompBits;
 
 typedef bool Active;
@@ -35,22 +36,22 @@ typedef uint32_t Mask;
 typedef struct CompXform CompXform;
 struct CompXform
 {
-    vec3s pos;
-    vec4s rot;
-    vec3s scale;
+    vec3s pos, lastPos, drawPos;
+    vec4s rot, lastRot, drawRot;
+    vec3s scale, lastScale, drawScale;
 };
 typedef enum
 {
     BODY_STATIC,
     BODY_DYNAMIC,
-}BodyType;
+} BodyType;
 typedef struct
 {
     vec3s vel, impulse, force;
     BodyType type;
     float grounded, airtime;
     float radius, height;
-    float mass, restitution;
+    float mass, invMass, restitution;
 } CompBody;
 
 typedef enum
@@ -75,7 +76,7 @@ typedef struct
 typedef struct
 {
     uint32_t gpuHandle;
-    
+
 } CompModel;
 
 typedef struct
@@ -115,11 +116,32 @@ typedef struct
     float yaw, pitch;
 } CompController;
 
+typedef enum
+{
+    AI_IDLE,
+    AI_FWD,
+    AI_BWD,
+    AI_LEFT,
+    AI_RIGHT,
+    AI_JUMP,
+    AI_DASH,
+} AiAction;
+typedef struct
+{
+    vec3s lookdir, wishdir;
+    AiAction actionState;
+} AiController;
+
 typedef struct World World;
 typedef void (*SystemFunc)(World *world, double dt, double time);
 
 struct World
 {
+    
+    SystemFunc preStepSystems[MAX_SYSTEMS];
+    int preStepCount;
+    SystemFunc postStepSystems[MAX_SYSTEMS];
+    int postStepCount;
     SystemFunc stepSystems[MAX_SYSTEMS];
     int stepCount;
     SystemFunc tickSystems[MAX_SYSTEMS];
@@ -127,6 +149,7 @@ struct World
     SystemFunc drawSystems[MAX_SYSTEMS];
     int drawCount;
 
+    int playerID;
     int activeEntities[MAX_ENTS];
     int activeCount;
 
@@ -182,6 +205,11 @@ SOLAPI CompUiElement Entity_Get_UiElement(World *world, int id);
 SOLAPI CompMovement Entity_Get_Movement(World *world, int id);
 SOLAPI CompController Entity_Get_Controller(World *world, int id);
 
+SOLAPI void Sol_Component_Init_Body(CompBody *body);
+
+// Xform systems
+SOLAPI void Sol_System_Xform_Snapshot(World *world);
+SOLAPI void Sol_System_Xform_Interpolate(World *world, float alpha);
 // Step Systems
 SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
@@ -194,7 +222,6 @@ SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
-
 // Draw Systems
 SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);

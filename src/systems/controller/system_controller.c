@@ -121,7 +121,3 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
         }
     }
 }
-
-void Sol_System_Controller_Ai_Tick(World *world, double dt, double time)
-{
-}

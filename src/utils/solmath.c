@@ -67,6 +67,39 @@ vec4s Sol_Quat_FromYawPitch(float yaw, float pitch)
     };
 }
 
+vec4s Sol_Quat_FromLookDir(vec3s lookDir)
+{
+    // Flatten to horizontal for yaw, then get pitch from vertical component
+    float yaw   = atan2f(lookDir.x, lookDir.z);
+    float pitch  = asinf(lookDir.y);
+
+    return Sol_Quat_FromYawPitch(yaw, -pitch);
+}
+
+vec4s Sol_Quat_FromLookDira(vec3s lookDir)
+{
+    vec3s forward = {0.0f, 0.0f, 1.0f};
+    vec3s dir = glms_vec3_normalize(lookDir);
+
+    float dot = glms_vec3_dot(forward, dir);
+
+    // Nearly the same direction
+    if (dot > 0.9999f)
+        return (vec4s){0, 0, 0, 1};
+
+    // Nearly opposite
+    if (dot < -0.9999f)
+        return (vec4s){0, 1, 0, 0}; // 180° around Y
+
+    vec3s axis = glms_vec3_normalize(glms_vec3_cross(forward, dir));
+    float angle = acosf(dot);
+
+    versor q;
+    glm_quatv(q, angle, (vec3){axis.x, axis.y, axis.z});
+
+    return (vec4s){q[0], q[1], q[2], q[3]};
+}
+
 float FlashAnim(float dt, float value, float speed)
 {
     speed = (speed > 0.0f) ? speed : 4.0f;

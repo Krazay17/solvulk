@@ -47,5 +47,7 @@ typedef struct
 
 vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
 vec4s Sol_Quat_FromYawPitch(float yaw, float pitch);
+vec4s Sol_Quat_FromLookDir(vec3s lookDir);
+vec4s Sol_Quat_FromLookDira(vec3s lookDir);
 float FlashAnim(float dt, float value, float speed);
 float PulseAnim(float dt, float value, float speed);

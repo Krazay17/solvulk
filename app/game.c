@@ -57,8 +57,12 @@ void MakeAWizard(void *data)
     static int posInc;
     World *world = (World *)data;
 
-    int wiz = Sol_Prefab_Wizard(world, (vec3s){0, posInc, 0});
-    //Entity_Add_Controller_Local(world, wiz, (CompController){0});
+    int wiz = Sol_Prefab_Wizard(world, (vec3s){
+                                           sin(solState.gameTime) * 20.0,
+                                           cos(solState.gameTime) * 20.0,
+                                           sin(solState.gameTime) * 20.0,
+                                       });
+    // Entity_Add_Controller_Local(world, wiz, (CompController){0});
     Entity_Add_Controller_Ai(world, wiz, (CompController){0});
     posInc++;
     Sol_Debug_Add("Entities", world->activeCount);

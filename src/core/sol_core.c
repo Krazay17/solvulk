@@ -19,6 +19,7 @@ void Sol_Init(void *hwnd, void *hInstance)
 
 void Sol_Tick(double dt, double time)
 {
+    solState.gameTime = time;
     SolInput_Update();
     if (SolInput_KeyPressed(SOL_KEY_ESCAPE))
         solState.worlds[0]->worldActive ^= 1;

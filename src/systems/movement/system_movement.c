@@ -24,10 +24,9 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 
             const MoveStateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
             funcs->update(world, id, dt);
-
-            Sol_Debug_Add("Velocity", glms_vec3_norm(body->vel));
         }
     }
+    Sol_Debug_Add("Velocity", glms_vec3_norm(world->bodies[world->playerID].vel));
 }
 
 void Sol_System_Movement_2d_Step(World *world, double dt, double time)

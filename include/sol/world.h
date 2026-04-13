@@ -3,7 +3,7 @@
 #include "sol/common.h"
 #include "sol/movement.h"
 
-#define MAX_ENTS 500000
+#define MAX_ENTS 50000
 #define MAX_SYSTEMS 64
 
 typedef enum

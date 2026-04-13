@@ -20,17 +20,20 @@
 #include "sol/movement.h"
 
 #define SOL_VERSION 1.0
+
 #define MAX_WORLDS 4
+#define SOL_PHYS_SUBSTEP 4
+#define SOL_PHYS_TIMESTEP 1.0f / 60.0f
 
 typedef enum
 {
-    ACTION_NONE     = 0,
-    ACTION_FWD      = (1 << 0),
-    ACTION_BWD      = (1 << 1),
-    ACTION_LEFT     = (1 << 2),
-    ACTION_RIGHT    = (1 << 3),
-    ACTION_JUMP     = (1 << 4),
-    ACTION_DASH     = (1 << 5),
+    ACTION_NONE = 0,
+    ACTION_FWD = (1 << 0),
+    ACTION_BWD = (1 << 1),
+    ACTION_LEFT = (1 << 2),
+    ACTION_RIGHT = (1 << 3),
+    ACTION_JUMP = (1 << 4),
+    ACTION_DASH = (1 << 5),
 } PlayerActionStates;
 
 typedef struct
@@ -39,6 +42,7 @@ typedef struct
     atomic_bool needsResize;
     float windowWidth, windowHeight;
     void *g_hwnd;
+    double gameTime;
 
     World *worlds[MAX_WORLDS];
     uint16_t worldCount;

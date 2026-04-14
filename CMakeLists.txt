@@ -140,13 +140,13 @@ add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
 
 #---- Server App ----
-# add_executable(solvulk_server server/main.c)
+add_executable(solvulk_server sol_server/main.c)
 
-# target_include_directories(solvulk_server PRIVATE
-#     "server"
-#     "vendored/enet/include"
-# )
+target_include_directories(solvulk_server PRIVATE
+    "sol_server/server.h"
+    "vendored/enet/include"
+)
 
-# if(WIN32)
-#     target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
-# endif()
+if(WIN32)
+    target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
+endif()

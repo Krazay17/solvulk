@@ -1,4 +1,3 @@
 build
 lib
-vendored
-server
+sol_server

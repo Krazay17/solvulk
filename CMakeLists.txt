@@ -5,12 +5,14 @@ option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(HOT_RELOAD "Build for hot reload" OFF)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
 set(SOL_PRIVATE_INCLUDE  
     "${CMAKE_SOURCE_DIR}/src"
-    "${CMAKE_SOURCE_DIR}/src/include"
+    "${CMAKE_SOURCE_DIR}/src/_internal"
 )
 
 find_package(Vulkan REQUIRED)
@@ -77,7 +79,7 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
-    add_executable(solapp WIN32 
+    add_executable(solapp #WIN32 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
         ${RESOURCE_FILE}

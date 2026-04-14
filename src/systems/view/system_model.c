@@ -34,11 +34,13 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
             continue;
 
         CompXform *xform = &world->xforms[id];
+        CompModel *modelComp = &world->models[id];
         uint32_t slot = cursors[world->models[id].gpuHandle]++;
 
         ModelSSBO *inst = &gpuData[slot];
-
-        memcpy(inst->position, &xform->drawPos, sizeof(float) * 3);
+        vec3s finalDraw = xform->drawPos;
+        finalDraw.y += modelComp->yOffset;
+        memcpy(inst->position, &finalDraw, sizeof(float) * 3);
         inst->position[3] = xform->scale.x;
 
         memcpy(inst->rotation, &xform->drawRot, sizeof(float) * 4);

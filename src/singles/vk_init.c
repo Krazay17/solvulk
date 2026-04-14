@@ -2,40 +2,6 @@
 #include <cglm/struct.h>
 
 #include "sol_core.h"
-#include "render_internal.h"
-
-// SolPipelineConfig pipelineConfigs[PIPE_COUNT] = {
-//     [PIPE_3D_MESH] = {
-//         .vertResource = "ID_SHADER_BASIC3D",
-//         .fragResource = "ID_SHADER_BASIC3DFRAG",
-//         .depthTest = 1,
-//         .alphaBlend = 1,
-//         .cullBackface = 1,
-//         .pushRangeSize = sizeof(float) * 32,
-//         .descLayoutCount = 2,
-//         .descLayouts = NULL,
-//     },
-//     [PIPE_2D_BUTTON] = {
-//         .vertResource = "ID_SHADER_BASICRECT",
-//         .fragResource = "ID_SHADER_BASICRECTFRAG",
-//         .depthTest = 0,
-//         .alphaBlend = 1,
-//         .cullBackface = 0,
-//         .pushRangeSize = sizeof(float) * 32,
-//         .descLayoutCount = 0,
-//         .descLayouts = NULL,
-//     },
-//     [PIPE_2D_TEXT] = {
-//         .vertResource = "ID_SHADER_BASICTEXT",
-//         .fragResource = "ID_SHADER_BASICTEXTFRAG",
-//         .depthTest = 0,
-//         .alphaBlend = 0,
-//         .cullBackface = 0,
-//         .pushRangeSize = sizeof(float) * 32,
-//         .descLayoutCount = 1,
-//         .descLayouts = NULL,
-//     },
-// };
 
 TextBounds ParseBounds(const char *p, const char *end)
 {

@@ -1,17 +1,8 @@
 #pragma once
-#include "sol/math.h"
-#include "sol/common.h"
-#include "sol/movement.h"
+#include "sol/types.h"
 
 #define MAX_ENTS 50000
 #define MAX_SYSTEMS 64
-
-typedef enum
-{
-    SYSTEM_STEP,
-    SYSTEM_TICK,
-    SYSTEM_DRAW,
-} SystemKind;
 
 typedef enum
 {
@@ -33,19 +24,20 @@ typedef enum
 typedef bool Active;
 typedef uint32_t Mask;
 
-typedef struct CompXform CompXform;
-struct CompXform
+typedef struct CompXform
 {
     vec3s pos, lastPos, drawPos;
     vec4s rot, lastRot, drawRot;
     vec3s scale, lastScale, drawScale;
-};
+} CompXform;
+
 typedef enum
 {
     BODY_STATIC,
     BODY_DYNAMIC,
 } BodyType;
-typedef struct
+
+typedef struct CompBody
 {
     vec3s vel, impulse, force;
     BodyType type;
@@ -59,33 +51,35 @@ typedef enum
     SHAPE_RECTANGLE,
     SHAPE_TRIANGLE,
 } ShapeType;
-typedef struct
+
+typedef struct CompShape
 {
     ShapeType type;
     float width, height;
 } CompShape;
 
 typedef void (*InteractCallback)(void *data);
-typedef struct
+typedef struct CompInteractable
 {
     bool isHovered, isPressed, isClicked, onHold;
     InteractCallback callback;
     void *callbackData;
 } CompInteractable;
 
-typedef struct
+typedef struct CompModel
 {
     uint32_t gpuHandle;
-
+    SolModel *model;
+    float yOffset;
 } CompModel;
 
-typedef struct
+typedef struct CompInfo
 {
     char name[24];
 
 } CompInfo;
 
-typedef struct
+typedef struct CompUiElement
 {
     SolColor baseColor;
     SolColor textColor;
@@ -100,7 +94,7 @@ typedef struct
     SolColor borderColor;
 } CompUiElement;
 
-typedef struct
+typedef struct CompMovement
 {
     vec3s wishdir, updir, lockdir;
     float stateTimer;
@@ -108,7 +102,7 @@ typedef struct
     MoveConfigId configId;
 } CompMovement;
 
-typedef struct
+typedef struct CompController
 {
     vec3s lookdir, wishdir;
     vec2s wishdir2;
@@ -116,116 +110,34 @@ typedef struct
     float yaw, pitch;
 } CompController;
 
-typedef enum
-{
-    AI_IDLE,
-    AI_FWD,
-    AI_BWD,
-    AI_LEFT,
-    AI_RIGHT,
-    AI_JUMP,
-    AI_DASH,
-} AiAction;
-typedef struct
+typedef struct AiController
 {
     vec3s lookdir, wishdir;
     AiAction actionState;
 } AiController;
 
-typedef struct World World;
-typedef void (*SystemFunc)(World *world, double dt, double time);
-
-struct World
-{
-    
-    SystemFunc preStepSystems[MAX_SYSTEMS];
-    int preStepCount;
-    SystemFunc postStepSystems[MAX_SYSTEMS];
-    int postStepCount;
-    SystemFunc stepSystems[MAX_SYSTEMS];
-    int stepCount;
-    SystemFunc tickSystems[MAX_SYSTEMS];
-    int tickCount;
-    SystemFunc drawSystems[MAX_SYSTEMS];
-    int drawCount;
-
-    int playerID;
-    int activeEntities[MAX_ENTS];
-    int activeCount;
-
-    Active actives[MAX_ENTS];
-    Mask masks[MAX_ENTS];
-
-    CompXform xforms[MAX_ENTS];
-    CompBody bodies[MAX_ENTS];
-    CompShape shapes[MAX_ENTS];
-    CompModel models[MAX_ENTS];
-    CompInteractable interactables[MAX_ENTS];
-    CompInfo infos[MAX_ENTS];
-    CompUiElement uiElements[MAX_ENTS];
-    CompMovement movements[MAX_ENTS];
-    CompController controllers[MAX_ENTS];
-
-    bool worldActive;
-};
-
 SOLAPI World *World_Create(void);
 SOLAPI World *World_Create_Default(void);
 SOLAPI void World_Destroy(World *world);
 
-SOLAPI void World_Step(World *world, double dt, double time);
-SOLAPI void World_Tick(World *world, double dt, double time);
-SOLAPI void World_Draw(World *world, double dt, double time);
-
-SOLAPI void World_System_Add(World *world, SystemFunc func, SystemKind kind);
-
 SOLAPI int Entity_Create(World *world);
 SOLAPI void Entity_Destroy(World *world, int id);
-
-SOLAPI void Entity_Add_Xform(World *world, int id, CompXform xform);
-SOLAPI void Entity_Add_Body2(World *world, int id, CompBody body);
-SOLAPI void Entity_Add_Body3(World *world, int id, CompBody body);
-SOLAPI void Entity_Add_Shape(World *world, int id, CompShape shape);
-SOLAPI void Entity_Add_Interact(World *world, int id, CompInteractable interact);
-SOLAPI void Entity_Add_Info(World *world, int id, CompInfo info);
-SOLAPI void Entity_Add_UiElement(World *world, int id, CompUiElement uiElement);
-SOLAPI void Entity_Add_Movement(World *world, int id, CompMovement movement);
-SOLAPI void Entity_Add_Controller_Local(World *world, int id, CompController controller);
-SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController controller);
-SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller);
-SOLAPI void Entity_Add_Model(World *world, int id, CompModel model);
-
-SOLAPI CompXform Entity_Get_Xform(World *world, int id);
-SOLAPI CompBody Entity_Get_Body2(World *world, int id);
-SOLAPI CompBody Entity_Get_Body3(World *world, int id);
-SOLAPI CompShape Entity_Get_Shape(World *world, int id);
-SOLAPI CompInteractable Entity_Get_Interact(World *world, int id);
-SOLAPI CompInfo Entity_Get_Info(World *world, int id);
-SOLAPI CompUiElement Entity_Get_UiElement(World *world, int id);
-SOLAPI CompMovement Entity_Get_Movement(World *world, int id);
-SOLAPI CompController Entity_Get_Controller(World *world, int id);
-
-SOLAPI void Sol_Component_Init_Body(CompBody *body);
-
-// Xform systems
-SOLAPI void Sol_System_Xform_Snapshot(World *world);
-SOLAPI void Sol_System_Xform_Interpolate(World *world, float alpha);
-// Step Systems
-SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
-SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
-SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
-SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
-// Tick Systems
-SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
-SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
-SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
-SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
-SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
-SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
-// Draw Systems
-SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
-SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
 
 SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
 SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
+
+SOLAPI CompXform *Entity_Add_Xform(World *world, int id);
+SOLAPI CompBody *Entity_Add_Body2(World *world, int id);
+SOLAPI CompBody *Entity_Add_Body3(World *world, int id);
+SOLAPI CompShape *Entity_Add_Shape(World *world, int id);
+SOLAPI CompInteractable *Entity_Add_Interact(World *world, int id);
+SOLAPI CompInfo *Entity_Add_Info(World *world, int id);
+SOLAPI CompUiElement *Entity_Add_UiElement(World *world, int id);
+SOLAPI CompMovement *Entity_Add_Movement(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Local(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Remote(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Ai(World *world, int id);
+SOLAPI CompModel *Entity_Add_Model(World *world, int id);
+
+int Sol_World_GetEntCount(World *world);

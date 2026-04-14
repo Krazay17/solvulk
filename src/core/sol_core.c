@@ -17,6 +17,16 @@ void Sol_Init(void *hwnd, void *hInstance)
     Sol_Loader_LoadModels();
 }
 
+SolState *Sol_GetState()
+{
+    return &solState;
+}
+
+double Sol_GetGameTime()
+{
+    return solState.gameTime;
+}
+
 void Sol_Tick(double dt, double time)
 {
     solState.gameTime = time;

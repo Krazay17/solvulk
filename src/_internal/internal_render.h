@@ -1,6 +1,6 @@
 #pragma once
+
 #include <vulkan/vulkan.h>
-#include "sol/render.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_DEVICE_QUERY 8
@@ -8,7 +8,62 @@
 #define MAX_GPU_MODELS 256
 #define MAX_MODEL_INSTANCES 500000
 
+#define MAX_DEBUGS 12
+#define MAX_STR_LEN 64
+
 // ─── Reusable resource types ─────────────────────────────────────
+
+typedef struct DebugLines
+{
+    int characterCount[MAX_DEBUGS];
+    char text[MAX_DEBUGS][MAX_STR_LEN];
+    float value[MAX_DEBUGS];
+    int count;
+} DebugLines;
+
+typedef struct SolCamera
+{
+    vec3 position;
+    vec3 target;
+    float fov;
+    float nearClip;
+    float farClip;
+    mat4 proj;
+    mat4 view;
+} SolCamera;
+
+typedef struct
+{
+    float position[3];
+    float normal[3];
+    float uv[2];
+} SolVertex;
+
+typedef struct
+{
+    float baseColor[4];
+    float metallic;
+    float roughness;
+} SolMaterial;
+
+typedef struct SolMesh
+{
+    uint32_t vertexOffset;
+    uint32_t vertexCount;
+    uint32_t indexOffset;
+    uint32_t indexCount;
+    SolMaterial material;
+} SolMesh;
+
+typedef struct SolModel
+{
+    SolVertex *vertices;
+    uint32_t *indices;
+    SolMesh *meshes;
+    uint32_t totalVertices;
+    uint32_t totalIndices;
+    uint32_t meshCount;
+} SolModel;
 
 typedef struct {
     VkDescriptorSetLayout layout;
@@ -211,3 +266,4 @@ void *Sol_ModelBuffer_Get(void);
 void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds ParseBounds(const char *p, const char *end);
 int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate);
+void Sol_Debug_Draw();

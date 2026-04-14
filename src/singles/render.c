@@ -2,7 +2,6 @@
 #include <cglm/struct.h>
 
 #include "sol_core.h"
-#include "render_internal.h"
 
 SolVkState solvkstate = {0};
 
@@ -96,9 +95,14 @@ void Sol_Render_Resize()
     SolVkImageViews(&solvkstate);
     SolVkDepthResources(&solvkstate);
     Sol_SetOrtho(width, height);
-    solState.windowWidth = width;
-    solState.windowHeight = height;
+    Sol_GetState()->windowWidth = (float)width;
+    Sol_GetState()->windowHeight = (float)height;
     solAspectRatio = (float)width / (float)height;
+}
+
+SolCamera *Sol_GetCamera()
+{
+    return &renderCam;
 }
 
 void Sol_Camera_Update(vec3 pos, vec3 target)
@@ -481,10 +485,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)
-    {
-        // You should eventually implement a Sol_FreeGpuModel function here
         free(gpuModels[modelId].meshes);
-    }
 
     SolGpuModel gpuModel = {0};
     gpuModel.meshCount = model->meshCount;
@@ -492,11 +493,8 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
 
     // 2. Calculate total memory needed for a single staging allocation
     VkDeviceSize totalSize = 0;
-    for (uint32_t m = 0; m < model->meshCount; m++)
-    {
-        totalSize += (sizeof(SolVertex) * model->meshes[m].vertexCount);
-        totalSize += (sizeof(uint32_t) * model->meshes[m].indexCount);
-    }
+    totalSize += sizeof(SolVertex) * model->totalVertices;
+    totalSize += sizeof(uint32_t) * model->totalIndices;
 
     // 3. Create a single staging buffer for all data
     VkBuffer stagingBuffer;
@@ -509,18 +507,11 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     void *data;
     vkMapMemory(solvkstate.device, stagingMemory, 0, totalSize, 0, &data);
 
-    VkDeviceSize currentOffset = 0;
-    for (uint32_t m = 0; m < model->meshCount; m++)
-    {
-        SolMesh *src = &model->meshes[m];
-        VkDeviceSize vSize = sizeof(SolVertex) * src->vertexCount;
-        VkDeviceSize iSize = sizeof(uint32_t) * src->indexCount;
-
-        memcpy((uint8_t *)data + currentOffset, src->vertices, vSize);
-        currentOffset += vSize;
-        memcpy((uint8_t *)data + currentOffset, src->indices, iSize);
-        currentOffset += iSize;
-    }
+    VkDeviceSize verticesSize = sizeof(SolVertex) * model->totalVertices;
+    VkDeviceSize indicesSize = sizeof(uint32_t) * model->totalIndices;
+    memcpy((uint8_t *)data, model->vertices, verticesSize);
+    memcpy((uint8_t *)data + verticesSize, model->indices, indicesSize);
+    
     vkUnmapMemory(solvkstate.device, stagingMemory);
 
     // 5. Setup single command buffer for batch transfer
@@ -538,17 +529,18 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkBeginCommandBuffer(copyCmd, &beginInfo);
 
     // 6. Create GPU buffers and record copy commands
-    currentOffset = 0;
     for (uint32_t m = 0; m < model->meshCount; m++)
     {
         SolMesh *src = &model->meshes[m];
         SolGpuMesh *dst = &gpuModel.meshes[m];
         dst->indexCount = src->indexCount;
+        dst->material = src->material;
 
         VkDeviceSize vSize = sizeof(SolVertex) * src->vertexCount;
         VkDeviceSize iSize = sizeof(uint32_t) * src->indexCount;
-        dst->material = src->material;
 
+        VkDeviceSize vSrcOffset = sizeof(SolVertex) * src->vertexOffset;
+        VkDeviceSize iSrcOffset = verticesSize + sizeof(uint32_t) * src->indexOffset;
         // Create Device Local Buffers
         SolCreateBuffer(&solvkstate, vSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &dst->vertexBuffer, &dst->vertexMemory);
@@ -556,13 +548,11 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &dst->indexBuffer, &dst->indexMemory);
 
         // Record Copies
-        VkBufferCopy vCopy = {.srcOffset = currentOffset, .dstOffset = 0, .size = vSize};
+        VkBufferCopy vCopy = {.srcOffset = vSrcOffset, .dstOffset = 0, .size = vSize};
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->vertexBuffer, 1, &vCopy);
-        currentOffset += vSize;
 
-        VkBufferCopy iCopy = {.srcOffset = currentOffset, .dstOffset = 0, .size = iSize};
+        VkBufferCopy iCopy = {.srcOffset = iSrcOffset, .dstOffset = 0, .size = iSize};
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->indexBuffer, 1, &iCopy);
-        currentOffset += iSize;
     }
 
     vkEndCommandBuffer(copyCmd);

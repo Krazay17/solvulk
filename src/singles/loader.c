@@ -6,40 +6,39 @@
 
 #include "sol_core.h"
 
-static SolBank bank = {0};
+static SolModel cpuModels[SOL_MODEL_COUNT] = {0};
 
 // name of the resource linked in the resources.rc
-static const char *models[SOL_MODEL_COUNT] = {
+static const char *modelResourceName[SOL_MODEL_COUNT] = {
     "ID_MODEL_WIZARD",
     "ID_MODEL_WORLD0",
 };
+
+SolModel *Sol_GetModel(SolModelId id)
+{
+    return &cpuModels[id];
+}
 
 void Sol_Loader_LoadModels()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; ++i)
     {
-        SolModel cpu = Sol_LoadModel(models[i]);
-        Sol_UploadModel(&cpu, i);
-        Sol_FreeModel(&cpu);
+        cpuModels[i] = Sol_LoadModel(modelResourceName[i]);
+        Sol_UploadModel(&cpuModels[i], i);
     }
 }
 
-SolBank *Sol_Loader_GetBank(void)
-{
-    return &bank;
-}
-
-char *Sol_ReadFile(const char *filename, size_t *outSize)
+char *Sol_ReadFile(const char *filename, long *outSize)
 {
     FILE *file = fopen(filename, "rb");
     if (!file)
     {
-        MessageBox(NULL, filename, "Failed to open shader file", MB_OK);
+        MessageBox(NULL, filename, "Failed to open file", MB_OK);
         return NULL;
     }
 
     fseek(file, 0, SEEK_END);
-    size_t size = ftell(file);
+    long size = ftell(file);
     rewind(file);
 
     char *buffer = malloc(size);
@@ -78,108 +77,91 @@ SolModel Sol_LoadModel(const char *resourceName)
 {
     SolModel model = {0};
 
-    // load raw bytes from exe resources
     SolResource res = Sol_LoadResource(resourceName);
-    if (!res.data)
-    {
-        printf("Failed to load resource: %s\n", resourceName);
-        return model;
-    }
+    if (!res.data) return model;
 
-    // parse the glb
     cgltf_options options = {0};
     cgltf_data *data = NULL;
-    cgltf_result result = cgltf_parse(&options, res.data, res.size, &data);
-    if (result != cgltf_result_success)
-    {
-        printf("Failed to parse GLB: %s\n", resourceName);
+    if (cgltf_parse(&options, res.data, res.size, &data) != cgltf_result_success)
         return model;
-    }
-
-    // load the buffer data (needed to access actual vertex bytes)
     cgltf_load_buffers(&options, data, NULL);
 
-    // count total meshes across all nodes
     model.meshCount = (uint32_t)data->meshes_count;
-    model.meshes = malloc(sizeof(SolMesh) * model.meshCount);
-    memset(model.meshes, 0, sizeof(SolMesh) * model.meshCount);
+    model.meshes = calloc(model.meshCount, sizeof(SolMesh));
 
+    // Pass 1: count totals
     for (uint32_t m = 0; m < model.meshCount; m++)
     {
-        cgltf_mesh *srcMesh = &data->meshes[m];
+        cgltf_mesh *src = &data->meshes[m];
+        if (src->primitives_count == 0) continue;
+        cgltf_primitive *prim = &src->primitives[0];
 
-        // for simplicity take the first primitive only
-        if (srcMesh->primitives_count == 0)
-            continue;
-        cgltf_primitive *prim = &srcMesh->primitives[0];
+        cgltf_accessor *posAcc = NULL;
+        for (uint32_t a = 0; a < prim->attributes_count; a++)
+            if (prim->attributes[a].type == cgltf_attribute_type_position)
+                posAcc = prim->attributes[a].data;
 
-        SolMesh *dstMesh = &model.meshes[m];
-        dstMesh->material.baseColor[0] = 1.0f;
-        dstMesh->material.baseColor[1] = 1.0f;
-        dstMesh->material.baseColor[2] = 1.0f;
-        dstMesh->material.baseColor[3] = 1.0f;
-        dstMesh->material.metallic = 0.0f;
-        dstMesh->material.roughness = 1.0f;
+        if (!posAcc) continue;
 
-        if (prim->material)
+        model.meshes[m].vertexCount = (uint32_t)posAcc->count;
+        model.meshes[m].indexCount  = prim->indices ? (uint32_t)prim->indices->count : 0;
+        model.totalVertices += model.meshes[m].vertexCount;
+        model.totalIndices  += model.meshes[m].indexCount;
+    }
+
+    // Single allocation
+    model.vertices = calloc(model.totalVertices, sizeof(SolVertex));
+    model.indices  = malloc(model.totalIndices * sizeof(uint32_t));
+
+    // Pass 2: fill data
+    uint32_t vOff = 0, iOff = 0;
+    for (uint32_t m = 0; m < model.meshCount; m++)
+    {
+        cgltf_mesh *src = &data->meshes[m];
+        if (src->primitives_count == 0) continue;
+        cgltf_primitive *prim = &src->primitives[0];
+
+        SolMesh *dst = &model.meshes[m];
+        dst->vertexOffset = vOff;
+        dst->indexOffset   = iOff;
+
+        // Material
+        dst->material = (SolMaterial){.baseColor = {1,1,1,1}, .roughness = 1.0f};
+        if (prim->material && prim->material->has_pbr_metallic_roughness)
         {
-            cgltf_material *srcMat = prim->material;
-
-            if (srcMat->has_pbr_metallic_roughness)
-            {
-                cgltf_pbr_metallic_roughness *pbr = &srcMat->pbr_metallic_roughness;
-                dstMesh->material.baseColor[0] = pbr->base_color_factor[0];
-                dstMesh->material.baseColor[1] = pbr->base_color_factor[1];
-                dstMesh->material.baseColor[2] = pbr->base_color_factor[2];
-                dstMesh->material.baseColor[3] = pbr->base_color_factor[3];
-                dstMesh->material.metallic = pbr->metallic_factor;
-                dstMesh->material.roughness = pbr->roughness_factor;
-            }
+            cgltf_pbr_metallic_roughness *pbr = &prim->material->pbr_metallic_roughness;
+            memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
+            dst->material.metallic  = pbr->metallic_factor;
+            dst->material.roughness = pbr->roughness_factor;
         }
 
-        // --- read indices ---
-        if (prim->indices)
-        {
-            dstMesh->indexCount = (uint32_t)prim->indices->count;
-            dstMesh->indices = malloc(sizeof(uint32_t) * dstMesh->indexCount);
-            for (uint32_t i = 0; i < dstMesh->indexCount; i++)
-            {
-                dstMesh->indices[i] = (uint32_t)cgltf_accessor_read_index(prim->indices, i);
-            }
-        }
-
-        // --- find accessors for position, normal, uv ---
-        cgltf_accessor *posAccessor = NULL;
-        cgltf_accessor *nrmAccessor = NULL;
-        cgltf_accessor *uvAccessor = NULL;
-
+        // Accessors
+        cgltf_accessor *posAcc = NULL, *nrmAcc = NULL, *uvAcc = NULL;
         for (uint32_t a = 0; a < prim->attributes_count; a++)
         {
             cgltf_attribute *attr = &prim->attributes[a];
-            if (attr->type == cgltf_attribute_type_position)
-                posAccessor = attr->data;
-            if (attr->type == cgltf_attribute_type_normal)
-                nrmAccessor = attr->data;
-            if (attr->type == cgltf_attribute_type_texcoord)
-                uvAccessor = attr->data;
+            if (attr->type == cgltf_attribute_type_position)  posAcc = attr->data;
+            if (attr->type == cgltf_attribute_type_normal)    nrmAcc = attr->data;
+            if (attr->type == cgltf_attribute_type_texcoord)  uvAcc  = attr->data;
         }
+        if (!posAcc) continue;
 
-        if (!posAccessor)
-            continue;
-
-        // --- read vertices ---
-        dstMesh->vertexCount = (uint32_t)posAccessor->count;
-        dstMesh->vertices = malloc(sizeof(SolVertex) * dstMesh->vertexCount);
-        memset(dstMesh->vertices, 0, sizeof(SolVertex) * dstMesh->vertexCount);
-
-        for (uint32_t v = 0; v < dstMesh->vertexCount; v++)
+        // Vertices
+        for (uint32_t v = 0; v < dst->vertexCount; v++)
         {
-            cgltf_accessor_read_float(posAccessor, v, dstMesh->vertices[v].position, 3);
-            if (nrmAccessor)
-                cgltf_accessor_read_float(nrmAccessor, v, dstMesh->vertices[v].normal, 3);
-            if (uvAccessor)
-                cgltf_accessor_read_float(uvAccessor, v, dstMesh->vertices[v].uv, 2);
+            SolVertex *vert = &model.vertices[vOff + v];
+            cgltf_accessor_read_float(posAcc, v, vert->position, 3);
+            if (nrmAcc) cgltf_accessor_read_float(nrmAcc, v, vert->normal, 3);
+            if (uvAcc)  cgltf_accessor_read_float(uvAcc,  v, vert->uv, 2);
         }
+
+        // Indices
+        if (prim->indices)
+            for (uint32_t i = 0; i < dst->indexCount; i++)
+                model.indices[iOff + i] = (uint32_t)cgltf_accessor_read_index(prim->indices, i);
+
+        vOff += dst->vertexCount;
+        iOff += dst->indexCount;
     }
 
     cgltf_free(data);
@@ -188,11 +170,8 @@ SolModel Sol_LoadModel(const char *resourceName)
 
 void Sol_FreeModel(SolModel *model)
 {
-    for (uint32_t i = 0; i < model->meshCount; i++)
-    {
-        free(model->meshes[i].vertices);
-        free(model->meshes[i].indices);
-    }
+    free(model->vertices);
+    free(model->indices);
     free(model->meshes);
-    model->meshCount = 0;
+    memset(model, 0, sizeof(SolModel));
 }

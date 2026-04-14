@@ -18,8 +18,9 @@ void Sol_System_Xform_Snapshot(World *world)
 void Sol_System_Xform_Interpolate(World *world, float alpha)
 {
     int i;
-    // #pragma omp parallel for
-    for (i = 0; i < world->activeCount; ++i)
+    int count = world->activeCount;
+#pragma omp parallel for if (count > 1000) schedule(guided)
+    for (i = 0; i < count; ++i)
     {
         int id = world->activeEntities[i];
         if (world->masks[id] & HAS_XFORM)

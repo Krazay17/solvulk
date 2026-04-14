@@ -1,27 +1,9 @@
 #pragma once
+
 #include <stdbool.h>
 #include <cglm/types-struct.h>
 
 typedef struct World World;
-
-typedef enum
-{
-    MOVE_CONFIG_PLAYER,
-    MOVE_CONFIG_WIZARD,
-    MOVE_CONFIG_COUNT,
-} MoveConfigId;
-
-typedef enum
-{
-    MOVE_IDLE,
-    MOVE_WALK,
-    MOVE_FALL,
-    MOVE_JUMP,
-    MOVE_DASH,
-    MOVE_SLIDE,
-    MOVE_FLY,
-    MOVE_STATE_COUNT
-} MoveState;
 
 typedef struct
 {

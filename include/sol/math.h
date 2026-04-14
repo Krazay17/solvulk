@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
@@ -40,14 +41,15 @@ typedef struct
         .a = (alpha)               \
     }
 
-    SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
-    SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
-    
-    bool Sol_Check_2d_Collision(vec2s a, vec4s b);
+SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
+SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
+
+bool Sol_Check_2d_Collision(vec2s a, vec4s b);
 
 vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
 vec4s Sol_Quat_FromYawPitch(float yaw, float pitch);
 vec4s Sol_Quat_FromLookDir(vec3s lookDir);
 vec4s Sol_Quat_FromLookDira(vec3s lookDir);
+vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
 float FlashAnim(float dt, float value, float speed);
 float PulseAnim(float dt, float value, float speed);

@@ -6,14 +6,15 @@ World *World_Create(void)
     if (world)
     {
         world->worldActive = true;
-        solState.worlds[solState.worldCount] = world;
-        solState.worldCount++;
+
+        SolState *state = Sol_GetState();
+        state->worlds[state->worldCount++] = world;
     }
 
     return world;
 }
 
-SOLAPI World *World_Create_Default(void)
+World *World_Create_Default(void)
 {
     World *world = World_Create();
     if (world)
@@ -147,78 +148,85 @@ void Entity_Destroy(World *world, int id)
     }
 }
 
-void Entity_Add_Xform(World *world, int id, CompXform xform)
+CompXform *Entity_Add_Xform(World *world, int id)
 {
-    world->xforms[id] = xform;
     world->masks[id] |= HAS_XFORM;
+    return &world->xforms[id];
 }
 
-void Entity_Add_Body2(World *world, int id, CompBody body)
+CompBody *Entity_Add_Body2(World *world, int id)
 {
-    world->bodies[id] = body;
     world->masks[id] |= HAS_BODY2;
+    return &world->bodies[id];
 }
 
-void Entity_Add_Body3(World *world, int id, CompBody body)
+CompBody *Entity_Add_Body3(World *world, int id)
 {
-    Sol_Component_Init_Body(&body);
-    world->bodies[id] = body;
     world->masks[id] |= HAS_BODY3;
+    return &world->bodies[id];
 }
 
-void Entity_Add_Shape(World *world, int id, CompShape shape)
+CompShape *Entity_Add_Shape(World *world, int id)
 {
-    world->shapes[id] = shape;
     world->masks[id] |= HAS_SHAPE;
+    return &world->shapes[id];
 }
 
-void Entity_Add_Interact(World *world, int id, CompInteractable interact)
+CompInteractable *Entity_Add_Interact(World *world, int id)
 {
-    world->interactables[id] = interact;
+
     world->masks[id] |= HAS_INTERACT;
+    return &world->interactables[id];
 }
 
-void Entity_Add_Info(World *world, int id, CompInfo info)
+CompInfo *Entity_Add_Info(World *world, int id)
 {
-    world->infos[id] = info;
     world->masks[id] |= HAS_INFO;
+    return &world->infos[id];
 }
 
-void Entity_Add_UiElement(World *world, int id, CompUiElement uiElement)
+CompUiElement *Entity_Add_UiElement(World *world, int id)
 {
-    world->uiElements[id] = uiElement;
     world->masks[id] |= HAS_UI_ELEMENT;
+    return &world->uiElements[id];
 }
 
-void Entity_Add_Movement(World *world, int id, CompMovement movement)
+CompMovement *Entity_Add_Movement(World *world, int id)
 {
-    world->movements[id] = movement;
     world->masks[id] |= HAS_MOVEMENT;
+    return &world->movements[id];
 }
 
-void Entity_Add_Controller_Local(World *world, int id, CompController controller)
+CompController *Entity_Add_Controller_Local(World *world, int id)
 {
-    world->controllers[id] = controller;
     world->masks[id] |= HAS_CONTROLLER;
+    world->playerID = id;
+    return &world->controllers[id];
 }
 
-SOLAPI void Entity_Add_Controller_Remote(World *world, int id, CompController controller)
+CompController *Entity_Add_Controller_Remote(World *world, int id)
 {
+    world->masks[id] |= HAS_CONTROLLER;
+    return &world->controllers[id];
 }
 
-SOLAPI void Entity_Add_Controller_Ai(World *world, int id, CompController controller)
+CompController *Entity_Add_Controller_Ai(World *world, int id)
 {
-    world->controllers[id] = controller;
     world->masks[id] |= HAS_CONTROLLER_AI;
+    return &world->controllers[id];
 }
 
-SOLAPI void Entity_Add_Model(World *world, int id, CompModel model)
+CompModel *Entity_Add_Model(World *world, int id)
 {
-    world->models[id] = model;
     world->masks[id] |= HAS_MODEL;
+    return &world->models[id];
 }
 
-CompUiElement Entity_Get_UiElement(World *world, int id)
+int Sol_World_GetEntCount(World *world)
 {
-    return world->uiElements[id];
+    return world->activeCount;
+}
+CompUiElement *Entity_Get_UiElement(World *world, int id)
+{
+    return &world->uiElements[id];
 }

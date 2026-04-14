@@ -1,3 +1,6 @@
 [submodule "vendored/enet"]
 	path = vendored/enet
 	url = https://github.com/zpl-c/enet.git
+[submodule "vendored/qu3e"]
+	path = vendored/qu3e
+	url = https://github.com/RandyGaul/qu3e

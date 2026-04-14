@@ -178,7 +178,7 @@ typedef struct {
 
 // ─── Vulkan plumbing (exists once) ───────────────────────────────
 
-struct SolVkState {
+typedef struct SolVkState {
     VkInstance instance;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
@@ -204,7 +204,7 @@ struct SolVkState {
     VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
     VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
     VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
-};
+} SolVkState;
 
 // ─── Vulkan init functions ───────────────────────────────────────
 

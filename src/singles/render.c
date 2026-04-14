@@ -487,6 +487,8 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     if (gpuModels[modelId].meshes != NULL)
         free(gpuModels[modelId].meshes);
 
+    // if (!model || model->meshCount < 1)
+    //     return;
     SolGpuModel gpuModel = {0};
     gpuModel.meshCount = model->meshCount;
     gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
@@ -511,7 +513,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     VkDeviceSize indicesSize = sizeof(uint32_t) * model->totalIndices;
     memcpy((uint8_t *)data, model->vertices, verticesSize);
     memcpy((uint8_t *)data + verticesSize, model->indices, indicesSize);
-    
+
     vkUnmapMemory(solvkstate.device, stagingMemory);
 
     // 5. Setup single command buffer for batch transfer

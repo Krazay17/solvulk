@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdatomic.h>
 #include <string.h>
 #include <assert.h>
 
@@ -32,9 +31,9 @@
 
 typedef struct World World;
 typedef struct SolState SolState;
-typedef struct SolCamera SolCamera;
 typedef struct SolModel SolModel;
-typedef struct SolVkState SolVkState;
+typedef struct SolCamera SolCamera;
+
 
 typedef enum
 {
@@ -57,6 +56,26 @@ typedef enum
     AI_JUMP,
     AI_DASH,
 } AiAction;
+
+typedef struct
+{
+    float x, y, z;
+} SolVec3;
+
+typedef struct
+{
+    float x, y;
+} SolVec2;
+
+typedef struct
+{
+    float x, y, w, h;
+} SolRect;
+
+typedef struct
+{
+    uint8_t r, g, b, a;
+} SolColor;
 
 typedef enum
 {

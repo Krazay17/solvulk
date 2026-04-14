@@ -15,10 +15,10 @@ static int keyMap[SOL_KEY_COUNT] = {
     SOL_KEYCODE_SHIFT,
 };
 
-static atomic_bool rawKeys[SOL_KEY_COUNT];
-static atomic_bool rawMouseButtons[SOL_MOUSE_COUNT];
-static atomic_int rawMouseX, rawMouseY;
-static atomic_int rawMouseDeltaX, rawMouseDeltaY;
+static volatile bool rawKeys[SOL_KEY_COUNT];
+static volatile bool rawMouseButtons[SOL_MOUSE_COUNT];
+static volatile int rawMouseX, rawMouseY;
+static volatile int rawMouseDeltaX, rawMouseDeltaY;
 
 // snapshot read by game thread
 static bool mouseLocked;
@@ -72,8 +72,10 @@ void SolInput_Update()
         mouseButtons[i] = rawMouseButtons[i];
     mouseX = rawMouseX;
     mouseY = rawMouseY;
-    mouseDeltaX = atomic_exchange(&rawMouseDeltaX, 0);
-    mouseDeltaY = atomic_exchange(&rawMouseDeltaY, 0);
+    mouseDeltaX = rawMouseDeltaX;
+    rawMouseDeltaX = 0;
+    mouseDeltaY = rawMouseDeltaY;
+    rawMouseDeltaY = 0;
 
     if (mouseButtons[SOL_MOUSE_RIGHT])
         mouseLocked = true;

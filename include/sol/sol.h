@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sol/types.h"
-#include "sol/math.h"
 #include "sol/world.h"
 
 #define SOL_VERSION 1.0

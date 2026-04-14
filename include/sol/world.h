@@ -1,4 +1,5 @@
 #pragma once
+
 #include "sol/types.h"
 
 #define MAX_ENTS 50000

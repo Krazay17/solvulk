@@ -1,65 +1,66 @@
 cmake_minimum_required(VERSION 3.20)
 project(solvulk C)
-
+# --- Options & Global Settings ---
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(HOT_RELOAD "Build for hot reload" OFF)
+option(SOL_DEV_MODE "Build dev mode" ON)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-
-set(SOL_PUBLIC_INCLUDE "${CMAKE_SOURCE_DIR}/include")
-set(SOL_PRIVATE_INCLUDE  
-    "${CMAKE_SOURCE_DIR}/src"
-    "${CMAKE_SOURCE_DIR}/src/_internal"
-)
-
+# --- Dependencies ---
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(Threads REQUIRED)
-
+# --- Engine Target (solvulk) ---
+add_library(solvulk "")
+# --- Core Sources ---
 file(GLOB_RECURSE SOURCES "src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
-
+target_sources(solvulk PRIVATE ${SOURCES})
+# Platform Logic
 if(WIN32)
     file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
-    set(RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources.rc")
-    set(PLATFORM_DEFS VK_USE_PLATFORM_WIN32_KHR)
-    list(APPEND PLATFORM_LIBS user32 gdi32)
+    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
+    target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+    target_link_libraries(solvulk PRIVATE user32 gdi32)
 else()
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
-    set(RESOURCE_FILE "")
-    set(PLATFORM_DEFS VK_USE_PLATFORM_XLIB_KHR)
-    list(APPEND PLATFORM_LIBS)
+    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
+    target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_XLIB_KHR)
 endif()
-
+# Compiler Specifics
 if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/std:c11 /experimental:c11atomics)
+    target_compile_options(solvulk PRIVATE /std:c11)
+    set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
-
-add_library(solvulk ${SOURCES} ${RESOURCE_FILE} ${PLATFORM_SOURCES})
 
 if(BUILD_SHARED_LIBS)
-    # Tell the header we are in "Shared Mode"
-    target_compile_definitions(solvulk PUBLIC SOL_VULK_SHARED)
-    
-    # Tell the header that THIS specific target is the one EXPORTING
-    target_compile_definitions(solvulk PRIVATE SOL_BUILD_DLL)
+    target_compile_definitions(solvulk PUBLIC SOL_VULK_SHARED PRIVATE SOL_BUILD_DLL)
+endif()
+
+if(SOL_DEV_MODE)
+    target_compile_definitions(solvulk PUBLIC SOL_DEV_MODE)
+    target_include_directories(solvulk PUBLIC "${CMAKE_SOURCE_DIR}/src/_internal")
 endif()
 
 target_include_directories(solvulk
     PUBLIC
-        ${SOL_PUBLIC_INCLUDE}
+        "${CMAKE_SOURCE_DIR}/include"
     PRIVATE
-        ${SOL_PRIVATE_INCLUDE}
+        "${CMAKE_SOURCE_DIR}/src"
+        "${CMAKE_SOURCE_DIR}/src/_internal"
         ${Vulkan_INCLUDE_DIRS}
 )
 
-target_compile_definitions(solvulk PUBLIC ${PLATFORM_DEFS})
+if(SOL_DEV_MODE)
+    # This pushes the internal headers to anything linking against the engine
+    target_compile_definitions(solvulk PUBLIC SOL_DEV_MODE)
+    target_include_directories(solvulk PUBLIC "${CMAKE_SOURCE_DIR}/src/_internal")
+endif()
 
 target_link_libraries(solvulk
     PUBLIC 
@@ -67,7 +68,6 @@ target_link_libraries(solvulk
         cglm::cglm
         CURL::libcurl
         OpenMP::OpenMP_C
-        Threads::Threads
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -77,18 +77,20 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 # BUILD APP
 #--------------------------------------
-set(SOLAPP_INCLUDE "${CMAKE_SOURCE_DIR}/app")
 if(WIN32)
     add_executable(solapp #WIN32 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
-        ${RESOURCE_FILE}
+        "${CMAKE_SOURCE_DIR}/resources.rc"
     )
 else()
     add_executable(solapp "${CMAKE_SOURCE_DIR}/app/linmain.c")
 endif()
 
-target_include_directories(solapp PRIVATE ${SOLAPP_INCLUDE})
+target_include_directories(solapp 
+PRIVATE 
+    "${CMAKE_SOURCE_DIR}/app"
+)
 
 if(HOT_RELOAD)
     target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
@@ -117,9 +119,9 @@ set(SHADERS
     ${SHADER_DIR}/basictext.frag
 )
 if(WIN32)
-set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")
+    set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")
 else()
-set(GLSLC_PATH "glslc")
+    set(GLSLC_PATH "glslc")
 endif()
 
 foreach(SHADER ${SHADERS})
@@ -140,13 +142,18 @@ add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
 
 #---- Server App ----
-add_executable(solvulk_server sol_server/main.c)
+add_executable(solvulk_server src_server/main.c)
 
-target_include_directories(solvulk_server PRIVATE
-    "sol_server/server.h"
+target_include_directories(solvulk_server 
+PRIVATE
+    "src_server"
     "vendored/enet/include"
 )
 
 if(WIN32)
     target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
 endif()
+
+set_target_properties(solvulk_server PROPERTIES 
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/server"
+    )

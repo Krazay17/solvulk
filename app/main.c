@@ -7,12 +7,10 @@
 #define IS_WINDOWS 0
 #endif
 
-#include "sol/sol.h"
 #include "game.h"
-#include <stdatomic.h>
 
 // --- Shared state between threads ---
-static atomic_bool g_running = TRUE;
+static volatile g_running = TRUE;
 static LARGE_INTEGER g_startTime, g_frequency;
 static HWND g_hwnd = NULL;
 
@@ -102,8 +100,7 @@ int main(int argc, char *argv[])
         DispatchMessage(&msg);
     }
 
-    // Signal the game thread to stop and wait for it to finish cleanly
-    g_running = FALSE;
+    InterlockedAdd(&g_running, 0);
     WaitForSingleObject(hGameThread, INFINITE);
     CloseHandle(hGameThread);
 
@@ -138,8 +135,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_DESTROY:
-        g_running = FALSE;  // tell the game thread to exit
-        PostQuitMessage(0); // tell the message loop to exit
+        InterlockedAdd(&g_running, 0);
+        PostQuitMessage(0);
         return 0;
 
     case WM_INPUT:

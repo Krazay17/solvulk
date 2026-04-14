@@ -25,8 +25,8 @@ typedef struct CompModel CompModel;
 typedef struct
 {
     u32 head[SPATIAL_SIZE];
-    u32 next[SPATIAL_ENTRIES];
     u32 value[SPATIAL_ENTRIES];
+    u32 next[SPATIAL_ENTRIES];
 
     int count;
 } SpatialTable;

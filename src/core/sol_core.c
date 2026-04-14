@@ -30,6 +30,7 @@ double Sol_GetGameTime()
 void Sol_Tick(double dt, double time)
 {
     solState.gameTime = time;
+    solState.tickCount++;
     SolInput_Update();
     if (SolInput_KeyPressed(SOL_KEY_ESCAPE))
         solState.worlds[0]->worldActive ^= 1;
@@ -46,6 +47,8 @@ void Sol_Tick(double dt, double time)
     while (accumulator >= timeStep)
     {
         accumulator -= timeStep;
+        solState.stepCount++;
+        Sol_Debug_Add("TickCount", solState.stepCount);
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], timeStep, time);
     }

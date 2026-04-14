@@ -52,6 +52,7 @@ SOLAPI void World_System_Add(World *world, SystemFunc func, SystemKind kind);
 SOLAPI void Sol_System_Xform_Snapshot(World *world);
 SOLAPI void Sol_System_Xform_Interpolate(World *world, float alpha);
 // Step Systems
+SOLAPI void Sol_System_Spatial_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);

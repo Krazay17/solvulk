@@ -45,6 +45,7 @@ typedef struct CompBody
     float grounded, airtime;
     float radius, height;
     float mass, invMass, restitution;
+    u32 neighborHashes[27];
 } CompBody;
 
 typedef enum
@@ -128,7 +129,7 @@ SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
 SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
 
-SOLAPI CompXform *Entity_Add_Xform(World *world, int id);
+SOLAPI CompXform *Entity_Add_Xform(World *world, int id, vec3s pos);
 SOLAPI CompBody *Entity_Add_Body2(World *world, int id);
 SOLAPI CompBody *Entity_Add_Body3(World *world, int id);
 SOLAPI CompShape *Entity_Add_Shape(World *world, int id);
@@ -139,6 +140,7 @@ SOLAPI CompMovement *Entity_Add_Movement(World *world, int id);
 SOLAPI CompController *Entity_Add_Controller_Local(World *world, int id);
 SOLAPI CompController *Entity_Add_Controller_Remote(World *world, int id);
 SOLAPI CompController *Entity_Add_Controller_Ai(World *world, int id);
-SOLAPI CompModel *Entity_Add_Model(World *world, int id);
+SOLAPI CompModel *Entity_Add_Model(World *world, int id, SolModelId model);
 
-int Sol_World_GetEntCount(World *world);
+SOLAPI int Sol_World_GetEntCount(World *world);
+SOLAPI void Sol_Spatial_AddStatic(World *world, SolModel *model);

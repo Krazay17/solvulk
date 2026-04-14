@@ -38,10 +38,10 @@ void Create_Sol_Game()
     Entity_Add_Controller_Local(game, player3d);
 
     int floor = Entity_Create(game);
-    CompXform *floorXform = Entity_Add_Xform(game, floor);
-    floorXform->pos = (vec3s){0, 0, 0};
-    CompModel *floorModel = Entity_Add_Model(game, floor);
-    floorModel->gpuHandle = SOL_MODEL_WORLD0;
+    CompXform *floorXform = Entity_Add_Xform(game, floor, (vec3s){0, 0, 0});
+    CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD0);
+
+    Sol_Spatial_AddStatic(game, floorModel->model);
 }
 
 void MakeAWizard(void *data)
@@ -50,7 +50,7 @@ void MakeAWizard(void *data)
     World *world = (World *)data;
     int wiz = Sol_Prefab_Wizard(world, (vec3s){
                                            sin(Sol_GetGameTime()) * 20.0,
-                                           cos(Sol_GetGameTime()) * 20.0,
+                                           cos(Sol_GetGameTime()) * -20.0,
                                            sin(Sol_GetGameTime()) * 20.0,
                                        });
     Entity_Add_Controller_Ai(world, wiz);

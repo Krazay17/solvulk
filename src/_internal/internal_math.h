@@ -15,11 +15,14 @@
     .b = ((hex)) & 0xFF,           \
     .a = 255}
 
-#define SOL_COLORA(hex, alpha) (SolColor){  \
-        .r = ((hex) >> 16) & 0xFF,          \
-        .g = ((hex) >> 8) & 0xFF,           \
-        .b = ((hex)) & 0xFF,                \
-        .a = (alpha)}
+#define SOL_COLORA(hex, alpha)     \
+    (SolColor)                     \
+    {                              \
+        .r = ((hex) >> 16) & 0xFF, \
+        .g = ((hex) >> 8) & 0xFF,  \
+        .b = ((hex)) & 0xFF,       \
+        .a = (alpha)               \
+    }
 
 SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
 SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
@@ -31,5 +34,6 @@ vec4s Sol_Quat_FromYawPitch(float yaw, float pitch);
 vec4s Sol_Quat_FromLookDir(vec3s lookDir);
 vec4s Sol_Quat_FromLookDira(vec3s lookDir);
 vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
+
 float FlashAnim(float dt, float value, float speed);
 float PulseAnim(float dt, float value, float speed);

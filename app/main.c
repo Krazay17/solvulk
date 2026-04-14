@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         DispatchMessage(&msg);
     }
 
-    InterlockedAdd(&g_running, 0);
+    InterlockedExchange(&g_running, 0);
     WaitForSingleObject(hGameThread, INFINITE);
     CloseHandle(hGameThread);
 
@@ -115,7 +115,7 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
     LARGE_INTEGER lastTime, currentTime;
     QueryPerformanceCounter(&lastTime);
 
-    while (g_running)
+    while (InterlockedAdd(&g_running, 0))
     {
         QueryPerformanceCounter(&currentTime);
         double dt = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)g_frequency.QuadPart;
@@ -135,7 +135,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_DESTROY:
-        InterlockedAdd(&g_running, 0);
+        InterlockedExchange(&g_running, 0);
         PostQuitMessage(0);
         return 0;
 

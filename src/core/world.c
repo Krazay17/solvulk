@@ -9,6 +9,8 @@ World *World_Create(void)
 
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
+        SpatialTable_Init(&world->worldSpatial.dynamicUnits, SPATIAL_ENTRIES);
+        SpatialTable_Init(&world->worldSpatial.staticWorld, SPATIAL_STATIC_ENTRIES);
     }
 
     return world;
@@ -20,12 +22,13 @@ World *World_Create_Default(void)
     if (world)
     {
         SystemFunc stepSystemInit[] = {
+            Sol_System_Spatial_Step,
             Sol_System_Movement_2d_Step,
             Sol_System_Movement_3d_Step,
             Sol_System_Step_Physx_2d,
             Sol_System_Step_Physx_3d,
         };
-        int stepSystemCount = 4;
+        int stepSystemCount = 5;
         world->stepCount = stepSystemCount;
         memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
 
@@ -148,8 +151,10 @@ void Entity_Destroy(World *world, int id)
     }
 }
 
-CompXform *Entity_Add_Xform(World *world, int id)
+CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
 {
+    world->xforms[id] = (CompXform){
+        .pos = pos};
     world->masks[id] |= HAS_XFORM;
     return &world->xforms[id];
 }
@@ -162,6 +167,13 @@ CompBody *Entity_Add_Body2(World *world, int id)
 
 CompBody *Entity_Add_Body3(World *world, int id)
 {
+
+    world->bodies[id] = (CompBody){
+        .height = 1.0f,
+        .radius = 1.0f,
+        .restitution = 0.8f,
+        .type = BODY_STATIC,
+    };
     world->masks[id] |= HAS_BODY3;
     return &world->bodies[id];
 }
@@ -216,8 +228,12 @@ CompController *Entity_Add_Controller_Ai(World *world, int id)
     return &world->controllers[id];
 }
 
-CompModel *Entity_Add_Model(World *world, int id)
+CompModel *Entity_Add_Model(World *world, int id, SolModelId model)
 {
+    world->models[id] = (CompModel){
+        .gpuHandle = model,
+        .model = Sol_GetModel(model),
+    };
     world->masks[id] |= HAS_MODEL;
     return &world->models[id];
 }

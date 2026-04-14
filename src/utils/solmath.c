@@ -124,12 +124,14 @@ vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c)
 
     float d1 = glms_vec3_dot(ab, ap);
     float d2 = glms_vec3_dot(ac, ap);
-    if (d1 <= 0.0f && d2 <= 0.0f) return a;
+    if (d1 <= 0.0f && d2 <= 0.0f)
+        return a;
 
     vec3s bp = glms_vec3_sub(p, b);
     float d3 = glms_vec3_dot(ab, bp);
     float d4 = glms_vec3_dot(ac, bp);
-    if (d3 >= 0.0f && d4 <= d3) return b;
+    if (d3 >= 0.0f && d4 <= d3)
+        return b;
 
     float vc = d1 * d4 - d3 * d2;
     if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
@@ -141,7 +143,8 @@ vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c)
     vec3s cp = glms_vec3_sub(p, c);
     float d5 = glms_vec3_dot(ab, cp);
     float d6 = glms_vec3_dot(ac, cp);
-    if (d6 >= 0.0f && d5 <= d6) return c;
+    if (d6 >= 0.0f && d5 <= d6)
+        return c;
 
     float vb = d5 * d2 - d1 * d6;
     if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)

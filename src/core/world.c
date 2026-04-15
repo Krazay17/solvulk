@@ -9,6 +9,7 @@ World *World_Create(void)
 
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
+        world->playerID = -1;
         SpatialTable_Init(&world->worldSpatial.dynamicUnits, SPATIAL_ENTRIES);
         SpatialTable_Init(&world->worldSpatial.staticWorld, SPATIAL_STATIC_ENTRIES);
     }
@@ -154,7 +155,9 @@ void Entity_Destroy(World *world, int id)
 CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
 {
     world->xforms[id] = (CompXform){
-        .pos = pos};
+        .pos = pos,
+        .scale = (vec3s){1.0f, 1.0f, 1.0f},
+    };
     world->masks[id] |= HAS_XFORM;
     return &world->xforms[id];
 }
@@ -167,7 +170,6 @@ CompBody *Entity_Add_Body2(World *world, int id)
 
 CompBody *Entity_Add_Body3(World *world, int id)
 {
-
     world->bodies[id] = (CompBody){
         .height = 1.0f,
         .radius = 1.0f,

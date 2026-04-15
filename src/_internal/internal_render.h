@@ -114,6 +114,7 @@ typedef struct {
 
 typedef struct {
     vec4 position;
+    vec4 scale;
     vec4 rotation;
     vec4 color;
     vec4 material;

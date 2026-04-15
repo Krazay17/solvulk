@@ -41,9 +41,8 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         vec3s finalDraw = xform->drawPos;
         finalDraw.y += modelComp->yOffset;
         memcpy(inst->position, &finalDraw, sizeof(float) * 3);
-        inst->position[3] = xform->scale.x;
-
-        memcpy(inst->rotation, &xform->drawRot, sizeof(float) * 4);
+        memcpy(inst->scale, &xform->scale, sizeof(float) * 3);
+        memcpy(inst->rotation, &xform->drawQuat, sizeof(float) * 4);
 
         // vec4 whiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
         // memcpy(inst->color, &whiteColor, sizeof(float) * 4);

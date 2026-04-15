@@ -20,7 +20,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             if (controller)
                 movement->wishdir = controller->wishdir;
 
-            xform->rot = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+            xform->quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
 
             const MoveStateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
             funcs->update(world, id, dt);

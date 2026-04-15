@@ -22,7 +22,7 @@ void Sol_System_Spatial_Step(World *world, double dt, double time)
     }
 }
 
-void Sol_Spatial_AddStatic(World *world, SolModel *model)
+void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform)
 {
     WorldSpatial *ws = &world->worldSpatial;
 
@@ -36,6 +36,8 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model)
     ws->tris = realloc(ws->tris, sizeof(CollisionTri) * totalTris);
     ws->triCount = totalTris;
 
+    mat3s mat = glms_quat_mat3(xform->quat);
+
     u32 triIdx = oldCount;
     for (u32 m = 0; m < model->meshCount; m++)
     {
@@ -44,13 +46,31 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model)
         {
             CollisionTri *t = &ws->tris[triIdx];
 
-            t->a = *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 0]].position;
-            t->b = *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 1]].position;
-            t->c = *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 2]].position;
+            vec3s verts[3] = {
+                *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 0]].position,
+                *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 1]].position,
+                *(vec3s *)model->vertices[mesh->vertexOffset + model->indices[mesh->indexOffset + i + 2]].position,
+            };
+
+            for (int v = 0; v < 3; v++)
+            {
+                verts[v] = glms_vec3_mul(verts[v], xform->scale);
+                verts[v] = glms_mat3_mulv(mat, verts[v]);
+                verts[v] = glms_vec3_add(verts[v], xform->pos);
+            }
+
+            t->a = verts[0];
+            t->b = verts[1];
+            t->c = verts[2];
 
             vec3s edge1 = glms_vec3_sub(t->b, t->a);
             vec3s edge2 = glms_vec3_sub(t->c, t->a);
-            t->normal = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
+            vec3s cross = glms_vec3_cross(edge1, edge2);
+            float len = glms_vec3_norm(cross);
+            if (len > 0.00001f)
+                t->normal = glms_vec3_scale(cross, 1.0f / len);
+            else
+                t->normal = (vec3s){0, 1, 0}; // Default up normal for broken tris
 
             float minX = fminf(t->a.x, fminf(t->b.x, t->c.x));
             float maxX = fmaxf(t->a.x, fmaxf(t->b.x, t->c.x));
@@ -91,9 +111,7 @@ void SpatialTable_Init(SpatialTable *table, u32 capacity)
     table->value = malloc(sizeof(u32) * capacity);
     table->next = malloc(sizeof(u32) * capacity);
     table->capacity = capacity;
-    table->count = 0;
-    for (u32 i = 0; i < SPATIAL_SIZE; i++)
-        table->head[i] = SPATIAL_NULL;
+    SpatialTable_Clear(table);
 }
 
 void SpatialTable_Clear(SpatialTable *table)
@@ -113,7 +131,15 @@ void SpatialTable_Free(SpatialTable *table)
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value)
 {
     if (table->count >= table->capacity)
+    {
+        static bool warned = false;
+        if (!warned)
+        {
+            printf("WARNING: SpatialTable full (%u entries)\n", table->capacity);
+            warned = true;
+        }
         return;
+    }
 
     u32 idx = table->count++;
     table->value[idx] = value;

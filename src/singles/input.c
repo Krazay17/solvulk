@@ -10,6 +10,7 @@ static int keyMap[SOL_KEY_COUNT] = {
     'A',
     'S',
     'D',
+    'F',
     SOL_KEYCODE_SPACE,
     SOL_KEYCODE_ESCAPE,
     SOL_KEYCODE_SHIFT,

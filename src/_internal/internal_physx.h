@@ -10,10 +10,10 @@ typedef struct CompXform CompXform;
 #define SOL_PHYS_COLLISION_SKIN 0.01f
 
 #define SPATIAL_NULL 0xFFFFFFFF
-#define SPATIAL_SIZE 32768
-#define SPATIAL_ENTRIES 32768
-#define SPATIAL_STATIC_ENTRIES 131072
-#define SPATIAL_CELL_SIZE 2.0f
+#define SPATIAL_SIZE 131072
+#define SPATIAL_ENTRIES 65536
+#define SPATIAL_STATIC_ENTRIES 1262144
+#define SPATIAL_CELL_SIZE 4.0f
 
 typedef struct
 {
@@ -56,55 +56,3 @@ SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, Collis
 
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
 void SimpleFloor(CompXform *xform, CompBody *body, float dt);
-
-//void ResolveWorldCollisions(World *world);
-//void ResolveWorldMeshSimple(CompBody *sphereBody, CompXform *sphereXform, CompXform *meshXform, SolModel *model);
-
-// void BuildSpatialHash(World *world, SpatialHash *grid);
-// void ResolveCollisionsSpatial(World *world, SpatialHash *grid);
-// TriAABB Sol_GetTriAABB(vec3s a, vec3s b, vec3s c);
-
-// #define CELL_SIZE 2.0f
-// #define MAX_ENTITIES_PER_CELL 32
-// #define TABLE_SIZE 8192
-
-// #define WORLD_CELL_SIZE 4.0f
-// #define WORLD_TABLE_SIZE 16384
-// #define MAX_TRIS_PER_CELL 64
-
-// typedef struct
-// {
-//     float minX, maxX;
-//     float minY, maxY;
-//     float minZ, maxZ;
-// } TriAABB;
-
-// typedef struct
-// {
-//     vec3s a, b, c;
-//     vec3s normal;
-// } CollisionTri;
-
-// typedef struct
-// {
-//     uint32_t triIndices[MAX_TRIS_PER_CELL];
-//     uint32_t count;
-// } WorldCell;
-
-// typedef struct
-// {
-//     CollisionTri *tris;
-//     uint32_t triCount;
-//     WorldCell cells[WORLD_TABLE_SIZE];
-// } WorldCollider;
-
-// typedef struct
-// {
-//     int entityIds[MAX_ENTITIES_PER_CELL];
-//     int count;
-// } SpatialCell;
-
-// typedef struct
-// {
-//     SpatialCell cells[TABLE_SIZE];
-// } SpatialHash;

@@ -10,8 +10,103 @@ typedef struct
 } LocalController;
 static LocalController localController = {0};
 float lookSens = 0.001f;
-// float maxPitch = GLM_PI_2 - 0.1f;
 static bool mouseLocked = false;
+
+static void LocalActions(World *world, double dt);
+static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
+static vec2s GetWishDir2(uint32_t action);
+
+void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
+{
+    SolMouse mouse = SolInput_GetMouse();
+    if (mouse.locked)
+    {
+        localController.yaw -= mouse.dx * lookSens;
+        localController.pitch -= mouse.dy * lookSens;
+
+        localController.yaw = fmodf(localController.yaw, 2.0f * GLM_PI);
+        if (localController.yaw > GLM_PI)
+            localController.yaw -= 2.0f * GLM_PI;
+        else if (localController.yaw < -GLM_PI)
+            localController.yaw += 2.0f * GLM_PI;
+
+        if (localController.pitch > MAX_PITCH)
+            localController.pitch = MAX_PITCH;
+        if (localController.pitch < -MAX_PITCH)
+            localController.pitch = -MAX_PITCH;
+    }
+
+    LocalActions(world, dt);
+
+    int required = HAS_CONTROLLER;
+    for (int i = 0; i < world->activeCount; ++i)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) == required)
+        {
+        }
+    }
+}
+
+static void LocalActions(World *world, double dt)
+{
+    int id = world->playerID;
+    if (id < 0)
+        return;
+    CompController *controller = &world->controllers[id];
+    CompMovement *movement = &world->movements[id];
+
+    controller->yaw = localController.yaw;
+    controller->pitch = localController.pitch;
+
+    if (SolInput_KeyDown(SOL_KEY_W))
+        controller->actionState |= ACTION_FWD;
+    else
+        controller->actionState &= ~ACTION_FWD;
+
+    if (SolInput_KeyDown(SOL_KEY_S))
+        controller->actionState |= ACTION_BWD;
+    else
+        controller->actionState &= ~ACTION_BWD;
+
+    if (SolInput_KeyDown(SOL_KEY_A))
+        controller->actionState |= ACTION_LEFT;
+    else
+        controller->actionState &= ~ACTION_LEFT;
+
+    if (SolInput_KeyDown(SOL_KEY_D))
+        controller->actionState |= ACTION_RIGHT;
+    else
+        controller->actionState &= ~ACTION_RIGHT;
+
+    if (SolInput_KeyDown(SOL_KEY_SPACE))
+        controller->actionState |= ACTION_JUMP;
+    else
+        controller->actionState &= ~ACTION_JUMP;
+
+    if (SolInput_KeyDown(SOL_KEY_SHIFT))
+        controller->actionState |= ACTION_DASH;
+    else
+        controller->actionState &= ~ACTION_DASH;
+
+    vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
+    vec3s updir = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});
+    vec3s wishdir = GetWishDir3(controller->actionState, lookdir, updir);
+
+    controller->lookdir = lookdir;
+    controller->wishdir = wishdir;
+    controller->wishdir2 = GetWishDir2(controller->actionState);
+
+    if (SolInput_KeyDown(SOL_KEY_F))
+    {
+        world->xforms[id].pos = glms_vec3_add(world->xforms[id].pos, glms_vec3_scale(lookdir, (float)dt * 60.0f));
+        world->bodies[id].vel = (vec3s){0, 0, 0};
+    }
+
+    Sol_Debug_Add("LookX", controller->lookdir.x);
+    Sol_Debug_Add("LookY", controller->lookdir.y);
+    Sol_Debug_Add("LookZ", controller->lookdir.z);
+}
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
 {
@@ -44,80 +139,4 @@ static vec2s GetWishDir2(uint32_t action)
         wishdir.x -= 1;
 
     return glms_vec2_normalize(wishdir);
-}
-
-void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
-{
-    SolMouse mouse = SolInput_GetMouse();
-    if (mouse.locked)
-    {
-        localController.yaw -= mouse.dx * lookSens;
-        localController.pitch -= mouse.dy * lookSens;
-
-        localController.yaw = fmodf(localController.yaw, 2.0f * GLM_PI);
-        if (localController.yaw > GLM_PI)
-            localController.yaw -= 2.0f * GLM_PI;
-        else if (localController.yaw < -GLM_PI)
-            localController.yaw += 2.0f * GLM_PI;
-
-        if (localController.pitch > MAX_PITCH)
-        localController.pitch = MAX_PITCH;
-        if (localController.pitch < -MAX_PITCH)
-        localController.pitch = -MAX_PITCH;
-    }
-    int required = HAS_CONTROLLER;
-    for (int i = 0; i < world->activeCount; ++i)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
-        {
-            CompController *controller = &world->controllers[id];
-            CompMovement *movement = &world->movements[id];
-
-            controller->yaw = localController.yaw;
-            controller->pitch = localController.pitch;
-
-            if (SolInput_KeyDown(SOL_KEY_W))
-                controller->actionState |= ACTION_FWD;
-            else
-                controller->actionState &= ~ACTION_FWD;
-
-            if (SolInput_KeyDown(SOL_KEY_S))
-                controller->actionState |= ACTION_BWD;
-            else
-                controller->actionState &= ~ACTION_BWD;
-
-            if (SolInput_KeyDown(SOL_KEY_A))
-                controller->actionState |= ACTION_LEFT;
-            else
-                controller->actionState &= ~ACTION_LEFT;
-
-            if (SolInput_KeyDown(SOL_KEY_D))
-                controller->actionState |= ACTION_RIGHT;
-            else
-                controller->actionState &= ~ACTION_RIGHT;
-
-            if (SolInput_KeyDown(SOL_KEY_SPACE))
-                controller->actionState |= ACTION_JUMP;
-            else
-                controller->actionState &= ~ACTION_JUMP;
-
-            if (SolInput_KeyDown(SOL_KEY_SHIFT))
-                controller->actionState |= ACTION_DASH;
-            else
-                controller->actionState &= ~ACTION_DASH;
-
-            vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
-            vec3s updir = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});
-            vec3s wishdir = GetWishDir3(controller->actionState, lookdir, updir);
-
-            controller->lookdir = lookdir;
-            controller->wishdir = wishdir;
-            controller->wishdir2 = GetWishDir2(controller->actionState);
-
-            Sol_Debug_Add("LookX", controller->lookdir.x);
-            Sol_Debug_Add("LookY", controller->lookdir.y);
-            Sol_Debug_Add("LookZ", controller->lookdir.z);
-        }
-    }
 }

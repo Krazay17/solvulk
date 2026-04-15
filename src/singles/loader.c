@@ -12,6 +12,8 @@ static SolModel cpuModels[SOL_MODEL_COUNT] = {0};
 static const char *modelResourceName[SOL_MODEL_COUNT] = {
     "ID_MODEL_WIZARD",
     "ID_MODEL_WORLD0",
+    "ID_MODEL_WORLD1",
+    "ID_MODEL_WORLD2",
 };
 
 SolModel *Sol_GetModel(SolModelId id)

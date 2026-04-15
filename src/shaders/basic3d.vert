@@ -17,6 +17,7 @@ layout(set = 0, binding = 0) uniform Scene {
 
 struct ModelData {
     vec4 position;
+    vec4 scale;
     vec4 rotation;
     vec4 color;
     vec4 material;
@@ -43,14 +44,12 @@ mat3 quatToMat3(vec4 q) {
 void main() {
     ModelData inst = instances[gl_InstanceIndex];
 
-    mat3 rot = quatToMat3(inst.rotation);
-    float scale = inst.position.w;
-    if (scale == 0.0) scale = 1.0;
+    mat3 mat = quatToMat3(inst.rotation);
 
-    vec3 worldPos = rot * (inPos * scale) + inst.position.xyz;
+    vec3 worldPos = mat * (inPos * inst.scale.xyz) + inst.position.xyz;
     gl_Position = scene.viewProj * vec4(worldPos, 1.0);
 
     fragColor = inst.color;
-    fragNormal = rot * inNormal;
+    fragNormal = mat * inNormal;
     fragMaterial = inst.material.xy;
 }

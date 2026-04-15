@@ -25,6 +25,6 @@ void Sol_System_Controller_Ai_Tick(World *world, double dt, double time)
         controller->yaw = yaw;
         controller->pitch = pitch;
         
-        xform->rot = Sol_Quat_FromYawPitch(yaw, 0);
+        xform->quat = Sol_Quat_FromYawPitch(yaw, 0);
     }
 }

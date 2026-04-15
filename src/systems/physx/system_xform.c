@@ -9,7 +9,7 @@ void Sol_System_Xform_Snapshot(World *world)
         if (world->masks[id] & HAS_XFORM)
         {
             world->xforms[id].lastPos = world->xforms[id].pos;
-            world->xforms[id].lastRot = world->xforms[id].rot;
+            world->xforms[id].lastQuat = world->xforms[id].quat;
         }
     }
 }
@@ -32,7 +32,7 @@ void Sol_System_Xform_Interpolate(World *world, float alpha)
             xf->drawPos.y = xf->lastPos.y + (xf->pos.y - xf->lastPos.y) * alpha;
             xf->drawPos.z = xf->lastPos.z + (xf->pos.z - xf->lastPos.z) * alpha;
 
-            xf->drawRot = glms_vec4_lerp(xf->lastRot, xf->rot, alpha);
+            xf->drawQuat = glms_quat_slerp(xf->lastQuat, xf->quat, alpha);
         }
     }
 }

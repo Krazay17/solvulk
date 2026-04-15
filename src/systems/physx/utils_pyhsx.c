@@ -3,44 +3,23 @@
 
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform)
 {
-    vec3s delta = {
-        .x = aXform->pos.x - bXform->pos.x,
-        .y = aXform->pos.y - bXform->pos.y,
-        .z = aXform->pos.z - bXform->pos.z,
-    };
-
+    vec3s delta = glms_vec3_sub(aXform->pos, bXform->pos);
     float combined_radius = aBody->radius + bBody->radius;
+    float dist_sq = glms_vec3_dot(delta, delta);
 
-    float dx = aXform->pos.x - bXform->pos.x;
-    if (fabsf(dx) > combined_radius)
-        return;
-
-    float dy = aXform->pos.y - bXform->pos.y;
-    if (fabsf(dy) > combined_radius)
-        return;
-
-    float dz = aXform->pos.z - bXform->pos.z;
-    if (fabsf(dz) > combined_radius)
-        return;
-
-    float combined_radius_sq = combined_radius * combined_radius;
-    float dist_sq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
-    if (dist_sq >= combined_radius_sq || dist_sq <= 0.0f)
+    // FIX 1: Increased epsilon to prevent floating point explosions
+    if (dist_sq >= (combined_radius * combined_radius) || dist_sq < 0.0001f)
         return;
 
     float distance = sqrt(dist_sq);
     float penetration = combined_radius - distance;
-    float invDist = 1.0f / distance;
-    vec3s normal = {
-        .x = delta.x * invDist,
-        .y = delta.y * invDist,
-        .z = delta.z * invDist,
-    };
+    vec3s normal = glms_vec3_scale(delta, 1.0f / distance);
+
     float invMassA = aBody->invMass;
     float invMassB = bBody->invMass;
     float totalInvMass = invMassA + invMassB;
 
-    if (totalInvMass <= 0.0f)
+    if (totalInvMass <= 0.000001f)
         return;
 
     float slack = 0.01f;
@@ -79,9 +58,9 @@ SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, Collis
         return result;
 
     float dist = sqrtf(distSq);
-    vec3s normal = dist < 0.0001f
-        ? tri->normal
-        : glms_vec3_scale(delta, 1.0f / dist);
+    vec3s normal = tri->normal;
+    if (dist > 0.0001f)
+        normal = glms_vec3_scale(delta, 1.0f / dist);
 
     float penetration = sphereBody->radius - dist;
     *localPos = glms_vec3_add(*localPos, glms_vec3_scale(normal, penetration));

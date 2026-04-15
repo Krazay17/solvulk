@@ -43,7 +43,7 @@ void Sol_Tick(double dt, double time)
 
     for (int i = 0; i < solState.worldCount; ++i)
         Sol_System_Xform_Snapshot(solState.worlds[i]);
-    accumulator = accumulator > timeStep * 4 ? timeStep * 4 : accumulator + dt;
+    accumulator = accumulator > timeStep * 3 ? timeStep * 3 : accumulator + dt;
     while (accumulator >= timeStep)
     {
         accumulator -= timeStep;

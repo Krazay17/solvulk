@@ -28,7 +28,7 @@ typedef uint32_t Mask;
 typedef struct CompXform
 {
     vec3s pos, lastPos, drawPos;
-    vec4s rot, lastRot, drawRot;
+    versors quat, lastQuat, drawQuat;
     vec3s scale, lastScale, drawScale;
 } CompXform;
 
@@ -143,4 +143,4 @@ SOLAPI CompController *Entity_Add_Controller_Ai(World *world, int id);
 SOLAPI CompModel *Entity_Add_Model(World *world, int id, SolModelId model);
 
 SOLAPI int Sol_World_GetEntCount(World *world);
-SOLAPI void Sol_Spatial_AddStatic(World *world, SolModel *model);
+SOLAPI void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform);

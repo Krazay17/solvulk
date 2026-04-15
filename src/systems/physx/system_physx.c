@@ -10,8 +10,11 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     WorldSpatial *ws = &world->worldSpatial;
 
     int count = world->activeCount;
-    int i;
-#pragma omp parallel for if (count > 1000)
+    int i, j, k;
+#pragma omp parallel for if (count > 100) default(none) \
+    shared(world, ws, count, required, fdt)             \
+    private(i)                                          \
+    schedule(guided)
     for (i = 0; i < count; ++i)
     {
         int id = world->activeEntities[i];
@@ -30,17 +33,11 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
     }
 
-    // 2. Rebuild dynamic spatial after integration
-    Sol_System_Spatial_Step(world, dt, 0);
-
-    // 3. Collision resolution
-    // Temp buffer to track which triangles this entity already checked
-    static u32 checkedTris[4096];
-    static u32 checkedCount = 0;
-
-    int j;
-#pragma omp parallel for if (count > 1000)
-    for (j = 0; j < world->activeCount; j++)
+#pragma omp parallel for if (count > 100) default(none) \
+    shared(world, ws, count, required, fdt)             \
+    private(j)                                          \
+    schedule(guided)
+    for (j = 0; j < count; j++)
     {
         int id = world->activeEntities[j];
         if ((world->masks[id] & required) != required)
@@ -56,8 +53,6 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         int iy = (int)floorf(pos.y / SPATIAL_CELL_SIZE);
         int iz = (int)floorf(pos.z / SPATIAL_CELL_SIZE);
 
-        // Reset dedup for this entity
-        checkedCount = 0;
         body->grounded = 0;
 
         for (int ox = -1; ox <= 1; ox++)
@@ -68,36 +63,24 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 
                     // A. Static triangles
                     u32 entry = ws->staticWorld.head[hash];
-                    while (entry != SPATIAL_NULL)
+                    int safety = 0;
+                    while (entry != SPATIAL_NULL && safety++ < ws->staticWorld.capacity)
                     {
                         u32 triIdx = ws->staticWorld.value[entry];
 
-                        // Dedup: skip if we already checked this triangle
-                        bool skip = false;
-                        for (u32 c = 0; c < checkedCount; c++)
-                        {
-                            if (checkedTris[c] == triIdx)
-                            {
-                                skip = true;
-                                break;
-                            }
-                        }
-
-                        if (!skip && checkedCount < 4096)
-                        {
-                            checkedTris[checkedCount++] = triIdx;
-                            CollisionTri *tri = &ws->tris[triIdx];
-                            SolCollision collision = ResolveSphereTriangle(body, &xform->pos, tri);
-                            if (collision.didCollide && collision.normal.y > 0.5f)
-                                body->grounded = 1;
-                        }
+                        CollisionTri *tri = &ws->tris[triIdx];
+                        SolCollision collision = ResolveSphereTriangle(body, &xform->pos, tri);
+                        if (collision.didCollide && collision.normal.y > 0.5f)
+                            body->grounded = 1;
 
                         entry = ws->staticWorld.next[entry];
                     }
 
+
                     // B. Dynamic entities
                     u32 dynEntry = ws->dynamicUnits.head[hash];
-                    while (dynEntry != SPATIAL_NULL)
+                    safety = 0;
+                    while (dynEntry != SPATIAL_NULL && safety++ < ws->dynamicUnits.capacity)
                     {
                         u32 otherID = ws->dynamicUnits.value[dynEntry];
                         if (id < (int)otherID)

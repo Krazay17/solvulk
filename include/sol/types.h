@@ -100,6 +100,8 @@ typedef enum
 {
     SOL_MODEL_WIZARD,
     SOL_MODEL_WORLD0,
+    SOL_MODEL_WORLD1,
+    SOL_MODEL_WORLD2,
     SOL_MODEL_COUNT,
 } SolModelId;
 
@@ -121,6 +123,7 @@ typedef enum
     SOL_KEY_A,
     SOL_KEY_S,
     SOL_KEY_D,
+    SOL_KEY_F,
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
     SOL_KEY_SHIFT,

@@ -242,6 +242,7 @@ int Sol_World_GetEntCount(World *world)
 {
     return world->activeCount;
 }
+
 CompUiElement *Entity_Get_UiElement(World *world, int id)
 {
     return &world->uiElements[id];

@@ -277,3 +277,28 @@
 //     // 6. Move the corrected position back to World Space
 //     sphereXform->pos = glms_vec3_add(localSpherePos, meshXform->pos);
 // }
+
+
+void Spatial_Insert(SpatialTable *table, vec3s pos, CompBody *body, u32 value)
+{
+    if (table->count >= SPATIAL_ENTRIES)
+        return; // Table full!
+
+    int ix = (int)floorf(pos.x / SPATIAL_CELL_SIZE);
+    int iy = (int)floorf(pos.y / SPATIAL_CELL_SIZE);
+    int iz = (int)floorf(pos.z / SPATIAL_CELL_SIZE);
+    u32 hash = HashCoords(ix, iy, iz);
+    int n = 0;
+    for (int ox = -1; ox <= 1; ox++)
+        for (int oy = -1; oy <= 1; oy++)
+            for (int oz = -1; oz <= 1; oz++)
+                body->neighborHashes[n++] = HashCoords(ix + ox, iy + oy, iz + oz);
+
+    // Get a new entry from the pool
+    u32 entryIdx = table->count++;
+    table->value[entryIdx] = value;
+
+    // Link it: New entry points to the old head, head points to new entry
+    table->next[entryIdx] = table->head[hash];
+    table->head[hash] = entryIdx;
+}

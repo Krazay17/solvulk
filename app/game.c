@@ -24,15 +24,14 @@ void Create_Sol_Game()
     World *game = World_Create_Default();
 
     int button = Sol_Prefab_Button(menu, (vec3s){800, 0, 0}, "QUIT");
-    Entity_Add_Interact(menu, button);
+    CompInteractable *buttonInteract = Entity_Add_Interact(menu, button);
+    buttonInteract->callback = QuitApp;
 
     int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
     CompInteractable *interactButton2 = Entity_Add_Interact(menu, button2);
     interactButton2->callback = MakeAWizard;
     interactButton2->callbackData = game;
     interactButton2->onHold = true;
-
-    int button3 = Sol_Prefab_Button(menu, (vec3s){0, 660, 0}, "BUTTON");
 
     int player3d = Sol_Prefab_Wizard(game, (vec3s){0, 5, 0});
     Entity_Add_Controller_Local(game, player3d);
@@ -48,10 +47,13 @@ void MakeAWizard(void *data)
 {
     static int posInc;
     World *world = (World *)data;
+    double time = Sol_GetGameTime();
+    double epsilonA = sin(time) * 10.0;
+    double epsilonB = cos(time) * 10.0 + 10.0;
     int wiz = Sol_Prefab_Wizard(world, (vec3s){
-                                           sin(Sol_GetGameTime()) * 20.0,
-                                           cos(Sol_GetGameTime()) * -20.0,
-                                           sin(Sol_GetGameTime()) * 20.0,
+                                           epsilonA,
+                                           epsilonB,
+                                           epsilonA,
                                        });
     Entity_Add_Controller_Ai(world, wiz);
     posInc++;

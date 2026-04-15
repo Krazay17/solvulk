@@ -88,8 +88,8 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
                             checkedTris[checkedCount++] = triIdx;
                             CollisionTri *tri = &ws->tris[triIdx];
                             SolCollision collision = ResolveSphereTriangle(body, &xform->pos, tri);
-                            if(collision.didCollide && collision.normal.y > 0.5f)
-                            body->grounded = 1;
+                            if (collision.didCollide && collision.normal.y > 0.5f)
+                                body->grounded = 1;
                         }
 
                         entry = ws->staticWorld.next[entry];

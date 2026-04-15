@@ -57,7 +57,6 @@ SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, Collis
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
 void SimpleFloor(CompXform *xform, CompBody *body, float dt);
 
-//void Spatial_Insert(SpatialTable *table, vec3s pos, CompBody *body, u32 value);
 //void ResolveWorldCollisions(World *world);
 //void ResolveWorldMeshSimple(CompBody *sphereBody, CompXform *sphereXform, CompXform *meshXform, SolModel *model);
 

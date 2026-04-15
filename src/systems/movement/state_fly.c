@@ -10,13 +10,16 @@ void Sol_Movement_Fly_Update(World *world, int id, float dt)
     if (!(controller->actionState & ACTION_JUMP))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
+    if (controller->actionState & ACTION_DASH)
+        if (Sol_Movement_SetState(world, id, MOVE_DASH))
+            return;
 
     const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
     vec3s vel = body->vel;
     vec3s wishdir = controller->wishdir;
-
     vel = ApplyFriction3(wishdir, vel, forces->friction, dt);
     vel = ApplyAccel3(wishdir, vel, forces->speed, forces->accell, dt);
+    vel = ApplyAccel3((vec3s){0, 1.0f, 0}, vel, forces->speed, forces->accell, dt);
 
     body->vel = vel;
 }

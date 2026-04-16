@@ -2,8 +2,7 @@
 
 SolState solState = {0};
 
-static double timeStep = 1.0f / 60.0f;
-static double accumulator = 0.0f;
+static double accumulator = 0.0;
 static float smoothedFps = 60.0f;
 
 static void DebugFPS(double dt);
@@ -43,16 +42,17 @@ void Sol_Tick(double dt, double time)
 
     for (int i = 0; i < solState.worldCount; ++i)
         Sol_System_Xform_Snapshot(solState.worlds[i]);
-    accumulator = accumulator > timeStep * 3 ? timeStep * 3 : accumulator + dt;
-    while (accumulator >= timeStep)
+
+    accumulator = accumulator > SOL_TIMESTEP * 24 ? SOL_TIMESTEP * 24 : accumulator + dt;
+    while (accumulator >= SOL_TIMESTEP)
     {
-        accumulator -= timeStep;
+        accumulator -= SOL_TIMESTEP;
         solState.stepCount++;
         Sol_Debug_Add("TickCount", solState.stepCount);
         for (int i = 0; i < solState.worldCount; ++i)
-            World_Step(solState.worlds[i], timeStep, time);
+            World_Step(solState.worlds[i], SOL_TIMESTEP, time);
     }
-    float alpha = (float)(accumulator / timeStep);
+    float alpha = (float)(accumulator / SOL_TIMESTEP);
     for (int i = 0; i < solState.worldCount; ++i)
         Sol_System_Xform_Interpolate(solState.worlds[i], alpha);
 

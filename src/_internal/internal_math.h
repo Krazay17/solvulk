@@ -1,12 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <math.h>
-
-#include <cglm/types.h>
-#include <cglm/types-struct.h>
-
+#include "internal_types.h"
 #include "sol/types.h"
 
 #define SOL_COLOR(hex) (SolColor){ \
@@ -33,7 +27,6 @@ vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
-vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
 
 float FlashAnim(float dt, float value, float speed);
 float PulseAnim(float dt, float value, float speed);

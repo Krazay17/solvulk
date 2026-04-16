@@ -6,8 +6,8 @@ vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
     vec3s vel = prevvel;
     const float speed = glms_vec3_norm(vel);
-    if (speed < 0.001f)
-        return (vec3s){0};
+    if (speed < 0.01f)
+        return (vec3s){0.0f,0.0f,0.0f};
     const float drop = speed * friction * dt;
     const float newspeed = fmaxf(0.0f, speed - drop);
     vel = glms_vec3_scale(vel, newspeed / speed);

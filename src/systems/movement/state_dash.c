@@ -12,18 +12,15 @@ void Sol_Movement_Dash_Update(World *world, int id, float dt)
     CompController *controller = &world->controllers[id];
     CompBody *body = &world->bodies[id];
     const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
-
-    vec3s vel = body->vel;
-    vec3s wishdir = controller->wishdir;
+    
     movement->stateTimer += dt;
-    float alpha = DASH_ALPHAMOD - (movement->stateTimer / DASH_DURATION);
-
     if (movement->stateTimer >= DASH_DURATION)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
 
-    vel = glms_vec3_scale(movement->lockdir, alpha * DASH_VEL);
+    float alpha = DASH_ALPHAMOD - (movement->stateTimer / DASH_DURATION);
 
+    vec3s vel = glms_vec3_scale(movement->lockdir, alpha * DASH_VEL);
     body->vel = vel;
 }
 

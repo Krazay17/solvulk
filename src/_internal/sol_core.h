@@ -2,13 +2,15 @@
 
 #include <sol/sol.h>
 
+#include "internal_types.h"
 #include "internal_math.h"
 #include "internal_world.h"
 #include "internal_movement.h"
 #include "internal_render.h"
-#include "internal_physx.h"
 #include "internal_platform.h"
 #include "internal_loader.h"
+
+#include "systems/physx/internal_physx.h"
 
 typedef struct SolState
 {

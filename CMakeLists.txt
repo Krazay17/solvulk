@@ -59,7 +59,11 @@ target_include_directories(solvulk
 if(SOL_DEV_MODE)
     # This pushes the internal headers to anything linking against the engine
     target_compile_definitions(solvulk PUBLIC SOL_DEV_MODE)
-    target_include_directories(solvulk PUBLIC "${CMAKE_SOURCE_DIR}/src/_internal")
+    target_include_directories(solvulk 
+    PUBLIC 
+        "${CMAKE_SOURCE_DIR}/src"
+        "${CMAKE_SOURCE_DIR}/src/_internal"
+    )
 endif()
 
 target_link_libraries(solvulk
@@ -83,7 +87,7 @@ if(WIN32)
         "${CMAKE_SOURCE_DIR}/app/game.c"
         "${CMAKE_SOURCE_DIR}/resources.rc"
     )
-    target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
+    #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
 else()
     add_executable(solapp "${CMAKE_SOURCE_DIR}/app/linmain.c")
 endif()

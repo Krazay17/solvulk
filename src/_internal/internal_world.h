@@ -1,7 +1,8 @@
+//internal_world.h
 #pragma once
 
+#include "internal_types.h"
 #include "sol/world.h"
-#include "internal_physx.h"
 
 typedef enum
 {
@@ -52,14 +53,12 @@ SOLAPI void World_System_Add(World *world, SystemFunc func, SystemKind kind);
 SOLAPI void Sol_System_Xform_Snapshot(World *world);
 SOLAPI void Sol_System_Xform_Interpolate(World *world, float alpha);
 // Step Systems
-SOLAPI void Sol_System_Spatial_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
-SOLAPI void Sol_System_Button_Update(World *world, double dt, double time);
 SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);

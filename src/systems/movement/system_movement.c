@@ -26,7 +26,12 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             funcs->update(world, id, dt);
         }
     }
-    Sol_Debug_Add("Velocity", glms_vec3_norm(world->bodies[world->playerID].vel));
+    int playerId = world->playerID;
+    if (playerId > -1)
+    {
+        float speed = glms_vec3_norm(world->bodies[playerId].vel);
+        Sol_Debug_Add("Velocity", speed);
+    }
 }
 
 void Sol_System_Movement_2d_Step(World *world, double dt, double time)

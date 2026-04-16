@@ -23,13 +23,12 @@ World *World_Create_Default(void)
     if (world)
     {
         SystemFunc stepSystemInit[] = {
-            Sol_System_Spatial_Step,
             Sol_System_Movement_2d_Step,
             Sol_System_Movement_3d_Step,
             Sol_System_Step_Physx_2d,
             Sol_System_Step_Physx_3d,
         };
-        int stepSystemCount = 5;
+        int stepSystemCount = 4;
         world->stepCount = stepSystemCount;
         memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
 

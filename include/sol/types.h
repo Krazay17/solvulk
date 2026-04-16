@@ -1,14 +1,14 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <stddef.h>
+#include <limits.h>
 #include <assert.h>
+#include <math.h>
 
 #include <cglm/types-struct.h>
 
@@ -22,6 +22,7 @@
     #define SOLAPI 
 #endif
 
+#define u8 uint8_t
 #define u16 uint16_t
 #define u32 uint32_t
 #define u64 uint64_t

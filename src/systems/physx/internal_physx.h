@@ -1,52 +1,25 @@
+// internal_physx.h
 #pragma once
 
-#include <cglm/types-struct.h>
-
+#include "internal_types.h"
 #include "sol/types.h"
 
 typedef struct CompBody CompBody;
 typedef struct CompXform CompXform;
+
+#define SOL_TIMESTEP 1.0 / 60.0
+
 
 #define SOL_PHYS_COLLISION_SKIN 0.01f
 
 #define SPATIAL_NULL 0xFFFFFFFF
 #define SPATIAL_SIZE 131072
 #define SPATIAL_ENTRIES 65536
-#define SPATIAL_STATIC_ENTRIES 1262144
-#define SPATIAL_CELL_SIZE 4.0f
-
-typedef struct
-{
-    vec3s pos, normal, vel;
-    int id;
-    bool didCollide;
-} SolCollision;
-
-typedef struct {
-    vec3s a, b, c;
-    vec3s normal;
-} CollisionTri;
-
-typedef struct
-{
-    u32 *head;
-    u32 *value;
-    u32 *next;
-    u32 capacity;
-    u32 count;
-} SpatialTable;
-
-typedef struct WorldSpatial
-{
-    SpatialTable staticWorld;
-    SpatialTable dynamicUnits;
-    
-    CollisionTri *tris;
-    u32 triCount;
-} WorldSpatial;
-
+#define SPATIAL_STATIC_ENTRIES 0x00FFFFFF
+#define SPATIAL_CELL_SIZE 2.0f
 
 u32 HashCoords(int x, int y, int z);
+vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
 
 void SpatialTable_Init(SpatialTable *table, u32 capacity);
 void SpatialTable_Clear(SpatialTable *table);
@@ -56,3 +29,10 @@ SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, Collis
 
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
 void SimpleFloor(CompXform *xform, CompBody *body, float dt);
+
+SpatialCell GetSpatialCell(vec3s pos);
+void Sol_Spatial_Build_Dynamic(World *world);
+void ResolvePositionOnly(CompBody *aBody, CompXform *aXform,
+                         CompBody *bBody, CompXform *bXform);
+void ResolveVelocityOnly(CompBody *aBody, CompXform *aXform,
+                         CompBody *bBody, CompXform *bXform);

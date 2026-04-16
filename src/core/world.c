@@ -10,8 +10,8 @@ World *World_Create(void)
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
         world->playerID = -1;
-        SpatialTable_Init(&world->worldSpatial.dynamicUnits, SPATIAL_ENTRIES);
-        SpatialTable_Init(&world->worldSpatial.staticWorld, SPATIAL_STATIC_ENTRIES);
+        SpatialTable_Init(&world->worldSpatial.dynamicUnits, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES);
+        SpatialTable_Init(&world->worldSpatial.staticWorld, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
     }
 
     return world;

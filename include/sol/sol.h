@@ -2,6 +2,7 @@
 
 #include "sol/types.h"
 #include "sol/world.h"
+#include "sol/profiler.h"
 
 #define SOL_VERSION 1.0
 

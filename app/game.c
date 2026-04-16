@@ -55,16 +55,22 @@ void Create_Sol_Game()
     CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD1);
     Sol_Spatial_AddStatic(game, floorModel->model, floorXform);
 
-    // int floor2 = Entity_Create(game);
-    // CompXform *floor2Xform = Entity_Add_Xform(game, floor2, (vec3s){0, -10.0f, 0});
-    // CompModel *floor2Model = Entity_Add_Model(game, floor2, SOL_MODEL_WORLD0);
-    // Sol_Spatial_AddStatic(game, floor2Model->model, floor2Xform);
+    int floor2 = Entity_Create(game);
+    CompXform *floor2Xform = Entity_Add_Xform(game, floor2, (vec3s){50, 0, 0});
+    CompModel *floor2Model = Entity_Add_Model(game, floor2, SOL_MODEL_WORLD1);
+    Sol_Spatial_AddStatic(game, floor2Model->model, floor2Xform);
 
-    // int floor3 = Entity_Create(game);
-    // CompXform *floor3Xform = Entity_Add_Xform(game, floor3, (vec3s){25, -10.0f, 0});
-    // floor3Xform->quat = Sol_Quat_FromYawPitch(45.0f, 0);
-    // CompModel *floor3Model = Entity_Add_Model(game, floor3, SOL_MODEL_WORLD0);
-    // Sol_Spatial_AddStatic(game, floor3Model->model, floor3Xform);
+    int floor3 = Entity_Create(game);
+    CompXform *floor3Xform = Entity_Add_Xform(game, floor3, (vec3s){50, 0, 0});
+    floor3Xform->quat = Sol_Quat_FromYawPitch(45.0f, 0);
+    CompModel *floor3Model = Entity_Add_Model(game, floor3, SOL_MODEL_WORLD1);
+    Sol_Spatial_AddStatic(game, floor3Model->model, floor3Xform);
+    
+    int floor4 = Entity_Create(game);
+    CompXform *floor4Xform = Entity_Add_Xform(game, floor4, (vec3s){150, 0, 0});
+    floor4Xform->quat = Sol_Quat_FromYawPitch(90.0f, 0);
+    CompModel *floor4Model = Entity_Add_Model(game, floor4, SOL_MODEL_WORLD1);
+    Sol_Spatial_AddStatic(game, floor4Model->model, floor4Xform);
 }
 
 void MakeAWizard(void *data)

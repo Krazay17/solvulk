@@ -6,129 +6,23 @@
 static int bodyIds[MAX_ENTS];
 static SpatialCell cells[MAX_ENTS];
 
-// void Sol_System_Step_Physx_3d(World *world, double dt, double time)
-// {
-//     float fdt = (float)dt;
-//     int required = HAS_BODY3 | HAS_XFORM;
-//     WorldSpatial *ws = &world->worldSpatial;
-//     int count = world->activeCount;
-//     int i, j, k, l;
-//     int bodyCount = 0;
-
-// #pragma omp parallel for if (bodyCount > 500) schedule(guided)
-//     for (i = 0; i < count; i++)
-//     {
-//         int id = world->activeEntities[i];
-//         if ((world->masks[id] & required) != required)
-//             continue;
-
-//         CompBody *body = &world->bodies[id];
-//         CompXform *xform = &world->xforms[id];
-
-//         vec3s accel = SOL_PHYS_GRAV;
-//         accel = glms_vec3_add(accel, body->force);
-//         accel = glms_vec3_add(accel, body->impulse);
-//         body->impulse = (vec3s){0};
-
-//         body->vel = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
-//         body->grounded = 0;
-
-//         // Test at future position
-//         vec3s futurePos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
-//         SpatialCell cell = GetSpatialCell(futurePos);
-
-//         for (int n = 0; n < 27; n++)
-//         {
-//             u32 entry = ws->staticWorld.head[cell.neighborHashes[n]];
-//             while (entry != SPATIAL_NULL)
-//             {
-//                 CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
-//                 SolCollision col = ResolveSphereTriangle(body, &futurePos, tri);
-//                 if (col.didCollide && col.normal.y > 0.5f)
-//                     body->grounded = 1;
-//                 // Kill velocity into the surface
-//                 float velInto = glms_vec3_dot(body->vel, col.normal);
-//                 if (velInto < 0)
-//                     body->vel = glms_vec3_sub(body->vel,
-//                                               glms_vec3_scale(col.normal, velInto));
-
-//                 entry = ws->staticWorld.next[entry];
-//             }
-//         }
-
-//         xform->pos = futurePos;
-
-//         if (body->invMass > 0.0f)
-//         {
-//             bodyIds[bodyCount] = id;
-//             cells[bodyCount] = GetSpatialCell(xform->pos);
-//             bodyCount++;
-//         }
-//     }
-
-//     // 3. Rebuild dynamic spatial + recache cells (positions changed from static resolve)
-//     Sol_Spatial_Build_Dynamic(world);
-//     for (int i = 0; i < bodyCount; i++)
-//         cells[i] = GetSpatialCell(world->xforms[bodyIds[i]].pos);
-
-//     // 4. Dynamic position resolution
-
-// #pragma omp parallel for if (bodyCount > 500) schedule(guided)
-//     for (k = 0; k < bodyCount; k++)
-//     {
-//         int id = bodyIds[k];
-//         CompBody *body = &world->bodies[id];
-//         CompXform *xform = &world->xforms[id];
-
-//         for (int n = 0; n < 27; n++)
-//         {
-//             u32 entry = ws->dynamicUnits.head[cells[k].neighborHashes[n]];
-//             while (entry != SPATIAL_NULL)
-//             {
-//                 u32 otherID = ws->dynamicUnits.value[entry];
-//                 if (id < (int)otherID)
-//                     ResolvePositionOnly(body, xform,
-//                                         &world->bodies[otherID],
-//                                         &world->xforms[otherID]);
-//                 entry = ws->dynamicUnits.next[entry];
-//             }
-//         }
-//     }
-
-//     // 5. Velocity resolution (reuse same cells — positions barely changed)
-// #pragma omp parallel for if (bodyCount > 500) schedule(guided)
-//     for (l = 0; l < bodyCount; l++)
-//     {
-//         int id = bodyIds[l];
-//         CompBody *body = &world->bodies[id];
-//         CompXform *xform = &world->xforms[id];
-
-//         for (int n = 0; n < 27; n++)
-//         {
-//             u32 entry = ws->dynamicUnits.head[cells[l].neighborHashes[n]];
-//             while (entry != SPATIAL_NULL)
-//             {
-//                 u32 otherID = ws->dynamicUnits.value[entry];
-//                 if (id < (int)otherID)
-//                     ResolveVelocityOnly(body, xform,
-//                                         &world->bodies[otherID],
-//                                         &world->xforms[otherID]);
-//                 entry = ws->dynamicUnits.next[entry];
-//             }
-//         }
-//     }
-// }
+static SolProfiler profSpatialStatic = {.name = "Spatial Static"};
+static SolProfiler profBuildDynamic = {.name = "Build Dynamic"};
+static SolProfiler profSpatialDynamicPos = {.name = "Spatial Dynamic Pos"};
+static SolProfiler profSpatialDynamicVel = {.name = "Spatial Dynamic Vel"};
+static int profFrame = 0;
 
 void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 {
     float fdt = (float)dt;
     int required = HAS_BODY3 | HAS_XFORM;
-    int i, j, k, l;
+    int i, j, k;
     int count = world->activeCount;
     WorldSpatial *ws = &world->worldSpatial;
-    Sol_Spatial_Build_Dynamic(world);
 
-#pragma omp parallel for if (count > 500) schedule(guided)
+    Prof_Begin(&profSpatialStatic);
+    // Static position resolution
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
@@ -145,6 +39,8 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         body->impulse = (vec3s){0};
         body->vel = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
+        int totalChecks = 0;
+
         // Per-entity substep count based on speed
         float speed = glms_vec3_norm(body->vel);
         float stepDist = body->radius * 0.9f;
@@ -153,19 +49,17 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             substeps = 1;
         if (substeps > 8)
             substeps = 8;
-
         float subDt = fdt / substeps;
-
         for (int s = 0; s < substeps; s++)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
-
             SpatialCell cell = GetSpatialCell(xform->pos);
             for (u8 n = 0; n < 27; n++)
             {
-                u32 entry = ws->staticWorld.head[cell.neighborHashes[n]];
+                u32 entry = ws->staticWorld.head[cell.neighborHashes[n] & ws->staticWorld.mask];
                 while (entry != SPATIAL_NULL)
                 {
+                    totalChecks++;
                     CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
                     SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
                     if (col.didCollide && col.normal.y > 0.5f)
@@ -174,12 +68,18 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
                 }
             }
         }
+        if (id == world->playerID)
+            Sol_Debug_Add("TriChecks", totalChecks);
     }
+    Prof_End(&profSpatialStatic);
 
+    Prof_Begin(&profBuildDynamic);
+    Sol_Spatial_Build_Dynamic(world);
+    Prof_End(&profBuildDynamic);
+
+    Prof_Begin(&profSpatialDynamicPos);
     // 2. Dynamic position resolution
-    //Sol_Spatial_Build_Dynamic(world);
-
-#pragma omp parallel for if (count > 500) schedule(guided)
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
         int id = world->activeEntities[j];
@@ -193,7 +93,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         SpatialCell cell = GetSpatialCell(xform->pos);
         for (u8 n = 0; n < 27; n++)
         {
-            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n]];
+            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n] & ws->dynamicUnits.mask];
             while (entry != SPATIAL_NULL)
             {
                 u32 otherID = ws->dynamicUnits.value[entry];
@@ -205,11 +105,11 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             }
         }
     }
+    Prof_End(&profSpatialDynamicPos);
 
+    Prof_Begin(&profSpatialDynamicVel);
     // 3. Dynamic velocity resolution
-    //Sol_Spatial_Build_Dynamic(world);
-
-#pragma omp parallel for if (count > 500) schedule(guided)
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (k = 0; k < count; k++)
     {
         int id = world->activeEntities[k];
@@ -223,7 +123,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         SpatialCell cell = GetSpatialCell(xform->pos);
         for (u8 n = 0; n < 27; n++)
         {
-            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n]];
+            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n] & ws->dynamicUnits.mask];
             while (entry != SPATIAL_NULL)
             {
                 u32 otherID = ws->dynamicUnits.value[entry];
@@ -234,6 +134,16 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
                 entry = ws->dynamicUnits.next[entry];
             }
         }
+    }
+    Prof_End(&profSpatialDynamicVel);
+
+    profFrame++;
+    if (profFrame % 300 == 0)
+    {
+        Prof_Print(&profSpatialStatic);
+        Prof_Print(&profBuildDynamic);
+        Prof_Print(&profSpatialDynamicPos);
+        Prof_Print(&profSpatialDynamicVel);
     }
 }
 
@@ -337,7 +247,7 @@ void Sol_Spatial_Build_Dynamic(World *world)
         int ix = (int)floorf(pos.x / SPATIAL_CELL_SIZE);
         int iy = (int)floorf(pos.y / SPATIAL_CELL_SIZE);
         int iz = (int)floorf(pos.z / SPATIAL_CELL_SIZE);
-        u32 hash = HashCoords(ix, iy, iz);
+        u32 hash = HashCoords(ix, iy, iz, dynamic->mask);
         SpatialTable_Insert(dynamic, hash, (u32)id);
     }
 }
@@ -383,6 +293,13 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform)
             t->b = verts[1];
             t->c = verts[2];
 
+            t->center = glms_vec3_scale(
+                glms_vec3_add(glms_vec3_add(t->a, t->b), t->c), 1.0f / 3.0f);
+            float da = glms_vec3_norm(glms_vec3_sub(t->a, t->center));
+            float db = glms_vec3_norm(glms_vec3_sub(t->b, t->center));
+            float dc = glms_vec3_norm(glms_vec3_sub(t->c, t->center));
+            t->boundRadius = fmaxf(da, fmaxf(db, dc));
+
             vec3s edge1 = glms_vec3_sub(t->b, t->a);
             vec3s edge2 = glms_vec3_sub(t->c, t->a);
             vec3s cross = glms_vec3_cross(edge1, edge2);
@@ -409,7 +326,7 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform)
             for (int x = x0; x <= x1; x++)
                 for (int y = y0; y <= y1; y++)
                     for (int z = z0; z <= z1; z++)
-                        SpatialTable_Insert(&ws->staticWorld, HashCoords(x, y, z), triIdx);
+                        SpatialTable_Insert(&ws->staticWorld, HashCoords(x, y, z, ws->staticWorld.mask), triIdx);
 
             triIdx++;
         }
@@ -428,22 +345,24 @@ SpatialCell GetSpatialCell(vec3s pos)
     for (int ox = -1; ox <= 1; ox++)
         for (int oy = -1; oy <= 1; oy++)
             for (int oz = -1; oz <= 1; oz++)
-                cell.neighborHashes[n++] = HashCoords(
+                cell.neighborHashes[n++] = HashCoordsRaw(
                     cell.ix + ox, cell.iy + oy, cell.iz + oz);
     return cell;
 }
 
-u32 HashCoords(int x, int y, int z)
+u32 HashCoords(int x, int y, int z, u32 mask)
 {
     unsigned int h = ((unsigned int)x * 73856093) ^
                      ((unsigned int)y * 19349663) ^
                      ((unsigned int)z * 83492791);
-    return h % SPATIAL_SIZE;
+    return h & mask;
 }
 
-void SpatialTable_Init(SpatialTable *table, u32 capacity)
+void SpatialTable_Init(SpatialTable *table, u32 buckets, u32 capacity)
 {
-    table->head = malloc(sizeof(u32) * SPATIAL_SIZE);
+    table->size = buckets;
+    table->mask = buckets - 1;
+    table->head = malloc(sizeof(u32) * buckets);
     table->value = malloc(sizeof(u32) * capacity);
     table->next = malloc(sizeof(u32) * capacity);
     table->capacity = capacity;
@@ -452,8 +371,7 @@ void SpatialTable_Init(SpatialTable *table, u32 capacity)
 
 void SpatialTable_Clear(SpatialTable *table)
 {
-    for (u32 i = 0; i < SPATIAL_SIZE; i++)
-        table->head[i] = SPATIAL_NULL;
+    memset(table->head, 0xFF, sizeof(u32) * table->size);
     table->count = 0;
 }
 
@@ -467,18 +385,10 @@ void SpatialTable_Free(SpatialTable *table)
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value)
 {
     if (table->count >= table->capacity)
-    {
-        static bool warned = false;
-        if (!warned)
-        {
-            printf("WARNING: SpatialTable full (%u entries)\n", table->capacity);
-            warned = true;
-        }
         return;
-    }
 
     u32 idx = table->count++;
     table->value[idx] = value;
-    table->next[idx] = table->head[hash];
-    table->head[hash] = idx;
+    table->next[idx] = table->head[hash & table->mask];
+    table->head[hash & table->mask] = idx;
 }

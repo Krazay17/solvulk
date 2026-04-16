@@ -2,8 +2,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-// --- Placeholder Math Types (Assume these are defined
-elsewhere) ---
+// --- Placeholder Math Types (Assume these are defined elsewhere) ---
 typedef struct { float x, y, z; } vec3;
 typedef struct { float x, y, z; } quat;
 
@@ -139,13 +138,11 @@ void simulate_step(
     State* state_a, State* state_b,
     const Xform* xform_a, const Xform* xform_b)
 {
-    // 1. Apply forces/integration (Update velocity based on
-gravity, etc.)
+    // 1. Apply forces/integration (Update velocity based on gravity, etc.)
     // (Skipped for brevity)
 
     // 2. Collision Detection & Resolution
-    // (This function would iterate over all pairs of
-objects)
+    // (This function would iterate over all pairs of objects)
     // For demonstration, we call the resolution
 function directly:
     resolve_collision(state_a, state_b, xform_a, xform_b);
@@ -158,9 +155,123 @@ typedef struct { vec3 pos; } Xform;
 void resolve_collision(State* state_a, State* state_b, const
 Xform* xform_a, const Xform* xform_b) {
     // Placeholder for the complex collision logic
-    // The actual implementation would use the math derived
-above.
+    // The actual implementation would use the math derived above.
     // resolve_collision(state_a, state_b, xform_a, xform_b);
 
+}
+```
+
+```c
+void Sol_System_Step_Physx_3d(World *world, double dt, double time)
+{
+    float fdt = (float)dt;
+    int required = HAS_BODY3 | HAS_XFORM;
+    WorldSpatial *ws = &world->worldSpatial;
+    int count = world->activeCount;
+    int i, j, k, l;
+    int bodyCount = 0;
+
+#pragma omp parallel for if (bodyCount > 500) schedule(guided)
+    for (i = 0; i < count; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompBody *body = &world->bodies[id];
+        CompXform *xform = &world->xforms[id];
+
+        vec3s accel = SOL_PHYS_GRAV;
+        accel = glms_vec3_add(accel, body->force);
+        accel = glms_vec3_add(accel, body->impulse);
+        body->impulse = (vec3s){0};
+
+        body->vel = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
+        body->grounded = 0;
+
+        // Test at future position
+        vec3s futurePos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
+        SpatialCell cell = GetSpatialCell(futurePos);
+
+        for (int n = 0; n < 27; n++)
+        {
+            u32 entry = ws->staticWorld.head[cell.neighborHashes[n]];
+            while (entry != SPATIAL_NULL)
+            {
+                CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
+                SolCollision col = ResolveSphereTriangle(body, &futurePos, tri);
+                if (col.didCollide && col.normal.y > 0.5f)
+                    body->grounded = 1;
+                // Kill velocity into the surface
+                float velInto = glms_vec3_dot(body->vel, col.normal);
+                if (velInto < 0)
+                    body->vel = glms_vec3_sub(body->vel,
+                                              glms_vec3_scale(col.normal, velInto));
+
+                entry = ws->staticWorld.next[entry];
+            }
+        }
+
+        xform->pos = futurePos;
+
+        if (body->invMass > 0.0f)
+        {
+            bodyIds[bodyCount] = id;
+            cells[bodyCount] = GetSpatialCell(xform->pos);
+            bodyCount++;
+        }
+    }
+
+    // 3. Rebuild dynamic spatial + recache cells (positions changed from static resolve)
+    Sol_Spatial_Build_Dynamic(world);
+    for (int i = 0; i < bodyCount; i++)
+        cells[i] = GetSpatialCell(world->xforms[bodyIds[i]].pos);
+
+    // 4. Dynamic position resolution
+
+#pragma omp parallel for if (bodyCount > 500) schedule(guided)
+    for (k = 0; k < bodyCount; k++)
+    {
+        int id = bodyIds[k];
+        CompBody *body = &world->bodies[id];
+        CompXform *xform = &world->xforms[id];
+
+        for (int n = 0; n < 27; n++)
+        {
+            u32 entry = ws->dynamicUnits.head[cells[k].neighborHashes[n]];
+            while (entry != SPATIAL_NULL)
+            {
+                u32 otherID = ws->dynamicUnits.value[entry];
+                if (id < (int)otherID)
+                    ResolvePositionOnly(body, xform,
+                                        &world->bodies[otherID],
+                                        &world->xforms[otherID]);
+                entry = ws->dynamicUnits.next[entry];
+            }
+        }
+    }
+
+    // 5. Velocity resolution (reuse same cells — positions barely changed)
+#pragma omp parallel for if (bodyCount > 500) schedule(guided)
+    for (l = 0; l < bodyCount; l++)
+    {
+        int id = bodyIds[l];
+        CompBody *body = &world->bodies[id];
+        CompXform *xform = &world->xforms[id];
+
+        for (int n = 0; n < 27; n++)
+        {
+            u32 entry = ws->dynamicUnits.head[cells[l].neighborHashes[n]];
+            while (entry != SPATIAL_NULL)
+            {
+                u32 otherID = ws->dynamicUnits.value[entry];
+                if (id < (int)otherID)
+                    ResolveVelocityOnly(body, xform,
+                                        &world->bodies[otherID],
+                                        &world->xforms[otherID]);
+                entry = ws->dynamicUnits.next[entry];
+            }
+        }
+    }
 }
 ```

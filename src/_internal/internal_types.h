@@ -12,6 +12,8 @@ typedef struct
 {
     vec3s a, b, c;
     vec3s normal;
+    vec3s center;
+    float boundRadius;
 } CollisionTri;
 
 typedef struct
@@ -20,6 +22,8 @@ typedef struct
     u32 *value;
     u32 *next;
     u32 capacity;
+    u32 size;
+    u32 mask;
     u32 count;
 } SpatialTable;
 

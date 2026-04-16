@@ -9,9 +9,10 @@
 
 #include "game.h"
 
+#define TARGET_FRAME_TIME 1.0 / 480.0
+
 // --- Shared state between threads ---
 static volatile g_running = TRUE;
-static LARGE_INTEGER g_startTime, g_frequency;
 static HWND g_hwnd = NULL;
 
 HMODULE current_engine_lib = NULL;
@@ -63,10 +64,6 @@ int main(int argc, char *argv[])
     // AllocConsole();
     // freopen("CONOUT$", "w", stdout);
 
-    // Timing init on the main thread so Sol_Init can use g_frequency/g_startTime
-    QueryPerformanceFrequency(&g_frequency);
-    QueryPerformanceCounter(&g_startTime);
-
     // Raw input device for accurate mouse
     RAWINPUTDEVICE rid;
     rid.usUsagePage = 0x01;
@@ -112,18 +109,28 @@ int main(int argc, char *argv[])
 // ─────────────────────────────────────────────────────────────────────────────
 static DWORD WINAPI GameThreadProc(LPVOID lpParam)
 {
-    LARGE_INTEGER lastTime, currentTime;
-    QueryPerformanceCounter(&lastTime);
+    LARGE_INTEGER startTime, lastTime, currentTime, endTime, freq;
+    QueryPerformanceCounter(&startTime);
+    lastTime = currentTime = startTime;
 
     while (InterlockedAdd(&g_running, 0))
     {
+        QueryPerformanceFrequency(&freq);
         QueryPerformanceCounter(&currentTime);
-        double dt = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)g_frequency.QuadPart;
-        double runTime = (double)(currentTime.QuadPart - g_startTime.QuadPart) / (double)g_frequency.QuadPart;
+        double dt = (double)(currentTime.QuadPart - lastTime.QuadPart) / freq.QuadPart;
+        double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / freq.QuadPart;
         lastTime = currentTime;
         POINT cursorPos;
+
         GetCursorPos(&cursorPos);
         Sol_Tick(dt, runTime);
+
+        QueryPerformanceFrequency(&freq);
+        QueryPerformanceCounter(&endTime);
+        double elapsed = (double)(endTime.QuadPart - currentTime.QuadPart) / freq.QuadPart;
+        double remaining = TARGET_FRAME_TIME - elapsed;
+        if(remaining > 0.0)
+            Sleep((DWORD)(remaining * 1000.0));
     }
 
     return 0;

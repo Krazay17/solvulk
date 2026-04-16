@@ -3,7 +3,6 @@
 SolState solState = {0};
 
 static double accumulator = 0.0;
-static float smoothedFps = 60.0f;
 
 static void DebugFPS(double dt);
 static void Sol_OnResize();
@@ -43,12 +42,12 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
         Sol_System_Xform_Snapshot(solState.worlds[i]);
 
-    accumulator = accumulator > SOL_TIMESTEP * 24 ? SOL_TIMESTEP * 24 : accumulator + dt;
+    accumulator = accumulator > SOL_TIMESTEP * 2 ? SOL_TIMESTEP * 2 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
         accumulator -= SOL_TIMESTEP;
         solState.stepCount++;
-        Sol_Debug_Add("TickCount", solState.stepCount);
+        Sol_Debug_Add("StepCount", solState.stepCount);
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], SOL_TIMESTEP, time);
     }
@@ -70,11 +69,20 @@ void Sol_Tick(double dt, double time)
 
 static void DebugFPS(double dt)
 {
-    float currentFps = dt > 0 ? 1.0f / (float)dt : 0.16;
-    float alpha = 0.01f;
-    smoothedFps = (alpha * currentFps) + (1.0f - alpha) * smoothedFps;
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "Fps: %.0f", smoothedFps);
+    static double total,throttle;
+    static char buffer[64];
+    static int count;
+    total += 1.0 / dt;
+    count++;
+
+    if ((throttle += dt) > 0.1)
+    {
+        float currentFps = total / count;
+        snprintf(buffer, sizeof(buffer), "Fps: %.0f", currentFps);
+        throttle = 0;
+        count = 0;
+        total = 0;
+    }
     Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
 }
 

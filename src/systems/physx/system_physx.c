@@ -7,9 +7,7 @@ static int bodyIds[MAX_ENTS];
 static SpatialCell cells[MAX_ENTS];
 
 static SolProfiler profSpatialStatic = {.name = "Spatial Static"};
-static SolProfiler profBuildDynamic = {.name = "Build Dynamic"};
-static SolProfiler profSpatialDynamicPos = {.name = "Spatial Dynamic Pos"};
-static SolProfiler profSpatialDynamicVel = {.name = "Spatial Dynamic Vel"};
+static SolProfiler profSpatialDynamic = {.name = "Spatial Dynamic"};
 static int profFrame = 0;
 
 void Sol_System_Step_Physx_3d(World *world, double dt, double time)
@@ -22,7 +20,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 
     Prof_Begin(&profSpatialStatic);
     // Static position resolution
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 2000) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
@@ -32,7 +30,11 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         CompBody *body = &world->bodies[id];
 
         body->grounded = 0;
-
+        if (xform->pos.y < -15.0f)
+        {
+            xform->pos = (vec3s){0, 100, 0};
+            continue;
+        }
         vec3s accel = SOL_PHYS_GRAV;
         accel = glms_vec3_add(accel, body->force);
         accel = glms_vec3_add(accel, body->impulse);
@@ -50,36 +52,15 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         if (substeps > 8)
             substeps = 8;
         float subDt = fdt / substeps;
-        for (int s = 0; s < substeps; s++)
-        {
-            xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
-            SpatialCell cell = GetSpatialCell(xform->pos);
-            for (u8 n = 0; n < 27; n++)
-            {
-                u32 entry = ws->staticWorld.head[cell.neighborHashes[n] & ws->staticWorld.mask];
-                while (entry != SPATIAL_NULL)
-                {
-                    totalChecks++;
-                    CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
-                    SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
-                    if (col.didCollide && col.normal.y > 0.5f)
-                        body->grounded = 1;
-                    entry = ws->staticWorld.next[entry];
-                }
-            }
-        }
-        if (id == world->playerID)
-            Sol_Debug_Add("TriChecks", totalChecks);
+        Static_Collisions_Grid(substeps, body, xform, subDt, &world->staticGrid, ws);
     }
     Prof_End(&profSpatialStatic);
 
-    Prof_Begin(&profBuildDynamic);
     Sol_Spatial_Build_Dynamic(world);
-    Prof_End(&profBuildDynamic);
 
-    Prof_Begin(&profSpatialDynamicPos);
+    Prof_Begin(&profSpatialDynamic);
     // 2. Dynamic position resolution
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 5000) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
         int id = world->activeEntities[j];
@@ -98,52 +79,84 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             {
                 u32 otherID = ws->dynamicUnits.value[entry];
                 if (id < (int)otherID)
-                    ResolvePositionOnly(body, xform,
-                                        &world->bodies[otherID],
-                                        &world->xforms[otherID]);
+                    ResolveCollision(body, xform,
+                                     &world->bodies[otherID],
+                                     &world->xforms[otherID]);
                 entry = ws->dynamicUnits.next[entry];
             }
         }
     }
-    Prof_End(&profSpatialDynamicPos);
+    Prof_End(&profSpatialDynamic);
 
-    Prof_Begin(&profSpatialDynamicVel);
-    // 3. Dynamic velocity resolution
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
-    for (k = 0; k < count; k++)
+    profFrame++;
+    if (profFrame % 200 == 0)
     {
-        int id = world->activeEntities[k];
-        if ((world->masks[id] & required) != required)
-            continue;
-        CompBody *body = &world->bodies[id];
-        CompXform *xform = &world->xforms[id];
-        if (body->invMass <= 0.0f)
-            continue;
+        Prof_Print(&profSpatialStatic);
+        Prof_Print(&profSpatialDynamic);
+    }
+}
 
+void collision_static_hashed(int substeps, CompBody *body, CompXform *xform, float subDt, WorldSpatial *ws)
+{
+    int totalChecks = 0;
+    for (int s = 0; s < substeps; s++)
+    {
+        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
         SpatialCell cell = GetSpatialCell(xform->pos);
         for (u8 n = 0; n < 27; n++)
         {
-            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n] & ws->dynamicUnits.mask];
+            u32 entry = ws->staticWorld.head[cell.neighborHashes[n] & ws->staticWorld.mask];
             while (entry != SPATIAL_NULL)
             {
-                u32 otherID = ws->dynamicUnits.value[entry];
-                if (id < (int)otherID)
-                    ResolveVelocityOnly(body, xform,
-                                        &world->bodies[otherID],
-                                        &world->xforms[otherID]);
-                entry = ws->dynamicUnits.next[entry];
+                if (++totalChecks > 512)
+                    return;
+                CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
+                SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
+                if (col.didCollide && col.normal.y > 0.5f)
+                    body->grounded = 1;
+                entry = ws->staticWorld.next[entry];
             }
         }
     }
-    Prof_End(&profSpatialDynamicVel);
+}
 
-    profFrame++;
-    if (profFrame % 300 == 0)
+void Static_Collisions_Grid(int substeps, CompBody *body, CompXform *xform, float subDt, StaticGrid *grid, WorldSpatial *ws)
+{
+    // In physics loop — replaces the 27-neighbor hash walk
+    for (int s = 0; s < substeps; s++)
     {
-        Prof_Print(&profSpatialStatic);
-        Prof_Print(&profBuildDynamic);
-        Prof_Print(&profSpatialDynamicPos);
-        Prof_Print(&profSpatialDynamicVel);
+        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
+
+        int checks = 0;
+        int ix = (int)floorf((xform->pos.x - grid->worldMin.x) / grid->cellSize);
+        int iy = (int)floorf((xform->pos.y - grid->worldMin.y) / grid->cellSize);
+        int iz = (int)floorf((xform->pos.z - grid->worldMin.z) / grid->cellSize);
+
+        for (int ox = -1; ox <= 1; ox++)
+            for (int oy = -1; oy <= 1; oy++)
+                for (int oz = -1; oz <= 1; oz++)
+                {
+                    int cx = ix + ox, cy = iy + oy, cz = iz + oz;
+                    if (cx < 0 || cx >= grid->gridX ||
+                        cy < 0 || cy >= grid->gridY ||
+                        cz < 0 || cz >= grid->gridZ)
+                        continue;
+
+                    u32 cell = cx + cy * grid->gridX + cz * grid->gridX * grid->gridY;
+                    u32 start = grid->offsets[cell];
+                    u32 end = grid->offsets[cell + 1];
+
+                    for (u32 e = start; e < end; e++)
+                    {
+                        if (++checks > 5000)
+                            return;
+
+                        CollisionTri *tri = &ws->tris[grid->tris[e]];
+                        SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
+                        if (col.didCollide && col.normal.y > 0.5f)
+                            body->grounded = 1;
+                    }
+                }
     }
 }
 
@@ -334,6 +347,112 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform)
     printf("Static world: %u tris, %u spatial entries\n", totalTris, ws->staticWorld.count);
 }
 
+void StaticGrid_Build(StaticGrid *grid, WorldSpatial *ws,
+                      vec3s worldMin, vec3s worldMax, float cellSize)
+{
+    grid->cellSize = cellSize;
+    grid->worldMin = worldMin;
+    grid->gridX = (int)ceilf((worldMax.x - worldMin.x) / cellSize) + 1;
+    grid->gridY = (int)ceilf((worldMax.y - worldMin.y) / cellSize) + 1;
+    grid->gridZ = (int)ceilf((worldMax.z - worldMin.z) / cellSize) + 1;
+    u32 cellCount = grid->gridX * grid->gridY * grid->gridZ;
+
+    // 1. Count entries per cell
+    u32 *counts = calloc(cellCount, sizeof(u32));
+    u32 totalEntries = 0;
+
+    for (u32 t = 0; t < ws->triCount; t++)
+    {
+        CollisionTri *tri = &ws->tris[t];
+        float minX = fminf(tri->a.x, fminf(tri->b.x, tri->c.x));
+        float maxX = fmaxf(tri->a.x, fmaxf(tri->b.x, tri->c.x));
+        float minY = fminf(tri->a.y, fminf(tri->b.y, tri->c.y));
+        float maxY = fmaxf(tri->a.y, fmaxf(tri->b.y, tri->c.y));
+        float minZ = fminf(tri->a.z, fminf(tri->b.z, tri->c.z));
+        float maxZ = fmaxf(tri->a.z, fmaxf(tri->b.z, tri->c.z));
+
+        int x0 = (int)floorf((minX - worldMin.x) / cellSize);
+        int x1 = (int)floorf((maxX - worldMin.x) / cellSize);
+        int y0 = (int)floorf((minY - worldMin.y) / cellSize);
+        int y1 = (int)floorf((maxY - worldMin.y) / cellSize);
+        int z0 = (int)floorf((minZ - worldMin.z) / cellSize);
+        int z1 = (int)floorf((maxZ - worldMin.z) / cellSize);
+
+        x0 = x0 < 0 ? 0 : x0;
+        x1 = x1 >= grid->gridX ? grid->gridX - 1 : x1;
+        y0 = y0 < 0 ? 0 : y0;
+        y1 = y1 >= grid->gridY ? grid->gridY - 1 : y1;
+        z0 = z0 < 0 ? 0 : z0;
+        z1 = z1 >= grid->gridZ ? grid->gridZ - 1 : z1;
+
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                {
+                    counts[x + y * grid->gridX + z * grid->gridX * grid->gridY]++;
+                    totalEntries++;
+                }
+    }
+
+    // 2. Prefix sum → offsets
+    grid->offsets = malloc((cellCount + 1) * sizeof(u32));
+    grid->offsets[0] = 0;
+    for (u32 i = 0; i < cellCount; i++)
+        grid->offsets[i + 1] = grid->offsets[i] + counts[i];
+
+    // 3. Fill sorted triangle indices
+    grid->tris = malloc(totalEntries * sizeof(u32));
+    u32 *cursor = malloc(cellCount * sizeof(u32));
+    memcpy(cursor, grid->offsets, cellCount * sizeof(u32));
+
+    for (u32 t = 0; t < ws->triCount; t++)
+    {
+        CollisionTri *tri = &ws->tris[t];
+        float minX = fminf(tri->a.x, fminf(tri->b.x, tri->c.x));
+        float maxX = fmaxf(tri->a.x, fmaxf(tri->b.x, tri->c.x));
+        float minY = fminf(tri->a.y, fminf(tri->b.y, tri->c.y));
+        float maxY = fmaxf(tri->a.y, fmaxf(tri->b.y, tri->c.y));
+        float minZ = fminf(tri->a.z, fminf(tri->b.z, tri->c.z));
+        float maxZ = fmaxf(tri->a.z, fmaxf(tri->b.z, tri->c.z));
+
+        int x0 = (int)floorf((minX - worldMin.x) / cellSize);
+        int x1 = (int)floorf((maxX - worldMin.x) / cellSize);
+        int y0 = (int)floorf((minY - worldMin.y) / cellSize);
+        int y1 = (int)floorf((maxY - worldMin.y) / cellSize);
+        int z0 = (int)floorf((minZ - worldMin.z) / cellSize);
+        int z1 = (int)floorf((maxZ - worldMin.z) / cellSize);
+
+        x0 = x0 < 0 ? 0 : x0;
+        x1 = x1 >= grid->gridX ? grid->gridX - 1 : x1;
+        y0 = y0 < 0 ? 0 : y0;
+        y1 = y1 >= grid->gridY ? grid->gridY - 1 : y1;
+        z0 = z0 < 0 ? 0 : z0;
+        z1 = z1 >= grid->gridZ ? grid->gridZ - 1 : z1;
+
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                {
+                    u32 cell = x + y * grid->gridX + z * grid->gridX * grid->gridY;
+                    grid->tris[cursor[cell]++] = t;
+                }
+    }
+
+    free(counts);
+    free(cursor);
+
+    // Find worst cell for debug
+    u32 worst = 0;
+    for (u32 i = 0; i < cellCount; i++)
+    {
+        u32 len = grid->offsets[i + 1] - grid->offsets[i];
+        if (len > worst)
+            worst = len;
+    }
+    printf("StaticGrid: %dx%dx%d cells, %u entries, worst cell: %u\n",
+           grid->gridX, grid->gridY, grid->gridZ, totalEntries, worst);
+}
+
 SpatialCell GetSpatialCell(vec3s pos)
 {
     SpatialCell cell;
@@ -391,4 +510,63 @@ void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value)
     table->value[idx] = value;
     table->next[idx] = table->head[hash & table->mask];
     table->head[hash & table->mask] = idx;
+}
+
+void SpatialTable_Compact(SpatialTable *table)
+{
+    // 1. Count entries per bucket
+    u32 *counts = calloc(table->size, sizeof(u32));
+    for (u32 i = 0; i < table->size; i++)
+    {
+        u32 entry = table->head[i];
+        while (entry != SPATIAL_NULL)
+        {
+            counts[i]++;
+            entry = table->next[entry];
+        }
+    }
+
+    // 2. Compute offsets (prefix sum)
+    u32 *offsets = malloc(table->size * sizeof(u32));
+    offsets[0] = 0;
+    for (u32 i = 1; i < table->size; i++)
+        offsets[i] = offsets[i - 1] + counts[i - 1];
+
+    // 3. Copy values into sorted order
+    u32 *sorted = malloc(table->count * sizeof(u32));
+    u32 *cursor = malloc(table->size * sizeof(u32));
+    memcpy(cursor, offsets, table->size * sizeof(u32));
+
+    for (u32 i = 0; i < table->size; i++)
+    {
+        u32 entry = table->head[i];
+        while (entry != SPATIAL_NULL)
+        {
+            sorted[cursor[i]++] = table->value[entry];
+            entry = table->next[entry];
+        }
+    }
+
+    // 4. Rebuild as contiguous — head points to start, next is just +1
+    memcpy(table->value, sorted, table->count * sizeof(u32));
+
+    for (u32 i = 0; i < table->size; i++)
+    {
+        if (counts[i] == 0)
+        {
+            table->head[i] = SPATIAL_NULL;
+        }
+        else
+        {
+            table->head[i] = offsets[i];
+            for (u32 j = 0; j < counts[i] - 1; j++)
+                table->next[offsets[i] + j] = offsets[i] + j + 1;
+            table->next[offsets[i] + counts[i] - 1] = SPATIAL_NULL;
+        }
+    }
+
+    free(sorted);
+    free(counts);
+    free(offsets);
+    free(cursor);
 }

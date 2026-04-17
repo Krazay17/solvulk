@@ -9,7 +9,7 @@
 
 #include "game.h"
 
-#define TARGET_FRAME_TIME 1.0 / 480.0
+#define TARGET_FRAME_TIME 1.0 / 500.0
 
 // --- Shared state between threads ---
 static volatile g_running = TRUE;

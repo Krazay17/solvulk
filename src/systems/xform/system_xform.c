@@ -12,6 +12,10 @@ void Sol_System_Xform_Snapshot(World *world)
             world->xforms[id].lastQuat = world->xforms[id].quat;
         }
     }
+    CompXform *playerXform = &world->xforms[world->playerID];
+    Sol_Debug_Add("X",playerXform->pos.x);
+    Sol_Debug_Add("Y",playerXform->pos.y);
+    Sol_Debug_Add("Z",playerXform->pos.z);
 }
 
 // system_xform.c

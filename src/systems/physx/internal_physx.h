@@ -14,11 +14,11 @@ typedef struct CompXform CompXform;
 
 #define SPATIAL_CELL_SIZE 2.0f
 
-#define SPATIAL_DYNAMIC_SIZE (1 << 14) // 16K buckets for entities
+#define SPATIAL_DYNAMIC_SIZE (1 << 14)
 #define SPATIAL_DYNAMIC_ENTRIES 65536
 
-#define SPATIAL_STATIC_SIZE (1 << 22) // 4M buckets for 119K tris
-#define SPATIAL_STATIC_ENTRIES 0x02FFFFFF
+#define SPATIAL_STATIC_SIZE (1 << 22)
+#define SPATIAL_STATIC_ENTRIES 0x0FFFFFFF
 
 u32 HashCoords(int x, int y, int z, u32 mask);
 
@@ -28,6 +28,7 @@ void SpatialTable_Init(SpatialTable *table, u32 buckets, u32 capacity);
 void SpatialTable_Clear(SpatialTable *table);
 void SpatialTable_Free(SpatialTable *table);
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value);
+void SpatialTable_Compact(SpatialTable *table);
 SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, CollisionTri *tri);
 
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
@@ -35,14 +36,34 @@ void SimpleFloor(CompXform *xform, CompBody *body, float dt);
 
 SpatialCell GetSpatialCell(vec3s pos);
 void Sol_Spatial_Build_Dynamic(World *world);
+
 void ResolvePositionOnly(CompBody *aBody, CompXform *aXform,
                          CompBody *bBody, CompXform *bXform);
+
 void ResolveVelocityOnly(CompBody *aBody, CompXform *aXform,
                          CompBody *bBody, CompXform *bXform);
+
+void StaticGrid_Build(StaticGrid *grid, WorldSpatial *ws,
+                      vec3s worldMin, vec3s worldMax, float cellSize);
+
+void Static_Collisions_Grid(int substeps, CompBody *body, CompXform *xform, float subDt, StaticGrid *grid, WorldSpatial *ws);
 
 static inline u32 HashCoordsRaw(int x, int y, int z)
 {
     return ((unsigned int)x * 73856093) ^
            ((unsigned int)y * 19349663) ^
            ((unsigned int)z * 83492791);
+}
+
+static inline u32 StaticGrid_CellIndex(StaticGrid *grid, vec3s pos)
+{
+    int x = (int)floorf((pos.x - grid->worldMin.x) / grid->cellSize);
+    int y = (int)floorf((pos.y - grid->worldMin.y) / grid->cellSize);
+    int z = (int)floorf((pos.z - grid->worldMin.z) / grid->cellSize);
+
+    x = x < 0 ? 0 : (x >= grid->gridX ? grid->gridX - 1 : x);
+    y = y < 0 ? 0 : (y >= grid->gridY ? grid->gridY - 1 : y);
+    z = z < 0 ? 0 : (z >= grid->gridZ ? grid->gridZ - 1 : z);
+
+    return x + y * grid->gridX + z * grid->gridX * grid->gridY;
 }

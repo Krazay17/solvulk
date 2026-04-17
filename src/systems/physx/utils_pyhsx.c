@@ -66,12 +66,26 @@ SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, Collis
         return result;
 
     float dist = sqrtf(distSq);
-    vec3s normal = tri->normal;
-    if (dist > 0.0001f)
-        normal = glms_vec3_scale(delta, 1.0f / dist);
 
-    float penetration = sphereBody->radius - dist;
-    *localPos = glms_vec3_add(*localPos, glms_vec3_scale(normal, penetration));
+    
+    float side = glms_vec3_dot(glms_vec3_sub(*localPos, tri->a), tri->normal);
+    vec3s normal;
+    if (side < 0)
+    {
+        // Behind the face — push out along face normal (through to front)
+        normal = tri->normal;
+        float penetration = sphereBody->radius + dist;
+        *localPos = glms_vec3_add(*localPos, glms_vec3_scale(normal, penetration));
+    }
+    else
+    {
+        // In front — normal behavior
+        normal = dist > 0.0001f
+            ? glms_vec3_scale(delta, 1.0f / dist)
+            : tri->normal;
+        float penetration = sphereBody->radius - dist;
+        *localPos = glms_vec3_add(*localPos, glms_vec3_scale(normal, penetration));
+    }
 
     float velAlongNormal = glms_vec3_dot(sphereBody->vel, normal);
     if (velAlongNormal < 0)

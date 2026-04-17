@@ -27,6 +27,15 @@ typedef struct
     u32 count;
 } SpatialTable;
 
+typedef struct
+{
+    u32 *offsets;  // [cellCount + 1] — start index per cell
+    u32 *tris;     // [totalEntries] — sorted triangle indices
+    int gridX, gridY, gridZ;
+    float cellSize;
+    vec3s worldMin;
+} StaticGrid;
+
 typedef struct WorldSpatial
 {
     SpatialTable staticWorld;

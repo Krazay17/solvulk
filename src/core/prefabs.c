@@ -2,7 +2,7 @@
 
 int Sol_Prefab_Wizard(World *world, vec3s pos)
 {
-    float height = 1.0f;
+    float height = 2.0f;
     int id = Entity_Create(world);
 
     CompXform *xform = Entity_Add_Xform(world, id, pos);
@@ -12,6 +12,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     body->radius = 0.5f;
     body->mass = 1.0f;
     body->type = BODY_DYNAMIC;
+    body->shape = BODY_SHAPE_CAPSULE;
     body->restitution = 0.8f;
     body->invMass = 1.0f / body->mass;
     
@@ -19,7 +20,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     movement->configId = MOVE_CONFIG_PLAYER;
     CompModel *model = Entity_Add_Model(world, id, SOL_MODEL_WORLD0);
     model->gpuHandle = SOL_MODEL_WIZARD;
-    model->yOffset = -height / 2.0f;
+    model->yOffset = -height * 0.5f;
 
     return id;
 }

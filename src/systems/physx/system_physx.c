@@ -3,8 +3,12 @@
 
 #include "sol_core.h"
 
-static int bodyIds[MAX_ENTS];
-static SpatialCell cells[MAX_ENTS];
+static ResolveShapeTri shapeTriResolvers[BODY_SHAPE_COUNT] = {
+    [BODY_SHAPE_SPHERE] = ResolveSphereTriangle,
+    [BODY_SHAPE_CAPSULE] = ResolveCapsuleTriangle,
+};
+
+static int ents[MAX_ENTS];
 
 static SolProfiler profSpatialStatic = {.name = "Spatial Static"};
 static SolProfiler profSpatialDynamic = {.name = "Spatial Dynamic"};
@@ -15,17 +19,24 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     float fdt = (float)dt;
     int required = HAS_BODY3 | HAS_XFORM;
     int i, j, k;
-    int count = world->activeCount;
+    int count = 0;
+    int actives = world->activeCount;
     WorldSpatial *ws = &world->worldSpatial;
+
+    for (k = 0; k < actives; k++)
+    {
+        int id = world->activeEntities[k];
+        if ((world->masks[id] & required) != required)
+            continue;
+        ents[count++] = id;
+    }
 
     Prof_Begin(&profSpatialStatic);
     // Static position resolution
-#pragma omp parallel for if (count > 2000) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 1000) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
-            continue;
+        int id = ents[i];
         CompXform *xform = &world->xforms[id];
         CompBody *body = &world->bodies[id];
 
@@ -35,24 +46,14 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             xform->pos = (vec3s){0, 100, 0};
             continue;
         }
+
         vec3s accel = SOL_PHYS_GRAV;
         accel = glms_vec3_add(accel, body->force);
         accel = glms_vec3_add(accel, body->impulse);
         body->impulse = (vec3s){0};
         body->vel = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
-        int totalChecks = 0;
-
-        // Per-entity substep count based on speed
-        float speed = glms_vec3_norm(body->vel);
-        float stepDist = body->radius * 0.9f;
-        int substeps = (int)ceilf(speed * fdt / stepDist);
-        if (substeps < 1)
-            substeps = 1;
-        if (substeps > 8)
-            substeps = 8;
-        float subDt = fdt / substeps;
-        Static_Collisions_Grid(substeps, body, xform, subDt, &world->staticGrid, ws);
+        static_collisions_grid(body, xform, substep_get(body, fdt), &world->staticGrid, ws);
     }
     Prof_End(&profSpatialStatic);
 
@@ -60,31 +61,17 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 
     Prof_Begin(&profSpatialDynamic);
     // 2. Dynamic position resolution
-#pragma omp parallel for if (count > 5000) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 1000) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
-        int id = world->activeEntities[j];
-        if ((world->masks[id] & required) != required)
-            continue;
+        int id = ents[j];
         CompBody *body = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
+
         if (body->invMass <= 0.0f)
             continue;
 
-        SpatialCell cell = GetSpatialCell(xform->pos);
-        for (u8 n = 0; n < 27; n++)
-        {
-            u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n] & ws->dynamicUnits.mask];
-            while (entry != SPATIAL_NULL)
-            {
-                u32 otherID = ws->dynamicUnits.value[entry];
-                if (id < (int)otherID)
-                    ResolveCollision(body, xform,
-                                     &world->bodies[otherID],
-                                     &world->xforms[otherID]);
-                entry = ws->dynamicUnits.next[entry];
-            }
-        }
+        dynamic_collisions_hashed(world, id, body, xform);
     }
     Prof_End(&profSpatialDynamic);
 
@@ -96,14 +83,52 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     }
 }
 
-void collision_static_hashed(int substeps, CompBody *body, CompXform *xform, float subDt, WorldSpatial *ws)
+// Per-entity substep count based on speed
+SubstepData substep_get(CompBody *body, float fdt)
+{
+    SubstepData substep_data = {0};
+
+    float speed = glms_vec3_norm(body->vel);
+    float stepDist = body->radius * 0.9f;
+    u8 substeps = (int)ceilf(speed * fdt / stepDist);
+    if (substeps < 1)
+        substeps = 1;
+    if (substeps > 8)
+        substeps = 8;
+
+    substep_data.substeps = substeps;
+    substep_data.sub_dt = fdt / substeps;
+
+    return substep_data;
+}
+
+void dynamic_collisions_hashed(World *world, int id, CompBody *body, CompXform *xform)
+{
+    WorldSpatial *ws = &world->worldSpatial;
+    SpatialCell cell = GetSpatialCell(xform->pos);
+    for (int n = 0; n < 27; n++)
+    {
+        u32 entry = ws->dynamicUnits.head[cell.neighborHashes[n] & ws->dynamicUnits.mask];
+        while (entry != SPATIAL_NULL)
+        {
+            u32 otherID = ws->dynamicUnits.value[entry];
+            if (id < otherID)
+                ResolveCollision(body, xform,
+                                 &world->bodies[otherID],
+                                 &world->xforms[otherID]);
+            entry = ws->dynamicUnits.next[entry];
+        }
+    }
+}
+
+void static_collisions_hashed(CompBody *body, CompXform *xform, SubstepData substep_data, WorldSpatial *ws)
 {
     int totalChecks = 0;
-    for (int s = 0; s < substeps; s++)
+    for (int s = 0; s < substep_data.substeps; s++)
     {
-        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
+        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep_data.sub_dt));
         SpatialCell cell = GetSpatialCell(xform->pos);
-        for (u8 n = 0; n < 27; n++)
+        for (int n = 0; n < 27; n++)
         {
             u32 entry = ws->staticWorld.head[cell.neighborHashes[n] & ws->staticWorld.mask];
             while (entry != SPATIAL_NULL)
@@ -111,7 +136,7 @@ void collision_static_hashed(int substeps, CompBody *body, CompXform *xform, flo
                 if (++totalChecks > 512)
                     return;
                 CollisionTri *tri = &ws->tris[ws->staticWorld.value[entry]];
-                SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
+                SolCollision col = ResolveSphereTriangle(body, xform, tri);
                 if (col.didCollide && col.normal.y > 0.5f)
                     body->grounded = 1;
                 entry = ws->staticWorld.next[entry];
@@ -120,12 +145,13 @@ void collision_static_hashed(int substeps, CompBody *body, CompXform *xform, flo
     }
 }
 
-void Static_Collisions_Grid(int substeps, CompBody *body, CompXform *xform, float subDt, StaticGrid *grid, WorldSpatial *ws)
+void static_collisions_grid(CompBody *body, CompXform *xform, SubstepData substep_data, StaticGrid *grid, WorldSpatial *ws)
 {
-    // In physics loop — replaces the 27-neighbor hash walk
-    for (int s = 0; s < substeps; s++)
+    ResolveShapeTri resolve = shapeTriResolvers[body->shape];
+
+    for (int s = 0; s < substep_data.substeps; s++)
     {
-        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, subDt));
+        xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep_data.sub_dt));
 
         int checks = 0;
         int ix = (int)floorf((xform->pos.x - grid->worldMin.x) / grid->cellSize);
@@ -148,11 +174,12 @@ void Static_Collisions_Grid(int substeps, CompBody *body, CompXform *xform, floa
 
                     for (u32 e = start; e < end; e++)
                     {
-                        if (++checks > 5000)
+                        if (++checks > 1000)
                             return;
 
                         CollisionTri *tri = &ws->tris[grid->tris[e]];
-                        SolCollision col = ResolveSphereTriangle(body, &xform->pos, tri);
+                        SolCollision col = resolve(body, xform, tri);
+
                         if (col.didCollide && col.normal.y > 0.5f)
                             body->grounded = 1;
                     }
@@ -188,8 +215,8 @@ void Sol_System_Step_Physx_2d(World *world, double dt, double time)
     }
 }
 
-void ResolvePositionOnly(CompBody *aBody, CompXform *aXform,
-                         CompBody *bBody, CompXform *bXform)
+void resolve_position_only(CompBody *aBody, CompXform *aXform,
+                           CompBody *bBody, CompXform *bXform)
 {
     vec3s delta = glms_vec3_sub(aXform->pos, bXform->pos);
     float combined = aBody->radius + bBody->radius;
@@ -212,8 +239,8 @@ void ResolvePositionOnly(CompBody *aBody, CompXform *aXform,
     bXform->pos = glms_vec3_sub(bXform->pos, glms_vec3_scale(corrVec, bBody->invMass));
 }
 
-void ResolveVelocityOnly(CompBody *aBody, CompXform *aXform,
-                         CompBody *bBody, CompXform *bXform)
+void resolve_velocity_only(CompBody *aBody, CompXform *aXform,
+                           CompBody *bBody, CompXform *bXform)
 {
     vec3s delta = glms_vec3_sub(aXform->pos, bXform->pos);
     float combined = aBody->radius + bBody->radius;
@@ -322,29 +349,37 @@ void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform)
             else
                 t->normal = (vec3s){0, 1, 0}; // Default up normal for broken tris
 
-            float minX = fminf(t->a.x, fminf(t->b.x, t->c.x));
-            float maxX = fmaxf(t->a.x, fmaxf(t->b.x, t->c.x));
-            float minY = fminf(t->a.y, fminf(t->b.y, t->c.y));
-            float maxY = fmaxf(t->a.y, fmaxf(t->b.y, t->c.y));
-            float minZ = fminf(t->a.z, fminf(t->b.z, t->c.z));
-            float maxZ = fmaxf(t->a.z, fmaxf(t->b.z, t->c.z));
-
-            int x0 = (int)floorf(minX / SPATIAL_CELL_SIZE);
-            int x1 = (int)floorf(maxX / SPATIAL_CELL_SIZE);
-            int y0 = (int)floorf(minY / SPATIAL_CELL_SIZE);
-            int y1 = (int)floorf(maxY / SPATIAL_CELL_SIZE);
-            int z0 = (int)floorf(minZ / SPATIAL_CELL_SIZE);
-            int z1 = (int)floorf(maxZ / SPATIAL_CELL_SIZE);
-
-            for (int x = x0; x <= x1; x++)
-                for (int y = y0; y <= y1; y++)
-                    for (int z = z0; z <= z1; z++)
-                        SpatialTable_Insert(&ws->staticWorld, HashCoords(x, y, z, ws->staticWorld.mask), triIdx);
-
             triIdx++;
         }
     }
     printf("Static world: %u tris, %u spatial entries\n", totalTris, ws->staticWorld.count);
+}
+
+void spatial_hash_tris_static(WorldSpatial *ws)
+{
+    CollisionTri *t = ws->tris;
+    int count = ws->triCount;
+    for (int i = 0; i < count; i++)
+    {
+        float minX = fminf(t->a.x, fminf(t->b.x, t->c.x));
+        float maxX = fmaxf(t->a.x, fmaxf(t->b.x, t->c.x));
+        float minY = fminf(t->a.y, fminf(t->b.y, t->c.y));
+        float maxY = fmaxf(t->a.y, fmaxf(t->b.y, t->c.y));
+        float minZ = fminf(t->a.z, fminf(t->b.z, t->c.z));
+        float maxZ = fmaxf(t->a.z, fmaxf(t->b.z, t->c.z));
+
+        int x0 = (int)floorf(minX / SPATIAL_CELL_SIZE);
+        int x1 = (int)floorf(maxX / SPATIAL_CELL_SIZE);
+        int y0 = (int)floorf(minY / SPATIAL_CELL_SIZE);
+        int y1 = (int)floorf(maxY / SPATIAL_CELL_SIZE);
+        int z0 = (int)floorf(minZ / SPATIAL_CELL_SIZE);
+        int z1 = (int)floorf(maxZ / SPATIAL_CELL_SIZE);
+
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                    SpatialTable_Insert(&ws->staticWorld, HashCoords(x, y, z, ws->staticWorld.mask), i);
+    }
 }
 
 void StaticGrid_Build(StaticGrid *grid, WorldSpatial *ws,

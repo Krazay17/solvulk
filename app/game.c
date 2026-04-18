@@ -16,7 +16,7 @@ static void TestFunc(void *data)
 
 static int player3d;
 
-static void MovePlayer(void *data)
+static void ResetPlayer(void *data)
 {
     World *world = (World *)data;
     CompXform *xform = &world->xforms[player3d];
@@ -44,7 +44,7 @@ void Create_Sol_Game()
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "RESET PLAYER");
     CompInteractable *interactButton3 = Entity_Add_Interact(menu, button3);
-    interactButton3->callback = MovePlayer;
+    interactButton3->callback = ResetPlayer;
     interactButton3->callbackData = game;
 
     player3d = Sol_Prefab_Wizard(game, (vec3s){0, 5, 0});
@@ -55,22 +55,8 @@ void Create_Sol_Game()
     CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD1);
     Sol_Spatial_AddStatic(game, floorModel->model, floorXform);
 
-    int floor2 = Entity_Create(game);
-    CompXform *floor2Xform = Entity_Add_Xform(game, floor2, (vec3s){0, 0, 0});
-    floor2Xform->quat = Sol_Quat_FromYawPitch(45, 0);
-    CompModel *floor2Model = Entity_Add_Model(game, floor2, SOL_MODEL_WORLD1);
-    Sol_Spatial_AddStatic(game, floor2Model->model, floor2Xform);
-
-    int floor3 = Entity_Create(game);
-    CompXform *floor3Xform = Entity_Add_Xform(game, floor3, (vec3s){0, 0, 0});
-    floor3Xform->quat = Sol_Quat_FromYawPitch(-45, 0);
-    CompModel *floor3Model = Entity_Add_Model(game, floor3, SOL_MODEL_WORLD1);
-    Sol_Spatial_AddStatic(game, floor3Model->model, floor3Xform);
-
-    SpatialTable_Compact(&game->worldSpatial.staticWorld);
-
     StaticGrid_Build(&game->staticGrid, &game->worldSpatial,
-                          (vec3s){-170, -170, -170}, (vec3s){170, 170, 170}, 0.75f);
+                     (vec3s){-170, -15, -170}, (vec3s){170, 100, 170}, 0.75f);
 }
 
 void MakeAWizard(void *data)
@@ -80,7 +66,7 @@ void MakeAWizard(void *data)
     double time = Sol_GetGameTime();
     double epsilonA = sin(time) * 10.0;
     double epsilonB = cos(time) * 10.0 + 25.0;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 10; i++)
     {
         int wiz = Sol_Prefab_Wizard(world, (vec3s){
                                                epsilonA,

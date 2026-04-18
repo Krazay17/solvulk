@@ -243,7 +243,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             {
                 u32 otherID = ws->dynamicUnits.value[entry];
                 if (id < (int)otherID)
-                    ResolvePositionOnly(body, xform,
+                    resolve_position_only(body, xform,
                                         &world->bodies[otherID],
                                         &world->xforms[otherID]);
                 entry = ws->dynamicUnits.next[entry];
@@ -266,7 +266,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             {
                 u32 otherID = ws->dynamicUnits.value[entry];
                 if (id < (int)otherID)
-                    ResolveVelocityOnly(body, xform,
+                    resolve_velocity_only(body, xform,
                                         &world->bodies[otherID],
                                         &world->xforms[otherID]);
                 entry = ws->dynamicUnits.next[entry];

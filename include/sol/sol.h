@@ -1,12 +1,12 @@
 #pragma once
 
 #include "sol/types.h"
-#include "sol/world.h"
-#include "sol/profiler.h"
 
 #define SOL_VERSION 1.0
 
 #define MAX_WORLDS 4
+#define MAX_ENTS 50000
+#define MAX_SYSTEMS 64
 
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SOL_PHYS_SUBSTEP 4
@@ -61,3 +61,31 @@ SOLAPI void SolInput_Update();
 SOLAPI bool SolInput_KeyDown(SolKey key);
 SOLAPI bool SolInput_KeyPressed(SolKey key); // true only on frame of press
 SOLAPI SolMouse SolInput_GetMouse();
+
+
+SOLAPI World *World_Create(void);
+SOLAPI World *World_Create_Default(void);
+SOLAPI void World_Destroy(World *world);
+
+SOLAPI int Entity_Create(World *world);
+SOLAPI void Entity_Destroy(World *world, int id);
+
+SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
+SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
+SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
+
+SOLAPI CompXform *Entity_Add_Xform(World *world, int id, vec3s pos);
+SOLAPI CompBody *Entity_Add_Body2(World *world, int id);
+SOLAPI CompBody *Entity_Add_Body3(World *world, int id);
+SOLAPI CompShape *Entity_Add_Shape(World *world, int id);
+SOLAPI CompInteractable *Entity_Add_Interact(World *world, int id);
+SOLAPI CompInfo *Entity_Add_Info(World *world, int id);
+SOLAPI CompUiElement *Entity_Add_UiElement(World *world, int id);
+SOLAPI CompMovement *Entity_Add_Movement(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Local(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Remote(World *world, int id);
+SOLAPI CompController *Entity_Add_Controller_Ai(World *world, int id);
+SOLAPI CompModel *Entity_Add_Model(World *world, int id, SolModelId model);
+
+SOLAPI int Sol_World_GetEntCount(World *world);
+SOLAPI void Sol_Spatial_AddStatic(World *world, SolModel *model, CompXform *xform);

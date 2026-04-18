@@ -30,12 +30,18 @@
 #define i32 int32_t
 #define i64 int64_t
 
+// Forwards
 typedef struct World World;
 typedef struct SolState SolState;
 typedef struct SolModel SolModel;
 typedef struct SolCamera SolCamera;
 
+// Defs
+typedef void (*InteractCallback)(void *data);
+typedef bool Active;
+typedef uint32_t Mask;
 
+// Enums
 typedef enum
 {
     ACTION_NONE = 0,
@@ -57,26 +63,6 @@ typedef enum
     AI_JUMP,
     AI_DASH,
 } AiAction;
-
-typedef struct
-{
-    float x, y, z;
-} SolVec3;
-
-typedef struct
-{
-    float x, y;
-} SolVec2;
-
-typedef struct
-{
-    float x, y, w, h;
-} SolRect;
-
-typedef struct
-{
-    uint8_t r, g, b, a;
-} SolColor;
 
 typedef enum
 {
@@ -138,6 +124,144 @@ typedef enum
     SOL_MOUSE_MIDDLE,
     SOL_MOUSE_COUNT
 } SolMouseButton;
+
+typedef enum
+{
+    HAS_NONE = 0,
+    HAS_XFORM = (1 << 0),
+    HAS_BODY2 = (1 << 1),
+    HAS_BODY3 = (1 << 2),
+    HAS_SHAPE = (1 << 3),
+    HAS_INTERACT = (1 << 4),
+    HAS_MODEL = (1 << 5),
+    HAS_INFO = (1 << 6),
+    HAS_UI_ELEMENT = (1 << 7),
+    HAS_MOVEMENT = (1 << 8),
+    HAS_CONTROLLER = (1 << 9),
+    HAS_CAMERA = (1 << 10),
+    HAS_CONTROLLER_AI = (1 << 11),
+} CompBits;
+
+typedef enum
+{
+    BODY_STATIC,
+    BODY_DYNAMIC,
+} BodyType;
+
+typedef enum
+{
+    BODY_SHAPE_SPHERE,
+    BODY_SHAPE_CAPSULE,
+    BODY_SHAPE_COUNT,
+} BodyShape;
+
+typedef enum
+{
+    SHAPE_RECTANGLE,
+    SHAPE_TRIANGLE,
+} ShapeType;
+
+// Structs
+typedef struct
+{
+    float x, y, z;
+} SolVec3;
+
+typedef struct
+{
+    float x, y;
+} SolVec2;
+
+typedef struct
+{
+    float x, y, w, h;
+} SolRect;
+
+typedef struct
+{
+    uint8_t r, g, b, a;
+} SolColor;
+
+typedef struct CompXform
+{
+    vec3s pos, lastPos, drawPos;
+    versors quat, lastQuat, drawQuat;
+    vec3s scale, lastScale, drawScale;
+} CompXform;
+
+typedef struct CompBody
+{
+    vec3s vel, impulse, force;
+    BodyType type;
+    BodyShape shape;
+    float grounded, airtime;
+    float radius, height;
+    float mass, invMass, restitution;
+    u32 neighborHashes[27];
+} CompBody;
+
+typedef struct CompShape
+{
+    ShapeType type;
+    float width, height;
+} CompShape;
+
+typedef struct CompInteractable
+{
+    bool isHovered, isPressed, isClicked, onHold;
+    InteractCallback callback;
+    void *callbackData;
+} CompInteractable;
+
+typedef struct CompModel
+{
+    uint32_t gpuHandle;
+    SolModel *model;
+    float yOffset;
+} CompModel;
+
+typedef struct CompInfo
+{
+    char name[24];
+
+} CompInfo;
+
+typedef struct CompUiElement
+{
+    SolColor baseColor;
+    SolColor textColor;
+    float fontSize;
+    char text[64];
+    float textWidth;
+
+    float hoverAnim;
+    float clickAnim;
+
+    float borderThickness;
+    SolColor borderColor;
+} CompUiElement;
+
+typedef struct CompMovement
+{
+    vec3s wishdir, updir, lockdir;
+    float stateTimer;
+    MoveState moveState;
+    MoveConfigId configId;
+} CompMovement;
+
+typedef struct CompController
+{
+    vec3s lookdir, wishdir;
+    vec2s wishdir2;
+    uint32_t actionState;
+    float yaw, pitch;
+} CompController;
+
+typedef struct AiController
+{
+    vec3s lookdir, wishdir;
+    AiAction actionState;
+} AiController;
 
 typedef struct
 {

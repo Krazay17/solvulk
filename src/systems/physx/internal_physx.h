@@ -9,9 +9,9 @@ typedef struct CompXform CompXform;
 // 131072
 // 131101
 #define SOL_TIMESTEP 1.0 / 60.0
-#define SPATIAL_NULL 0xFFFFFFFF
 #define SOL_PHYS_COLLISION_SKIN 0.01f
 
+#define SPATIAL_NULL 0xFFFFFFFF
 #define SPATIAL_CELL_SIZE 2.0f
 
 #define SPATIAL_DYNAMIC_SIZE (1 << 14)
@@ -19,6 +19,14 @@ typedef struct CompXform CompXform;
 
 #define SPATIAL_STATIC_SIZE (1 << 22)
 #define SPATIAL_STATIC_ENTRIES 0x0FFFFFFF
+
+typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, CollisionTri *tri);
+
+typedef struct
+{
+    u8 substeps;
+    float sub_dt;
+} SubstepData;
 
 u32 HashCoords(int x, int y, int z, u32 mask);
 
@@ -29,7 +37,9 @@ void SpatialTable_Clear(SpatialTable *table);
 void SpatialTable_Free(SpatialTable *table);
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value);
 void SpatialTable_Compact(SpatialTable *table);
-SolCollision ResolveSphereTriangle(CompBody *sphereBody, vec3s *localPos, CollisionTri *tri);
+
+SolCollision ResolveSphereTriangle(CompBody *sphereBody, CompXform *xform, CollisionTri *tri);
+SolCollision ResolveCapsuleTriangle(CompBody *sphereBody, CompXform *xform, CollisionTri *tri);
 
 void ResolveCollision(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
 void SimpleFloor(CompXform *xform, CompBody *body, float dt);
@@ -37,16 +47,19 @@ void SimpleFloor(CompXform *xform, CompBody *body, float dt);
 SpatialCell GetSpatialCell(vec3s pos);
 void Sol_Spatial_Build_Dynamic(World *world);
 
-void ResolvePositionOnly(CompBody *aBody, CompXform *aXform,
+void resolve_position_only(CompBody *aBody, CompXform *aXform,
                          CompBody *bBody, CompXform *bXform);
 
-void ResolveVelocityOnly(CompBody *aBody, CompXform *aXform,
+void resolve_velocity_only(CompBody *aBody, CompXform *aXform,
                          CompBody *bBody, CompXform *bXform);
 
 void StaticGrid_Build(StaticGrid *grid, WorldSpatial *ws,
                       vec3s worldMin, vec3s worldMax, float cellSize);
 
-void Static_Collisions_Grid(int substeps, CompBody *body, CompXform *xform, float subDt, StaticGrid *grid, WorldSpatial *ws);
+void static_collisions_grid(CompBody *body, CompXform *xform, SubstepData substep_data, StaticGrid *grid, WorldSpatial *ws);
+
+SubstepData substep_get(CompBody *body, float fdt);
+void dynamic_collisions_hashed(World *world, int id, CompBody *body, CompXform *xform);
 
 static inline u32 HashCoordsRaw(int x, int y, int z)
 {

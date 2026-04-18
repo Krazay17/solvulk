@@ -2,7 +2,6 @@
 #pragma once
 
 #include "internal_types.h"
-#include "sol/world.h"
 
 typedef enum
 {

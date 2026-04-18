@@ -9,6 +9,7 @@
 #include "internal_render.h"
 #include "internal_platform.h"
 #include "internal_loader.h"
+#include "internal_profiler.h"
 
 #include "systems/physx/internal_physx.h"
 

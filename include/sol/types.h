@@ -125,41 +125,41 @@ typedef enum
     SOL_MOUSE_COUNT
 } SolMouseButton;
 
+// clang-format off
 typedef enum
 {
-    HAS_NONE = 0,
-    HAS_XFORM = (1 << 0),
-    HAS_BODY2 = (1 << 1),
-    HAS_BODY3 = (1 << 2),
-    HAS_SHAPE = (1 << 3),
-    HAS_INTERACT = (1 << 4),
-    HAS_MODEL = (1 << 5),
-    HAS_INFO = (1 << 6),
-    HAS_UI_ELEMENT = (1 << 7),
-    HAS_MOVEMENT = (1 << 8),
-    HAS_CONTROLLER = (1 << 9),
-    HAS_CAMERA = (1 << 10),
-    HAS_CONTROLLER_AI = (1 << 11),
+    HAS_NONE                =   0,
+    HAS_XFORM               =   (1 << 0),
+    HAS_BODY2               =   (1 << 1),
+    HAS_BODY3               =   (1 << 2),
+    HAS_SHAPE               =   (1 << 4),
+    HAS_INTERACT            =   (1 << 5),
+    HAS_MODEL               =   (1 << 6),
+    HAS_INFO                =   (1 << 7),
+    HAS_UI_ELEMENT          =   (1 << 8),
+    HAS_MOVEMENT            =   (1 << 9),
+    HAS_CONTROLLER          =   (1 << 10),
+    HAS_CAMERA              =   (1 << 11),
+    HAS_CONTROLLER_AI       =   (1 << 12),
 } CompBits;
+// clang-format on
 
-typedef enum
+typedef enum Shape3
 {
-    BODY_STATIC,
-    BODY_DYNAMIC,
-} BodyType;
+    SHAPE3_SPH,
+    SHAPE3_CAP,
+    SHAPE3_BOX,
+    SHAPE3_MOD,
+    SHAPE3_CNT,
+} Shape3;
 
-typedef enum
+typedef enum Shape2
 {
-    BODY_SHAPE_SPHERE,
-    BODY_SHAPE_CAPSULE,
-    BODY_SHAPE_COUNT,
-} BodyShape;
-
-typedef enum
-{
-    SHAPE_RECTANGLE,
-    SHAPE_TRIANGLE,
-} ShapeType;
+    SHAPE2_CIR,
+    SHAPE2_REC,
+    SHAPE2_TRI,
+    SHAPE2_CNT,
+} Shape2;
 
 // Structs
 typedef struct
@@ -192,17 +192,15 @@ typedef struct CompXform
 typedef struct CompBody
 {
     vec3s vel, impulse, force;
-    BodyType type;
-    BodyShape shape;
+    Shape3 shape;
     float grounded, airtime;
-    float radius, height;
+    float radius, height, length;
     float mass, invMass, restitution;
-    u32 neighborHashes[27];
 } CompBody;
 
 typedef struct CompShape
 {
-    ShapeType type;
+    Shape2 type;
     float width, height;
 } CompShape;
 

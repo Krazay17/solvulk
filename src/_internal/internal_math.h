@@ -22,6 +22,7 @@ SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
 SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b);
+vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
 
 vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromYawPitch(float yaw, float pitch);

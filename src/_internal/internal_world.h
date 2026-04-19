@@ -23,7 +23,6 @@ struct World
     int drawCount;
 
     WorldSpatial worldSpatial;
-    StaticGrid staticGrid;
 
     int playerID;
     int activeEntities[MAX_ENTS];

@@ -7,18 +7,17 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
 
     CompXform *xform = Entity_Add_Xform(world, id, pos);
 
-    CompBody *body = Entity_Add_Body3(world, id);
-    body->height = height;
-    body->radius = 0.5f;
-    body->mass = 1.0f;
-    body->type = BODY_DYNAMIC;
-    body->shape = BODY_SHAPE_CAPSULE;
-    body->restitution = 0.8f;
-    body->invMass = 1.0f / body->mass;
-    
+    Entity_Add_Body3(world, id, (CompBody){
+                                    .height = height,
+                                    .radius = 0.5f,
+                                    .mass = 1.0f,
+                                    .shape = SHAPE3_CAP,
+                                    .restitution = 0.8f,
+                                });
+
     CompMovement *movement = Entity_Add_Movement(world, id);
     movement->configId = MOVE_CONFIG_PLAYER;
-    CompModel *model = Entity_Add_Model(world, id, SOL_MODEL_WORLD0);
+    CompModel *model = Entity_Add_Model(world, id, SOL_MODEL_WIZARD);
     model->gpuHandle = SOL_MODEL_WIZARD;
     model->yOffset = -height * 0.5f;
 
@@ -34,7 +33,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     CompXform *xform = Entity_Add_Xform(world, id, pos);
 
     CompShape *shape = Entity_Add_Shape(world, id);
-    shape->type = SHAPE_RECTANGLE;
+    shape->type = SHAPE2_REC;
     shape->width = width;
     shape->height = height;
 

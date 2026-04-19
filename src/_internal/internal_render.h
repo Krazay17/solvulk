@@ -21,51 +21,8 @@ typedef struct DebugLines
     int count;
 } DebugLines;
 
-typedef struct SolCamera
-{
-    vec3 position;
-    vec3 target;
-    float fov;
-    float nearClip;
-    float farClip;
-    mat4 proj;
-    mat4 view;
-} SolCamera;
-
 typedef struct
 {
-    float position[3];
-    float normal[3];
-    float uv[2];
-} SolVertex;
-
-typedef struct
-{
-    float baseColor[4];
-    float metallic;
-    float roughness;
-} SolMaterial;
-
-typedef struct SolMesh
-{
-    uint32_t vertexOffset;
-    uint32_t vertexCount;
-    uint32_t indexOffset;
-    uint32_t indexCount;
-    SolMaterial material;
-} SolMesh;
-
-typedef struct SolModel
-{
-    SolVertex *vertices;
-    uint32_t *indices;
-    SolMesh *meshes;
-    uint32_t totalVertices;
-    uint32_t totalIndices;
-    uint32_t meshCount;
-} SolModel;
-
-typedef struct {
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet sets[MAX_FRAMES_IN_FLIGHT];
@@ -74,13 +31,15 @@ typedef struct {
     void *mapped[MAX_FRAMES_IN_FLIGHT];
 } SolDescriptorBuffer;
 
-typedef struct {
+typedef struct
+{
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet set;
 } SolDescriptorImage;
 
-typedef struct {
+typedef struct
+{
     VkImage image;
     VkDeviceMemory memory;
     VkImageView view;
@@ -89,7 +48,8 @@ typedef struct {
 
 // ─── GPU model data ──────────────────────────────────────────────
 
-typedef struct {
+typedef struct
+{
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexMemory;
     VkBuffer indexBuffer;
@@ -98,21 +58,24 @@ typedef struct {
     SolMaterial material;
 } SolGpuMesh;
 
-typedef struct {
+typedef struct
+{
     SolGpuMesh *meshes;
-    uint32_t meshCount;
+    u32 mesh_count;
 } SolGpuModel;
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
-typedef struct {
+typedef struct
+{
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
 } SceneUBO;
 
-typedef struct {
+typedef struct
+{
     vec4 position;
     vec4 scale;
     vec4 rotation;
@@ -120,7 +83,8 @@ typedef struct {
     vec4 material;
 } ModelSSBO;
 
-typedef struct {
+typedef struct
+{
     mat4 ortho;
     float x, y, w, h;
     float u, v, uw, vh;
@@ -129,7 +93,8 @@ typedef struct {
 
 // ─── Font data ───────────────────────────────────────────────────
 
-typedef struct {
+typedef struct
+{
     float u, v, uw, vh;
     float xoffset;
     float ytop;
@@ -137,28 +102,33 @@ typedef struct {
     float yadvance;
 } SolGlyph;
 
-typedef struct {
+typedef struct
+{
     float l, b, r, t;
 } TextBounds;
 
 // ─── Pipeline + resource groupings ───────────────────────────────
 
-typedef struct {
+typedef struct
+{
     VkPipeline pipeline;
     VkPipelineLayout layout;
 } SolPipeline;
 
-typedef struct {
+typedef struct
+{
     SolPipeline pipe;
     SolDescriptorBuffer sceneUBO;
     SolDescriptorBuffer modelSSBO;
 } SolPipe3D;
 
-typedef struct {
+typedef struct
+{
     SolPipeline pipe;
 } SolPipe2DRect;
 
-typedef struct {
+typedef struct
+{
     SolPipeline pipe;
     SolGpuImage fontAtlas;
     SolDescriptorImage fontDesc;
@@ -167,7 +137,8 @@ typedef struct {
 
 // ─── Pipeline build configs ──────────────────────────────────────
 
-typedef struct {
+typedef struct
+{
     const char *vertResource;
     const char *fragResource;
     int depthTest;
@@ -179,7 +150,8 @@ typedef struct {
 
 // ─── Vulkan plumbing (exists once) ───────────────────────────────
 
-typedef struct SolVkState {
+typedef struct SolVkState
+{
     VkInstance instance;
     VkDevice device;
     VkPhysicalDevice physicalDevice;

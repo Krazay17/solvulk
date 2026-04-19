@@ -2,8 +2,16 @@
 
 layout(location = 0) in vec4 fragColor;
 layout(location = 1) in vec3 fragNormal;
+layout(location = 2) in vec3 fragWorldPos;
 
 layout(location = 0) out vec4 outColor;
+
+layout(set = 0, binding = 0) uniform Scene {
+    mat4 viewProj;
+    mat4 view;
+    mat4 proj;
+    vec4 cameraPos;
+} scene;
 
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
@@ -24,7 +32,7 @@ void main() {
     vec3 diffuse = diffuseColor * NdotL;
 
     // Simple specular — rougher surfaces have wider, dimmer highlights
-    vec3 viewDir = normalize(-gl_FragCoord.xyz);
+    vec3 viewDir = normalize(scene.cameraPos.xyz - fragWorldPos);
     vec3 halfDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normalize(fragNormal), halfDir), 0.0),
                      mix(256.0, 4.0, material.roughness));

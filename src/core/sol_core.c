@@ -72,7 +72,8 @@ static void DebugFPS(double dt)
     static double total,throttle;
     static char buffer[64];
     static int count;
-    total += 1.0 / dt;
+    solState.fps = 1.0 / dt;
+    total += solState.fps;
     count++;
 
     if ((throttle += dt) > 0.1)

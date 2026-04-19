@@ -76,7 +76,7 @@ SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
 
 SOLAPI CompXform *Entity_Add_Xform(World *world, int id, vec3s pos);
 SOLAPI CompBody *Entity_Add_Body2(World *world, int id);
-SOLAPI CompBody *Entity_Add_Body3(World *world, int id);
+SOLAPI CompBody *Entity_Add_Body3(World *world, int id, CompBody body);
 SOLAPI CompShape *Entity_Add_Shape(World *world, int id);
 SOLAPI CompInteractable *Entity_Add_Interact(World *world, int id);
 SOLAPI CompInfo *Entity_Add_Info(World *world, int id);

@@ -254,7 +254,7 @@ void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_
                             sets, 0, NULL);
 
     SolGpuModel *model = &gpuModels[handle];
-    for (uint32_t m = 0; m < model->meshCount; m++)
+    for (uint32_t m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipe3D.pipe.layout, VK_SHADER_STAGE_FRAGMENT_BIT,
                            0, sizeof(SolMaterial), &model->meshes[m].material);
@@ -487,16 +487,16 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     if (gpuModels[modelId].meshes != NULL)
         free(gpuModels[modelId].meshes);
 
-    // if (!model || model->meshCount < 1)
+    // if (!model || model->mesh_count < 1)
     //     return;
     SolGpuModel gpuModel = {0};
-    gpuModel.meshCount = model->meshCount;
-    gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->meshCount);
+    gpuModel.mesh_count = model->mesh_count;
+    gpuModel.meshes = malloc(sizeof(SolGpuMesh) * model->mesh_count);
 
     // 2. Calculate total memory needed for a single staging allocation
     VkDeviceSize totalSize = 0;
-    totalSize += sizeof(SolVertex) * model->totalVertices;
-    totalSize += sizeof(uint32_t) * model->totalIndices;
+    totalSize += sizeof(SolVertex) * model->vertex_count;
+    totalSize += sizeof(uint32_t) * model->indice_count;
 
     // 3. Create a single staging buffer for all data
     VkBuffer stagingBuffer;
@@ -509,8 +509,8 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     void *data;
     vkMapMemory(solvkstate.device, stagingMemory, 0, totalSize, 0, &data);
 
-    VkDeviceSize verticesSize = sizeof(SolVertex) * model->totalVertices;
-    VkDeviceSize indicesSize = sizeof(uint32_t) * model->totalIndices;
+    VkDeviceSize verticesSize = sizeof(SolVertex) * model->vertex_count;
+    VkDeviceSize indicesSize = sizeof(uint32_t) * model->indice_count;
     memcpy((uint8_t *)data, model->vertices, verticesSize);
     memcpy((uint8_t *)data + verticesSize, model->indices, indicesSize);
 
@@ -531,7 +531,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkBeginCommandBuffer(copyCmd, &beginInfo);
 
     // 6. Create GPU buffers and record copy commands
-    for (uint32_t m = 0; m < model->meshCount; m++)
+    for (uint32_t m = 0; m < model->mesh_count; m++)
     {
         SolMesh *src = &model->meshes[m];
         SolGpuMesh *dst = &gpuModel.meshes[m];
@@ -573,7 +573,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
     gpuModels[modelId] = gpuModel;
-    printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.meshCount);
+    printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 }
 
 void *Sol_ModelBuffer_Get()

@@ -21,6 +21,7 @@ typedef struct SolState
     void *g_hwnd;
     double gameTime;
     u64 stepCount, tickCount;
+    double fps;
 
     World *worlds[MAX_WORLDS];
     uint16_t worldCount;

@@ -60,7 +60,7 @@ typedef struct
 typedef struct SolLineVertex
 {
     vec3s pos, color;
-}SolLineVertex;
+} SolLineVertex;
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
@@ -123,7 +123,7 @@ typedef struct SolPipeRay
 {
     SolPipeline pipe;
     SolDescriptorBuffer sceneUBO;
-}SolPipeRay;
+} SolPipeRay;
 
 typedef struct
 {
@@ -248,3 +248,5 @@ void *Sol_ModelBuffer_Get(void);
 void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds ParseBounds(const char *p, const char *end);
 int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate);
+void Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
+void Sol_Flush_Models(void);

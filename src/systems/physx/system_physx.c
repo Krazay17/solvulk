@@ -2,7 +2,7 @@
 #include <omp.h>
 
 #include "sol_core.h"
-#include "internal_physx.h"
+#include "physx_i.h"
 
 static ResolveShapeTri shapeTriResolvers[SHAPE3_CNT] = {
     [SHAPE3_SPH] = collide_sphere_tri,
@@ -23,6 +23,38 @@ static SolProfiler prof_static = {.name = "Static"};
 static SolProfiler prof_dynamic = {.name = "Dynamic"};
 static int prof_frame = 0;
 
+void Physx_Init(World *world)
+{
+    world->spatial = calloc(1, sizeof(WorldSpatial));
+    SpatialTable_Init(&world->spatial->table_dynamic, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES);
+    SpatialTable_Init(&world->spatial->table_static, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
+}
+
+
+CompBody *Entity_Add_Body2(World *world, int id)
+{
+    world->masks[id] |= HAS_BODY2;
+    return &world->bodies[id];
+}
+
+CompBody *Entity_Add_Body3(World *world, int id, CompBody init_body)
+{
+    CompBody body = init_body;
+    body.height = body.height ? body.height : 0.5f;
+    body.radius = body.radius ? body.radius : 0.5f;
+    body.length = body.length ? body.length : 0.5f;
+    body.invMass = body.mass > 0 ? 1.0f / body.mass : 0;
+
+    if(body.shape == SHAPE3_MOD && body.mass == 0)
+    {
+        spatial_static_add_model(world->spatial, world->models[id].model, &world->xforms[id]);
+    }
+
+    world->bodies[id] = body;
+    world->masks[id] |= HAS_BODY3;
+    return &world->bodies[id];
+}
+
 void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 {
     if (Sol_GetState()->fps < 30)
@@ -32,7 +64,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     int i, j, k, l;
     int count = 0;
     int actives = world->activeCount;
-    WorldSpatial *ws = &world->spatial;
+    WorldSpatial *ws = world->spatial;
 
     // Filter entities
     for (k = 0; k < actives; k++)
@@ -44,7 +76,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
             continue;
         ents[count++] = id;
     }
-    
+
     rebuild_grid_static(ws);
 
     // Static resolution
@@ -76,7 +108,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     Prof_End(&prof_static);
 
     // ReBuild dynamic spatial table
-    SpatialTable_Clear(&world->spatial.table_dynamic);
+    SpatialTable_Clear(&world->spatial->table_dynamic);
     for (l = 0; l < count; l++)
     {
         int id = ents[l];
@@ -85,7 +117,7 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
         int iy = (int)floorf(pos.y / SPATIAL_DYNAMIC_CELL_SIZE);
         int iz = (int)floorf(pos.z / SPATIAL_DYNAMIC_CELL_SIZE);
         u32 hash = hash_coords(ix, iy, iz) & SPATIAL_DYNAMIC_MASK;
-        SpatialTable_Insert(&world->spatial.table_dynamic, hash, (u32)id);
+        SpatialTable_Insert(&world->spatial->table_dynamic, hash, (u32)id);
     }
 
     // Dynamic resolution
@@ -208,7 +240,7 @@ void collisions_hash_static(CompBody *body, CompXform *xform, SubstepData subste
 
 void collisions_hash_dynamic(World *world, int id, CompBody *body, CompXform *xform)
 {
-    WorldSpatial *ws = &world->spatial;
+    WorldSpatial *ws = world->spatial;
     SpatialCell cell = spatial_cell_get(xform->pos, SPATIAL_DYNAMIC_CELL_SIZE);
     SolCollision col;
     for (int n = 0; n < 27; n++)

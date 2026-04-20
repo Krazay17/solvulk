@@ -1,6 +1,5 @@
 #pragma once
 
-#include "internal_types.h"
 #include "sol/types.h"
 
 #define SOL_COLOR(hex) (SolColor){ \

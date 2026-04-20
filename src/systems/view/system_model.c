@@ -4,29 +4,7 @@
 
 void Sol_System_Model_Draw(World *world, double dt, double time)
 {
-    // shader data
-    ModelSSBO *gpuData = (ModelSSBO *)Sol_ModelBuffer_Get();
-
     int required = HAS_XFORM | HAS_MODEL;
-
-    // 1. Count per model
-    uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
-            counts[world->models[id].gpuHandle]++;
-    }
-
-    // 2. Prefix sum → offsets
-    uint32_t offsets[SOL_MODEL_COUNT] = {0};
-    for (int i = 1; i < SOL_MODEL_COUNT; i++)
-        offsets[i] = offsets[i - 1] + counts[i - 1];
-
-    // 3. Fill SSBO (cursor tracks next write slot per model)
-    uint32_t cursors[SOL_MODEL_COUNT];
-    memcpy(cursors, offsets, sizeof(offsets));
-
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -35,24 +13,11 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
 
         CompXform *xform = &world->xforms[id];
         CompModel *modelComp = &world->models[id];
-        uint32_t slot = cursors[world->models[id].gpuHandle]++;
+        vec3s drawPos = xform->drawPos;
+        drawPos.y += modelComp->yOffset;
 
-        ModelSSBO *inst = &gpuData[slot];
-        vec3s finalDraw = xform->drawPos;
-        finalDraw.y += modelComp->yOffset;
-        memcpy(inst->position, &finalDraw, sizeof(float) * 3);
-        memcpy(inst->scale, &xform->scale, sizeof(float) * 3);
-        memcpy(inst->rotation, &xform->drawQuat, sizeof(float) * 4);
-
-        // vec4 whiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
-        // memcpy(inst->color, &whiteColor, sizeof(float) * 4);
-        // memcpy(inst->material, &whiteColor, sizeof(float) * 4);
+        Submit_Model(modelComp->gpuHandle, drawPos, xform->drawScale, xform->drawQuat);
     }
 
-    Sol_Begin_3D();
-    for (int b = 0; b < SOL_MODEL_COUNT; b++)
-    {
-        if (counts[b] > 0)
-            Sol_Draw_Model_Instanced(b, counts[b], offsets[b]);
-    }
+    Sol_Flush_Models();
 }

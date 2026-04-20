@@ -10,6 +10,7 @@ void Sol_System_Xform_Snapshot(World *world)
         {
             world->xforms[id].lastPos = world->xforms[id].pos;
             world->xforms[id].lastQuat = world->xforms[id].quat;
+            world->xforms[id].lastScale = world->xforms[id].scale;
         }
     }
     CompXform *playerXform = &world->xforms[world->playerID];
@@ -37,6 +38,8 @@ void Sol_System_Xform_Interpolate(World *world, float alpha)
             xf->drawPos.z = xf->lastPos.z + (xf->pos.z - xf->lastPos.z) * alpha;
 
             xf->drawQuat = glms_quat_slerp(xf->lastQuat, xf->quat, alpha);
+
+            xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
         }
     }
 }

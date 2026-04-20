@@ -2,16 +2,16 @@
 
 #include <sol/sol.h>
 
-#include "internal_types.h"
-#include "internal_math.h"
-#include "internal_movement.h"
-#include "internal_render.h"
-#include "internal_platform.h"
-#include "internal_loader.h"
-#include "internal_profiler.h"
-#include "internal_debug.h"
+#include "math_i.h"
+#include "movement_i.h"
+#include "render_i.h"
+#include "platform_i.h"
+#include "loader_i.h"
+#include "profiler_i.h"
+#include "debug_i.h"
 
-#include "systems/physx/internal_physx.h"
+#include "systems/physx/physx_i.h"
+#include "systems/view/view_i.h"
 
 typedef struct SolState
 {

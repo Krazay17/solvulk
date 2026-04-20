@@ -1,7 +1,5 @@
-// internal_physx.h
 #pragma once
 
-#include "internal_types.h"
 #include "sol/types.h"
 
 #define SOL_TIMESTEP 1.0 / 60.0
@@ -19,16 +17,60 @@
 #define SPATIAL_STATIC_MASK (SPATIAL_STATIC_SIZE - 1)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
-typedef struct CompBody CompBody;
-typedef struct CompXform CompXform;
+// typedef struct CompBody CompBody;
+// typedef struct CompXform CompXform;
 typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, SolTri *tri);
 typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb);
+
+typedef struct SpatialCell
+{
+    int ix, iy, iz;
+    u32 neighborHashes[27];
+} SpatialCell;
+
+typedef struct SpatialTable
+{
+    u32 *head;
+    u32 *value;
+    u32 *next;
+    u32 capacity;
+    u32 size;
+    u32 count;
+} SpatialTable;
+
+typedef struct SpatialGrid
+{
+    u32 *offsets; // [cellCount + 1] — start index per cell
+    u32 *tris;    // [totalEntries] — sorted triangle indices
+    u32 build_tri_count;
+    float cellSize;
+    vec3s min;
+    vec3s max;
+    ivec3s dims;
+} SpatialGrid;
+
+typedef struct WorldSpatial
+{
+    SpatialTable table_static;
+    SpatialTable table_dynamic;
+
+    SpatialGrid grid_static;
+    SpatialGrid grid_dynamic;
+
+    SolTri *tris_static;
+    int tris_static_count;
+
+    SolTri *tris_dynamic;
+    int tris_dynamic_count;
+} WorldSpatial;
 
 typedef struct
 {
     u8 substeps;
     float sub_dt;
 } SubstepData;
+
+void Physx_Init(World *world);
 
 // Per-entity substep count based on speed
 SubstepData substep_get(CompBody *body, float fdt);
@@ -79,4 +121,3 @@ static inline u32 cell_index(SpatialGrid *grid, vec3s pos)
 
     return x + y * grid->dims.x + z * grid->dims.x * grid->dims.y;
 }
-

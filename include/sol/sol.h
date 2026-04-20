@@ -5,7 +5,6 @@
 
 #define SOL_VERSION 1.0
 
-
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SOL_PHYS_SUBSTEP 4
 #define SOL_PHYS_TIMESTEP 1.0f / 60.0f

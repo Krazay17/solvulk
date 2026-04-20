@@ -56,6 +56,8 @@ void Sol_Tick(double dt, double time)
         Sol_System_Xform_Interpolate(solState.worlds[i], alpha);
 
     Sol_Begin_Draw();
+    
+    Sol_Begin_3D();
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw(solState.worlds[i], dt, time);

@@ -13,12 +13,19 @@ SolCamera renderCam = {
 };
 mat4 ortho2d;
 
+static struct
+{
+    uint32_t count;
+    ModelSSBO instances[MAX_MODEL_INSTANCES];
+    SolModelId handles[MAX_MODEL_INSTANCES];
+} submissionQueue;
+
 static SolDescriptorBuffer sceneUBO;
 
 static SolPipeModel pipeModel;
 static SolPipeRect pipeRect;
 static SolPipeText pipeText;
-static SolGpuModel gpuModels[MAX_GPU_MODELS];
+static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
 static SolPipeRay pipeRay;
 static SolFrameBuffer lineBuffer;
@@ -266,6 +273,22 @@ void Sol_Begin_3D()
     memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
 }
 
+void Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat)
+{
+    if (submissionQueue.count >= MAX_MODEL_INSTANCES)
+        return;
+
+    uint32_t slot = submissionQueue.count++;
+    submissionQueue.handles[slot] = handle;
+
+    ModelSSBO *inst = &submissionQueue.instances[slot];
+    *inst = (ModelSSBO){0};
+
+    memcpy(inst->position, &pos, sizeof(float) * 3);
+    memcpy(inst->scale, &scale, sizeof(float) * 3);
+    memcpy(inst->rotation, &quat, sizeof(float) * 4);
+}
+
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
@@ -273,8 +296,9 @@ void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_
 
     VkDescriptorSet sets[2] = {
         sceneUBO.sets[solvkstate.currentFrame],
-        pipeModel.modelSSBO.sets[solvkstate.currentFrame]};
-    // Bind the SSBO for the CURRENT frame
+        pipeModel.modelSSBO.sets[solvkstate.currentFrame],
+    };
+
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipeModel.pipe.layout, 0, 2,
                             sets, 0, NULL);
@@ -389,7 +413,6 @@ float Sol_MeasureText(const char *str, float size)
 
 void Sol_Begin_Draw()
 {
-    // solvkstate.currentBoundPipeline = -1;
     vkWaitForFences(solvkstate.device, 1, &solvkstate.inFlightFences[solvkstate.currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(solvkstate.device, 1, &solvkstate.inFlightFences[solvkstate.currentFrame]);
 
@@ -481,6 +504,43 @@ void Sol_Begin_Draw()
     VkRect2D scissor = {0};
     scissor.extent = solvkstate.swapchainExtent;
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
+}
+
+void Sol_Flush_Models(void)
+{
+    if (submissionQueue.count == 0)
+        return;
+
+    // Count per handle
+    uint32_t counts[SOL_MODEL_COUNT] = {0};
+    for (uint32_t i = 0; i < submissionQueue.count; i++)
+        counts[submissionQueue.handles[i]]++;
+
+    // Prefix sum
+    uint32_t offsets[SOL_MODEL_COUNT] = {0};
+    for (int i = 1; i < SOL_MODEL_COUNT; i++)
+        offsets[i] = offsets[i - 1] + counts[i - 1];
+
+    // Write sorted into SSBO
+    ModelSSBO *gpu = (ModelSSBO *)Sol_ModelBuffer_Get();
+    uint32_t cursors[SOL_MODEL_COUNT];
+    memcpy(cursors, offsets, sizeof(offsets));
+
+    for (uint32_t i = 0; i < submissionQueue.count; i++)
+    {
+        SolModelId h = submissionQueue.handles[i];
+        gpu[cursors[h]++] = submissionQueue.instances[i];
+    }
+
+    for (int h = 0; h < SOL_MODEL_COUNT; h++)
+    {
+        if (counts[h] > 0)
+        {
+            Sol_Draw_Model_Instanced(h, counts[h], offsets[h]);
+        }
+    }
+
+    submissionQueue.count = 0;
 }
 
 void Sol_End_Draw()

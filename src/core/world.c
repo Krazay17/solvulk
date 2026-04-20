@@ -10,8 +10,9 @@ World *World_Create(void)
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
         world->playerID = -1;
-        SpatialTable_Init(&world->spatial.table_dynamic, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES);
-        SpatialTable_Init(&world->spatial.table_static, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
+
+        Physx_Init(world);
+        Lines_Init(world);
     }
 
     return world;
@@ -164,29 +165,6 @@ CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
     return &world->xforms[id];
 }
 
-CompBody *Entity_Add_Body2(World *world, int id)
-{
-    world->masks[id] |= HAS_BODY2;
-    return &world->bodies[id];
-}
-
-CompBody *Entity_Add_Body3(World *world, int id, CompBody init_body)
-{
-    CompBody body = init_body;
-    body.height = body.height ? body.height : 0.5f;
-    body.radius = body.radius ? body.radius : 0.5f;
-    body.length = body.length ? body.length : 0.5f;
-    body.invMass = body.mass > 0 ? 1.0f / body.mass : 0;
-
-    if(body.shape == SHAPE3_MOD && body.mass == 0)
-    {
-        spatial_static_add_model(&world->spatial, world->models[id].model, &world->xforms[id]);
-    }
-
-    world->bodies[id] = body;
-    world->masks[id] |= HAS_BODY3;
-    return &world->bodies[id];
-}
 
 CompShape *Entity_Add_Shape(World *world, int id)
 {

@@ -51,7 +51,7 @@ void Create_Sol_Game()
     Entity_Add_Controller_Local(game, player3d);
 
     int floor = Entity_Create(game);
-    CompXform *floorXform = Entity_Add_Xform(game, floor, (vec3s){100, 0, 0});
+    CompXform *floorXform = Entity_Add_Xform(game, floor, (vec3s){0, 0, 0});
     CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD1);
     CompBody *floorBody = Entity_Add_Body3(game, floor, (CompBody){.shape = SHAPE3_MOD});
 }

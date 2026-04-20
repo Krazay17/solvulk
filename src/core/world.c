@@ -10,8 +10,8 @@ World *World_Create(void)
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
         world->playerID = -1;
-        SpatialTable_Init(&world->worldSpatial.table_dynamic, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES);
-        SpatialTable_Init(&world->worldSpatial.table_static, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
+        SpatialTable_Init(&world->spatial.table_dynamic, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES);
+        SpatialTable_Init(&world->spatial.table_static, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
     }
 
     return world;
@@ -46,8 +46,9 @@ World *World_Create_Default(void)
         SystemFunc drawSystemInit[] = {
             Sol_System_Model_Draw,
             Sol_System_UI_Draw,
+            Sol_System_Line_Draw,
         };
-        int drawSystemCount = 2;
+        int drawSystemCount = 3;
         world->drawCount = drawSystemCount;
         memcpy(world->drawSystems, drawSystemInit, sizeof(SystemFunc) * drawSystemCount);
     }
@@ -177,7 +178,7 @@ CompBody *Entity_Add_Body3(World *world, int id, CompBody init_body)
 
     if(body.shape == SHAPE3_MOD && body.mass == 0)
     {
-        spatial_static_add_model(&world->worldSpatial, world->models[id].model, &world->xforms[id]);
+        spatial_static_add_model(&world->spatial, world->models[id].model, &world->xforms[id]);
     }
 
     world->bodies[id] = body;
@@ -248,9 +249,4 @@ CompModel *Entity_Add_Model(World *world, int id, SolModelId model)
 int Sol_World_GetEntCount(World *world)
 {
     return world->activeCount;
-}
-
-CompUiElement *Entity_Get_UiElement(World *world, int id)
-{
-    return &world->uiElements[id];
 }

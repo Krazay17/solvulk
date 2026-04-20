@@ -69,7 +69,7 @@ void Sol_Tick(double dt, double time)
 
 static void DebugFPS(double dt)
 {
-    static double total,throttle;
+    static double total, throttle;
     static char buffer[64];
     static int count;
     solState.fps = 1.0 / dt;
@@ -89,6 +89,11 @@ static void DebugFPS(double dt)
 
 void Sol_Destroy()
 {
+    for (int i = 0; i < solState.worldCount; i++)
+    {
+        free(solState.worlds[i]);
+    }
+    solState.isRunning = false;
 }
 
 void Sol_Window_Resize(float width, float height)

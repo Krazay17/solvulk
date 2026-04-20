@@ -112,13 +112,14 @@ set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS
-    ${SHADER_DIR}/basic3d.vert
-    ${SHADER_DIR}/basic3d.frag
-    ${SHADER_DIR}/batched_rect.vert
-    ${SHADER_DIR}/basicrect.vert
-    ${SHADER_DIR}/basicrect.frag
-    ${SHADER_DIR}/basictext.vert
-    ${SHADER_DIR}/basictext.frag
+    ${SHADER_DIR}/model.vert
+    ${SHADER_DIR}/model.frag
+    ${SHADER_DIR}/rect.vert
+    ${SHADER_DIR}/rect.frag
+    ${SHADER_DIR}/text.vert
+    ${SHADER_DIR}/text.frag
+    ${SHADER_DIR}/line.vert
+    ${SHADER_DIR}/line.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")
@@ -157,5 +158,5 @@ if(WIN32)
 endif()
 
 set_target_properties(solvulk_server PROPERTIES 
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/server"
-    )
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)

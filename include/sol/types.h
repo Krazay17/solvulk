@@ -13,13 +13,13 @@
 #include <cglm/types-struct.h>
 
 #ifdef SOL_VULK_SHARED
-    #ifdef SOL_BUILD_DLL
-        #define SOLAPI __declspec(dllexport)
-    #else
-        #define SOLAPI __declspec(dllimport)
-    #endif
+#ifdef SOL_BUILD_DLL
+#define SOLAPI __declspec(dllexport)
 #else
-    #define SOLAPI 
+#define SOLAPI __declspec(dllimport)
+#endif
+#else
+#define SOLAPI
 #endif
 
 #define u8 uint8_t
@@ -30,6 +30,8 @@
 #define i32 int32_t
 #define i64 int64_t
 
+#define FLOATING_EPSILON 1e-7f
+
 // Forwards
 typedef struct World World;
 typedef struct SolState SolState;
@@ -37,6 +39,7 @@ typedef struct SolModel SolModel;
 typedef struct SolCamera SolCamera;
 
 // Defs
+typedef void (*SystemFunc)(World *world, double dt, double time);
 typedef void (*InteractCallback)(void *data);
 typedef bool Active;
 typedef uint32_t Mask;
@@ -125,6 +128,13 @@ typedef enum
     SOL_MOUSE_COUNT
 } SolMouseButton;
 
+typedef enum
+{
+    SYSTEM_STEP,
+    SYSTEM_TICK,
+    SYSTEM_DRAW,
+} SystemKind;
+
 // clang-format off
 typedef enum
 {
@@ -182,86 +192,13 @@ typedef struct
     uint8_t r, g, b, a;
 } SolColor;
 
-typedef struct CompXform
-{
-    vec3s pos, lastPos, drawPos;
-    versors quat, lastQuat, drawQuat;
-    vec3s scale, lastScale, drawScale;
-} CompXform;
-
-typedef struct CompBody
-{
-    vec3s vel, impulse, force;
-    Shape3 shape;
-    float grounded, airtime;
-    float radius, height, length;
-    float mass, invMass, restitution;
-} CompBody;
-
-typedef struct CompShape
-{
-    Shape2 type;
-    float width, height;
-} CompShape;
-
-typedef struct CompInteractable
-{
-    bool isHovered, isPressed, isClicked, onHold;
-    InteractCallback callback;
-    void *callbackData;
-} CompInteractable;
-
-typedef struct CompModel
-{
-    uint32_t gpuHandle;
-    SolModel *model;
-    float yOffset;
-} CompModel;
-
-typedef struct CompInfo
-{
-    char name[24];
-
-} CompInfo;
-
-typedef struct CompUiElement
-{
-    SolColor baseColor;
-    SolColor textColor;
-    float fontSize;
-    char text[64];
-    float textWidth;
-
-    float hoverAnim;
-    float clickAnim;
-
-    float borderThickness;
-    SolColor borderColor;
-} CompUiElement;
-
-typedef struct CompMovement
-{
-    vec3s wishdir, updir, lockdir;
-    float stateTimer;
-    MoveState moveState;
-    MoveConfigId configId;
-} CompMovement;
-
-typedef struct CompController
-{
-    vec3s lookdir, wishdir;
-    vec2s wishdir2;
-    uint32_t actionState;
-    float yaw, pitch;
-} CompController;
-
 typedef struct AiController
 {
     vec3s lookdir, wishdir;
     AiAction actionState;
 } AiController;
 
-typedef struct
+typedef struct SolMouse
 {
     int x, y;
     int dx, dy;
@@ -269,3 +206,11 @@ typedef struct
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];
 } SolMouse;
+
+typedef struct SolRay
+{
+    bool hit;
+    vec3s pos, normal;
+    float distance;
+    u32 triIdx;
+} SolRay;

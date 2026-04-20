@@ -13,9 +13,12 @@ SolCamera renderCam = {
 };
 mat4 ortho2d;
 
-static SolPipe3D pipe3D;
-static SolPipe2DRect pipeRect;
+static SolDescriptorBuffer sceneUBO;
+
+static SolPipeModel pipeModel;
+static SolPipeRect pipeRect;
 static SolPipeText pipeText;
+static SolPipeRay pipeRay;
 static SolGpuModel gpuModels[MAX_GPU_MODELS];
 
 static VkPipeline currentBoundPipeline = VK_NULL_HANDLE;
@@ -52,12 +55,12 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
     return 0;
 }
 
-VkCommandBuffer Sol_CommandBuffer()
+VkCommandBuffer Command_Buffer_Get()
 {
     return solvkstate.commandBuffers[solvkstate.currentFrame];
 }
 
-void SolBindPipeline(VkCommandBuffer cmd, VkPipeline pipeline)
+void Bind_Pipeline(VkCommandBuffer cmd, VkPipeline pipeline)
 {
     if (pipeline == currentBoundPipeline)
         return;
@@ -140,13 +143,14 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
         return 1;
 
     SolPipelineConfig textConfig = {
-        .vertResource = "ID_SHADER_BASICTEXT",
-        .fragResource = "ID_SHADER_BASICTEXTFRAG",
+        .vertResource = "ID_SHADER_TEXTV",
+        .fragResource = "ID_SHADER_TEXTF",
         .depthTest = 0,
         .alphaBlend = 0,
-        .cullBackface = 0,
+        .cullMode = VK_CULL_MODE_NONE,
         .pushRangeSize = sizeof(SolTextPush),
         .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     };
 
     if (Sol_BuildPipeline(vkstate, &textConfig, &pipeText.fontDesc.layout, 1, &pipeText.pipe) != 0)
@@ -156,45 +160,64 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
     if (Sol_CreateDescriptorBuffer(vkstate, sizeof(SceneUBO),
                                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                   &pipe3D.sceneUBO) != 0)
+                                   &sceneUBO) != 0)
         return 1;
 
     if (Sol_CreateDescriptorBuffer(vkstate, sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                    VK_SHADER_STAGE_VERTEX_BIT,
-                                   &pipe3D.modelSSBO) != 0)
+                                   &pipeModel.modelSSBO) != 0)
         return 1;
 
     VkDescriptorSetLayout meshLayouts[] = {
-        pipe3D.sceneUBO.layout,
-        pipe3D.modelSSBO.layout,
+        sceneUBO.layout,
+        pipeModel.modelSSBO.layout,
     };
 
     SolPipelineConfig meshConfig = {
-        .vertResource = "ID_SHADER_BASIC3D",
-        .fragResource = "ID_SHADER_BASIC3DFRAG",
+        .vertResource = "ID_SHADER_MODELV",
+        .fragResource = "ID_SHADER_MODELF",
         .depthTest = 1,
         .alphaBlend = 1,
-        .cullBackface = 0,
+        .cullMode = VK_CULL_MODE_NONE,
         .pushRangeSize = sizeof(SolMaterial),
         .pushStageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     };
 
-    if (Sol_BuildPipeline(vkstate, &meshConfig, meshLayouts, 2, &pipe3D.pipe) != 0)
+    if (Sol_BuildPipeline(vkstate, &meshConfig, meshLayouts, 2, &pipeModel.pipe) != 0)
         return 1;
 
     // ─── 2D Rect Pipeline ───────────────────────────────────────
     SolPipelineConfig rectConfig = {
-        .vertResource = "ID_SHADER_BASICRECT",
-        .fragResource = "ID_SHADER_BASICRECTFRAG",
+        .vertResource = "ID_SHADER_RECTV",
+        .fragResource = "ID_SHADER_RECTF",
         .depthTest = 0,
         .alphaBlend = 1,
-        .cullBackface = 0,
+        .cullMode = VK_CULL_MODE_NONE,
+        .pushRangeSize = sizeof(float) * 32,
+        .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    };
+
+    if (Sol_BuildPipeline(vkstate, &rectConfig, NULL, 0, &pipeRect.pipe) != 0)
+        return 1;
+
+    SolPipelineConfig lineConfig = {
+        .vertResource = "ID_SHADER_LINEV",
+        .fragResource = "ID_SHADER_LINEF",
+        .depthTest = 0,
+        .alphaBlend = 1,
+        .cullMode = VK_CULL_MODE_NONE,
         .pushRangeSize = sizeof(float) * 32,
         .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
     };
 
-    if (Sol_BuildPipeline(vkstate, &rectConfig, NULL, 0, &pipeRect.pipe) != 0)
+    VkDescriptorSetLayout lineLayouts[] = {
+        sceneUBO.layout,
+    };
+
+    if (Sol_BuildPipeline(vkstate, &lineConfig, lineLayouts, 1, &pipeRay.pipe) != 0)
         return 1;
 
     return 0;
@@ -202,8 +225,8 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
 
 void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 {
-    VkCommandBuffer cmd = Sol_CommandBuffer();
-    SolBindPipeline(cmd, pipeRect.pipe.pipeline);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, pipeRect.pipe.pipeline);
 
     struct
     {
@@ -226,43 +249,48 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 
 void Sol_Begin_3D()
 {
-    SceneUBO *ubo = (SceneUBO *)pipe3D.sceneUBO.mapped[solvkstate.currentFrame];
+    SceneUBO *ubo = sceneUBO.mapped[solvkstate.currentFrame];
     glm_mat4_mul(renderCam.proj, renderCam.view, ubo->viewProjection);
     memcpy(ubo->view, renderCam.view, sizeof(mat4));
     memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
     memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
-
-    // vkCmdPushConstants(Sol_CommandBuffer(),
-    //                    solvkstate.pipelineLayout[PIPE_3D_MESH],
-    //                    VK_SHADER_STAGE_VERTEX_BIT,
-    //                    0,
-    //                    sizeof(mat4),
-    //                    viewProj);
 }
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
 {
-    VkCommandBuffer cmd = Sol_CommandBuffer();
-    SolBindPipeline(cmd, pipe3D.pipe.pipeline);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, pipeModel.pipe.pipeline);
 
     VkDescriptorSet sets[2] = {
-        pipe3D.sceneUBO.sets[solvkstate.currentFrame],
-        pipe3D.modelSSBO.sets[solvkstate.currentFrame]};
+        sceneUBO.sets[solvkstate.currentFrame],
+        pipeModel.modelSSBO.sets[solvkstate.currentFrame]};
     // Bind the SSBO for the CURRENT frame
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipe3D.pipe.layout, 0, 2,
+                            pipeModel.pipe.layout, 0, 2,
                             sets, 0, NULL);
 
     SolGpuModel *model = &gpuModels[handle];
     for (uint32_t m = 0; m < model->mesh_count; m++)
     {
-        vkCmdPushConstants(cmd, pipe3D.pipe.layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+        vkCmdPushConstants(cmd, pipeModel.pipe.layout, VK_SHADER_STAGE_FRAGMENT_BIT,
                            0, sizeof(SolMaterial), &model->meshes[m].material);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
     }
+}
+
+void Sol_Draw_Line(SolLine *lines, int count)
+{
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, pipeRay.pipe.pipeline);
+
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipeRay.pipe.layout, 0, 1,
+                            &sceneUBO.sets[solvkstate.currentFrame], 0, NULL);
+
+    vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
 void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color)
@@ -275,8 +303,8 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
     const float CHAR_W = size * 0.6f; // aspect ratio of one glyph
     const float CHAR_H = size;
 
-    VkCommandBuffer cmd = Sol_CommandBuffer();
-    SolBindPipeline(cmd, pipeText.pipe.pipeline);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, pipeText.pipe.pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipeText.pipe.layout, 0, 1,
                             &pipeText.fontDesc.set, 0, NULL);
@@ -578,5 +606,5 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
 
 void *Sol_ModelBuffer_Get()
 {
-    return pipe3D.modelSSBO.mapped[solvkstate.currentFrame];
+    return pipeModel.modelSSBO.mapped[solvkstate.currentFrame];
 }

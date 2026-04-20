@@ -10,6 +10,13 @@ static ResolveShapeTri shapeTriResolvers[SHAPE3_CNT] = {
     [SHAPE3_BOX] = collide_box_tri,
 };
 
+static ResolveShapePair shape_pair_resolvers[SHAPE3_CNT][SHAPE3_CNT] = {
+    [SHAPE3_SPH][SHAPE3_SPH] = collide_sphere_sphere,
+    [SHAPE3_CAP][SHAPE3_CAP] = collide_sphere_sphere,
+    [SHAPE3_CAP][SHAPE3_SPH] = collide_sphere_sphere,
+    [SHAPE3_SPH][SHAPE3_CAP] = collide_sphere_sphere,
+};
+
 static int ents[MAX_ENTS];
 
 static SolProfiler prof_static = {.name = "Static"};
@@ -25,26 +32,29 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
     int i, j, k, l;
     int count = 0;
     int actives = world->activeCount;
-    WorldSpatial *ws = &world->worldSpatial;
+    WorldSpatial *ws = &world->spatial;
 
+    // Filter entities
     for (k = 0; k < actives; k++)
     {
         int id = world->activeEntities[k];
         if ((world->masks[id] & required) != required)
             continue;
+        if (world->bodies[id].mass == 0)
+            continue;
         ents[count++] = id;
     }
+    
+    rebuild_grid_static(ws);
 
+    // Static resolution
     Prof_Begin(&prof_static);
-    // Static position resolution
-#pragma omp parallel for if (count > 1000) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = ents[i];
         CompXform *xform = &world->xforms[id];
         CompBody *body = &world->bodies[id];
-        if (body->mass == 0)
-            continue;
 
         if (xform->pos.y < -15.0f)
         {
@@ -62,42 +72,41 @@ void Sol_System_Step_Physx_3d(World *world, double dt, double time)
 
         collisions_grid_static(body, xform, ws, fdt);
     }
+
     Prof_End(&prof_static);
 
-    //     // Build dynamic spatial table
-    //     for (l = 0; l < count; l++)
-    //     {
-    //         int id = ents[l];
-    //         vec3s pos = world->xforms[id].pos;
-    //         int ix = (int)floorf(pos.x / SPATIAL_DYNAMIC_CELL_SIZE);
-    //         int iy = (int)floorf(pos.y / SPATIAL_DYNAMIC_CELL_SIZE);
-    //         int iz = (int)floorf(pos.z / SPATIAL_DYNAMIC_CELL_SIZE);
-    //         u32 hash = hash_coords(ix, iy, iz) & SPATIAL_DYNAMIC_SIZE;
-    //         SpatialTable_Insert(&world->worldSpatial.table_dynamic, hash, (u32)id);
-    //     }
+    // ReBuild dynamic spatial table
+    SpatialTable_Clear(&world->spatial.table_dynamic);
+    for (l = 0; l < count; l++)
+    {
+        int id = ents[l];
+        vec3s pos = world->xforms[id].pos;
+        int ix = (int)floorf(pos.x / SPATIAL_DYNAMIC_CELL_SIZE);
+        int iy = (int)floorf(pos.y / SPATIAL_DYNAMIC_CELL_SIZE);
+        int iz = (int)floorf(pos.z / SPATIAL_DYNAMIC_CELL_SIZE);
+        u32 hash = hash_coords(ix, iy, iz) & SPATIAL_DYNAMIC_MASK;
+        SpatialTable_Insert(&world->spatial.table_dynamic, hash, (u32)id);
+    }
 
-    //     Prof_Begin(&prof_dynamic);
-    //     // 2. Dynamic position resolution
-    // #pragma omp parallel for if (count > 1000) schedule(dynamic, 16)
-    //     for (j = 0; j < count; j++)
-    //     {
-    //         int id = ents[j];
-    //         CompBody *body = &world->bodies[id];
-    //         CompXform *xform = &world->xforms[id];
+    // Dynamic resolution
+    Prof_Begin(&prof_dynamic);
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+    for (j = 0; j < count; j++)
+    {
+        int id = ents[j];
+        CompBody *body = &world->bodies[id];
+        CompXform *xform = &world->xforms[id];
 
-    //         if (body->invMass <= 0.0f)
-    //             continue;
+        collisions_hash_dynamic(world, id, body, xform);
+    }
+    Prof_End(&prof_dynamic);
 
-    //         collisions_hash_dynamic(world, id, body, xform);
-    //     }
-    //     Prof_End(&prof_dynamic);
-
-    //     prof_frame++;
-    //     if (prof_frame % 200 == 0)
-    //     {
-    //         Prof_Print(&prof_static);
-    //         Prof_Print(&prof_dynamic);
-    //     }
+    prof_frame++;
+    if (prof_frame % 200 == 0)
+    {
+        Prof_Print(&prof_static);
+        Prof_Print(&prof_dynamic);
+    }
 }
 
 void Sol_System_Step_Physx_2d(World *world, double dt, double time)
@@ -146,6 +155,33 @@ SubstepData substep_get(CompBody *body, float fdt)
     return substep_data;
 }
 
+void rebuild_grid_static(WorldSpatial *ws)
+{
+    SpatialGrid *grid = &ws->grid_static;
+    if (!grid->offsets && ws->tris_static_count > 0)
+    {
+        vec3s min = {1e9f, 1e9f, 1e9f};
+        vec3s max = {-1e9f, -1e9f, -1e9f};
+        for (u32 t = 0; t < ws->tris_static_count; t++)
+        {
+            SolTri *tri = &ws->tris_static[t];
+            min.x = fminf(min.x, fminf(tri->a.x, fminf(tri->b.x, tri->c.x)));
+            min.y = fminf(min.y, fminf(tri->a.y, fminf(tri->b.y, tri->c.y)));
+            min.z = fminf(min.z, fminf(tri->a.z, fminf(tri->b.z, tri->c.z)));
+            max.x = fmaxf(max.x, fmaxf(tri->a.x, fmaxf(tri->b.x, tri->c.x)));
+            max.y = fmaxf(max.y, fmaxf(tri->a.y, fmaxf(tri->b.y, tri->c.y)));
+            max.z = fmaxf(max.z, fmaxf(tri->a.z, fmaxf(tri->b.z, tri->c.z)));
+        }
+        physx_grid_build_static(ws, min, max, 1.0f);
+        grid->build_tri_count = ws->tris_static_count;
+    }
+    else if (grid->build_tri_count != ws->tris_static_count)
+    {
+        physx_grid_build_static(ws, grid->min, grid->max, grid->cellSize);
+        grid->build_tri_count = ws->tris_static_count;
+    }
+}
+
 void collisions_hash_static(CompBody *body, CompXform *xform, SubstepData substep_data, WorldSpatial *ws)
 {
     int totalChecks = 0;
@@ -172,21 +208,168 @@ void collisions_hash_static(CompBody *body, CompXform *xform, SubstepData subste
 
 void collisions_hash_dynamic(World *world, int id, CompBody *body, CompXform *xform)
 {
-    WorldSpatial *ws = &world->worldSpatial;
+    WorldSpatial *ws = &world->spatial;
     SpatialCell cell = spatial_cell_get(xform->pos, SPATIAL_DYNAMIC_CELL_SIZE);
+    SolCollision col;
     for (int n = 0; n < 27; n++)
     {
-        u32 entry = ws->table_dynamic.head[cell.neighborHashes[n] & SPATIAL_DYNAMIC_SIZE];
+        u32 entry = ws->table_dynamic.head[cell.neighborHashes[n] & SPATIAL_DYNAMIC_MASK];
         while (entry != SPATIAL_NULL)
         {
             u32 otherID = ws->table_dynamic.value[entry];
             if (id < otherID)
-                collide_sphere_sphere(body, xform,
-                                      &world->bodies[otherID],
-                                      &world->xforms[otherID]);
+            {
+                CompBody *other_body = &world->bodies[otherID];
+                CompXform *other_xform = &world->xforms[otherID];
+                ResolveShapePair resolver = shape_pair_resolvers[body->shape][other_body->shape];
+
+                if (resolver)
+                    col = resolver(body, xform, other_body, other_xform);
+            }
             entry = ws->table_dynamic.next[entry];
         }
     }
+}
+
+SolRay Sol_Raycast(WorldSpatial *ws, vec3s origin, vec3s dir, float maxDist)
+{
+    SolRay result = {0};
+
+    result.distance = maxDist;
+    SpatialGrid *grid = &ws->grid_static;
+
+    if (!grid->offsets)
+        return result;
+
+    // Normalize direction (algorithm assumes unit length for clean tDelta)
+    float dirLen = glms_vec3_norm(dir);
+    if (dirLen < FLOATING_EPSILON)
+        return result;
+    dir = glms_vec3_scale(dir, 1.0f / dirLen);
+
+    // Current cell
+    int ix = (int)floorf((origin.x - grid->min.x) / grid->cellSize);
+    int iy = (int)floorf((origin.y - grid->min.y) / grid->cellSize);
+    int iz = (int)floorf((origin.z - grid->min.z) / grid->cellSize);
+
+    // If origin is outside grid, reject (or you could march the ray forward to grid entry — skipping that for simplicity)
+    if (ix < 0 || ix >= grid->dims.x ||
+        iy < 0 || iy >= grid->dims.y ||
+        iz < 0 || iz >= grid->dims.z)
+        return result;
+
+    // Direction signs
+    int stepX = dir.x > 0 ? 1 : -1;
+    int stepY = dir.y > 0 ? 1 : -1;
+    int stepZ = dir.z > 0 ? 1 : -1;
+
+    // Distance to next boundary along each axis
+    // "Next boundary" depends on step direction
+    float nextX = grid->min.x + (ix + (stepX > 0 ? 1 : 0)) * grid->cellSize;
+    float nextY = grid->min.y + (iy + (stepY > 0 ? 1 : 0)) * grid->cellSize;
+    float nextZ = grid->min.z + (iz + (stepZ > 0 ? 1 : 0)) * grid->cellSize;
+
+    // t values where ray reaches those boundaries
+    float tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - origin.x) / dir.x : INFINITY;
+    float tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - origin.y) / dir.y : INFINITY;
+    float tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - origin.z) / dir.z : INFINITY;
+
+    // t distance per cell along each axis
+    float tDeltaX = (fabsf(dir.x) > 1e-8f) ? grid->cellSize / fabsf(dir.x) : INFINITY;
+    float tDeltaY = (fabsf(dir.y) > 1e-8f) ? grid->cellSize / fabsf(dir.y) : INFINITY;
+    float tDeltaZ = (fabsf(dir.z) > 1e-8f) ? grid->cellSize / fabsf(dir.z) : INFINITY;
+
+    float closestT = maxDist;
+
+    while (1)
+    {
+        // Test triangles in current cell
+        u32 cellIdx = ix + iy * grid->dims.x + iz * grid->dims.x * grid->dims.y;
+        u32 start = grid->offsets[cellIdx];
+        u32 end = grid->offsets[cellIdx + 1];
+
+        // The distance along the ray at which we leave this cell
+        float tCellExit = fminf(tMaxX, fminf(tMaxY, tMaxZ));
+
+        for (u32 e = start; e < end; e++)
+        {
+            SolTri *tri = &ws->tris_static[grid->tris[e]];
+            vec3s normal;
+            float t = Ray_Tri_Test(origin, dir, tri, &normal);
+
+            if (t > 0 && t < closestT)
+            {
+                closestT = t;
+                result.hit = true;
+                result.distance = t;
+                result.normal = normal;
+                result.triIdx = grid->tris[e];
+                result.pos = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+            }
+        }
+
+        // If we found a hit within this cell's span, it's the nearest
+        if (result.hit && closestT <= tCellExit)
+            return result;
+
+        // Advance to next cell along the axis with smallest tMax
+        if (tMaxX < tMaxY && tMaxX < tMaxZ)
+        {
+            ix += stepX;
+            tMaxX += tDeltaX;
+        }
+        else if (tMaxY < tMaxZ)
+        {
+            iy += stepY;
+            tMaxY += tDeltaY;
+        }
+        else
+        {
+            iz += stepZ;
+            tMaxZ += tDeltaZ;
+        }
+
+        // Past max distance?
+        if (fminf(tMaxX, fminf(tMaxY, tMaxZ)) > maxDist)
+            break;
+
+        // Exited grid bounds?
+        if (ix < 0 || ix >= grid->dims.x ||
+            iy < 0 || iy >= grid->dims.y ||
+            iz < 0 || iz >= grid->dims.z)
+            break;
+    }
+
+    return result;
+}
+
+inline float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal)
+{
+    vec3s edge1 = glms_vec3_sub(tri->b, tri->a);
+    vec3s edge2 = glms_vec3_sub(tri->c, tri->a);
+    vec3s h = glms_vec3_cross(dir, edge2);
+    float a = glms_vec3_dot(edge1, h);
+
+    if (fabsf(a) < FLOATING_EPSILON)
+        return -1.0f; // ray parallel to triangle
+
+    float f = 1.0f / a;
+    vec3s s = glms_vec3_sub(origin, tri->a);
+    float u = f * glms_vec3_dot(s, h);
+    if (u < 0.0f || u > 1.0f)
+        return -1.0f;
+
+    vec3s q = glms_vec3_cross(s, edge1);
+    float v = f * glms_vec3_dot(dir, q);
+    if (v < 0.0f || u + v > 1.0f)
+        return -1.0f;
+
+    float t = f * glms_vec3_dot(edge2, q);
+    if (t < FLOATING_EPSILON)
+        return -1.0f; // behind origin or too close
+
+    *outNormal = tri->normal;
+    return t;
 }
 
 void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws, float fdt)
@@ -194,28 +377,6 @@ void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws, 
     SubstepData substep_data = substep_get(body, fdt);
     ResolveShapeTri resolve = shapeTriResolvers[body->shape];
     SpatialGrid *grid = &ws->grid_static;
-    if (!grid->offsets && ws->tris_static_count > 0)
-    {
-        // First build — pick default bounds from tris
-        vec3s min = {1e9f, 1e9f, 1e9f};
-        vec3s max = {-1e9f, -1e9f, -1e9f};
-        for (u32 t = 0; t < ws->tris_static_count; t++)
-        {
-            SolTri *tri = &ws->tris_static[t];
-            min.x = fminf(min.x, fminf(tri->a.x, fminf(tri->b.x, tri->c.x)));
-            min.y = fminf(min.y, fminf(tri->a.y, fminf(tri->b.y, tri->c.y)));
-            min.z = fminf(min.z, fminf(tri->a.z, fminf(tri->b.z, tri->c.z)));
-            max.x = fmaxf(max.x, fmaxf(tri->a.x, fmaxf(tri->b.x, tri->c.x)));
-            max.y = fmaxf(max.y, fmaxf(tri->a.y, fmaxf(tri->b.y, tri->c.y)));
-            max.z = fmaxf(max.z, fmaxf(tri->a.z, fmaxf(tri->b.z, tri->c.z)));
-        }
-        physx_grid_build_static(ws, min, max, 2.0f);
-    }
-    if (grid->needs_build)
-    {
-        grid->needs_build = false;
-        physx_grid_build_static(ws, grid->min, (vec3s){grid->gridX, grid->gridY, grid->gridZ}, grid->cellSize);
-    }
 
     for (int s = 0; s < substep_data.substeps; s++)
     {
@@ -231,12 +392,12 @@ void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws, 
                 for (int oz = -1; oz <= 1; oz++)
                 {
                     int cx = ix + ox, cy = iy + oy, cz = iz + oz;
-                    if (cx < 0 || cx >= grid->gridX ||
-                        cy < 0 || cy >= grid->gridY ||
-                        cz < 0 || cz >= grid->gridZ)
+                    if (cx < 0 || cx >= grid->dims.x ||
+                        cy < 0 || cy >= grid->dims.y ||
+                        cz < 0 || cz >= grid->dims.z)
                         continue;
 
-                    u32 cell = cx + cy * grid->gridX + cz * grid->gridX * grid->gridY;
+                    u32 cell = cx + cy * grid->dims.x + cz * grid->dims.x * grid->dims.y;
                     u32 start = grid->offsets[cell];
                     u32 end = grid->offsets[cell + 1];
 
@@ -287,14 +448,20 @@ void spatial_hash_tris(SolTri *t, int count, SpatialTable *table, float cellSize
 void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_size)
 {
     SpatialGrid *grid = &ws->grid_static;
+
+    free(grid->offsets);
+    free(grid->tris);
+    grid->offsets = NULL;
+    grid->tris = NULL;
+
     grid->cellSize = cell_size;
     grid->min = min;
-    grid->gridX = (int)ceilf((max.x - min.x) / cell_size) + 1;
-    grid->gridY = (int)ceilf((max.y - min.y) / cell_size) + 1;
-    grid->gridZ = (int)ceilf((max.z - min.z) / cell_size) + 1;
-    u32 cellCount = grid->gridX * grid->gridY * grid->gridZ;
+    grid->max = max;
+    grid->dims.x = (int)ceilf((max.x - min.x) / cell_size) + 1;
+    grid->dims.y = (int)ceilf((max.y - min.y) / cell_size) + 1;
+    grid->dims.z = (int)ceilf((max.z - min.z) / cell_size) + 1;
 
-    // 1. Count entries per cell
+    u32 cellCount = (u32)grid->dims.x * grid->dims.y * grid->dims.z;
     u32 *counts = calloc(cellCount, sizeof(u32));
     u32 totalEntries = 0;
 
@@ -316,28 +483,26 @@ void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_
         int z1 = (int)floorf((maxZ - min.z) / cell_size);
 
         x0 = x0 < 0 ? 0 : x0;
-        x1 = x1 >= grid->gridX ? grid->gridX - 1 : x1;
+        x1 = x1 >= grid->dims.x ? grid->dims.x - 1 : x1;
         y0 = y0 < 0 ? 0 : y0;
-        y1 = y1 >= grid->gridY ? grid->gridY - 1 : y1;
+        y1 = y1 >= grid->dims.y ? grid->dims.y - 1 : y1;
         z0 = z0 < 0 ? 0 : z0;
-        z1 = z1 >= grid->gridZ ? grid->gridZ - 1 : z1;
+        z1 = z1 >= grid->dims.z ? grid->dims.z - 1 : z1;
 
         for (int x = x0; x <= x1; x++)
             for (int y = y0; y <= y1; y++)
                 for (int z = z0; z <= z1; z++)
                 {
-                    counts[x + y * grid->gridX + z * grid->gridX * grid->gridY]++;
+                    counts[x + y * grid->dims.x + z * grid->dims.x * grid->dims.y]++;
                     totalEntries++;
                 }
     }
 
-    // 2. Prefix sum → offsets
     grid->offsets = malloc((cellCount + 1) * sizeof(u32));
     grid->offsets[0] = 0;
     for (u32 i = 0; i < cellCount; i++)
         grid->offsets[i + 1] = grid->offsets[i] + counts[i];
 
-    // 3. Fill sorted triangle indices
     grid->tris = malloc(totalEntries * sizeof(u32));
     u32 *cursor = malloc(cellCount * sizeof(u32));
     memcpy(cursor, grid->offsets, cellCount * sizeof(u32));
@@ -360,17 +525,17 @@ void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_
         int z1 = (int)floorf((maxZ - min.z) / cell_size);
 
         x0 = x0 < 0 ? 0 : x0;
-        x1 = x1 >= grid->gridX ? grid->gridX - 1 : x1;
+        x1 = x1 >= grid->dims.x ? grid->dims.x - 1 : x1;
         y0 = y0 < 0 ? 0 : y0;
-        y1 = y1 >= grid->gridY ? grid->gridY - 1 : y1;
+        y1 = y1 >= grid->dims.y ? grid->dims.y - 1 : y1;
         z0 = z0 < 0 ? 0 : z0;
-        z1 = z1 >= grid->gridZ ? grid->gridZ - 1 : z1;
+        z1 = z1 >= grid->dims.z ? grid->dims.z - 1 : z1;
 
         for (int x = x0; x <= x1; x++)
             for (int y = y0; y <= y1; y++)
                 for (int z = z0; z <= z1; z++)
                 {
-                    u32 cell = x + y * grid->gridX + z * grid->gridX * grid->gridY;
+                    u32 cell = x + y * grid->dims.x + z * grid->dims.x * grid->dims.y;
                     grid->tris[cursor[cell]++] = t;
                 }
     }
@@ -378,7 +543,6 @@ void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_
     free(counts);
     free(cursor);
 
-    // Find worst cell for debug
     u32 worst = 0;
     for (u32 i = 0; i < cellCount; i++)
     {
@@ -387,7 +551,7 @@ void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_
             worst = len;
     }
     printf("grid_static: %dx%dx%d cells, %u entries, worst cell: %u\n",
-           grid->gridX, grid->gridY, grid->gridZ, totalEntries, worst);
+           grid->dims.x, grid->dims.y, grid->dims.z, totalEntries, worst);
 }
 
 void spatial_static_add_model(WorldSpatial *ws, SolModel *model, CompXform *xform)
@@ -427,7 +591,6 @@ void spatial_static_add_model(WorldSpatial *ws, SolModel *model, CompXform *xfor
         float dc = glms_vec3_norm(glms_vec3_sub(dst->c, dst->center));
         dst->boundRadius = fmaxf(da, fmaxf(db, dc));
     }
-    ws->grid_static.needs_build = true;
 }
 
 SpatialCell spatial_cell_get(vec3s pos, float cellSize)

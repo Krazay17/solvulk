@@ -683,7 +683,7 @@ int Sol_BuildPipeline(SolVkState *vkstate,
     // --- input assembly (what shape to draw) ---
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = config->primitiveTopology;
 
     // --- viewport and scissor (dynamic so we can resize) ---
     VkPipelineViewportStateCreateInfo viewportState = {0};
@@ -695,7 +695,7 @@ int Sol_BuildPipeline(SolVkState *vkstate,
     VkPipelineRasterizationStateCreateInfo rasterizer = {0};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.cullMode = config->cullBackface ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
+    rasterizer.cullMode = config->cullMode;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.lineWidth = 1.0f;
 

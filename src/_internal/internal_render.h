@@ -3,23 +3,10 @@
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
-#define MAX_DEVICE_QUERY 8
-#define MAX_QUEUE_FAMILIES 16
-#define MAX_GPU_MODELS 256
-#define MAX_MODEL_INSTANCES 500000
 
-#define MAX_DEBUGS 12
-#define MAX_STR_LEN 64
 
 // ─── Reusable resource types ─────────────────────────────────────
 
-typedef struct DebugLines
-{
-    int characterCount[MAX_DEBUGS];
-    char text[MAX_DEBUGS][MAX_STR_LEN];
-    float value[MAX_DEBUGS];
-    int count;
-} DebugLines;
 
 typedef struct
 {
@@ -115,17 +102,22 @@ typedef struct
     VkPipelineLayout layout;
 } SolPipeline;
 
-typedef struct
+typedef struct SolPipeModel
+{
+    SolPipeline pipe;
+    SolDescriptorBuffer modelSSBO;
+} SolPipeModel;
+
+typedef struct SolPipeRay
 {
     SolPipeline pipe;
     SolDescriptorBuffer sceneUBO;
-    SolDescriptorBuffer modelSSBO;
-} SolPipe3D;
+}SolPipeRay;
 
 typedef struct
 {
     SolPipeline pipe;
-} SolPipe2DRect;
+} SolPipeRect;
 
 typedef struct
 {
@@ -143,9 +135,10 @@ typedef struct
     const char *fragResource;
     int depthTest;
     int alphaBlend;
-    int cullBackface;
+    VkCullModeFlags cullMode;
     uint32_t pushRangeSize;
     VkShaderStageFlags pushStageFlags;
+    VkPrimitiveTopology primitiveTopology;
 } SolPipelineConfig;
 
 // ─── Vulkan plumbing (exists once) ───────────────────────────────
@@ -232,11 +225,10 @@ int Sol_BuildPipeline(SolVkState *vk,
 
 // ─── Render API (internal) ───────────────────────────────────────
 
-VkCommandBuffer Sol_CommandBuffer(void);
-void SolBindPipeline(VkCommandBuffer cmd, VkPipeline pipeline);
+VkCommandBuffer Command_Buffer_Get(void);
+void Bind_Pipeline(VkCommandBuffer cmd, VkPipeline pipeline);
 void Sol_UploadModel(SolModel *model, SolModelId modelId);
 void *Sol_ModelBuffer_Get(void);
 void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds ParseBounds(const char *p, const char *end);
 int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate);
-void Sol_Debug_Draw();

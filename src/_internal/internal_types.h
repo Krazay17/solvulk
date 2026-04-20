@@ -1,6 +1,13 @@
 #pragma once
 #include <cglm/types-struct.h>
 
+#define MAX_DEVICE_QUERY 8
+#define MAX_QUEUE_FAMILIES 16
+#define MAX_GPU_MODELS 256
+#define MAX_MODEL_INSTANCES 500000
+
+#define MAX_WORLD_LINES 0xffff
+
 typedef struct SolCamera
 {
     vec3 position;
@@ -33,6 +40,19 @@ typedef struct SolMaterial
     float metallic;
     float roughness;
 } SolMaterial;
+
+typedef struct SolLine
+{
+    vec3s a, b;
+    vec3s aColor, bColor;
+    float ttl;
+} SolLine;
+
+typedef struct WorldLines
+{
+    SolLine lines[MAX_WORLD_LINES];
+    int count;
+} WorldLines;
 
 typedef struct SolMesh
 {
@@ -83,10 +103,11 @@ typedef struct SpatialGrid
 {
     u32 *offsets; // [cellCount + 1] — start index per cell
     u32 *tris;    // [totalEntries] — sorted triangle indices
-    bool needs_build;
-    int gridX, gridY, gridZ;
+    u32 build_tri_count;
     float cellSize;
     vec3s min;
+    vec3s max;
+    ivec3s dims;
 } SpatialGrid;
 
 typedef struct WorldSpatial
@@ -103,3 +124,34 @@ typedef struct WorldSpatial
     SolTri *tris_dynamic;
     int tris_dynamic_count;
 } WorldSpatial;
+
+typedef struct World
+{
+    bool worldActive;
+    SystemFunc stepSystems[MAX_SYSTEMS];
+    int stepCount;
+    SystemFunc tickSystems[MAX_SYSTEMS];
+    int tickCount;
+    SystemFunc drawSystems[MAX_SYSTEMS];
+    int drawCount;
+
+    WorldSpatial spatial;
+    WorldLines lines;
+
+    int playerID;
+    int activeEntities[MAX_ENTS];
+    int activeCount;
+
+    Active actives[MAX_ENTS];
+    Mask masks[MAX_ENTS];
+
+    CompXform xforms[MAX_ENTS];
+    CompBody bodies[MAX_ENTS];
+    CompShape shapes[MAX_ENTS];
+    CompModel models[MAX_ENTS];
+    CompInteractable interactables[MAX_ENTS];
+    CompInfo infos[MAX_ENTS];
+    CompUiElement uiElements[MAX_ENTS];
+    CompMovement movements[MAX_ENTS];
+    CompController controllers[MAX_ENTS];
+} World;

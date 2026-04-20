@@ -10,9 +10,6 @@ World *World_Create(void)
         SolState *state = Sol_GetState();
         state->worlds[state->worldCount++] = world;
         world->playerID = -1;
-
-        Physx_Init(world);
-        Lines_Init(world);
     }
 
     return world;
@@ -22,39 +19,8 @@ World *World_Create_Default(void)
 {
     World *world = World_Create();
     if (world)
-    {
-        SystemFunc stepSystemInit[] = {
-            Sol_System_Movement_2d_Step,
-            Sol_System_Movement_3d_Step,
-            Sol_System_Step_Physx_2d,
-            Sol_System_Step_Physx_3d,
-        };
-        int stepSystemCount = 4;
-        world->stepCount = stepSystemCount;
-        memcpy(world->stepSystems, stepSystemInit, sizeof(SystemFunc) * stepSystemCount);
-
-        SystemFunc tickSystemInit[] = {
-            Sol_System_Controller_Local_Tick,
-            Sol_System_Controller_Ai_Tick,
-            Sol_System_Interact_Ui,
-            Sol_System_Info_Tick,
-            Sol_System_Camera_Tick,
-            System_Combat_Tick,
-            Sol_System_Line_Tick,
-        };
-        int tickSystemCount = 7;
-        world->tickCount = tickSystemCount;
-        memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
-
-        SystemFunc drawSystemInit[] = {
-            Sol_System_Model_Draw,
-            Sol_System_UI_Draw,
-            Sol_System_Line_Draw,
-        };
-        int drawSystemCount = 3;
-        world->drawCount = drawSystemCount;
-        memcpy(world->drawSystems, drawSystemInit, sizeof(SystemFunc) * drawSystemCount);
-    }
+        for (int i = 0; i < WORLD_SYS_COUNT; i++)
+            World_System_Add(world, i);
     return world;
 }
 
@@ -94,26 +60,18 @@ void World_Draw(World *world, double dt, double time)
     }
 }
 
-void World_System_Add(World *world, SystemFunc func, SystemKind kind)
+void World_System_Add(World *world, WorldSystems system)
 {
-    if (!world || !func)
+    if (!world)
         return;
-
-    switch (kind)
-    {
-    case SYSTEM_STEP:
-        if (world->stepCount < MAX_SYSTEMS)
-            world->stepSystems[world->stepCount++] = func;
-        break;
-    case SYSTEM_TICK:
-        if (world->tickCount < MAX_SYSTEMS)
-            world->tickSystems[world->tickCount++] = func;
-        break;
-    case SYSTEM_DRAW:
-        if (world->drawCount < MAX_SYSTEMS)
-            world->drawSystems[world->drawCount++] = func;
-        break;
-    }
+    if (world_systems[system].init)
+        world_systems[system].init(world);
+    if (world_systems[system].step)
+        world->stepSystems[world->stepCount++] = world_systems[system].step;
+    if (world_systems[system].tick)
+        world->tickSystems[world->tickCount++] = world_systems[system].tick;
+    if (world_systems[system].draw)
+        world->drawSystems[world->drawCount++] = world_systems[system].draw;
 }
 
 int Entity_Create(World *world)
@@ -164,7 +122,6 @@ CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
     world->masks[id] |= HAS_XFORM;
     return &world->xforms[id];
 }
-
 
 CompShape *Entity_Add_Shape(World *world, int id)
 {

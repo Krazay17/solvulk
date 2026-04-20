@@ -7,13 +7,30 @@
 #define MAX_SYSTEMS 64
 
 typedef struct World World;
+typedef void (*SystemInit)(World *world);
 typedef void (*SystemFunc)(World *world, double dt, double time);
 typedef void (*InteractCallback)(void *data);
 typedef bool Active;
 typedef uint32_t Mask;
 
+// fwds
 typedef struct WorldSpatial WorldSpatial;
 typedef struct WorldLines WorldLines;
+
+typedef enum
+{
+    WORLD_SYS_PHYSX,
+    WORLD_SYS_CAM,
+    WORLD_SYS_CONTROLLER_LOCAL,
+    WORLD_SYS_CONTROLLER_AI,
+    WORLD_SYS_INTERACT,
+    WORLD_SYS_MODEL,
+    WORLD_SYS_UI,
+    WORLD_SYS_MOVEMENT,
+    WORLD_SYS_LINE,
+    WORLD_SYS_COMBAT,
+    WORLD_SYS_COUNT,
+} WorldSystems;
 
 // clang-format off
 typedef enum
@@ -127,6 +144,14 @@ typedef struct CompBody
     float mass, invMass, restitution;
 } CompBody;
 
+typedef struct
+{
+    SystemInit init;
+    SystemFunc step;
+    SystemFunc tick;
+    SystemFunc draw;
+} SystemFuncs;
+
 typedef struct World
 {
     bool worldActive;
@@ -159,10 +184,12 @@ typedef struct World
     CompCombat combats[MAX_ENTS];
 } World;
 
+
 SOLAPI World *World_Create(void);
 SOLAPI World *World_Create_Default(void);
+SOLAPI World *World_Create_Defaults(void);
 SOLAPI void World_Destroy(World *world);
-SOLAPI void World_System_Add(World *world, SystemFunc func, SystemKind kind);
+void World_System_Add(World *world, WorldSystems system);
 SOLAPI int Sol_World_GetEntCount(World *world);
 
 // Add thing to world
@@ -191,3 +218,46 @@ SOLAPI CompController *Entity_Add_Controller_Remote(World *world, int id);
 SOLAPI CompController *Entity_Add_Controller_Ai(World *world, int id);
 SOLAPI CompModel *Entity_Add_Model(World *world, int id, SolModelId model);
 SOLAPI CompCombat *Sol_Add_Combat(World *world, int id);
+
+
+// Xform systems
+SOLAPI void Sol_System_Xform_Snapshot(World *world);
+SOLAPI void Sol_System_Xform_Interpolate(World *world, float alpha);
+// Init Systems
+SOLAPI void Physx_Init(World *world);
+SOLAPI void Lines_Init(World *world);
+// Step Systems
+SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
+SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
+SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
+SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
+// Tick Systems
+SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
+SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Line_Tick(World *world, double dt, double time);
+SOLAPI void System_Combat_Tick(World *world, double dt, double time);
+// Draw Systems
+SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
+SOLAPI void Sol_System_Line_Draw(World *world, double dt, double time);
+SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
+// Draw Calls
+SOLAPI void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
+SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
+SOLAPI void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);
+
+static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
+    [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Sol_System_Step_Physx_3d},
+    [WORLD_SYS_CAM] = {.tick = Sol_System_Camera_Tick},
+    [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
+    [WORLD_SYS_CONTROLLER_AI] = {.tick = Sol_System_Controller_Ai_Tick},
+    [WORLD_SYS_MODEL] = {.draw = Sol_System_Model_Draw},
+    [WORLD_SYS_UI] = {.draw = Sol_System_UI_Draw},
+    [WORLD_SYS_INTERACT] = {.tick = Sol_System_Interact_Ui},
+    [WORLD_SYS_MOVEMENT] = {.step = Sol_System_Movement_3d_Step},
+    [WORLD_SYS_LINE] = {.init=Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
+    [WORLD_SYS_COMBAT] = {.tick = System_Combat_Tick},
+};

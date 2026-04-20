@@ -22,7 +22,7 @@ void System_Combat_Tick(World *world, double dt, double time)
         if (controller->actionState & ACTION_ATTACK)
         {
             vec3s endPos = glms_vec3_add(xform->pos, glms_vec3_scale(controller->lookdir, 50.0f));
-            Sol_World_Line_Add(world, xform->pos, endPos, (vec3s){1, 1, 0}, (vec3s){0, 1, 0}, 5.0f);
+            Sol_World_Line_Add(world, xform->pos, endPos, (vec3s){0, 1, 0}, (vec3s){0, 0, 0}, 5.0f);
         }
     }
 }

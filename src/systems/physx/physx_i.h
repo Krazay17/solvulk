@@ -17,8 +17,8 @@
 #define SPATIAL_STATIC_MASK (SPATIAL_STATIC_SIZE - 1)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
-// typedef struct CompBody CompBody;
-// typedef struct CompXform CompXform;
+typedef struct CompBody CompBody;
+typedef struct CompXform CompXform;
 typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, SolTri *tri);
 typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb);
 
@@ -69,8 +69,6 @@ typedef struct
     u8 substeps;
     float sub_dt;
 } SubstepData;
-
-void Physx_Init(World *world);
 
 // Per-entity substep count based on speed
 SubstepData substep_get(CompBody *body, float fdt);

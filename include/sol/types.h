@@ -252,3 +252,10 @@ typedef struct SolCollision
     int id;
     vec3s pos, normal, vel;
 } SolCollision;
+
+typedef struct SolLine
+{
+    vec3s a, b;
+    vec3s aColor, bColor;
+    float ttl;
+} SolLine;

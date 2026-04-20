@@ -59,6 +59,11 @@ static void LocalActions(World *world, double dt)
     controller->yaw = localController.yaw;
     controller->pitch = localController.pitch;
 
+    if (SolInput_GetMouse().buttons[SOL_MOUSE_LEFT])
+        controller->actionState |= ACTION_ATTACK;
+    else
+        controller->actionState &= ~ACTION_ATTACK;
+
     if (SolInput_KeyDown(SOL_KEY_W))
         controller->actionState |= ACTION_FWD;
     else

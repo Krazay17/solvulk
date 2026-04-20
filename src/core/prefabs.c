@@ -21,6 +21,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     model->gpuHandle = SOL_MODEL_WIZARD;
     model->yOffset = -height * 0.5f;
 
+    CompCombat *combat = Sol_Add_Combat(world, id);
+
     return id;
 }
 

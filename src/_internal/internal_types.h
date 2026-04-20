@@ -124,34 +124,3 @@ typedef struct WorldSpatial
     SolTri *tris_dynamic;
     int tris_dynamic_count;
 } WorldSpatial;
-
-typedef struct World
-{
-    bool worldActive;
-    SystemFunc stepSystems[MAX_SYSTEMS];
-    int stepCount;
-    SystemFunc tickSystems[MAX_SYSTEMS];
-    int tickCount;
-    SystemFunc drawSystems[MAX_SYSTEMS];
-    int drawCount;
-
-    WorldSpatial spatial;
-    WorldLines lines;
-
-    int playerID;
-    int activeEntities[MAX_ENTS];
-    int activeCount;
-
-    Active actives[MAX_ENTS];
-    Mask masks[MAX_ENTS];
-
-    CompXform xforms[MAX_ENTS];
-    CompBody bodies[MAX_ENTS];
-    CompShape shapes[MAX_ENTS];
-    CompModel models[MAX_ENTS];
-    CompInteractable interactables[MAX_ENTS];
-    CompInfo infos[MAX_ENTS];
-    CompUiElement uiElements[MAX_ENTS];
-    CompMovement movements[MAX_ENTS];
-    CompController controllers[MAX_ENTS];
-} World;

@@ -33,16 +33,10 @@
 #define FLOATING_EPSILON 1e-7f
 
 // Forwards
-typedef struct World World;
+
 typedef struct SolState SolState;
 typedef struct SolModel SolModel;
 typedef struct SolCamera SolCamera;
-
-// Defs
-typedef void (*SystemFunc)(World *world, double dt, double time);
-typedef void (*InteractCallback)(void *data);
-typedef bool Active;
-typedef uint32_t Mask;
 
 // Enums
 typedef enum
@@ -54,6 +48,7 @@ typedef enum
     ACTION_RIGHT = (1 << 3),
     ACTION_JUMP = (1 << 4),
     ACTION_DASH = (1 << 5),
+    ACTION_ATTACK = (1 << 6),
 } PlayerActionStates;
 
 typedef enum
@@ -128,31 +123,6 @@ typedef enum
     SOL_MOUSE_COUNT
 } SolMouseButton;
 
-typedef enum
-{
-    SYSTEM_STEP,
-    SYSTEM_TICK,
-    SYSTEM_DRAW,
-} SystemKind;
-
-// clang-format off
-typedef enum
-{
-    HAS_NONE                =   0,
-    HAS_XFORM               =   (1 << 0),
-    HAS_BODY2               =   (1 << 1),
-    HAS_BODY3               =   (1 << 2),
-    HAS_SHAPE               =   (1 << 4),
-    HAS_INTERACT            =   (1 << 5),
-    HAS_MODEL               =   (1 << 6),
-    HAS_INFO                =   (1 << 7),
-    HAS_UI_ELEMENT          =   (1 << 8),
-    HAS_MOVEMENT            =   (1 << 9),
-    HAS_CONTROLLER          =   (1 << 10),
-    HAS_CAMERA              =   (1 << 11),
-    HAS_CONTROLLER_AI       =   (1 << 12),
-} CompBits;
-// clang-format on
 
 typedef enum Shape3
 {

@@ -1,11 +1,11 @@
 #include "sol_core.h"
 
-void Sol_World_Line_Add(World *world, vec3s a, vec3s b, vec3s color, float ttl)
+void Sol_World_Line_Add(World *world, vec3s a, vec3s b, vec3s color, vec3s bColor, float ttl)
 {
     WorldLines *lines = &world->lines;
     if (lines->count >= MAX_WORLD_LINES)
         return;
-    lines->lines[lines->count++] = (SolLine){a, b, color, ttl};
+    lines->lines[lines->count++] = (SolLine){a, b, color, bColor, ttl};
 }
 
 void Sol_System_Line_Tick(World *world, double dt, double time)
@@ -15,7 +15,7 @@ void Sol_System_Line_Tick(World *world, double dt, double time)
     for (int i = 0; i < lines->count; i++)
     {
         lines->lines[i].ttl -= (float)dt;
-        if (lines->lines[i].ttl > 0)
+        if (lines->lines[i].ttl >= 0)
             lines->lines[write++] = lines->lines[i];
     }
     lines->count = write;

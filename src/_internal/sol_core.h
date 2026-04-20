@@ -49,6 +49,8 @@ SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
+SOLAPI void Sol_System_Line_Tick(World *world, double dt, double time);
+SOLAPI void System_Combat_Tick(World *world, double dt, double time);
 // Draw Systems
 SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Draw(World *world, double dt, double time);

@@ -38,8 +38,10 @@ World *World_Create_Default(void)
             Sol_System_Interact_Ui,
             Sol_System_Info_Tick,
             Sol_System_Camera_Tick,
+            System_Combat_Tick,
+            Sol_System_Line_Tick,
         };
-        int tickSystemCount = 5;
+        int tickSystemCount = 7;
         world->tickCount = tickSystemCount;
         memcpy(world->tickSystems, tickSystemInit, sizeof(SystemFunc) * tickSystemCount);
 

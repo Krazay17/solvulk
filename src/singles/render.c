@@ -18,8 +18,10 @@ static SolDescriptorBuffer sceneUBO;
 static SolPipeModel pipeModel;
 static SolPipeRect pipeRect;
 static SolPipeText pipeText;
-static SolPipeRay pipeRay;
 static SolGpuModel gpuModels[MAX_GPU_MODELS];
+
+static SolPipeRay pipeRay;
+static SolFrameBuffer lineBuffer;
 
 static VkPipeline currentBoundPipeline = VK_NULL_HANDLE;
 
@@ -183,6 +185,7 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
         .pushRangeSize = sizeof(SolMaterial),
         .pushStageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .type = VERTEX_TRI,
     };
 
     if (Sol_BuildPipeline(vkstate, &meshConfig, meshLayouts, 2, &pipeModel.pipe) != 0)
@@ -206,11 +209,13 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
     SolPipelineConfig lineConfig = {
         .vertResource = "ID_SHADER_LINEV",
         .fragResource = "ID_SHADER_LINEF",
-        .depthTest = 0,
+        .depthTest = 1,
         .alphaBlend = 1,
         .cullMode = VK_CULL_MODE_NONE,
-        .pushRangeSize = sizeof(float) * 32,
-        .pushStageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .pushRangeSize = 0,
+        .pushStageFlags = 0,
+        .type = VERTEX_LINE,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
     };
 
     VkDescriptorSetLayout lineLayouts[] = {
@@ -219,6 +224,11 @@ int Sol_Pipeline_BuildAllDefault(SolVkState *vkstate)
 
     if (Sol_BuildPipeline(vkstate, &lineConfig, lineLayouts, 1, &pipeRay.pipe) != 0)
         return 1;
+
+    Sol_CreateFrameBuffer(&solvkstate,
+                          sizeof(SolLineVertex) * MAX_LINE_VERTICES,
+                          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                          &lineBuffer);
 
     return 0;
 }
@@ -283,12 +293,28 @@ void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_
 
 void Sol_Draw_Line(SolLine *lines, int count)
 {
+    if (count == 0 || count > MAX_WORLD_LINES)
+        return;
+
+    uint32_t frame = solvkstate.currentFrame;
+
+    // Expand lines (a, b, color) into vertex pairs
+    SolLineVertex *verts = (SolLineVertex *)lineBuffer.mapped[frame];
+    for (int i = 0; i < count; i++)
+    {
+        verts[i * 2 + 0] = (SolLineVertex){.pos = lines[i].a, .color = lines[i].aColor};
+        verts[i * 2 + 1] = (SolLineVertex){.pos = lines[i].b, .color = lines[i].bColor};
+    }
+
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, pipeRay.pipe.pipeline);
 
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipeRay.pipe.layout, 0, 1,
-                            &sceneUBO.sets[solvkstate.currentFrame], 0, NULL);
+                            &sceneUBO.sets[frame], 0, NULL);
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(cmd, 0, 1, &lineBuffer.buffers[frame], &offset);
 
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }

@@ -649,36 +649,41 @@ int Sol_BuildPipeline(SolVkState *vkstate,
 
     VkPipelineShaderStageCreateInfo stages[] = {vertStage, fragStage};
 
-    // binding — one buffer, per-vertex data
-    VkVertexInputBindingDescription binding = {0};
-    binding.binding = 0;
-    binding.stride = sizeof(SolVertex);
-    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    VkVertexInputBindingDescription binding = {
+        .binding = 0,
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+    VkVertexInputAttributeDescription attrs[4] = {0};
+    uint32_t attrCount = 0;
+    uint32_t bindingCount = 1;
 
-    // attributes — position, normal, uv
-    VkVertexInputAttributeDescription attrs[3] = {0};
-    attrs[0].location = 0;
-    attrs[0].binding = 0;
-    attrs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attrs[0].offset = offsetof(SolVertex, position);
-
-    attrs[1].location = 1;
-    attrs[1].binding = 0;
-    attrs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attrs[1].offset = offsetof(SolVertex, normal);
-
-    attrs[2].location = 2;
-    attrs[2].binding = 0;
-    attrs[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attrs[2].offset = offsetof(SolVertex, uv);
+    if (config->type == VERTEX_TRI)
+    {
+        binding.stride = sizeof(SolVertex);
+        attrs[0] = (VkVertexInputAttributeDescription){.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)};
+        attrs[1] = (VkVertexInputAttributeDescription){.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)};
+        attrs[2] = (VkVertexInputAttributeDescription){.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)};
+        attrCount = 3;
+    }
+    else if (config->type == VERTEX_LINE)
+    {
+        binding.stride = sizeof(SolLineVertex);
+        attrs[0] = (VkVertexInputAttributeDescription){.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolLineVertex, pos)};
+        attrs[1] = (VkVertexInputAttributeDescription){.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolLineVertex, color)};
+        attrCount = 2;
+    }
+    else
+    {
+        bindingCount = 0;
+    }
 
     // --- vertex input ---
     VkPipelineVertexInputStateCreateInfo vertexInput = {0};
     vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInput.vertexBindingDescriptionCount = 1;
-    vertexInput.pVertexBindingDescriptions = &binding;
-    vertexInput.vertexAttributeDescriptionCount = 3;
-    vertexInput.pVertexAttributeDescriptions = attrs;
+    vertexInput.vertexBindingDescriptionCount = bindingCount;
+    vertexInput.pVertexBindingDescriptions = bindingCount ? &binding : NULL;
+    vertexInput.vertexAttributeDescriptionCount = attrCount;
+    vertexInput.pVertexAttributeDescriptions = attrCount ? attrs : NULL;
 
     // --- input assembly (what shape to draw) ---
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
@@ -735,7 +740,7 @@ int Sol_BuildPipeline(SolVkState *vkstate,
     dynamicState.pDynamicStates = dynamicStates;
 
     VkPushConstantRange pushRange = {0};
-    pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushRange.stageFlags = config->pushStageFlags;
     pushRange.offset = 0;
     pushRange.size = config->pushRangeSize;
 
@@ -996,6 +1001,23 @@ int SolCreateBuffer(SolVkState *vkstate,
     }
 
     vkBindBufferMemory(vkstate->device, *outBuffer, *outMemory, 0);
+    return 0;
+}
+
+int Sol_CreateFrameBuffer(SolVkState *vkstate,
+                          VkDeviceSize size,
+                          VkBufferUsageFlags usage,
+                          SolFrameBuffer *out)
+{
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        if (SolCreateBuffer(vkstate, size, usage,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            &out->buffers[i], &out->memory[i]) != 0)
+            return 1;
+
+        vkMapMemory(vkstate->device, out->memory[i], 0, VK_WHOLE_SIZE, 0, &out->mapped[i]);
+    }
     return 0;
 }
 
@@ -1286,5 +1308,3 @@ int Sol_UploadImage(SolVkState *vkstate,
 
     return 0;
 }
-
-

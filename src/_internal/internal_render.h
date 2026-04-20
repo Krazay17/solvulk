@@ -3,10 +3,16 @@
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
-
+#define MAX_LINE_VERTICES 0xffff
 
 // ─── Reusable resource types ─────────────────────────────────────
 
+typedef struct
+{
+    VkBuffer buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
+    void *mapped[MAX_FRAMES_IN_FLIGHT];
+} SolFrameBuffer;
 
 typedef struct
 {
@@ -33,7 +39,7 @@ typedef struct
     VkSampler sampler;
 } SolGpuImage;
 
-// ─── GPU model data ──────────────────────────────────────────────
+// ─── GPU data ──────────────────────────────────────────────
 
 typedef struct
 {
@@ -50,6 +56,11 @@ typedef struct
     SolGpuMesh *meshes;
     u32 mesh_count;
 } SolGpuModel;
+
+typedef struct SolLineVertex
+{
+    vec3s pos, color;
+}SolLineVertex;
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
@@ -128,11 +139,16 @@ typedef struct
 } SolPipeText;
 
 // ─── Pipeline build configs ──────────────────────────────────────
-
+typedef enum
+{
+    VERTEX_TRI,
+    VERTEX_LINE,
+} VertexType;
 typedef struct
 {
     const char *vertResource;
     const char *fragResource;
+    VertexType type;
     int depthTest;
     int alphaBlend;
     VkCullModeFlags cullMode;

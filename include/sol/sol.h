@@ -5,9 +5,6 @@
 
 #define SOL_VERSION 1.0
 
-#define MAX_WORLDS 4
-#define MAX_ENTS 50000
-#define MAX_SYSTEMS 64
 
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SOL_PHYS_SUBSTEP 4

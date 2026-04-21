@@ -13,6 +13,8 @@ void Sol_Init(void *hwnd, void *hInstance)
     int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
     Sol_Loader_LoadModels();
+
+    solState.debug = true;
 }
 
 SolState *Sol_GetState()
@@ -37,10 +39,10 @@ void Sol_Tick(double dt, double time)
         Sol_OnResize();
 
     for (int i = 0; i < solState.worldCount; ++i)
-        World_Tick(solState.worlds[i], dt, time);
+        Sol_System_Xform_Snapshot(solState.worlds[i]);
 
     for (int i = 0; i < solState.worldCount; ++i)
-        Sol_System_Xform_Snapshot(solState.worlds[i]);
+        World_Tick(solState.worlds[i], dt, time);
 
     accumulator = accumulator > SOL_TIMESTEP * 3 ? SOL_TIMESTEP * 3 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
@@ -48,6 +50,7 @@ void Sol_Tick(double dt, double time)
         accumulator -= SOL_TIMESTEP;
         solState.stepCount++;
         Sol_Debug_Add("StepCount", solState.stepCount);
+
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], SOL_TIMESTEP, time);
     }
@@ -56,7 +59,7 @@ void Sol_Tick(double dt, double time)
         Sol_System_Xform_Interpolate(solState.worlds[i], alpha);
 
     Sol_Begin_Draw();
-    
+
     Sol_Begin_3D();
 
     for (int i = solState.worldCount - 1; i >= 0; --i)

@@ -2,7 +2,7 @@
 
 #include "sol/types.h"
 
-#define MAX_WORLD_LINES 0xffff
+#define MAX_WORLD_LINES 0xffffff
 
 
 typedef struct WorldLines

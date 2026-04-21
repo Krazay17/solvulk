@@ -187,7 +187,6 @@ typedef struct World
 
 SOLAPI World *World_Create(void);
 SOLAPI World *World_Create_Default(void);
-SOLAPI World *World_Create_Defaults(void);
 SOLAPI void World_Destroy(World *world);
 void World_System_Add(World *world, WorldSystems system);
 SOLAPI int Sol_World_GetEntCount(World *world);

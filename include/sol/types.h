@@ -36,7 +36,6 @@
 #define MAX_QUEUE_FAMILIES 16
 #define MAX_MODEL_INSTANCES 500000
 
-
 // Forwards
 
 typedef struct SolState SolState;
@@ -128,7 +127,6 @@ typedef enum
     SOL_MOUSE_COUNT
 } SolMouseButton;
 
-
 typedef enum Shape3
 {
     SHAPE3_SPH,
@@ -184,12 +182,17 @@ typedef struct SolMouse
 
 typedef struct SolRay
 {
-    bool hit;
-    vec3s pos, normal;
-    float distance;
-    u32 triIdx;
+    vec3s pos, dir;
+    float dist;
 } SolRay;
 
+typedef struct SolRayResult
+{
+    bool hit;
+    vec3s pos, norm;
+    float dist;
+    u32 triIndex;
+} SolRayResult;
 
 typedef struct SolCamera
 {

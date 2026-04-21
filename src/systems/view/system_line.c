@@ -21,7 +21,9 @@ void Sol_System_Line_Tick(World *world, double dt, double time)
     {
         lines->lines[i].ttl -= (float)dt;
         if (lines->lines[i].ttl >= 0)
+        {
             lines->lines[write++] = lines->lines[i];
+        }
     }
     lines->count = write;
 }

@@ -14,9 +14,9 @@ void Sol_System_Xform_Snapshot(World *world)
         }
     }
     CompXform *playerXform = &world->xforms[world->playerID];
-    Sol_Debug_Add("X",playerXform->pos.x);
-    Sol_Debug_Add("Y",playerXform->pos.y);
-    Sol_Debug_Add("Z",playerXform->pos.z);
+    Sol_Debug_Add("X", playerXform->pos.x);
+    Sol_Debug_Add("Y", playerXform->pos.y);
+    Sol_Debug_Add("Z", playerXform->pos.z);
 }
 
 // system_xform.c
@@ -24,7 +24,6 @@ void Sol_System_Xform_Interpolate(World *world, float alpha)
 {
     int i;
     int count = world->activeCount;
-#pragma omp parallel for if (count > 1000) schedule(guided)
     for (i = 0; i < count; ++i)
     {
         int id = world->activeEntities[i];
@@ -32,10 +31,7 @@ void Sol_System_Xform_Interpolate(World *world, float alpha)
         {
             CompXform *xf = &world->xforms[id];
 
-            // Branchless lerp
-            xf->drawPos.x = xf->lastPos.x + (xf->pos.x - xf->lastPos.x) * alpha;
-            xf->drawPos.y = xf->lastPos.y + (xf->pos.y - xf->lastPos.y) * alpha;
-            xf->drawPos.z = xf->lastPos.z + (xf->pos.z - xf->lastPos.z) * alpha;
+            xf->drawPos = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
 
             xf->drawQuat = glms_quat_slerp(xf->lastQuat, xf->quat, alpha);
 

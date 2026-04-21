@@ -30,7 +30,6 @@ void Physx_Init(World *world)
     SpatialTable_Init(&world->spatial->table_static, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES);
 }
 
-
 CompBody *Entity_Add_Body2(World *world, int id)
 {
     world->masks[id] |= HAS_BODY2;
@@ -45,7 +44,7 @@ CompBody *Entity_Add_Body3(World *world, int id, CompBody init_body)
     body.length = body.length ? body.length : 0.5f;
     body.invMass = body.mass > 0 ? 1.0f / body.mass : 0;
 
-    if(body.shape == SHAPE3_MOD && body.mass == 0)
+    if (body.shape == SHAPE3_MOD && body.mass == 0)
     {
         spatial_static_add_model(world->spatial, world->models[id].model, &world->xforms[id]);
     }
@@ -263,28 +262,43 @@ void collisions_hash_dynamic(World *world, int id, CompBody *body, CompXform *xf
     }
 }
 
-SolRay Sol_Raycast(WorldSpatial *ws, vec3s origin, vec3s dir, float maxDist)
+SolRayResult Sol_RaycastD(World *world, SolRay ray)
 {
-    SolRay result = {0};
+    SolRayResult result = Sol_Raycast(world, ray);
+    Sol_World_Line_Add(world, ray.pos, result.pos, (vec3s){1, 0, 0}, (vec3s){1, 0, 0}, 5.0f);
+    if (result.hit)
+        Sol_World_Line_Add(world, result.pos,
+                           glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+                           (vec3s){0, 1, 0}, (vec3s){0, 1, 0},
+                           5.0f);
+    return result;
+}
 
-    result.distance = maxDist;
+SolRayResult Sol_Raycast(World *world, SolRay ray)
+{
+    vec3s pos = ray.pos;
+    vec3s dir = ray.dir;
+    float dist = ray.dist;
+
+    SolRayResult result = {.dist = dist, .pos = glms_vec3_add(pos, glms_vec3_scale(dir, dist))};
+    WorldSpatial *ws = world->spatial;
     SpatialGrid *grid = &ws->grid_static;
+    bool debug = Sol_GetState()->debug;
 
     if (!grid->offsets)
         return result;
 
-    // Normalize direction (algorithm assumes unit length for clean tDelta)
     float dirLen = glms_vec3_norm(dir);
     if (dirLen < FLOATING_EPSILON)
         return result;
     dir = glms_vec3_scale(dir, 1.0f / dirLen);
 
     // Current cell
-    int ix = (int)floorf((origin.x - grid->min.x) / grid->cellSize);
-    int iy = (int)floorf((origin.y - grid->min.y) / grid->cellSize);
-    int iz = (int)floorf((origin.z - grid->min.z) / grid->cellSize);
+    int ix = (int)floorf((pos.x - grid->min.x) / grid->cellSize);
+    int iy = (int)floorf((pos.y - grid->min.y) / grid->cellSize);
+    int iz = (int)floorf((pos.z - grid->min.z) / grid->cellSize);
 
-    // If origin is outside grid, reject (or you could march the ray forward to grid entry — skipping that for simplicity)
+    // If pos is outside grid, reject (or you could march the forward to grid entry — skipping that for simplicity)
     if (ix < 0 || ix >= grid->dims.x ||
         iy < 0 || iy >= grid->dims.y ||
         iz < 0 || iz >= grid->dims.z)
@@ -301,17 +315,17 @@ SolRay Sol_Raycast(WorldSpatial *ws, vec3s origin, vec3s dir, float maxDist)
     float nextY = grid->min.y + (iy + (stepY > 0 ? 1 : 0)) * grid->cellSize;
     float nextZ = grid->min.z + (iz + (stepZ > 0 ? 1 : 0)) * grid->cellSize;
 
-    // t values where ray reaches those boundaries
-    float tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - origin.x) / dir.x : INFINITY;
-    float tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - origin.y) / dir.y : INFINITY;
-    float tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - origin.z) / dir.z : INFINITY;
+    // t values where reaches those boundaries
+    float tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - pos.x) / dir.x : INFINITY;
+    float tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - pos.y) / dir.y : INFINITY;
+    float tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - pos.z) / dir.z : INFINITY;
 
-    // t distance per cell along each axis
+    // t hitDist per cell along each axis
     float tDeltaX = (fabsf(dir.x) > 1e-8f) ? grid->cellSize / fabsf(dir.x) : INFINITY;
     float tDeltaY = (fabsf(dir.y) > 1e-8f) ? grid->cellSize / fabsf(dir.y) : INFINITY;
     float tDeltaZ = (fabsf(dir.z) > 1e-8f) ? grid->cellSize / fabsf(dir.z) : INFINITY;
 
-    float closestT = maxDist;
+    float closestT = dist;
 
     while (1)
     {
@@ -320,29 +334,29 @@ SolRay Sol_Raycast(WorldSpatial *ws, vec3s origin, vec3s dir, float maxDist)
         u32 start = grid->offsets[cellIdx];
         u32 end = grid->offsets[cellIdx + 1];
 
-        // The distance along the ray at which we leave this cell
+        // The hitDist along the ray at which we leave this cell
         float tCellExit = fminf(tMaxX, fminf(tMaxY, tMaxZ));
 
         for (u32 e = start; e < end; e++)
         {
             SolTri *tri = &ws->tris_static[grid->tris[e]];
             vec3s normal;
-            float t = Ray_Tri_Test(origin, dir, tri, &normal);
+            float t = Ray_Tri_Test(pos, dir, tri, &normal);
 
             if (t > 0 && t < closestT)
             {
                 closestT = t;
                 result.hit = true;
-                result.distance = t;
-                result.normal = normal;
-                result.triIdx = grid->tris[e];
-                result.pos = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+                result.dist = t;
+                result.norm = normal;
+                result.triIndex = grid->tris[e];
+                result.pos = glms_vec3_add(pos, glms_vec3_scale(dir, t));
             }
         }
 
         // If we found a hit within this cell's span, it's the nearest
         if (result.hit && closestT <= tCellExit)
-            return result;
+            break;
 
         // Advance to next cell along the axis with smallest tMax
         if (tMaxX < tMaxY && tMaxX < tMaxZ)
@@ -361,8 +375,8 @@ SolRay Sol_Raycast(WorldSpatial *ws, vec3s origin, vec3s dir, float maxDist)
             tMaxZ += tDeltaZ;
         }
 
-        // Past max distance?
-        if (fminf(tMaxX, fminf(tMaxY, tMaxZ)) > maxDist)
+        // Past max hitDist?
+        if (fminf(tMaxX, fminf(tMaxY, tMaxZ)) > result.dist)
             break;
 
         // Exited grid bounds?
@@ -839,7 +853,7 @@ SolCollision collide_capsule_tri(CompBody *body, CompXform *xform, SolTri *tri)
     vec3s seg = glms_vec3_sub(b, a);
 
     // Get closest point on triangle to several points along the segment
-    // and find which gives minimum distance
+    // and find which gives minimum hitDist
     vec3s bestCapsulePoint = a;
     vec3s bestTriPoint = ClosestPointOnTriangle(a, tri->a, tri->b, tri->c);
     float bestDistSq = glms_vec3_norm2(glms_vec3_sub(a, bestTriPoint));

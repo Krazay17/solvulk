@@ -88,7 +88,6 @@ void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws, 
 void collisions_hash_dynamic(World *world, int id, CompBody *body, CompXform *xform);
 
 float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
-SolRay Sol_Raycast(WorldSpatial *ws, vec3s pos, vec3s dir, float dist);
 
 SolCollision collide_y0(CompXform *xform, CompBody *body);
 SolCollision collide_sphere_tri(CompBody *body, CompXform *xform, SolTri *tri);

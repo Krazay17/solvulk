@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
-#define MAX_LINE_VERTICES 0xffff
+#define MAX_LINE_VERTICES 0xffffff
 
 // ─── Reusable resource types ─────────────────────────────────────
 

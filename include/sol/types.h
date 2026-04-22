@@ -96,6 +96,13 @@ typedef enum
 
 typedef enum
 {
+    COMBAT_IDLE,
+    COMBAT_CHARGING,
+    COMBAT_ATTACKING,
+} CombatState;
+
+typedef enum
+{
     SOL_FONT_ICE,
     SOL_FONT_COUNT,
 } SolFontId;

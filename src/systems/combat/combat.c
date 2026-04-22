@@ -1,16 +1,19 @@
 #include "sol_core.h"
 #include <cglm/struct.h>
 
-static SolRay rayTest;
-
-CompCombat *Sol_Add_Combat(World *world, int id)
+void Combat_Init(World *world)
 {
+
+}
+
+CompCombat * Sol_Combat_Add(World *world, int id, CompCombat combat)
+{
+    world->combats[id] = combat;
     world->masks[id] |= HAS_COMBAT;
-    world->combats[id] = (CompCombat){0};
     return &world->combats[id];
 }
 
-void System_Combat_Tick(World *world, double dt, double time)
+void Combat_Tick(World *world, double dt, double time)
 {
     int required = HAS_COMBAT;
     int count = world->activeCount;

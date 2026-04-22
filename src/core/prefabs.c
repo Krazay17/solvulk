@@ -7,7 +7,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
 
     CompXform *xform = Entity_Add_Xform(world, id, pos);
 
-    Entity_Add_Body3(world, id, (CompBody){
+    Sol_Physx_Add(world, id, (CompBody){
                                     .height = height,
                                     .radius = 0.5f,
                                     .mass = 1.0f,
@@ -21,7 +21,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     model->gpuHandle = SOL_MODEL_WIZARD;
     model->yOffset = -height * 0.5f;
 
-    CompCombat *combat = Sol_Add_Combat(world, id);
+    CompCombat *combat = Sol_Combat_Add(world, id, (CompCombat){0});
 
     return id;
 }

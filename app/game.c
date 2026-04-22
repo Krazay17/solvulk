@@ -53,7 +53,7 @@ void Create_Sol_Game()
     int floor = Entity_Create(game);
     CompXform *floorXform = Entity_Add_Xform(game, floor, (vec3s){0, 0, 0});
     CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD1);
-    CompBody *floorBody = Entity_Add_Body3(game, floor, (CompBody){.shape = SHAPE3_MOD});
+    CompBody *floorBody = Sol_Physx_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
 }
 
 void MakeAWizard(void *data)

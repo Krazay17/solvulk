@@ -12,6 +12,7 @@
 
 #include "systems/physx/physx_i.h"
 #include "systems/view/view_i.h"
+#include "systems/combat/combat_i.h"
 
 typedef struct SolState
 {

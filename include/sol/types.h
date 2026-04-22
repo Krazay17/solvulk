@@ -222,6 +222,8 @@ typedef struct SolVertex
 typedef struct SolTri
 {
     vec3s a, b, c;
+    vec3s normal, center;
+    float bounds;
 } SolTri;
 
 typedef struct SolMaterial
@@ -251,6 +253,7 @@ typedef struct SolModel
     u32 mesh_count;
     u32 tri_count;
     u32 indice_count;
+    SolModelId modelId;
 } SolModel;
 
 typedef struct SolCollision

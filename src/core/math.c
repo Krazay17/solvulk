@@ -2,73 +2,68 @@
 
 #include "sol_core.h"
 
-vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c)
+vec3s ClosestPointOnTriangle(const vec3s p, const vec3s a, const vec3s b, const vec3s c)
 {
-    vec3s ab = glms_vec3_sub(b, a);
-    vec3s ac = glms_vec3_sub(c, a);
-    vec3s ap = glms_vec3_sub(p, a);
+    const vec3s ab = glms_vec3_sub(b, a);
+    const vec3s ac = glms_vec3_sub(c, a);
+    const vec3s ap = glms_vec3_sub(p, a);
 
-    float d1 = glms_vec3_dot(ab, ap);
-    float d2 = glms_vec3_dot(ac, ap);
+    const float d1 = glms_vec3_dot(ab, ap);
+    const float d2 = glms_vec3_dot(ac, ap);
     if (d1 <= 0.0f && d2 <= 0.0f)
         return a;
 
-    vec3s bp = glms_vec3_sub(p, b);
-    float d3 = glms_vec3_dot(ab, bp);
-    float d4 = glms_vec3_dot(ac, bp);
+    const vec3s bp = glms_vec3_sub(p, b);
+    const float d3 = glms_vec3_dot(ab, bp);
+    const float d4 = glms_vec3_dot(ac, bp);
     if (d3 >= 0.0f && d4 <= d3)
         return b;
 
-    vec3s cp = glms_vec3_sub(p, c);
-    float d5 = glms_vec3_dot(ab, cp);
-    float d6 = glms_vec3_dot(ac, cp);
+    const vec3s cp = glms_vec3_sub(p, c);
+    const float d5 = glms_vec3_dot(ab, cp);
+    const float d6 = glms_vec3_dot(ac, cp);
     if (d6 >= 0.0f && d5 <= d6)
         return c;
 
     float vc = d1 * d4 - d3 * d2;
     if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
     {
-        float v = d1 / (d1 - d3);
+        const float v = d1 / (d1 - d3);
         return glms_vec3_add(a, glms_vec3_scale(ab, v));
     }
 
     float vb = d5 * d2 - d1 * d6;
     if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
     {
-        float w = d2 / (d2 - d6);
+        const float w = d2 / (d2 - d6);
         return glms_vec3_add(a, glms_vec3_scale(ac, w));
     }
 
     float va = d3 * d6 - d5 * d4;
     if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
     {
-        float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+        const float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
         return glms_vec3_add(b, glms_vec3_scale(glms_vec3_sub(c, b), w));
     }
 
-    float denom = va + vb + vc;
-    if (denom <= 1e-8f)
+    const float denom = va + vb + vc;
+    if (denom < FLOATING_EPSILON)
         return a;
 
-    float inv = 1.0f / denom;
-    float v = vb * inv;
-    float w = vc * inv;
+    const float inv = 1.0f / denom;
+    const float v   = vb * inv;
+    const float w   = vc * inv;
     return glms_vec3_add(a, glms_vec3_add(glms_vec3_scale(ab, v), glms_vec3_scale(ac, w)));
 }
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b)
 {
-    return !((a.x < b.x) |
-             (a.x >= b.x + b.z) |
-             (a.y < b.y) |
-             (a.y >= b.y + b.w));
+    return !((a.x < b.x) | (a.x >= b.x + b.z) | (a.y < b.y) | (a.y >= b.y + b.w));
 }
 
 SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b)
 {
-    return (SolVec3){a.x + b.x,
-                     a.y + b.y,
-                     a.z + b.z};
+    return (SolVec3){a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
 float Sol_Lerp(float start, float end, float amount)
@@ -123,7 +118,7 @@ versors Sol_Quat_FromYawPitch(float yaw, float pitch)
 versors Sol_Quat_FromLookDir(vec3s lookDir)
 {
     // Flatten to horizontal for yaw, then get pitch from vertical component
-    float yaw = atan2f(lookDir.x, lookDir.z);
+    float yaw   = atan2f(lookDir.x, lookDir.z);
     float pitch = asinf(lookDir.y);
 
     return Sol_Quat_FromYawPitch(yaw, -pitch);
@@ -132,7 +127,7 @@ versors Sol_Quat_FromLookDir(vec3s lookDir)
 versors Sol_Quat_FromLookDira(vec3s lookDir)
 {
     vec3s forward = {0.0f, 0.0f, 1.0f};
-    vec3s dir = glms_vec3_normalize(lookDir);
+    vec3s dir     = glms_vec3_normalize(lookDir);
 
     float dot = glms_vec3_dot(forward, dir);
 
@@ -144,7 +139,7 @@ versors Sol_Quat_FromLookDira(vec3s lookDir)
     if (dot < -0.9999f)
         return (versors){0, 1, 0, 0}; // 180° around Y
 
-    vec3s axis = glms_vec3_normalize(glms_vec3_cross(forward, dir));
+    vec3s axis  = glms_vec3_normalize(glms_vec3_cross(forward, dir));
     float angle = acosf(dot);
 
     versor q;

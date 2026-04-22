@@ -61,8 +61,8 @@ void MakeAWizard(void *data)
     static int posInc;
     World *world = (World *)data;
     double time = Sol_GetGameTime();
-    double epsilonA = sin(time) * 10.0;
-    double epsilonB = cos(time) * 10.0 + 25.0;
+    double epsilonA = sin(time) * 100.0;
+    double epsilonB = cos(time) * 100.0 + 25.0;
     for (int i = 0; i < 10; i++)
     {
         int wiz = Sol_Prefab_Wizard(world, (vec3s){

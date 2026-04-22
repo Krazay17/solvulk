@@ -18,7 +18,6 @@ typedef uint32_t Mask;
 // fwds
 typedef struct WorldSpatial WorldSpatial;
 typedef struct WorldLines   WorldLines;
-typedef struct WorldTris    WorldTris;
 
 typedef enum {
   WORLD_SYS_PHYSX,
@@ -144,7 +143,6 @@ typedef struct World {
 
   WorldSpatial *spatial;
   WorldLines   *lines;
-  WorldTris    *tris;
 
   int playerID;
   int activeEntities[MAX_ENTS];
@@ -211,7 +209,7 @@ SOLAPI void Lines_Init(World *world);
 SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
-SOLAPI void Sol_System_Step_Physx_3d(World *world, double dt, double time);
+SOLAPI void Physx_Step(World *world, double dt, double time);
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
@@ -236,7 +234,7 @@ SOLAPI void Sol_Draw_Text(const char *str, float x, float y, float size,
                           SolColor color);
 
 static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
-    [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Sol_System_Step_Physx_3d},
+    [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Physx_Step},
     [WORLD_SYS_CAM]   = {.tick = Sol_System_Camera_Tick},
     [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
     [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},

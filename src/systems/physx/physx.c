@@ -14,7 +14,7 @@ void Physx_Init(World *world) {
                     SPATIAL_DYNAMIC_ENTRIES);
   SpatialTable_Init(&world->spatial->table_static, SPATIAL_STATIC_SIZE,
                     SPATIAL_STATIC_ENTRIES);
-  world->tris = malloc(sizeof(WorldTris));
+  world->tris = calloc(1, sizeof(WorldTris));
 }
 
 CompBody *Entity_Add_Body2(World *world, int id) {
@@ -33,9 +33,11 @@ CompBody *Sol_Physx_Add(World *world, int id, CompBody init_body) {
     if (body.mass == 0) {
       spatial_static_add_model(world->spatial, world->models[id].model,
                                &world->xforms[id]);
-      Physx_Tris_Add(world, world->models[id].model, &world->xforms[id], false);
+      Physx_Tris_Add_Static(&world->tris->triStatic, world->models[id].model,
+                     &world->xforms[id]);
     } else {
-      Physx_Tris_Add(world, world->models[id].model, &world->xforms[id], true);
+      Physx_Tris_Add_Dynamic(&world->tris->triDynamic, world->models[id].model,
+                     &world->xforms[id]);
     }
   }
 

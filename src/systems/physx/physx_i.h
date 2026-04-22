@@ -19,17 +19,18 @@
 
 typedef struct CompBody  CompBody;
 typedef struct CompXform CompXform;
+typedef struct CollisionTri CollisionTri;
 typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform,
-                                        SolTri *tri);
+                                        CollisionTri *tri);
 typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab,
                                          CompBody *ba, CompXform *bb);
 
-typedef struct CollisionTri {
+struct CollisionTri {
   vec3s a, b, c;
-  vec3s normal;
+  vec3s normal, center;
   float bounds;
   u32   index;
-} CollisionTri;
+};
 
 typedef struct {
   u32 entity_id;
@@ -37,14 +38,22 @@ typedef struct {
   u32 count; // number of tris
 } DynamicTriRange;
 
-typedef struct WorldTris {
-  CollisionTri *static_tris; // pre-transformed, world space
-  u32           static_count;
+typedef struct {
+  CollisionTri *tris;
+  u32           count;
+  u32           capacity;
+} WorldStaticTris;
 
-  CollisionTri    *dynamic_tris; // model-local, transformed per-raycast
+typedef struct {
+  CollisionTri    *tris;
   DynamicTriRange *ranges;
-  u32              dynamic_count;
-  u32              range_count;
+  u32              count;
+  u32              capacity;
+} WorldDynamicTris;
+
+typedef struct WorldTris {
+  WorldStaticTris  triStatic;
+  WorldDynamicTris triDynamic;
 } WorldTris;
 
 typedef struct SpatialCell {
@@ -78,10 +87,10 @@ typedef struct WorldSpatial {
   SpatialGrid grid_static;
   SpatialGrid grid_dynamic;
 
-  SolTri *tris_static;
+  CollisionTri *tris_static;
   int     tris_static_count;
 
-  SolTri *tris_dynamic;
+  CollisionTri *tris_dynamic;
   int     tris_dynamic_count;
 } WorldSpatial;
 
@@ -106,8 +115,8 @@ void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max,
                              float cell_size);
 void rebuild_grid_static(WorldSpatial *ws);
 
-void Physx_Tris_Add(World *world, SolModel *model, CompXform *xform,
-                    bool dynamic);
+void Physx_Tris_Add_Static(WorldStaticTris *tris, SolModel *model, CompXform *xform);
+void Physx_Tris_Add_Dynamic(WorldDynamicTris *tris, SolModel *model, CompXform *xform);
 void Spatial_Hash_Tris(World *world);
 
 void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws,
@@ -116,12 +125,12 @@ void collisions_hash_dynamic(World *world, int id, CompBody *body,
                              CompXform *xform);
 
 void  Raycast_Tri_Dynamic(World *world, SolRay ray);
-float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
+float Ray_Tri_Test(vec3s origin, vec3s dir, CollisionTri *tri, vec3s *outNormal);
 
 SolCollision collide_y0(CompXform *xform, CompBody *body);
-SolCollision collide_sphere_tri(CompBody *body, CompXform *xform, SolTri *tri);
-SolCollision collide_capsule_tri(CompBody *body, CompXform *xform, SolTri *tri);
-SolCollision collide_box_tri(CompBody *body, CompXform *xform, SolTri *tri);
+SolCollision collide_sphere_tri(CompBody *body, CompXform *xform, CollisionTri *tri);
+SolCollision collide_capsule_tri(CompBody *body, CompXform *xform, CollisionTri *tri);
+SolCollision collide_box_tri(CompBody *body, CompXform *xform, CollisionTri *tri);
 
 SolCollision collide_sphere_sphere(CompBody *aBody, CompXform *aXform,
                                    CompBody *bBody, CompXform *bXform);

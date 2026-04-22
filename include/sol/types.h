@@ -222,9 +222,6 @@ typedef struct SolVertex
 typedef struct SolTri
 {
     vec3s a, b, c;
-    vec3s normal;
-    vec3s center;
-    float boundRadius;
 } SolTri;
 
 typedef struct SolMaterial

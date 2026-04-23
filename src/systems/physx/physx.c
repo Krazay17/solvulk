@@ -57,7 +57,7 @@ void Physx_Step(World *world, double dt, double time)
     WorldSpatial  *ws           = world->spatial;
     WorldTriGroup *staticGroup  = &ws->staticGroup;
     WorldTriGroup *dynamicGroup = &ws->dynamicGroup;
-
+    Physx_Grid_Static_Rebuild(staticGroup);
     // Filter
     for (i = 0; i < activeCount; i++)
     {
@@ -76,7 +76,6 @@ void Physx_Step(World *world, double dt, double time)
         if (body->mass == 0)
             continue;
         CompXform *xform = &world->xforms[id];
-        body->grounded   = 0;
 
         vec3s accel   = SOL_PHYS_GRAV;
         accel         = glms_vec3_add(accel, body->force);
@@ -92,12 +91,26 @@ void Physx_Step(World *world, double dt, double time)
             xform->pos       = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
             SolCollision col = Collide_Static_Hashed(staticGroup, body, xform, resolver);
         }
+        Physx_Ground_Trace(world, body, xform);
     }
 
     Prof_End(&prof_static);
     if (prof_frame++ % 200 == 0)
     {
         Prof_Print(&prof_static);
+    }
+}
+
+void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform)
+{
+    body->grounded = 0;
+    SolRayResult result =
+        Sol_RaycastD(world, (SolRay){.pos = xform->pos, .dir = (vec3s){0, -1, 0}, .dist = 1.5f}, 0.5f);
+    if (result.hit)
+    {
+        if (result.norm.y > 0.5f)
+            body->grounded = 1;
+        Sol_Debug_Add("TraceHit", result.dist);
     }
 }
 
@@ -111,14 +124,11 @@ SolCollision Collide_Static_Hashed(WorldTriGroup *group, CompBody *body, CompXfo
         u32 entry = group->table.head[cell.neighborHashes[c] & (group->table.size - 1)];
         while (entry != SPATIAL_NULL)
         {
-            if (checks > 0xff)
+            if (checks > 0x1ff)
                 break;
             SolTri *tri = &group->tris[group->table.value[entry]];
             col         = resolver(body, xform, tri);
-            if (col.didCollide && col.normal.y > 0.5f)
-                body->grounded = 1;
-
-            entry = group->table.next[entry];
+            entry       = group->table.next[entry];
         }
     }
     return col;
@@ -144,7 +154,7 @@ SolCollision Collide_Static_Hashed(WorldTriGroup *group, CompBody *body, CompXfo
 //     ents[count++] = id;
 //   }
 
-//   rebuild_grid_static(ws);
+//   Physx_Grid_Static_Rebuild(ws);
 
 //   // Static resolution
 //   Prof_Begin(&prof_static);

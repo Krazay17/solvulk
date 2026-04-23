@@ -13,7 +13,7 @@
 #define SPATIAL_DYNAMIC_ENTRIES 0xFFFF
 
 #define SPATIAL_STATIC_CELL_SIZE 1.0f
-#define SPATIAL_STATIC_SIZE (1 << 22)
+#define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_MASK (SPATIAL_STATIC_SIZE - 1)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
@@ -25,8 +25,8 @@ typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *
 typedef struct
 {
     u32 entity_id;
-    u32 start; // first tri index
-    u32 count; // number of tris
+    u32 start;
+    u32 count;
 } DynamicTriRange;
 
 typedef struct
@@ -54,8 +54,8 @@ typedef struct SpatialTable
 
 typedef struct SpatialGrid
 {
-    u32   *offsets; // [cellCount + 1] — start index per cell
-    u32   *tris;    // [totalEntries] — sorted triangle indices
+    u32   *offsets;
+    u32   *tris;
     u32    build_tri_count;
     float  cellSize;
     vec3s  min;
@@ -68,25 +68,13 @@ typedef struct
     SpatialTable table;
     SpatialGrid  grid;
     SolTri      *tris;
-    u32          count;
+    u32          triCount;
 
     TriRange ranges[MAX_ENTS];
 } WorldTriGroup;
 
 typedef struct WorldSpatial
 {
-    SpatialTable table_static;
-    SpatialTable table_dynamic;
-
-    SpatialGrid grid_static;
-    SpatialGrid grid_dynamic;
-
-    SolTri *tris_static;
-    int     tris_static_count;
-
-    SolTri *tris_dynamic;
-    int     tris_dynamic_count;
-
     WorldTriGroup staticGroup;
     WorldTriGroup dynamicGroup;
 
@@ -103,6 +91,8 @@ void Spatial_Hash_Tris(WorldTriGroup *triGroup);
 
 SolCollision Collide_Static_Hashed(WorldTriGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
 
+void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform);
+
 // Per-entity substep count based on speed
 SubstepData Substep_Get(CompBody *body, float fdt);
 SpatialCell Spatial_Cell_Get(vec3s pos, float cell_size);
@@ -116,17 +106,18 @@ void SpatialTable_Compact(SpatialTable *table);
 void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform);
 void spatial_static_add_model(WorldSpatial *ws, SolModel *model, CompXform *xform);
 
-void physx_grid_build_static(WorldSpatial *ws, vec3s min, vec3s max, float cell_size);
-void rebuild_grid_static(WorldSpatial *ws);
+void Physx_Grid_Static_Build(WorldTriGroup *group, vec3s min, vec3s max, float cell_size);
+void Physx_Grid_Static_Rebuild(WorldTriGroup *group);
 
 void collisions_grid_static(CompBody *body, CompXform *xform, WorldSpatial *ws, float fdt);
 void collisions_hash_dynamic(World *world, int id, CompBody *body, CompXform *xform);
 
-void         Raycast_Tri_Dynamic(World *world, SolRay ray);
-float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
-SolCollision collide_y0(CompXform *xform, CompBody *body);
-SolCollision collide_sphere_tri(CompBody *body, CompXform *xform, SolTri *tri);
-SolCollision collide_capsule_tri(CompBody *body, CompXform *xform, SolTri *tri);
+void  Raycast_Tri_Dynamic(World *world, SolRay ray);
+float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
+
+SolCollision Collide_Y(CompXform *xform, CompBody *body);
+SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri);
+SolCollision Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri);
 SolCollision collide_box_tri(CompBody *body, CompXform *xform, SolTri *tri);
 
 SolCollision collide_sphere_sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
@@ -151,8 +142,8 @@ static inline u32 cell_index(SpatialGrid *grid, vec3s pos)
 }
 
 static ResolveShapeTri shape_tri_resolvers[SHAPE3_CNT] = {
-    [SHAPE3_SPH] = collide_sphere_tri,
-    [SHAPE3_CAP] = collide_capsule_tri,
+    [SHAPE3_SPH] = Collide_Sphere_Tri,
+    [SHAPE3_CAP] = Collide_Capsule_Tri,
     [SHAPE3_BOX] = collide_box_tri,
 };
 

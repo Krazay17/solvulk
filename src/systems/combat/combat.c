@@ -26,7 +26,7 @@ void Combat_Tick(World *world, double dt, double time)
         CompXform *xform = &world->xforms[id];
         if (controller->actionState & ACTION_ATTACK)
         {
-            SolRayResult result = Sol_RaycastD(world, (SolRay){.pos = xform->pos, .dir = controller->lookdir, .dist = 50.0f});
+            SolRayResult result = Sol_RaycastD(world, (SolRay){.pos = xform->pos, .dir = controller->lookdir, .dist = 50.0f}, 1.0f);
             Sol_Debug_Add("Ray", result.dist);
         }
     }

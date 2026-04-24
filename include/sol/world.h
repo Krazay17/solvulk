@@ -3,7 +3,7 @@
 #include "sol/types.h"
 
 #define MAX_WORLDS 4
-#define MAX_ENTS 50000
+#define MAX_ENTS (1 << 13)
 #define MAX_SYSTEMS 64
 
 #define SYS_BIT(x) (1u << (x))
@@ -30,6 +30,7 @@ typedef enum
     WORLD_SYS_MOVEMENT,
     WORLD_SYS_LINE,
     WORLD_SYS_COMBAT,
+    WORLD_SYS_DEBUFF,
     WORLD_SYS_CAM,
     WORLD_SYS_COUNT,
 } WorldSystems;
@@ -50,6 +51,8 @@ typedef enum
     HAS_CAMERA        = (1 << 11),
     HAS_CONTROLLER_AI = (1 << 12),
     HAS_COMBAT        = (1 << 13),
+    HAS_BUFF          = (1 << 14),
+    HAS_DEBUFF        = (1 << 15),
 } CompBits;
 
 typedef enum
@@ -59,10 +62,30 @@ typedef enum
     SYSTEM_DRAW,
 } SystemKind;
 
+typedef enum
+{
+    DEBUFF_KNOCKBACK = (1 << 0),
+    DEBUFF_FIRE      = (1 << 1),
+    DEBUFF_COUNT     = (1 << 2),
+} DebuffKind;
+
+typedef struct CompBuff
+{
+    float duration;
+    u32   kinds;
+} CompBuff;
+
+typedef struct CompDebuff
+{
+    float      duration;
+    DebuffKind kinds;
+    SolHit     hit;
+} CompDebuff;
+
 typedef struct CompCombat
 {
     CombatState state;
-    vec3s attackPos, attackDir;
+    vec3s       attackPos, attackDir;
 } CompCombat;
 
 typedef struct CompXform
@@ -128,10 +151,11 @@ typedef struct CompMovement
 
 typedef struct CompController
 {
-    vec3s              lookdir, wishdir;
+    vec3s              lookdir, wishdir, aimdir, aimPos, aimHitPos;
     vec2s              wishdir2;
     PlayerActionStates actionState;
     float              yaw, pitch;
+    u32                aimHitEnt;
 } CompController;
 
 typedef struct CompBody
@@ -172,6 +196,7 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
+    CompDebuff       debuffs[MAX_ENTS];
     CompXform        xforms[MAX_ENTS];
     CompBody         bodies[MAX_ENTS];
     CompShape        shapes[MAX_ENTS];
@@ -218,6 +243,7 @@ SOLAPI CompModel        *Entity_Add_Model(World *world, int id, SolModelId model
 CompBody   *Sol_Physx_Add(World *world, int id, CompBody body);
 CompCombat *Sol_Combat_Add(World *world, int id, CompCombat combat);
 CompModel  *Sol_Model_Add(World *world, int id, CompModel model);
+CompDebuff *Sol_Debuff_Add(World *world, int id, CompDebuff init);
 
 // Xform systems
 SOLAPI void Xform_Snapshot(World *world);
@@ -230,6 +256,8 @@ SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Physx_Step(World *world, double dt, double time);
+SOLAPI void Debuff_Step(World *world, double dt, double time);
+
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
@@ -249,7 +277,8 @@ SOLAPI void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, 
 SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
 SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
 SOLAPI void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);
-void Cam_Update_3D(World *world, double dt, double time, float alpha);
+void        Cam_Update_3D(World *world, double dt, double time, float alpha);
+void        Crosshair_Draw(World *world, double dt, double time);
 
 static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_PHYSX]            = {.init = Physx_Init, .step = Physx_Step},
@@ -261,4 +290,6 @@ static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
+    [WORLD_SYS_DEBUFF]           = {.step = Debuff_Step},
+    [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
 };

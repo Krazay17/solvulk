@@ -21,6 +21,26 @@ typedef struct CompXform CompXform;
 typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, SolTri *tri);
 typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb);
 
+typedef struct GridWalker
+{
+    // Walk state
+    int   ix, iy, iz;
+    int   stepX, stepY, stepZ;
+    float tMaxX, tMaxY, tMaxZ;
+    float tDeltaX, tDeltaY, tDeltaZ;
+    float tEntry; // t at entry of the cell we're about to return
+    float maxDist;
+
+    ivec3s dims;
+    bool   bounded; // if false, no dims check (infinite hash grid)
+} GridWalker;
+
+typedef struct GridCell
+{
+    int   ix, iy, iz;
+    float tEntry, tExit;
+} GridCell;
+
 typedef struct SpatialCell
 {
     int ix, iy, iz;
@@ -65,7 +85,7 @@ typedef struct PhysxGroup
     u32     triCount;
 
     PhysxEnts ents[MAX_ENTS];
-    u32        entCount;
+    u32       entCount;
 } PhysxGroup;
 
 typedef struct WorldPhysx
@@ -79,6 +99,9 @@ typedef struct
     u8    substeps;
     float sub_dt;
 } SubstepData;
+
+SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray);
+SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray);
 
 void Spatial_Add(World *world, int id, CompBody *body);
 void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform *xform, bool hash);
@@ -108,9 +131,17 @@ void SpatialTable_Compact(SpatialTable *table);
 void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform);
 void Spatial_Hash_Tris(PhysxGroup *group);
 
-void  Raycast_Tri_Dynamic(World *world, SolRay ray);
-float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
-SolRayResult Raycast_Static_Grid(PhysxGroup *group, SolRay ray);
+// SolRayResult Raycast_Dynamic_Grid_Tri(PhysxGroup *group, SolRay ray);
+// SolRayResult Raycast_Dynamic_Table_Tri(PhysxGroup *group, SolRay ray);
+// SolRayResult Raycast_Static_Table_Tri(PhysxGroup *group, SolRay ray);
+void Grid_Walker_Init(GridWalker *w, SolRay ray, SpatialGrid *grid);
+void Grid_Walker_Init_Infinite(GridWalker *w, SolRay ray, float cellSize);
+bool Grid_Walker_Next(GridWalker *w, GridCell *out);
+
+SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray);
+float        Ray_Sphere_Test(vec3s origin, vec3s dir, vec3s center, float radius, vec3s *outNormal);
+float        Ray_Capsule_Test(vec3s origin, vec3s dir, vec3s center, float radius, float height, vec3s *outNormal);
+float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
 
 SolCollision Collide_Y(CompXform *xform, CompBody *body);
 SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri);
@@ -149,4 +180,13 @@ static ResolveShapePair shape_pair_resolvers[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_CAP][SHAPE3_CAP] = collide_sphere_sphere,
     [SHAPE3_CAP][SHAPE3_SPH] = collide_sphere_sphere,
     [SHAPE3_SPH][SHAPE3_CAP] = collide_sphere_sphere,
+};
+
+typedef float (*ResolveShapeTest)(vec3s origin, vec3s dir, CompBody *body, CompXform *xform, vec3s *normal);
+
+static ResolveShapeTest shape_test_resolver[SHAPE3_CNT] = {
+    [SHAPE3_SPH] = NULL,
+    [SHAPE3_CAP] = NULL,
+    [SHAPE3_CAP] = NULL,
+    [SHAPE3_SPH] = NULL,
 };

@@ -1,7 +1,9 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#define NOGDI
+// #define NOGDI
+#include <dwmapi.h>
 #include <windows.h>
+#pragma comment(lib, "dwmapi.lib")
 #define IS_WINDOWS 1
 #else
 #define IS_WINDOWS 0
@@ -54,10 +56,18 @@ int main(int argc, char *argv[])
     wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_EX_NOREDIRECTIONBITMAP | WS_POPUP | WS_VISIBLE, 780, 0,
-                            1200, 800, NULL, NULL, hInstance, NULL);
+    g_hwnd = CreateWindowEx(WS_EX_TOPMOST, CLASS_NAME, "Sol Vulkan",
+                            WS_POPUP | WS_VISIBLE, 720, 0, 1200, 800, NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
         return 1;
+
+    MARGINS margins = {-1}; // -1 extends to the entire window
+    DwmExtendFrameIntoClientArea(g_hwnd, &margins);
+
+    // CLICKTHROUGH
+    // LONG_PTR exStyle = GetWindowLongPtr(g_hwnd, GWL_EXSTYLE);
+    // exStyle |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+    // SetWindowLongPtr(g_hwnd, GWL_EXSTYLE, exStyle);
 
     ShowWindow(g_hwnd, nShowCmd);
 
@@ -172,6 +182,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     }
+    // case WM_NCHITTEST: {
+    //     POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
+    //     ScreenToClient(hwnd, &pt);
+    //     if (pt.y < 30)
+    //         return HTCAPTION; // drag bar
+    //     // if (IsOverButton(pt))
+    //     //     return HTCLIENT;  // interactive
+    //     //return HTTRANSPARENT; // everything else: click-through
+    //     return 0;
+    // }
     case WM_SIZE:
         Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
         return 0;

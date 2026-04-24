@@ -474,7 +474,7 @@ void Sol_Begin_Draw()
                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          0, 0, NULL, 0, NULL, 1, &toRender);
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 0.0f}}};
 
     VkRenderingAttachmentInfo colorAttachment = {0};
     colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

@@ -124,7 +124,19 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
     result.pos       = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist));
     SolRayResult sub = {0};
 
-    sub = Raycast_Static_Grid(&ws->staticGroup, ray);
+    // sub = Raycast_Static_Grid_Tri(&ws->staticGroup, ray);
+    // if (sub.hit && sub.dist < result.dist)
+    //     result = sub;
+
+    // sub = Raycast_Dynamic_Table_Ent(&ws->dynamicGroup, ray);
+    // if (sub.hit && sub.dist < result.dist)
+    //     result = sub;
+
+    sub = Raycast_Static_Grid_Walk(world, ray);
+    if (sub.hit && sub.dist < result.dist)
+        result = sub;
+
+    sub = Raycast_Dynamic_Table_Walk(world, ray);
     if (sub.hit && sub.dist < result.dist)
         result = sub;
 

@@ -95,3 +95,52 @@ int required = HAS_CONTROLLER | HAS_XFORM;
             break;
         }
     }
+
+    
+SolRayResult Raycast_Static_Table_Tri(PhysxGroup *group, SolRay ray)
+{
+    SolRayResult result = {0};
+
+    int          checks = 0;
+    SpatialCell  cell   = Spatial_Cell_Get(ray.pos, group->table.cellSize);
+    SolCollision col    = {0};
+    for (int c = 0; c < 27; c++)
+    {
+        u32 entry = group->table.head[cell.neighborHashes[c] & (group->table.size - 1)];
+        while (entry != SPATIAL_NULL)
+        {
+            if (checks > 0x1ff)
+                break;
+                u32 index = group->table.value[entry];
+            SolTri *tri = &group->tris[index];
+            vec3s   normal;
+            float   t = Ray_Tri_Test(ray.pos, ray.dir, tri, &normal);
+            
+            if (t > 0 && t <= result.dist)
+            {
+                result.dist     = t;
+                result.hit      = true;
+                result.dist     = t;
+                result.norm     = normal;
+                result.triIndex = index;
+                result.pos      = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                break;
+            }
+            entry  = group->table.next[entry];
+        }
+    }
+
+    return result;
+}
+
+SolRayResult Raycast_Dynamic_Grid_Tri(PhysxGroup *group, SolRay ray)
+{
+    SolRayResult result = {0};
+    return result;
+}
+
+SolRayResult Raycast_Dynamic_Table_Tri(PhysxGroup *group, SolRay ray)
+{
+    SolRayResult result = {0};
+    return result;
+}

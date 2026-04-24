@@ -1,5 +1,6 @@
 #include <cglm/struct.h>
 
+#include "physx_i.h"
 #include "sol_core.h"
 
 void Spatial_Add(World *world, int id, CompBody *body)
@@ -31,21 +32,30 @@ void Fill_Dynamic_Table(World *world, int count, int *ents)
     SpatialTable_Clear(table);
     for (int i = 0; i < count; i++)
     {
-        u32   id   = ents[i];
-        vec3s pos  = world->xforms[id].pos;
-        int   ix   = (int)floorf(pos.x / SPATIAL_DYNAMIC_CELL_SIZE);
-        int   iy   = (int)floorf(pos.y / SPATIAL_DYNAMIC_CELL_SIZE);
-        int   iz   = (int)floorf(pos.z / SPATIAL_DYNAMIC_CELL_SIZE);
-        u32   hash = hash_coords(ix, iy, iz) & (table->size - 1);
-        SpatialTable_Insert(table, hash, id);
+        u32   id  = ents[i];
+        vec3s pos = world->xforms[id].pos;
+        float r   = fmaxf(world->bodies[id].radius, world->bodies[id].height * 0.5f);
+
+        int x0 = (int)floorf((pos.x - r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        int x1 = (int)floorf((pos.x + r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        int y0 = (int)floorf((pos.y - r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        int y1 = (int)floorf((pos.y + r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        int z0 = (int)floorf((pos.z - r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        int z1 = (int)floorf((pos.z + r) / SPATIAL_DYNAMIC_CELL_SIZE);
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                {
+                    u32 hash = hash_coords(x, y, z) & (table->size - 1);
+                    SpatialTable_Insert(table, hash, id);
+                }
     }
 }
 
 void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform)
 {
-    body->grounded = 0;
-    SolRayResult result =
-        Sol_Raycast(world, (SolRay){.pos = xform->pos, .dir = (vec3s){0, -1, 0}, .dist = 1.5f});
+    body->grounded      = 0;
+    SolRayResult result = Sol_Raycast(world, (SolRay){.pos = xform->pos, .dir = (vec3s){0, -1, 0}, .dist = 1.5f});
     if (result.hit)
     {
         if (result.norm.y > 0.5f)
@@ -268,121 +278,54 @@ SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompX
     return col;
 }
 
-SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
+float Ray_Sphere_Test(vec3s origin, vec3s dir, vec3s center, float radius, vec3s *outNormal)
 {
-    SolRayResult result = Sol_Raycast(world, ray);
-    Sol_World_Line_Add(world, ray.pos, result.pos, (vec3s){1, 0, 0}, (vec3s){1, 0, 0}, debugDuration);
-    if (result.hit)
-        Sol_World_Line_Add(world, result.pos,
-                           glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-                           (vec3s){0, 1, 0}, (vec3s){0, 1, 0}, debugDuration);
-    return result;
+    vec3s oc = glms_vec3_sub(origin, center);
+    float b  = glms_vec3_dot(oc, dir);
+    float c  = glms_vec3_dot(oc, oc) - radius * radius;
+
+    // If origin is outside sphere and ray points away, no hit
+    if (c > 0.0f && b > 0.0f)
+        return -1.0f;
+
+    float discriminant = b * b - c;
+    if (discriminant < 0.0f)
+        return -1.0f; // ray misses sphere
+
+    float sq = sqrtf(discriminant);
+    float t  = -b - sq; // near intersection
+
+    // If origin is inside sphere, t is negative; use far intersection
+    if (t < 0.0f)
+        t = -b + sq;
+    if (t < 0.0f)
+        return -1.0f;
+
+    // Normal at hit = (hit_point - center) / radius
+    vec3s hit  = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+    *outNormal = glms_vec3_scale(glms_vec3_sub(hit, center), 1.0f / radius);
+    return t;
 }
 
-SolRayResult Raycast_Static_Grid(PhysxGroup *group, SolRay ray)
+float Ray_Capsule_Test(vec3s origin, vec3s dir, vec3s center, float radius, float height, vec3s *outNormal)
 {
-    SolRayResult result = {0};
-    result.dist         = ray.dist;
-    SpatialGrid *grid   = &group->grid;
-    if (!grid->offsets)
-        return result;
+    // Capsule oriented along Y axis, centered at `center`
+    float halfH = height * 0.5f - radius; // distance from center to each hemisphere center
+    vec3s a     = center;
+    a.y += halfH; // top hemisphere center
+    vec3s b = center;
+    b.y -= halfH; // bottom hemisphere center
 
-    vec3s pos  = ray.pos;
-    vec3s dir  = ray.dir;
-    float dist = ray.dist;
+    // Nearest ray-vs-segment approach
+    // 1. Test ray vs infinite cylinder axis
+    // 2. Clamp hit to capsule segment
+    // 3. If outside segment, test ray vs hemisphere at that end
 
-    // Current cell
-    int ix = (int)floorf((pos.x - grid->min.x) / grid->cellSize);
-    int iy = (int)floorf((pos.y - grid->min.y) / grid->cellSize);
-    int iz = (int)floorf((pos.z - grid->min.z) / grid->cellSize);
+    // This is more involved — a clean implementation is ~40 lines.
+    // For a first pass, approximate as a sphere at `center` with radius ~ height/2.
+    // Refine later if gameplay requires precision.
 
-    // If pos is outside grid, reject (or you could march the forward to grid
-    // entry — skipping that for simplicity)
-    if (ix < 0 || ix >= grid->dims.x || iy < 0 || iy >= grid->dims.y || iz < 0 || iz >= grid->dims.z)
-        return result;
-
-    // Direction signs
-    int stepX = dir.x > 0 ? 1 : -1;
-    int stepY = dir.y > 0 ? 1 : -1;
-    int stepZ = dir.z > 0 ? 1 : -1;
-
-    // Distance to next boundary along each axis
-    // "Next boundary" depends on step direction
-    float nextX = grid->min.x + (ix + (stepX > 0 ? 1 : 0)) * grid->cellSize;
-    float nextY = grid->min.y + (iy + (stepY > 0 ? 1 : 0)) * grid->cellSize;
-    float nextZ = grid->min.z + (iz + (stepZ > 0 ? 1 : 0)) * grid->cellSize;
-
-    // t values where reaches those boundaries
-    float tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - pos.x) / dir.x : INFINITY;
-    float tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - pos.y) / dir.y : INFINITY;
-    float tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - pos.z) / dir.z : INFINITY;
-
-    // t hitDist per cell along each axis
-    float tDeltaX = (fabsf(dir.x) > 1e-8f) ? grid->cellSize / fabsf(dir.x) : INFINITY;
-    float tDeltaY = (fabsf(dir.y) > 1e-8f) ? grid->cellSize / fabsf(dir.y) : INFINITY;
-    float tDeltaZ = (fabsf(dir.z) > 1e-8f) ? grid->cellSize / fabsf(dir.z) : INFINITY;
-
-    while (1)
-    {
-        // Test triangles in current cell
-        u32 cellIdx = ix + iy * grid->dims.x + iz * grid->dims.x * grid->dims.y;
-        u32 start   = grid->offsets[cellIdx];
-        u32 end     = grid->offsets[cellIdx + 1];
-
-        // The hitDist along the ray at which we leave this cell
-        float tCellExit = fminf(tMaxX, fminf(tMaxY, tMaxZ));
-
-        for (u32 e = start; e < end; e++)
-        {
-            SolTri *tri = &group->tris[grid->values[e]];
-            vec3s   normal;
-            float   t = Ray_Tri_Test(pos, dir, tri, &normal);
-
-            if (t > 0 && t <= result.dist)
-            {
-                result.dist     = t;
-                result.hit      = true;
-                result.dist     = t;
-                result.norm     = normal;
-                result.triIndex = grid->values[e];
-                result.pos      = glms_vec3_add(pos, glms_vec3_scale(dir, t));
-            }
-        }
-
-        // If we found a hit within this cell's span, it's the nearest
-        if (result.hit && result.dist <= tCellExit)
-            break;
-
-        float tCellEntry;
-        // Advance to next cell along the axis with smallest tMax
-        if (tMaxX < tMaxY && tMaxX < tMaxZ)
-        {
-            tCellEntry = tMaxX;
-            ix += stepX;
-            tMaxX += tDeltaX;
-        }
-        else if (tMaxY < tMaxZ)
-        {
-            tCellEntry = tMaxY;
-            iy += stepY;
-            tMaxY += tDeltaY;
-        }
-        else
-        {
-            tCellEntry = tMaxZ;
-            iz += stepZ;
-            tMaxZ += tDeltaZ;
-        }
-
-        if (tCellEntry > result.dist)
-            break;
-
-        // Exited grid bounds?
-        if (ix < 0 || ix >= grid->dims.x || iy < 0 || iy >= grid->dims.y || iz < 0 || iz >= grid->dims.z)
-            break;
-    }
-
-    return result;
+    return Ray_Sphere_Test(origin, dir, center, height * 0.5f, outNormal);
 }
 
 inline float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal)
@@ -935,4 +878,366 @@ SolCollision collide_sphere_sphere(CompBody *aBody, CompXform *aXform, CompBody 
     bBody->vel = glms_vec3_sub(bBody->vel, glms_vec3_scale(impulse, invMassB));
 
     return col;
+}
+
+SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
+{
+    SolRayResult result = Sol_Raycast(world, ray);
+    Sol_World_Line_Add(world, ray.pos, result.pos, (vec3s){1, 0, 0}, (vec3s){1, 0, 0}, debugDuration);
+    if (result.hit)
+        Sol_World_Line_Add(world, result.pos,
+                           glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+                           (vec3s){0, 1, 0}, (vec3s){0, 1, 0}, debugDuration);
+    return result;
+}
+
+SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray)
+{
+    SolRayResult result = {0};
+    result.dist         = ray.dist;
+    SpatialGrid *grid   = &group->grid;
+    if (!grid->offsets)
+        return result;
+
+    vec3s pos  = ray.pos;
+    vec3s dir  = ray.dir;
+    float dist = ray.dist;
+
+    // Current cell
+    int ix = (int)floorf((pos.x - grid->min.x) / grid->cellSize);
+    int iy = (int)floorf((pos.y - grid->min.y) / grid->cellSize);
+    int iz = (int)floorf((pos.z - grid->min.z) / grid->cellSize);
+
+    // If pos is outside grid, reject (or you could march the forward to grid
+    // entry — skipping that for simplicity)
+    if (ix < 0 || ix >= grid->dims.x || iy < 0 || iy >= grid->dims.y || iz < 0 || iz >= grid->dims.z)
+        return result;
+
+    // Direction signs
+    int stepX = dir.x > 0 ? 1 : -1;
+    int stepY = dir.y > 0 ? 1 : -1;
+    int stepZ = dir.z > 0 ? 1 : -1;
+
+    // Distance to next boundary along each axis
+    // "Next boundary" depends on step direction
+    float nextX = grid->min.x + (ix + (stepX > 0 ? 1 : 0)) * grid->cellSize;
+    float nextY = grid->min.y + (iy + (stepY > 0 ? 1 : 0)) * grid->cellSize;
+    float nextZ = grid->min.z + (iz + (stepZ > 0 ? 1 : 0)) * grid->cellSize;
+
+    // t values where reaches those boundaries
+    float tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - pos.x) / dir.x : INFINITY;
+    float tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - pos.y) / dir.y : INFINITY;
+    float tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - pos.z) / dir.z : INFINITY;
+
+    // t hitDist per cell along each axis
+    float tDeltaX = (fabsf(dir.x) > 1e-8f) ? grid->cellSize / fabsf(dir.x) : INFINITY;
+    float tDeltaY = (fabsf(dir.y) > 1e-8f) ? grid->cellSize / fabsf(dir.y) : INFINITY;
+    float tDeltaZ = (fabsf(dir.z) > 1e-8f) ? grid->cellSize / fabsf(dir.z) : INFINITY;
+
+    while (1)
+    {
+        // Test triangles in current cell
+        u32 cellIdx = ix + iy * grid->dims.x + iz * grid->dims.x * grid->dims.y;
+        u32 start   = grid->offsets[cellIdx];
+        u32 end     = grid->offsets[cellIdx + 1];
+
+        // The hitDist along the ray at which we leave this cell
+        float tCellExit = fminf(tMaxX, fminf(tMaxY, tMaxZ));
+
+        for (u32 e = start; e < end; e++)
+        {
+            SolTri *tri = &group->tris[grid->values[e]];
+            vec3s   normal;
+            float   t = Ray_Tri_Test(pos, dir, tri, &normal);
+
+            if (t > 0 && t <= result.dist)
+            {
+                result.dist     = t;
+                result.hit      = true;
+                result.dist     = t;
+                result.norm     = normal;
+                result.triIndex = grid->values[e];
+                result.pos      = glms_vec3_add(pos, glms_vec3_scale(dir, t));
+            }
+        }
+
+        // If we found a hit within this cell's span, it's the nearest
+        if (result.hit && result.dist <= tCellExit)
+            break;
+
+        float tCellEntry;
+        // Advance to next cell along the axis with smallest tMax
+        if (tMaxX < tMaxY && tMaxX < tMaxZ)
+        {
+            tCellEntry = tMaxX;
+            ix += stepX;
+            tMaxX += tDeltaX;
+        }
+        else if (tMaxY < tMaxZ)
+        {
+            tCellEntry = tMaxY;
+            iy += stepY;
+            tMaxY += tDeltaY;
+        }
+        else
+        {
+            tCellEntry = tMaxZ;
+            iz += stepZ;
+            tMaxZ += tDeltaZ;
+        }
+
+        if (tCellEntry > result.dist)
+            break;
+
+        // Exited grid bounds?
+        if (ix < 0 || ix >= grid->dims.x || iy < 0 || iy >= grid->dims.y || iz < 0 || iz >= grid->dims.z)
+            break;
+    }
+
+    return result;
+}
+
+SolRayResult Raycast_Dynamic_Table_Ent(PhysxGroup *group, SolRay ray, World *world)
+{
+    SolRayResult result   = {0};
+    vec3s        origin   = ray.pos;
+    vec3s        dir      = ray.dir;
+    float        dist     = ray.dist;
+    int          cellWalk = 0;
+    while (1)
+    {
+        vec3s checkPos = glms_vec3_add(origin, glms_vec3_scale(dir, group->table.cellSize * cellWalk));
+        cellWalk++;
+        int         checks = 0;
+        SpatialCell cell   = Spatial_Cell_Get(checkPos, group->table.cellSize);
+        for (int c = 0; c < 27; c++)
+        {
+            u32 entry = group->table.head[cell.neighborHashes[c] & (group->table.size - 1)];
+            while (entry != SPATIAL_NULL)
+            {
+                if (checks > 0x1ff)
+                    break;
+                u32 id = group->table.value[entry];
+
+                entry = group->table.next[entry];
+            }
+        }
+    }
+
+    return result;
+}
+
+void Grid_Walker_Init(GridWalker *w, SolRay ray, SpatialGrid *grid)
+{
+    if (!grid->offsets)
+        return;
+    float cellSize = grid->cellSize;
+    vec3s gridMin  = grid->min;
+    vec3s pos      = ray.pos;
+    vec3s dir      = ray.dir;
+
+    w->ix = (int)floorf((pos.x - gridMin.x) / cellSize);
+    w->iy = (int)floorf((pos.y - gridMin.y) / cellSize);
+    w->iz = (int)floorf((pos.z - gridMin.z) / cellSize);
+
+    w->dims    = grid->dims;
+    w->bounded = true;
+    w->maxDist = ray.dist;
+    w->tEntry  = 0.0f;
+
+    w->stepX = dir.x > 0 ? 1 : -1;
+    w->stepY = dir.y > 0 ? 1 : -1;
+    w->stepZ = dir.z > 0 ? 1 : -1;
+
+    float nextX = gridMin.x + (w->ix + (w->stepX > 0 ? 1 : 0)) * cellSize;
+    float nextY = gridMin.y + (w->iy + (w->stepY > 0 ? 1 : 0)) * cellSize;
+    float nextZ = gridMin.z + (w->iz + (w->stepZ > 0 ? 1 : 0)) * cellSize;
+
+    w->tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - pos.x) / dir.x : INFINITY;
+    w->tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - pos.y) / dir.y : INFINITY;
+    w->tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - pos.z) / dir.z : INFINITY;
+
+    w->tDeltaX = (fabsf(dir.x) > 1e-8f) ? cellSize / fabsf(dir.x) : INFINITY;
+    w->tDeltaY = (fabsf(dir.y) > 1e-8f) ? cellSize / fabsf(dir.y) : INFINITY;
+    w->tDeltaZ = (fabsf(dir.z) > 1e-8f) ? cellSize / fabsf(dir.z) : INFINITY;
+}
+
+void Grid_Walker_Init_Infinite(GridWalker *w, SolRay ray, float cellSize)
+{
+    float maxDist = ray.dist;
+    vec3s dir     = ray.dir;
+    vec3s pos     = ray.pos;
+
+    w->ix = (int)floorf(pos.x / cellSize);
+    w->iy = (int)floorf(pos.y / cellSize);
+    w->iz = (int)floorf(pos.z / cellSize);
+
+    w->bounded = false;
+    w->maxDist = maxDist;
+    w->tEntry  = 0.0f;
+
+    w->stepX = dir.x > 0 ? 1 : -1;
+    w->stepY = dir.y > 0 ? 1 : -1;
+    w->stepZ = dir.z > 0 ? 1 : -1;
+
+    float nextX = (w->ix + (w->stepX > 0 ? 1 : 0)) * cellSize;
+    float nextY = (w->iy + (w->stepY > 0 ? 1 : 0)) * cellSize;
+    float nextZ = (w->iz + (w->stepZ > 0 ? 1 : 0)) * cellSize;
+
+    w->tMaxX = (fabsf(dir.x) > 1e-8f) ? (nextX - pos.x) / dir.x : INFINITY;
+    w->tMaxY = (fabsf(dir.y) > 1e-8f) ? (nextY - pos.y) / dir.y : INFINITY;
+    w->tMaxZ = (fabsf(dir.z) > 1e-8f) ? (nextZ - pos.z) / dir.z : INFINITY;
+
+    w->tDeltaX = (fabsf(dir.x) > 1e-8f) ? cellSize / fabsf(dir.x) : INFINITY;
+    w->tDeltaY = (fabsf(dir.y) > 1e-8f) ? cellSize / fabsf(dir.y) : INFINITY;
+    w->tDeltaZ = (fabsf(dir.z) > 1e-8f) ? cellSize / fabsf(dir.z) : INFINITY;
+}
+
+bool Grid_Walker_Next(GridWalker *w, GridCell *out)
+{
+    // Stop if ray has reached max distance
+    if (w->tEntry >= w->maxDist)
+        return false;
+
+    // Stop if current cell is outside bounded grid
+    if (w->bounded &&
+        (w->ix < 0 || w->ix >= w->dims.x || w->iy < 0 || w->iy >= w->dims.y || w->iz < 0 || w->iz >= w->dims.z))
+        return false;
+
+    // Fill current cell
+    out->ix     = w->ix;
+    out->iy     = w->iy;
+    out->iz     = w->iz;
+    out->tEntry = w->tEntry;
+    out->tExit  = fminf(w->tMaxX, fminf(w->tMaxY, w->tMaxZ));
+    if (out->tExit > w->maxDist)
+        out->tExit = w->maxDist;
+
+    // Advance state for next call
+    if (w->tMaxX < w->tMaxY && w->tMaxX < w->tMaxZ)
+    {
+        w->tEntry = w->tMaxX;
+        w->ix += w->stepX;
+        w->tMaxX += w->tDeltaX;
+    }
+    else if (w->tMaxY < w->tMaxZ)
+    {
+        w->tEntry = w->tMaxY;
+        w->iy += w->stepY;
+        w->tMaxY += w->tDeltaY;
+    }
+    else
+    {
+        w->tEntry = w->tMaxZ;
+        w->iz += w->stepZ;
+        w->tMaxZ += w->tDeltaZ;
+    }
+
+    return true;
+}
+
+SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray)
+{
+    SolRayResult result = {0};
+    result.dist         = ray.dist;
+    PhysxGroup  *group  = &world->spatial->staticGroup;
+    SpatialGrid *grid   = &world->spatial->staticGroup.grid;
+
+    if (!grid->offsets)
+        return result;
+
+    GridWalker walker;
+    Grid_Walker_Init(&walker, ray, grid);
+
+    GridCell cell;
+    while (Grid_Walker_Next(&walker, &cell))
+    {
+        u32 cellIdx = cell.ix + cell.iy * grid->dims.x + cell.iz * grid->dims.x * grid->dims.y;
+        u32 start   = grid->offsets[cellIdx];
+        u32 end     = grid->offsets[cellIdx + 1];
+
+        for (u32 e = start; e < end; e++)
+        {
+            SolTri *tri = &group->tris[grid->values[e]];
+            vec3s   normal;
+            float   t = Ray_Tri_Test(ray.pos, ray.dir, tri, &normal);
+
+            if (t > 0 && t <= result.dist)
+            {
+                result.dist     = t;
+                result.hit      = true;
+                result.norm     = normal;
+                result.triIndex = grid->values[e];
+                result.pos      = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+            }
+        }
+
+        // Early out: if we have a hit within this cell's span, no closer hit possible
+        if (result.hit && result.dist <= cell.tExit)
+            break;
+    }
+
+    return result;
+}
+
+SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray)
+{
+    SolRayResult result = {0};
+    result.dist         = ray.dist;
+
+    PhysxGroup   *group = &world->spatial->dynamicGroup;
+    SpatialTable *table = &group->table;
+
+    GridWalker walker;
+    Grid_Walker_Init_Infinite(&walker, ray, table->cellSize);
+
+    GridCell cell;
+    while (Grid_Walker_Next(&walker, &cell))
+    {
+        // Hash the cell coordinates
+        u32 hash  = hash_coords(cell.ix, cell.iy, cell.iz) & (table->size - 1);
+        u32 entry = table->head[hash];
+
+        while (entry != SPATIAL_NULL)
+        {
+            u32 id = table->value[entry];
+            if (id != ray.ignoreEnt)
+            {
+                CompBody  *body  = &world->bodies[id];
+                CompXform *xform = &world->xforms[id];
+
+                vec3s normal;
+                float t = -1.0f;
+
+                switch (body->shape)
+                {
+                case SHAPE3_SPH:
+                    t = Ray_Sphere_Test(ray.pos, ray.dir, xform->pos, body->radius, &normal);
+                    break;
+                case SHAPE3_CAP:
+                    t = Ray_Capsule_Test(ray.pos, ray.dir, xform->pos, body->radius, body->height, &normal);
+                    break;
+                default:
+                    break;
+                }
+
+                if (t > 0 && t <= result.dist)
+                {
+                    result.dist  = t;
+                    result.hit   = true;
+                    result.norm  = normal;
+                    result.entId = id;
+                    result.pos   = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                }
+            }
+
+            entry = table->next[entry];
+        }
+
+        // Early out if hit within current cell's span
+        if (result.hit && result.dist <= cell.tExit)
+            break;
+    }
+
+    return result;
 }

@@ -35,6 +35,7 @@
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 #define MAX_MODEL_INSTANCES 500000
+#define WORLD_UP (vec3s){0, 1.0f, 0}
 
 // Forwards
 
@@ -200,7 +201,15 @@ typedef struct SolRay
     vec3s             pos, dir;
     float             dist;
     SolRaySpacialMask spatialMask;
+    u32               ignoreEnt;
 } SolRay;
+
+typedef struct SolHit
+{
+    vec3s pos, dir;
+    float power;
+    u32   damage;
+} SolHit;
 
 typedef struct SolRayResult
 {
@@ -208,6 +217,7 @@ typedef struct SolRayResult
     vec3s pos, norm;
     float dist;
     u32   triIndex;
+    u32   entId;
 } SolRayResult;
 
 typedef struct SolCamera

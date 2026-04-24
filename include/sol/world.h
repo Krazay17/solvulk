@@ -64,23 +64,17 @@ typedef enum
 
 typedef enum
 {
-    DEBUFF_KNOCKBACK = (1 << 0),
-    DEBUFF_FIRE      = (1 << 1),
-    DEBUFF_COUNT     = (1 << 2),
-} DebuffKind;
+    BUFF_KNOCKBACK = (1 << 0),
+    BUFF_FIRE      = (1 << 1),
+    BUFF_COUNT,
+} BuffKind;
 
 typedef struct CompBuff
 {
-    float duration;
-    u32   kinds;
+    float    duration;
+    BuffKind kind;
+    SolHit   hit;
 } CompBuff;
-
-typedef struct CompDebuff
-{
-    float      duration;
-    DebuffKind kinds;
-    SolHit     hit;
-} CompDebuff;
 
 typedef struct CompCombat
 {
@@ -196,7 +190,7 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
-    CompDebuff       debuffs[MAX_ENTS];
+    CompBuff         buffs[MAX_ENTS];
     CompXform        xforms[MAX_ENTS];
     CompBody         bodies[MAX_ENTS];
     CompShape        shapes[MAX_ENTS];
@@ -243,7 +237,7 @@ SOLAPI CompModel        *Entity_Add_Model(World *world, int id, SolModelId model
 CompBody   *Sol_Physx_Add(World *world, int id, CompBody body);
 CompCombat *Sol_Combat_Add(World *world, int id, CompCombat combat);
 CompModel  *Sol_Model_Add(World *world, int id, CompModel model);
-CompDebuff *Sol_Debuff_Add(World *world, int id, CompDebuff init);
+CompBuff   *Sol_Debuff_Add(World *world, int id, CompBuff init);
 
 // Xform systems
 SOLAPI void Xform_Snapshot(World *world);
@@ -256,7 +250,7 @@ SOLAPI void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Physx_Step(World *world, double dt, double time);
-SOLAPI void Debuff_Step(World *world, double dt, double time);
+SOLAPI void Buff_Step(World *world, double dt, double time);
 
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
@@ -290,6 +284,6 @@ static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
-    [WORLD_SYS_DEBUFF]           = {.step = Debuff_Step},
+    [WORLD_SYS_DEBUFF]           = {.step = Buff_Step},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
 };

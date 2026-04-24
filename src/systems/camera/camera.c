@@ -30,8 +30,8 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
         initialized = true;
     }
 
+    anchor = glms_vec3_add(anchor, glms_vec3_scale(glms_vec3_cross(lookdir, WORLD_UP), offset));
     arm = glms_vec3_lerp(arm, anchor, fdt * 60.0f);
-    arm = glms_vec3_add(anchor, glms_vec3_scale(glms_vec3_cross(lookdir, WORLD_UP), offset));
 
     SolRayResult result = Raycast_Static_Grid_Walk(world, (SolRay){.pos = arm, .dir = invDirection, .dist = distance});
     vec3s        pos    = glms_vec3_add(arm, glms_vec3_scale(invDirection, result.dist - 2.0f));

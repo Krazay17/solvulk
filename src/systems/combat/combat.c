@@ -32,8 +32,8 @@ void Combat_Tick(World *world, double dt, double time)
             if (result.hit && result.entId)
             {
                 Sol_Debuff_Add(world, result.entId,
-                               (CompDebuff){.duration = 1.0f,
-                                            .kinds    = DEBUFF_KNOCKBACK,
+                               (CompBuff){.duration = 1.0f,
+                                            .kind    = BUFF_KNOCKBACK,
                                             .hit      = (SolHit){.dir = controller->lookdir, .power = 30.0f}});
             }
         }

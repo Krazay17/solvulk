@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_DEBUGS 12
+#define MAX_DEBUGS 14
 #define MAX_STR_LEN 64
 
 typedef struct Debuggers

@@ -36,3 +36,62 @@ void Build_Tris(SolModel *model) {
     }
   }
 }
+
+
+// void Raycast_Tri_Dynamic(World *world, SolRay ray) {
+//   SolRayResult result = {0};
+
+//   for (u32 r = 0; r < world->tris->range_count; r++) {
+//     DynamicTriRange *range = &world->tris->ranges[r];
+//     CompXform       *xform = &world->xforms[range->entity_id];
+
+//     // Inverse-transform ray into model-local space
+//     mat3s invRot = glms_quat_mat3(glms_quat_inv(xform->drawQuat));
+//     vec3s localOrigin =
+//         glms_mat3_mulv(invRot, glms_vec3_sub(result.pos, xform->drawPos));
+//     vec3s localDir = glms_mat3_mulv(invRot, ray.dir);
+
+//     // Test against this entity's tris
+//     for (u32 t = range->start; t < range->start + range->count; t++) {
+//       SolTri *tri = &world->tris->dynamic_tris[t];
+//       vec3s         localNormal;
+//       float dist = Ray_Tri_Test(localOrigin, localDir, tri, &localNormal);
+
+//       if (dist > 0 && dist < result.dist) {
+//         result.hit  = true;
+//         result.dist = dist;
+//         result.pos  = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir,
+//         dist));
+//         // Transform normal back to world space
+//         mat3s rot       = glms_quat_mat3(xform->drawQuat);
+//         result.norm     = glms_mat3_mulv(rot, localNormal);
+//         result.triIndex = t;
+//       }
+//     }
+//   }
+// }
+
+int required = HAS_CONTROLLER | HAS_XFORM;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) == required)
+        {
+            CompXform *xform = &world->xforms[id];
+            CompController *controller = &world->controllers[id];
+
+            vec3s pos = glms_vec3_sub(xform->pos, glms_vec3_scale(controller->lookdir, 10.0f));
+            vec3s target = xform->pos;
+
+            vec3 finalPos = {pos.x, pos.y, pos.z};
+            vec3 finalTarget = {target.x, target.y, target.z};
+
+            Render_Camera_Update(finalPos, finalTarget);
+            
+            // Sol_Debug_Add("CamPosX", pos.x);
+            // Sol_Debug_Add("CamPosY", pos.y);
+            // Sol_Debug_Add("CamPosZ", pos.z);
+
+            break;
+        }
+    }

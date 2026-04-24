@@ -2,30 +2,32 @@
 
 #include "sol_core.h"
 
-void Sol_System_Camera_Tick(World *world, double dt, double time)
+static bool  initialized = false;
+static vec3s arm;
+
+void Cam_Update_3D(World *world, double dt, double time, float alpha)
 {
-    int required = HAS_CONTROLLER | HAS_XFORM;
-    for (int i = 0; i < world->activeCount; i++)
+    int id = world->playerID;
+    if (id < 0)
+        return;
+    float           fdt        = (float)dt;
+    CompXform      *xform      = &world->xforms[id];
+    CompBody       *body       = &world->bodies[id];
+    CompController *controller = &world->controllers[id];
+
+    vec3s lookdir = controller->lookdir;
+    vec3s anchor  = xform->drawPos;
+
+    if (body)
+        anchor.y += body->height * 0.5f;
+
+    if (!initialized)
     {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
-        {
-            CompXform *xform = &world->xforms[id];
-            CompController *controller = &world->controllers[id];
-
-            vec3s pos = glms_vec3_sub(xform->pos, glms_vec3_scale(controller->lookdir, 10.0f));
-            vec3s target = xform->pos;
-
-            vec3 finalPos = {pos.x, pos.y, pos.z};
-            vec3 finalTarget = {target.x, target.y, target.z};
-
-            Sol_Camera_Update(finalPos, finalTarget);
-            
-            // Sol_Debug_Add("CamPosX", pos.x);
-            // Sol_Debug_Add("CamPosY", pos.y);
-            // Sol_Debug_Add("CamPosZ", pos.z);
-
-            break;
-        }
+        arm         = anchor;
+        initialized = true;
     }
+
+    arm = glms_vec3_lerp(arm, anchor, fdt * 60.0f);
+    vec3s pos = glms_vec3_sub(arm, glms_vec3_scale(lookdir, 10.0f));
+    Render_Camera_Update(pos.raw, arm.raw);
 }

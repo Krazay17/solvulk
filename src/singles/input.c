@@ -32,7 +32,7 @@ static int mouseDeltaX, mouseDeltaY;
 
 void SolInput_OnKey(int vkCode, bool down)
 {
-    Sol_Debug_Add("KeyCode", vkCode);
+    //Sol_Debug_Add("KeyCode", vkCode);
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (keyMap[i] == vkCode)

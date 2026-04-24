@@ -7,9 +7,9 @@ World *World_Create(void)
     {
         world->worldActive = true;
 
-        SolState *state = Sol_GetState();
+        SolState *state                    = Sol_GetState();
         state->worlds[state->worldCount++] = world;
-        world->playerID = -1;
+        world->playerID                    = -1;
     }
 
     return world;
@@ -81,7 +81,7 @@ int Entity_Create(World *world)
         if (!world->actives[i])
         {
             world->actives[i] = true;
-            world->masks[i] = HAS_NONE;
+            world->masks[i]   = HAS_NONE;
 
             // NEW: Track this ID in our dense list
             world->activeEntities[world->activeCount] = i;
@@ -97,7 +97,7 @@ void Entity_Destroy(World *world, int id)
 {
     // 1. Mark as inactive
     world->actives[id] = false;
-    world->masks[id] = 0;
+    world->masks[id]   = 0;
 
     // 2. Remove from dense list by "Swapping with Last"
     // This keeps the array dense without needing to shift everything
@@ -111,16 +111,6 @@ void Entity_Destroy(World *world, int id)
             break;
         }
     }
-}
-
-CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
-{
-    world->xforms[id] = (CompXform){
-        .pos = pos,
-        .scale = (vec3s){1.0f, 1.0f, 1.0f},
-    };
-    world->masks[id] |= HAS_XFORM;
-    return &world->xforms[id];
 }
 
 CompShape *Entity_Add_Shape(World *world, int id)
@@ -177,7 +167,7 @@ CompModel *Entity_Add_Model(World *world, int id, SolModelId model)
 {
     world->models[id] = (CompModel){
         .gpuHandle = model,
-        .model = Sol_GetModel(model),
+        .model     = Sol_GetModel(model),
     };
     world->masks[id] |= HAS_MODEL;
     return &world->models[id];

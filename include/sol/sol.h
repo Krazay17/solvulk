@@ -21,7 +21,6 @@ SOLAPI int Sol_Init_Vulkan(void *hwnd, void *hInstance);
 
 SOLAPI void Sol_Render_Resize();
 SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
-SOLAPI void Sol_Camera_Update(vec3 pos, vec3 target);
 
 SOLAPI float Sol_MeasureText(const char *str, float size);
 

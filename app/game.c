@@ -32,8 +32,8 @@ void Create_Sol_Game()
     World *menu = World_Create_Default();
     World *game = World_Create_Default();
 
-    int button = Sol_Prefab_Button(menu, (vec3s){800, 0, 0}, "QUIT");
-    CompInteractable *buttonInteract = Entity_Add_Interact(menu, button);
+    int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
+    CompInteractable *buttonInteract = Entity_Add_Interact(menu, quitButton);
     buttonInteract->callback = QuitApp;
 
     int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");

@@ -9,26 +9,29 @@
 
 #include "game.h"
 
-#define TARGET_FRAME_TIME 1.0 / 500.0
+#define TARGET_FRAME_TIME (1.0 / 500.0)
 
 // --- Shared state between threads ---
 static volatile g_running = TRUE;
-static HWND g_hwnd = NULL;
+static HWND g_hwnd        = NULL;
+
+static bool  isDragging = false;
+static POINT dragStartPos;
 
 HMODULE current_engine_lib = NULL;
 
 // --- Forward declarations ---
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK    WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // HOT REALOAD
-#define SOL_FUNC(ret, name, ...)           \
-    typedef ret (*name##_fn)(__VA_ARGS__); \
+#define SOL_FUNC(ret, name, ...)                                                                                       \
+    typedef ret (*name##_fn)(__VA_ARGS__);                                                                             \
     name##_fn pfn_##name;
 #include "sol/functions.inc"
 #undef SOL_FUNC
 
-void load_api(const char *path);
+void     load_api(const char *path);
 FILETIME get_last_write_time(const char *path);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,22 +43,19 @@ int main(int argc, char *argv[])
 
 #ifdef IS_WINDOWS
     HINSTANCE hInstance = GetModuleHandle(NULL);
-    int nShowCmd = SW_SHOWDEFAULT;
+    int       nShowCmd  = SW_SHOWDEFAULT;
 #endif
 
     const char CLASS_NAME[] = "SolVulk";
-    WNDCLASS wc = {0};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = CLASS_NAME;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    WNDCLASS   wc           = {0};
+    wc.lpfnWndProc          = WindowProc;
+    wc.hInstance            = hInstance;
+    wc.lpszClassName        = CLASS_NAME;
+    wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(
-        0, CLASS_NAME, "Sol Vulkan",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800,
-        NULL, NULL, hInstance, NULL);
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_EX_NOREDIRECTIONBITMAP | WS_POPUP | WS_VISIBLE, 780, 0,
+                            1200, 800, NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
         return 1;
 
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
     // Raw input device for accurate mouse
     RAWINPUTDEVICE rid;
     rid.usUsagePage = 0x01;
-    rid.usUsage = 0x02;
-    rid.dwFlags = 0;
-    rid.hwndTarget = g_hwnd;
+    rid.usUsage     = 0x02;
+    rid.dwFlags     = 0;
+    rid.hwndTarget  = g_hwnd;
     if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == false)
     {
         printf("Raw input register failed!");
@@ -117,9 +117,9 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
     {
         QueryPerformanceFrequency(&freq);
         QueryPerformanceCounter(&currentTime);
-        double dt = (double)(currentTime.QuadPart - lastTime.QuadPart) / freq.QuadPart;
-        double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / freq.QuadPart;
-        lastTime = currentTime;
+        double dt      = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)freq.QuadPart;
+        double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
+        lastTime       = currentTime;
         POINT cursorPos;
 
         GetCursorPos(&cursorPos);
@@ -127,10 +127,17 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
 
         QueryPerformanceFrequency(&freq);
         QueryPerformanceCounter(&endTime);
-        double elapsed = (double)(endTime.QuadPart - currentTime.QuadPart) / freq.QuadPart;
+        double elapsed   = (double)(endTime.QuadPart - currentTime.QuadPart) / (double)freq.QuadPart;
         double remaining = TARGET_FRAME_TIME - elapsed;
-        if(remaining > 0.0)
+        if (remaining > 0.001)
             Sleep((DWORD)(remaining * 1000.0));
+        while (1)
+        {
+            QueryPerformanceCounter(&endTime);
+            double e = (double)(endTime.QuadPart - currentTime.QuadPart) / (double)freq.QuadPart;
+            if (e >= TARGET_FRAME_TIME)
+                break;
+        }
     }
 
     return 0;
@@ -146,9 +153,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         return 0;
 
-    case WM_INPUT:
-    {
-        UINT dwSize = sizeof(RAWINPUT);
+    case WM_INPUT: {
+        UINT        dwSize = sizeof(RAWINPUT);
         static BYTE lpb[sizeof(RAWINPUT)]; // Static buffer for performance
 
         GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
@@ -159,8 +165,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             LONG mouseX = raw->data.mouse.lLastX;
             LONG mouseY = raw->data.mouse.lLastY;
-
-            // Check if movement is relative (most mice)
             if (!(raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE))
             {
                 Sol_Input_OnRawMouse(mouseX, mouseY);
@@ -170,6 +174,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     case WM_SIZE:
         Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
+        return 0;
+    case WM_PAINT:
+        ValidateRect(hwnd, NULL);
         return 0;
     case WM_SETCURSOR:
         SolMouse mouse = SolInput_GetMouse();
@@ -186,13 +193,39 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SolInput_OnKey((int)wParam, false);
         return 0;
     case WM_MOUSEMOVE:
+        if (isDragging)
+        {
+            POINT currentPos;
+            GetCursorPos(&currentPos);
+            RECT windowRect;
+            GetWindowRect(hwnd, &windowRect);
+            int newX = windowRect.left + (currentPos.x - dragStartPos.x);
+            int newY = windowRect.top + (currentPos.y - dragStartPos.y);
+
+            SetWindowPos(hwnd, NULL, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+            dragStartPos = currentPos;
+        }
+
         SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_LBUTTONDOWN:
         SolInput_OnMouseButton(SOL_MOUSE_LEFT, true);
+        POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
+        if (pt.y < 30)
+        {
+            isDragging = true;
+            SetCapture(hwnd); // Ensures you get mouse input even if the mouse leaves the window
+            GetCursorPos(&dragStartPos);
+        }
         return 0;
     case WM_LBUTTONUP:
         SolInput_OnMouseButton(SOL_MOUSE_LEFT, false);
+        if (isDragging)
+        {
+            isDragging = false;
+            ReleaseCapture();
+        }
         return 0;
     case WM_RBUTTONDOWN:
         SolInput_OnMouseButton(SOL_MOUSE_RIGHT, true);
@@ -242,7 +275,7 @@ void load_api(const char *path)
 
 FILETIME get_last_write_time(const char *path)
 {
-    FILETIME lastWriteTime = {0};
+    FILETIME                  lastWriteTime = {0};
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesExA(path, GetFileExInfoStandard, &data))
     {

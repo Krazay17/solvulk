@@ -10,7 +10,7 @@ static void Sol_OnResize();
 void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd = hwnd;
-    int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
+    int vulkInit    = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
     Sol_Loader_LoadModels();
 
@@ -39,24 +39,28 @@ void Sol_Tick(double dt, double time)
         Sol_OnResize();
 
     for (int i = 0; i < solState.worldCount; ++i)
-        Sol_System_Xform_Snapshot(solState.worlds[i]);
-
-    for (int i = 0; i < solState.worldCount; ++i)
         World_Tick(solState.worlds[i], dt, time);
 
-    accumulator = accumulator > SOL_TIMESTEP * 3 ? SOL_TIMESTEP * 3 : accumulator + dt;
+    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
+    if (accumulator >= SOL_TIMESTEP)
+        for (int i = 0; i < solState.worldCount; ++i)
+            Xform_Snapshot(solState.worlds[i]);
+
     while (accumulator >= SOL_TIMESTEP)
     {
-        accumulator -= SOL_TIMESTEP;
-        solState.stepCount++;
-        Sol_Debug_Add("StepCount", solState.stepCount);
-
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], SOL_TIMESTEP, time);
+
+        solState.stepCount++;
+        accumulator -= SOL_TIMESTEP;
     }
+
     float alpha = (float)(accumulator / SOL_TIMESTEP);
     for (int i = 0; i < solState.worldCount; ++i)
-        Sol_System_Xform_Interpolate(solState.worlds[i], alpha);
+    {
+        Xform_Interpolate(solState.worlds[i], alpha);
+        Cam_Update_3D(solState.worlds[i], dt, time, alpha);
+    }
 
     Sol_Begin_Draw();
 
@@ -75,8 +79,8 @@ void Sol_Tick(double dt, double time)
 static void DebugFPS(double dt)
 {
     static double total, throttle;
-    static char buffer[64];
-    static int count;
+    static char   buffer[64];
+    static int    count;
     solState.fps = 1.0 / dt;
     total += solState.fps;
     count++;
@@ -86,8 +90,8 @@ static void DebugFPS(double dt)
         float currentFps = total / count;
         snprintf(buffer, sizeof(buffer), "Fps: %.0f", currentFps);
         throttle = 0;
-        count = 0;
-        total = 0;
+        count    = 0;
+        total    = 0;
     }
     Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
 }
@@ -103,9 +107,9 @@ void Sol_Destroy()
 
 void Sol_Window_Resize(float width, float height)
 {
-    solState.windowWidth = width;
+    solState.windowWidth  = width;
     solState.windowHeight = height;
-    solState.needsResize = true;
+    solState.needsResize  = true;
 }
 
 static void Sol_OnResize()

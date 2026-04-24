@@ -1,14 +1,14 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stddef.h>
-#include <limits.h>
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <cglm/types-struct.h>
 
@@ -38,20 +38,20 @@
 
 // Forwards
 
-typedef struct SolState SolState;
-typedef struct SolModel SolModel;
+typedef struct SolState  SolState;
+typedef struct SolModel  SolModel;
 typedef struct SolCamera SolCamera;
 
 // Enums
 typedef enum
 {
-    ACTION_NONE = 0,
-    ACTION_FWD = (1 << 0),
-    ACTION_BWD = (1 << 1),
-    ACTION_LEFT = (1 << 2),
-    ACTION_RIGHT = (1 << 3),
-    ACTION_JUMP = (1 << 4),
-    ACTION_DASH = (1 << 5),
+    ACTION_NONE   = 0,
+    ACTION_FWD    = (1 << 0),
+    ACTION_BWD    = (1 << 1),
+    ACTION_LEFT   = (1 << 2),
+    ACTION_RIGHT  = (1 << 3),
+    ACTION_JUMP   = (1 << 4),
+    ACTION_DASH   = (1 << 5),
     ACTION_ATTACK = (1 << 6),
 } PlayerActionStates;
 
@@ -174,42 +174,51 @@ typedef struct
 
 typedef struct AiController
 {
-    vec3s lookdir, wishdir;
+    vec3s    lookdir, wishdir;
     AiAction actionState;
 } AiController;
 
 typedef struct SolMouse
 {
-    int x, y;
-    int dx, dy;
+    int  x, y;
+    int  dx, dy;
     bool locked;
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];
 } SolMouse;
 
+typedef enum
+{
+    RAYSPACE_STATIC_GRID   = (1 << 0),
+    RAYSPACE_STATIC_TABLE  = (1 << 1),
+    RAYSPACE_DYNAMIC_GRID  = (1 << 2),
+    RAYSPACE_DYNAMIC_TABLE = (1 << 3),
+} SolRaySpacialMask;
+
 typedef struct SolRay
 {
-    vec3s pos, dir;
-    float dist;
+    vec3s             pos, dir;
+    float             dist;
+    SolRaySpacialMask spatialMask;
 } SolRay;
 
 typedef struct SolRayResult
 {
-    bool hit;
+    bool  hit;
     vec3s pos, norm;
     float dist;
-    u32 triIndex;
+    u32   triIndex;
 } SolRayResult;
 
 typedef struct SolCamera
 {
-    vec3 position;
-    vec3 target;
+    vec3  position;
+    vec3  target;
     float fov;
     float nearClip;
     float farClip;
-    mat4 proj;
-    mat4 view;
+    mat4  proj;
+    mat4  view;
 } SolCamera;
 
 typedef struct SolVertex
@@ -235,31 +244,31 @@ typedef struct SolMaterial
 
 typedef struct SolMesh
 {
-    uint32_t vertexOffset;
-    uint32_t vertexCount;
-    uint32_t indexOffset;
-    uint32_t indexCount;
+    uint32_t    vertexOffset;
+    uint32_t    vertexCount;
+    uint32_t    indexOffset;
+    uint32_t    indexCount;
     SolMaterial material;
 } SolMesh;
 
 typedef struct SolModel
 {
     SolVertex *vertices;
-    SolMesh *meshes;
-    SolTri *tris;
-    u32 *indices;
+    SolMesh   *meshes;
+    SolTri    *tris;
+    u32       *indices;
 
-    u32 vertex_count;
-    u32 mesh_count;
-    u32 tri_count;
-    u32 indice_count;
+    u32        vertex_count;
+    u32        mesh_count;
+    u32        tri_count;
+    u32        indice_count;
     SolModelId modelId;
 } SolModel;
 
 typedef struct SolCollision
 {
-    bool didCollide;
-    int id;
+    bool  didCollide;
+    int   id;
     vec3s pos, normal, vel;
 } SolCollision;
 

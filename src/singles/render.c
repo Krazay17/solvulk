@@ -117,7 +117,7 @@ SolCamera *Sol_GetCamera()
     return &renderCam;
 }
 
-void Sol_Camera_Update(vec3 pos, vec3 target)
+void Render_Camera_Update(vec3 pos, vec3 target)
 {
     // 1. Update vectors
     glm_vec3_copy(pos, renderCam.position);

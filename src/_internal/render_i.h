@@ -70,6 +70,7 @@ typedef struct
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
+    vec4 sun;
 } SceneUBO;
 
 typedef struct

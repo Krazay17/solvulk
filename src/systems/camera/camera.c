@@ -29,21 +29,21 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
         arm         = anchor;
         initialized = true;
     }
-
-    anchor = glms_vec3_add(anchor, glms_vec3_scale(glms_vec3_cross(lookdir, WORLD_UP), offset));
-    arm = glms_vec3_lerp(arm, anchor, fdt * 60.0f);
+    vec3s head = anchor;
+    anchor     = glms_vec3_add(anchor, glms_vec3_scale(glms_vec3_cross(lookdir, WORLD_UP), offset));
+    arm        = glms_vec3_lerp(arm, anchor, fdt * 60.0f);
 
     SolRayResult result = Raycast_Static_Grid_Walk(world, (SolRay){.pos = arm, .dir = invDirection, .dist = distance});
-    vec3s        pos    = glms_vec3_add(arm, glms_vec3_scale(invDirection, result.dist - 2.0f));
+    vec3s        camPos = glms_vec3_add(arm, glms_vec3_scale(invDirection, result.dist - 2.0f));
 
-    vec3s target = glms_vec3_add(pos, lookdir);
-    Render_Camera_Update(pos.raw, target.raw);
+    vec3s target = glms_vec3_add(camPos, lookdir);
+    Render_Camera_Update(camPos.raw, target.raw);
 
     controller->aimHitEnt = -1;
-    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){.pos = pos, .ignoreEnt = id, .dir = lookdir, .dist = 500.f});
-    controller->aimdir    = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, anchor));
+    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){.pos = camPos, .ignoreEnt = id, .dir = lookdir, .dist = 500.f});
+    controller->aimdir    = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
     controller->aimHitEnt = aimTrace.entId;
-    controller->aimPos    = anchor;
+    controller->aimPos    = head;
 }
 
 void Crosshair_Draw(World *world, double dt, double time)

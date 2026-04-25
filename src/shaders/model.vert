@@ -15,6 +15,7 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
+    vec4 sun;
 } scene;
 
 struct ModelData {

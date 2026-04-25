@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
+    vec4 sun;
 } scene;
 
 layout(push_constant) uniform MeshMaterial {
@@ -20,7 +21,7 @@ layout(push_constant) uniform MeshMaterial {
 } material;
 
 void main() {
-    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+    vec3 lightDir = normalize(scene.sun.xyz);
     float NdotL = max(dot(normalize(fragNormal), lightDir), 0.0);
 
     vec3 color = fragColor.a > 0.0 ? fragColor.rgb : material.baseColor.rgb;

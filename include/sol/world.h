@@ -32,6 +32,7 @@ typedef enum
     WORLD_SYS_COMBAT,
     WORLD_SYS_DEBUFF,
     WORLD_SYS_CAM,
+    WORLD_SYS_VITAL,
     WORLD_SYS_COUNT,
 } WorldSystems;
 
@@ -53,6 +54,7 @@ typedef enum
     HAS_COMBAT        = (1 << 13),
     HAS_BUFF          = (1 << 14),
     HAS_DEBUFF        = (1 << 15),
+    HAS_VITAL         = (1 << 16),
 } CompBits;
 
 typedef enum
@@ -75,6 +77,14 @@ typedef struct CompBuff
     BuffKind kind;
     SolHit   hit;
 } CompBuff;
+
+typedef struct CompVital
+{
+    u32   maxHealth, maxEnergy, maxMana;
+    u32   health, energy, mana;
+    bool  doesRespawn;
+    float deathTime, respawnTime;
+} CompVital;
 
 typedef struct CompCombat
 {
@@ -190,6 +200,7 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
+    CompVital        vitals[MAX_ENTS];
     CompBuff         buffs[MAX_ENTS];
     CompXform        xforms[MAX_ENTS];
     CompBody         bodies[MAX_ENTS];
@@ -251,6 +262,7 @@ SOLAPI void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Physx_Step(World *world, double dt, double time);
 SOLAPI void Buff_Step(World *world, double dt, double time);
+void        Vital_Step(World *world, double dt, double time);
 
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
@@ -273,6 +285,7 @@ SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
 SOLAPI void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);
 void        Cam_Update_3D(World *world, double dt, double time, float alpha);
 void        Crosshair_Draw(World *world, double dt, double time);
+void        Vital_Draw(World *world, double dt, double time);
 
 static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_PHYSX]            = {.init = Physx_Init, .step = Physx_Step},
@@ -286,4 +299,4 @@ static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
     [WORLD_SYS_DEBUFF]           = {.step = Buff_Step},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
-};
+    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw}};

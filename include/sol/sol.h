@@ -13,18 +13,19 @@ SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Destroy();
 
-SOLAPI SolState *Sol_GetState();
+SOLAPI SolState  *Sol_GetState();
 SOLAPI SolCamera *Sol_GetCamera();
-SOLAPI double Sol_GetGameTime();
+SOLAPI double     Sol_GetGameTime();
 
 SOLAPI int Sol_Init_Vulkan(void *hwnd, void *hInstance);
+int        Sol_Init_Vulkan_Resources();
 
 SOLAPI void Sol_Render_Resize();
 SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
 
 SOLAPI float Sol_MeasureText(const char *str, float size);
 
-SOLAPI void Sol_Window_Resize(float width, float height);
+SOLAPI void      Sol_Window_Resize(float width, float height);
 SOLAPI SolModel *Sol_GetModel(SolModelId id);
 
 // Needs free
@@ -43,8 +44,8 @@ SOLAPI void Sol_Input_OnRawMouse(int x, int y);
 SOLAPI void SolInput_Update();
 
 // query from game code
-SOLAPI bool SolInput_KeyDown(SolKey key);
-SOLAPI bool SolInput_KeyPressed(SolKey key); // true only on frame of press
+SOLAPI bool     SolInput_KeyDown(SolKey key);
+SOLAPI bool     SolInput_KeyPressed(SolKey key); // true only on frame of press
 SOLAPI SolMouse SolInput_GetMouse();
 
 SOLAPI void Sol_Debug_Add(const char *text, float value);

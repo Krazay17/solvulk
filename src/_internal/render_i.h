@@ -2,65 +2,34 @@
 
 #include <vulkan/vulkan.h>
 
+#define MAX_MODEL_INSTANCES (1 << 13)
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_LINE_VERTICES 0xffffff
 
-// ─── Reusable resource types ─────────────────────────────────────
-
-typedef struct
+typedef enum
 {
-    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
-    void          *mapped[MAX_FRAMES_IN_FLIGHT];
-} SolFrameBuffer;
+    DESC_SCENE_UBO,
+    DESC_MODEL_SSBO,
+    DESC_FONT_ATLAS,
+    DESC_PARTICLE_SSBO,
+    DESC_COUNT,
+} DescriptorId;
 
-typedef struct
+typedef enum
 {
-    VkDescriptorSetLayout layout;
-    VkDescriptorPool      pool;
-    VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
-    VkBuffer              buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory        memory[MAX_FRAMES_IN_FLIGHT];
-    void                 *mapped[MAX_FRAMES_IN_FLIGHT];
-} SolDescriptorBuffer;
+    DESC_KIND_UBO,
+    DESC_KIND_SSBO,
+    DESC_KIND_IMAGE,
+} DescriptorKind;
 
-typedef struct
+typedef enum PipelineId
 {
-    VkDescriptorSetLayout layout;
-    VkDescriptorPool      pool;
-    VkDescriptorSet       set;
-} SolDescriptorImage;
-
-typedef struct
-{
-    VkImage        image;
-    VkDeviceMemory memory;
-    VkImageView    view;
-    VkSampler      sampler;
-} SolGpuImage;
-
-// ─── GPU data ──────────────────────────────────────────────
-
-typedef struct
-{
-    VkBuffer       vertexBuffer;
-    VkDeviceMemory vertexMemory;
-    VkBuffer       indexBuffer;
-    VkDeviceMemory indexMemory;
-    uint32_t       indexCount;
-    SolMaterial    material;
-} SolGpuMesh;
-
-typedef struct
-{
-    SolGpuMesh *meshes;
-    u32         mesh_count;
-} SolGpuModel;
-
-typedef struct SolLineVertex
-{
-    vec3s pos, color;
-} SolLineVertex;
+    PIPE_MODEL,
+    PIPE_TEXT,
+    PIPE_RECT,
+    PIPE_LINE,
+    PIPE_COUNT,
+} PipelineId;
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
@@ -84,11 +53,97 @@ typedef struct
 
 typedef struct
 {
+    vec4 position;
+} VertexSSBO;
+
+typedef struct
+{
     mat4  ortho;
     float x, y, w, h;
     float u, v, uw, vh;
     float r, g, b, a;
 } SolTextPush;
+
+// ─── GPU data ──────────────────────────────────────────────
+typedef struct
+{
+    VkBuffer       vertexBuffer;
+    VkDeviceMemory vertexMemory;
+    VkBuffer       indexBuffer;
+    VkDeviceMemory indexMemory;
+    uint32_t       indexCount;
+    SolMaterial    material;
+} SolGpuMesh;
+
+typedef struct
+{
+    SolGpuMesh *meshes;
+    u32         mesh_count;
+} SolGpuModel;
+
+typedef struct SolLineVertex
+{
+    vec3s pos, color;
+} SolLineVertex;
+
+typedef struct
+{
+    VkImage        image;
+    VkDeviceMemory memory;
+    VkImageView    view;
+    VkSampler      sampler;
+} SolGpuImage;
+
+// ─── Reusable resource types ─────────────────────────────────────
+typedef struct
+{
+    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
+    void          *mapped[MAX_FRAMES_IN_FLIGHT];
+} SolFrameBuffer;
+
+typedef struct SolDescriptor
+{
+    DescriptorKind        kind;
+    VkDescriptorSetLayout layout;
+    VkDescriptorPool      pool;
+    VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
+
+    // Buffer-backed (UBO/SSBO)
+    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
+    void          *mapped[MAX_FRAMES_IN_FLIGHT];
+
+    // Image-backed (texture)
+    SolGpuImage image;
+} SolDescriptor;
+
+typedef struct SolDescriptorConfig
+{
+    VkDeviceSize       size;
+    VkDescriptorType   type;
+    VkShaderStageFlags stageFlags;
+    DescriptorKind     kind;
+    SolImageId         imageId;
+} SolDescriptorConfig;
+
+typedef struct SolPipe
+{
+    VkPipeline         pipeline;
+    VkPipelineLayout   layout;
+    uint32_t           pushSize;
+    VkShaderStageFlags pushStages;
+} SolPipe;
+
+// typedef struct
+// {
+//     VkDescriptorSetLayout layout;
+//     VkDescriptorPool      pool;
+//     VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
+//     VkBuffer              buffers[MAX_FRAMES_IN_FLIGHT];
+//     VkDeviceMemory        memory[MAX_FRAMES_IN_FLIGHT];
+//     void                 *mapped[MAX_FRAMES_IN_FLIGHT];
+// } SolDescriptorBuffer;
 
 // ─── Font data ───────────────────────────────────────────────────
 
@@ -108,36 +163,34 @@ typedef struct
 
 // ─── Pipeline + resource groupings ───────────────────────────────
 
-typedef struct
-{
-    VkPipeline       pipeline;
-    VkPipelineLayout layout;
-} SolPipeline;
+// typedef struct
+// {
+//     VkPipeline       pipeline;
+//     VkPipelineLayout layout;
+// } SolPipeline;
 
-typedef struct SolPipeModel
-{
-    SolPipeline         pipe;
-    SolDescriptorBuffer modelSSBO;
-} SolPipeModel;
+// typedef struct SolPipeModel
+// {
+//     SolPipeline         pipe;
+//     SolDescriptorBuffer modelSSBO;
+// } SolPipeModel;
 
-typedef struct SolPipeRay
-{
-    SolPipeline         pipe;
-    SolDescriptorBuffer sceneUBO;
-} SolPipeRay;
+// typedef struct SolPipeRay
+// {
+//     SolPipeline pipe;
+// } SolPipeRay;
 
-typedef struct
-{
-    SolPipeline pipe;
-} SolPipeRect;
+// typedef struct
+// {
+//     SolPipeline pipe;
+// } SolPipeRect;
 
-typedef struct
-{
-    SolPipeline        pipe;
-    SolGpuImage        fontAtlas;
-    SolDescriptorImage fontDesc;
-    SolGlyph           glyphs[128];
-} SolPipeText;
+// typedef struct
+// {
+//     SolPipeline        pipe;
+//     SolGpuImage        fontAtlas;
+//     SolDescriptorImage fontDesc;
+// } SolPipeText;
 
 // ─── Pipeline build configs ──────────────────────────────────────
 typedef enum
@@ -156,6 +209,9 @@ typedef struct
     uint32_t            pushRangeSize;
     VkShaderStageFlags  pushStageFlags;
     VkPrimitiveTopology primitiveTopology;
+
+    DescriptorId descId[DESC_COUNT];
+    u32          descCount;
 } SolPipelineConfig;
 
 // ─── Vulkan plumbing (exists once) ───────────────────────────────
@@ -209,28 +265,108 @@ int SolFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMe
 int SolCreateBuffer(SolVkState *vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                     VkBuffer *outBuffer, VkDeviceMemory *outMemory);
 
-int Sol_CreateDescriptorBuffer(SolVkState *vk, VkDeviceSize size, VkDescriptorType type, VkShaderStageFlags stageFlags,
-                               SolDescriptorBuffer *out);
-
 int Sol_CreateDescriptorImage(SolVkState *vk, VkImageView imageView, VkSampler sampler, VkShaderStageFlags stageFlags,
-                              SolDescriptorImage *out);
+                              SolDescriptor *out);
 
-int Sol_UploadImage(SolVkState *vkstate, const void *pixels, uint32_t width, uint32_t height, VkFormat format,
-                    SolGpuImage *out);
+int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *pipe);
+int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out);
 
-int Sol_BuildPipeline(SolVkState *vk, SolPipelineConfig *config, VkDescriptorSetLayout *descLayouts,
-                      uint32_t descLayoutCount, SolPipeline *out);
+int  Sol_UploadImage(const void *pixels, u32 width, u32 height, VkFormat format, SolImageId id);
+void Sol_UploadModel(SolModel *model, SolModelId id);
 
 // ─── Render API (internal) ───────────────────────────────────────
 
 VkCommandBuffer Command_Buffer_Get(void);
-void            Bind_Pipeline(VkCommandBuffer cmd, VkPipeline pipeline);
-void            Sol_UploadModel(SolModel *model, SolModelId modelId);
-void           *Sol_ModelBuffer_Get(void);
+void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
 void            Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds      ParseBounds(const char *p, const char *end);
-int             Sol_Pipeline_BuildAllDefault(SolVkState *vkstate);
+int             Sol_Pipeline_Buildall(SolVkState *vkstate);
 void            Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
 void            Sol_Flush_Models(void);
 
 void Render_Camera_Update(vec3 pos, vec3 target);
+
+static SolPipelineConfig pipe_config[PIPE_COUNT] = {
+    [PIPE_TEXT] =
+        {
+            .vertResource      = "ID_SHADER_TEXTV",
+            .fragResource      = "ID_SHADER_TEXTF",
+            .depthTest         = 0,
+            .alphaBlend        = 0,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolTextPush),
+            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_FONT_ATLAS},
+            .descCount         = 1,
+        },
+    [PIPE_MODEL] =
+        {
+            .vertResource      = "ID_SHADER_MODELV",
+            .fragResource      = "ID_SHADER_MODELF",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolMaterial),
+            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .type              = VERTEX_TRI,
+            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO},
+            .descCount         = 2,
+        },
+    [PIPE_RECT] =
+        {
+            .vertResource      = "ID_SHADER_RECTV",
+            .fragResource      = "ID_SHADER_RECTF",
+            .depthTest         = 0,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(float) * 32,
+            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+    [PIPE_LINE] =
+        {
+            .vertResource      = "ID_SHADER_LINEV",
+            .fragResource      = "ID_SHADER_LINEF",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = 0,
+            .pushStageFlags    = 0,
+            .type              = VERTEX_LINE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+            .descId            = {DESC_SCENE_UBO},
+            .descCount         = 1,
+        },
+};
+
+static SolDescriptorConfig desc_config[DESC_COUNT] = {
+    [DESC_SCENE_UBO] =
+        {
+            .size       = sizeof(SceneUBO),
+            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_UBO,
+        },
+    [DESC_MODEL_SSBO] =
+        {
+            .size       = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_FONT_ATLAS] =
+        {
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_IMAGE,
+            .imageId    = SOL_IMAGE_FONT,
+        },
+    [DESC_PARTICLE_SSBO] =
+        {
+            .size       = sizeof(VertexSSBO),
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+};

@@ -217,7 +217,7 @@ SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, Com
 {
     WorldPhysx  *ws   = world->spatial;
     SpatialCell  cell = Spatial_Cell_Get(xform->pos, SPATIAL_DYNAMIC_CELL_SIZE);
-    SolCollision col;
+    SolCollision col = {0};
     for (int n = 0; n < 27; n++)
     {
         u32 entry = ws->dynamicGroup.table.head[cell.neighborHashes[n] & (ws->dynamicGroup.table.size - 1)];

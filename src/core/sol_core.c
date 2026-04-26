@@ -12,7 +12,9 @@ void Sol_Init(void *hwnd, void *hInstance)
     solState.g_hwnd = hwnd;
     int vulkInit    = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
-    Sol_Loader_LoadModels();
+    
+    Sol_Load_Resources();
+    Sol_Init_Vulkan_Resources();
 
     solState.debug = true;
 }

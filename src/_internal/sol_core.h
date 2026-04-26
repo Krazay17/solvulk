@@ -14,6 +14,7 @@
 #include "systems/view/view_i.h"
 #include "systems/combat/combat_i.h"
 #include "systems/buff/buff_i.h"
+#include "systems/vital/vital_i.h"
 
 typedef struct SolState
 {

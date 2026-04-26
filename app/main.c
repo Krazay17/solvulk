@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
     wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(WS_EX_TOPMOST, CLASS_NAME, "Sol Vulkan",
-                            WS_POPUP | WS_VISIBLE, 720, 0, 1200, 800, NULL, NULL, hInstance, NULL);
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 720, 0, 1200, 800, NULL, NULL,
+                            hInstance, NULL);
     if (!g_hwnd)
         return 1;
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     }
 
     InterlockedExchange(&g_running, 0);
-    WaitForSingleObject(hGameThread, INFINITE);
+    WaitForSingleObject(hGameThread, 0x2ff);
     CloseHandle(hGameThread);
 
     return (int)msg.wParam;

@@ -7,6 +7,14 @@ layout(location = 1) in vec4 fragColor;
 
 layout(location = 0) out vec4 outColor;
 
+layout(set = 0, binding = 0) uniform Scene {
+    mat4 viewProj;
+    mat4 view;
+    mat4 proj;
+    vec4 cameraPos;
+    vec4 sun;
+} scene;
+
 float median(float r, float g, float b) {
     return max(min(r,g), min(max(r,g),b));
 }

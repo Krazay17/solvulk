@@ -34,7 +34,6 @@
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
-#define MAX_MODEL_INSTANCES 500000
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 
 // Forwards
@@ -94,6 +93,12 @@ typedef enum
     SOL_MODEL_WORLD2,
     SOL_MODEL_COUNT,
 } SolModelId;
+
+typedef enum
+{
+    SOL_IMAGE_FONT,
+    SOL_IMAGE_COUNT,
+} SolImageId;
 
 typedef enum
 {
@@ -274,6 +279,12 @@ typedef struct SolModel
     u32        indice_count;
     SolModelId modelId;
 } SolModel;
+
+typedef struct SolImage
+{
+    u32         width, height;
+    const void *pixels;
+} SolImage;
 
 typedef struct SolCollision
 {

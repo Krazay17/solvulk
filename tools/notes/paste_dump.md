@@ -144,3 +144,131 @@ SolRayResult Raycast_Dynamic_Table_Tri(PhysxGroup *group, SolRay ray)
     SolRayResult result = {0};
     return result;
 }
+
+
+// int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptor *desc)
+// {
+
+//     Sol_Descriptor_Build(&vkstate, sizeof(SceneUBO), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+//                                &descriptors[DESC_SCENE_UBO]);
+//     Sol_Descriptor_Build(&vkstate, sizeof(ModelSSBO) * MAX_MODEL_INSTANCES, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//                                VK_SHADER_STAGE_VERTEX_BIT, &descriptors[DESC_MODEL_SSBO]);
+//     return 0;
+// }
+
+// int Sol_Descriptor_Buildall(SolVkState *vkstate)
+// {
+//     for (int i = 0; i < DESC_COUNT; i++)
+//         Sol_Descriptor_Build(&vkstate, &descriptors[i]);
+
+//     return 0;
+// }
+
+int Sol_Pipeline_Buildall(SolVkState *vkstate)
+{
+
+    // for (int i = 0; i < PIPE_COUNT; i++)
+    // {
+    //     Sol_Pipeline_Build(&vkstate, &pipe_config[i]);
+    // }
+
+    // // ─── Text Pipeline ──────────────────────────────────────────
+    // SolResource metrics = Sol_LoadResource("ID_FONT_METRICS");
+    // if (metrics.data)
+    //     Sol_ParseFontMetrics((const char *)metrics.data, 224.0f, 224.0f, fontGlyphs);
+
+    // SolResource fontRes = Sol_LoadResource("ID_FONT_ATLAS");
+    // if (!fontRes.data)
+    //     return 1;
+
+    // if (Sol_UploadImage(vkstate, fontRes.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, &pipeText.fontAtlas) != 0)
+    //     return 1;
+
+    // if (Sol_CreateDescriptorImage(vkstate, pipeText.fontAtlas.view, pipeText.fontAtlas.sampler,
+    //                               VK_SHADER_STAGE_FRAGMENT_BIT, &pipeText.fontDesc) != 0)
+    //     return 1;
+
+    // SolPipelineConfig textConfig = {
+    //     .vertResource      = "ID_SHADER_TEXTV",
+    //     .fragResource      = "ID_SHADER_TEXTF",
+    //     .depthTest         = 0,
+    //     .alphaBlend        = 0,
+    //     .cullMode          = VK_CULL_MODE_NONE,
+    //     .pushRangeSize     = sizeof(SolTextPush),
+    //     .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+    //     .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    // };
+
+    // if (Sol_Pipeline_Build(vkstate, &textConfig, &pipeText.fontDesc.layout, 1, &pipeText.pipe) != 0)
+    //     return 1;
+
+    // // ─── 3D Mesh Pipeline ───────────────────────────────────────
+    // if (Sol_Descriptor_Build(vkstate, sizeof(SceneUBO), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &sceneUBO) != 0)
+    //     return 1;
+
+    // if (Sol_Descriptor_Build(vkstate, sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+    // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    //                                VK_SHADER_STAGE_VERTEX_BIT, &pipeModel.modelSSBO) != 0)
+    //     return 1;
+
+    // VkDescriptorSetLayout meshLayouts[] = {
+    //     sceneUBO.layout,
+    //     pipeModel.modelSSBO.layout,
+    // };
+
+    // SolPipelineConfig meshConfig = {
+    //     .vertResource      = "ID_SHADER_MODELV",
+    //     .fragResource      = "ID_SHADER_MODELF",
+    //     .depthTest         = 1,
+    //     .alphaBlend        = 1,
+    //     .cullMode          = VK_CULL_MODE_NONE,
+    //     .pushRangeSize     = sizeof(SolMaterial),
+    //     .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+    //     .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //     .type              = VERTEX_TRI,
+    // };
+
+    // if (Sol_Pipeline_Build(vkstate, &meshConfig, meshLayouts, 2, &pipeModel.pipe) != 0)
+    //     return 1;
+
+    // // ─── 2D Rect Pipeline ───────────────────────────────────────
+    // SolPipelineConfig rectConfig = {
+    //     .vertResource      = "ID_SHADER_RECTV",
+    //     .fragResource      = "ID_SHADER_RECTF",
+    //     .depthTest         = 0,
+    //     .alphaBlend        = 1,
+    //     .cullMode          = VK_CULL_MODE_NONE,
+    //     .pushRangeSize     = sizeof(float) * 32,
+    //     .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+    //     .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    // };
+
+    // if (Sol_Pipeline_Build(vkstate, &rectConfig, NULL, 0, &pipeRect.pipe) != 0)
+    //     return 1;
+
+    // SolPipelineConfig lineConfig = {
+    //     .vertResource      = "ID_SHADER_LINEV",
+    //     .fragResource      = "ID_SHADER_LINEF",
+    //     .depthTest         = 1,
+    //     .alphaBlend        = 1,
+    //     .cullMode          = VK_CULL_MODE_NONE,
+    //     .pushRangeSize     = 0,
+    //     .pushStageFlags    = 0,
+    //     .type              = VERTEX_LINE,
+    //     .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+    // };
+
+    // VkDescriptorSetLayout lineLayouts[] = {
+    //     sceneUBO.layout,
+    // };
+
+    // if (Sol_Pipeline_Build(vkstate, &pipe_config[PIPE_LINE], lineLayouts, 1, &pipeRay.pipe) != 0)
+    //     return 1;
+
+    // Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    //                       &lineBuffer);
+
+    // return 0;
+}

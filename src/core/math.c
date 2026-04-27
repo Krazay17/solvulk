@@ -1,60 +1,12 @@
-#include <cglm/struct.h>
-
+#include "math_i.h"
 #include "sol_core.h"
 
-vec3s ClosestPointOnTriangle(const vec3s p, const vec3s a, const vec3s b, const vec3s c)
-{
-    const vec3s ab = glms_vec3_sub(b, a);
-    const vec3s ac = glms_vec3_sub(c, a);
-    const vec3s ap = glms_vec3_sub(p, a);
-
-    const float d1 = glms_vec3_dot(ab, ap);
-    const float d2 = glms_vec3_dot(ac, ap);
-    if (d1 <= 0.0f && d2 <= 0.0f)
-        return a;
-
-    const vec3s bp = glms_vec3_sub(p, b);
-    const float d3 = glms_vec3_dot(ab, bp);
-    const float d4 = glms_vec3_dot(ac, bp);
-    if (d3 >= 0.0f && d4 <= d3)
-        return b;
-
-    const vec3s cp = glms_vec3_sub(p, c);
-    const float d5 = glms_vec3_dot(ab, cp);
-    const float d6 = glms_vec3_dot(ac, cp);
-    if (d6 >= 0.0f && d5 <= d6)
-        return c;
-
-    float vc = d1 * d4 - d3 * d2;
-    if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
-    {
-        const float v = d1 / (d1 - d3);
-        return glms_vec3_add(a, glms_vec3_scale(ab, v));
-    }
-
-    float vb = d5 * d2 - d1 * d6;
-    if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
-    {
-        const float w = d2 / (d2 - d6);
-        return glms_vec3_add(a, glms_vec3_scale(ac, w));
-    }
-
-    float va = d3 * d6 - d5 * d4;
-    if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
-    {
-        const float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-        return glms_vec3_add(b, glms_vec3_scale(glms_vec3_sub(c, b), w));
-    }
-
-    const float denom = va + vb + vc;
-    if (denom < FLOATING_EPSILON)
-        return a;
-
-    const float inv = 1.0f / denom;
-    const float v   = vb * inv;
-    const float w   = vc * inv;
-    return glms_vec3_add(a, glms_vec3_add(glms_vec3_scale(ab, v), glms_vec3_scale(ac, w)));
-}
+const vec3s VECTOR_RADIAL_DIRECTIONS[4] = {
+    { 1.0f, 0.0f,  0.0f}, // Forward
+    { 0.0f, 0.0f,  1.0f}, // Right
+    {-1.0f, 0.0f,  0.0f}, // Backward
+    { 0.0f, 0.0f, -1.0f}  // Left
+};
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b)
 {
@@ -148,18 +100,12 @@ versors Sol_Quat_FromLookDira(vec3s lookDir)
     return (versors){q[0], q[1], q[2], q[3]};
 }
 
-float FlashAnim(float dt, float value, float speed)
+float Sol_YawFromQuat(versor q)
 {
-    speed = (speed > 0.0f) ? speed : 4.0f;
-    value -= dt * speed;
-    if (value < 0.0f)
-        value = 0.0f;
-    return value;
+    return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
 }
-
 float PulseAnim(float dt, float value, float speed)
 {
-    speed = (speed > 0.0f) ? speed : 4.0f;
     value += dt * speed;
     value = (sinf(value) * 0.5f) + 0.5f;
     return value;

@@ -32,6 +32,6 @@ void Sol_Debug_Draw()
     {
         char buffer[MAX_STR_LEN];
         sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
-        Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (SolColor){255, 0, 122, 255});
+        Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (SolColor){255, 0, 122, 255}, SOL_FONT_ICE);
     }
 }

@@ -1,15 +1,11 @@
-#include <cglm/cglm.h>
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 SolVkState solvkstate = {0};
 
 float     solAspectRatio;
-mat4      ortho2d;
 SolCamera renderCam = {
     .fov      = 60.0f,
-    .nearClip = 0.1f,
+    .nearClip = 0.2f,
     .farClip  = 5000.0f,
 };
 
@@ -23,17 +19,13 @@ static struct
 static u32            boundPipeline;
 static SolGpuImage    gpuImages[SOL_IMAGE_COUNT];
 static SolGpuModel    gpuModels[SOL_MODEL_COUNT];
-static SolGlyph       fontGlyphs[128];
 static SolFrameBuffer particleBuffer;
 static SolFrameBuffer lineBuffer;
+static uint32_t       windowWidth;
+static uint32_t       windowHeight;
 
 static SolDescriptor descriptors[DESC_COUNT];
 static SolPipe       pipes[PIPE_COUNT];
-
-//  static SolDescriptorBuffer sceneUBO;
-//  static SolPipeModel pipeModel;
-//  static SolPipeRect  pipeRect;
-//  static SolPipeText  pipeText;
 
 int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 {
@@ -56,21 +48,15 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
 
-    uint32_t width  = solvkstate.swapchainExtent.width;
-    uint32_t height = solvkstate.swapchainExtent.height;
-    solAspectRatio  = (float)width / (float)height;
-    Sol_SetOrtho(width, height);
+    windowWidth    = solvkstate.swapchainExtent.width;
+    windowHeight   = solvkstate.swapchainExtent.height;
+    solAspectRatio = (float)windowWidth / (float)windowHeight;
 
     return 0;
 }
 
 int Sol_Init_Vulkan_Resources()
 {
-    const char *data = Sol_Getbank()->fonts->metrics.data;
-
-    if (data)
-        Sol_ParseFontMetrics(data, 224.0f, 224.0f, fontGlyphs);
-
     for (int i = 0; i < DESC_COUNT; i++)
     {
         if (Sol_Descriptor_Build(&solvkstate, &desc_config[i], &descriptors[i]) != 0)
@@ -91,19 +77,9 @@ int Sol_Init_Vulkan_Resources()
     Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                           &lineBuffer);
 
+    Sol_SetOrtho(windowWidth, windowHeight);
     return 0;
 }
-
-// void Build_Fonts(SolVkState *vkstate)
-// {
-//     SolFont *font = &Sol_Getbank()->fonts[SOL_FONT_ICE];
-//     Sol_UploadImage(vkstate, &Sol_Getbank()->fonts->atlas, 224, 224, VK_FORMAT_R8G8B8A8_UNORM,
-//                     &gpuImages[SOL_IMAGE_FONT]);
-//     if (font->metrics.data)
-//         Sol_ParseFontMetrics((const char *)font->metrics.data, 224.0f, 224.0f, fontGlyphs);
-//     Sol_CreateDescriptorImage(vkstate, gpuImages[SOL_IMAGE_FONT].view, gpuImages[SOL_IMAGE_FONT].sampler,
-//                               VK_SHADER_STAGE_FRAGMENT_BIT, &descriptors[DESC_FONT_ATLAS]);
-// }
 
 VkCommandBuffer Command_Buffer_Get()
 {
@@ -133,14 +109,17 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     boundPipeline = id;
 }
 
-static float SolColorF(uint8_t c)
-{
-    return c / 255.0f;
-}
-
 void Sol_SetOrtho(uint32_t width, uint32_t height)
 {
-    glm_ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f, ortho2d);
+    mat4 ortho;
+    glm_ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f, ortho);
+
+    for(int i = 0;i<MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        OrthoUBO *ubo = descriptors[DESC_ORTHO_UBO].mapped[i];
+        memcpy(ubo->ortho2d, ortho, sizeof(mat4));
+
+    }
 }
 
 void Sol_Render_Resize()
@@ -196,21 +175,13 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_RECT);
 
-    struct
-    {
-        mat4 o;
-        vec4 rec;
-        vec4 c;
-        vec4 extras;
-    } push = {
+    ShaderPushRect push = {
         .rec    = {rect.x, rect.y, rect.w, rect.h},
-        .c      = {SolColorF(color.r), SolColorF(color.g), SolColorF(color.b), SolColorF(color.a)},
+        .c      = {ColorF(color.r), ColorF(color.g), ColorF(color.b), ColorF(color.a)},
         .extras = {thickness, 0, 0, 0},
     };
-    memcpy(push.o, ortho2d, sizeof(mat4));
 
-    vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push), &push);
-
+    vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
@@ -281,18 +252,20 @@ void Sol_Draw_Line(SolLine *lines, int count)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
-void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color)
+void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId)
 {
-    // atlas layout constants — match your exported atlas
-    const int   COLS   = 16;
-    const int   ROWS   = 6;
-    const float CELL_W = 1.0f / COLS;
-    const float CELL_H = 1.0f / ROWS;
-    const float CHAR_W = size * 0.6f; // aspect ratio of one glyph
-    const float CHAR_H = size;
+    SolFont *font = &Sol_Getbank()->fonts[fontId];
 
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_TEXT);
+
+    ShaderPushText push;
+    const int      COLS   = 16;
+    const int      ROWS   = 6;
+    const float    CELL_W = 1.0f / COLS;
+    const float    CELL_H = 1.0f / ROWS;
+    const float    CHAR_W = size * 0.6f; // aspect ratio of one glyph
+    const float    CHAR_H = size;
 
     float cursorX = x;
     for (const char *c = str; *c; c++)
@@ -307,42 +280,26 @@ void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color
         int       col      = ascii % COLS;
         int       row      = ascii / COLS;
         float     baseSize = size / 32.0f;
-        SolGlyph *g        = &fontGlyphs[(int)*c];
-
-        SolTextPush push;
-        memcpy(push.ortho, ortho2d, sizeof(mat4));
+        SolGlyph *g        = &font->glyph[(int)*c];
 
         float pad = 0.2f * baseSize * (224.0f / 32.0f);
         push.x    = cursorX + g->xoffset * size - pad;
         push.y    = y - g->ytop * size - pad;
         push.w    = g->uw * 224.0f * baseSize + pad * 2.0f;
         push.h    = g->vh * 224.0f * baseSize + pad * 2.0f;
-        push.r    = SolColorF(color.r);
-        push.g    = SolColorF(color.g);
-        push.b    = SolColorF(color.b);
-        push.a    = SolColorF(color.a);
+        push.r    = ColorF(color.r);
+        push.g    = ColorF(color.g);
+        push.b    = ColorF(color.b);
+        push.a    = ColorF(color.a);
         push.u    = g->u;
         push.v    = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
         push.uw   = g->uw;
         push.vh   = g->vh;
         cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
 
-        vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(SolTextPush), &push);
+        vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText), &push);
         vkCmdDraw(cmd, 6, 1, 0, 0);
     }
-}
-
-float Sol_MeasureText(const char *str, float size)
-{
-    float width = 0.0f;
-    for (const char *c = str; *c; c++)
-    {
-        int id = (int)*c;
-        if (id < 0 || id >= 128)
-            continue;
-        width += fontGlyphs[id].yadvance * size;
-    }
-    return width;
 }
 
 void Sol_Begin_Draw()

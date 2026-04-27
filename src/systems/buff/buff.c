@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include <cglm/struct.h>
 
 CompBuff *Sol_Debuff_Add(World *world, int id, CompBuff init)
 {

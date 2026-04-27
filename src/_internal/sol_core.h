@@ -9,6 +9,7 @@
 #include "loader_i.h"
 #include "profiler_i.h"
 #include "debug_i.h"
+#include "input_i.h"
 
 #include "systems/physx/physx_i.h"
 #include "systems/view/view_i.h"

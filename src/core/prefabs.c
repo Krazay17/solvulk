@@ -2,7 +2,7 @@
 
 int Sol_Prefab_Wizard(World *world, vec3s pos)
 {
-    float height = 2.0f;
+    float height = 2.8f;
     int id = Entity_Create(world);
 
     CompXform *xform = Entity_Add_Xform(world, id, pos);
@@ -45,7 +45,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     uiEle->textColor = (SolColor){0, 255, 0, 255};
     uiEle->borderThickness = 2.0f;
     uiEle->fontSize = 16.0f;
-    uiEle->textWidth = Sol_MeasureText(text, 16.0f);
+    uiEle->textWidth = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE);
     strncpy_s(uiEle->text, sizeof(uiEle->text), text, 64);
 
     return id;

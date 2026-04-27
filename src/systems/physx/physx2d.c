@@ -1,4 +1,3 @@
-#include <cglm/struct.h>
 #include "sol_core.h"
 
 CompBody *Entity_Add_Body2(World *world, int id)

@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
 
     ShowWindow(g_hwnd, nShowCmd);
 
-    // AllocConsole();
-    // freopen("CONOUT$", "w", stdout);
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
 
     // Raw input device for accurate mouse
     RAWINPUTDEVICE rid;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
     // Main thread is now 100% dedicated to pumping Windows messages.
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0)) // blocks until a message arrives – zero CPU waste
+    while (GetMessage(&msg, NULL, 0, 0) && Sol_GetState()->isRunning) // blocks until a message arrives – zero CPU waste
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -199,7 +199,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         ValidateRect(hwnd, NULL);
         return 0;
     case WM_SETCURSOR:
-        SolMouse mouse = SolInput_GetMouse();
+        SolMouse mouse = Sol_Input_GetMouse();
         if (mouse.locked)
         {
             SetCursor(NULL);
@@ -207,10 +207,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_KEYDOWN:
-        SolInput_OnKey((int)wParam, true);
+        Sol_Input_OnKey((int)wParam, true);
         return 0;
     case WM_KEYUP:
-        SolInput_OnKey((int)wParam, false);
+        Sol_Input_OnKey((int)wParam, false);
         return 0;
     case WM_MOUSEMOVE:
         if (isDragging)
@@ -227,10 +227,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             dragStartPos = currentPos;
         }
 
-        SolInput_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+        Sol_Input_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         return 0;
     case WM_LBUTTONDOWN:
-        SolInput_OnMouseButton(SOL_MOUSE_LEFT, true);
+        Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, true);
         POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
         if (pt.y < 30)
         {
@@ -240,7 +240,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     case WM_LBUTTONUP:
-        SolInput_OnMouseButton(SOL_MOUSE_LEFT, false);
+        Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, false);
         if (isDragging)
         {
             isDragging = false;
@@ -248,16 +248,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     case WM_RBUTTONDOWN:
-        SolInput_OnMouseButton(SOL_MOUSE_RIGHT, true);
+        Sol_Input_OnMouseButton(SOL_MOUSE_RIGHT, true);
         return 0;
     case WM_RBUTTONUP:
-        SolInput_OnMouseButton(SOL_MOUSE_RIGHT, false);
+        Sol_Input_OnMouseButton(SOL_MOUSE_RIGHT, false);
         return 0;
     case WM_MBUTTONDOWN:
-        SolInput_OnMouseButton(SOL_MOUSE_MIDDLE, true);
+        Sol_Input_OnMouseButton(SOL_MOUSE_MIDDLE, true);
         return 0;
     case WM_MBUTTONUP:
-        SolInput_OnMouseButton(SOL_MOUSE_MIDDLE, false);
+        Sol_Input_OnMouseButton(SOL_MOUSE_MIDDLE, false);
+        return 0;
+    case WM_MOUSEWHEEL:
+        GET_KEYSTATE_WPARAM(wParam);
+        int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+        Sol_Input_OnMouseWheel(zDelta);
         return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);

@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include <cglm/struct.h>
 
 void Sol_Movement_Fly_Update(World *world, int id, float dt)
 {

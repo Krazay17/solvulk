@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include <cglm/struct.h>
 
 void Combat_Init(World *world)
 {
@@ -24,17 +23,19 @@ void Combat_Tick(World *world, double dt, double time)
         CompController *controller = &world->controllers[id];
         CompXform      *xform      = &world->xforms[id];
 
+        vec3s aimpos = controller->aimpos;
+        vec3s aimdir = controller->aimdir;
+
         if (controller->actionState & ACTION_ATTACK)
         {
             SolRayResult result = Sol_RaycastD(
-                world, (SolRay){.pos = controller->aimPos, .dir = controller->aimdir, .dist = 50.0f, .ignoreEnt = id},
-                1.0f);
+                world, (SolRay){.pos = aimpos, .dir = aimdir, .dist = 50.0f, .ignoreEnt = id}, 1.0f);
             if (result.hit && result.entId)
             {
                 Sol_Debuff_Add(world, result.entId,
                                (CompBuff){.duration = 1.0f,
-                                            .kind    = BUFF_KNOCKBACK,
-                                            .hit      = (SolHit){.dir = controller->lookdir, .power = 30.0f}});
+                                          .kind     = BUFF_KNOCKBACK,
+                                          .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
             }
         }
     }

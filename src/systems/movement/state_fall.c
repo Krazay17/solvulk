@@ -1,5 +1,3 @@
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 void Sol_Movement_Fall_Update(World *world, int id, float dt)
@@ -19,9 +17,9 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
     if (controller->actionState & ACTION_DASH)
         if (Sol_Movement_SetState(world, id, MOVE_DASH))
             return;
-    if (controller->actionState & ACTION_JUMP)
-        if (Sol_Movement_SetState(world, id, MOVE_FLY))
-            return;
+    // if (controller->actionState & ACTION_JUMP)
+    //     if (Sol_Movement_SetState(world, id, MOVE_FLY))
+    //         return;
 
     vec3s latwishdir = wishdir;
     latwishdir.y = 0;

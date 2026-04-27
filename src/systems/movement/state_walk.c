@@ -1,5 +1,3 @@
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 void Sol_Movement_Walk_Update(World *world, int id, float dt)

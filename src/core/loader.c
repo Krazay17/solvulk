@@ -4,34 +4,26 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 SolBank         bank                       = {0};
 static SolModel cpuModels[SOL_MODEL_COUNT] = {0};
 
-// name of the resource linked in the resources.rc
-static const char *modelResourceName[SOL_MODEL_COUNT] = {
-    "ID_MODEL_WIZARD",
-    "ID_MODEL_WORLD0",
-    "ID_MODEL_WORLD1",
-    "ID_MODEL_WORLD2",
-};
 
 SolBank *Sol_Load_Resources()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; ++i)
     {
-        cpuModels[i] = Sol_LoadModel(modelResourceName[i]);
-        Sol_UploadModel(&cpuModels[i], i);
+        bank.models[i] = Sol_LoadModel(modelResourceName[i]);
+        Sol_UploadModel(&bank.models[i], i);
     }
-
-    bank.fonts[SOL_FONT_ICE].metrics = Sol_LoadResource("ID_FONT_METRICS");
-    bank.fonts[SOL_FONT_ICE].atlas   = Sol_LoadResource("ID_FONT_ATLAS");
-    bank.fonts[SOL_FONT_ICE].width   = 224;
-    bank.fonts[SOL_FONT_ICE].height  = 224;
-    Sol_UploadImage(bank.fonts[SOL_FONT_ICE].atlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
+    for (int i = 0; i < SOL_FONT_COUNT; i++)
+    {
+        SolResource fontIceMetrics = Sol_LoadResource(fontResourceName[i][0]);
+        SolResource fontIceAtlas   = Sol_LoadResource(fontResourceName[i][1]);
+        Load_Font(&bank.fonts[SOL_FONT_ICE], fontIceMetrics.data, fontIceAtlas.data, 224.0f, 224.0f);
+        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
+    }
 
     return &bank;
 }
@@ -43,7 +35,7 @@ SolBank *Sol_Getbank()
 
 SolModel *Sol_GetModel(SolModelId id)
 {
-    return &cpuModels[id];
+    return &bank.models[id];
 }
 
 char *Sol_ReadFile(const char *filename, long *outSize)

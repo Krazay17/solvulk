@@ -1,7 +1,8 @@
 #version 450
-
+layout(set=0, binding=0) uniform Ortho {
+    mat4 ortho2d;
+};
 layout(push_constant) uniform Push {
-    mat4 ortho;
     float x, y, w, h;
     float u, v, uw, vh;
     float r, g, b, a;
@@ -32,5 +33,5 @@ void main()
 
     fragUV    = uvs[gl_VertexIndex];
     fragColor = vec4(push.r, push.g, push.b, push.a);
-    gl_Position = push.ortho * vec4(positions[gl_VertexIndex], 0.0, 1.0);
+    gl_Position = ortho2d * vec4(positions[gl_VertexIndex], 0.0, 1.0);
 }

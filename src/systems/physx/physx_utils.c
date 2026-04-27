@@ -1,6 +1,3 @@
-#include <cglm/struct.h>
-
-#include "physx_i.h"
 #include "sol_core.h"
 
 void Spatial_Add(World *world, int id, CompBody *body)
@@ -54,12 +51,15 @@ void Fill_Dynamic_Table(World *world, int count, int *ents)
 
 void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform)
 {
-    body->grounded      = 0;
-    SolRayResult result = Sol_Raycast(world, (SolRay){.pos = xform->pos, .dir = (vec3s){0, -1, 0}, .dist = 1.5f});
+    body->grounded = 0;
+    SolRayResult result =
+        Sol_Raycast(world, (SolRay){.pos = xform->pos, .dir = (vec3s){0, -1, 0}, .dist = body->height * 0.55});
     if (result.hit)
     {
         if (result.norm.y > 0.5f)
+        {
             body->grounded = 1;
+        }
     }
 }
 
@@ -217,7 +217,7 @@ SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, Com
 {
     WorldPhysx  *ws   = world->spatial;
     SpatialCell  cell = Spatial_Cell_Get(xform->pos, SPATIAL_DYNAMIC_CELL_SIZE);
-    SolCollision col = {0};
+    SolCollision col  = {0};
     for (int n = 0; n < 27; n++)
     {
         u32 entry = ws->dynamicGroup.table.head[cell.neighborHashes[n] & (ws->dynamicGroup.table.size - 1)];
@@ -363,15 +363,22 @@ SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform
     SpatialGrid *grid = &group->grid;
 
     int checks = 0;
-    int ix     = (int)floorf((xform->pos.x - grid->min.x) / grid->cellSize);
-    int iy     = (int)floorf((xform->pos.y - grid->min.y) / grid->cellSize);
-    int iz     = (int)floorf((xform->pos.z - grid->min.z) / grid->cellSize);
 
-    for (int ox = -1; ox <= 1; ox++)
-        for (int oy = -1; oy <= 1; oy++)
-            for (int oz = -1; oz <= 1; oz++)
+    // Compute capsule's AABB extents in cell units
+    float halfH = (body->shape == SHAPE3_CAP) ? (body->height * 0.5f) : body->radius;
+    float r     = body->radius;
+
+    int x0 = (int)floorf((xform->pos.x - r - grid->min.x) / grid->cellSize);
+    int x1 = (int)floorf((xform->pos.x + r - grid->min.x) / grid->cellSize);
+    int y0 = (int)floorf((xform->pos.y - halfH - grid->min.y) / grid->cellSize);
+    int y1 = (int)floorf((xform->pos.y + halfH - grid->min.y) / grid->cellSize);
+    int z0 = (int)floorf((xform->pos.z - r - grid->min.z) / grid->cellSize);
+    int z1 = (int)floorf((xform->pos.z + r - grid->min.z) / grid->cellSize);
+
+    for (int cx = x0; cx <= x1; cx++)
+        for (int cy = y0; cy <= y1; cy++)
+            for (int cz = z0; cz <= z1; cz++)
             {
-                int cx = ix + ox, cy = iy + oy, cz = iz + oz;
                 if (cx < 0 || cx >= grid->dims.x || cy < 0 || cy >= grid->dims.y || cz < 0 || cz >= grid->dims.z)
                     continue;
 
@@ -383,7 +390,6 @@ SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform
                 {
                     if (++checks > 1000)
                         return col;
-
                     SolTri *tri = &group->tris[grid->values[e]];
                     col         = resolver(body, xform, tri);
                 }
@@ -708,13 +714,16 @@ SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri)
 
 SolCollision Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri)
 {
-    SolCollision result     = {0};
-    vec3s       *pos        = &xform->pos;
-    float        halfHeight = body->height * 0.5f - body->radius;
-    float        boundsSq   = tri->bounds * tri->bounds + halfHeight;
-    float        distSq     = glms_vec3_norm2(glms_vec3_sub(*pos, tri->center));
-    if (distSq > boundsSq)
-        return result;
+    SolCollision result          = {0};
+    vec3s       *pos             = &xform->pos;
+    float        halfHeight      = body->height * 0.5f - body->radius;
+    float        capsuleMaxReach = halfHeight + body->radius;
+    float        maxDist         = tri->bounds + capsuleMaxReach;
+    float        boundsSq        = maxDist * maxDist;
+    float        distSq          = glms_vec3_norm2(glms_vec3_sub(*pos, tri->center));
+
+    // if (distSq > boundsSq)
+    //     return result;
 
     vec3s a = *pos;
     a.y += halfHeight;
@@ -777,8 +786,8 @@ SolCollision Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri)
         }
         else
         {
-            s = (ra * bb - rb * ab) / denom;
-            t = (ra * ab - rb * aa) / -denom;
+            s = (ab * rb - bb * ra) / denom;
+            t = (aa * rb - ab * ra) / denom;
         }
 
         s = fmaxf(0.0f, fminf(1.0f, s));
@@ -1140,6 +1149,7 @@ SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray)
 {
     SolRayResult result = {0};
     result.dist         = ray.dist;
+    result.pos          = vecAdd(ray.pos, vecSca(ray.dir, ray.dist));
     PhysxGroup  *group  = &world->spatial->staticGroup;
     SpatialGrid *grid   = &world->spatial->staticGroup.grid;
 

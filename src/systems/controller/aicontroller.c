@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include <cglm/struct.h>
 
 void Sol_System_Controller_Ai_Tick(World *world, double dt, double time)
 {

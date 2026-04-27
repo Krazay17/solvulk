@@ -1,13 +1,17 @@
-#include <cglm/struct.h>
-#include <omp.h>
-
 #include "sol_core.h"
+#include <omp.h>
 
 static u32         ents[MAX_ENTS];
 static SolProfiler prof_static  = {.name = "Static"};
 static SolProfiler prof_dynamic = {.name = "Dynamic"};
 
 static int prof_frame = 0;
+
+struct PhysxTable
+{
+    CompBody *bodies;
+    u32       count;
+};
 
 void Physx_Init(World *world)
 {
@@ -31,6 +35,11 @@ CompBody *Sol_Physx_Add(World *world, int id, CompBody init_body)
 
     world->masks[id] |= HAS_BODY3;
     return &world->bodies[id];
+}
+
+void Sol_Touch_Add(World *world, int id)
+{
+    // world->masks[id]
 }
 
 void Physx_Step(World *world, double dt, double time)
@@ -59,6 +68,8 @@ void Physx_Step(World *world, double dt, double time)
         ents[count++] = id;
     }
 
+    Touch_Step(world, dt, time, count);
+
     Prof_Begin(&prof_static);
     // velocity and static collisions
 #pragma omp parallel for if (count > 500) schedule(dynamic, 16)
@@ -83,8 +94,8 @@ void Physx_Step(World *world, double dt, double time)
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
             col        = Collisions_Static_Grid(staticGroup, body, xform, resolver);
         }
-        Physx_Ground_Trace(world, body, xform);
     }
+    Prof_EndEz(&prof_static);
 
     Fill_Dynamic_Table(world, count, ents);
 
@@ -98,13 +109,42 @@ void Physx_Step(World *world, double dt, double time)
         CompXform *xform = &world->xforms[id];
         Collisions_Dynamic_Hashed(world, id, body, xform);
     }
-    Prof_End(&prof_dynamic);
+    Prof_EndEz(&prof_dynamic);
+}
 
-    Prof_End(&prof_static);
-    if (prof_frame++ % 200 == 0)
+void Touch_Step(World *world, double dt, double time, int count)
+{
+    u32 required = HAS_BODY3 | HAS_XFORM;
+    for (int i = 0; i < count; i++)
     {
-        Prof_Print(&prof_static);
-        Prof_Print(&prof_dynamic);
+        int id = ents[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompXform *xform = &world->xforms[id];
+        CompBody  *body  = &world->bodies[id];
+
+        // Start from center-bottom of the body
+        vec3s origin = vecSub(xform->pos, vecSca(WORLD_UP, body->height * 0.25f));
+
+        body->grounded = 0; // Reset every frame
+        for (int j = 0; j < 4; j++)
+        {
+            // Rotate the local offset by the entity's rotation
+            vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
+
+            // Calculate ray start position
+            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->radius));
+
+            SolRayResult result =
+                Sol_RaycastD(world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->height * 0.3f, .ignoreEnt = id}, 1.5f);
+
+            if (result.hit && result.norm.y > 0.5f)
+            {
+                body->grounded = 1;
+                break;
+            }
+        }
     }
 }
 
@@ -123,14 +163,6 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
     ray.dir          = glms_vec3_scale(ray.dir, 1.0f / dirLen);
     result.pos       = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist));
     SolRayResult sub = {0};
-
-    // sub = Raycast_Static_Grid_Tri(&ws->staticGroup, ray);
-    // if (sub.hit && sub.dist < result.dist)
-    //     result = sub;
-
-    // sub = Raycast_Dynamic_Table_Ent(&ws->dynamicGroup, ray);
-    // if (sub.hit && sub.dist < result.dist)
-    //     result = sub;
 
     sub = Raycast_Static_Grid_Walk(world, ray);
     if (sub.hit && sub.dist < result.dist)

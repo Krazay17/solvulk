@@ -5,9 +5,8 @@ layout(location=1)in vec2 fragPos;
 layout(location=0)out vec4 outColor;
 
 layout(push_constant)uniform Push{
-    mat4 ortho;
-    vec4 rect;// x, y, z, w
-    vec4 color;// r, g, b, a
+    vec4 rect;
+    vec4 color;
     vec4 extra;// thickness, 0, 0, 0
 }push;
 

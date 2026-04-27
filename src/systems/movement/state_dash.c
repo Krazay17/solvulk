@@ -1,5 +1,3 @@
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 #define DASH_VEL 28.0f

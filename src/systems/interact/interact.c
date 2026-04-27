@@ -3,7 +3,7 @@
 void Sol_System_Interact_Ui(World *world, double dt, double time)
 {
     int required = HAS_INTERACT | HAS_XFORM | HAS_SHAPE;
-    SolMouse mouse = SolInput_GetMouse();
+    SolMouse mouse = Sol_Input_GetMouse();
 
     for (int i = 0; i < world->activeCount; i++)
     {

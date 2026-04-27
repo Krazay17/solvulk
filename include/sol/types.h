@@ -34,7 +34,10 @@
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
+#define WORLD_FORWARD (vec3s){0, 0, -1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
+#define WORLD_DOWN (vec3s){0, -1.0f, 0}
+#define ColorF(x) (x / 255.0f)
 
 // Forwards
 
@@ -178,6 +181,28 @@ typedef struct
     uint8_t r, g, b, a;
 } SolColor;
 
+// ─── Font data ───────────────────────────────────────────────────
+
+typedef struct
+{
+    float u, v, uw, vh;
+    float xoffset;
+    float ytop;
+    float yoffset;
+    float yadvance;
+} SolGlyph;
+
+typedef struct
+{
+    float l, b, r, t;
+} TextBounds;
+
+typedef struct
+{
+    SolGlyph   glyph[128];
+    TextBounds bounds;
+} SolFont;
+
 typedef struct AiController
 {
     vec3s    lookdir, wishdir;
@@ -188,6 +213,7 @@ typedef struct SolMouse
 {
     int  x, y;
     int  dx, dy;
+    int  wheelV;
     bool locked;
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];

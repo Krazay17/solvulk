@@ -1,5 +1,3 @@
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)

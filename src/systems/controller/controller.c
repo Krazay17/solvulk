@@ -1,99 +1,77 @@
-#include <cglm/struct.h>
-
 #include "sol_core.h"
 
 #define MAX_PITCH (GLM_PI_2 - 0.1f)
 
-typedef struct
-{
-    float yaw, pitch;
-} LocalController;
-static LocalController localController = {0};
-float                  lookSens        = 0.001f;
-static bool            mouseLocked     = false;
+float lookSens = 0.001f;
 
-static void  LocalActions(World *world, double dt);
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
 
 void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 {
-    SolMouse mouse = SolInput_GetMouse();
-    if (mouse.locked)
-    {
-        localController.yaw -= mouse.dx * lookSens;
-        localController.pitch -= mouse.dy * lookSens;
-
-        localController.yaw = fmodf(localController.yaw, 2.0f * GLM_PI);
-        if (localController.yaw > GLM_PI)
-            localController.yaw -= 2.0f * GLM_PI;
-        else if (localController.yaw < -GLM_PI)
-            localController.yaw += 2.0f * GLM_PI;
-
-        if (localController.pitch > MAX_PITCH)
-            localController.pitch = MAX_PITCH;
-        if (localController.pitch < -MAX_PITCH)
-            localController.pitch = -MAX_PITCH;
-    }
-
-    LocalActions(world, dt);
-
-    int required = HAS_CONTROLLER;
-    for (int i = 0; i < world->activeCount; ++i)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
-        {
-        }
-    }
-}
-
-static void LocalActions(World *world, double dt)
-{
     int id = world->playerID;
     if (id < 0)
         return;
+    SolMouse        mouse      = Sol_Input_GetMouse();
     CompXform      *xform      = &world->xforms[id];
     CompController *controller = &world->controllers[id];
     CompMovement   *movement   = &world->movements[id];
     CompBody       *body       = &world->bodies[id];
     CompCombat     *combat     = &world->combats[id];
-    
+    float           yaw        = controller->yaw;
+    float           pitch      = controller->pitch;
 
-    controller->yaw   = localController.yaw;
-    controller->pitch = localController.pitch;
+    if (mouse.locked)
+    {
+        yaw -= mouse.dx * lookSens;
+        pitch -= mouse.dy * lookSens;
 
-    if (SolInput_GetMouse().buttons[SOL_MOUSE_LEFT])
+        yaw = fmodf(yaw, 2.0f * GLM_PI);
+        if (yaw > GLM_PI)
+            yaw -= 2.0f * GLM_PI;
+        else if (yaw < -GLM_PI)
+            yaw += 2.0f * GLM_PI;
+
+        if (pitch > MAX_PITCH)
+            pitch = MAX_PITCH;
+        if (pitch < -MAX_PITCH)
+            pitch = -MAX_PITCH;
+    }
+
+    controller->yaw   = yaw;
+    controller->pitch = pitch;
+
+    if (Sol_Input_GetMouse().buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_ATTACK;
     else
         controller->actionState &= ~ACTION_ATTACK;
 
-    if (SolInput_KeyDown(SOL_KEY_W))
+    if (Sol_Input_KeyDown(SOL_KEY_W))
         controller->actionState |= ACTION_FWD;
     else
         controller->actionState &= ~ACTION_FWD;
 
-    if (SolInput_KeyDown(SOL_KEY_S))
+    if (Sol_Input_KeyDown(SOL_KEY_S))
         controller->actionState |= ACTION_BWD;
     else
         controller->actionState &= ~ACTION_BWD;
 
-    if (SolInput_KeyDown(SOL_KEY_A))
+    if (Sol_Input_KeyDown(SOL_KEY_A))
         controller->actionState |= ACTION_LEFT;
     else
         controller->actionState &= ~ACTION_LEFT;
 
-    if (SolInput_KeyDown(SOL_KEY_D))
+    if (Sol_Input_KeyDown(SOL_KEY_D))
         controller->actionState |= ACTION_RIGHT;
     else
         controller->actionState &= ~ACTION_RIGHT;
 
-    if (SolInput_KeyDown(SOL_KEY_SPACE))
+    if (Sol_Input_KeyDown(SOL_KEY_SPACE))
         controller->actionState |= ACTION_JUMP;
     else
         controller->actionState &= ~ACTION_JUMP;
 
-    if (SolInput_KeyDown(SOL_KEY_SHIFT))
+    if (Sol_Input_KeyDown(SOL_KEY_SHIFT))
         controller->actionState |= ACTION_DASH;
     else
         controller->actionState &= ~ACTION_DASH;
@@ -104,26 +82,19 @@ static void LocalActions(World *world, double dt)
 
     if (body && combat)
     {
-        vec3s pos = xform->pos;
-        pos.y += body->height / 2.0f;
-        combat->attackPos = pos;
+        combat->attackPos = xform->pos;
+        combat->attackPos.y += body->height * 0.5f;
     }
-
-    
 
     controller->lookdir  = lookdir;
     controller->wishdir  = wishdir;
     controller->wishdir2 = GetWishDir2(controller->actionState);
 
-    if (SolInput_KeyDown(SOL_KEY_F))
+    if (Sol_Input_KeyDown(SOL_KEY_F))
     {
         world->xforms[id].pos = glms_vec3_add(world->xforms[id].pos, glms_vec3_scale(lookdir, (float)dt * 60.0f));
         world->bodies[id].vel = (vec3s){0, 0, 0};
     }
-
-    // Sol_Debug_Add("LookX", controller->lookdir.x);
-    // Sol_Debug_Add("LookY", controller->lookdir.y);
-    // Sol_Debug_Add("LookZ", controller->lookdir.z);
 }
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)

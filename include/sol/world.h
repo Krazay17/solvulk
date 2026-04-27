@@ -3,7 +3,7 @@
 #include "sol/types.h"
 
 #define MAX_WORLDS 4
-#define MAX_ENTS (1 << 13)
+#define MAX_ENTS (1 << 14)
 #define MAX_SYSTEMS 64
 
 #define SYS_BIT(x) (1u << (x))
@@ -42,6 +42,7 @@ typedef enum
     HAS_XFORM         = (1 << 0),
     HAS_BODY2         = (1 << 1),
     HAS_BODY3         = (1 << 2),
+    HAS_TOUCH         = (1 << 3),
     HAS_SHAPE         = (1 << 4),
     HAS_INTERACT      = (1 << 5),
     HAS_MODEL         = (1 << 6),
@@ -78,6 +79,11 @@ typedef struct CompBuff
     SolHit   hit;
 } CompBuff;
 
+typedef struct CompTouch
+{
+    bool down, up, left, right, front, back;
+} CompTouch;
+
 typedef struct CompVital
 {
     u32   maxHealth, maxEnergy, maxMana;
@@ -94,6 +100,8 @@ typedef struct CompCombat
 
 typedef struct CompXform
 {
+    mat4 xform, lastXform, drawXform;
+
     vec3s   pos, lastPos, drawPos;
     versors quat, lastQuat, drawQuat;
     vec3s   scale, lastScale, drawScale;
@@ -155,10 +163,11 @@ typedef struct CompMovement
 
 typedef struct CompController
 {
-    vec3s              lookdir, wishdir, aimdir, aimPos, aimHitPos;
+    vec3s              lookdir, wishdir, aimdir, aimpos, aimHitPos;
     vec2s              wishdir2;
     PlayerActionStates actionState;
     float              yaw, pitch;
+    float              zoom;
     u32                aimHitEnt;
 } CompController;
 
@@ -282,7 +291,7 @@ SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
 SOLAPI void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
 SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
-SOLAPI void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color);
+void        Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId);
 void        Cam_Update_3D(World *world, double dt, double time, float alpha);
 void        Crosshair_Draw(World *world, double dt, double time);
 void        Vital_Draw(World *world, double dt, double time);

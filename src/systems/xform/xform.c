@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include <cglm/struct.h>
 
 CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
 {

@@ -23,7 +23,7 @@ int        Sol_Init_Vulkan_Resources();
 SOLAPI void Sol_Render_Resize();
 SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
 
-SOLAPI float Sol_MeasureText(const char *str, float size);
+SOLAPI float Sol_MeasureText(const char *str, float size, SolFontId id);
 
 SOLAPI void      Sol_Window_Resize(float width, float height);
 SOLAPI SolModel *Sol_GetModel(SolModelId id);
@@ -35,18 +35,19 @@ SOLAPI void Sol_FreeModel(SolModel *model);
 SOLAPI void Sol_Loader_LoadModels();
 
 // called from WindowProc on main thread
-SOLAPI void SolInput_OnKey(int vkCode, bool down);
-SOLAPI void SolInput_OnMouseMove(int x, int y);
-SOLAPI void SolInput_OnMouseButton(SolMouseButton btn, bool down);
+SOLAPI void Sol_Input_OnKey(int vkCode, bool down);
+SOLAPI void Sol_Input_OnMouseMove(int x, int y);
+SOLAPI void Sol_Input_OnMouseButton(SolMouseButton btn, bool down);
+SOLAPI void Sol_Input_OnMouseWheel(int delta);
 SOLAPI void Sol_Input_OnRawMouse(int x, int y);
 
 // called at start of each game frame to snapshot state
-SOLAPI void SolInput_Update();
+SOLAPI void Sol_Input_Update();
 
 // query from game code
-SOLAPI bool     SolInput_KeyDown(SolKey key);
-SOLAPI bool     SolInput_KeyPressed(SolKey key); // true only on frame of press
-SOLAPI SolMouse SolInput_GetMouse();
+SOLAPI bool     Sol_Input_KeyDown(SolKey key);
+SOLAPI bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
+SOLAPI SolMouse Sol_Input_GetMouse();
 
 SOLAPI void Sol_Debug_Add(const char *text, float value);
 

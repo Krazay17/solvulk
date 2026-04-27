@@ -116,6 +116,7 @@ SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform
 SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
 SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
 
+void Touch_Step(World *world, double dt, double time, int count);
 void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform);
 
 // Per-entity substep count based on speed

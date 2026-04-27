@@ -51,7 +51,7 @@ void Sol_System_UI_Draw(World *world, double dt, double time)
         {
             float tx = rect.x + (rect.w * 0.5f) - (ui->textWidth * 0.5f);
             float ty = rect.y + (rect.h * 0.5f) + (ui->fontSize * 0.3f);
-            Sol_Draw_Text(ui->text, tx, ty, ui->fontSize, ui->textColor);
+            Sol_Draw_Text(ui->text, tx, ty, ui->fontSize, ui->textColor, SOL_FONT_ICE);
         }
     }
 }

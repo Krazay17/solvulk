@@ -1,5 +1,4 @@
 #include <curl/curl.h>
-
 #include "game.h"
 
 typedef struct
@@ -40,7 +39,7 @@ void Create_Sol_Game()
     CompInteractable *interactButton2 = Entity_Add_Interact(menu, button2);
     interactButton2->callback = MakeAWizard;
     interactButton2->callbackData = game;
-    interactButton2->onHold = true;
+    interactButton2->onHold = false;
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "RESET PLAYER");
     CompInteractable *interactButton3 = Entity_Add_Interact(menu, button3);

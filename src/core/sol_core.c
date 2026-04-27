@@ -10,9 +10,10 @@ static void Sol_OnResize();
 void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd = hwnd;
+    solState.isRunning = true;
     int vulkInit    = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
-    
+
     Sol_Load_Resources();
     Sol_Init_Vulkan_Resources();
 
@@ -33,9 +34,12 @@ void Sol_Tick(double dt, double time)
 {
     solState.gameTime = time;
     solState.tickCount++;
-    SolInput_Update();
-    if (SolInput_KeyPressed(SOL_KEY_ESCAPE))
-        solState.worlds[0]->worldActive ^= 1;
+    Sol_Input_Update();
+    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
+    {
+        //solState.worlds[0]->worldActive ^= 1;
+        solState.isRunning = false;
+    }
 
     if (solState.needsResize)
         Sol_OnResize();
@@ -43,6 +47,7 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
         World_Tick(solState.worlds[i], dt, time);
 
+    // Step at limited timestep -------
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
     if (accumulator >= SOL_TIMESTEP)
         for (int i = 0; i < solState.worldCount; ++i)
@@ -56,6 +61,7 @@ void Sol_Tick(double dt, double time)
         solState.stepCount++;
         accumulator -= SOL_TIMESTEP;
     }
+    // ---------------------------------
 
     float alpha = (float)(accumulator / SOL_TIMESTEP);
     for (int i = 0; i < solState.worldCount; ++i)
@@ -65,14 +71,12 @@ void Sol_Tick(double dt, double time)
     }
 
     Sol_Begin_Draw();
-
     Sol_Begin_3D();
-
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw(solState.worlds[i], dt, time);
 
+    // Debug
     Sol_Debug_Draw();
-
     DebugFPS(dt);
 
     Sol_End_Draw();
@@ -95,7 +99,7 @@ static void DebugFPS(double dt)
         count    = 0;
         total    = 0;
     }
-    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255});
+    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255}, SOL_FONT_ICE);
 }
 
 void Sol_Destroy()

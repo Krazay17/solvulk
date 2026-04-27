@@ -1,18 +1,19 @@
 #pragma once
 
-#include <windows.h>
 #include <stdio.h>
+#include <windows.h>
 
 typedef struct
 {
-    const char *name;
+    const char   *name;
     LARGE_INTEGER start;
-    double totalMs;
-    int count;
+    double        totalMs;
+    int           count;
+    int           limiter;
 } SolProfiler;
 
 static LARGE_INTEGER _profFreq;
-static int _profFreqInit = 0;
+static int           _profFreqInit = 0;
 
 static inline void Prof_Begin(SolProfiler *p)
 {
@@ -36,12 +37,21 @@ static inline void Prof_End(SolProfiler *p)
 static inline void Prof_Print(SolProfiler *p)
 {
     if (p->count > 0)
-        printf("%-24s avg=%.3fms total=%.1fms calls=%d\n",
-               p->name, p->totalMs / p->count, p->totalMs, p->count);
+        printf("%-24s avg=%.3fms total=%.1fms calls=%d\n", p->name, p->totalMs / p->count, p->totalMs, p->count);
 }
 
 static inline void Prof_Reset(SolProfiler *p)
 {
     p->totalMs = 0;
-    p->count = 0;
+    p->count   = 0;
+}
+
+static inline void Prof_EndEz(SolProfiler *p)
+{
+    Prof_End(p);
+    if (p->limiter++ % 500 == 0)
+    {
+        Prof_Print(p);
+        Prof_Reset(p);
+    }
 }

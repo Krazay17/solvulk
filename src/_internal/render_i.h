@@ -8,6 +8,7 @@
 
 typedef enum
 {
+    DESC_ORTHO_UBO,
     DESC_SCENE_UBO,
     DESC_MODEL_SSBO,
     DESC_FONT_ATLAS,
@@ -35,6 +36,11 @@ typedef enum PipelineId
 
 typedef struct
 {
+    mat4 ortho2d;
+} OrthoUBO;
+
+typedef struct
+{
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
@@ -53,16 +59,22 @@ typedef struct
 
 typedef struct
 {
+    vec4 rec;
+    vec4 c;
+    vec4 extras;
+} ShaderPushRect;
+
+typedef struct
+{
     vec4 position;
 } VertexSSBO;
 
 typedef struct
 {
-    mat4  ortho;
     float x, y, w, h;
     float u, v, uw, vh;
     float r, g, b, a;
-} SolTextPush;
+} ShaderPushText;
 
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
@@ -144,53 +156,6 @@ typedef struct SolPipe
 //     VkDeviceMemory        memory[MAX_FRAMES_IN_FLIGHT];
 //     void                 *mapped[MAX_FRAMES_IN_FLIGHT];
 // } SolDescriptorBuffer;
-
-// ─── Font data ───────────────────────────────────────────────────
-
-typedef struct
-{
-    float u, v, uw, vh;
-    float xoffset;
-    float ytop;
-    float yoffset;
-    float yadvance;
-} SolGlyph;
-
-typedef struct
-{
-    float l, b, r, t;
-} TextBounds;
-
-// ─── Pipeline + resource groupings ───────────────────────────────
-
-// typedef struct
-// {
-//     VkPipeline       pipeline;
-//     VkPipelineLayout layout;
-// } SolPipeline;
-
-// typedef struct SolPipeModel
-// {
-//     SolPipeline         pipe;
-//     SolDescriptorBuffer modelSSBO;
-// } SolPipeModel;
-
-// typedef struct SolPipeRay
-// {
-//     SolPipeline pipe;
-// } SolPipeRay;
-
-// typedef struct
-// {
-//     SolPipeline pipe;
-// } SolPipeRect;
-
-// typedef struct
-// {
-//     SolPipeline        pipe;
-//     SolGpuImage        fontAtlas;
-//     SolDescriptorImage fontDesc;
-// } SolPipeText;
 
 // ─── Pipeline build configs ──────────────────────────────────────
 typedef enum
@@ -280,7 +245,6 @@ VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
 void            Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds      ParseBounds(const char *p, const char *end);
-int             Sol_Pipeline_Buildall(SolVkState *vkstate);
 void            Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
 void            Sol_Flush_Models(void);
 
@@ -294,11 +258,11 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthTest         = 0,
             .alphaBlend        = 0,
             .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(SolTextPush),
+            .pushRangeSize     = sizeof(ShaderPushText),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_FONT_ATLAS},
-            .descCount         = 1,
+            .descId            = {DESC_ORTHO_UBO, DESC_FONT_ATLAS},
+            .descCount         = 2,
         },
     [PIPE_MODEL] =
         {
@@ -321,9 +285,11 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthTest         = 0,
             .alphaBlend        = 1,
             .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(float) * 32,
+            .pushRangeSize     = sizeof(ShaderPushRect),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_ORTHO_UBO},
+            .descCount         = 1,
         },
     [PIPE_LINE] =
         {
@@ -342,6 +308,13 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {
+    [DESC_ORTHO_UBO] =
+        {
+            .size       = sizeof(OrthoUBO),
+            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_UBO,
+        },
     [DESC_SCENE_UBO] =
         {
             .size       = sizeof(SceneUBO),

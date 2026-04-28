@@ -3,6 +3,7 @@
 #include "sol/types.h"
 
 #define MAX_WORLDS 4
+
 #define MAX_ENTS (1 << 14)
 #define MAX_SYSTEMS 64
 
@@ -34,7 +35,7 @@ typedef enum
     WORLD_SYS_CAM,
     WORLD_SYS_VITAL,
     WORLD_SYS_COUNT,
-} WorldSystems;
+} WorldSystem;
 
 typedef enum
 {
@@ -186,7 +187,8 @@ typedef struct
     SystemFunc step;
     SystemFunc tick;
     SystemFunc draw;
-} SystemFuncs;
+} SystemConfig;
+
 
 typedef struct World
 {
@@ -226,7 +228,7 @@ typedef struct World
 SOLAPI World *World_Create(void);
 SOLAPI World *World_Create_Default(void);
 SOLAPI void   World_Destroy(World *world);
-void          World_System_Add(World *world, WorldSystems system);
+void          World_System_Add(World *world, WorldSystem system);
 SOLAPI int    Sol_World_GetEntCount(World *world);
 
 // Add thing to world
@@ -293,10 +295,9 @@ SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
 SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
 void        Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId);
 void        Cam_Update_3D(World *world, double dt, double time, float alpha);
-void        Crosshair_Draw(World *world, double dt, double time);
 void        Vital_Draw(World *world, double dt, double time);
 
-static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
+static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_PHYSX]            = {.init = Physx_Init, .step = Physx_Step},
     [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
     [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
@@ -307,5 +308,5 @@ static SystemFuncs world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
     [WORLD_SYS_DEBUFF]           = {.step = Buff_Step},
-    [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
-    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw}};
+    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw},
+};

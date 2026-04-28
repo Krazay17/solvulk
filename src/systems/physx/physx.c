@@ -68,7 +68,7 @@ void Physx_Step(World *world, double dt, double time)
         ents[count++] = id;
     }
 
-    Touch_Step(world, dt, time, count);
+    Touch_Step(world, count);
 
     Prof_Begin(&prof_static);
     // velocity and static collisions
@@ -78,6 +78,11 @@ void Physx_Step(World *world, double dt, double time)
         int        id    = ents[j];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
+
+        if (xform->pos.y < -15)
+        {
+            xform->pos = (vec3s){0, 25, 0};
+        }
 
         vec3s accel   = SOL_PHYS_GRAV;
         accel         = glms_vec3_add(accel, body->force);
@@ -112,10 +117,12 @@ void Physx_Step(World *world, double dt, double time)
     Prof_EndEz(&prof_dynamic);
 }
 
-void Touch_Step(World *world, double dt, double time, int count)
+void Touch_Step(World *world, int count)
 {
     u32 required = HAS_BODY3 | HAS_XFORM;
-    for (int i = 0; i < count; i++)
+    int i;
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+    for (i = 0; i < count; i++)
     {
         int id = ents[i];
         if ((world->masks[id] & required) != required)
@@ -136,8 +143,8 @@ void Touch_Step(World *world, double dt, double time, int count)
             // Calculate ray start position
             vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->radius));
 
-            SolRayResult result =
-                Sol_RaycastD(world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->height * 0.3f, .ignoreEnt = id}, 1.5f);
+            SolRayResult result = Sol_Raycast(
+                world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->height * 0.3f, .ignoreEnt = id});
 
             if (result.hit && result.norm.y > 0.5f)
             {

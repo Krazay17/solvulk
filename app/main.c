@@ -308,3 +308,8 @@ FILETIME get_last_write_time(const char *path)
     }
     return lastWriteTime;
 }
+
+void W_Set_Ontop(void *data)
+{
+    SetWindowPos(g_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}

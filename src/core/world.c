@@ -60,7 +60,7 @@ void World_Draw(World *world, double dt, double time)
     }
 }
 
-void World_System_Add(World *world, WorldSystems system)
+void World_System_Add(World *world, WorldSystem system)
 {
     if (!world)
         return;
@@ -71,7 +71,7 @@ void World_System_Add(World *world, WorldSystems system)
     if (world_systems[system].tick)
         world->tickSystems[world->tickCount++] = world_systems[system].tick;
     if (world_systems[system].draw)
-       world->drawSystems[world->drawCount++] = world_systems[system].draw;
+        world->drawSystems[world->drawCount++] = world_systems[system].draw;
 }
 
 int Entity_Create(World *world)

@@ -11,4 +11,4 @@ typedef struct Debuggers
     int count;
 } Debuggers;
 
-void Sol_Debug_Draw();
+void Sol_Debug_Draw(double dt);

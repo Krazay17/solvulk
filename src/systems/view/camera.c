@@ -42,7 +42,7 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
     if (distance <= 4.4f)
     {
         distance = 4.4f;
-        camPos = head;
+        camPos = arm = head;
     }
     else
     {
@@ -61,7 +61,6 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
         if (currentDistance < 0)
             currentDistance = 0;
         camPos = glms_vec3_add(arm, glms_vec3_scale(invDirection, currentDistance));
-
     }
     target = glms_vec3_add(camPos, lookdir);
 
@@ -74,7 +73,7 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
     controller->aimpos    = head;
 }
 
-void Crosshair_Draw(World *world, double dt, double time)
+void Crosshair_Draw(double dt, double time)
 {
     int width  = Sol_GetState()->windowWidth / 2;
     int height = Sol_GetState()->windowHeight / 2;
@@ -95,3 +94,4 @@ void Crosshair_Draw(World *world, double dt, double time)
         },
         (SolColor){255, 0, 0, 255}, 0);
 }
+

@@ -8,7 +8,7 @@
 
 #define SPATIAL_NULL 0xFFFFFFFF
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 1.0f
+#define SPATIAL_DYNAMIC_CELL_SIZE 2.0f
 #define SPATIAL_DYNAMIC_SIZE (1 << 14)
 #define SPATIAL_DYNAMIC_ENTRIES 0xFFFF
 
@@ -116,7 +116,7 @@ SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform
 SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
 SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
 
-void Touch_Step(World *world, double dt, double time, int count);
+void Touch_Step(World *world, int count);
 void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform);
 
 // Per-entity substep count based on speed

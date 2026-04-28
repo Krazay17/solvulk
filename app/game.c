@@ -1,25 +1,12 @@
-#include <curl/curl.h>
 #include "game.h"
+#include <curl/curl.h>
 
-typedef struct
-{
-    char test[24];
-    int testInt;
-} TestData;
-
-static void TestFunc(void *data)
-{
-    TestData *testData = (TestData *)data;
-    printf(testData->test, testData->testInt);
-}
-
-static int player3d;
-
+static int  player3d;
 static void ResetPlayer(void *data)
 {
-    World *world = (World *)data;
+    World     *world = (World *)data;
     CompXform *xform = &world->xforms[player3d];
-    xform->pos = (vec3s){0, 5, 0};
+    xform->pos       = (vec3s){0, 5, 0};
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,48 +14,48 @@ static void ResetPlayer(void *data)
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
-    CURL *curl = curl_easy_init();
+    // CURL *curl = curl_easy_init();
     World *menu = World_Create_Default();
     World *game = World_Create_Default();
 
-    int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
+    int               quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     CompInteractable *buttonInteract = Entity_Add_Interact(menu, quitButton);
-    buttonInteract->callback = QuitApp;
+    buttonInteract->callback         = QuitApp;
 
-    int button2 = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
+    int               button2         = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MAKE A WIZARD");
     CompInteractable *interactButton2 = Entity_Add_Interact(menu, button2);
-    interactButton2->callback = MakeAWizard;
-    interactButton2->callbackData = game;
-    interactButton2->onHold = false;
+    interactButton2->callback         = MakeAWizard;
+    interactButton2->callbackData     = game;
+    interactButton2->onHold           = true;
 
-    int button3 = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "RESET PLAYER");
+    int               button3         = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "RESET PLAYER");
     CompInteractable *interactButton3 = Entity_Add_Interact(menu, button3);
-    interactButton3->callback = ResetPlayer;
-    interactButton3->callbackData = game;
+    interactButton3->callback         = ResetPlayer;
+    interactButton3->callbackData     = game;
+
+    int               button4         = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
+    CompInteractable *interactButton4 = Entity_Add_Interact(menu, button4);
+    interactButton4->callback         = W_Set_Ontop;
 
     player3d = Sol_Prefab_Wizard(game, (vec3s){0, 5, 0});
     Entity_Add_Controller_Local(game, player3d);
 
-    int floor = Entity_Create(game);
+    int        floor      = Entity_Create(game);
     CompXform *floorXform = Entity_Add_Xform(game, floor, (vec3s){0, 0, 0});
     CompModel *floorModel = Entity_Add_Model(game, floor, SOL_MODEL_WORLD1);
-    CompBody *floorBody = Sol_Physx_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
+    CompBody  *floorBody  = Sol_Physx_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
 }
 
 void MakeAWizard(void *data)
 {
     static int posInc;
-    World *world = (World *)data;
-    double time = Sol_GetGameTime();
-    double epsilonA = sin(time) * 10.0;
-    double epsilonB = cos(time) * 10.0 + 25.0;
-    for (int i = 0; i < 1; i++)
+    World     *world    = (World *)data;
+    double     time     = Sol_GetGameTime();
+    double     epsilonA = sin(time) * 10.0;
+    double     epsilonB = cos(time) * 10.0 + 25.0;
+    for (int i = 0; i < 100; i++)
     {
-        int wiz = Sol_Prefab_Wizard(world, (vec3s){
-                                               epsilonA,
-                                               epsilonB,
-                                               epsilonA,
-                                           });
+        int wiz = Sol_Prefab_Wizard(world, (vec3s){epsilonA, epsilonB, epsilonA});
         Entity_Add_Controller_Ai(world, wiz);
     }
     Sol_Debug_Add("Entities", Sol_World_GetEntCount(world));

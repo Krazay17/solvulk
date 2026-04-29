@@ -81,7 +81,7 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 # BUILD APP
 #--------------------------------------
 if(WIN32)
-    add_executable(solapp
+    add_executable(solapp WIN32
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
         "${CMAKE_SOURCE_DIR}/resources.rc"

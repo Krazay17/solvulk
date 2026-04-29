@@ -38,7 +38,10 @@ void Combat_Tick(World *world, double dt, double time)
             //                                 .kind     = BUFF_KNOCKBACK,
             //                                 .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
             // }
-            float randSize = 1.0f / (1 + rand() % 100);
+
+            float min = 0.2f;
+            float max = 0.8f;
+            float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
             int   ball =
                 Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
                                 (CompSphere){.radius = randSize,

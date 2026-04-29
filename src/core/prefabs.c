@@ -10,7 +10,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
                   (CompBody){
                       .radius      = sphere.radius,
                       .shape       = SHAPE3_SPH,
-                      .mass        = 10.0f * sphere.radius,
+                      .mass        = 1.0f * sphere.radius,
                       .restitution = 0.5f,
                       .vel = vel,
                   });

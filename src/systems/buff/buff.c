@@ -1,23 +1,23 @@
 #include "sol_core.h"
 
-CompBuff *Sol_Debuff_Add(World *world, int id, CompBuff init)
+CompBuff *Sol_Buff_Add(World *world, int id, CompBuff init)
 {
     CompBuff debuff = init;
 
     world->buffs[id] = debuff;
-    world->masks[id] |= HAS_DEBUFF;
+    world->masks[id] |= HAS_BUFF;
     return &world->buffs[id];
 }
 
 void Sol_Debuff_Remove(World *world, int id)
 {
     memset(&world->buffs[id], 0, sizeof(CompBuff));
-    world->masks[id] &= ~HAS_DEBUFF;
+    world->masks[id] &= ~HAS_BUFF;
 }
 
 void Buff_Step(World *world, double dt, double time)
 {
-    int required = HAS_DEBUFF;
+    int required = HAS_BUFF;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {

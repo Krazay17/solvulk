@@ -13,7 +13,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # --- Dependencies ---
 find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
-find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
@@ -71,7 +70,6 @@ target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
         cglm::cglm
-        CURL::libcurl
         OpenMP::OpenMP_C
     PRIVATE
         ${PLATFORM_LIBS}
@@ -121,6 +119,8 @@ set(SHADERS
     ${SHADER_DIR}/text.frag
     ${SHADER_DIR}/line.vert
     ${SHADER_DIR}/line.frag
+    ${SHADER_DIR}/sphere.vert
+    ${SHADER_DIR}/sphere.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")

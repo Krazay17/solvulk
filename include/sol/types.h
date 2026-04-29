@@ -40,7 +40,7 @@
 #define ColorF(x) (x / 255.0f)
 
 // Forwards
-
+typedef struct World World;
 typedef struct SolState  SolState;
 typedef struct SolModel  SolModel;
 typedef struct SolCamera SolCamera;
@@ -180,6 +180,13 @@ typedef struct
 {
     uint8_t r, g, b, a;
 } SolColor;
+
+typedef void (*CallbackFunc)(void *data);
+typedef struct
+{
+    CallbackFunc callbackFunc;
+    void        *callbackData;
+} Callback;
 
 // ─── Font data ───────────────────────────────────────────────────
 

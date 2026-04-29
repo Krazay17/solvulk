@@ -18,11 +18,6 @@ void Sol_Init(void *hwnd, void *hInstance)
     Sol_Init_Vulkan_Resources();
 
     solState.debug = true;
-
-    for (int i = 0; i < SINGLE_SYS_COUNT; i++)
-    {
-        Single_System_Add(&solState, i);
-    }
 }
 
 SolState *Sol_GetState()
@@ -49,9 +44,10 @@ void Sol_Tick(double dt, double time)
 
     if (solState.needsResize)
         Sol_OnResize();
-    for (int i = 0; i < solState.tickCount; ++i)
-        if (solState.tickSystems[i])
-            solState.tickSystems[i](dt, time);
+
+    for (int i = 0; i < solState.singleCount; ++i)
+        if (solState.singleSystems[i])
+            solState.singleSystems[i](dt, time);
     for (int i = 0; i < solState.worldCount; ++i)
         World_Tick(solState.worlds[i], dt, time);
 
@@ -63,9 +59,6 @@ void Sol_Tick(double dt, double time)
 
     while (accumulator >= SOL_TIMESTEP)
     {
-        for (int i = 0; i < solState.stepCount; ++i)
-            if (solState.stepSystems[i])
-                solState.stepSystems[i](dt, time);
         for (int i = 0; i < solState.worldCount; ++i)
             World_Step(solState.worlds[i], SOL_TIMESTEP, time);
 
@@ -86,11 +79,7 @@ void Sol_Tick(double dt, double time)
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw(solState.worlds[i], dt, time);
-    for (int i = 0; i < solState.drawCount; ++i)
-        if (solState.drawSystems[i])
-            solState.drawSystems[i](dt, time);
 
-    // Debug
     Sol_Debug_Draw(dt);
     Sol_End_Draw();
 }
@@ -118,14 +107,4 @@ static void Sol_OnResize()
     {
         Sol_Render_Resize();
     }
-}
-
-void Single_System_Add(SolState *state, SingleSystem system)
-{
-    if (single_systems[system].step)
-        state->stepSystems[state->stepCount++] = single_systems[system].step;
-    if (single_systems[system].tick)
-        state->tickSystems[state->tickCount++] = single_systems[system].tick;
-    if (single_systems[system].draw)
-        state->drawSystems[state->drawCount++] = single_systems[system].draw;
 }

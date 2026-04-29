@@ -11,6 +11,8 @@ typedef struct
     float mouseWheelDelta;
     int   mouseX, mouseY;
     int   mouseDeltaX, mouseDeltaY;
+
+    u32 action;
 } LocalInput;
 
 extern LocalInput local_input;

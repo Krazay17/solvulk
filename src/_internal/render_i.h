@@ -1,8 +1,11 @@
 #pragma once
+#include "sol/types.h"
 
 #include <vulkan/vulkan.h>
 
-#define MAX_MODEL_INSTANCES (1 << 13)
+#define MAX_MODEL_INSTANCES (1 << 14)
+#define MAX_SPHERE_INSTANCES (1 << 22)
+
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_LINE_VERTICES 0xffffff
 
@@ -13,6 +16,7 @@ typedef enum
     DESC_MODEL_SSBO,
     DESC_FONT_ATLAS,
     DESC_PARTICLE_SSBO,
+    DESC_SPHERE_SSBO,
     DESC_COUNT,
 } DescriptorId;
 
@@ -29,6 +33,7 @@ typedef enum PipelineId
     PIPE_TEXT,
     PIPE_RECT,
     PIPE_LINE,
+    PIPE_SPHERE,
     PIPE_COUNT,
 } PipelineId;
 
@@ -75,6 +80,27 @@ typedef struct
     float u, v, uw, vh;
     float r, g, b, a;
 } ShaderPushText;
+
+typedef struct
+{
+    vec4s pos; // xyz w=radius
+    vec4s color;
+} SphereSSBO;
+
+// Submission Que
+
+typedef struct
+{
+    u32        count;
+    ModelSSBO  instances[MAX_MODEL_INSTANCES];
+    SolModelId handles[MAX_MODEL_INSTANCES];
+} ModelSubmission;
+
+typedef struct
+{
+    u32        count;
+    SphereSSBO instances[MAX_SPHERE_INSTANCES];
+} SphereSubmission;
 
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
@@ -160,6 +186,7 @@ typedef struct SolPipe
 // ─── Pipeline build configs ──────────────────────────────────────
 typedef enum
 {
+    VERTEX_SINGLE,
     VERTEX_TRI,
     VERTEX_LINE,
 } VertexType;
@@ -243,11 +270,15 @@ void Sol_UploadModel(SolModel *model, SolModelId id);
 
 VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void            Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
+void            Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds      ParseBounds(const char *p, const char *end);
-void            Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
-void            Sol_Flush_Models(void);
 
+void Flush_Models(void);
+void Flush_Spheres(void);
+void Flush_Queue(void);
+
+void Sol_Submit_Sphere(vec4s pos, vec4s color);
+void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
 void Render_Camera_Update(vec3 pos, vec3 target);
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
@@ -305,6 +336,19 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO},
             .descCount         = 1,
         },
+    [PIPE_SPHERE] =
+        {
+            .vertResource      = "ID_SHADER_SPHEREV",
+            .fragResource      = "ID_SHADER_SPHEREF",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = 0,
+            .pushStageFlags    = 0,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+            .descCount         = 2,
+        },
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {
@@ -340,6 +384,13 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
             .size       = sizeof(VertexSSBO),
             .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_SPHERE_SSBO] =
+        {
+            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_SSBO,
         },
 };

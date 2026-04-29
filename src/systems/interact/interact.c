@@ -1,9 +1,15 @@
 #include "sol_core.h"
 
+CompInteractable *Sol_Interact_Add(World *world, int id)
+{
+    world->masks[id] |= HAS_INTERACT;
+    return &world->interactables[id];
+}
+
 void Sol_System_Interact_Ui(World *world, double dt, double time)
 {
-    int required = HAS_INTERACT | HAS_XFORM | HAS_SHAPE;
-    SolMouse mouse = Sol_Input_GetMouse();
+    int      required = HAS_INTERACT | HAS_XFORM | HAS_SHAPE;
+    SolMouse mouse    = Sol_Input_GetMouse();
 
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -11,15 +17,14 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
         if ((world->masks[id] & required) == required)
         {
             CompInteractable *interact = &world->interactables[id];
-            CompXform *xform = &world->xforms[id];
-            CompShape *shape = &world->shapes[id];
+            CompXform        *xform    = &world->xforms[id];
+            CompShape        *shape    = &world->shapes[id];
 
-            bool wasPressed = interact->isPressed;
+            bool wasPressed     = interact->isPressed;
             interact->isClicked = false;
 
             interact->isHovered = Sol_Check_2d_Collision(
-                (vec2s){mouse.x, mouse.y},
-                (vec4s){xform->pos.x, xform->pos.y, shape->width, shape->height});
+                (vec2s){mouse.x, mouse.y}, (vec4s){xform->pos.x, xform->pos.y, shape->width, shape->height});
 
             if (interact->isHovered)
             {
@@ -28,20 +33,20 @@ void Sol_System_Interact_Ui(World *world, double dt, double time)
                     interact->isPressed = true;
                     if (interact->onHold)
                     {
-                        if (interact->callbackData)
-                            interact->callback(interact->callbackData);
-                        else if (interact->callback)
-                            interact->callback(NULL);
+                        if (interact->callback.callbackData)
+                            interact->callback.callbackFunc(interact->callback.callbackData);
+                        else if (interact->callback.callbackFunc)
+                            interact->callback.callbackFunc(NULL);
                     }
                 }
                 else if (wasPressed)
                 {
                     interact->isClicked = true;
                     interact->isPressed = false;
-                    if (interact->callbackData)
-                        interact->callback(interact->callbackData);
-                    else if (interact->callback)
-                        interact->callback(NULL);
+                    if (interact->callback.callbackData)
+                        interact->callback.callbackFunc(interact->callback.callbackData);
+                    else if (interact->callback.callbackFunc)
+                        interact->callback.callbackFunc(NULL);
                 }
             }
             else

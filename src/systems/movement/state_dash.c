@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "movement.h"
 
 #define DASH_VEL 28.0f
 #define DASH_ALPHAMOD 1.5f

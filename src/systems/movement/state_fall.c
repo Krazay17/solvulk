@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "movement.h"
 
 void Sol_Movement_Fall_Update(World *world, int id, float dt)
 {

@@ -1,11 +1,20 @@
+#include "controller.h"
 #include "sol_core.h"
 
-#define MAX_PITCH (GLM_PI_2 - 0.1f)
+#define MAX_PITCH (GLM_PI_2 - 0.01f)
 
 float lookSens = 0.001f;
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
+
+CompController *Sol_ControllerLocal_Add(World *world, int id)
+{
+    world->playerID = id;
+
+    world->masks[id] |= HAS_CONTROLLER;
+    return &world->controllers[id];
+}
 
 void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 {
@@ -41,40 +50,18 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
     controller->yaw   = yaw;
     controller->pitch = pitch;
 
+    for (int i = 0; i < SOL_KEY_COUNT; i++)
+    {
+        if (Sol_Input_KeyDown(i))
+            controller->actionState |= action_binds[i];
+        else
+            controller->actionState &= ~action_binds[i];
+    }
+
     if (Sol_Input_GetMouse().buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_ATTACK;
     else
         controller->actionState &= ~ACTION_ATTACK;
-
-    if (Sol_Input_KeyDown(SOL_KEY_W))
-        controller->actionState |= ACTION_FWD;
-    else
-        controller->actionState &= ~ACTION_FWD;
-
-    if (Sol_Input_KeyDown(SOL_KEY_S))
-        controller->actionState |= ACTION_BWD;
-    else
-        controller->actionState &= ~ACTION_BWD;
-
-    if (Sol_Input_KeyDown(SOL_KEY_A))
-        controller->actionState |= ACTION_LEFT;
-    else
-        controller->actionState &= ~ACTION_LEFT;
-
-    if (Sol_Input_KeyDown(SOL_KEY_D))
-        controller->actionState |= ACTION_RIGHT;
-    else
-        controller->actionState &= ~ACTION_RIGHT;
-
-    if (Sol_Input_KeyDown(SOL_KEY_SPACE))
-        controller->actionState |= ACTION_JUMP;
-    else
-        controller->actionState &= ~ACTION_JUMP;
-
-    if (Sol_Input_KeyDown(SOL_KEY_SHIFT))
-        controller->actionState |= ACTION_DASH;
-    else
-        controller->actionState &= ~ACTION_DASH;
 
     vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
     vec3s updir   = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});

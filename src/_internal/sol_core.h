@@ -6,7 +6,6 @@
 #include "input_i.h"
 #include "loader_i.h"
 #include "math_i.h"
-#include "movement_i.h"
 #include "platform_i.h"
 #include "profiler_i.h"
 #include "render_i.h"
@@ -42,12 +41,8 @@ typedef struct SolState
     bool          debug;
     u32           tickCounter, stepCounter;
 
-    SingleFunc stepSystems[MAX_SYSTEMS];
-    u32        stepCount;
-    SingleFunc tickSystems[MAX_SYSTEMS];
-    u32        tickCount;
-    SingleFunc drawSystems[MAX_SYSTEMS];
-    u32        drawCount;
+    SingleFunc singleSystems[MAX_SYSTEMS];
+    u32        singleCount;
 
     World   *worlds[MAX_WORLDS];
     uint16_t worldCount;
@@ -56,14 +51,7 @@ typedef struct SolState
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_Begin_3D();
 SOLAPI void Sol_End_Draw();
-void        Single_System_Add(SolState *state, SingleSystem system);
 
 SOLAPI void World_Step(World *world, double dt, double time);
 SOLAPI void World_Tick(World *world, double dt, double time);
 SOLAPI void World_Draw(World *world, double dt, double time);
-
-void Crosshair_Draw(double dt, double time);
-
-static SingleConfig single_systems[SINGLE_SYS_COUNT] = {
-    [SINGLE_SYS_CAM] = {.draw = Crosshair_Draw},
-};

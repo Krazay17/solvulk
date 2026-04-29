@@ -39,14 +39,20 @@ void Sol_Debug_Draw(double dt)
         Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (SolColor){255, 0, 122, 255}, SOL_FONT_ICE);
     }
     DebugFPS(dt);
+
+    // static int limiter;
+    // if(limiter++ % 100 == 0)
+    // printf("rand %d\n", rand()%255);
 }
 
 static void DebugFPS(double dt)
 {
-    SolState *state = Sol_GetState();
+    SolState     *state = Sol_GetState();
     static double total, throttle;
     static char   buffer[64];
     static int    count;
+    if (dt < FLOATING_EPSILON)
+        return;
     state->fps = 1.0 / dt;
     total += state->fps;
     count++;

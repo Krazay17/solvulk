@@ -29,10 +29,7 @@ SOLAPI void      Sol_Window_Resize(float width, float height);
 SOLAPI SolModel *Sol_GetModel(SolModelId id);
 
 // Needs free
-SOLAPI char *Sol_ReadFile(const char *filename, long *outSize);
-
 SOLAPI void Sol_FreeModel(SolModel *model);
-SOLAPI void Sol_Loader_LoadModels();
 
 // called from WindowProc on main thread
 SOLAPI void Sol_Input_OnKey(int vkCode, bool down);

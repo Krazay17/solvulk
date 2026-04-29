@@ -73,8 +73,10 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
     controller->aimpos    = head;
 }
 
-void Crosshair_Draw(double dt, double time)
+void Crosshair_Draw(World *world, double dt, double time)
 {
+    if (world->playerID < 0)
+        return;
     int width  = Sol_GetState()->windowWidth / 2;
     int height = Sol_GetState()->windowHeight / 2;
     Sol_Draw_Rectangle(
@@ -94,4 +96,3 @@ void Crosshair_Draw(double dt, double time)
         },
         (SolColor){255, 0, 0, 255}, 0);
 }
-

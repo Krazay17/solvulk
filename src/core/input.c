@@ -83,6 +83,8 @@ void Sol_Input_Update()
     mouseWheelDelta    = rawMouseWheelDelta;
     rawMouseWheelDelta = 0;
 
+    memcpy(local_input.keys, rawKeys, sizeof(bool) * SOL_KEY_COUNT);
+
     if (mouseButtons[SOL_MOUSE_RIGHT])
         mouseLocked = true;
     else

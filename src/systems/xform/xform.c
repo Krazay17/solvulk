@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-CompXform *Entity_Add_Xform(World *world, int id, vec3s pos)
+CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
 {
     world->xforms[id] = (CompXform){
         .pos     = pos,
@@ -19,6 +19,13 @@ void Xform_Snapshot(World *world)
         int id = world->activeEntities[i];
         if (world->masks[id] & HAS_XFORM)
         {
+            vec3s pos = world->xforms[id].pos;
+            if (pos.x == NAN || pos.y == NAN || pos.z == NAN)
+            {
+                pos.x = 0;
+                pos.y = 5;
+                pos.z = 0;
+            }
             world->xforms[id].lastPos   = world->xforms[id].pos;
             world->xforms[id].lastQuat  = world->xforms[id].quat;
             world->xforms[id].lastScale = world->xforms[id].scale;

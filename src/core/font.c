@@ -2,10 +2,10 @@
 
 void Load_Font(SolFont *font, const char *metrics, const char *atlas, float w, float h)
 {
-    Sol_ParseFontMetrics(metrics, 224.0f, 224.0f, font->glyph);
+    Parse_Font_Metrics(metrics, 224.0f, 224.0f, font->glyph);
 }
 
-void Sol_ParseFontMetrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs)
+void Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs)
 {
     const char *p = strstr(json, "\"glyphs\":[");
     if (!p)

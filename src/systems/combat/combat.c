@@ -28,15 +28,21 @@ void Combat_Tick(World *world, double dt, double time)
 
         if (controller->actionState & ACTION_ATTACK)
         {
-            SolRayResult result = Sol_RaycastD(
-                world, (SolRay){.pos = aimpos, .dir = aimdir, .dist = 50.0f, .ignoreEnt = id}, 1.0f);
-            if (result.hit && result.entId)
-            {
-                Sol_Debuff_Add(world, result.entId,
-                               (CompBuff){.duration = 1.0f,
-                                          .kind     = BUFF_KNOCKBACK,
-                                          .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
-            }
+            // SolRayResult result =
+            //     Sol_RaycastD(world, (SolRay){.pos = aimpos, .dir = aimdir, .dist = 50.0f, .ignoreEnt = id}, 1.0f);
+            // if (result.hit)
+            // {
+            //     if (result.entId)
+            //         Sol_Buff_Add(world, result.entId,
+            //                      (CompBuff){.duration = 1.0f,
+            //                                 .kind     = BUFF_KNOCKBACK,
+            //                                 .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
+            // }
+            float randSize = 1.0f / (1 + rand() % 100);
+            int   ball =
+                Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
+                                (CompSphere){.radius = randSize,
+                                             .color = (vec4s){rand() % 255, rand() % 255, rand() % 255,  255}});
         }
     }
 }

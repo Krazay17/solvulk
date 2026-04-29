@@ -302,7 +302,9 @@ float Ray_Sphere_Test(vec3s origin, vec3s dir, vec3s center, float radius, vec3s
         return -1.0f;
 
     // Normal at hit = (hit_point - center) / radius
-    vec3s hit  = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+    vec3s hit = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+    if (radius < FLOATING_EPSILON)
+        return t;
     *outNormal = glms_vec3_scale(glms_vec3_sub(hit, center), 1.0f / radius);
     return t;
 }
@@ -850,12 +852,14 @@ SolCollision collide_sphere_sphere(CompBody *aBody, CompXform *aXform, CompBody 
     float combined_radius = aBody->radius + bBody->radius;
     float dist_sq         = glms_vec3_dot(delta, delta);
 
-    if (dist_sq >= (combined_radius * combined_radius) || dist_sq < 0.0001f)
+    if (dist_sq >= (combined_radius * combined_radius) || dist_sq < FLOATING_EPSILON)
         return col;
 
     float distance    = sqrt(dist_sq);
     float penetration = combined_radius - distance;
-    vec3s normal      = glms_vec3_scale(delta, 1.0f / distance);
+    if (distance < FLOATING_EPSILON)
+        return col;
+    vec3s normal = glms_vec3_scale(delta, 1.0f / distance);
 
     float invMassA     = aBody->invMass;
     float invMassB     = bBody->invMass;

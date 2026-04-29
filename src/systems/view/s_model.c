@@ -2,8 +2,11 @@
 
 #include "sol_core.h"
 
-CompModel *Sol_Model_Add(World *world, int id, CompModel model)
+CompModel *Sol_Model_Add(World *world, int id, CompModel init)
 {
+    CompModel model = init;
+    model.model = Sol_GetModel(model.modelId);
+
     world->models[id] = model;
     world->masks[id] |= HAS_MODEL;
     return &world->models[id];
@@ -23,8 +26,6 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         vec3s      drawPos   = xform->drawPos;
         drawPos.y += modelComp->yOffset;
 
-        Submit_Model(modelComp->gpuHandle, drawPos, xform->drawScale, xform->drawQuat);
+        Sol_Submit_Model(modelComp->modelId, drawPos, xform->drawScale, xform->drawQuat);
     }
-
-    Sol_Flush_Models();
 }

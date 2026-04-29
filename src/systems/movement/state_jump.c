@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "movement.h"
 
 #define JUMP_VEL 9.0f
 #define JUMP_ALPHAMOD 1.66f

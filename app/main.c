@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
 
     ShowWindow(g_hwnd, nShowCmd);
 
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
 
     // Raw input device for accurate mouse
     RAWINPUTDEVICE rid;

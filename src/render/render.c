@@ -1,3 +1,4 @@
+#include "render_i.h"
 #include "sol_core.h"
 
 SolVkState solvkstate = {0};
@@ -9,12 +10,8 @@ SolCamera renderCam = {
     .farClip  = 5000.0f,
 };
 
-static struct
-{
-    uint32_t   count;
-    ModelSSBO  instances[MAX_MODEL_INSTANCES];
-    SolModelId handles[MAX_MODEL_INSTANCES];
-} submissionQueue;
+static ModelSubmission  modelSubmission;
+static SphereSubmission sphereQueue;
 
 static u32            boundPipeline;
 static SolGpuImage    gpuImages[SOL_IMAGE_COUNT];
@@ -114,11 +111,10 @@ void Sol_SetOrtho(uint32_t width, uint32_t height)
     mat4 ortho;
     glm_ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f, ortho);
 
-    for(int i = 0;i<MAX_FRAMES_IN_FLIGHT; i++)
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         OrthoUBO *ubo = descriptors[DESC_ORTHO_UBO].mapped[i];
         memcpy(ubo->ortho2d, ortho, sizeof(mat4));
-
     }
 }
 
@@ -170,6 +166,16 @@ void Render_Camera_Update(vec3 pos, vec3 target)
     renderCam.proj[1][1] *= -1;
 }
 
+void Sol_Submit_Sphere(vec4s pos, vec4s color)
+{
+    if (sphereQueue.count >= MAX_SPHERE_INSTANCES)
+        return;
+    SphereSSBO *s = &sphereQueue.instances[sphereQueue.count++];
+
+    s->pos   = pos;
+    s->color = (vec4s){ColorF(color.r), ColorF(color.g), ColorF(color.b), ColorF(color.a)};
+}
+
 void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
@@ -195,15 +201,15 @@ void Sol_Begin_3D()
     memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
 }
 
-void Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat)
+void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat)
 {
-    if (submissionQueue.count >= MAX_MODEL_INSTANCES)
+    if (modelSubmission.count >= MAX_MODEL_INSTANCES)
         return;
 
-    uint32_t slot                 = submissionQueue.count++;
-    submissionQueue.handles[slot] = handle;
+    uint32_t slot                 = modelSubmission.count++;
+    modelSubmission.handles[slot] = handle;
 
-    ModelSSBO *inst = &submissionQueue.instances[slot];
+    ModelSSBO *inst = &modelSubmission.instances[slot];
     *inst           = (ModelSSBO){0};
 
     memcpy(inst->position, &pos, sizeof(float) * 3);
@@ -394,15 +400,15 @@ void Sol_Begin_Draw()
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
 }
 
-void Sol_Flush_Models(void)
+void Flush_Models(void)
 {
-    if (submissionQueue.count == 0)
+    if (modelSubmission.count == 0)
         return;
 
     // Count per handle
     uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (uint32_t i = 0; i < submissionQueue.count; i++)
-        counts[submissionQueue.handles[i]]++;
+    for (uint32_t i = 0; i < modelSubmission.count; i++)
+        counts[modelSubmission.handles[i]]++;
 
     // Prefix sum
     uint32_t offsets[SOL_MODEL_COUNT] = {0};
@@ -414,10 +420,10 @@ void Sol_Flush_Models(void)
     uint32_t   cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
 
-    for (uint32_t i = 0; i < submissionQueue.count; i++)
+    for (uint32_t i = 0; i < modelSubmission.count; i++)
     {
-        SolModelId h      = submissionQueue.handles[i];
-        gpu[cursors[h]++] = submissionQueue.instances[i];
+        SolModelId h      = modelSubmission.handles[i];
+        gpu[cursors[h]++] = modelSubmission.instances[i];
     }
 
     for (int h = 0; h < SOL_MODEL_COUNT; h++)
@@ -428,7 +434,27 @@ void Sol_Flush_Models(void)
         }
     }
 
-    submissionQueue.count = 0;
+    modelSubmission.count = 0;
+}
+
+void Flush_Spheres(void)
+{
+    if (sphereQueue.count == 0)
+        return;
+
+    SphereSSBO *gpu = descriptors[DESC_SPHERE_SSBO].mapped[solvkstate.currentFrame];
+    memcpy(gpu, sphereQueue.instances, sizeof(SphereSSBO) * sphereQueue.count);
+
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, PIPE_SPHERE);
+    vkCmdDraw(cmd, 6, sphereQueue.count, 0, 0);
+    sphereQueue.count = 0;
+}
+
+void Flush_Queue(void)
+{
+    Flush_Models();
+    Flush_Spheres();
 }
 
 void Sol_End_Draw()

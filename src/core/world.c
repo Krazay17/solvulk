@@ -57,6 +57,7 @@ void World_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->drawCount; i++)
     {
         world->drawSystems[i](world, dt, time);
+        Flush_Queue();
     }
 }
 
@@ -74,7 +75,7 @@ void World_System_Add(World *world, WorldSystem system)
         world->drawSystems[world->drawCount++] = world_systems[system].draw;
 }
 
-int Entity_Create(World *world)
+int Sol_Create_Ent(World *world)
 {
     for (int i = 0; i < MAX_ENTS; i++)
     {
@@ -87,13 +88,14 @@ int Entity_Create(World *world)
             world->activeEntities[world->activeCount] = i;
             world->activeCount++;
 
+            Sol_Debug_Add("Entities", world->activeCount);
             return i;
         }
     }
     return -1;
 }
 
-void Entity_Destroy(World *world, int id)
+void Sol_Destroy_Ent(World *world, int id)
 {
     // 1. Mark as inactive
     world->actives[id] = false;
@@ -113,64 +115,34 @@ void Entity_Destroy(World *world, int id)
     }
 }
 
-CompShape *Entity_Add_Shape(World *world, int id)
+CompShape *Sol_Shape_Add(World *world, int id)
 {
     world->masks[id] |= HAS_SHAPE;
     return &world->shapes[id];
 }
 
-CompInteractable *Entity_Add_Interact(World *world, int id)
-{
-
-    world->masks[id] |= HAS_INTERACT;
-    return &world->interactables[id];
-}
-
-CompInfo *Entity_Add_Info(World *world, int id)
+CompInfo *Sol_Info_Add(World *world, int id)
 {
     world->masks[id] |= HAS_INFO;
     return &world->infos[id];
 }
 
-CompUiElement *Entity_Add_UiElement(World *world, int id)
+CompUiElement *Sol_UiElement_Add(World *world, int id)
 {
     world->masks[id] |= HAS_UI_ELEMENT;
     return &world->uiElements[id];
 }
 
-CompMovement *Entity_Add_Movement(World *world, int id)
-{
-    world->masks[id] |= HAS_MOVEMENT;
-    return &world->movements[id];
-}
-
-CompController *Entity_Add_Controller_Local(World *world, int id)
-{
-    world->masks[id] |= HAS_CONTROLLER;
-    world->playerID = id;
-    return &world->controllers[id];
-}
-
-CompController *Entity_Add_Controller_Remote(World *world, int id)
+CompController *Sol_ControllerRemote_Add(World *world, int id)
 {
     world->masks[id] |= HAS_CONTROLLER;
     return &world->controllers[id];
 }
 
-CompController *Entity_Add_Controller_Ai(World *world, int id)
+CompController *Sol_ControllerAi_Add(World *world, int id)
 {
     world->masks[id] |= HAS_CONTROLLER_AI;
     return &world->controllers[id];
-}
-
-CompModel *Entity_Add_Model(World *world, int id, SolModelId model)
-{
-    world->models[id] = (CompModel){
-        .gpuHandle = model,
-        .model     = Sol_GetModel(model),
-    };
-    world->masks[id] |= HAS_MODEL;
-    return &world->models[id];
 }
 
 int Sol_World_GetEntCount(World *world)

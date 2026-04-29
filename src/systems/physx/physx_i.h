@@ -9,8 +9,8 @@
 #define SPATIAL_NULL 0xFFFFFFFF
 
 #define SPATIAL_DYNAMIC_CELL_SIZE 2.0f
-#define SPATIAL_DYNAMIC_SIZE (1 << 14)
-#define SPATIAL_DYNAMIC_ENTRIES 0xFFFF
+#define SPATIAL_DYNAMIC_SIZE (1 << 18)
+#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
 #define SPATIAL_STATIC_CELL_SIZE 1.0f
 #define SPATIAL_STATIC_SIZE (1 << 21)
@@ -20,6 +20,7 @@ typedef struct CompBody  CompBody;
 typedef struct CompXform CompXform;
 typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, SolTri *tri);
 typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb);
+typedef float (*ResolveShapeTest)(SolRay ray, CompXform *xform, CompBody *body, vec3s *normal);
 
 typedef struct GridWalker
 {
@@ -116,7 +117,7 @@ SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform
 SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
 SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
 
-void Touch_Step(World *world, int count);
+void Ground_Trace(World *world, int count);
 void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform);
 
 // Per-entity substep count based on speed
@@ -140,8 +141,8 @@ void Grid_Walker_Init_Infinite(GridWalker *w, SolRay ray, float cellSize);
 bool Grid_Walker_Next(GridWalker *w, GridCell *out);
 
 SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray);
-float        Ray_Sphere_Test(vec3s origin, vec3s dir, vec3s center, float radius, vec3s *outNormal);
-float        Ray_Capsule_Test(vec3s origin, vec3s dir, vec3s center, float radius, float height, vec3s *outNormal);
+float        Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
+float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
 
 SolCollision Collide_Y(CompXform *xform, CompBody *body);
@@ -183,11 +184,9 @@ static ResolveShapePair shape_pair_resolvers[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_SPH][SHAPE3_CAP] = collide_sphere_sphere,
 };
 
-typedef float (*ResolveShapeTest)(vec3s origin, vec3s dir, CompBody *body, CompXform *xform, vec3s *normal);
-
 static ResolveShapeTest shape_test_resolver[SHAPE3_CNT] = {
-    [SHAPE3_SPH] = NULL,
-    [SHAPE3_CAP] = NULL,
-    [SHAPE3_CAP] = NULL,
-    [SHAPE3_SPH] = NULL,
+    [SHAPE3_SPH] = Ray_Sphere_Test,
+    [SHAPE3_CAP] = Ray_Capsule_Test,
+    [SHAPE3_BOX] = NULL,
+    [SHAPE3_MOD] = NULL,
 };

@@ -17,6 +17,7 @@ typedef enum
     DESC_FONT_ATLAS,
     DESC_PARTICLE_SSBO,
     DESC_SPHERE_SSBO,
+    DESC_FLAGS_SSBO,
     DESC_COUNT,
 } DescriptorId;
 
@@ -60,6 +61,7 @@ typedef struct
     vec4 rotation;
     vec4 color;
     vec4 material;
+
 } ModelSSBO;
 
 typedef struct
@@ -87,12 +89,18 @@ typedef struct
     vec4s color;
 } SphereSSBO;
 
+typedef struct
+{
+    u32 flags;
+} FlagsSSBO;
+
 // Submission Que
 
 typedef struct
 {
     u32        count;
     ModelSSBO  instances[MAX_MODEL_INSTANCES];
+    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
     SolModelId handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
@@ -278,7 +286,7 @@ void Flush_Spheres(void);
 void Flush_Queue(void);
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color);
-void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat);
+void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
 void Render_Camera_Update(vec3 pos, vec3 target);
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
@@ -306,8 +314,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .type              = VERTEX_TRI,
-            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO},
-            .descCount         = 2,
+            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO},
+            .descCount         = 3,
         },
     [PIPE_RECT] =
         {
@@ -389,6 +397,13 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
     [DESC_SPHERE_SSBO] =
         {
             .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_FLAGS_SSBO] =
+        {
+            .size       = sizeof(FlagsSSBO) * MAX_MODEL_INSTANCES,
             .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_SSBO,

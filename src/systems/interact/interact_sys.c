@@ -1,5 +1,8 @@
 #include "sol_core.h"
 
+
+    SolRayResult screenRay = {0};
+
 CompInteract *Sol_Interact_Add(World *world, int id)
 {
     CompInteract interact = {0};
@@ -10,9 +13,15 @@ CompInteract *Sol_Interact_Add(World *world, int id)
 
 void Interact2d_Tick(World *world, double dt, double time)
 {
-    int      required = HAS_INTERACT | HAS_XFORM | HAS_SHAPE;
-    SolMouse mouse    = Sol_Input_GetMouse();
+    SolMouse     mouse  = Sol_Input_GetMouse();
+    int          rayId  = -1;
 
+    if (!mouse.locked)
+        screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 1, .dist = 100.0f});
+    if (screenRay.hit && screenRay.entId)
+        rayId = screenRay.entId;
+
+    int required = HAS_INTERACT | HAS_XFORM;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -20,7 +29,8 @@ void Interact2d_Tick(World *world, double dt, double time)
         {
             CompInteract *interact = &world->interacts[id];
             CompXform    *xform    = &world->xforms[id];
-            CompShape    *shape    = &world->shapes[id];
+            CompShape    *shape    = (world->masks[id] & HAS_SHAPE) ? &world->shapes[id] : NULL;
+            CompBody     *body     = (world->masks[id] & HAS_BODY3) ? &world->bodies[id] : NULL;
 
             bool wasPressed = interact->states & INTERACT_PRESSED;
             interact->states &= ~INTERACT_PRESSED;
@@ -29,7 +39,23 @@ void Interact2d_Tick(World *world, double dt, double time)
 
             vec2s mousePos = (vec2s){mouse.x, mouse.y};
 
-            if (Sol_Check_2d_Collision(mousePos, (vec4s){xform->pos.x, xform->pos.y, shape->width, shape->height}))
+            bool collision = false;
+            if (body)
+            {
+                if (rayId == id)
+                {
+                    collision = true;
+                }
+            }
+            else if (shape)
+                collision = Sol_Check_2d_Collision(mousePos, (vec4s){
+                                                                 xform->pos.x,
+                                                                 xform->pos.y,
+                                                                 shape->width,
+                                                                 shape->height,
+                                                             });
+
+            if (collision)
             {
                 interact->states |= INTERACT_HOVERED;
                 if (mouse.buttons[SOL_MOUSE_LEFT])
@@ -43,8 +69,8 @@ void Interact2d_Tick(World *world, double dt, double time)
                 {
                     interact->states |= INTERACT_CLICKED;
                     interact->states &= ~INTERACT_PRESSED;
-                    if(interact->states & INTERACT_ISTOGGLE)
-                    interact->states ^= INTERACT_TOGGLED;
+                    if (interact->states & INTERACT_ISTOGGLE)
+                        interact->states ^= INTERACT_TOGGLED;
 
                     if (interact->onClick.callbackFunc)
                         interact->onClick.callbackFunc(interact->onClick.callbackData);
@@ -60,4 +86,9 @@ void Interact2d_Tick(World *world, double dt, double time)
 
 void Interact3d_Tick(World *world, double dt, double time)
 {
+}
+
+SolRayResult *Sol_GetScreenRay()
+{
+    return &screenRay;
 }

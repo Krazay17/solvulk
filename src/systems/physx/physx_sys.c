@@ -68,7 +68,7 @@ void Physx_Step(World *world, double dt, double time)
         ents[count++] = id;
     }
 
-    Touch_Step(world, count);
+    Ground_Trace(world, count);
 
     Prof_Begin(&prof_static);
     // velocity and static collisions
@@ -81,7 +81,7 @@ void Physx_Step(World *world, double dt, double time)
 
         if (xform->pos.y < -15)
         {
-            xform->pos = (vec3s){0, 25, 0};
+            Xform_Teleport(xform, (vec3s){0, 15, 0});
         }
 
         vec3s accel   = SOL_PHYS_GRAV;
@@ -117,9 +117,9 @@ void Physx_Step(World *world, double dt, double time)
     Prof_EndEz(&prof_dynamic);
 }
 
-void Touch_Step(World *world, int count)
+void Ground_Trace(World *world, int count)
 {
-    u32 required = HAS_BODY3 | HAS_XFORM;
+    u32 required = HAS_BODY3 | HAS_XFORM | HAS_MOVEMENT;
     int i;
 #pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
@@ -182,6 +182,50 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
     return result;
 }
 
+// dont fill pos or dir in ray
+SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray)
+{
+    SolCamera *cam = Sol_GetCamera();
+    float winW = Sol_GetState()->windowWidth;
+    float winH = Sol_GetState()->windowHeight;
+    
+    // 1. Convert screen pixel → NDC [-1, 1]
+    float ndcX = (2.0f * screenX / winW) - 1.0f;
+    float ndcY = (2.0f * screenY / winH) - 1.0f;
+    // Note: your proj has the Y flip baked in (proj[1][1] *= -1), 
+    // so NDC Y here matches Vulkan's convention. No extra flip needed.
+    
+    // 2. Build a clip-space point at the far plane
+    vec4 clipFar  = {ndcX, ndcY, 1.0f, 1.0f};
+    
+    // 3. Invert viewProjection to go from clip → world
+    mat4 invVP;
+    glm_mat4_inv(cam->viewProj, invVP);
+    
+    // 4. Transform clip → world
+    vec4 worldFar;
+    glm_mat4_mulv(invVP, clipFar, worldFar);
+    
+    // 5. Perspective divide (homogeneous → 3D)
+    if (fabsf(worldFar[3]) < FLOATING_EPSILON) {
+        return (SolRayResult){0};
+    }
+    vec3s farPos = {{
+        worldFar[0] / worldFar[3],
+        worldFar[1] / worldFar[3],
+        worldFar[2] / worldFar[3],
+    }};
+    
+    // 6. Build the ray from camera position toward the far point
+    vec3s camPos = {{cam->position[0], cam->position[1], cam->position[2]}};
+    vec3s dir    = glms_vec3_normalize(glms_vec3_sub(farPos, camPos));
+    
+    ray.pos = camPos;
+    ray.dir = dir;
+    
+    // 7. Cast through your existing raycast
+    return Sol_Raycast(world, ray);
+}
 
 CompBody *Sol_Body2_Add(World *world, int id)
 {

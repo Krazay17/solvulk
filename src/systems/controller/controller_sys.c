@@ -58,11 +58,6 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
             controller->actionState &= ~action_binds[i];
     }
 
-    if (Sol_Input_GetMouse().buttons[SOL_MOUSE_LEFT])
-        controller->actionState |= ACTION_ATTACK;
-    else
-        controller->actionState &= ~ACTION_ATTACK;
-
     vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
     vec3s updir   = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});
     vec3s wishdir = GetWishDir3(controller->actionState, lookdir, updir);

@@ -26,10 +26,17 @@ void Combat_Tick(World *world, double dt, double time)
         vec3s aimpos = controller->aimpos;
         vec3s aimdir = controller->aimdir;
 
-        if (controller->actionState & ACTION_ATTACK)
+        if (controller->actionState & ACTION_ABILITY1)
         {
-            // SolRayResult result =
-            //     Sol_RaycastD(world, (SolRay){.pos = aimpos, .dir = aimdir, .dist = 50.0f, .ignoreEnt = id}, 1.0f);
+            // SolRayResult result = Sol_RaycastD(world,
+            //                                    (SolRay){
+            //                                        .pos       = aimpos,
+            //                                        .dir       = aimdir,
+            //                                        .dist      = 50.0f,
+            //                                        .ignoreEnt = id,
+            //                                        .mask      = 1,
+            //                                    },
+            //                                    1.0f);
             // if (result.hit)
             // {
             //     if (result.entId)

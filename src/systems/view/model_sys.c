@@ -5,7 +5,7 @@
 CompModel *Sol_Model_Add(World *world, int id, CompModel init)
 {
     CompModel model = init;
-    model.model = Sol_GetModel(model.modelId);
+    model.model     = Sol_GetModel(model.modelId);
 
     world->models[id] = model;
     world->masks[id] |= HAS_MODEL;
@@ -21,11 +21,20 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
 
-        CompXform *xform     = &world->xforms[id];
-        CompModel *modelComp = &world->models[id];
-        vec3s      drawPos   = xform->drawPos;
+        CompXform    *xform     = &world->xforms[id];
+        CompModel    *modelComp = &world->models[id];
+        CompInteract *interact  = (world->masks[id] & HAS_INTERACT) ? &world->interacts[id] : NULL;
+
+        u32 flags = 0;
+        if (interact)
+        {
+            if (interact->states & INTERACT_HOVERED)
+                flags = 1;
+        }
+
+        vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
 
-        Sol_Submit_Model(modelComp->modelId, drawPos, xform->drawScale, xform->drawQuat);
+        Sol_Submit_Model(modelComp->modelId, drawPos, xform->drawScale, xform->drawQuat, flags);
     }
 }

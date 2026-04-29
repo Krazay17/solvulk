@@ -55,9 +55,9 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
 
         arm = glms_vec3_lerp(arm, anchor, factor);
 
-        SolRayResult result =
+        SolRayResult camDistTrace =
             Raycast_Static_Grid_Walk(world, (SolRay){.pos = arm, .dir = invDirection, .dist = distance});
-        currentDistance = Sol_Lerp(currentDistance, result.dist - 3.0f, factor);
+        currentDistance = Sol_Lerp(currentDistance, camDistTrace.dist - 3.0f, factor);
         if (currentDistance < 0)
             currentDistance = 0;
         camPos = glms_vec3_add(arm, glms_vec3_scale(invDirection, currentDistance));
@@ -67,9 +67,15 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
     Render_Camera_Update(camPos.raw, target.raw);
 
     controller->aimHitEnt = -1;
-    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){.pos = camPos, .ignoreEnt = id, .dir = lookdir, .dist = 100.f});
-    vec3s dir = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
-    controller->aimdir    = vecDot(dir, lookdir) > 0.5f ? dir : lookdir;
+    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
+                                                   .pos       = camPos,
+                                                   .ignoreEnt = id,
+                                                   .mask      = 1,
+                                                   .dir       = lookdir,
+                                                   .dist      = 100.f,
+                                               });
+    vec3s        dir      = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
+    controller->aimdir    = vecDot(dir, lookdir) > 0.6f ? dir : lookdir;
     controller->aimHitEnt = aimTrace.entId;
     controller->aimpos    = head;
 }

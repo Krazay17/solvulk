@@ -164,6 +164,8 @@ void Render_Camera_Update(vec3 pos, vec3 target)
     // 3. Projection Matrix
     glm_perspective(glm_rad(renderCam.fov), solAspectRatio, renderCam.nearClip, renderCam.farClip, renderCam.proj);
     renderCam.proj[1][1] *= -1;
+
+    glm_mat4_mul(renderCam.proj, renderCam.view, renderCam.viewProj);
 }
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color)
@@ -194,14 +196,14 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
 void Sol_Begin_3D()
 {
     SceneUBO *ubo = descriptors[DESC_SCENE_UBO].mapped[solvkstate.currentFrame];
-    glm_mat4_mul(renderCam.proj, renderCam.view, ubo->viewProjection);
     memcpy(ubo->view, renderCam.view, sizeof(mat4));
     memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
+    memcpy(ubo->viewProjection, renderCam.viewProj, sizeof(mat4));
     memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
     memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
 }
 
-void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat)
+void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags)
 {
     if (modelSubmission.count >= MAX_MODEL_INSTANCES)
         return;
@@ -211,10 +213,12 @@ void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat)
 
     ModelSSBO *inst = &modelSubmission.instances[slot];
     *inst           = (ModelSSBO){0};
-
     memcpy(inst->position, &pos, sizeof(float) * 3);
     memcpy(inst->scale, &scale, sizeof(float) * 3);
     memcpy(inst->rotation, &quat, sizeof(float) * 4);
+
+    FlagsSSBO *f = &modelSubmission.flags[slot];
+    f->flags     = flags;
 }
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -417,13 +421,17 @@ void Flush_Models(void)
 
     // Write sorted into SSBO
     ModelSSBO *gpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
-    uint32_t   cursors[SOL_MODEL_COUNT];
+    FlagsSSBO *f   = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
+
+    uint32_t cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
 
     for (uint32_t i = 0; i < modelSubmission.count; i++)
     {
-        SolModelId h      = modelSubmission.handles[i];
-        gpu[cursors[h]++] = modelSubmission.instances[i];
+        SolModelId h    = modelSubmission.handles[i];
+        gpu[cursors[h]] = modelSubmission.instances[i];
+        f[cursors[h]]   = modelSubmission.flags[i];
+        cursors[h]++;
     }
 
     for (int h = 0; h < SOL_MODEL_COUNT; h++)

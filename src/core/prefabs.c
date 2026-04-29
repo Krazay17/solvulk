@@ -31,6 +31,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
                       .mass        = 1.0f,
                       .shape       = SHAPE3_CAP,
                       .restitution = 0.8f,
+                      .group       = 1,
                   });
 
     CompMovement *movement = Sol_Movement_Add(world, id, (CompMovement){.configId = MOVE_CONFIG_PLAYER});
@@ -38,6 +39,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     model->yOffset         = -height * 0.5f;
 
     CompCombat *combat = Sol_Combat_Add(world, id, (CompCombat){0});
+    Sol_Interact_Add(world, id);
+    Sol_Pickup_Add(world, id, (CompPickup){0});
 
     return id;
 }
@@ -76,7 +79,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text)
     s->width     = 100.0f;
     s->type      = SHAPE2_REC;
 
-    //CompUiSlider *slider = Sol_Slider_Add
+    // CompUiSlider *slider = Sol_Slider_Add
 
     CompUiView *v      = Sol_UiView_Add(world, id);
     v->baseColor       = (SolColor){255, 0, 0, 255};

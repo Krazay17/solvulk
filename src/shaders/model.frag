@@ -3,6 +3,7 @@
 layout(location = 0) in vec4 fragColor;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec3 fragWorldPos;
+layout(location = 4) flat in int inInstanceIndex;
 
 layout(location = 0) out vec4 outColor;
 
@@ -14,11 +15,20 @@ layout(set = 0, binding = 0) uniform Scene {
     vec4 sun;
 } scene;
 
+struct Flags{
+    uint flags;
+};
+layout(std430, set = 2, binding = 0) readonly buffer FlagsBuffer {
+    Flags instances[];
+};
+
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
     float metallic;
     float roughness;
 } material;
+
+const uint FLAG_FRESNEL = 1u << 0;
 
 void main() {
     vec3 lightDir = normalize(scene.sun.xyz);
@@ -40,5 +50,12 @@ void main() {
     vec3 specColor = mix(vec3(0.04), color, material.metallic);
     vec3 specular = specColor * spec * (1.0 - material.roughness * 0.5);
 
-    outColor = vec4(ambient + diffuse + specular, alpha);
+    vec4 finalRGB = vec4(ambient + diffuse + specular, alpha);
+    if ((instances[inInstanceIndex].flags & FLAG_FRESNEL) != 0u) {
+            float fresnelTerm = 1.0 - max(dot(normalize(fragNormal), viewDir), 0.0);
+            // Using pow(x, 4.0) for a standard rim light effect
+            finalRGB.rgb += pow(fresnelTerm, 4.0) * vec3(1.0);
+        }
+
+    outColor = finalRGB;
 }

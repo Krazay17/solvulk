@@ -277,57 +277,125 @@ SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompX
             }
     return col;
 }
-
-float Ray_Sphere_Test(vec3s origin, vec3s dir, vec3s center, float radius, vec3s *outNormal)
+float Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal)
 {
-    vec3s oc = glms_vec3_sub(origin, center);
-    float b  = glms_vec3_dot(oc, dir);
+    vec3s center = xform->pos;
+    float radius = body->radius;
+    
+    vec3s oc = glms_vec3_sub(ray.pos, center);
+    float b  = glms_vec3_dot(oc, ray.dir);
     float c  = glms_vec3_dot(oc, oc) - radius * radius;
-
-    // If origin is outside sphere and ray points away, no hit
-    if (c > 0.0f && b > 0.0f)
-        return -1.0f;
-
-    float discriminant = b * b - c;
-    if (discriminant < 0.0f)
-        return -1.0f; // ray misses sphere
-
-    float sq = sqrtf(discriminant);
-    float t  = -b - sq; // near intersection
-
-    // If origin is inside sphere, t is negative; use far intersection
-    if (t < 0.0f)
-        t = -b + sq;
-    if (t < 0.0f)
-        return -1.0f;
-
-    // Normal at hit = (hit_point - center) / radius
-    vec3s hit = glms_vec3_add(origin, glms_vec3_scale(dir, t));
-    if (radius < FLOATING_EPSILON)
-        return t;
-    *outNormal = glms_vec3_scale(glms_vec3_sub(hit, center), 1.0f / radius);
+    
+    // Outside sphere and pointing away
+    if (c > 0.0f && b > 0.0f) return -1.0f;
+    
+    float disc = b * b - c;
+    if (disc < 0.0f) return -1.0f;
+    
+    float sq = sqrtf(disc);
+    float t  = -b - sq;
+    if (t < 0.0f) t = -b + sq;       // origin inside sphere → use far hit
+    if (t < 0.0f) return -1.0f;
+    
+    vec3s hit = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+    *outNormal = (radius > FLOATING_EPSILON)
+        ? glms_vec3_scale(glms_vec3_sub(hit, center), 1.0f / radius)
+        : (vec3s){{0, 1, 0}};
     return t;
 }
 
-float Ray_Capsule_Test(vec3s origin, vec3s dir, vec3s center, float radius, float height, vec3s *outNormal)
+float Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal)
 {
-    // Capsule oriented along Y axis, centered at `center`
-    float halfH = height * 0.5f - radius; // distance from center to each hemisphere center
-    vec3s a     = center;
-    a.y += halfH; // top hemisphere center
-    vec3s b = center;
-    b.y -= halfH; // bottom hemisphere center
-
-    // Nearest ray-vs-segment approach
-    // 1. Test ray vs infinite cylinder axis
-    // 2. Clamp hit to capsule segment
-    // 3. If outside segment, test ray vs hemisphere at that end
-
-    // This is more involved — a clean implementation is ~40 lines.
-    // For a first pass, approximate as a sphere at `center` with radius ~ height/2.
-    // Refine later if gameplay requires precision.
-
-    return Ray_Sphere_Test(origin, dir, center, height * 0.5f, outNormal);
+    vec3s center = xform->pos;
+    float radius = body->radius;
+    float halfH  = body->height * 0.5f - radius;  // half of cylinder portion
+    
+    // Capsule axis: A (bottom hemisphere center) → B (top hemisphere center)
+    vec3s A = {{center.x, center.y - halfH, center.z}};
+    vec3s B = {{center.x, center.y + halfH, center.z}};
+    vec3s axis = glms_vec3_sub(B, A);                          // length = 2*halfH
+    float axisLenSq = glms_vec3_dot(axis, axis);
+    
+    // Vector from A to ray origin
+    vec3s oa = glms_vec3_sub(ray.pos, A);
+    
+    // Project ray direction and oa onto the axis
+    float dDotAxis  = glms_vec3_dot(ray.dir, axis);
+    float oaDotAxis = glms_vec3_dot(oa, axis);
+    
+    // Coefficients of quadratic for cylinder intersection
+    // Standard infinite cylinder: a*t^2 + 2*b*t + c = 0
+    float a = axisLenSq - dDotAxis * dDotAxis;
+    float b = axisLenSq * glms_vec3_dot(oa, ray.dir) - oaDotAxis * dDotAxis;
+    float c = axisLenSq * glms_vec3_dot(oa, oa) - oaDotAxis * oaDotAxis 
+            - radius * radius * axisLenSq;
+    
+    float bestT = INFINITY;
+    
+    // === Cylinder body ===
+    // Ray parallel to axis (a ≈ 0) skips this — the hemispheres handle it.
+    if (fabsf(a) > FLOATING_EPSILON) {
+        float disc = b * b - a * c;
+        if (disc >= 0.0f) {
+            float sq = sqrtf(disc);
+            float t  = (-b - sq) / a;
+            if (t < 0.0f) t = (-b + sq) / a;  // origin inside? try far hit
+            
+            if (t >= 0.0f) {
+                // Check the hit lies between A and B along the axis
+                float hitProj = oaDotAxis + t * dDotAxis;
+                if (hitProj >= 0.0f && hitProj <= axisLenSq) {
+                    bestT = t;
+                    
+                    // Normal: from axis to hit, perpendicular to axis
+                    vec3s hit = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                    vec3s axisPoint = glms_vec3_add(A, 
+                        glms_vec3_scale(axis, hitProj / axisLenSq));
+                    vec3s n = glms_vec3_sub(hit, axisPoint);
+                    float nLen = glms_vec3_norm(n);
+                    *outNormal = (nLen > FLOATING_EPSILON)
+                        ? glms_vec3_scale(n, 1.0f / nLen)
+                        : (vec3s){{1, 0, 0}};
+                }
+            }
+        }
+    }
+    
+    // === Hemispheres (test both, keep closer hit) ===
+    vec3s hemiCenters[2] = {A, B};
+    for (int i = 0; i < 2; i++) {
+        vec3s hc  = hemiCenters[i];
+        vec3s oc  = glms_vec3_sub(ray.pos, hc);
+        float hb  = glms_vec3_dot(oc, ray.dir);
+        float hc2 = glms_vec3_dot(oc, oc) - radius * radius;
+        
+        if (hc2 > 0.0f && hb > 0.0f) continue;
+        
+        float disc = hb * hb - hc2;
+        if (disc < 0.0f) continue;
+        
+        float sq = sqrtf(disc);
+        float t  = -hb - sq;
+        if (t < 0.0f) t = -hb + sq;
+        if (t < 0.0f) continue;
+        
+        if (t >= bestT) continue;
+        
+        // Verify the hit is on the correct hemisphere, not in the cylinder zone.
+        // Project the hit onto the axis. If A side: proj <= 0. If B side: proj >= axisLenSq.
+        vec3s hit = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+        float hitProj = glms_vec3_dot(glms_vec3_sub(hit, A), axis);
+        
+        bool onCorrectHemi = (i == 0) ? (hitProj <= 0.0f) : (hitProj >= axisLenSq);
+        if (!onCorrectHemi) continue;
+        
+        bestT = t;
+        *outNormal = (radius > FLOATING_EPSILON)
+            ? glms_vec3_scale(glms_vec3_sub(hit, hc), 1.0f / radius)
+            : (vec3s){{0, 1, 0}};
+    }
+    
+    return (bestT == INFINITY) ? -1.0f : bestT;
 }
 
 inline float Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal)
@@ -1208,7 +1276,6 @@ SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray)
     GridCell cell;
     while (Grid_Walker_Next(&walker, &cell))
     {
-        // Hash the cell coordinates
         u32 hash  = hash_coords(cell.ix, cell.iy, cell.iz) & (table->size - 1);
         u32 entry = table->head[hash];
 
@@ -1217,38 +1284,29 @@ SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray)
             u32 id = table->value[entry];
             if (id != ray.ignoreEnt)
             {
-                CompBody  *body  = &world->bodies[id];
-                CompXform *xform = &world->xforms[id];
-
-                vec3s normal;
-                float t = -1.0f;
-
-                switch (body->shape)
+                CompBody *body = &world->bodies[id];
+                if (ray.mask & body->group)
                 {
-                case SHAPE3_SPH:
-                    t = Ray_Sphere_Test(ray.pos, ray.dir, xform->pos, body->radius, &normal);
-                    break;
-                case SHAPE3_CAP:
-                    t = Ray_Capsule_Test(ray.pos, ray.dir, xform->pos, body->radius, body->height, &normal);
-                    break;
-                default:
-                    break;
-                }
+                    vec3s normal;
+                    float t = -1.0f;
 
-                if (t > 0 && t <= result.dist)
-                {
-                    result.dist  = t;
-                    result.hit   = true;
-                    result.norm  = normal;
-                    result.entId = id;
-                    result.pos   = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                    ResolveShapeTest resolver = shape_test_resolver[body->shape];
+                    if (resolver)
+                        t = resolver(ray, &world->xforms[id], body, &normal);
+
+                    if (t > 0 && t <= result.dist)
+                    {
+                        result.dist  = t;
+                        result.hit   = true;
+                        result.norm  = normal;
+                        result.entId = id;
+                        result.pos   = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                    }
                 }
             }
 
             entry = table->next[entry];
         }
-
-        // Early out if hit within current cell's span
         if (result.hit && result.dist <= cell.tExit)
             break;
     }

@@ -9,6 +9,14 @@
 
 #define SYS_BIT(x) (1u << (x))
 
+// #define SYS_LOOP(a, b)                                                                                                 \
+//     u32 required = a;                                                                                                  \
+//     for (int i = 0; i < b->activeCount; i++)                                                                           \
+//     {                                                                                                                  \
+//         u32 id = world->activeEntities[i];                                                                             \
+//         if ((b->masks[id] & required) != required)                                                                     \
+//             continue;
+
 typedef struct World World;
 typedef void (*SystemInit)(World *world);
 typedef void (*SystemFunc)(World *world, double dt, double time);
@@ -35,6 +43,7 @@ typedef enum
     WORLD_SYS_SPHERE,
     WORLD_SYS_TIMER,
     WORLD_SYS_CAM,
+    WORLD_SYS_PICKUP,
     WORLD_SYS_COUNT,
 } WorldSystem;
 
@@ -59,6 +68,7 @@ typedef enum
     HAS_VITAL         = (1 << 15),
     HAS_SPHERE        = (1 << 16),
     HAS_TIMER         = (1 << 17),
+    HAS_PICKUP        = (1 << 18),
 } CompBits;
 
 typedef enum
@@ -132,12 +142,17 @@ typedef struct CompInfo
 
 } CompInfo;
 
+typedef struct CompPickup
+{
+    bool active;
+} CompPickup;
+
 typedef enum InteractState
 {
-    INTERACT_HOVERED = (1 << 0),
-    INTERACT_PRESSED = (1 << 1),
-    INTERACT_CLICKED = (1 << 2),
-    INTERACT_TOGGLED = (1 << 3),
+    INTERACT_HOVERED  = (1 << 0),
+    INTERACT_PRESSED  = (1 << 1),
+    INTERACT_CLICKED  = (1 << 2),
+    INTERACT_TOGGLED  = (1 << 3),
     INTERACT_ISTOGGLE = (1 << 4),
 } InteractState;
 typedef struct CompInteract
@@ -211,6 +226,7 @@ typedef struct CompBody
     float  grounded, airtime;
     float  radius, height, length;
     float  mass, invMass, restitution;
+    u8     group;
 } CompBody;
 
 typedef struct
@@ -242,6 +258,7 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
+    CompPickup     pickups[MAX_ENTS];
     CompTimer      timers[MAX_ENTS];
     CompSphere     spheres[MAX_ENTS];
     CompVital      vitals[MAX_ENTS];
@@ -278,22 +295,23 @@ SOLAPI int  Sol_Create_Ent(World *world);
 SOLAPI void Sol_Destroy_Ent(World *world, int id);
 
 // Add Component to entity
-SOLAPI CompXform      *Sol_Xform_Add(World *world, int id, vec3s pos);
-SOLAPI CompShape      *Sol_Shape_Add(World *world, int id);
-SOLAPI CompBody       *Sol_Body2_Add(World *world, int id);
-SOLAPI CompInteract   *Sol_Interact_Add(World *world, int id);
-SOLAPI CompInfo       *Sol_Info_Add(World *world, int id);
-SOLAPI CompUiView     *Sol_UiView_Add(World *world, int id);
-SOLAPI CompMovement   *Sol_Movement_Add(World *world, int id, CompMovement init);
-SOLAPI CompController *Sol_ControllerLocal_Add(World *world, int id);
-SOLAPI CompController *Sol_ControllerRemote_Add(World *world, int id);
-SOLAPI CompController *Sol_ControllerAi_Add(World *world, int id);
-SOLAPI CompBody       *Sol_Physx_Add(World *world, int id, CompBody init);
-SOLAPI CompCombat     *Sol_Combat_Add(World *world, int id, CompCombat init);
-SOLAPI CompModel      *Sol_Model_Add(World *world, int id, CompModel init);
-SOLAPI CompBuff       *Sol_Buff_Add(World *world, int id, CompBuff init);
-CompSphere            *Sol_Sphere_Add(World *world, int id, CompSphere init);
-CompTimer             *Sol_Timer_Add(World *world, int id, CompTimer init);
+CompXform      *Sol_Xform_Add(World *world, int id, vec3s pos);
+CompShape      *Sol_Shape_Add(World *world, int id);
+CompBody       *Sol_Body2_Add(World *world, int id);
+CompInteract   *Sol_Interact_Add(World *world, int id);
+CompInfo       *Sol_Info_Add(World *world, int id);
+CompUiView     *Sol_UiView_Add(World *world, int id);
+CompMovement   *Sol_Movement_Add(World *world, int id, CompMovement init);
+CompController *Sol_ControllerLocal_Add(World *world, int id);
+CompController *Sol_ControllerRemote_Add(World *world, int id);
+CompController *Sol_ControllerAi_Add(World *world, int id);
+CompBody       *Sol_Physx_Add(World *world, int id, CompBody init);
+CompCombat     *Sol_Combat_Add(World *world, int id, CompCombat init);
+CompModel      *Sol_Model_Add(World *world, int id, CompModel init);
+CompBuff       *Sol_Buff_Add(World *world, int id, CompBuff init);
+CompSphere     *Sol_Sphere_Add(World *world, int id, CompSphere init);
+CompTimer      *Sol_Timer_Add(World *world, int id, CompTimer init);
+CompPickup     *Sol_Pickup_Add(World *world, int id, CompPickup init);
 
 // Xform systems
 SOLAPI void Xform_Snapshot(World *world);
@@ -308,6 +326,7 @@ SOLAPI void Sol_System_Step_Physx_2d(World *world, double dt, double time);
 SOLAPI void Physx_Step(World *world, double dt, double time);
 SOLAPI void Buff_Step(World *world, double dt, double time);
 SOLAPI void Vital_Step(World *world, double dt, double time);
+void        Pickup_Step(World *world, double dt, double time);
 
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
@@ -334,7 +353,10 @@ void        Crosshair_Draw(World *world, double dt, double time);
 void        Sphere_Draw(World *world, double dt, double time);
 
 // System oneshot calls
-void Sol_Sphere_ColorAll(World *world, vec4s color);
+void          Sol_Sphere_ColorAll(World *world, vec4s color);
+void          Xform_Teleport(CompXform *xform, vec3s pos);
+SolRayResult  Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
+SolRayResult *Sol_GetScreenRay();
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER] = {.tick = Timer_Tick},
@@ -352,4 +374,5 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
     [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
+    [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
 };

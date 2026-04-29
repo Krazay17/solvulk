@@ -48,14 +48,25 @@ typedef struct SolCamera SolCamera;
 // Enums
 typedef enum
 {
-    ACTION_NONE   = 0,
-    ACTION_FWD    = (1 << 0),
-    ACTION_BWD    = (1 << 1),
-    ACTION_LEFT   = (1 << 2),
-    ACTION_RIGHT  = (1 << 3),
-    ACTION_JUMP   = (1 << 4),
-    ACTION_DASH   = (1 << 5),
-    ACTION_ATTACK = (1 << 6),
+    ACTION_NONE  = 0,
+    ACTION_FWD   = (1 << 0),
+    ACTION_BWD   = (1 << 1),
+    ACTION_LEFT  = (1 << 2),
+    ACTION_RIGHT = (1 << 3),
+    ACTION_JUMP  = (1 << 4),
+    ACTION_DASH  = (1 << 5),
+
+    ACTION_ABILITY0 = (1 << 6),
+    ACTION_ABILITY1 = (1 << 7),
+    ACTION_ABILITY2 = (1 << 8),
+    ACTION_ABILITY3 = (1 << 9),
+    ACTION_ABILITY4 = (1 << 10),
+    ACTION_ABILITY5 = (1 << 11),
+    ACTION_ABILITY6 = (1 << 12),
+    ACTION_ABILITY7 = (1 << 13),
+    ACTION_ABILITY8 = (1 << 14),
+    ACTION_ABILITY9 = (1 << 15),
+
 } PlayerActionStates;
 
 typedef enum
@@ -124,6 +135,17 @@ typedef enum
 
 typedef enum
 {
+    SOL_KEY_0,
+    SOL_KEY_1,
+    SOL_KEY_2,
+    SOL_KEY_3,
+    SOL_KEY_4,
+    SOL_KEY_5,
+    SOL_KEY_6,
+    SOL_KEY_7,
+    SOL_KEY_8,
+    SOL_KEY_9,
+
     SOL_KEY_W,
     SOL_KEY_A,
     SOL_KEY_S,
@@ -226,21 +248,13 @@ typedef struct SolMouse
     bool buttonsPressed[SOL_MOUSE_COUNT];
 } SolMouse;
 
-typedef enum
-{
-    RAYSPACE_STATIC_GRID   = (1 << 0),
-    RAYSPACE_STATIC_TABLE  = (1 << 1),
-    RAYSPACE_DYNAMIC_GRID  = (1 << 2),
-    RAYSPACE_DYNAMIC_TABLE = (1 << 3),
-} SolRaySpacialMask;
-
 typedef struct SolRay
 {
-    vec3s             pos, dir;
-    float             dist;
-    float             min;
-    SolRaySpacialMask spatialMask;
-    u32               ignoreEnt;
+    vec3s pos, dir;
+    float dist;
+    float min;
+    u8    mask;
+    u32   ignoreEnt;
 } SolRay;
 
 typedef struct SolHit
@@ -268,6 +282,7 @@ typedef struct SolCamera
     float farClip;
     mat4  proj;
     mat4  view;
+    mat4  viewProj;
 } SolCamera;
 
 typedef struct SolVertex

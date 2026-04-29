@@ -57,3 +57,8 @@ void Xform_Interpolate(World *world, float alpha)
         }
     }
 }
+
+void Xform_Teleport(CompXform *xform, vec3s pos)
+{
+    xform->pos = xform->lastPos = xform->drawPos = pos;
+}

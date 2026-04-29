@@ -8,7 +8,7 @@ LocalInput local_input = {0};
 
 // maps SolKey to Windows virtual key codes
 static int keyMap[SOL_KEY_COUNT] = {
-    'W', 'A', 'S', 'D', 'F', SOL_KEYCODE_SPACE, SOL_KEYCODE_ESCAPE, SOL_KEYCODE_SHIFT,
+   48, 49, 50, 51, 52, 53, 54, 55, 56, 56, 'W', 'A', 'S', 'D', 'F', SOL_KEYCODE_SPACE, SOL_KEYCODE_ESCAPE, SOL_KEYCODE_SHIFT,
 };
 
 static volatile bool  rawKeys[SOL_KEY_COUNT];
@@ -29,7 +29,7 @@ static int   mouseDeltaX, mouseDeltaY;
 
 void Sol_Input_OnKey(int vkCode, bool down)
 {
-    // Sol_Debug_Add("KeyCode", vkCode);
+     Sol_Debug_Add("KeyCode", vkCode);
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (keyMap[i] == vkCode)

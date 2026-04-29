@@ -3,6 +3,16 @@
 #include "sol/types.h"
 
 static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
+    [SOL_KEY_0] = ACTION_ABILITY0,
+    [SOL_KEY_1] = ACTION_ABILITY1,
+    [SOL_KEY_2] = ACTION_ABILITY2,
+    [SOL_KEY_3] = ACTION_ABILITY3,
+    [SOL_KEY_4] = ACTION_ABILITY4,
+    [SOL_KEY_5] = ACTION_ABILITY5,
+    [SOL_KEY_6] = ACTION_ABILITY6,
+    [SOL_KEY_7] = ACTION_ABILITY7,
+    [SOL_KEY_8] = ACTION_ABILITY8,
+    [SOL_KEY_9] = ACTION_ABILITY9,
     [SOL_KEY_W] = ACTION_FWD,
     [SOL_KEY_A] = ACTION_LEFT,
     [SOL_KEY_S] = ACTION_BWD,

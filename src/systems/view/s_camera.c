@@ -68,7 +68,8 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
 
     controller->aimHitEnt = -1;
     SolRayResult aimTrace = Sol_Raycast(world, (SolRay){.pos = camPos, .ignoreEnt = id, .dir = lookdir, .dist = 100.f});
-    controller->aimdir    = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
+    vec3s dir = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
+    controller->aimdir    = vecDot(dir, lookdir) > 0.5f ? dir : lookdir;
     controller->aimHitEnt = aimTrace.entId;
     controller->aimpos    = head;
 }

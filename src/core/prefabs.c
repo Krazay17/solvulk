@@ -2,17 +2,17 @@
 
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
 {
-    int   id     = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world);
     Sol_Sphere_Add(world, id, sphere);
     Sol_Xform_Add(world, id, pos);
-    //Sol_Timer_Add(world, id, (CompTimer){.duration = 55.0f});
+    // Sol_Timer_Add(world, id, (CompTimer){.duration = 55.0f});
     Sol_Physx_Add(world, id,
                   (CompBody){
                       .radius      = sphere.radius,
                       .shape       = SHAPE3_SPH,
                       .mass        = 1.0f * sphere.radius,
                       .restitution = 0.5f,
-                      .vel = vel,
+                      .vel         = vel,
                   });
     return id;
 }
@@ -55,7 +55,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     shape->width     = width;
     shape->height    = height;
 
-    CompUiElement *uiEle   = Sol_UiElement_Add(world, id);
+    CompUiView *uiEle      = Sol_UiView_Add(world, id);
     uiEle->baseColor       = (SolColor){255, 0, 0, 255};
     uiEle->borderColor     = (SolColor){0, 0, 0, 255};
     uiEle->textColor       = (SolColor){0, 255, 0, 255};
@@ -63,6 +63,29 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     uiEle->fontSize        = 16.0f;
     uiEle->textWidth       = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE);
     strncpy_s(uiEle->text, sizeof(uiEle->text), text, 64);
+
+    return id;
+}
+
+int Sol_Prefab_Slider(World *world, vec3s pos, const char *text)
+{
+    int id = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, id, pos);
+    CompShape *s = Sol_Shape_Add(world, id);
+    s->height    = 50.0f;
+    s->width     = 100.0f;
+    s->type      = SHAPE2_REC;
+
+    //CompUiSlider *slider = Sol_Slider_Add
+
+    CompUiView *v      = Sol_UiView_Add(world, id);
+    v->baseColor       = (SolColor){255, 0, 0, 255};
+    v->borderColor     = (SolColor){0, 0, 0, 255};
+    v->textColor       = (SolColor){0, 255, 0, 255};
+    v->borderThickness = 2.0f;
+    v->fontSize        = 16.0f;
+    v->textWidth       = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE);
+    strncpy_s(v->text, sizeof(v->text), text, 64);
 
     return id;
 }
@@ -81,7 +104,7 @@ int Sol_Prefab_Boxman(World *world, vec3s pos)
     // Sol_Movement_Add(world, id, (CompMovement){
     //                                    .configId = MOVE_CONFIG_PLAYER,
     //                                });
-    // Sol_UiElement_Add(world, id, (CompUiElement){
+    // Sol_UiView_Add(world, id, (CompUiView){
     //                                     .baseColor = {255, 0, 0, 255},
     //                                     .borderColor = {0, 255, 0, 255},
     //                                     .fontSize = 16.0f,

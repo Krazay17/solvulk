@@ -31,10 +31,10 @@ typedef enum
     WORLD_SYS_LINE,
     WORLD_SYS_COMBAT,
     WORLD_SYS_BUFF,
-    WORLD_SYS_CAM,
     WORLD_SYS_VITAL,
     WORLD_SYS_SPHERE,
     WORLD_SYS_TIMER,
+    WORLD_SYS_CAM,
     WORLD_SYS_COUNT,
 } WorldSystem;
 
@@ -49,7 +49,7 @@ typedef enum
     HAS_INTERACT      = (1 << 5),
     HAS_MODEL         = (1 << 6),
     HAS_INFO          = (1 << 7),
-    HAS_UI_ELEMENT    = (1 << 8),
+    HAS_UIVIEW        = (1 << 8),
     HAS_MOVEMENT      = (1 << 9),
     HAS_CONTROLLER    = (1 << 10),
     HAS_CAMERA        = (1 << 11),
@@ -119,12 +119,6 @@ typedef struct CompCam
     vec3s pos, dir;
 } CompCam;
 
-typedef struct CompInteractable
-{
-    bool     isHovered, isPressed, isClicked, onHold;
-    Callback callback;
-} CompInteractable;
-
 typedef struct CompModel
 {
     SolModelId modelId;
@@ -138,7 +132,35 @@ typedef struct CompInfo
 
 } CompInfo;
 
-typedef struct CompUiElement
+typedef enum InteractState
+{
+    INTERACT_HOVERED = (1 << 0),
+    INTERACT_PRESSED = (1 << 1),
+    INTERACT_CLICKED = (1 << 2),
+    INTERACT_TOGGLED = (1 << 3),
+    INTERACT_ISTOGGLE = (1 << 4),
+} InteractState;
+typedef struct CompInteract
+{
+    u8       states;
+    float    value;
+    Callback onClick;
+    Callback onHold;
+} CompInteract;
+
+typedef struct CompUiButton
+{
+    bool isToggle, toggle;
+} CompUiButton;
+
+typedef struct CompUiSlider
+{
+    float value;
+    float min, max;
+    bool  isDragging;
+} CompUiSlider;
+
+typedef struct CompUiView
 {
     SolColor baseColor;
     SolColor textColor;
@@ -151,7 +173,7 @@ typedef struct CompUiElement
 
     float    borderThickness;
     SolColor borderColor;
-} CompUiElement;
+} CompUiView;
 
 typedef struct CompMovement
 {
@@ -220,20 +242,20 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
-    CompTimer        timers[MAX_ENTS];
-    CompSphere       spheres[MAX_ENTS];
-    CompVital        vitals[MAX_ENTS];
-    CompBuff         buffs[MAX_ENTS];
-    CompXform        xforms[MAX_ENTS];
-    CompBody         bodies[MAX_ENTS];
-    CompShape        shapes[MAX_ENTS];
-    CompModel        models[MAX_ENTS];
-    CompInteractable interactables[MAX_ENTS];
-    CompInfo         infos[MAX_ENTS];
-    CompUiElement    uiElements[MAX_ENTS];
-    CompMovement     movements[MAX_ENTS];
-    CompController   controllers[MAX_ENTS];
-    CompCombat       combats[MAX_ENTS];
+    CompTimer      timers[MAX_ENTS];
+    CompSphere     spheres[MAX_ENTS];
+    CompVital      vitals[MAX_ENTS];
+    CompBuff       buffs[MAX_ENTS];
+    CompXform      xforms[MAX_ENTS];
+    CompBody       bodies[MAX_ENTS];
+    CompShape      shapes[MAX_ENTS];
+    CompModel      models[MAX_ENTS];
+    CompInteract   interacts[MAX_ENTS];
+    CompInfo       infos[MAX_ENTS];
+    CompUiView     uiElements[MAX_ENTS];
+    CompMovement   movements[MAX_ENTS];
+    CompController controllers[MAX_ENTS];
+    CompCombat     combats[MAX_ENTS];
 } World;
 
 SOLAPI World *World_Create(void);
@@ -256,22 +278,22 @@ SOLAPI int  Sol_Create_Ent(World *world);
 SOLAPI void Sol_Destroy_Ent(World *world, int id);
 
 // Add Component to entity
-SOLAPI CompXform        *Sol_Xform_Add(World *world, int id, vec3s pos);
-SOLAPI CompShape        *Sol_Shape_Add(World *world, int id);
-SOLAPI CompBody         *Sol_Body2_Add(World *world, int id);
-SOLAPI CompInteractable *Sol_Interact_Add(World *world, int id);
-SOLAPI CompInfo         *Sol_Info_Add(World *world, int id);
-SOLAPI CompUiElement    *Sol_UiElement_Add(World *world, int id);
-SOLAPI CompMovement     *Sol_Movement_Add(World *world, int id, CompMovement init);
-SOLAPI CompController   *Sol_ControllerLocal_Add(World *world, int id);
-SOLAPI CompController   *Sol_ControllerRemote_Add(World *world, int id);
-SOLAPI CompController   *Sol_ControllerAi_Add(World *world, int id);
-SOLAPI CompBody         *Sol_Physx_Add(World *world, int id, CompBody init);
-SOLAPI CompCombat       *Sol_Combat_Add(World *world, int id, CompCombat init);
-SOLAPI CompModel        *Sol_Model_Add(World *world, int id, CompModel init);
-SOLAPI CompBuff         *Sol_Buff_Add(World *world, int id, CompBuff init);
-CompSphere              *Sol_Sphere_Add(World *world, int id, CompSphere init);
-CompTimer               *Sol_Timer_Add(World *world, int id, CompTimer init);
+SOLAPI CompXform      *Sol_Xform_Add(World *world, int id, vec3s pos);
+SOLAPI CompShape      *Sol_Shape_Add(World *world, int id);
+SOLAPI CompBody       *Sol_Body2_Add(World *world, int id);
+SOLAPI CompInteract   *Sol_Interact_Add(World *world, int id);
+SOLAPI CompInfo       *Sol_Info_Add(World *world, int id);
+SOLAPI CompUiView     *Sol_UiView_Add(World *world, int id);
+SOLAPI CompMovement   *Sol_Movement_Add(World *world, int id, CompMovement init);
+SOLAPI CompController *Sol_ControllerLocal_Add(World *world, int id);
+SOLAPI CompController *Sol_ControllerRemote_Add(World *world, int id);
+SOLAPI CompController *Sol_ControllerAi_Add(World *world, int id);
+SOLAPI CompBody       *Sol_Physx_Add(World *world, int id, CompBody init);
+SOLAPI CompCombat     *Sol_Combat_Add(World *world, int id, CompCombat init);
+SOLAPI CompModel      *Sol_Model_Add(World *world, int id, CompModel init);
+SOLAPI CompBuff       *Sol_Buff_Add(World *world, int id, CompBuff init);
+CompSphere            *Sol_Sphere_Add(World *world, int id, CompSphere init);
+CompTimer             *Sol_Timer_Add(World *world, int id, CompTimer init);
 
 // Xform systems
 SOLAPI void Xform_Snapshot(World *world);
@@ -289,7 +311,7 @@ SOLAPI void Vital_Step(World *world, double dt, double time);
 
 // Tick Systems
 SOLAPI void Sol_System_Info_Tick(World *world, double dt, double time);
-SOLAPI void Sol_System_Interact_Ui(World *world, double dt, double time);
+SOLAPI void Interact2d_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Local_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
@@ -300,7 +322,7 @@ void        Combat_Tick(World *world, double dt, double time);
 // Draw Systems
 SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Draw(World *world, double dt, double time);
-SOLAPI void Sol_System_UI_Draw(World *world, double dt, double time);
+SOLAPI void UiView_Draw(World *world, double dt, double time);
 // Draw Calls
 SOLAPI void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
@@ -315,18 +337,18 @@ void        Sphere_Draw(World *world, double dt, double time);
 void Sol_Sphere_ColorAll(World *world, vec4s color);
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
-    [WORLD_SYS_TIMER]            = {.tick = Timer_Tick},
+    [WORLD_SYS_TIMER] = {.tick = Timer_Tick},
     [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Physx_Step},
 
     [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
     [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
-    [WORLD_SYS_INTERACT]         = {.tick = Sol_System_Interact_Ui},
+    [WORLD_SYS_INTERACT]         = {.tick = Interact2d_Tick},
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
     [WORLD_SYS_BUFF]             = {.step = Buff_Step},
     [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw},
     [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
-    [WORLD_SYS_UI]               = {.draw = Sol_System_UI_Draw},
+    [WORLD_SYS_UI]               = {.draw = UiView_Draw},
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
     [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},

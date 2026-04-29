@@ -40,7 +40,7 @@
 #define ColorF(x) (x / 255.0f)
 
 // Forwards
-typedef struct World World;
+typedef struct World     World;
 typedef struct SolState  SolState;
 typedef struct SolModel  SolModel;
 typedef struct SolCamera SolCamera;
@@ -238,6 +238,7 @@ typedef struct SolRay
 {
     vec3s             pos, dir;
     float             dist;
+    float             min;
     SolRaySpacialMask spatialMask;
     u32               ignoreEnt;
 } SolRay;

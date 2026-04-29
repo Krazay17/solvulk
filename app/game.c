@@ -59,40 +59,40 @@ void Create_Sol_Game()
 
     SpawnPlayer(game);
 
-    int               quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
-    CompInteractable *buttonInteract = Sol_Interact_Add(menu, quitButton);
-    buttonInteract->callback         = (Callback){QuitApp};
+    int           quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
+    CompInteract *buttonInteract = Sol_Interact_Add(menu, quitButton);
+    buttonInteract->onClick      = (Callback){QuitApp};
 
     int                   wizOneButton    = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "1 Wizard");
-    CompInteractable     *interactButton5 = Sol_Interact_Add(menu, wizOneButton);
+    CompInteract         *wizOneButtonInt = Sol_Interact_Add(menu, wizOneButton);
     static struct MakeWiz wizOne          = {0};
     wizOne.amount                         = 1;
     wizOne.world                          = game;
-    interactButton5->callback             = (Callback){MakeAWizard, &wizOne};
+    wizOneButtonInt->onClick              = (Callback){MakeAWizard, &wizOne};
 
     int                   wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "100 Wizards");
-    CompInteractable     *interactButton2  = Sol_Interact_Add(menu, wizHundredButton);
+    CompInteract         *interactButton2  = Sol_Interact_Add(menu, wizHundredButton);
     static struct MakeWiz wizhundred       = {0};
     wizhundred.amount                      = 100;
     wizhundred.world                       = game;
-    interactButton2->callback              = (Callback){MakeAWizard, &wizhundred};
-    interactButton2->onHold                = true;
+    interactButton2->onHold                = (Callback){MakeAWizard, &wizhundred};
 
-    int               button3         = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "Spawn Player");
-    CompInteractable *interactButton3 = Sol_Interact_Add(menu, button3);
-    interactButton3->callback         = (Callback){SpawnPlayer, game};
+    int           button3         = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "Spawn Player");
+    CompInteract *interactButton3 = Sol_Interact_Add(menu, button3);
+    interactButton3->onClick      = (Callback){SpawnPlayer, game};
 
-    int               button4         = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "ONTOP");
-    CompInteractable *interactButton4 = Sol_Interact_Add(menu, button4);
-    interactButton4->callback         = (Callback){W_Set_Ontop};
+    int           button4         = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "ONTOP");
+    CompInteract *interactButton4 = Sol_Interact_Add(menu, button4);
+    interactButton4->states |= INTERACT_ISTOGGLE;
+    interactButton4->onClick = (Callback){W_Set_Ontop, interactButton4};
 
-    int               buttonKillLastEnt         = Sol_Prefab_Button(menu, (vec3s){10, 700, 0}, "Clear Ents");
-    CompInteractable *buttonKillLastEntInteract = Sol_Interact_Add(menu, buttonKillLastEnt);
-    buttonKillLastEntInteract->callback         = (Callback){.callbackFunc = KillLastEnt, .callbackData = game};
+    int           buttonKillLastEnt         = Sol_Prefab_Button(menu, (vec3s){10, 700, 0}, "Clear Ents");
+    CompInteract *buttonKillLastEntInteract = Sol_Interact_Add(menu, buttonKillLastEnt);
+    buttonKillLastEntInteract->onClick      = (Callback){.callbackFunc = KillLastEnt, .callbackData = game};
 
-    int               buttonColorSpheres    = Sol_Prefab_Button(menu, (vec3s){1000, 300, 0}, "ColorSpheres");
-    CompInteractable *buttonColorSpheresInt = Sol_Interact_Add(menu, buttonColorSpheres);
-    buttonColorSpheresInt->callback         = (Callback){.callbackFunc = ColorSpheres, .callbackData = game};
+    int           buttonColorSpheres    = Sol_Prefab_Button(menu, (vec3s){1000, 300, 0}, "ColorSpheres");
+    CompInteract *buttonColorSpheresInt = Sol_Interact_Add(menu, buttonColorSpheres);
+    buttonColorSpheresInt->onClick      = (Callback){.callbackFunc = ColorSpheres, .callbackData = game};
 
     int        floor      = Sol_Create_Ent(game);
     CompXform *floorXform = Sol_Xform_Add(game, floor, (vec3s){0, 0, 0});

@@ -127,12 +127,6 @@ CompInfo *Sol_Info_Add(World *world, int id)
     return &world->infos[id];
 }
 
-CompUiElement *Sol_UiElement_Add(World *world, int id)
-{
-    world->masks[id] |= HAS_UI_ELEMENT;
-    return &world->uiElements[id];
-}
-
 CompController *Sol_ControllerRemote_Add(World *world, int id)
 {
     world->masks[id] |= HAS_CONTROLLER;

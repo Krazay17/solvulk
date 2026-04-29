@@ -311,5 +311,8 @@ FILETIME get_last_write_time(const char *path)
 
 void W_Set_Ontop(void *data)
 {
-    SetWindowPos(g_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    CompInteract *interact = (CompInteract *)data;
+    bool          toggle   = interact->states & INTERACT_TOGGLED;
+    HWND          top      = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
+    SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }

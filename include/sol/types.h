@@ -335,13 +335,6 @@ typedef struct SolImage
     const void *pixels;
 } SolImage;
 
-typedef struct SolCollision
-{
-    bool  didCollide;
-    int   id;
-    vec3s pos, normal, vel;
-} SolCollision;
-
 typedef struct SolLine
 {
     vec3s a, b;

@@ -317,4 +317,39 @@ int Sol_Pipeline_Buildall(SolVkState *vkstate)
     return 0;
 }
 
+
+SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri)
+{
+    SolCollision result   = {0};
+    vec3s       *localPos = &xform->pos;
+
+    vec3s closestP = ClosestPointOnTriangle(*localPos, tri->a, tri->b, tri->c);
+    vec3s delta    = glms_vec3_sub(*localPos, closestP);
+    float distSq   = glms_vec3_dot(delta, delta);
+
+    float radiusSq = body->radius * body->radius;
+    if (distSq >= radiusSq)
+        return result;
+
+    float dist = sqrtf(distSq);
+
+    vec3s normal      = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : tri->normal;
+    float penetration = body->radius - dist;
+    *localPos         = glms_vec3_add(*localPos, glms_vec3_scale(normal, penetration));
+
+    float velAlongNormal = glms_vec3_dot(body->vel, normal);
+
+    if (velAlongNormal < 0)
+    {
+        body->vel = glms_vec3_sub(body->vel, glms_vec3_scale(normal, velAlongNormal * body->restitution));
+    }
+
+    result.didCollide = true;
+    result.pos        = closestP;
+    result.normal     = normal;
+    result.vel        = body->vel;
+
+    return result;
+}
+
 ```

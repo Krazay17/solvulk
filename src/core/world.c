@@ -115,6 +115,11 @@ void Sol_Destroy_Ent(World *world, int id)
     }
 }
 
+void Sol_Flags_Add(World *world, int id, EntFlags flags)
+{
+    world->flags[id].flags |= flags;
+}
+
 CompShape *Sol_Shape_Add(World *world, int id)
 {
     world->masks[id] |= HAS_SHAPE;

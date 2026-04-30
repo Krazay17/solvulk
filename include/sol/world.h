@@ -73,6 +73,12 @@ typedef enum
 
 typedef enum
 {
+    EFLAG_PICKUPABLE = (1 << 0),
+    EFLAG_PICKEDUP   = (1 << 1),
+} EntFlags;
+
+typedef enum
+{
     SYSTEM_STEP,
     SYSTEM_TICK,
     SYSTEM_DRAW,
@@ -84,6 +90,11 @@ typedef enum
     BUFF_FIRE      = (1 << 1),
     BUFF_COUNT,
 } BuffKind;
+
+typedef struct CompFlags
+{
+    EntFlags flags;
+} CompFlags;
 
 typedef struct CompBuff
 {
@@ -258,7 +269,7 @@ typedef struct World
     Active actives[MAX_ENTS];
     Mask   masks[MAX_ENTS];
 
-    CompPickup     pickups[MAX_ENTS];
+    CompFlags      flags[MAX_ENTS];
     CompTimer      timers[MAX_ENTS];
     CompSphere     spheres[MAX_ENTS];
     CompVital      vitals[MAX_ENTS];
@@ -295,6 +306,7 @@ SOLAPI int  Sol_Create_Ent(World *world);
 SOLAPI void Sol_Destroy_Ent(World *world, int id);
 
 // Add Component to entity
+void            Sol_Flags_Add(World *world, int id, EntFlags flags);
 CompXform      *Sol_Xform_Add(World *world, int id, vec3s pos);
 CompShape      *Sol_Shape_Add(World *world, int id);
 CompBody       *Sol_Body2_Add(World *world, int id);
@@ -305,13 +317,12 @@ CompMovement   *Sol_Movement_Add(World *world, int id, CompMovement init);
 CompController *Sol_ControllerLocal_Add(World *world, int id);
 CompController *Sol_ControllerRemote_Add(World *world, int id);
 CompController *Sol_ControllerAi_Add(World *world, int id);
-CompBody       *Sol_Physx_Add(World *world, int id, CompBody init);
+CompBody       *Sol_Body_Add(World *world, int id, CompBody init);
 CompCombat     *Sol_Combat_Add(World *world, int id, CompCombat init);
 CompModel      *Sol_Model_Add(World *world, int id, CompModel init);
 CompBuff       *Sol_Buff_Add(World *world, int id, CompBuff init);
 CompSphere     *Sol_Sphere_Add(World *world, int id, CompSphere init);
 CompTimer      *Sol_Timer_Add(World *world, int id, CompTimer init);
-CompPickup     *Sol_Pickup_Add(World *world, int id, CompPickup init);
 
 // Xform systems
 SOLAPI void Xform_Snapshot(World *world);
@@ -356,7 +367,6 @@ void        Sphere_Draw(World *world, double dt, double time);
 void          Sol_Sphere_ColorAll(World *world, vec4s color);
 void          Xform_Teleport(CompXform *xform, vec3s pos);
 SolRayResult  Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
-SolRayResult *Sol_GetScreenRay();
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER] = {.tick = Timer_Tick},

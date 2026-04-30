@@ -97,5 +97,5 @@ void Create_Sol_Game()
     int        floor      = Sol_Create_Ent(game);
     CompXform *floorXform = Sol_Xform_Add(game, floor, (vec3s){0, 0, 0});
     CompModel *floorModel = Sol_Model_Add(game, floor, (CompModel){.modelId = SOL_MODEL_WORLD1});
-    CompBody  *floorBody  = Sol_Physx_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
+    CompBody  *floorBody  = Sol_Body_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
 }

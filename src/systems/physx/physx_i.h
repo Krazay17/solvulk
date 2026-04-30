@@ -16,11 +16,21 @@
 #define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
-typedef struct CompBody  CompBody;
-typedef struct CompXform CompXform;
-typedef SolCollision (*ResolveShapeTri)(CompBody *body, CompXform *xform, SolTri *tri);
-typedef SolCollision (*ResolveShapePair)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb);
-typedef float (*ResolveShapeTest)(SolRay ray, CompXform *xform, CompBody *body, vec3s *normal);
+typedef struct CompBody   CompBody;
+typedef struct CompXform  CompXform;
+typedef struct SolContact SolContact;
+
+typedef bool (*ShapeTriTest)(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit);
+typedef bool (*ShapePairTest)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb, SolContact *hit);
+
+typedef float (*RaycastTest)(SolRay ray, CompXform *xform, CompBody *body, vec3s *normal);
+
+struct SolContact
+{
+    vec3s point, normal;
+    float penetration;
+    bool  didCollide;
+};
 
 typedef struct GridWalker
 {
@@ -101,28 +111,15 @@ typedef struct
     float sub_dt;
 } SubstepData;
 
-SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray);
-SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray);
-
 void Spatial_Add(World *world, int id, CompBody *body);
 void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform *xform, bool hash);
-
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size);
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
-
+void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform);
 void Fill_Dynamic_Table(World *world, int count, int *ents);
 
-SolCollision Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
-SolCollision Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
-SolCollision Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
-SolCollision Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
-
-void Ground_Trace(World *world, int count);
-void Physx_Ground_Trace(World *world, CompBody *body, CompXform *xform);
-
-// Per-entity substep count based on speed
-SubstepData Substep_Get(CompBody *body, float fdt);
-SpatialCell Spatial_Cell_Get(vec3s pos, float cell_size);
+// SolContact Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
+// SolContact Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
 
 void SpatialTable_Init(SpatialTable *table, u32 buckets, u32 capacity, float cellSize);
 void SpatialTable_Clear(SpatialTable *table);
@@ -130,28 +127,38 @@ void SpatialTable_Free(SpatialTable *table);
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value);
 void SpatialTable_Compact(SpatialTable *table);
 
-void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform);
-void Spatial_Hash_Tris(PhysxGroup *group);
+// Per-entity substep count based on speed
+SubstepData Substep_Get(CompBody *body, float fdt);
+SpatialCell Spatial_Cell_Get(vec3s pos, float cell_size);
+void        Spatial_Hash_Tris(PhysxGroup *group);
 
 // SolRayResult Raycast_Dynamic_Grid_Tri(PhysxGroup *group, SolRay ray);
 // SolRayResult Raycast_Dynamic_Table_Tri(PhysxGroup *group, SolRay ray);
 // SolRayResult Raycast_Static_Table_Tri(PhysxGroup *group, SolRay ray);
-void Grid_Walker_Init(GridWalker *w, SolRay ray, SpatialGrid *grid);
-void Grid_Walker_Init_Infinite(GridWalker *w, SolRay ray, float cellSize);
-bool Grid_Walker_Next(GridWalker *w, GridCell *out);
-
+void         Grid_Walker_Init(GridWalker *w, SolRay ray, SpatialGrid *grid);
+void         Grid_Walker_Init_Infinite(GridWalker *w, SolRay ray, float cellSize);
+bool         Grid_Walker_Next(GridWalker *w, GridCell *out);
 SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray);
+
+SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray);
+SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray);
 float        Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
+void         Ground_Trace(World *world, int count);
 
-SolCollision Collide_Y(CompXform *xform, CompBody *body);
-SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri);
-SolCollision Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri);
-SolCollision collide_box_tri(CompBody *body, CompXform *xform, SolTri *tri);
+void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ShapeTriTest shapeTest);
+void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
 
-SolCollision collide_sphere_sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
-SolCollision collide_sphere_rect(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform);
+bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit);
+bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
+bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
+bool Collide_Box_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
+void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit);
+
+bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 
 static inline u32 hash_coords(int x, int y, int z)
 {
@@ -171,20 +178,20 @@ static inline u32 cell_index(SpatialGrid *grid, vec3s pos)
     return x + y * grid->dims.x + z * grid->dims.x * grid->dims.y;
 }
 
-static ResolveShapeTri shape_tri_resolvers[SHAPE3_CNT] = {
+static ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
     [SHAPE3_CAP] = Collide_Capsule_Tri,
-    [SHAPE3_BOX] = collide_box_tri,
+    [SHAPE3_BOX] = Collide_Box_Tri,
 };
 
-static ResolveShapePair shape_pair_resolvers[SHAPE3_CNT][SHAPE3_CNT] = {
-    [SHAPE3_SPH][SHAPE3_SPH] = collide_sphere_sphere,
-    [SHAPE3_CAP][SHAPE3_CAP] = collide_sphere_sphere,
-    [SHAPE3_CAP][SHAPE3_SPH] = collide_sphere_sphere,
-    [SHAPE3_SPH][SHAPE3_CAP] = collide_sphere_sphere,
+static ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
+    [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
+    [SHAPE3_CAP][SHAPE3_CAP] = Collide_Sphere_Sphere,
+    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Sphere_Sphere,
+    [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Sphere,
 };
 
-static ResolveShapeTest shape_test_resolver[SHAPE3_CNT] = {
+static RaycastTest ray_shape_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Ray_Sphere_Test,
     [SHAPE3_CAP] = Ray_Capsule_Test,
     [SHAPE3_BOX] = NULL,

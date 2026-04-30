@@ -1,8 +1,5 @@
 #include "sol_core.h"
 
-
-    SolRayResult screenRay = {0};
-
 CompInteract *Sol_Interact_Add(World *world, int id)
 {
     CompInteract interact = {0};
@@ -13,9 +10,9 @@ CompInteract *Sol_Interact_Add(World *world, int id)
 
 void Interact2d_Tick(World *world, double dt, double time)
 {
-    SolMouse     mouse  = Sol_Input_GetMouse();
-    int          rayId  = -1;
-
+    SolMouse     mouse     = Sol_Input_GetMouse();
+    int          rayId     = -1;
+    SolRayResult screenRay = {0};
     if (!mouse.locked)
         screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 1, .dist = 100.0f});
     if (screenRay.hit && screenRay.entId)
@@ -82,13 +79,4 @@ void Interact2d_Tick(World *world, double dt, double time)
             }
         }
     }
-}
-
-void Interact3d_Tick(World *world, double dt, double time)
-{
-}
-
-SolRayResult *Sol_GetScreenRay()
-{
-    return &screenRay;
 }

@@ -1,33 +1,26 @@
 #include "sol_core.h"
 
-u32 pickupId = -1;
+u32   pickupId  = -1;
 float stiffness = 5.0f;
-
-CompPickup *Sol_Pickup_Add(World *world, int id, CompPickup init)
-{
-    CompPickup pickup  = {0};
-    world->pickups[id] = pickup;
-    world->masks[id] |= HAS_PICKUP;
-    return &world->pickups[id];
-}
 
 void Pickup_Step(World *world, double dt, double time)
 {
     SolMouse mouse    = Sol_Input_GetMouse();
-    u32      required = HAS_PICKUP | HAS_INTERACT;
+    u32      required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)
     {
         u32 id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if ((world->masks[id] & required) != required || !(world->flags[id].flags & EFLAG_PICKUPABLE))
             continue;
-
-        CompPickup   *pickup   = &world->pickups[id];
+            
+        CompFlags    *flags    = &world->flags[id];
         CompXform    *xform    = &world->xforms[id];
         CompBody     *body     = &world->bodies[id];
         CompInteract *interact = &world->interacts[id];
 
         if (pickupId == id)
         {
+            world->flags[id].flags |= EFLAG_PICKEDUP;
             vec3s targetPos = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.dist = 20.0f}).pos;
             body->vel       = vecSca(vecSub(targetPos, xform->pos), stiffness);
             return;
@@ -38,6 +31,9 @@ void Pickup_Step(World *world, double dt, double time)
             pickupId = id;
         }
         if (!Sol_Input_GetMouse().buttons[SOL_MOUSE_LEFT])
+        {
             pickupId = -1;
+            world->flags[id].flags &= ~EFLAG_PICKEDUP;
+        }
     }
 }

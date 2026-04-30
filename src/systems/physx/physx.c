@@ -22,7 +22,7 @@ void Physx_Init(World *world)
                       SPATIAL_DYNAMIC_CELL_SIZE);
 }
 
-CompBody *Sol_Physx_Add(World *world, int id, CompBody init_body)
+CompBody *Sol_Body_Add(World *world, int id, CompBody init_body)
 {
     CompBody body     = init_body;
     body.height       = body.height ? body.height : 0.5f;
@@ -90,14 +90,11 @@ void Physx_Step(World *world, double dt, double time)
         body->impulse = (vec3s){0};
         body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
-        SolCollision    col      = {0};
-        ResolveShapeTri resolver = shape_tri_resolvers[body->shape];
-
         SubstepData substep = Substep_Get(body, fdt);
         for (int s = 0; s < substep.substeps; s++)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
-            col        = Collisions_Static_Grid(staticGroup, body, xform, resolver);
+            Collisions_Static_Grid(staticGroup, body, xform, shape_tri_test[body->shape]);
         }
     }
     Prof_EndEz(&prof_static);
@@ -112,6 +109,7 @@ void Physx_Step(World *world, double dt, double time)
         int        id    = ents[k];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
+
         Collisions_Dynamic_Hashed(world, id, body, xform);
     }
     Prof_EndEz(&prof_dynamic);
@@ -185,29 +183,30 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
 // dont fill pos or dir in ray
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray)
 {
-    SolCamera *cam = Sol_GetCamera();
-    float winW = Sol_GetState()->windowWidth;
-    float winH = Sol_GetState()->windowHeight;
-    
+    SolCamera *cam  = Sol_GetCamera();
+    float      winW = Sol_GetState()->windowWidth;
+    float      winH = Sol_GetState()->windowHeight;
+
     // 1. Convert screen pixel → NDC [-1, 1]
     float ndcX = (2.0f * screenX / winW) - 1.0f;
     float ndcY = (2.0f * screenY / winH) - 1.0f;
-    // Note: your proj has the Y flip baked in (proj[1][1] *= -1), 
+    // Note: your proj has the Y flip baked in (proj[1][1] *= -1),
     // so NDC Y here matches Vulkan's convention. No extra flip needed.
-    
+
     // 2. Build a clip-space point at the far plane
-    vec4 clipFar  = {ndcX, ndcY, 1.0f, 1.0f};
-    
+    vec4 clipFar = {ndcX, ndcY, 1.0f, 1.0f};
+
     // 3. Invert viewProjection to go from clip → world
     mat4 invVP;
     glm_mat4_inv(cam->viewProj, invVP);
-    
+
     // 4. Transform clip → world
     vec4 worldFar;
     glm_mat4_mulv(invVP, clipFar, worldFar);
-    
+
     // 5. Perspective divide (homogeneous → 3D)
-    if (fabsf(worldFar[3]) < FLOATING_EPSILON) {
+    if (fabsf(worldFar[3]) < FLOATING_EPSILON)
+    {
         return (SolRayResult){0};
     }
     vec3s farPos = {{
@@ -215,14 +214,14 @@ SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRa
         worldFar[1] / worldFar[3],
         worldFar[2] / worldFar[3],
     }};
-    
+
     // 6. Build the ray from camera position toward the far point
     vec3s camPos = {{cam->position[0], cam->position[1], cam->position[2]}};
     vec3s dir    = glms_vec3_normalize(glms_vec3_sub(farPos, camPos));
-    
+
     ray.pos = camPos;
     ray.dir = dir;
-    
+
     // 7. Cast through your existing raycast
     return Sol_Raycast(world, ray);
 }

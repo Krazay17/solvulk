@@ -28,7 +28,7 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         u32 flags = 0;
         if (interact)
         {
-            if (interact->states & INTERACT_HOVERED)
+            if (interact->states & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
                 flags = 1;
         }
 

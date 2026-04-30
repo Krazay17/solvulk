@@ -6,7 +6,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
     Sol_Sphere_Add(world, id, sphere);
     Sol_Xform_Add(world, id, pos);
     // Sol_Timer_Add(world, id, (CompTimer){.duration = 55.0f});
-    Sol_Physx_Add(world, id,
+    Sol_Body_Add(world, id,
                   (CompBody){
                       .radius      = sphere.radius,
                       .shape       = SHAPE3_SPH,
@@ -24,13 +24,13 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
 
     CompXform *xform = Sol_Xform_Add(world, id, pos);
 
-    Sol_Physx_Add(world, id,
+    Sol_Body_Add(world, id,
                   (CompBody){
                       .height      = height,
                       .radius      = 0.5f,
                       .mass        = 1.0f,
                       .shape       = SHAPE3_CAP,
-                      .restitution = 0.8f,
+                      .restitution = 0.1f,
                       .group       = 1,
                   });
 
@@ -40,8 +40,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
 
     CompCombat *combat = Sol_Combat_Add(world, id, (CompCombat){0});
     Sol_Interact_Add(world, id);
-    Sol_Pickup_Add(world, id, (CompPickup){0});
-
+    Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+    
     return id;
 }
 

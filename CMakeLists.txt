@@ -111,6 +111,7 @@ set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS
+    ${SHADER_DIR}/model_skinned.vert
     ${SHADER_DIR}/model.vert
     ${SHADER_DIR}/model.frag
     ${SHADER_DIR}/rect.vert

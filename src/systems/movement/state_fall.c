@@ -35,6 +35,7 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
 
 void Sol_Movement_Fall_Enter(World *world, int id)
 {
+    Sol_Model_PlayAnim(world, id, ANIM_FALL, 0);
 }
 
 void Sol_Movement_Fall_Exit(World *world, int id)

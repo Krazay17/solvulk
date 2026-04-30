@@ -23,6 +23,7 @@ void Sphere_Draw(World *world, double dt, double time)
 
         Sol_Submit_Sphere(pos, sphere->color);
     }
+    Flush_Spheres();
 }
 
 void Sol_Sphere_ColorAll(World *world, vec4s color)

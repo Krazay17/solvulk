@@ -3,7 +3,7 @@
 
 #define JUMP_VEL 9.0f
 #define JUMP_ALPHAMOD 1.66f
-#define JUMP_TIMER 0.1f
+#define JUMP_TIMER 0.2f
 #define JUMP_GROUND_COOLDOWN 0.1f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
@@ -24,6 +24,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
+    Sol_Model_PlayAnim(world, id, ANIM_JUMP, 0);
     CompMovement *movement = &world->movements[id];
     movement->stateTimer = 0;
 }

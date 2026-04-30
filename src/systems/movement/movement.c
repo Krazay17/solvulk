@@ -38,6 +38,28 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
     Sol_Debug_Add("Velocity", speed);
 }
 
+bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
+{
+    CompMovement *movement = &world->movements[id];
+    if (movement->moveState == nextState)
+        return false;
+    const MoveStateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
+    if (!prevfunc->canExit(world, id))
+        return false;
+    const MoveStateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
+    if (!nextfunc->canEnter(world, id))
+    return false;
+
+    printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
+
+    prevfunc->exit(world, id);
+    movement->moveState = nextState;
+    nextfunc->enter(world, id);
+    Sol_Debug_Add("state", movement->moveState);
+
+    return true;
+}
+
 void Sol_System_Movement_2d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;

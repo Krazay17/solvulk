@@ -8,11 +8,11 @@
 
 #define SPATIAL_NULL 0xFFFFFFFF
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 2.0f
+#define SPATIAL_DYNAMIC_CELL_SIZE 3.0f
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
-#define SPATIAL_STATIC_CELL_SIZE 1.0f
+#define SPATIAL_STATIC_CELL_SIZE 1.5f
 #define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
@@ -115,7 +115,7 @@ void Spatial_Add(World *world, int id, CompBody *body);
 void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform *xform, bool hash);
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size);
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
-void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform);
 void Fill_Dynamic_Table(World *world, int count, int *ents);
 
 // SolContact Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);

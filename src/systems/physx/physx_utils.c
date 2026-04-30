@@ -16,7 +16,8 @@ void Spatial_Add(World *world, int id, CompBody *body)
 
         group->tris     = realloc(group->tris, sizeof(SolTri) * newCount);
         group->triCount = newCount;
-        Transform_Tris_LocalToWorld(group->tris, oldCount, model, xform);
+
+        Transform_Tris_LocalToWorld(group->tris,id,  oldCount, model, xform);
 
         group->ents[id].triIndexStart = oldCount;
         group->ents[id].triIndexCount = model->tri_count;
@@ -76,7 +77,7 @@ void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform 
 
     triGroup->tris     = realloc(triGroup->tris, sizeof(SolTri) * newCount);
     triGroup->triCount = newCount;
-    Transform_Tris_LocalToWorld(triGroup->tris, oldCount, model, xform);
+    Transform_Tris_LocalToWorld(triGroup->tris, id, oldCount, model, xform);
 
     triGroup->ents[id].triIndexStart = oldCount;
     triGroup->ents[id].triIndexCount = model->tri_count;
@@ -90,13 +91,14 @@ void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform 
     }
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int offset, SolModel *model, CompXform *xform)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)
 {
     mat3s rot = glms_quat_mat3(xform->quat);
     for (int i = 0; i < model->tri_count; i++)
     {
         SolTri  src = model->tris[i];
         SolTri *dst = &group[offset + i];
+        dst->entId  = id;
 
         dst->a = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.a, xform->scale)), xform->pos);
         dst->b = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.b, xform->scale)), xform->pos);
@@ -1237,6 +1239,7 @@ SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray)
                 result.norm     = normal;
                 result.triIndex = grid->values[e];
                 result.pos      = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, t));
+                result.entId    = tri->entId;
             }
         }
 

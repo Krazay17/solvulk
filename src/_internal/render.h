@@ -5,6 +5,7 @@
 
 #define MAX_MODEL_INSTANCES (1 << 14)
 #define MAX_SPHERE_INSTANCES (1 << 22)
+#define MAX_BONES 128
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_LINE_VERTICES 0xffffff
@@ -14,6 +15,7 @@ typedef enum
     DESC_ORTHO_UBO,
     DESC_SCENE_UBO,
     DESC_MODEL_SSBO,
+    DESC_SKINNING_SSBO,
     DESC_FONT_ATLAS,
     DESC_PARTICLE_SSBO,
     DESC_SPHERE_SSBO,
@@ -31,12 +33,17 @@ typedef enum
 typedef enum PipelineId
 {
     PIPE_MODEL,
+    PIPE_MODEL_SKINNED,
     PIPE_TEXT,
     PIPE_RECT,
     PIPE_LINE,
     PIPE_SPHERE,
     PIPE_COUNT,
 } PipelineId;
+
+// ------Cpu data----------
+
+// Per-bone CPU data
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
@@ -61,7 +68,6 @@ typedef struct
     vec4 rotation;
     vec4 color;
     vec4 material;
-
 } ModelSSBO;
 
 typedef struct
@@ -73,8 +79,8 @@ typedef struct
 
 typedef struct
 {
-    vec4 position;
-} VertexSSBO;
+    mat4 bones[MAX_BONES];
+} SkinningSSBO;
 
 typedef struct
 {
@@ -91,6 +97,11 @@ typedef struct
 
 typedef struct
 {
+    vec3s vertex;
+} VertexSSBO;
+
+typedef struct
+{
     u32 flags;
 } FlagsSSBO;
 
@@ -103,6 +114,15 @@ typedef struct
     FlagsSSBO  flags[MAX_MODEL_INSTANCES];
     SolModelId handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
+
+typedef struct
+{
+    u32          count;
+    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
+    SkinningSSBO instances[MAX_MODEL_INSTANCES];
+    FlagsSSBO    flags[MAX_MODEL_INSTANCES];
+    SolModelId   handles[MAX_MODEL_INSTANCES];
+} ModelSkinnedSubmission;
 
 typedef struct
 {
@@ -181,22 +201,13 @@ typedef struct SolPipe
     VkShaderStageFlags pushStages;
 } SolPipe;
 
-// typedef struct
-// {
-//     VkDescriptorSetLayout layout;
-//     VkDescriptorPool      pool;
-//     VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
-//     VkBuffer              buffers[MAX_FRAMES_IN_FLIGHT];
-//     VkDeviceMemory        memory[MAX_FRAMES_IN_FLIGHT];
-//     void                 *mapped[MAX_FRAMES_IN_FLIGHT];
-// } SolDescriptorBuffer;
-
 // ─── Pipeline build configs ──────────────────────────────────────
 typedef enum
 {
     VERTEX_SINGLE,
-    VERTEX_TRI,
     VERTEX_LINE,
+    VERTEX_TRI,
+    VERTEX_SKINNED,
 } VertexType;
 typedef struct
 {
@@ -281,19 +292,26 @@ void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
 void            Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
 TextBounds      ParseBounds(const char *p, const char *end);
 
-void Flush_Models(void);
-void Flush_Spheres(void);
-void Flush_Queue(void);
+void Render_Camera_Update(vec3 pos, vec3 target);
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color);
 void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
-void Render_Camera_Update(vec3 pos, vec3 target);
+void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time, u32 flags);
+
+void Flush_Models(void);
+void Flush_Models_Skinned(void);
+void Flush_Spheres(void);
+
+void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+void Sol_Draw_Model_Skinned_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+
+void Sol_Skeleton_Pose(SolSkeleton *skel, int animIndex, float time, mat4 *outSkinMatrices);
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
     [PIPE_TEXT] =
         {
-            .vertResource      = "ID_SHADER_TEXTV",
-            .fragResource      = "ID_SHADER_TEXTF",
+            .vertResource      = "ID_SHADER_TEXT_V",
+            .fragResource      = "ID_SHADER_TEXT_F",
             .depthTest         = 0,
             .alphaBlend        = 0,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -305,8 +323,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_MODEL] =
         {
-            .vertResource      = "ID_SHADER_MODELV",
-            .fragResource      = "ID_SHADER_MODELF",
+            .vertResource      = "ID_SHADER_MODEL_V",
+            .fragResource      = "ID_SHADER_MODEL_F",
             .depthTest         = 1,
             .alphaBlend        = 1,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -319,8 +337,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_RECT] =
         {
-            .vertResource      = "ID_SHADER_RECTV",
-            .fragResource      = "ID_SHADER_RECTF",
+            .vertResource      = "ID_SHADER_RECT_V",
+            .fragResource      = "ID_SHADER_RECT_F",
             .depthTest         = 0,
             .alphaBlend        = 1,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -332,8 +350,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_LINE] =
         {
-            .vertResource      = "ID_SHADER_LINEV",
-            .fragResource      = "ID_SHADER_LINEF",
+            .vertResource      = "ID_SHADER_LINE_V",
+            .fragResource      = "ID_SHADER_LINE_F",
             .depthTest         = 1,
             .alphaBlend        = 1,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -346,8 +364,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_SPHERE] =
         {
-            .vertResource      = "ID_SHADER_SPHEREV",
-            .fragResource      = "ID_SHADER_SPHEREF",
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_SPHERE_F",
             .depthTest         = 1,
             .alphaBlend        = 1,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -356,6 +374,20 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .descId            = {DESC_SCENE_UBO, DESC_SPHERE_SSBO},
             .descCount         = 2,
+        },
+    [PIPE_MODEL_SKINNED] =
+        {
+            .vertResource      = "ID_SHADER_SKINNED_V",
+            .fragResource      = "ID_SHADER_MODEL_F",
+            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO, DESC_SKINNING_SSBO},
+            .descCount         = 4,
+            .type              = VERTEX_SKINNED,
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolMaterial),
+            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
 };
 
@@ -408,4 +440,12 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_SSBO,
         },
+    [DESC_SKINNING_SSBO] =
+        {
+            .size       = sizeof(SkinningSSBO) * MAX_MODEL_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+
 };

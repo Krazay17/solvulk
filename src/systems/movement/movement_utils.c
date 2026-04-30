@@ -38,20 +38,3 @@ vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float 
     return vel;
 }
 
-bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
-{
-    CompMovement *movement = &world->movements[id];
-    if (movement->moveState == nextState)
-        return false;
-    const MoveStateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
-    if (!prevfunc->canExit(world, id))
-        return false;
-    const MoveStateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
-    if (!nextfunc->canEnter(world, id))
-        return false;
-    prevfunc->exit(world, id);
-    movement->moveState = nextState;
-    nextfunc->enter(world, id);
-    Sol_Debug_Add("state", movement->moveState);
-    return true;
-}

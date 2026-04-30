@@ -22,6 +22,7 @@ void Combat_Tick(World *world, double dt, double time)
             continue;
         CompController *controller = &world->controllers[id];
         CompXform      *xform      = &world->xforms[id];
+        CompModel      *model      = &world->models[id];
 
         vec3s aimpos = controller->aimpos;
         vec3s aimdir = controller->aimdir;
@@ -46,13 +47,15 @@ void Combat_Tick(World *world, double dt, double time)
             //                                 .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
             // }
 
-            float min = 0.2f;
-            float max = 0.8f;
+            float min      = 0.2f;
+            float max      = 0.8f;
             float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
-            int   ball =
-                Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
-                                (CompSphere){.radius = randSize,
-                                             .color = (vec4s){rand() % 255, rand() % 255, rand() % 255,  255}});
-        }
+            int   ball     = Sol_Prefab_Ball(
+                world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
+                (CompSphere){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
+
+                Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 0);
+
+            }
     }
 }

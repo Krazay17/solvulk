@@ -2,19 +2,19 @@
 
 #include <sol/sol.h>
 
-#include "debug_i.h"
-#include "input_i.h"
-#include "loader_i.h"
-#include "math_i.h"
-#include "platform_i.h"
-#include "profiler_i.h"
-#include "render_i.h"
+#include "debug.h"
+#include "input.h"
+#include "loader.h"
+#include "sol_math.h"
+#include "platform.h"
+#include "profiler.h"
+#include "render.h"
 
-#include "systems/buff/buff_i.h"
-#include "systems/combat/combat_i.h"
-#include "systems/physx/physx_i.h"
-#include "systems/view/view_i.h"
-#include "systems/vital/vital_i.h"
+#include "systems/buff/buff.h"
+#include "systems/combat/combat.h"
+#include "systems/physx/physx.h"
+#include "systems/view/view.h"
+#include "systems/vital/vital.h"
 typedef void (*SingleFunc)(double dt, double time);
 
 typedef enum

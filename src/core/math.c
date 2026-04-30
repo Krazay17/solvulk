@@ -1,4 +1,4 @@
-#include "math_i.h"
+#include "math.h"
 #include "sol_core.h"
 
 const vec3s VECTOR_RADIAL_DIRECTIONS[4] = {

@@ -33,10 +33,10 @@ void MakeAWizard(void *data)
     }
 }
 
-void KillLastEnt(void *data)
+void ClearEnts(void *data)
 {
     World *world = (World *)data;
-    for (int i = world->activeCount; i >= 2; i--)
+    for (int i = world->activeCount; i > 2; i--)
         Sol_Destroy_Ent(world, i);
 
     Sol_Debug_Add("Entities", Sol_World_GetEntCount(world));
@@ -58,6 +58,7 @@ void Create_Sol_Game()
     World *game = World_Create_Default();
 
     SpawnPlayer(game);
+    Sol_Prefab_Floor(game, (vec3s){0, 0, 0});
 
     int           quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     CompInteract *buttonInteract = Sol_Interact_Add(menu, quitButton);
@@ -86,16 +87,11 @@ void Create_Sol_Game()
     interactButton4->states |= INTERACT_ISTOGGLE;
     interactButton4->onClick = (Callback){W_Set_Ontop, interactButton4};
 
-    int           buttonKillLastEnt         = Sol_Prefab_Button(menu, (vec3s){10, 700, 0}, "Clear Ents");
-    CompInteract *buttonKillLastEntInteract = Sol_Interact_Add(menu, buttonKillLastEnt);
-    buttonKillLastEntInteract->onClick      = (Callback){.callbackFunc = KillLastEnt, .callbackData = game};
+    int           buttonClearEnts         = Sol_Prefab_Button(menu, (vec3s){10, 700, 0}, "Clear Ents");
+    CompInteract *buttonClearEntsInteract = Sol_Interact_Add(menu, buttonClearEnts);
+    buttonClearEntsInteract->onClick      = (Callback){.callbackFunc = ClearEnts, .callbackData = game};
 
     int           buttonColorSpheres    = Sol_Prefab_Button(menu, (vec3s){1000, 300, 0}, "ColorSpheres");
     CompInteract *buttonColorSpheresInt = Sol_Interact_Add(menu, buttonColorSpheres);
     buttonColorSpheresInt->onClick      = (Callback){.callbackFunc = ColorSpheres, .callbackData = game};
-
-    int        floor      = Sol_Create_Ent(game);
-    CompXform *floorXform = Sol_Xform_Add(game, floor, (vec3s){0, 0, 0});
-    CompModel *floorModel = Sol_Model_Add(game, floor, (CompModel){.modelId = SOL_MODEL_WORLD1});
-    CompBody  *floorBody  = Sol_Body_Add(game, floor, (CompBody){.shape = SHAPE3_MOD});
 }

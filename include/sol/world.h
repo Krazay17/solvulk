@@ -145,6 +145,8 @@ typedef struct CompModel
     SolModelId modelId;
     SolModel  *model;
     float      yOffset;
+    i32        animIndex;
+    float      animSeek;
 } CompModel;
 
 typedef struct CompInfo
@@ -289,17 +291,18 @@ typedef struct World
 SOLAPI World *World_Create(void);
 SOLAPI World *World_Create_Default(void);
 SOLAPI void   World_Destroy(World *world);
-void          World_System_Add(World *world, WorldSystem system);
+SOLAPI void   World_System_Add(World *world, WorldSystem system);
 SOLAPI int    Sol_World_GetEntCount(World *world);
 
 // Add thing to world
 SOLAPI void Sol_World_Line_Add(World *world, vec3s a, vec3s b, vec3s color, vec3s bColor, float ttl);
 
 // Add Prefab entity
-SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
+SOLAPI int Sol_Prefab_Floor(World *world, vec3s pos);
 SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
+SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
+SOLAPI int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere);
 SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
-int        Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere);
 
 // Add Entity
 SOLAPI int  Sol_Create_Ent(World *world);
@@ -307,6 +310,7 @@ SOLAPI void Sol_Destroy_Ent(World *world, int id);
 
 // Add Component to entity
 void            Sol_Flags_Add(World *world, int id, EntFlags flags);
+void            Sol_Flags_Remove(World *world, int id, EntFlags flags);
 CompXform      *Sol_Xform_Add(World *world, int id, vec3s pos);
 CompShape      *Sol_Shape_Add(World *world, int id);
 CompBody       *Sol_Body2_Add(World *world, int id);
@@ -354,7 +358,6 @@ SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Draw(World *world, double dt, double time);
 SOLAPI void UiView_Draw(World *world, double dt, double time);
 // Draw Calls
-SOLAPI void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
 SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
 void        Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId);
@@ -364,9 +367,10 @@ void        Crosshair_Draw(World *world, double dt, double time);
 void        Sphere_Draw(World *world, double dt, double time);
 
 // System oneshot calls
-void          Sol_Sphere_ColorAll(World *world, vec4s color);
-void          Xform_Teleport(CompXform *xform, vec3s pos);
-SolRayResult  Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
+void         Sol_Sphere_ColorAll(World *world, vec4s color);
+void         Xform_Teleport(CompXform *xform, vec3s pos);
+SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
+void Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER] = {.tick = Timer_Tick},

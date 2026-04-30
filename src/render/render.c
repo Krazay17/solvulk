@@ -1,4 +1,4 @@
-#include "render_i.h"
+#include "render.h"
 #include "sol_core.h"
 
 SolVkState solvkstate = {0};
@@ -10,9 +10,11 @@ SolCamera renderCam = {
     .farClip  = 5000.0f,
 };
 
-static ModelSubmission  modelSubmission;
-static SphereSubmission sphereQueue;
+static ModelSubmission        modelSubmission;
+static SphereSubmission       sphereQueue;
+static ModelSkinnedSubmission skinningQueue;
 
+static u32            model_que_offset;
 static u32            boundPipeline;
 static SolGpuImage    gpuImages[SOL_IMAGE_COUNT];
 static SolGpuModel    gpuModels[SOL_MODEL_COUNT];
@@ -158,14 +160,27 @@ void Render_Camera_Update(vec3 pos, vec3 target)
     glm_vec3_copy(target, renderCam.target);
 
     // 2. View Matrix
-    vec3 up = {0.0f, 1.0f, 0.0f};
-    glm_lookat(renderCam.position, renderCam.target, up, renderCam.view);
+    glm_lookat(renderCam.position, renderCam.target, (vec3){0.0f, 1.0f, 0.0f}, renderCam.view);
 
     // 3. Projection Matrix
     glm_perspective(glm_rad(renderCam.fov), solAspectRatio, renderCam.nearClip, renderCam.farClip, renderCam.proj);
     renderCam.proj[1][1] *= -1;
 
+    // 4. View Projection
     glm_mat4_mul(renderCam.proj, renderCam.view, renderCam.viewProj);
+}
+
+void Sol_Begin_3D()
+{
+    SceneUBO *ubo = descriptors[DESC_SCENE_UBO].mapped[solvkstate.currentFrame];
+    memcpy(ubo->view, renderCam.view, sizeof(mat4));
+    memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
+    memcpy(ubo->viewProjection, renderCam.viewProj, sizeof(mat4));
+    ubo->cameraPos[0] = renderCam.position[0];
+    ubo->cameraPos[1] = renderCam.position[1];
+    ubo->cameraPos[2] = renderCam.position[2];
+    ubo->cameraPos[3] = 1.0f;
+    memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
 }
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color)
@@ -193,16 +208,6 @@ void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
-void Sol_Begin_3D()
-{
-    SceneUBO *ubo = descriptors[DESC_SCENE_UBO].mapped[solvkstate.currentFrame];
-    memcpy(ubo->view, renderCam.view, sizeof(mat4));
-    memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
-    memcpy(ubo->viewProjection, renderCam.viewProj, sizeof(mat4));
-    memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
-    memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
-}
-
 void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags)
 {
     if (modelSubmission.count >= MAX_MODEL_INSTANCES)
@@ -211,14 +216,54 @@ void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u
     uint32_t slot                 = modelSubmission.count++;
     modelSubmission.handles[slot] = handle;
 
-    ModelSSBO *inst = &modelSubmission.instances[slot];
-    *inst           = (ModelSSBO){0};
-    memcpy(inst->position, &pos, sizeof(float) * 3);
-    memcpy(inst->scale, &scale, sizeof(float) * 3);
-    memcpy(inst->rotation, &quat, sizeof(float) * 4);
+    ModelSSBO *inst   = &modelSubmission.instances[slot];
+    *inst             = (ModelSSBO){0};
+    inst->position[0] = pos.x;
+    inst->position[1] = pos.y;
+    inst->position[2] = pos.z;
+    inst->position[3] = 1.0f;
+    inst->scale[0]    = scale.x;
+    inst->scale[1]    = scale.y;
+    inst->scale[2]    = scale.z;
+    inst->scale[3]    = 1.0f;
+    memcpy(inst->rotation, &quat, sizeof(vec4));
 
     FlagsSSBO *f = &modelSubmission.flags[slot];
     f->flags     = flags;
+}
+
+// New submit function for animated entities
+void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time,
+                               u32 flags)
+{
+    if (skinningQueue.count >= MAX_MODEL_INSTANCES)
+        return;
+
+    uint32_t slot               = skinningQueue.count++;
+    skinningQueue.handles[slot] = handle;
+
+    ModelSSBO *inst   = &skinningQueue.modelSSBO[slot];
+    *inst             = (ModelSSBO){0};
+    inst->position[0] = pos.x;
+    inst->position[1] = pos.y;
+    inst->position[2] = pos.z;
+    inst->position[3] = 1.0f;
+    inst->scale[0]    = scale.x;
+    inst->scale[1]    = scale.y;
+    inst->scale[2]    = scale.z;
+    inst->scale[3]    = 1.0f;
+    memcpy(inst->rotation, &quat, sizeof(vec4));
+
+    FlagsSSBO *f = &skinningQueue.flags[slot];
+    f->flags     = flags;
+
+    // Plus: pose the skeleton and write skinning matrices
+    SolModel *model = &Sol_Getbank()->models[handle];
+    if (model->skeleton.animations)
+    {
+        SkinningSSBO *gpuSkin = &skinningQueue.instances[slot];
+        Sol_Skeleton_Pose(&model->skeleton, animIndex, time, gpuSkin->bones);
+    }
 }
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -230,6 +275,23 @@ void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_
     for (uint32_t m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
+                           &model->meshes[m].material);
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
+        vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
+    }
+}
+
+void Sol_Draw_Model_Skinned_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
+{
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
+
+    SolGpuModel *model = &gpuModels[handle];
+    for (uint32_t m = 0; m < model->mesh_count; m++)
+    {
+        vkCmdPushConstants(cmd, pipes[PIPE_MODEL_SKINNED].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
@@ -442,7 +504,63 @@ void Flush_Models(void)
         }
     }
 
+    model_que_offset += modelSubmission.count;
     modelSubmission.count = 0;
+}
+
+void Flush_Models_Skinned(void)
+{
+    if (skinningQueue.count == 0)
+        return;
+
+    // Count per handle
+    uint32_t counts[SOL_MODEL_COUNT] = {0};
+    for (uint32_t i = 0; i < skinningQueue.count; i++)
+        counts[skinningQueue.handles[i]]++;
+
+    // Prefix sum
+    uint32_t offsets[SOL_MODEL_COUNT] = {0};
+    for (int i = 1; i < SOL_MODEL_COUNT; i++)
+        offsets[i] = offsets[i - 1] + counts[i - 1];
+
+    // Write sorted into SSBO
+    ModelSSBO    *modelGpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
+    SkinningSSBO *boneGpu  = descriptors[DESC_SKINNING_SSBO].mapped[solvkstate.currentFrame];
+    FlagsSSBO    *flagGpu  = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
+
+    uint32_t cursors[SOL_MODEL_COUNT];
+    memcpy(cursors, offsets, sizeof(offsets));
+
+    for (uint32_t i = 0; i < skinningQueue.count; i++)
+    {
+        SolModelId h = skinningQueue.handles[i];
+
+        // GLOBAL INDEX = Base Offset + Local Sorted Position
+        uint32_t globalIdx = model_que_offset + cursors[h];
+
+        // 1. Write model data to the global slot
+        modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
+
+        // 2. Write flags to the global slot (Don't overwrite the static ones at index 0!)
+        flagGpu[globalIdx] = skinningQueue.flags[i];
+
+        // 3. Write bones to the global slot
+        // This ensures shader's gl_InstanceIndex points to the right matrices
+        boneGpu[globalIdx] = skinningQueue.instances[i];
+
+        cursors[h]++;
+    }
+
+    for (int h = 0; h < SOL_MODEL_COUNT; h++)
+    {
+        if (counts[h] > 0)
+        {
+            Sol_Draw_Model_Skinned_Instanced(h, counts[h], model_que_offset + offsets[h]);
+        }
+    }
+    // Crucial: increment the global offset so the next system knows where we left off
+    model_que_offset += skinningQueue.count;
+    skinningQueue.count = 0;
 }
 
 void Flush_Spheres(void)
@@ -513,6 +631,8 @@ void Sol_End_Draw()
     vkQueuePresentKHR(solvkstate.graphicsQueue, &presentInfo);
 
     solvkstate.currentFrame = (solvkstate.currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    model_que_offset = 0;
 }
 
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *out)
@@ -566,7 +686,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
         .binding   = 0,
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
     };
-    VkVertexInputAttributeDescription attrs[4]     = {0};
+    VkVertexInputAttributeDescription attrs[5]     = {0};
     uint32_t                          attrCount    = 0;
     uint32_t                          bindingCount = 1;
 
@@ -591,6 +711,26 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
                                                         .format   = VK_FORMAT_R32G32B32_SFLOAT,
                                                         .offset   = offsetof(SolLineVertex, color)};
         attrCount = 2;
+    }
+    else if (config->type == VERTEX_SKINNED)
+    {
+        binding.stride = sizeof(SolVertex);
+
+        attrs[0] = (VkVertexInputAttributeDescription){
+            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)};
+        attrs[1] = (VkVertexInputAttributeDescription){
+            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)};
+        attrs[2] = (VkVertexInputAttributeDescription){
+            .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)};
+        attrs[3]  = (VkVertexInputAttributeDescription){.location = 3,
+                                                        .binding  = 0,
+                                                        .format   = VK_FORMAT_R32G32B32A32_UINT,
+                                                        .offset   = offsetof(SolVertex, boneIndices)};
+        attrs[4]  = (VkVertexInputAttributeDescription){.location = 4,
+                                                        .binding  = 0,
+                                                        .format   = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                        .offset   = offsetof(SolVertex, boneWeights)};
+        attrCount = 5;
     }
     else
     {

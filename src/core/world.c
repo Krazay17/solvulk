@@ -57,7 +57,6 @@ void World_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->drawCount; i++)
     {
         world->drawSystems[i](world, dt, time);
-        Flush_Queue();
     }
 }
 
@@ -77,7 +76,7 @@ void World_System_Add(World *world, WorldSystem system)
 
 int Sol_Create_Ent(World *world)
 {
-    for (int i = 0; i < MAX_ENTS; i++)
+    for (int i = 1; i < MAX_ENTS; i++)
     {
         if (!world->actives[i])
         {
@@ -118,6 +117,12 @@ void Sol_Destroy_Ent(World *world, int id)
 void Sol_Flags_Add(World *world, int id, EntFlags flags)
 {
     world->flags[id].flags |= flags;
+}
+
+
+void Sol_Flags_Remove(World *world, int id, EntFlags flags)
+{
+    world->flags[id].flags &= ~flags;
 }
 
 CompShape *Sol_Shape_Add(World *world, int id)

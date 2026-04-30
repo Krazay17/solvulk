@@ -1,5 +1,17 @@
 #include "sol_core.h"
 
+int Sol_Prefab_Floor(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world);
+
+    CompXform *floorXform = Sol_Xform_Add(world, id, (vec3s){0, 0, 0});
+    CompModel *floorModel = Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_WORLD1});
+    CompBody  *floorBody  = Sol_Body_Add(world, id, (CompBody){.shape = SHAPE3_MOD});
+    Sol_Interact_Add(world, id);
+
+    return id;
+}
+
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
 {
     int id = Sol_Create_Ent(world);
@@ -7,13 +19,17 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
     Sol_Xform_Add(world, id, pos);
     // Sol_Timer_Add(world, id, (CompTimer){.duration = 55.0f});
     Sol_Body_Add(world, id,
-                  (CompBody){
-                      .radius      = sphere.radius,
-                      .shape       = SHAPE3_SPH,
-                      .mass        = 1.0f * sphere.radius,
-                      .restitution = 0.5f,
-                      .vel         = vel,
-                  });
+                 (CompBody){
+                     .radius      = sphere.radius,
+                     .shape       = SHAPE3_SPH,
+                     .mass        = 1.0f * sphere.radius,
+                     .restitution = 0.5f,
+                     .vel         = vel,
+                     .group       = 0b10,
+                 });
+    Sol_Interact_Add(world, id);
+    Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+
     return id;
 }
 
@@ -25,14 +41,14 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     CompXform *xform = Sol_Xform_Add(world, id, pos);
 
     Sol_Body_Add(world, id,
-                  (CompBody){
-                      .height      = height,
-                      .radius      = 0.5f,
-                      .mass        = 1.0f,
-                      .shape       = SHAPE3_CAP,
-                      .restitution = 0.1f,
-                      .group       = 1,
-                  });
+                 (CompBody){
+                     .height      = height,
+                     .radius      = 0.5f,
+                     .mass        = 1.0f,
+                     .shape       = SHAPE3_CAP,
+                     .restitution = 0.1f,
+                     .group       = 1,
+                 });
 
     CompMovement *movement = Sol_Movement_Add(world, id, (CompMovement){.configId = MOVE_CONFIG_PLAYER});
     CompModel    *model    = Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_WIZARD});
@@ -41,7 +57,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
     CompCombat *combat = Sol_Combat_Add(world, id, (CompCombat){0});
     Sol_Interact_Add(world, id);
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
-    
+
     return id;
 }
 

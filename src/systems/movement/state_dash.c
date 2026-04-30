@@ -25,6 +25,7 @@ void Sol_Movement_Dash_Update(World *world, int id, float dt)
 
 void Sol_Movement_Dash_Enter(World *world, int id)
 {
+    Sol_Model_PlayAnim(world, id, ANIM_DASH, 0);
     CompMovement *movement = &world->movements[id];
     CompController *controller = &world->controllers[id];
 

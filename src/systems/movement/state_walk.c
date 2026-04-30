@@ -1,46 +1,45 @@
-#include "sol_core.h"
 #include "movement.h"
+#include "sol_core.h"
 
 void Sol_Movement_Walk_Update(World *world, int id, float dt)
 {
-    CompMovement *movement = &world->movements[id];
-    CompController *controller = &world->controllers[id];
-    CompBody *body = &world->bodies[id];
-    const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
+    CompMovement         *movement   = &world->movements[id];
+    CompController       *controller = &world->controllers[id];
+    CompBody             *body       = &world->bodies[id];
+    const MoveStateForce *forces     = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
 
-    vec3s vel = body->vel;
+    vec3s vel     = body->vel;
     vec3s wishdir = controller->wishdir;
 
+    if (controller->actionState & ACTION_JUMP)
+        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+            return;
     if (!body->grounded)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return;
     if (glms_vec3_norm(wishdir) == 0)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
-    if (controller->actionState & ACTION_JUMP)
-        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
-            return;
     if (controller->actionState & ACTION_DASH)
         if (Sol_Movement_SetState(world, id, MOVE_DASH))
             return;
 
     vec3s latwishdir = wishdir;
-    latwishdir.y = 0;
-    latwishdir = glms_vec3_normalize(latwishdir);
-    vel = ApplyFriction3(latwishdir, vel, forces->friction, dt);
-    vel = ApplyAccel3(latwishdir, vel, forces->speed, forces->accell, dt);
+    latwishdir.y     = 0;
+    latwishdir       = glms_vec3_normalize(latwishdir);
+    vel              = ApplyFriction3(latwishdir, vel, forces->friction, dt);
+    vel              = ApplyAccel3(latwishdir, vel, forces->speed, forces->accell, dt);
 
     body->vel = vel;
 }
 
 void Sol_Movement_Walk_Enter(World *world, int id)
 {
-    // todo
+    Sol_Model_PlayAnim(world, id, ANIM_WALK_FWD, 0);
 }
 
 void Sol_Movement_Walk_Exit(World *world, int id)
 {
-    // todo
 }
 bool Sol_Movement_Walk_CanEnter(World *world, int id)
 {

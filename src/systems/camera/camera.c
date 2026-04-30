@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "camera.h"
 
 static bool  initialized = false;
 static vec3s arm;
@@ -70,7 +71,7 @@ void Cam_Update_3D(World *world, double dt, double time, float alpha)
     SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
                                                    .pos       = camPos,
                                                    .ignoreEnt = id,
-                                                   .mask      = 1,
+                                                   .mask      = 0b01,
                                                    .dir       = lookdir,
                                                    .dist      = 100.f,
                                                });

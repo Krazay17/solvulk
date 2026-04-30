@@ -14,9 +14,11 @@ void Interact2d_Tick(World *world, double dt, double time)
     int          rayId     = -1;
     SolRayResult screenRay = {0};
     if (!mouse.locked)
-        screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 1, .dist = 100.0f});
+        screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 0b11, .dist = 100.0f});
     if (screenRay.hit && screenRay.entId)
         rayId = screenRay.entId;
+
+    Sol_Debug_Add("SelectedEnt", rayId);
 
     int required = HAS_INTERACT | HAS_XFORM;
     for (int i = 0; i < world->activeCount; i++)

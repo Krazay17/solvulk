@@ -26,6 +26,7 @@
 #define u16 uint16_t
 #define u32 uint32_t
 #define u64 uint64_t
+#define i8 int8_t
 #define i16 int16_t
 #define i32 int32_t
 #define i64 int64_t
@@ -98,6 +99,29 @@ typedef enum
     MOVE_FLY,
     MOVE_STATE_COUNT
 } MoveState;
+
+typedef enum
+{
+    ANIM_IDLE,
+    ANIM_WALK_FWD,
+    ANIM_WALK_BWD,
+    ANIM_WALK_LEFT,
+    ANIM_WALK_RIGHT,
+    ANIM_JUMP,
+    ANIM_FALL,
+    ANIM_DASH,
+    ANIM_ABILITY0,
+    ANIM_ABILITY1,
+    ANIM_ABILITY2,
+    ANIM_ABILITY3,
+    ANIM_ABILITY4,
+    ANIM_ABILITY5,
+    ANIM_ABILITY6,
+    ANIM_ABILITY7,
+    ANIM_ABILITY8,
+    ANIM_ABILITY9,
+    ANIM_COUNT,
+} SolAnims;
 
 typedef enum
 {
@@ -285,15 +309,9 @@ typedef struct SolCamera
     mat4  viewProj;
 } SolCamera;
 
-typedef struct SolVertex
-{
-    float position[3];
-    float normal[3];
-    float uv[2];
-} SolVertex;
-
 typedef struct SolTri
 {
+    int   entId;
     vec3s a, b, c;
     vec3s normal, center;
     float bounds;
@@ -305,6 +323,64 @@ typedef struct SolMaterial
     float metallic;
     float roughness;
 } SolMaterial;
+
+// ___________________________SKELETON___________________
+
+typedef struct SolVertex
+{
+    vec3 position;
+    vec3 normal;
+    vec2 uv;
+
+    ivec4 boneIndices; // up to 4 bones per vertex (glTF default)
+    vec4  boneWeights; // weights, sum = 1.0
+} SolVertex;
+
+typedef struct SolBone
+{
+    char name[64];
+    int  parent;      // index into bones array, or -1 for root
+    mat4 inverseBind; // baked from glTF
+
+    // Local TRS at rest (used as default if no animation channel exists)
+    vec3s   restTrans;
+    versors restRot;
+    vec3s   restScale;
+} SolBone;
+
+// One animation channel = one bone's TRS curve
+typedef enum
+{
+    ANIM_PATH_TRANSLATION,
+    ANIM_PATH_ROTATION,
+    ANIM_PATH_SCALE,
+} AnimPath;
+
+typedef struct SolAnimChannel
+{
+    int      boneIndex; // which bone this affects
+    AnimPath path;      // T, R, or S
+    float   *times;     // keyframe timestamps, length = keyCount
+    float   *values;    // packed values: vec3 for T/S, vec4 (quat) for R
+    int      keyCount;
+} SolAnimChannel;
+
+typedef struct SolAnimation
+{
+    char            name[64];
+    float           duration; // longest keyframe time across all channels
+    SolAnimChannel *channels;
+    int             channelCount;
+} SolAnimation;
+
+// Skeleton attached to a model
+typedef struct SolSkeleton
+{
+    SolBone      *bones;
+    int           boneCount;
+    SolAnimation *animations;
+    int           animationCount;
+} SolSkeleton;
 
 typedef struct SolMesh
 {
@@ -322,12 +398,19 @@ typedef struct SolModel
     SolTri    *tris;
     u32       *indices;
 
-    u32        vertex_count;
-    u32        mesh_count;
-    u32        tri_count;
-    u32        indice_count;
+    u32 vertex_count;
+    u32 mesh_count;
+    u32 tri_count;
+    u32 indice_count;
+
+    SolSkeleton skeleton;
+
+    mat4s *jointMatrices;
+
     SolModelId modelId;
 } SolModel;
+
+// ^^^^^^^^^^^^^^^^^^^^^^^^SKELETON^^^^^^^^^^^^^^^^^^^^^^^
 
 typedef struct SolImage
 {

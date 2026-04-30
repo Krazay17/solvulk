@@ -11,7 +11,7 @@ static vec2s GetWishDir2(uint32_t action);
 CompController *Sol_ControllerLocal_Add(World *world, int id)
 {
     world->playerID = id;
-
+    Sol_Flags_Remove(world, id, EFLAG_PICKUPABLE);
     world->masks[id] |= HAS_CONTROLLER;
     return &world->controllers[id];
 }

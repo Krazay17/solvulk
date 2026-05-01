@@ -1,36 +1,16 @@
 #include "sol_core.h"
+#include "model/model.h"
+#include "font/font.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 SolBank bank = {0};
 
-SolBank *Sol_Load_Resources()
-{
-    for (int i = 0; i < SOL_MODEL_COUNT; i++)
-    {
-        SolResource res = Sol_LoadResource(model_path[i]);
-        if (res.data)
-        {
-            bank.models[i] = Parse_Model(res);
-            Sol_UploadModel(&bank.models[i], i);
-            if (res.isHeap)
-                free(res.data);
-        }
-    }
-
-    for (int i = 0; i < SOL_FONT_COUNT; i++)
-    {
-        SolResource fontIceMetrics = Sol_LoadResource(fontResourceName[i][0]);
-        SolResource fontIceAtlas   = Sol_LoadResource(fontResourceName[i][1]);
-        if (!fontIceAtlas.data || !fontIceMetrics.data)
-            continue;
-
-        Load_Font(&bank.fonts[SOL_FONT_ICE], fontIceMetrics.data, fontIceAtlas.data, 224.0f, 224.0f);
-        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
-    }
-
-    return &bank;
+void Sol_Load_Resources()
+{    
+    Load_Models(&bank);
+    Load_Font(&bank);
 }
 
 Sol_Free_Resource(SolResource *res)

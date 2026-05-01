@@ -33,6 +33,19 @@
 
 #define FLOATING_EPSILON 1e-7f
 
+#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
+#define SOL_PHYS_SUBSTEP 4
+#define SOL_PHYS_TIMESTEP 1.0f / 60.0f
+
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+#define TARGET_ASPECT 16 / 9
+
+#define MAX_MODEL_INSTANCES (1 << 14)
+#define MAX_SPHERE_INSTANCES (1 << 22)
+#define MAX_LINE_VERTICES 0xffffff
+#define MAX_BONES 64
+
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 #define WORLD_FORWARD (vec3s){0, 0, -1.0f}
@@ -207,7 +220,15 @@ typedef enum Shape2
     SHAPE2_CNT,
 } Shape2;
 
-// Structs
+// Structs ----------------------------------------------------
+
+typedef struct
+{
+    void *data;
+    long  size;
+    int   isHeap;
+} SolResource;
+
 typedef struct
 {
     float x, y, z;
@@ -227,6 +248,12 @@ typedef struct
 {
     uint8_t r, g, b, a;
 } SolColor;
+
+typedef struct
+{
+    vec3s   pos, rot, scale;
+    versors quat;
+} SolTransform;
 
 typedef void (*CallbackFunc)(void *data);
 typedef struct

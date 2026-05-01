@@ -52,7 +52,7 @@ target_include_directories(solvulk
         "${CMAKE_SOURCE_DIR}/include"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/_internal"
+        "${CMAKE_SOURCE_DIR}/src/_core"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -62,7 +62,7 @@ if(SOL_DEV_MODE)
     target_include_directories(solvulk 
     PUBLIC 
         "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/_internal"
+        "${CMAKE_SOURCE_DIR}/src/_core"
     )
 endif()
 

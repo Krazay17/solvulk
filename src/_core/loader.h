@@ -1,14 +1,7 @@
 #pragma once
 #include "sol_core.h"
 
-typedef struct
-{
-    void *data;
-    long  size;
-    int   isHeap;
-} SolResource;
-
-typedef struct
+typedef struct SolBank
 {
     SolFont  fonts[SOL_FONT_COUNT];
     SolImage images[SOL_IMAGE_COUNT];
@@ -17,14 +10,10 @@ typedef struct
 
 int Sol_ReadFile(const char *filename, SolResource *outRes);
 
-SolBank *Sol_Load_Resources();
+void Sol_Load_Resources();
 SolBank *Sol_Getbank();
 
 SOLAPI SolResource Sol_LoadResource(const char *resourceName);
-SolModel           Parse_Model(SolResource res);
-
-void Load_Font(SolFont *font, const char *metrics, const char *atlas, float w, float h);
-void Load_Model(SolModel *model, SolModelId id);
 
 static const char *fontResourceName[SOL_FONT_COUNT][2] = {
     [SOL_FONT_ICE] = {"ID_FONT_METRICS", "ID_FONT_ATLAS"},

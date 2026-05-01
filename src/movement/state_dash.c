@@ -1,8 +1,8 @@
 #include "sol_core.h"
 #include "movement.h"
 
-#define DASH_VEL 25.0f
-#define DASH_ALPHAMOD 1.4f
+#define DASH_VEL 26.0f
+#define DASH_ALPHAMOD 1.2f
 #define DASH_DURATION 0.3f
 
 void Sol_Movement_Dash_Update(World *world, int id, float dt)

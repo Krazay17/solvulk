@@ -8,13 +8,13 @@
 #include "sol_math.h"
 #include "platform.h"
 #include "profiler.h"
-#include "render.h"
 
-#include "systems/buff/buff.h"
-#include "systems/combat/combat.h"
-#include "systems/physx/physx.h"
-#include "systems/view/view.h"
-#include "systems/vital/vital.h"
+#include "render/render.h"
+#include "buff/buff.h"
+#include "combat/combat.h"
+#include "physx/physx.h"
+#include "view/view.h"
+#include "vital/vital.h"
 typedef void (*SingleFunc)(double dt, double time);
 
 typedef enum

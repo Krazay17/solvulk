@@ -54,7 +54,7 @@ void Combat_Tick(World *world, double dt, double time)
                 world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
                 (CompSphere){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
-                Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 0);
+                Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
 
             }
     }

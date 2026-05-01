@@ -176,10 +176,7 @@ void Sol_Begin_3D()
     memcpy(ubo->view, renderCam.view, sizeof(mat4));
     memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
     memcpy(ubo->viewProjection, renderCam.viewProj, sizeof(mat4));
-    ubo->cameraPos[0] = renderCam.position[0];
-    ubo->cameraPos[1] = renderCam.position[1];
-    ubo->cameraPos[2] = renderCam.position[2];
-    ubo->cameraPos[3] = 1.0f;
+    memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
     memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
 }
 
@@ -232,38 +229,20 @@ void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u
     f->flags     = flags;
 }
 
-// New submit function for animated entities
-void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time,
-                               u32 flags)
+void Sol_Submit_Animated_Model(SolModelId handle, SolDrawInstance *inst)
 {
     if (skinningQueue.count >= MAX_MODEL_INSTANCES)
         return;
-
     uint32_t slot               = skinningQueue.count++;
     skinningQueue.handles[slot] = handle;
 
-    ModelSSBO *inst   = &skinningQueue.modelSSBO[slot];
-    *inst             = (ModelSSBO){0};
-    inst->position[0] = pos.x;
-    inst->position[1] = pos.y;
-    inst->position[2] = pos.z;
-    inst->position[3] = 1.0f;
-    inst->scale[0]    = scale.x;
-    inst->scale[1]    = scale.y;
-    inst->scale[2]    = scale.z;
-    inst->scale[3]    = 1.0f;
-    memcpy(inst->rotation, &quat, sizeof(vec4));
+    memcpy(skinningQueue.modelSSBO[slot].position, &inst->pos, sizeof(vec3));
+    memcpy(skinningQueue.modelSSBO[slot].scale, &inst->scale, sizeof(vec3));
+    memcpy(skinningQueue.modelSSBO[slot].rotation, &inst->rot, sizeof(vec4));
+    skinningQueue.flags[slot].flags = inst->flags;
 
-    FlagsSSBO *f = &skinningQueue.flags[slot];
-    f->flags     = flags;
-
-    // Plus: pose the skeleton and write skinning matrices
-    SolModel *model = &Sol_Getbank()->models[handle];
-    if (model->skeleton.animations)
-    {
-        SkinningSSBO *gpuSkin = &skinningQueue.instances[slot];
-        Sol_Skeleton_Pose(&model->skeleton, animIndex, time, gpuSkin->bones);
-    }
+    if (inst->bonePtr)
+        memcpy(skinningQueue.instances[slot].bones, inst->bonePtr, sizeof(mat4) * MAX_BONES);
 }
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -473,7 +452,7 @@ void Flush_Models(void)
 
     // Count per handle
     uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (uint32_t i = 0; i < modelSubmission.count; i++)
+    for (int i = 0; i < modelSubmission.count; i++)
         counts[modelSubmission.handles[i]]++;
 
     // Prefix sum
@@ -488,7 +467,7 @@ void Flush_Models(void)
     uint32_t cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
 
-    for (uint32_t i = 0; i < modelSubmission.count; i++)
+    for (int i = 0; i < modelSubmission.count; i++)
     {
         SolModelId h    = modelSubmission.handles[i];
         gpu[cursors[h]] = modelSubmission.instances[i];
@@ -515,7 +494,7 @@ void Flush_Models_Skinned(void)
 
     // Count per handle
     uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (uint32_t i = 0; i < skinningQueue.count; i++)
+    for (int i = 0; i < skinningQueue.count; i++)
         counts[skinningQueue.handles[i]]++;
 
     // Prefix sum
@@ -531,7 +510,7 @@ void Flush_Models_Skinned(void)
     uint32_t cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
 
-    for (uint32_t i = 0; i < skinningQueue.count; i++)
+    for (int i = 0; i < skinningQueue.count; i++)
     {
         SolModelId h = skinningQueue.handles[i];
 
@@ -558,7 +537,7 @@ void Flush_Models_Skinned(void)
             Sol_Draw_Model_Skinned_Instanced(h, counts[h], model_que_offset + offsets[h]);
         }
     }
-    // Crucial: increment the global offset so the next system knows where we left off
+
     model_que_offset += skinningQueue.count;
     skinningQueue.count = 0;
 }
@@ -580,7 +559,10 @@ void Flush_Spheres(void)
 void Flush_Queue(void)
 {
     Flush_Models();
+    Flush_Models_Skinned();
     Flush_Spheres();
+
+    model_que_offset = 0;
 }
 
 void Sol_End_Draw()
@@ -631,8 +613,6 @@ void Sol_End_Draw()
     vkQueuePresentKHR(solvkstate.graphicsQueue, &presentInfo);
 
     solvkstate.currentFrame = (solvkstate.currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-    model_que_offset = 0;
 }
 
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *out)

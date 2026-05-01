@@ -1,18 +1,8 @@
 #pragma once
 #include "sol/types.h"
-
 #include <vulkan/vulkan.h>
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-#define TARGET_ASPECT 16 / 9
-
-#define MAX_MODEL_INSTANCES (1 << 14)
-#define MAX_SPHERE_INSTANCES (1 << 22)
-#define MAX_BONES 128
-
 #define MAX_FRAMES_IN_FLIGHT 2
-#define MAX_LINE_VERTICES 0xffffff
 
 #define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 
@@ -49,7 +39,17 @@ typedef enum PipelineId
 
 // ------Cpu data----------
 
-// Per-bone CPU data
+typedef struct SolDrawInstance
+{
+    vec3s   pos;
+    vec3s   scale;
+    versors rot;
+
+    mat4 *bonePtr;
+
+    u32 modelId;
+    u32 flags;
+} SolDrawInstance;
 
 // ─── Shader data (matches GLSL layouts) ──────────────────────────
 
@@ -125,8 +125,8 @@ typedef struct
 {
     u32          count;
     ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
-    SkinningSSBO instances[MAX_MODEL_INSTANCES];
     FlagsSSBO    flags[MAX_MODEL_INSTANCES];
+    SkinningSSBO instances[MAX_MODEL_INSTANCES];
     SolModelId   handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
@@ -302,17 +302,15 @@ void Render_Camera_Update(vec3 pos, vec3 target);
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color);
 void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
-void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time,
-                               u32 flags);
+void Sol_Submit_Animated_Model(SolModelId handle, SolDrawInstance *inst);
 
 void Flush_Models(void);
 void Flush_Models_Skinned(void);
 void Flush_Spheres(void);
+void Flush_Queue(void);
 
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Sol_Draw_Model_Skinned_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-
-void Sol_Skeleton_Pose(SolSkeleton *skel, int animIndex, float time, mat4 *outSkinMatrices);
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
     [PIPE_TEXT] =

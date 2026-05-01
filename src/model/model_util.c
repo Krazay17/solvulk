@@ -1,4 +1,5 @@
 #include "model.h"
+#include "render/render.h"
 #include "sol_core.h"
 
 #define CGLTF_IMPLEMENTATION
@@ -18,6 +19,22 @@ void Sol_FreeModel(SolModel *model)
     free(model->meshes);
     free(model->tris);
     memset(model, 0, sizeof(SolModel));
+}
+
+void Load_Models(SolBank *bank)
+{
+    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    {
+        SolResource res = Sol_LoadResource(model_path[i]);
+        if (res.data)
+        {
+            SolModel model = Parse_Model(res);
+            Sol_UploadModel(&model, i);
+            bank->models[i] = model;
+            if (res.isHeap)
+                free(res.data);
+        }
+    }
 }
 
 SolModel Parse_Model(SolResource res)
@@ -405,7 +422,7 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
 
     if (ch->path == ANIM_PATH_ROTATION)
     {
-        glm_quat_slerp(v0, v1, a, out);
+        glm_quat_nlerp(v0, v1, a, out);
     }
     else
     {
@@ -414,80 +431,92 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
     }
 }
 
-// Compute skinning matrices for one entity at one moment in time
-void Sol_Skeleton_Pose(SolSkeleton *skel, int animIndex, float time, mat4 *outSkinMatrices)
+// Helper to get a full pose for a specific animation time
+void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *outT, versor *outR, vec3 *outS)
 {
-    // 1. Start each bone with its rest pose
-    static vec3s   localT[MAX_BONES];
-    static versors localR[MAX_BONES];
-    static vec3s   localS[MAX_BONES];
-    static mat4    world[MAX_BONES];
-
+    // Initialize with rest pose (fallback if a bone isn't animated)
     for (int i = 0; i < skel->boneCount; i++)
     {
-        localT[i] = skel->bones[i].restTrans;
-        localR[i] = skel->bones[i].restRot;
-        localS[i] = skel->bones[i].restScale;
+        memcpy(&outT[i], &skel->bones[i].restTrans, sizeof(vec3));
+        memcpy(&outR[i], &skel->bones[i].restRot, sizeof(vec4));
+        memcpy(&outS[i], &skel->bones[i].restScale, sizeof(vec3));
     }
 
-    // 2. Sample animation channels and override the rest pose
-    if (animIndex >= 0 && animIndex < skel->animationCount)
+    if (animIndex < 0 || animIndex >= skel->animationCount)
+        return;
+
+    SolAnimation *anim = &skel->animations[animIndex];
+    float t = fmodf(time, anim->duration);
+    for (int c = 0; c < anim->channelCount; c++)
     {
-        SolAnimation *anim = &skel->animations[animIndex];
-        float         t    = fmodf(time, anim->duration); // loop the animation
+        SolAnimChannel *ch = &anim->channels[c];
+        if (ch->boneIndex < 0)
+            continue;
 
-        for (int c = 0; c < anim->channelCount; c++)
+        float sampled[4];
+        Sample_Channel(ch, t, sampled);
+
+        switch (ch->path)
         {
-            SolAnimChannel *ch = &anim->channels[c];
-            if (ch->boneIndex < 0)
-                continue;
+        case ANIM_PATH_TRANSLATION:
+            memcpy(&outT[ch->boneIndex], sampled, sizeof(vec3));
+            break;
+        case ANIM_PATH_ROTATION:
+            memcpy(&outR[ch->boneIndex], sampled, sizeof(vec4));
+            break;
+        case ANIM_PATH_SCALE:
+            memcpy(&outS[ch->boneIndex], sampled, sizeof(vec3));
+            break;
+        }
+    }
+}
 
-            float sampled[4];
-            Sample_Channel(ch, t, sampled);
+// Compute skinning matrices for one entity at one moment in time
+void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends)
+{
+    vec3   tA[MAX_BONES], tB[MAX_BONES];
+    versor rA[MAX_BONES], rB[MAX_BONES];
+    vec3   sA[MAX_BONES], sB[MAX_BONES];
+    mat4   world[MAX_BONES];
 
-            switch (ch->path)
-            {
-            case ANIM_PATH_TRANSLATION:
-                memcpy(&localT[ch->boneIndex], sampled, sizeof(vec3));
-                break;
-            case ANIM_PATH_ROTATION:
-                memcpy(&localR[ch->boneIndex], sampled, sizeof(vec4));
-                break;
-            case ANIM_PATH_SCALE:
-                memcpy(&localS[ch->boneIndex], sampled, sizeof(vec3));
-                break;
-            }
+    // Sample Animation A (Current)
+    Sample_Animation_Pose(skel, blends->animA, blends->seekA, tA, rA, sA);
+
+    // Sample Animation B (Old) and Blend
+    if (blends->animB >= 0 && blends->blendFactor < 1.0f) 
+    {
+        Sample_Animation_Pose(skel, blends->animB, blends->seekB, tB, rB, sB);
+
+        for (int i = 0; i < skel->boneCount; i++)
+        {
+            glm_vec3_lerp(tB[i], tA[i], blends->blendFactor, tA[i]);
+            glm_quat_nlerp(rB[i], rA[i], blends->blendFactor, rA[i]);
+            glm_vec3_lerp(sB[i], sA[i], blends->blendFactor, sA[i]);
         }
     }
 
-    // 3. Build local matrices and accumulate world-space matrices via parent chain
+
+    // Combine into World Matrices
     for (int i = 0; i < skel->boneCount; i++)
     {
         mat4 local;
+        // Build Local: T * R * S
         glm_mat4_identity(local);
-
-        // T * R * S
-        mat4 tMat, rMat, sMat;
-        glm_translate_make(tMat, (float *)&localT[i]);
-        glm_quat_mat4(localR[i].raw, rMat);
-        glm_scale_make(sMat, (float *)&localS[i]);
-        glm_mat4_mul(tMat, rMat, local);
-        glm_mat4_mul(local, sMat, local);
+        glm_translate(local, tA[i]);
+        
+        mat4 rotM;
+        glm_quat_mat4(rA[i], rotM);
+        glm_mat4_mul(local, rotM, local);
+        
+        glm_scale(local, sA[i]);
 
         int parent = skel->bones[i].parent;
-        if (parent < 0)
-        {
-            memcpy(world[i], local, sizeof(mat4));
-        }
-        else
-        {
+        if (parent < 0) {
+            glm_mat4_copy(local, world[i]);
+        } else {
             glm_mat4_mul(world[parent], local, world[i]);
         }
-    }
-
-    // 4. Final skinning matrix = world * inverseBind
-    for (int i = 0; i < skel->boneCount; i++)
-    {
-        glm_mat4_mul(world[i], skel->bones[i].inverseBind, outSkinMatrices[i]);
+        
+        glm_mat4_mul(world[i], skel->bones[i].inverseBind, blends->bones[i]);
     }
 }

@@ -57,6 +57,7 @@ void World_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->drawCount; i++)
     {
         world->drawSystems[i](world, dt, time);
+        Flush_Queue();
     }
 }
 

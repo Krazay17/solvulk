@@ -145,8 +145,10 @@ typedef struct CompModel
     SolModelId modelId;
     SolModel  *model;
     float      yOffset;
-    i32        animIndex;
-    float      animSeek;
+    i32        currentAnim, lastAnim;
+    float      currentSeek, lastSeek;
+    float      blendFactor, blendSpeed;
+    mat4       bones[MAX_BONES];
 } CompModel;
 
 typedef struct CompInfo

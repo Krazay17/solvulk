@@ -45,8 +45,6 @@ void ClearEnts(void *data)
     World *world = (World *)data;
     for (int i = world->activeCount; i > 2; i--)
         Sol_Destroy_Ent(world, i);
-
-    Sol_Debug_Add("Entities", Sol_World_GetEntCount(world));
 }
 
 void ColorSpheres(void *data)
@@ -67,12 +65,12 @@ void Create_Sol_Game()
     SpawnPlayer(game);
     Sol_Prefab_Floor(game, (vec3s){0, 0, 0});
 
-    int box = Sol_Create_Ent(game);
-    Sol_Xform_Add(game, box, (vec3s){5, 5, 0});
-    Sol_Model_Add(game, box, (CompModel){.modelId = SOL_MODEL_BOX});
-    Sol_Body_Add(game, box, (CompBody){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
-    Sol_Interact_Add(game, box);
-    Sol_Flags_Add(game, box, EFLAG_PICKUPABLE);
+    // int box = Sol_Create_Ent(game);
+    // Sol_Xform_Add(game, box, (vec3s){5, 5, 0});
+    // Sol_Model_Add(game, box, (CompModel){.modelId = SOL_MODEL_BOX});
+    // Sol_Body_Add(game, box, (CompBody){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
+    // Sol_Interact_Add(game, box);
+    // Sol_Flags_Add(game, box, EFLAG_PICKUPABLE);
 
     int           quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     CompInteract *buttonInteract = Sol_Interact_Add(menu, quitButton);

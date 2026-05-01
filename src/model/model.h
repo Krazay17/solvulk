@@ -2,6 +2,20 @@
 #include "sol/types.h"
 
 typedef struct SolSkeleton SolSkeleton;
+typedef struct SolBank     SolBank;
+
+typedef struct
+{
+    int   animA, animB;
+    float seekA, seekB;
+    float blendFactor;
+    mat4  bones[MAX_BONES];
+} AnimBlend;
+
+void     Load_Models(SolBank *bank);
+SolModel Parse_Model(SolResource res);
+
+void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends);
 
 // Apply a 4x4 world matrix to a position
 static inline void TransformPos(const float m[16], const float in[3], float out[3])
@@ -51,6 +65,5 @@ static const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_ABILITY7]   = 2,
             [ANIM_ABILITY8]   = 2,
             [ANIM_ABILITY9]   = 2,
-
         },
 };

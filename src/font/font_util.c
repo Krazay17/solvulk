@@ -1,8 +1,20 @@
 #include "sol_core.h"
+#include "font.h"
+#include "../render/render.h"
 
-void Load_Font(SolFont *font, const char *metrics, const char *atlas, float w, float h)
+void Load_Font(SolBank *bank)
 {
-    Parse_Font_Metrics(metrics, 224.0f, 224.0f, font->glyph);
+    
+    for (int i = 0; i < SOL_FONT_COUNT; i++)
+    {
+        SolResource fontIceMetrics = Sol_LoadResource(fontResourceName[i][0]);
+        SolResource fontIceAtlas   = Sol_LoadResource(fontResourceName[i][1]);
+        if (!fontIceAtlas.data || !fontIceMetrics.data)
+            continue;
+
+        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
+        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[SOL_FONT_ICE].glyph);
+    }
 }
 
 void Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs)

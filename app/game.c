@@ -36,8 +36,15 @@ void MakeAWizard(void *data)
 void MakeABox(void *data)
 {
     World *world = (World *)data;
-    vec3s pos = world->controllers[world->playerID].aimpos;
-    int id = Sol_Prefab_Box(world, pos);
+    vec3s  pos   = world->controllers[world->playerID].aimpos;
+    int    id    = Sol_Prefab_Box(world, pos);
+}
+
+void MakeAEmitter(void *data)
+{
+    World *world = (World *)data;
+    vec3s  pos   = world->controllers[world->playerID].aimpos;
+    Emitter_Add(world, (EmitterDesc){.emitterKind = EMITTER_FOUNTAIN, .particleKind = PARTICLE_ORB, .pos = pos});
 }
 
 void ClearEnts(void *data)
@@ -63,14 +70,7 @@ void Create_Sol_Game()
     World *game = World_Create_Default();
 
     SpawnPlayer(game);
-    Sol_Prefab_Floor(game, (vec3s){0, 0, 0});
-
-    // int box = Sol_Create_Ent(game);
-    // Sol_Xform_Add(game, box, (vec3s){5, 5, 0});
-    // Sol_Model_Add(game, box, (CompModel){.modelId = SOL_MODEL_BOX});
-    // Sol_Body_Add(game, box, (CompBody){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
-    // Sol_Interact_Add(game, box);
-    // Sol_Flags_Add(game, box, EFLAG_PICKUPABLE);
+    Sol_Prefab_Floor(game, (vec3s){0, -7, 0});
 
     int           quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     CompInteract *buttonInteract = Sol_Interact_Add(menu, quitButton);
@@ -112,7 +112,11 @@ void Create_Sol_Game()
     fullscreenI->states |= INTERACT_ISTOGGLE;
     fullscreenI->onClick = (Callback){.callbackFunc = W_Set_Fullscreen, .callbackData = fullscreenI};
 
-    int boxButton = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
+    int           boxButton  = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
     CompInteract *boxButtonI = Sol_Interact_Add(menu, boxButton);
-    boxButtonI->onClick = (Callback){.callbackFunc = MakeABox, .callbackData=game};
+    boxButtonI->onClick      = (Callback){.callbackFunc = MakeABox, .callbackData = game};
+
+    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
+    CompInteract *emitterButtonI = Sol_Interact_Add(menu, emitterButton);
+    emitterButtonI->onClick      = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
 }

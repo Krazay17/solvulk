@@ -12,6 +12,8 @@
 
 #include <cglm/types-struct.h>
 
+#include "emitter/emitter_types.h"
+
 #ifdef SOL_VULK_SHARED
 #ifdef SOL_BUILD_DLL
 #define SOLAPI __declspec(dllexport)

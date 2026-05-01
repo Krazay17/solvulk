@@ -24,8 +24,9 @@ typedef bool     Active;
 typedef uint32_t Mask;
 
 // fwds
-typedef struct WorldPhysx WorldPhysx;
-typedef struct WorldLines WorldLines;
+typedef struct WorldPhysx  WorldPhysx;
+typedef struct WorldLines  WorldLines;
+typedef struct SolEmitters SolEmitters;
 
 typedef enum
 {
@@ -44,6 +45,7 @@ typedef enum
     WORLD_SYS_TIMER,
     WORLD_SYS_CAM,
     WORLD_SYS_PICKUP,
+    WORLD_SYS_EMITTER,
     WORLD_SYS_COUNT,
 } WorldSystem;
 
@@ -254,25 +256,12 @@ typedef struct
 
 typedef struct World
 {
-    bool       worldActive;
-    SystemFunc stepSystems[MAX_SYSTEMS];
-    SystemFunc tickSystems[MAX_SYSTEMS];
-    SystemFunc drawSystems[MAX_SYSTEMS];
-    int        stepCount;
-    int        tickCount;
-    int        drawCount;
-    u32        systemBits;
-
-    WorldPhysx *spatial;
-    WorldLines *lines;
-
-    int playerID;
-    int activeEntities[MAX_ENTS];
-    int activeCount;
-
-    Active actives[MAX_ENTS];
-    Mask   masks[MAX_ENTS];
-
+    SystemFunc     stepSystems[MAX_SYSTEMS];
+    SystemFunc     tickSystems[MAX_SYSTEMS];
+    SystemFunc     drawSystems[MAX_SYSTEMS];
+    int            activeEntities[MAX_ENTS];
+    Active         actives[MAX_ENTS];
+    Mask           masks[MAX_ENTS];
     CompFlags      flags[MAX_ENTS];
     CompTimer      timers[MAX_ENTS];
     CompSphere     spheres[MAX_ENTS];
@@ -288,6 +277,19 @@ typedef struct World
     CompMovement   movements[MAX_ENTS];
     CompController controllers[MAX_ENTS];
     CompCombat     combats[MAX_ENTS];
+
+    bool worldActive;
+
+    int stepCount;
+    int tickCount;
+    int drawCount;
+    int activeCount;
+    int playerID;
+    u32 systemBits;
+
+    WorldPhysx  *spatial;
+    WorldLines  *lines;
+    SolEmitters *emitters;
 } World;
 
 SOLAPI World *World_Create(void);
@@ -374,21 +376,8 @@ void         Xform_Teleport(CompXform *xform, vec3s pos);
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
 void         Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
 
-static SystemConfig world_systems[WORLD_SYS_COUNT] = {
-    [WORLD_SYS_TIMER] = {.tick = Timer_Tick},
-    [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Physx_Step},
+void Emitter_Init(World *world);
+void Emitter_Add(World *world, EmitterDesc e);
+void Emitter_Tick(World *world, double dt, double time);
+void Emitter_Draw(World *world, double dt, double time);
 
-    [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
-    [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
-    [WORLD_SYS_INTERACT]         = {.tick = Interact2d_Tick},
-    [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
-    [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
-    [WORLD_SYS_BUFF]             = {.step = Buff_Step},
-    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw},
-    [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
-    [WORLD_SYS_UI]               = {.draw = UiView_Draw},
-    [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
-    [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
-    [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
-    [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
-};

@@ -334,12 +334,9 @@ void W_Set_Fullscreen(void *data)
     u32 width              = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
     u32 height             = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
     
-    ChangeDisplaySettings(0, CDS_FULLSCREEN);
-    return;
+    //ChangeDisplaySettings(0, CDS_FULLSCREEN);
     SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
-    // Sol_Render_Resize(width, height);
     Sol_GetState()->windowWidth  = width;
     Sol_GetState()->windowHeight = height;
     Sol_GetState()->needsResize  = true;
-    //DEVMODE dev = {.dmOrientation}
 }

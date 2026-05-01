@@ -1,5 +1,25 @@
 #include "sol_core.h"
 
+static SystemConfig world_systems[WORLD_SYS_COUNT] = {
+    [WORLD_SYS_TIMER] = {.tick = Timer_Tick},
+    [WORLD_SYS_PHYSX] = {.init = Physx_Init, .step = Physx_Step},
+
+    [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
+    [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
+    [WORLD_SYS_INTERACT]         = {.tick = Interact2d_Tick},
+    [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
+    [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
+    [WORLD_SYS_BUFF]             = {.step = Buff_Step},
+    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw},
+    [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
+    [WORLD_SYS_UI]               = {.draw = UiView_Draw},
+    [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
+    [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
+    [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
+    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw},
+    [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
+};
+
 World *World_Create(void)
 {
     World *world = calloc(1, sizeof(World));

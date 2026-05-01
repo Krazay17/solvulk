@@ -20,7 +20,7 @@ void Xform_Snapshot(World *world)
         if (world->masks[id] & HAS_XFORM)
         {
             vec3s pos = world->xforms[id].pos;
-            if (pos.x == NAN || pos.y == NAN || pos.z == NAN)
+            if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z))
             {
                 pos.x = 0;
                 pos.y = 5;
@@ -52,7 +52,7 @@ void Xform_Interpolate(World *world, float alpha)
             CompXform *xf = &world->xforms[id];
 
             xf->drawPos   = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
-            xf->drawQuat  = glms_quat_slerp(xf->lastQuat, xf->quat, alpha);
+            xf->drawQuat  = glms_quat_nlerp(xf->lastQuat, xf->quat, alpha);
             xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
         }
     }

@@ -1,8 +1,8 @@
 #include "sol_core.h"
 #include "movement.h"
 
-#define DASH_VEL 28.0f
-#define DASH_ALPHAMOD 1.5f
+#define DASH_VEL 25.0f
+#define DASH_ALPHAMOD 1.4f
 #define DASH_DURATION 0.3f
 
 void Sol_Movement_Dash_Update(World *world, int id, float dt)
@@ -30,11 +30,12 @@ void Sol_Movement_Dash_Enter(World *world, int id)
     CompController *controller = &world->controllers[id];
 
     vec3s dashdir = Sol_Vec3_FromYawPitch(controller->yaw, 0);
-    if (glms_vec3_norm(movement->wishdir) > 0)
+    if (glms_vec3_norm(movement->wishdir) > 0 && vecDot(movement->wishdir, WORLD_UP) < 0.99f)
         dashdir = movement->wishdir;
 
     dashdir.y = 0;
     dashdir = glms_vec3_normalize(dashdir);
+
     movement->lockdir = dashdir;
     movement->stateTimer = 0;
 }

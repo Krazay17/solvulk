@@ -27,8 +27,18 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
     vec3s latwishdir = wishdir;
     latwishdir.y     = 0;
     latwishdir       = glms_vec3_normalize(latwishdir);
-    vel              = ApplyFriction3(latwishdir, vel, forces->friction, dt);
-    vel              = ApplyAccel3(latwishdir, vel, forces->speed, forces->accell, dt);
+
+    // Formula: v_projected = v - (v . normal) * normal
+    float dot      = glms_vec3_dot(latwishdir, body->groundNormal);
+    vec3s slopeDir = glms_vec3_sub(latwishdir, glms_vec3_scale(body->groundNormal, dot));
+
+    // 3. Re-normalize!
+    // Projecting onto an angle shortens the vector,
+    // so we normalize to ensure we move at full speed.
+    latwishdir = glms_vec3_normalize(slopeDir);
+
+    vel = ApplyFriction3(latwishdir, vel, forces->friction, dt);
+    vel = ApplyAccel3(latwishdir, vel, forces->speed, forces->accell, dt);
 
     body->vel = vel;
 }

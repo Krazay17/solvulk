@@ -7,11 +7,24 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
     CompXform *floorXform = Sol_Xform_Add(world, id, (vec3s){0, 0, 0});
     CompModel *floorModel = Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_WORLD1});
     CompBody  *floorBody  = Sol_Body_Add(world, id, (CompBody){.shape = SHAPE3_MOD});
-    Sol_Interact_Add(world, id);
+
+    // Sol_Interact_Add(world, id);
 
     return id;
 }
 
+int Sol_Prefab_Box(World *world, vec3s pos)
+{
+
+    int id = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_BOX});
+    Sol_Body_Add(world, id, (CompBody){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
+    Sol_Interact_Add(world, id);
+    Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+
+    return id;
+}
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
 {
     int id = Sol_Create_Ent(world);

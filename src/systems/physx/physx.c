@@ -37,11 +37,6 @@ CompBody *Sol_Body_Add(World *world, int id, CompBody init_body)
     return &world->bodies[id];
 }
 
-void Sol_Touch_Add(World *world, int id)
-{
-    // world->masks[id]
-}
-
 void Physx_Step(World *world, double dt, double time)
 {
     if (Sol_GetState()->fps < 30)
@@ -97,7 +92,7 @@ void Physx_Step(World *world, double dt, double time)
             Collisions_Static_Grid(staticGroup, body, xform, shape_tri_test[body->shape]);
         }
     }
-    Prof_EndEz(&prof_static);
+    Prof_EndEz(&prof_static, true);
 
     Fill_Dynamic_Table(world, count, ents);
 
@@ -112,7 +107,7 @@ void Physx_Step(World *world, double dt, double time)
 
         Collisions_Dynamic_Hashed(world, id, body, xform);
     }
-    Prof_EndEz(&prof_dynamic);
+    Prof_EndEz(&prof_dynamic, true);
 }
 
 void Ground_Trace(World *world, int count)
@@ -146,7 +141,8 @@ void Ground_Trace(World *world, int count)
 
             if (result.hit && result.norm.y > 0.5f)
             {
-                body->grounded = 1;
+                body->grounded     = 1;
+                body->groundNormal = result.norm;
                 break;
             }
         }
@@ -234,27 +230,28 @@ CompBody *Sol_Body2_Add(World *world, int id)
 
 void Sol_System_Step_Physx_2d(World *world, double dt, double time)
 {
-    // float fdt      = (float)dt;
-    // int   required = HAS_BODY2 | HAS_XFORM;
-    // for (int i = 0; i < world->activeCount; ++i)
-    // {
-    //     int id = world->activeEntities[i];
-    //     if ((world->masks[id] & required) == required)
-    //     {
-    //         CompBody     *body     = &world->bodies[id];
-    //         CompMovement *movement = &world->movements[id];
-    //         CompXform    *xform    = &world->xforms[id];
+    float fdt      = (float)dt;
+    int   required = HAS_BODY2 | HAS_XFORM;
+    for (int i = 0; i < world->activeCount; ++i)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) == required)
+        {
+            CompBody     *body     = &world->bodies[id];
+            CompMovement *movement = &world->movements[id];
+            CompXform    *xform    = &world->xforms[id];
 
-    //         float moveGrav = MOVE_STATE_FORCES[movement->configId][movement->moveState].gravity;
-    //         body->vel.y    = moveGrav ? body->vel.y + moveGrav * fdt : body->vel.y + SOL_PHYS_GRAV.y * fdt;
-    //         vec3s finalVel = glms_vec3_scale(body->vel, fdt * 20.0f);
-    //         xform->pos     = glms_vec3_add(xform->pos, finalVel);
+            vec3s accel   = SOL_PHYS_GRAV;
+            accel         = glms_vec3_add(accel, body->force);
+            accel         = glms_vec3_add(accel, body->impulse);
+            body->impulse = (vec3s){0};
+            body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
-    //         if (xform->pos.y + body->height >= Sol_GetState()->windowHeight)
-    //         {
-    //             xform->pos.y = Sol_GetState()->windowHeight - body->height;
-    //             body->vel.y  = 0;
-    //         }
-    //     }
-    // }
+            if (xform->pos.y + body->height >= Sol_GetState()->windowHeight)
+            {
+                xform->pos.y = Sol_GetState()->windowHeight - body->height;
+                body->vel.y  = 0;
+            }
+        }
+    }
 }

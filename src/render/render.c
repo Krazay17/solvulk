@@ -120,10 +120,8 @@ void Sol_SetOrtho(uint32_t width, uint32_t height)
     }
 }
 
-void Sol_Render_Resize()
+void Sol_Render_Resize(uint32_t width, uint32_t height)
 {
-    uint32_t width  = solvkstate.swapchainExtent.width;
-    uint32_t height = solvkstate.swapchainExtent.height;
     if (width == 0 || height == 0)
         return;
     vkDeviceWaitIdle(solvkstate.device);
@@ -139,6 +137,8 @@ void Sol_Render_Resize()
     vkDestroySwapchainKHR(solvkstate.device, solvkstate.swapchain, NULL);
 
     // recreate
+    solvkstate.swapchainExtent.width  = width;
+    solvkstate.swapchainExtent.height = height;
     SolVkSwapchain(&solvkstate);
     SolVkImageViews(&solvkstate);
     SolVkDepthResources(&solvkstate);

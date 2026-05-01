@@ -1,8 +1,15 @@
-#include "sol_core.h"
 #include "model.h"
+#include "sol_core.h"
 
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
+
+static SolSkeleton ParseSkeleton(cgltf_data *data);
+
+static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount,
+                            uint32_t *outIndexCount);
+static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
+static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
 void Sol_FreeModel(SolModel *model)
 {
@@ -13,6 +20,85 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
+SolModel Parse_Model(SolResource res)
+{
+    SolModel model = {0};
+
+    cgltf_options options = {0};
+    cgltf_data   *data    = NULL;
+    if (cgltf_parse(&options, res.data, res.size, &data) != cgltf_result_success)
+        return model;
+
+    cgltf_load_buffers(&options, data, NULL);
+
+    // Pick the default scene (or first scene if no default)
+    cgltf_scene *scene = data->scene ? data->scene : &data->scenes[0];
+    if (!scene)
+    {
+        cgltf_free(data);
+        return model;
+    }
+
+    // Pass 1: count meshes and totals by walking the scene hierarchy
+    for (cgltf_size n = 0; n < scene->nodes_count; n++)
+        CountNodeMeshes(scene->nodes[n], &model.mesh_count, &model.vertex_count, &model.indice_count);
+
+    if (model.mesh_count == 0)
+    {
+        cgltf_free(data);
+        return model;
+    }
+
+    model.skeleton = ParseSkeleton(data);
+
+    // Allocate
+    model.meshes   = calloc(model.mesh_count, sizeof(SolMesh));
+    model.vertices = calloc(model.vertex_count, sizeof(SolVertex));
+    model.indices  = malloc(model.indice_count * sizeof(uint32_t));
+
+    // Pass 2: fill, applying world transforms
+    uint32_t meshIdx = 0, vOff = 0, iOff = 0;
+    for (cgltf_size n = 0; n < scene->nodes_count; n++)
+        ProcessNode(scene->nodes[n], &model, &meshIdx, &vOff, &iOff);
+
+    // Build tris from final world-space vertices
+    model.tri_count = model.indice_count / 3;
+    model.tris      = malloc(model.tri_count * sizeof(SolTri));
+
+    uint32_t triIdx = 0;
+    for (uint32_t m = 0; m < model.mesh_count; m++)
+    {
+        SolMesh *mesh = &model.meshes[m];
+        for (uint32_t i = 0; i < mesh->indexCount; i += 3)
+        {
+            SolTri *t = &model.tris[triIdx++];
+
+            uint32_t i0 = model.indices[mesh->indexOffset + i + 0];
+            uint32_t i1 = model.indices[mesh->indexOffset + i + 1];
+            uint32_t i2 = model.indices[mesh->indexOffset + i + 2];
+
+            t->a = *(vec3s *)model.vertices[mesh->vertexOffset + i0].position;
+            t->b = *(vec3s *)model.vertices[mesh->vertexOffset + i1].position;
+            t->c = *(vec3s *)model.vertices[mesh->vertexOffset + i2].position;
+
+            vec3s e1    = glms_vec3_sub(t->b, t->a);
+            vec3s e2    = glms_vec3_sub(t->c, t->a);
+            vec3s cross = glms_vec3_cross(e1, e2);
+            float len   = glms_vec3_norm(cross);
+            t->normal   = len > 0.00001f ? glms_vec3_scale(cross, 1.0f / len) : (vec3s){{0, 1, 0}};
+
+            t->center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(t->a, t->b), t->c), 1.0f / 3.0f);
+
+            float da  = glms_vec3_norm(glms_vec3_sub(t->a, t->center));
+            float db  = glms_vec3_norm(glms_vec3_sub(t->b, t->center));
+            float dc  = glms_vec3_norm(glms_vec3_sub(t->c, t->center));
+            t->bounds = fmaxf(da, fmaxf(db, dc));
+        }
+    }
+
+    cgltf_free(data);
+    return model;
+}
 
 static SolSkeleton ParseSkeleton(cgltf_data *data)
 {
@@ -288,34 +374,41 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
 // Sample one channel at a given time, returning interpolated value
 static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
 {
-    if (ch->keyCount == 0) return;
-    if (ch->keyCount == 1 || t <= ch->times[0]) {
+    if (ch->keyCount == 0)
+        return;
+    if (ch->keyCount == 1 || t <= ch->times[0])
+    {
         int valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
         memcpy(out, ch->values, valuesPerKey * sizeof(float));
         return;
     }
-    if (t >= ch->times[ch->keyCount - 1]) {
+    if (t >= ch->times[ch->keyCount - 1])
+    {
         int valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
         memcpy(out, &ch->values[(ch->keyCount - 1) * valuesPerKey], valuesPerKey * sizeof(float));
         return;
     }
-    
+
     // Find bracketing keyframes
     int k1 = 1;
-    while (k1 < ch->keyCount && ch->times[k1] < t) k1++;
+    while (k1 < ch->keyCount && ch->times[k1] < t)
+        k1++;
     int k0 = k1 - 1;
-    
+
     float t0 = ch->times[k0];
     float t1 = ch->times[k1];
     float a  = (t - t0) / (t1 - t0);
-    
-    int valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
-    float *v0 = &ch->values[k0 * valuesPerKey];
-    float *v1 = &ch->values[k1 * valuesPerKey];
-    
-    if (ch->path == ANIM_PATH_ROTATION) {
+
+    int    valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
+    float *v0           = &ch->values[k0 * valuesPerKey];
+    float *v1           = &ch->values[k1 * valuesPerKey];
+
+    if (ch->path == ANIM_PATH_ROTATION)
+    {
         glm_quat_slerp(v0, v1, a, out);
-    } else {
+    }
+    else
+    {
         for (int i = 0; i < 3; i++)
             out[i] = v0[i] + a * (v1[i] - v0[i]);
     }
@@ -325,147 +418,76 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
 void Sol_Skeleton_Pose(SolSkeleton *skel, int animIndex, float time, mat4 *outSkinMatrices)
 {
     // 1. Start each bone with its rest pose
-    static vec3s    localT[MAX_BONES];
-    static versors  localR[MAX_BONES];
-    static vec3s    localS[MAX_BONES];
-    static mat4     world[MAX_BONES];
-    
-    for (int i = 0; i < skel->boneCount; i++) {
+    static vec3s   localT[MAX_BONES];
+    static versors localR[MAX_BONES];
+    static vec3s   localS[MAX_BONES];
+    static mat4    world[MAX_BONES];
+
+    for (int i = 0; i < skel->boneCount; i++)
+    {
         localT[i] = skel->bones[i].restTrans;
         localR[i] = skel->bones[i].restRot;
         localS[i] = skel->bones[i].restScale;
     }
-    
+
     // 2. Sample animation channels and override the rest pose
-    if (animIndex >= 0 && animIndex < skel->animationCount) {
+    if (animIndex >= 0 && animIndex < skel->animationCount)
+    {
         SolAnimation *anim = &skel->animations[animIndex];
-        float t = fmodf(time, anim->duration);  // loop the animation
-        
-        for (int c = 0; c < anim->channelCount; c++) {
+        float         t    = fmodf(time, anim->duration); // loop the animation
+
+        for (int c = 0; c < anim->channelCount; c++)
+        {
             SolAnimChannel *ch = &anim->channels[c];
-            if (ch->boneIndex < 0) continue;
-            
+            if (ch->boneIndex < 0)
+                continue;
+
             float sampled[4];
             Sample_Channel(ch, t, sampled);
-            
-            switch (ch->path) {
-                case ANIM_PATH_TRANSLATION:
-                    memcpy(&localT[ch->boneIndex], sampled, sizeof(vec3));
-                    break;
-                case ANIM_PATH_ROTATION:
-                    memcpy(&localR[ch->boneIndex], sampled, sizeof(vec4));
-                    break;
-                case ANIM_PATH_SCALE:
-                    memcpy(&localS[ch->boneIndex], sampled, sizeof(vec3));
-                    break;
+
+            switch (ch->path)
+            {
+            case ANIM_PATH_TRANSLATION:
+                memcpy(&localT[ch->boneIndex], sampled, sizeof(vec3));
+                break;
+            case ANIM_PATH_ROTATION:
+                memcpy(&localR[ch->boneIndex], sampled, sizeof(vec4));
+                break;
+            case ANIM_PATH_SCALE:
+                memcpy(&localS[ch->boneIndex], sampled, sizeof(vec3));
+                break;
             }
         }
     }
-    
+
     // 3. Build local matrices and accumulate world-space matrices via parent chain
-    for (int i = 0; i < skel->boneCount; i++) {
+    for (int i = 0; i < skel->boneCount; i++)
+    {
         mat4 local;
         glm_mat4_identity(local);
-        
+
         // T * R * S
         mat4 tMat, rMat, sMat;
-        glm_translate_make(tMat, (float*)&localT[i]);
+        glm_translate_make(tMat, (float *)&localT[i]);
         glm_quat_mat4(localR[i].raw, rMat);
-        glm_scale_make(sMat, (float*)&localS[i]);
+        glm_scale_make(sMat, (float *)&localS[i]);
         glm_mat4_mul(tMat, rMat, local);
         glm_mat4_mul(local, sMat, local);
-        
+
         int parent = skel->bones[i].parent;
-        if (parent < 0) {
+        if (parent < 0)
+        {
             memcpy(world[i], local, sizeof(mat4));
-        } else {
+        }
+        else
+        {
             glm_mat4_mul(world[parent], local, world[i]);
         }
     }
-    
+
     // 4. Final skinning matrix = world * inverseBind
-    for (int i = 0; i < skel->boneCount; i++) {
+    for (int i = 0; i < skel->boneCount; i++)
+    {
         glm_mat4_mul(world[i], skel->bones[i].inverseBind, outSkinMatrices[i]);
     }
-}
-
-
-SolModel Parse_Model(SolResource res)
-{
-    SolModel model = {0};
-
-    cgltf_options options = {0};
-    cgltf_data   *data    = NULL;
-    if (cgltf_parse(&options, res.data, res.size, &data) != cgltf_result_success)
-        return model;
-
-    cgltf_load_buffers(&options, data, NULL);
-
-    // Pick the default scene (or first scene if no default)
-    cgltf_scene *scene = data->scene ? data->scene : &data->scenes[0];
-    if (!scene)
-    {
-        cgltf_free(data);
-        return model;
-    }
-
-    // Pass 1: count meshes and totals by walking the scene hierarchy
-    for (cgltf_size n = 0; n < scene->nodes_count; n++)
-        CountNodeMeshes(scene->nodes[n], &model.mesh_count, &model.vertex_count, &model.indice_count);
-
-    if (model.mesh_count == 0)
-    {
-        cgltf_free(data);
-        return model;
-    }
-
-    model.skeleton = ParseSkeleton(data);
-
-    // Allocate
-    model.meshes   = calloc(model.mesh_count, sizeof(SolMesh));
-    model.vertices = calloc(model.vertex_count, sizeof(SolVertex));
-    model.indices  = malloc(model.indice_count * sizeof(uint32_t));
-
-    // Pass 2: fill, applying world transforms
-    uint32_t meshIdx = 0, vOff = 0, iOff = 0;
-    for (cgltf_size n = 0; n < scene->nodes_count; n++)
-        ProcessNode(scene->nodes[n], &model, &meshIdx, &vOff, &iOff);
-
-    // Build tris from final world-space vertices
-    model.tri_count = model.indice_count / 3;
-    model.tris      = malloc(model.tri_count * sizeof(SolTri));
-
-    uint32_t triIdx = 0;
-    for (uint32_t m = 0; m < model.mesh_count; m++)
-    {
-        SolMesh *mesh = &model.meshes[m];
-        for (uint32_t i = 0; i < mesh->indexCount; i += 3)
-        {
-            SolTri *t = &model.tris[triIdx++];
-
-            uint32_t i0 = model.indices[mesh->indexOffset + i + 0];
-            uint32_t i1 = model.indices[mesh->indexOffset + i + 1];
-            uint32_t i2 = model.indices[mesh->indexOffset + i + 2];
-
-            t->a = *(vec3s *)model.vertices[mesh->vertexOffset + i0].position;
-            t->b = *(vec3s *)model.vertices[mesh->vertexOffset + i1].position;
-            t->c = *(vec3s *)model.vertices[mesh->vertexOffset + i2].position;
-
-            vec3s e1    = glms_vec3_sub(t->b, t->a);
-            vec3s e2    = glms_vec3_sub(t->c, t->a);
-            vec3s cross = glms_vec3_cross(e1, e2);
-            float len   = glms_vec3_norm(cross);
-            t->normal   = len > 0.00001f ? glms_vec3_scale(cross, 1.0f / len) : (vec3s){{0, 1, 0}};
-
-            t->center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(t->a, t->b), t->c), 1.0f / 3.0f);
-
-            float da  = glms_vec3_norm(glms_vec3_sub(t->a, t->center));
-            float db  = glms_vec3_norm(glms_vec3_sub(t->b, t->center));
-            float dc  = glms_vec3_norm(glms_vec3_sub(t->c, t->center));
-            t->bounds = fmaxf(da, fmaxf(db, dc));
-        }
-    }
-
-    cgltf_free(data);
-    return model;
 }

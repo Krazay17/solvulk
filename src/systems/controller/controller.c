@@ -82,12 +82,14 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
 {
     vec3s wishdir  = {0, 0, 0};
-    vec3s rightdir = glms_vec3_normalize(glms_vec3_cross(lookdir, updir));
+    vec3s flatdir = lookdir;
+    flatdir.y = 0;
+    vec3s rightdir = glms_vec3_normalize(glms_vec3_cross(flatdir, updir));
     if (action & ACTION_FWD)
-        wishdir = glms_vec3_add(wishdir, lookdir);
+        wishdir = glms_vec3_add(wishdir, flatdir);
 
     if (action & ACTION_BWD)
-        wishdir = glms_vec3_sub(wishdir, lookdir);
+        wishdir = glms_vec3_sub(wishdir, flatdir);
 
     if (action & ACTION_RIGHT)
         wishdir = glms_vec3_add(wishdir, rightdir);

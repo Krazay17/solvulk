@@ -105,6 +105,6 @@ static void Sol_OnResize()
     solState.needsResize = false;
     if (solState.windowWidth != 0 && solState.windowHeight != 0)
     {
-        Sol_Render_Resize();
+        Sol_Render_Resize(solState.windowWidth, solState.windowHeight);
     }
 }

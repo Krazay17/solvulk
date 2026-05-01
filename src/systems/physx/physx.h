@@ -94,6 +94,7 @@ typedef struct PhysxGroup
 
     SolTri *tris;
     u32     triCount;
+    u32 capacity;
 
     PhysxEnts ents[MAX_ENTS];
     u32       entCount;

@@ -48,10 +48,10 @@ void Interact2d_Tick(World *world, double dt, double time)
             }
             else if (shape)
                 collision = Sol_Check_2d_Collision(mousePos, (vec4s){
-                                                                 xform->pos.x,
-                                                                 xform->pos.y,
-                                                                 shape->width,
-                                                                 shape->height,
+                                                                 UISCALE(xform->pos.x),
+                                                                 UISCALE(xform->pos.y),
+                                                                 UISCALE(shape->width),
+                                                                 UISCALE(shape->height),
                                                              });
 
             if (collision)

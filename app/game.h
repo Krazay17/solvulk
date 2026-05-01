@@ -10,3 +10,4 @@ void Create_Sol_Game();
 
 void QuitApp(void *data);
 void W_Set_Ontop(void *data);
+void W_Set_Fullscreen(void *data);

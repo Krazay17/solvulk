@@ -234,11 +234,11 @@ typedef struct CompTimer
 
 typedef struct CompBody
 {
-    vec3s  vel, impulse, force;
-    Shape3 shape;
+    vec3s  vel, impulse, force, groundNormal;
     float  grounded, airtime;
     float  radius, height, length;
     float  mass, invMass, restitution;
+    Shape3 shape;
     u8     group;
 } CompBody;
 
@@ -370,7 +370,7 @@ void        Sphere_Draw(World *world, double dt, double time);
 void         Sol_Sphere_ColorAll(World *world, vec4s color);
 void         Xform_Teleport(CompXform *xform, vec3s pos);
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
-void Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
+void         Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER] = {.tick = Timer_Tick},

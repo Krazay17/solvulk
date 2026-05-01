@@ -126,6 +126,7 @@ typedef enum
 typedef enum
 {
     SOL_MODEL_WIZARD,
+    SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
     SOL_MODEL_WORLD2,

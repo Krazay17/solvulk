@@ -3,12 +3,18 @@
 
 #include <vulkan/vulkan.h>
 
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+#define TARGET_ASPECT 16 / 9
+
 #define MAX_MODEL_INSTANCES (1 << 14)
 #define MAX_SPHERE_INSTANCES (1 << 22)
 #define MAX_BONES 128
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_LINE_VERTICES 0xffffff
+
+#define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 
 typedef enum
 {
@@ -296,7 +302,8 @@ void Render_Camera_Update(vec3 pos, vec3 target);
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color);
 void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
-void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time, u32 flags);
+void Sol_Submit_Animated_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, int animIndex, float time,
+                               u32 flags);
 
 void Flush_Models(void);
 void Flush_Models_Skinned(void);

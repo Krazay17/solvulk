@@ -16,6 +16,7 @@
 // --- Shared state between threads ---
 static volatile g_running = TRUE;
 static HWND g_hwnd        = NULL;
+static bool isFullscreen;
 
 static bool  isDragging = false;
 static POINT dragStartPos;
@@ -56,8 +57,8 @@ int main(int argc, char *argv[])
     wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 720, 0, 1200, 800, NULL, NULL,
-                            hInstance, NULL);
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 720, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                            NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
         return 1;
 
@@ -193,7 +194,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     //     return 0;
     // }
     case WM_SIZE:
-        Sol_Window_Resize(LOWORD(lParam), HIWORD(lParam));
+        int width  = LOWORD(lParam);
+        int height = HIWORD(lParam);
+
+        Sol_GetState()->windowWidth  = width;
+        Sol_GetState()->windowHeight = height;
+        Sol_GetState()->needsResize  = true;
+        // Sol_Window_Resize(width, height);
         return 0;
     case WM_PAINT:
         ValidateRect(hwnd, NULL);
@@ -231,6 +238,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     case WM_LBUTTONDOWN:
         Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, true);
+        if (isFullscreen)
+            return 0;
         POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
         if (pt.y < 30)
         {
@@ -315,4 +324,19 @@ void W_Set_Ontop(void *data)
     bool          toggle   = interact->states & INTERACT_TOGGLED;
     HWND          top      = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
     SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
+
+void W_Set_Fullscreen(void *data)
+{
+    CompInteract *interact = (CompInteract *)data;
+    bool          toggle   = interact->states & INTERACT_TOGGLED;
+    isFullscreen           = toggle;
+    u32 width              = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
+    u32 height             = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
+
+    SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
+    // Sol_Render_Resize(width, height);
+    Sol_GetState()->windowWidth  = width;
+    Sol_GetState()->windowHeight = height;
+    Sol_GetState()->needsResize  = true;
 }

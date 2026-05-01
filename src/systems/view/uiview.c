@@ -35,7 +35,7 @@ void UiView_Draw(World *world, double dt, double time)
         }
 
         // --- DRAWING LOGIC ---
-        SolRect  rect    = {xform->pos.x, xform->pos.y, shape->width, shape->height};
+        SolRect  rect = {UISCALE(xform->pos.x), UISCALE(xform->pos.y), UISCALE(shape->width), UISCALE(shape->height)};
         SolColor drawCol = view->baseColor;
         if (interact->states & INTERACT_TOGGLED)
             drawCol = (SolColor){80, 200, 80, 255};
@@ -54,9 +54,9 @@ void UiView_Draw(World *world, double dt, double time)
         // Text
         if (view->text[0] != '\0')
         {
-            float tx = rect.x + (rect.w * 0.5f) - (view->textWidth * 0.5f);
+            float tx = rect.x + (rect.w * 0.5f) - (UISCALE(view->textWidth) * 0.5f);
             float ty = rect.y + (rect.h * 0.5f) + (view->fontSize * 0.3f);
-            Sol_Draw_Text(view->text, tx, ty, view->fontSize, view->textColor, SOL_FONT_ICE);
+            Sol_Draw_Text(view->text, tx, ty, UISCALE(view->fontSize), view->textColor, SOL_FONT_ICE);
         }
     }
 }

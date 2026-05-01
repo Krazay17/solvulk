@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include <omp.h>
 
 void Spatial_Add(World *world, int id, CompBody *body)
 {
@@ -14,10 +15,14 @@ void Spatial_Add(World *world, int id, CompBody *body)
         u32       oldCount = group->triCount;
         u32       newCount = oldCount + model->tri_count;
 
-        group->tris     = realloc(group->tris, sizeof(SolTri) * newCount);
-        group->triCount = newCount;
+        if (newCount > group->capacity)
+        {
+            group->capacity = newCount * 2;
+            group->tris     = realloc(group->tris, sizeof(SolTri) * group->capacity);
+        }
 
-        Transform_Tris_LocalToWorld(group->tris,id,  oldCount, model, xform);
+        group->triCount = newCount;
+        Transform_Tris_LocalToWorld(group->tris, id, oldCount, model, xform);
 
         group->ents[id].triIndexStart = oldCount;
         group->ents[id].triIndexCount = model->tri_count;
@@ -90,9 +95,10 @@ void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform 
         Spatial_Hash_Tris(triGroup);
     }
 }
-
+static SolProfiler local_tris = {.name="LocalTris"};
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)
 {
+    Prof_Begin(&local_tris);
     mat3s rot = glms_quat_mat3(xform->quat);
     for (int i = 0; i < model->tri_count; i++)
     {
@@ -118,6 +124,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *mo
         float dc    = glms_vec3_norm(glms_vec3_sub(dst->c, dst->center));
         dst->bounds = fmaxf(da, fmaxf(db, dc));
     }
+    Prof_EndEz(&local_tris, false);
 }
 
 void Physx_Mass_Set(World *world, int id, float mass)
@@ -502,7 +509,6 @@ void spatial_hash_tris(SolTri *t, int count, SpatialTable *table, float cellSize
                     SpatialTable_Insert(table, hash_coords(x, y, z), i);
     }
 }
-
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size)
 {
     SpatialGrid *grid = &group->grid;
@@ -510,19 +516,19 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
     free(grid->values);
     grid->offsets = NULL;
     grid->values  = NULL;
-
+    
     grid->cellSize = cell_size;
     grid->min      = min;
     grid->max      = max;
     grid->dims.x   = (int)ceilf((max.x - min.x) / cell_size);
     grid->dims.y   = (int)ceilf((max.y - min.y) / cell_size);
     grid->dims.z   = (int)ceilf((max.z - min.z) / cell_size);
-
+    
     u32  cellCount    = (u32)grid->dims.x * grid->dims.y * grid->dims.z;
     u32 *counts       = calloc(cellCount, sizeof(u32));
     u32  totalEntries = 0;
 
-    for (u32 t = 0; t < group->triCount; t++)
+    for (int t = 0; t < group->triCount; t++)
     {
         SolTri *tri  = &group->tris[t];
         float   minX = fminf(tri->a.x, fminf(tri->b.x, tri->c.x));

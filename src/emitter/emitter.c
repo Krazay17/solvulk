@@ -1,40 +1,53 @@
 #include "emitter.h"
 #include "sol_core.h"
 
-static EmitterConfig emitter_kinds[EMITTER_COUNT] = {
-    [EMITTER_FOUNTAIN] = {.duration = 5.0f, .rate = 25, .spread = 1.0f},
-};
-
-static Particle particle_pool[MAX_PARTICLES] = {0};
-static u32      particleCursor               = 0;
-
 void Emitter_Add(World *world, EmitterDesc e)
 {
-    u32 index = world->emitters->count++;
-    if (world->emitters->count >= world->emitters->capacity)
+    SolEmitters *sys = world->emitters;
+
+    if (sys->count >= sys->capacity)
     {
-        world->emitters->capacity *= 2;
-        world->emitters->emitter = realloc(world->emitters->emitter, sizeof(Emitter) * world->emitters->capacity);
+        sys->capacity *= 2;
+        sys->emitter = realloc(sys->emitter, sizeof(Emitter) * sys->capacity);
     }
-    // EmitterConfig base  = emitter_kinds[e.emitterKind];
-    // EmitterConfig final = {
-    //     .rate = e.overrides.rate > 0 ? e.overrides.rate : base.rate,
-    // };
-    Emitter *em        = &world->emitters->emitter[index];
-    *em                = (Emitter){.rate = 10.0f,.emitterKind = e.emitterKind, .pos = e.pos, .life = 5.0f, .vel = (vec3s){0, 5, 0}};
-    em->particles      = particle_pool;
-    em->particleOffset = particleCursor;
+    u32 index = sys->count++;
+
+    Emitter *em = &sys->emitter[index];
+    *em         = (Emitter){
+        .emitterKind  = e.emitterKind,
+        .particleKind = e.particleKind,
+        .pos          = e.pos,
+        .life         = 5.0f,
+        .rate         = 10.0f,
+        .vel          = (vec3s){0, 5, 0},
+    };
+
+    em->particles      = sys->particle_pool;
+    em->particleOffset = sys->particle_cursor;
     em->particleCount  = EMITTER_PARTICLES;
-    particleCursor += EMITTER_PARTICLES;
-    assert(particleCursor < MAX_PARTICLES);
-    Sol_Debug_Add("EmitterPos", e.pos.y);
-    Sol_Debug_Add("Emitters", world->emitters->count);
+
+    sys->particle_cursor += EMITTER_PARTICLES;
+
+    Sol_Debug_Add("Emitters", sys->count);
+    assert(sys->particle_cursor < MAX_PARTICLES && "Particle Pool Overflow!");
+
+    for (int i = 0; i < EMITTER_PARTICLES; i++)
+    {
+        int       idx = em->particleOffset + i;
+        Particle *p   = &sys->particle_pool[idx];
+
+        p->pos   = e.pos;
+        p->scale = (rand() % 100) * 0.001f;
+        p->vel   = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f};
+        p->life  = 1.0f;
+    }
 }
 
 void Emitter_Remove(World *world, int index)
 {
-    Emitter emitter                 = world->emitters->emitter[index];
-    world->emitters->emitter[index] = world->emitters->emitter[--world->emitters->count];
+    world->emitters->emitter[index].life = -1.0f;
+    // Emitter emitter                 = world->emitters->emitter[index];
+    // world->emitters->emitter[index] = world->emitters->emitter[--world->emitters->count];
 }
 
 void Emitter_Init(World *world)
@@ -42,8 +55,10 @@ void Emitter_Init(World *world)
     world->emitters           = malloc(sizeof(SolEmitters));
     world->emitters->count    = 0;
     world->emitters->capacity = MAX_EMITTERS;
+    world->emitters->emitter  = calloc(world->emitters->capacity, sizeof(Emitter));
 
-    world->emitters->emitter = calloc(world->emitters->capacity, sizeof(Emitter));
+    world->emitters->particle_pool   = calloc(MAX_PARTICLES, sizeof(Particle));
+    world->emitters->particle_cursor = 0;
 }
 
 void Emitter_Tick(World *world, double dt, double time)
@@ -51,48 +66,43 @@ void Emitter_Tick(World *world, double dt, double time)
     if (!world->emitters)
         return;
 
-    float    fdt     = (float)dt;
-    int      count   = world->emitters->count;
-    Emitter *emitter = world->emitters->emitter;
-    int      write   = 0;
-    for (int i = 0; i < count; i++)
+    float        fdt = (float)dt;
+    SolEmitters *sys = world->emitters;
+
+    int write = 0;
+    for (int i = 0; i < sys->count; i++)
     {
-        emitter[i].life -= fdt;
-        if (emitter[i].life >= 0)
-            emitter[write++] = emitter[i];
+        sys->emitter[i].life -= fdt;
+        if (sys->emitter[i].life < 0)
+            continue;
 
-        emitter[i].pos = vecAdd(emitter[i].pos, vecSca(emitter[i].vel, fdt));
+        sys->emitter[i].pos = vecAdd(sys->emitter[i].pos, vecSca(sys->emitter[i].vel, fdt));
 
-        int start = emitter[i].particleOffset;
-        int end   = start + emitter[i].particleCount;
+        int start = sys->emitter[i].particleOffset;
+        int end   = start + sys->emitter[i].particleCount;
         for (int j = start; j < end; j++)
         {
-            emitter[i].particles[j].pos =
-                vecAdd(emitter[i].particles[j].pos, vecSca(emitter[i].particles[j].vel, fdt));
+            Particle *p = &sys->particle_pool[j];
+            p->pos      = vecAdd(p->pos, vecSca(p->vel, fdt));
         }
+
+        sys->emitter[write++] = sys->emitter[i];
     }
     world->emitters->count = write;
 }
 
 void Emitter_Draw(World *world, double dt, double time)
 {
-    float    fdt     = (float)dt;
-    int      count   = world->emitters->count;
-    Emitter *emitter = world->emitters->emitter;
-    for (int i = 0; i < count; i++)
+    float        fdt = (float)dt;
+    SolEmitters *sys = world->emitters;
+    for (int i = 0; i < sys->count; i++)
     {
-        int start = emitter[i].particleOffset;
-        int end   = start + emitter[i].particleCount;
+        int start = sys->emitter[i].particleOffset;
+        int end   = start + sys->emitter[i].particleCount;
         for (int j = start; j < end; j++)
         {
-            Sol_Submit_Sphere(
-                (vec4s){
-                    emitter[i].particles[j].pos.x,
-                    emitter[i].particles[j].pos.y,
-                    emitter[i].particles[j].pos.z,
-                    1.0f,
-                },
-                (vec4s){.r = 0, .g = 255, .b = 55, .a = 255});
+            Particle *p = &sys->particle_pool[j];
+            Sol_Submit_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, p->scale}, (vec4s){0, 255, 55, 255});
         }
     }
 }

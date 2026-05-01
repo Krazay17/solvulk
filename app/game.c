@@ -116,7 +116,7 @@ void Create_Sol_Game()
     CompInteract *boxButtonI = Sol_Interact_Add(menu, boxButton);
     boxButtonI->onClick      = (Callback){.callbackFunc = MakeABox, .callbackData = game};
 
-    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
+    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){330, 650, 0}, "MakeAEmitter");
     CompInteract *emitterButtonI = Sol_Interact_Add(menu, emitterButton);
     emitterButtonI->onClick      = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
 }

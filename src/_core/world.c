@@ -14,9 +14,9 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
     [WORLD_SYS_UI]               = {.draw = UiView_Draw},
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
+    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw},
     [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
-    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw},
     [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
 };
 
@@ -77,8 +77,8 @@ void World_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->drawCount; i++)
     {
         world->drawSystems[i](world, dt, time);
-        Flush_Queue();
     }
+    Flush_Queue();
 }
 
 void World_System_Add(World *world, WorldSystem system)
@@ -139,7 +139,6 @@ void Sol_Flags_Add(World *world, int id, EntFlags flags)
 {
     world->flags[id].flags |= flags;
 }
-
 
 void Sol_Flags_Remove(World *world, int id, EntFlags flags)
 {

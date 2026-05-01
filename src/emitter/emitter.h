@@ -11,7 +11,7 @@ typedef struct Particle
     ParticleKind kind;
     vec3s        pos, vel;
     vec4s        color;
-    float        life;
+    float        life, scale;
 } Particle;
 
 typedef struct Emitter
@@ -32,4 +32,7 @@ typedef struct SolEmitters
     Emitter *emitter;
     u32      count;
     u32      capacity;
+
+    Particle *particle_pool;
+    u32       particle_cursor;
 } SolEmitters;

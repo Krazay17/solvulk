@@ -1,5 +1,5 @@
 #pragma once
-#include "emitter_types.h"
+#include "sol/emitter_types.h"
 #include "sol/types.h"
 
 #define MAX_EMITTERS 0xFFF

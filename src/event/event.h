@@ -1,5 +1,4 @@
 #pragma once
-#include "event_types.h"
 #include "sol/types.h"
 
 #define EVENT_INIT_SIZE 12

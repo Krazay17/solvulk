@@ -3,7 +3,6 @@
 CompSphere *Sol_Sphere_Add(World *world, int id, CompSphere init)
 {
     CompSphere sphere = init;
-
     world->spheres[id] = sphere;
     world->masks[id] |= HAS_SPHERE;
     return &world->spheres[id];
@@ -28,7 +27,7 @@ void Sphere_Step(World *world, double dt, double time)
         Emitter_Add(world, (Emitter){.pos      = e->pos,
                                      .burst    = 10,
                                      .rate     = 0,
-                                     .particle = (Particle){.color = (vec4s){255, 0, 0, 155}, .ttl = 0.6f, .scale=0.3f}});
+                                     .particle = (Particle){.color = (vec4s){255, 0, 0, 155}, .ttl = 0.6f, .scale=0.2f}});
         e->kind = 0;
     }
 }

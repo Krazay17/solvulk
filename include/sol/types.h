@@ -1,8 +1,9 @@
 #pragma once
 
 #include "base_types.h"
-#include "emitter/emitter_types.h"
-#include "event/event_types.h"
+#include "emitter_types.h"
+#include "event_types.h"
+#include "model_types.h"
 
 #ifdef SOL_VULK_SHARED
 #ifdef SOL_BUILD_DLL
@@ -25,7 +26,7 @@
 #define MAX_MODEL_INSTANCES (1 << 14)
 #define MAX_SPHERE_INSTANCES (1 << 22)
 #define MAX_LINE_VERTICES 0xffffff
-#define MAX_BONES 64
+#define MAX_BONES 128
 
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
@@ -98,49 +99,9 @@ typedef enum
 
 typedef enum
 {
-    ANIM_IDLE,
-    ANIM_WALK_FWD,
-    ANIM_WALK_BWD,
-    ANIM_WALK_LEFT,
-    ANIM_WALK_RIGHT,
-    ANIM_JUMP,
-    ANIM_FALL,
-    ANIM_DASH,
-    ANIM_ABILITY0,
-    ANIM_ABILITY1,
-    ANIM_ABILITY2,
-    ANIM_ABILITY3,
-    ANIM_ABILITY4,
-    ANIM_ABILITY5,
-    ANIM_ABILITY6,
-    ANIM_ABILITY7,
-    ANIM_ABILITY8,
-    ANIM_ABILITY9,
-    ANIM_COUNT,
-} SolAnims;
-
-typedef enum
-{
-    SOL_MODEL_WIZARD,
-    SOL_MODEL_BOX,
-    SOL_MODEL_WORLD0,
-    SOL_MODEL_WORLD1,
-    SOL_MODEL_WORLD2,
-    SOL_MODEL_COUNT,
-} SolModelId;
-
-typedef enum
-{
     SOL_IMAGE_FONT,
     SOL_IMAGE_COUNT,
 } SolImageId;
-
-typedef enum
-{
-    COMBAT_IDLE,
-    COMBAT_CHARGING,
-    COMBAT_ATTACKING,
-} CombatState;
 
 typedef enum
 {

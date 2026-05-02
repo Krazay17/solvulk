@@ -9,7 +9,7 @@ static void SpawnPlayer(void *data)
     if (world->actives[world->playerID])
         Sol_Destroy_Ent(world, world->playerID);
 
-    player3d                         = Sol_Prefab_Wizard(world, (vec3s){0, 5, 0});
+    player3d                         = Sol_Prefab_Pawn(world, (vec3s){0, 5, 0}, SOL_MODEL_DUDE, 2.0f);
     CompController *playerController = Sol_ControllerLocal_Add(world, player3d);
 }
 
@@ -28,7 +28,7 @@ void MakeAWizard(void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Wizard(wizard->world, (vec3s){epsilonA, epsilonB, epsilonA});
+        int id = Sol_Prefab_Pawn(wizard->world, (vec3s){epsilonA, epsilonB, epsilonA}, SOL_MODEL_WIZARD, 2.8f);
         Sol_ControllerAi_Add(wizard->world, id);
     }
 }
@@ -50,7 +50,7 @@ void MakeAEmitter(void *data)
                           .rate     = 0.1f,
                           .burst    = 50,
                           .vel      = (vec3s){0, 0, 0},
-                          .particle = (Particle){.ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.3f}});
+                          .particle = (Particle){.ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.15f}});
 }
 
 void ClearEnts(void *data)

@@ -29,7 +29,7 @@ struct ModelData {
 layout(set = 1, binding = 0) readonly buffer Models {
     ModelData models[];};
 
-#define MAX_BONES 64
+#define MAX_BONES 128
 struct InstanceSkinning {
     mat4 bones[MAX_BONES];};
 layout(set = 3, binding = 0) readonly buffer Skinning {

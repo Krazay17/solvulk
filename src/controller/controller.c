@@ -26,7 +26,7 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
     CompController *controller = &world->controllers[id];
     CompMovement   *movement   = &world->movements[id];
     CompBody       *body       = &world->bodies[id];
-    CompCombat     *combat     = &world->combats[id];
+    CompAbility     *combat     = &world->abilities[id];
     float           yaw        = controller->yaw;
     float           pitch      = controller->pitch;
 

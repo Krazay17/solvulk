@@ -5,6 +5,32 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
+const char *model_path[SOL_MODEL_COUNT] = {
+    [SOL_MODEL_WIZARD] = "Wizard.glb", [SOL_MODEL_DUDE] = "Dude.glb",     [SOL_MODEL_BOX] = "Box.glb",
+    [SOL_MODEL_WORLD0] = "World0.glb", [SOL_MODEL_WORLD1] = "World1.glb", [SOL_MODEL_WORLD2] = "World2.glb",
+};
+
+const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
+    [SOL_MODEL_WIZARD] =
+        {
+            [ANIM_IDLE] = 0,       [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 1,   [ANIM_WALK_LEFT] = 1,
+            [ANIM_WALK_RIGHT] = 1, [ANIM_JUMP] = 1,      [ANIM_FALL] = 1,       [ANIM_DASH_FWD] = 1,
+            [ANIM_DASH_BWD] = 1,   [ANIM_DASH_LEFT] = 1, [ANIM_DASH_RIGHT] = 1, [ANIM_ABILITY0] = 2,
+            [ANIM_ABILITY1] = 2,   [ANIM_ABILITY2] = 2,  [ANIM_ABILITY3] = 2,   [ANIM_ABILITY4] = 2,
+            [ANIM_ABILITY5] = 2,   [ANIM_ABILITY6] = 2,  [ANIM_ABILITY7] = 2,   [ANIM_ABILITY8] = 2,
+            [ANIM_ABILITY9] = 2,
+        },
+    [SOL_MODEL_DUDE] =
+        {
+            [ANIM_IDLE] = 2,        [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 18,  [ANIM_WALK_LEFT] = 11,
+            [ANIM_WALK_RIGHT] = 10, [ANIM_JUMP] = 4,      [ANIM_FALL] = 3,       [ANIM_DASH_FWD] = 6,
+            [ANIM_DASH_BWD] = 8,    [ANIM_DASH_LEFT] = 7, [ANIM_DASH_RIGHT] = 9, [ANIM_ABILITY0] = 15,
+            [ANIM_ABILITY1] = 15,   [ANIM_ABILITY2] = 15, [ANIM_ABILITY3] = 15,  [ANIM_ABILITY4] = 15,
+            [ANIM_ABILITY5] = 15,   [ANIM_ABILITY6] = 15, [ANIM_ABILITY7] = 15,  [ANIM_ABILITY8] = 15,
+            [ANIM_ABILITY9] = 15,
+        },
+};
+
 static SolSkeleton ParseSkeleton(cgltf_data *data);
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount,
@@ -194,7 +220,10 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             SolAnimation    *anim = &skel.animations[a];
 
             if (src->name)
+            {
                 strncpy(anim->name, src->name, 63);
+                printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
+            }
 
             anim->channelCount = (int)src->channels_count;
             anim->channels     = calloc(anim->channelCount, sizeof(SolAnimChannel));
@@ -446,7 +475,7 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
         return;
 
     SolAnimation *anim = &skel->animations[animIndex];
-    float t = fmodf(time, anim->duration);
+    float         t    = fmodf(time, anim->duration);
     for (int c = 0; c < anim->channelCount; c++)
     {
         SolAnimChannel *ch = &anim->channels[c];
@@ -483,18 +512,29 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends)
     Sample_Animation_Pose(skel, blends->animA, blends->seekA, tA, rA, sA);
 
     // Sample Animation B (Old) and Blend
-    if (blends->animB >= 0 && blends->blendFactor < 1.0f) 
+    if (blends->animB >= 0 && blends->blendFactor < 1.0f)
     {
         Sample_Animation_Pose(skel, blends->animB, blends->seekB, tB, rB, sB);
 
         for (int i = 0; i < skel->boneCount; i++)
         {
             glm_vec3_lerp(tB[i], tA[i], blends->blendFactor, tA[i]);
-            glm_quat_nlerp(rB[i], rA[i], blends->blendFactor, rA[i]);
+            // Shortest path logic:
+            // If dot product is negative, nlerp will flip the long way.
+            // Use glm_quat_dot to check.
+            if (glm_quat_dot(rA[i], rB[i]) < 0.0f)
+            {
+                // Negate rB to align polarity with rA
+                rB[i][0] = -rB[i][0];
+                rB[i][1] = -rB[i][1];
+                rB[i][2] = -rB[i][2];
+                rB[i][3] = -rB[i][3];
+            }
+
+            glm_quat_nlerp(rA[i], rB[i], 1.0f - blends->blendFactor, rA[i]);
             glm_vec3_lerp(sB[i], sA[i], blends->blendFactor, sA[i]);
         }
     }
-
 
     // Combine into World Matrices
     for (int i = 0; i < skel->boneCount; i++)
@@ -503,20 +543,23 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends)
         // Build Local: T * R * S
         glm_mat4_identity(local);
         glm_translate(local, tA[i]);
-        
+
         mat4 rotM;
         glm_quat_mat4(rA[i], rotM);
         glm_mat4_mul(local, rotM, local);
-        
+
         glm_scale(local, sA[i]);
 
         int parent = skel->bones[i].parent;
-        if (parent < 0) {
+        if (parent < 0)
+        {
             glm_mat4_copy(local, world[i]);
-        } else {
+        }
+        else
+        {
             glm_mat4_mul(world[parent], local, world[i]);
         }
-        
+
         glm_mat4_mul(world[i], skel->bones[i].inverseBind, blends->bones[i]);
     }
 }

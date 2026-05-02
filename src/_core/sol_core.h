@@ -10,7 +10,7 @@
 #include "profiler.h"
 
 #include "buff/buff.h"
-#include "combat/combat.h"
+#include "ability/ability.h"
 #include "physx/physx.h"
 #include "view/view.h"
 #include "vital/vital.h"

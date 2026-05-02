@@ -1,5 +1,5 @@
 #pragma once
-#include "sol/types.h"
+#include "sol/base_types.h"
 
 #define MAX_WORLDS 4
 #define MAX_SYSTEMS 64
@@ -96,6 +96,18 @@ typedef enum
     BUFF_COUNT,
 } BuffKind;
 
+typedef enum AbilityState
+{
+    ABILITY_CLAW,
+    ABILITY_COUNT,
+} AbilityState;
+
+typedef struct CompAbility
+{
+    AbilityState state;
+    vec3s        attackPos, attackDir;
+    float        cooldown;
+} CompAbility;
 typedef struct
 {
     SystemInit init;
@@ -129,13 +141,6 @@ typedef struct CompVital
     bool  doesRespawn;
     float deathTime, respawnTime;
 } CompVital;
-
-typedef struct CompCombat
-{
-    CombatState state;
-    vec3s       attackPos, attackDir;
-    float       cooldown;
-} CompCombat;
 
 typedef struct CompXform
 {
@@ -283,7 +288,7 @@ typedef struct World
     CompUiView     uiElements[MAX_ENTS];
     CompMovement   movements[MAX_ENTS];
     CompController controllers[MAX_ENTS];
-    CompCombat     combats[MAX_ENTS];
+    CompAbility    abilities[MAX_ENTS];
 
     bool worldActive;
 
@@ -312,7 +317,7 @@ SOLAPI void Sol_World_Line_Add(World *world, vec3s a, vec3s b, vec3s color, vec3
 
 // Add Prefab entity
 SOLAPI int Sol_Prefab_Floor(World *world, vec3s pos);
-SOLAPI int Sol_Prefab_Wizard(World *world, vec3s pos);
+int        Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height);
 SOLAPI int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 SOLAPI int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere);
 SOLAPI int Sol_Prefab_Boxman(World *world, vec3s pos);
@@ -335,7 +340,7 @@ CompController *Sol_ControllerLocal_Add(World *world, int id);
 CompController *Sol_ControllerRemote_Add(World *world, int id);
 CompController *Sol_ControllerAi_Add(World *world, int id);
 CompBody       *Sol_Body_Add(World *world, int id, CompBody init);
-CompCombat     *Sol_Combat_Add(World *world, int id, CompCombat init);
+CompAbility    *Sol_Ability_Add(World *world, int id, CompAbility init);
 CompModel      *Sol_Model_Add(World *world, int id, CompModel init);
 CompBuff       *Sol_Buff_Add(World *world, int id, CompBuff init);
 CompSphere     *Sol_Sphere_Add(World *world, int id, CompSphere init);
@@ -364,7 +369,7 @@ SOLAPI void Sol_System_Controller_Ai_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Tick(World *world, double dt, double time);
 void        Timer_Tick(World *world, double dt, double time);
-void        Combat_Tick(World *world, double dt, double time);
+void        Ability_Tick(World *world, double dt, double time);
 void        Sphere_Step(World *world, double dt, double time);
 
 // Draw Systems
@@ -384,7 +389,7 @@ void        Sphere_Draw(World *world, double dt, double time);
 void         Sol_Sphere_ColorAll(World *world, vec4s color);
 void         Xform_Teleport(CompXform *xform, vec3s pos);
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
-void         Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
+void         Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed);
 
 void Emitter_Init(World *world);
 void Emitter_Add(World *world, Emitter e);

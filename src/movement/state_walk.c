@@ -28,6 +28,22 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
     latwishdir.y     = 0;
     latwishdir       = glms_vec3_normalize(latwishdir);
 
+    switch (Get_StrafeDir(latwishdir.x, latwishdir.z, controller->lookdir.x, controller->lookdir.z))
+    {
+    case STRAFE_FWD:
+        Sol_Model_PlayAnim(world, id, ANIM_WALK_FWD, 0);
+        break;
+    case STRAFE_BWD:
+        Sol_Model_PlayAnim(world, id, ANIM_WALK_BWD, 0);
+        break;
+    case STRAFE_LEFT:
+        Sol_Model_PlayAnim(world, id, ANIM_WALK_LEFT, 0);
+        break;
+    case STRAFE_RIGHT:
+        Sol_Model_PlayAnim(world, id, ANIM_WALK_RIGHT, 0);
+        break;
+    }
+
     // Formula: v_projected = v - (v . normal) * normal
     float dot      = glms_vec3_dot(latwishdir, body->groundNormal);
     vec3s slopeDir = glms_vec3_sub(latwishdir, glms_vec3_scale(body->groundNormal, dot));
@@ -45,7 +61,6 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
 
 void Sol_Movement_Walk_Enter(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, ANIM_WALK_FWD, 0);
 }
 
 void Sol_Movement_Walk_Exit(World *world, int id)

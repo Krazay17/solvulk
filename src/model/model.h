@@ -17,6 +17,9 @@ SolModel Parse_Model(SolResource res);
 
 void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends);
 
+const char *model_path[SOL_MODEL_COUNT];
+const i32   model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+
 // Apply a 4x4 world matrix to a position
 static inline void TransformPos(const float m[16], const float in[3], float out[3])
 {
@@ -43,27 +46,3 @@ static inline void TransformNrm(const float m[16], const float in[3], float out[
         out[2] /= len;
     }
 }
-
-static const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
-    [SOL_MODEL_WIZARD] =
-        {
-            [ANIM_IDLE]       = 0,
-            [ANIM_WALK_FWD]   = 1,
-            [ANIM_WALK_BWD]   = 1,
-            [ANIM_WALK_LEFT]  = 1,
-            [ANIM_WALK_RIGHT] = 1,
-            [ANIM_JUMP]       = 1,
-            [ANIM_FALL]       = 1,
-            [ANIM_DASH]       = 1,
-            [ANIM_ABILITY0]   = 2,
-            [ANIM_ABILITY1]   = 2,
-            [ANIM_ABILITY2]   = 2,
-            [ANIM_ABILITY3]   = 2,
-            [ANIM_ABILITY4]   = 2,
-            [ANIM_ABILITY5]   = 2,
-            [ANIM_ABILITY6]   = 2,
-            [ANIM_ABILITY7]   = 2,
-            [ANIM_ABILITY8]   = 2,
-            [ANIM_ABILITY9]   = 2,
-        },
-};

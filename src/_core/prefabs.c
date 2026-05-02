@@ -46,9 +46,8 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
     return id;
 }
 
-int Sol_Prefab_Wizard(World *world, vec3s pos)
+int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height)
 {
-    float height = 2.8f;
     int   id     = Sol_Create_Ent(world);
 
     CompXform *xform = Sol_Xform_Add(world, id, pos);
@@ -64,10 +63,10 @@ int Sol_Prefab_Wizard(World *world, vec3s pos)
                  });
 
     CompMovement *movement = Sol_Movement_Add(world, id, (CompMovement){.configId = MOVE_CONFIG_PLAYER});
-    CompModel    *model    = Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_WIZARD});
+    CompModel    *model    = Sol_Model_Add(world, id, (CompModel){.modelId = modelId});
     model->yOffset         = -height * 0.5f;
 
-    CompCombat *combat = Sol_Combat_Add(world, id, (CompCombat){0});
+    CompAbility *combat = Sol_Ability_Add(world, id, (CompAbility){0});
     Sol_Interact_Add(world, id);
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 

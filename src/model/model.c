@@ -99,5 +99,5 @@ void Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed)
     model->currentAnim = nextAnim;
     model->currentSeek = 0;
     model->blendFactor = 0;
-    model->blendSpeed  = blendSpeed > 0 ? blendSpeed : 5.0f;
+    model->blendSpeed  = blendSpeed > 0 ? blendSpeed : 6.0f;
 }

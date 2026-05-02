@@ -8,7 +8,7 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
     [WORLD_SYS_INTERACT]         = {.tick = Interact2d_Tick},
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
-    [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
+    [WORLD_SYS_COMBAT]           = {.tick = Ability_Tick},
     [WORLD_SYS_BUFF]             = {.step = Buff_Step},
     [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw3d = Vital_Draw},
     [WORLD_SYS_MODEL]            = {.draw3d = Sol_System_Model_Draw},
@@ -132,19 +132,24 @@ int Sol_Create_Ent(World *world)
 
 void Sol_Destroy_Ent(World *world, int id)
 {
-    // 1. Mark as inactive
+    /*
+        id = 2
+        count = 4
+        activeEnts [0][1][2][3]
+                   '2''1''3''6'
+        index 0 = index[count - 1] 
+        // Puts last ent into the slot this ent was in, -1 because count is +1 offset from array index
+        count-- // lowers count to filter ent moved to last
+        activeEnts [0][1][2]
+                   '6''1''3'
+    */
     world->actives[id] = false;
     world->masks[id]   = 0;
-
-    // 2. Remove from dense list by "Swapping with Last"
-    // This keeps the array dense without needing to shift everything
     for (int i = 0; i < world->activeCount; i++)
     {
         if (world->activeEntities[i] == id)
         {
-            // Take the very last ID in the list and put it here
-            world->activeEntities[i] = world->activeEntities[world->activeCount - 1];
-            world->activeCount--;
+            world->activeEntities[i] = world->activeEntities[--world->activeCount];
             break;
         }
     }

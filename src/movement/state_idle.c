@@ -48,7 +48,7 @@ void Sol_Movement_Idle_Enter(World *world, int id)
         if (Sol_Movement_SetState(world, id, MOVE_DASH))
             return;
 
-    Sol_Model_PlayAnim(world, id, ANIM_IDLE, 0);
+    Sol_Model_PlayAnim(world, id, ANIM_IDLE, 3.0f);
 }
 
 void Sol_Movement_Idle_Exit(World *world, int id)

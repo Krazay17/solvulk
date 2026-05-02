@@ -1,18 +1,8 @@
 #pragma once
 
-#include <assert.h>
-#include <limits.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <cglm/types-struct.h>
-
+#include "base_types.h"
 #include "emitter/emitter_types.h"
+#include "event/event_types.h"
 
 #ifdef SOL_VULK_SHARED
 #ifdef SOL_BUILD_DLL
@@ -23,17 +13,6 @@
 #else
 #define SOLAPI
 #endif
-
-#define u8 uint8_t
-#define u16 uint16_t
-#define u32 uint32_t
-#define u64 uint64_t
-#define i8 int8_t
-#define i16 int16_t
-#define i32 int32_t
-#define i64 int64_t
-
-#define FLOATING_EPSILON 1e-7f
 
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SOL_PHYS_SUBSTEP 4
@@ -54,6 +33,8 @@
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
 #define ColorF(x) (x / 255.0f)
+
+#define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 
 // Forwards
 typedef struct World     World;

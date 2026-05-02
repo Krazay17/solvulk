@@ -1,64 +1,66 @@
 #include "emitter.h"
+#include "render/render.h"
 #include "sol_core.h"
+
+void Emitter_Init(World *world)
+{
+    world->emitters = malloc(sizeof(SolEmitters));
+
+    world->emitters->emitter_count    = 0;
+    world->emitters->emitter_capacity = MAX_EMITTERS;
+    world->emitters->emitter          = calloc(world->emitters->emitter_capacity, sizeof(Emitter));
+
+    world->emitters->particle_count    = 0;
+    world->emitters->particle_capacity = MAX_PARTICLES;
+    world->emitters->particle_pool     = calloc(world->emitters->particle_capacity, sizeof(Particle));
+}
 
 void Emitter_Add(World *world, EmitterDesc e)
 {
     SolEmitters *sys = world->emitters;
-
-    if (sys->count >= sys->capacity)
+    if (sys->emitter_count >= sys->emitter_capacity)
     {
-        sys->capacity *= 2;
-        sys->emitter = realloc(sys->emitter, sizeof(Emitter) * sys->capacity);
+        sys->emitter_capacity *= 2;
+        sys->emitter = realloc(sys->emitter, sizeof(Emitter) * sys->emitter_capacity);
     }
-    u32 index = sys->count++;
+
+    u32 index = sys->emitter_count++;
 
     Emitter *em = &sys->emitter[index];
     *em         = (Emitter){
-        .emitterKind  = e.emitterKind,
-        .particleKind = e.particleKind,
-        .pos          = e.pos,
-        .life         = 5.0f,
-        .rate         = 10.0f,
-        .vel          = (vec3s){0, 5, 0},
+        .pos  = e.pos,
+        .ttl  = e.ttl,
+        .rate = e.rate,
+        .vel  = e.vel,
+        .particle =
+            (Particle){
+                .color = e.color,
+                .ttl   = e.pttl,
+                .scale = 0.1f,
+            },
     };
 
-    em->particles      = sys->particle_pool;
-    em->particleOffset = sys->particle_cursor;
-    em->particleCount  = EMITTER_PARTICLES;
-
-    sys->particle_cursor += EMITTER_PARTICLES;
-
-    Sol_Debug_Add("Emitters", sys->count);
-    assert(sys->particle_cursor < MAX_PARTICLES && "Particle Pool Overflow!");
-
-    for (int i = 0; i < EMITTER_PARTICLES; i++)
+    Sol_Debug_Add("Emitters", sys->emitter_count);
+    for (int i = 0; i < e.burst; i++)
     {
-        int       idx = em->particleOffset + i;
-        Particle *p   = &sys->particle_pool[idx];
-
-        p->pos   = e.pos;
-        p->scale = (rand() % 100) * 0.001f;
-        p->vel   = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f};
-        p->life  = 1.0f;
+        Particle *p = Particle_Activate(sys, em);
+        p->scale    = (rand() % 100) * 0.001f;
+        p->vel      = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f,
+                              ((float)(rand() % 100) / 50.0f) - 1.0f};
     }
 }
 
-void Emitter_Remove(World *world, int index)
+void Emitter_Step(World *world, double dt, double time)
 {
-    world->emitters->emitter[index].life = -1.0f;
-    // Emitter emitter                 = world->emitters->emitter[index];
-    // world->emitters->emitter[index] = world->emitters->emitter[--world->emitters->count];
-}
-
-void Emitter_Init(World *world)
-{
-    world->emitters           = malloc(sizeof(SolEmitters));
-    world->emitters->count    = 0;
-    world->emitters->capacity = MAX_EMITTERS;
-    world->emitters->emitter  = calloc(world->emitters->capacity, sizeof(Emitter));
-
-    world->emitters->particle_pool   = calloc(MAX_PARTICLES, sizeof(Particle));
-    world->emitters->particle_cursor = 0;
+    SolEvents *s = world->events;
+    if (!s)
+        return;
+    for (int i = 0; i < s->count; i++)
+    {
+        SolEvent *e = &s->event[i];
+        if (e->kind == EVENT_COLLISION)
+            Emitter_Add(world, (EmitterDesc){.pos = e->pos,.burst=5, .color= (vec4s){255, 50, 50, 255}, .pttl = 0.5f});
+    }
 }
 
 void Emitter_Tick(World *world, double dt, double time)
@@ -70,39 +72,80 @@ void Emitter_Tick(World *world, double dt, double time)
     SolEmitters *sys = world->emitters;
 
     int write = 0;
-    for (int i = 0; i < sys->count; i++)
+    for (int i = 0; i < sys->emitter_count; i++)
     {
-        sys->emitter[i].life -= fdt;
-        if (sys->emitter[i].life < 0)
+        Emitter *e = &sys->emitter[i];
+        e->ttl -= fdt;
+        if (e->ttl < 0)
             continue;
+        e->pos = vecAdd(e->pos, vecSca(e->vel, fdt));
 
-        sys->emitter[i].pos = vecAdd(sys->emitter[i].pos, vecSca(sys->emitter[i].vel, fdt));
-
-        int start = sys->emitter[i].particleOffset;
-        int end   = start + sys->emitter[i].particleCount;
-        for (int j = start; j < end; j++)
+        e->accumulator += fdt;
+        while (e->accumulator >= e->rate)
         {
-            Particle *p = &sys->particle_pool[j];
-            p->pos      = vecAdd(p->pos, vecSca(p->vel, fdt));
+            Particle *p = Particle_Activate(sys, e);
+
+            float offset = e->accumulator / fdt;
+            p->pos       = vecAdd(e->pos, vecSca(e->vel, -offset * fdt));
+            p->scale     = (rand() % 100) * 0.001f;
+            p->vel       = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f,
+                                   ((float)(rand() % 100) / 50.0f) - 1.0f};
+
+            e->accumulator -= e->rate;
         }
 
-        sys->emitter[write++] = sys->emitter[i];
+        sys->emitter[write++] = *e;
     }
-    world->emitters->count = write;
+    world->emitters->emitter_count = write;
+
+    Particle_Tick(world, dt, time);
+}
+
+void Particle_Tick(World *world, double dt, double time)
+{
+    float        fdt   = (float)dt;
+    SolEmitters *s     = world->emitters;
+    int          write = 0;
+
+    for (int i = 0; i < s->particle_count; i++)
+    {
+        Particle *p = &s->particle_pool[i];
+        p->ttl -= fdt;
+        if (p->ttl <= 0)
+            continue;
+        p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
+
+        s->particle_pool[write++] = *p;
+    }
+
+    // The count is now exactly how many particles we 'wrote'
+    s->particle_count = write;
 }
 
 void Emitter_Draw(World *world, double dt, double time)
 {
     float        fdt = (float)dt;
-    SolEmitters *sys = world->emitters;
-    for (int i = 0; i < sys->count; i++)
+    SolEmitters *s   = world->emitters;
+    for (int i = 0; i < s->particle_count; i++)
     {
-        int start = sys->emitter[i].particleOffset;
-        int end   = start + sys->emitter[i].particleCount;
-        for (int j = start; j < end; j++)
-        {
-            Particle *p = &sys->particle_pool[j];
-            Sol_Submit_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, p->scale}, (vec4s){0, 255, 55, 255});
-        }
+        Particle *p = &s->particle_pool[i];
+        float t = p->ttl / p->startTtl;
+        float visualScale = p->scale * t;
+        Sol_Submit_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, p->color);
     }
+}
+
+Particle *Particle_Activate(SolEmitters *sys, Emitter *init)
+{
+    if (sys->particle_count >= sys->particle_capacity)
+        return &sys->particle_pool[0];
+
+    u32       index = sys->particle_count++;
+    Particle *p     = &sys->particle_pool[index];
+
+    memcpy(p, &init->particle, sizeof(Particle));
+    p->startTtl = p->ttl;
+    p->pos = init->pos;
+
+    return p;
 }

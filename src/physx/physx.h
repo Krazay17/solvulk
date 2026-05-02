@@ -148,7 +148,7 @@ float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
 void         Ground_Trace(World *world, int count);
 
-void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ShapeTriTest shapeTest);
+void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ShapeTriTest shapeTest, SolContact *hit);
 void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);
 
 bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit);

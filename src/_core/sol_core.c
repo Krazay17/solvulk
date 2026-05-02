@@ -60,7 +60,10 @@ void Sol_Tick(double dt, double time)
     while (accumulator >= SOL_TIMESTEP)
     {
         for (int i = 0; i < solState.worldCount; ++i)
+        {
             World_Step(solState.worlds[i], SOL_TIMESTEP, time);
+            Event_Clear(solState.worlds[i]);
+        }
 
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;

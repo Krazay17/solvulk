@@ -27,6 +27,7 @@ typedef uint32_t Mask;
 typedef struct WorldPhysx  WorldPhysx;
 typedef struct WorldLines  WorldLines;
 typedef struct SolEmitters SolEmitters;
+typedef struct SolEvents   SolEvents;
 
 typedef enum
 {
@@ -71,6 +72,7 @@ typedef enum
     HAS_SPHERE        = (1 << 16),
     HAS_TIMER         = (1 << 17),
     HAS_PICKUP        = (1 << 18),
+    HAS_EVENT         = (1 << 19),
 } CompBits;
 
 typedef enum
@@ -122,6 +124,7 @@ typedef struct CompCombat
 {
     CombatState state;
     vec3s       attackPos, attackDir;
+    float       cooldown;
 } CompCombat;
 
 typedef struct CompXform
@@ -290,6 +293,7 @@ typedef struct World
     WorldPhysx  *spatial;
     WorldLines  *lines;
     SolEmitters *emitters;
+    SolEvents   *events;
 } World;
 
 SOLAPI World *World_Create(void);
@@ -380,4 +384,4 @@ void Emitter_Init(World *world);
 void Emitter_Add(World *world, EmitterDesc e);
 void Emitter_Tick(World *world, double dt, double time);
 void Emitter_Draw(World *world, double dt, double time);
-
+void Emitter_Step(World *world, double dt, double time);

@@ -1,5 +1,5 @@
 #pragma once
-#include "sol/types.h"
+#include "sol/base_types.h"
 
 typedef enum
 {
@@ -13,15 +13,12 @@ typedef enum
     EMITTER_COUNT,
 } EmitterKind;
 
-typedef struct
-{
-    float rate, duration, spread;
-} EmitterConfig;
-
 typedef struct EmitterDesc
 {
-    EmitterKind   emitterKind;
-    ParticleKind  particleKind;
-    EmitterConfig overrides;
-    vec3s         pos;
+    // EmitterKind  emitterKind;
+    // ParticleKind particleKind;
+    vec3s pos, rot, vel;
+    vec4s color;
+    float ttl, pttl, rate;
+    u32   burst;
 } EmitterDesc;

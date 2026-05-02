@@ -14,7 +14,7 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
     [WORLD_SYS_UI]               = {.draw = UiView_Draw},
     [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
-    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw},
+    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw,.step=Emitter_Step},
     [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
     [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
     [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
@@ -41,6 +41,9 @@ World *World_Create_Default(void)
     if (world)
         for (int i = 0; i < WORLD_SYS_COUNT; i++)
             World_System_Add(world, i);
+
+    Event_Init(world);
+
     return world;
 }
 

@@ -44,7 +44,15 @@ void MakeAEmitter(void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = world->controllers[world->playerID].aimpos;
-    Emitter_Add(world, (EmitterDesc){.emitterKind = EMITTER_FOUNTAIN, .particleKind = PARTICLE_ORB, .pos = pos});
+    Emitter_Add(world, (EmitterDesc){
+                           .pos   = pos,
+                           .ttl   = 50.0f,
+                           .pttl  = 5.0f,
+                           .rate  = 0.1f,
+                           .burst = 50,
+                           .vel = (vec3s){0,0,0},
+                           .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255},
+                       });
 }
 
 void ClearEnts(void *data)
@@ -118,5 +126,5 @@ void Create_Sol_Game()
 
     int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){330, 650, 0}, "MakeAEmitter");
     CompInteract *emitterButtonI = Sol_Interact_Add(menu, emitterButton);
-    emitterButtonI->onClick      = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
+    emitterButtonI->onHold       = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
 }

@@ -4,8 +4,6 @@
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
-#define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
-
 typedef enum
 {
     DESC_ORTHO_UBO,

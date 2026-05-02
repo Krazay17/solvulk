@@ -95,8 +95,8 @@ void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform 
         Spatial_Hash_Tris(triGroup);
     }
 }
-static SolProfiler local_tris = {.name="LocalTris"};
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)
+static SolProfiler local_tris = {.name = "LocalTris"};
+void               Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)
 {
     Prof_Begin(&local_tris);
     mat3s rot = glms_quat_mat3(xform->quat);
@@ -225,7 +225,10 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                 CompXform *other_xform = &world->xforms[otherID];
                 SolContact result      = {0};
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &result))
+                {
                     Resolve_Dynamic_Pair(body, xform, other_body, other_xform, &result);
+                    //Sol_Event_Add(world, (EventDesc){.entA = id, .kind = EVENT_PARTICLE, .pos = result.point});
+                }
             }
             entry = ws->dynamicGroup.table.next[entry];
         }
@@ -442,7 +445,7 @@ void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit)
     }
 }
 
-void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ShapeTriTest shapeTest)
+void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, ShapeTriTest shapeTest, SolContact *hit)
 {
     SpatialGrid *grid   = &group->grid;
     int          checks = 0;
@@ -473,12 +476,15 @@ void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform,
                 {
                     if (++checks > 1000)
                         return;
-                    SolContact hit = {0};
                     SolTri    *tri = &group->tris[grid->values[e]];
-                    if (shapeTest(body, xform, tri, &hit))
-                        Resolve_Contact(body, xform, &hit);
+                    if (shapeTest(body, xform, tri, hit))
+                    {
+                        Resolve_Contact(body, xform, hit);
+                        
+                    }
                 }
             }
+            
 }
 
 void collisions_grid_dynamic(CompBody *body, CompXform *xform, SubstepData substep_data, WorldPhysx *ws)
@@ -516,14 +522,14 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
     free(grid->values);
     grid->offsets = NULL;
     grid->values  = NULL;
-    
+
     grid->cellSize = cell_size;
     grid->min      = min;
     grid->max      = max;
     grid->dims.x   = (int)ceilf((max.x - min.x) / cell_size);
     grid->dims.y   = (int)ceilf((max.y - min.y) / cell_size);
     grid->dims.z   = (int)ceilf((max.z - min.z) / cell_size);
-    
+
     u32  cellCount    = (u32)grid->dims.x * grid->dims.y * grid->dims.z;
     u32 *counts       = calloc(cellCount, sizeof(u32));
     u32  totalEntries = 0;
@@ -776,6 +782,7 @@ bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContac
     col->point       = closestP;
     col->penetration = penetration;
     col->normal      = normal;
+    col->didCollide = true;
 
     return true;
 }
@@ -883,6 +890,8 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
     hit->normal =
         dist > 0.0001f ? glms_vec3_scale(glms_vec3_sub(bestCapsulePoint, bestTriPoint), 1.0f / dist) : tri->normal;
     hit->penetration = body->radius - dist;
+    hit->didCollide = true;
+    hit->point = bestTriPoint;
 
     return true;
 }

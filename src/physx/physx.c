@@ -86,11 +86,14 @@ void Physx_Step(World *world, double dt, double time)
         body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
         SubstepData substep = Substep_Get(body, fdt);
+        SolContact  hit     = {0};
         for (int s = 0; s < substep.substeps; s++)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
-            Collisions_Static_Grid(staticGroup, body, xform, shape_tri_test[body->shape]);
+            Collisions_Static_Grid(staticGroup, body, xform, shape_tri_test[body->shape], &hit);
         }
+        if (hit.didCollide)
+            Sol_Event_Add(world, (EventDesc){.pos = hit.point, .kind = EVENT_COLLISION});
     }
     Prof_EndEz(&prof_static, true);
 

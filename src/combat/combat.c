@@ -4,8 +4,9 @@ void Combat_Init(World *world)
 {
 }
 
-CompCombat *Sol_Combat_Add(World *world, int id, CompCombat combat)
+CompCombat *Sol_Combat_Add(World *world, int id, CompCombat init)
 {
+    CompCombat combat  = init;
     world->combats[id] = combat;
     world->masks[id] |= HAS_COMBAT;
     return &world->combats[id];
@@ -23,11 +24,15 @@ void Combat_Tick(World *world, double dt, double time)
         CompController *controller = &world->controllers[id];
         CompXform      *xform      = &world->xforms[id];
         CompModel      *model      = &world->models[id];
+        CompCombat     *combat     = &world->combats[id];
 
         vec3s aimpos = controller->aimpos;
         vec3s aimdir = controller->aimdir;
+        combat->cooldown -= dt;
+        if (combat->cooldown <= 0)
+            combat->cooldown = 0;
 
-        if (controller->actionState & ACTION_ABILITY1)
+        if (controller->actionState & ACTION_ABILITY1 && combat->cooldown <= 0)
         {
             // SolRayResult result = Sol_RaycastD(world,
             //                                    (SolRay){
@@ -50,12 +55,13 @@ void Combat_Tick(World *world, double dt, double time)
             float min      = 0.2f;
             float max      = 0.8f;
             float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
-            int   ball     = Sol_Prefab_Ball(
+
+            int ball = Sol_Prefab_Ball(
                 world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
                 (CompSphere){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
-                Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
-
-            }
+            Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
+            combat->cooldown = 0.05f;
+        }
     }
 }

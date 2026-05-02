@@ -4,3 +4,6 @@
 [submodule "vendored/qu3e"]
 	path = vendored/qu3e
 	url = https://github.com/RandyGaul/qu3e
+[submodule "vendored/cglm"]
+	path = vendored/cglm
+	url = https://github.com/recp/cglm

@@ -9,6 +9,30 @@ CompSphere *Sol_Sphere_Add(World *world, int id, CompSphere init)
     return &world->spheres[id];
 }
 
+void Sphere_Step(World *world, double dt, double time)
+{
+    SolEvents *s = world->events;
+    if (!s)
+        return;
+    for (int i = 0; i < s->count; i++)
+    {
+        SolEvent *e = &s->event[i];
+        if (!(world->masks[e->entA] & HAS_SPHERE))
+            continue;
+        if (e->kind != EVENT_COLLISION)
+            continue;
+        CompBody *body = &world->bodies[e->entA];
+        if (glms_vec3_norm(body->vel) < 1.0f)
+            continue;
+
+        Emitter_Add(world, (Emitter){.pos      = e->pos,
+                                     .burst    = 10,
+                                     .rate     = 0,
+                                     .particle = (Particle){.color = (vec4s){255, 0, 0, 155}, .ttl = 0.6f, .scale=0.3f}});
+        e->kind = 0;
+    }
+}
+
 void Sphere_Draw(World *world, double dt, double time)
 {
     int required = HAS_XFORM | HAS_SPHERE;

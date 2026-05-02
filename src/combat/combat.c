@@ -61,7 +61,7 @@ void Combat_Tick(World *world, double dt, double time)
                 (CompSphere){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
             Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
-            combat->cooldown = 0.05f;
+            //combat->cooldown = 0.05f;
         }
     }
 }

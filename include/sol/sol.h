@@ -5,7 +5,6 @@
 
 #define SOL_VERSION 1.0
 
-
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Destroy();
@@ -49,3 +48,20 @@ SolRayResult Sol_Raycast(World *world, SolRay ray);
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration);
 
 void Physx_Mass_Set(World *world, int id, float mass);
+
+static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
+{
+    if (count >= *capacity)
+    {
+        int   newCap = (*capacity <= 0) ? 128 : *capacity * 2;
+        void *tmp    = realloc(*data, size * newCap);
+        if (!tmp)
+        {
+            fprintf(stderr, "Failed to realloc");
+            return 1;
+        }
+        *data      = tmp;
+        *capacity = newCap;
+    }
+    return 0;
+}

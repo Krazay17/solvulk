@@ -44,15 +44,13 @@ void MakeAEmitter(void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = world->controllers[world->playerID].aimpos;
-    Emitter_Add(world, (EmitterDesc){
-                           .pos   = pos,
-                           .ttl   = 50.0f,
-                           .pttl  = 5.0f,
-                           .rate  = 0.1f,
-                           .burst = 50,
-                           .vel = (vec3s){0,0,0},
-                           .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255},
-                       });
+    Emitter_Add(world,
+                (Emitter){.pos      = pos,
+                          .ttl      = 50.0f,
+                          .rate     = 0.1f,
+                          .burst    = 50,
+                          .vel      = (vec3s){0, 0, 0},
+                          .particle = (Particle){.ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.3f}});
 }
 
 void ClearEnts(void *data)
@@ -69,7 +67,7 @@ void ColorSpheres(void *data)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sol Game Config
+// Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
@@ -124,7 +122,7 @@ void Create_Sol_Game()
     CompInteract *boxButtonI = Sol_Interact_Add(menu, boxButton);
     boxButtonI->onClick      = (Callback){.callbackFunc = MakeABox, .callbackData = game};
 
-    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){330, 650, 0}, "MakeAEmitter");
+    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
     CompInteract *emitterButtonI = Sol_Interact_Add(menu, emitterButton);
     emitterButtonI->onHold       = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
 }

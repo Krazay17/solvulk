@@ -22,3 +22,20 @@ typedef struct EmitterDesc
     float ttl, pttl, rate;
     u32   burst;
 } EmitterDesc;
+
+typedef struct Particle
+{
+    ParticleKind kind;
+    vec3s        pos, vel;
+    vec4s        color;
+    float        ttl, scale, startTtl;
+} Particle;
+
+typedef struct Emitter
+{
+    EmitterKind emitterKind;
+    vec3s       pos, vel;
+    float       ttl, rate, accumulator;
+    Particle    particle;
+    u32         burst;
+} Emitter;

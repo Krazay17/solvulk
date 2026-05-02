@@ -54,4 +54,5 @@ SOLAPI void Sol_End_Draw();
 
 SOLAPI void World_Step(World *world, double dt, double time);
 SOLAPI void World_Tick(World *world, double dt, double time);
-SOLAPI void World_Draw(World *world, double dt, double time);
+SOLAPI void World_Draw3d(World *world, double dt, double time);
+SOLAPI void World_Draw2d(World *world, double dt, double time);

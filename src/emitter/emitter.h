@@ -2,26 +2,8 @@
 #include "emitter_types.h"
 #include "sol/types.h"
 
+#define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
-#define MAX_EMITTERS 0xFFFF
-#define EMITTER_PARTICLES 64
-
-typedef struct Particle
-{
-    ParticleKind kind;
-    vec3s        pos, vel;
-    vec4s        color;
-    float        ttl, scale, startTtl;
-} Particle;
-
-typedef struct Emitter
-{
-    EmitterKind emitterKind;
-    vec3s       pos, vel;
-    float       ttl, rate, accumulator;
-    Particle    particle;
-
-} Emitter;
 
 typedef struct SolEmitters
 {

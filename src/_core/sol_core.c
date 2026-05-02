@@ -81,7 +81,9 @@ void Sol_Tick(double dt, double time)
     Sol_Begin_3D();
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
-        World_Draw(solState.worlds[i], dt, time);
+        World_Draw3d(solState.worlds[i], dt, time);
+    for (int i = solState.worldCount - 1; i >= 0; --i)
+        World_Draw2d(solState.worlds[i], dt, time);
 
     Sol_Debug_Draw(dt);
     Sol_End_Draw();

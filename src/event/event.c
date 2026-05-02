@@ -14,15 +14,10 @@ void Sol_Event_Add(World *w, EventDesc d)
     SolEvents *s = w->events;
     if (!s)
         return;
-    if (s->count >= s->capacity)
-    {
-        s->capacity *= 2;
-        s->event = realloc(s->event, sizeof(SolEvent) * s->capacity);
-    }
-    u32 index = s->count++;
+    Sol_Realloc(&s->event, s->count, &s->capacity, sizeof(SolEvent));
 
-    SolEvent *e = &s->event[index];
-    *e          = (SolEvent){.entA = d.entA, .kind = d.kind, .pos = d.pos};
+    s->event[s->count] = (SolEvent){.entA = d.entA, .kind = d.kind, .pos = d.pos};
+    s->count++;
 }
 
 void Event_Clear(World *w)

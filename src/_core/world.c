@@ -10,14 +10,14 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
     [WORLD_SYS_COMBAT]           = {.tick = Combat_Tick},
     [WORLD_SYS_BUFF]             = {.step = Buff_Step},
-    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw = Vital_Draw},
-    [WORLD_SYS_MODEL]            = {.draw = Sol_System_Model_Draw},
-    [WORLD_SYS_UI]               = {.draw = UiView_Draw},
-    [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw = Sol_System_Line_Draw},
-    [WORLD_SYS_EMITTER]          = {.init = Emitter_Init, .tick = Emitter_Tick, .draw = Emitter_Draw,.step=Emitter_Step},
-    [WORLD_SYS_SPHERE]           = {.draw = Sphere_Draw},
-    [WORLD_SYS_CAM]              = {.draw = Crosshair_Draw},
-    [WORLD_SYS_PICKUP]           = {.step = Pickup_Step},
+    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw3d = Vital_Draw},
+    [WORLD_SYS_MODEL]            = {.draw3d = Sol_System_Model_Draw},
+    [WORLD_SYS_UI]               = {.draw3d = UiView_Draw},
+    [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw3d = Sol_System_Line_Draw},
+    [WORLD_SYS_EMITTER] = {.init = Emitter_Init, .tick = Emitter_Tick, .draw3d = Emitter_Draw, .step = Emitter_Step},
+    [WORLD_SYS_SPHERE]  = {.draw3d = Sphere_Draw, .step = Sphere_Step},
+    [WORLD_SYS_PICKUP]  = {.step = Pickup_Step},
+    [WORLD_SYS_CAM]     = {.draw2d = Crosshair_Draw},
 };
 
 World *World_Create(void)
@@ -73,15 +73,25 @@ void World_Tick(World *world, double dt, double time)
     }
 }
 
-void World_Draw(World *world, double dt, double time)
+void World_Draw3d(World *world, double dt, double time)
 {
     if (!world || !world->worldActive)
         return;
-    for (int i = 0; i < world->drawCount; i++)
+    for (int i = 0; i < world->draw3dCount; i++)
     {
-        world->drawSystems[i](world, dt, time);
+        world->draw3dSystems[i](world, dt, time);
     }
     Flush_Queue();
+}
+
+void World_Draw2d(World *world, double dt, double time)
+{
+    if (!world || !world->worldActive)
+        return;
+    for (int i = 0; i < world->draw2dCount; i++)
+    {
+        world->draw2dSystems[i](world, dt, time);
+    }
 }
 
 void World_System_Add(World *world, WorldSystem system)
@@ -94,8 +104,10 @@ void World_System_Add(World *world, WorldSystem system)
         world->stepSystems[world->stepCount++] = world_systems[system].step;
     if (world_systems[system].tick)
         world->tickSystems[world->tickCount++] = world_systems[system].tick;
-    if (world_systems[system].draw)
-        world->drawSystems[world->drawCount++] = world_systems[system].draw;
+    if (world_systems[system].draw3d)
+        world->draw3dSystems[world->draw3dCount++] = world_systems[system].draw3d;
+    if (world_systems[system].draw2d)
+        world->draw2dSystems[world->draw2dCount++] = world_systems[system].draw2d;
 }
 
 int Sol_Create_Ent(World *world)

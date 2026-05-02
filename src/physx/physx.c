@@ -1,7 +1,9 @@
 #include "sol_core.h"
 #include <omp.h>
 
-static u32         ents[MAX_ENTS];
+static u32        ents[MAX_ENTS];
+static SolContact contacts[MAX_ENTS];
+
 static SolProfiler prof_static  = {.name = "Static"};
 static SolProfiler prof_dynamic = {.name = "Dynamic"};
 
@@ -49,6 +51,7 @@ void Physx_Step(World *world, double dt, double time)
     WorldPhysx *ws           = world->spatial;
     PhysxGroup *staticGroup  = &ws->staticGroup;
     PhysxGroup *dynamicGroup = &ws->dynamicGroup;
+    memset(contacts, 0, sizeof(contacts));
 
     Physx_Grid_Static_Rebuild(staticGroup);
 
@@ -67,7 +70,7 @@ void Physx_Step(World *world, double dt, double time)
 
     Prof_Begin(&prof_static);
     // velocity and static collisions
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 500) shared(contacts) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
         int        id    = ents[j];
@@ -93,7 +96,7 @@ void Physx_Step(World *world, double dt, double time)
             Collisions_Static_Grid(staticGroup, body, xform, shape_tri_test[body->shape], &hit);
         }
         if (hit.didCollide)
-            Sol_Event_Add(world, (EventDesc){.pos = hit.point, .kind = EVENT_COLLISION});
+            contacts[j] = hit;
     }
     Prof_EndEz(&prof_static, true);
 
@@ -111,13 +114,19 @@ void Physx_Step(World *world, double dt, double time)
         Collisions_Dynamic_Hashed(world, id, body, xform);
     }
     Prof_EndEz(&prof_dynamic, true);
+
+    for (int i = 0; i < count; i++)
+    {
+        int id = ents[i];
+        Sol_Event_Add(world, (EventDesc){.entA = id, .pos = contacts[i].point, .kind = EVENT_COLLISION});
+    }
 }
 
 void Ground_Trace(World *world, int count)
 {
     u32 required = HAS_BODY3 | HAS_XFORM | HAS_MOVEMENT;
     int i;
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 500) shared(contacts) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = ents[i];

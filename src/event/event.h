@@ -2,7 +2,7 @@
 #include "event_types.h"
 #include "sol/types.h"
 
-#define EVENT_INIT_SIZE 128
+#define EVENT_INIT_SIZE 12
 
 
 typedef void (*EventFunc)(void *data);

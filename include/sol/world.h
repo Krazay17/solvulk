@@ -1,12 +1,9 @@
 #pragma once
-
 #include "sol/types.h"
 
 #define MAX_WORLDS 4
-
-#define MAX_ENTS (1 << 15)
 #define MAX_SYSTEMS 64
-
+#define MAX_ENTS (1 << 15)
 #define SYS_BIT(x) (1u << (x))
 
 // #define SYS_LOOP(a, b)                                                                                                 \
@@ -18,8 +15,9 @@
 //             continue;
 
 typedef struct World World;
-typedef void (*SystemInit)(World *world);
-typedef void (*SystemFunc)(World *world, double dt, double time);
+typedef void (*SystemInit)(World *);
+typedef void (*SystemFunc)(World *, double, double);
+
 typedef bool     Active;
 typedef uint32_t Mask;
 
@@ -31,22 +29,25 @@ typedef struct SolEvents   SolEvents;
 
 typedef enum
 {
+    WORLD_SYS_TIMER,
     WORLD_SYS_PHYSX,
-    WORLD_SYS_CONTROLLER_LOCAL,
-    WORLD_SYS_CONTROLLER_AI,
-    WORLD_SYS_INTERACT,
-    WORLD_SYS_MODEL,
-    WORLD_SYS_UI,
+
     WORLD_SYS_MOVEMENT,
-    WORLD_SYS_LINE,
+    WORLD_SYS_INTERACT,
+    WORLD_SYS_PICKUP,
     WORLD_SYS_COMBAT,
     WORLD_SYS_BUFF,
     WORLD_SYS_VITAL,
-    WORLD_SYS_SPHERE,
-    WORLD_SYS_TIMER,
-    WORLD_SYS_CAM,
-    WORLD_SYS_PICKUP,
+
+    WORLD_SYS_CONTROLLER_LOCAL,
+    WORLD_SYS_CONTROLLER_AI,
+
+    WORLD_SYS_MODEL,
+    WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
+    WORLD_SYS_SPHERE,
+    WORLD_SYS_CAM,
+    WORLD_SYS_UI,
     WORLD_SYS_COUNT,
 } WorldSystem;
 
@@ -94,6 +95,15 @@ typedef enum
     BUFF_FIRE      = (1 << 1),
     BUFF_COUNT,
 } BuffKind;
+
+typedef struct
+{
+    SystemInit init;
+    SystemFunc tick;
+    SystemFunc step;
+    SystemFunc draw2d;
+    SystemFunc draw3d;
+} SystemConfig;
 
 typedef struct CompFlags
 {
@@ -175,6 +185,7 @@ typedef enum InteractState
     INTERACT_TOGGLED  = (1 << 3),
     INTERACT_ISTOGGLE = (1 << 4),
 } InteractState;
+
 typedef struct CompInteract
 {
     u8       states;
@@ -249,19 +260,12 @@ typedef struct CompBody
     u8     group;
 } CompBody;
 
-typedef struct
-{
-    SystemInit init;
-    SystemFunc step;
-    SystemFunc tick;
-    SystemFunc draw;
-} SystemConfig;
-
 typedef struct World
 {
-    SystemFunc     stepSystems[MAX_SYSTEMS];
     SystemFunc     tickSystems[MAX_SYSTEMS];
-    SystemFunc     drawSystems[MAX_SYSTEMS];
+    SystemFunc     stepSystems[MAX_SYSTEMS];
+    SystemFunc     draw2dSystems[MAX_SYSTEMS];
+    SystemFunc     draw3dSystems[MAX_SYSTEMS];
     int            activeEntities[MAX_ENTS];
     Active         actives[MAX_ENTS];
     Mask           masks[MAX_ENTS];
@@ -285,7 +289,8 @@ typedef struct World
 
     int stepCount;
     int tickCount;
-    int drawCount;
+    int draw3dCount;
+    int draw2dCount;
     int activeCount;
     int playerID;
     u32 systemBits;
@@ -360,6 +365,7 @@ SOLAPI void Sol_System_Camera_Tick(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Tick(World *world, double dt, double time);
 void        Timer_Tick(World *world, double dt, double time);
 void        Combat_Tick(World *world, double dt, double time);
+void        Sphere_Step(World *world, double dt, double time);
 
 // Draw Systems
 SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
@@ -381,7 +387,7 @@ SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRa
 void         Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float seek);
 
 void Emitter_Init(World *world);
-void Emitter_Add(World *world, EmitterDesc e);
+void Emitter_Add(World *world, Emitter e);
 void Emitter_Tick(World *world, double dt, double time);
 void Emitter_Draw(World *world, double dt, double time);
 void Emitter_Step(World *world, double dt, double time);

@@ -23,13 +23,13 @@ float Sol_Lerp(float start, float end, float amount)
     return start + amount * (end - start);
 }
 
-SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha)
+vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha)
 {
     float r = base.r + alpha * (target.r - base.r);
     float g = base.g + alpha * (target.g - base.g);
     float b = base.b + alpha * (target.b - base.b);
     float a = base.a + alpha * (target.a - base.a);
-    return (SolColor){
+    return (vec4s){
         .r = (uint8_t)fminf(r, 255),
         .g = (uint8_t)fminf(g, 255),
         .b = (uint8_t)fminf(b, 255),

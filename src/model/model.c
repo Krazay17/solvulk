@@ -1,6 +1,7 @@
 #include "model.h"
 #include "render/render.h"
 #include "sol_core.h"
+#include "sol_bank.h"
 
 CompModel *Sol_Model_Add(World *world, int id, CompModel init)
 {

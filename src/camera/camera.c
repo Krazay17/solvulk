@@ -94,7 +94,7 @@ void Crosshair_Draw(World *world, double dt, double time)
             .h = 3,
             .w = 12,
         },
-        (SolColor){255, 0, 0, 255}, 0);
+        (vec4s){255, 0, 0, 255}, 0);
     Sol_Draw_Rectangle(
         (SolRect){
             .x = width,
@@ -102,5 +102,5 @@ void Crosshair_Draw(World *world, double dt, double time)
             .h = 12,
             .w = 3,
         },
-        (SolColor){255, 0, 0, 255}, 0);
+        (vec4s){255, 0, 0, 255}, 0);
 }

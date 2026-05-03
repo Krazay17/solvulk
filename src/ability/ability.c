@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "ability.h"
 
 void Ability_Init(World *world)
 {

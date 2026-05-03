@@ -1,9 +1,9 @@
 #include "sol_core.h"
+#include "sol_bank.h"
 
 SolState solState = {0};
 
 static double accumulator = 0.0;
-
 static void DebugFPS(double dt);
 static void Sol_OnResize();
 

@@ -31,12 +31,12 @@ void Sol_Debug_Draw(double dt)
         return;
     float offset  = 48.0f;
     float spacing = 24.0f;
-    Sol_Draw_Rectangle((SolRect){0, 0, 200.0f, offset + spacing * debuggers.count}, (SolColor){8, 0, 23, 222}, 0);
+    Sol_Draw_Rectangle((SolRect){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){8, 0, 23, 222}, 0);
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];
         sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
-        Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (SolColor){255, 0, 122, 255}, SOL_FONT_ICE);
+        Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (vec4s){255, 0, 122, 255}, SOL_FONT_ICE);
     }
     DebugFPS(dt);
 
@@ -65,5 +65,5 @@ static void DebugFPS(double dt)
         count    = 0;
         total    = 0;
     }
-    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (SolColor){0, 255, 0, 255}, SOL_FONT_ICE);
+    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (vec4s){0, 255, 0, 255}, SOL_FONT_ICE);
 }

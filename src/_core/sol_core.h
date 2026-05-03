@@ -9,12 +9,14 @@
 #include "platform.h"
 #include "profiler.h"
 
+#include "font/font.h"
 #include "buff/buff.h"
 #include "ability/ability.h"
 #include "physx/physx.h"
 #include "view/view.h"
 #include "vital/vital.h"
 #include "event/event.h"
+
 typedef void (*SingleFunc)(double dt, double time);
 
 typedef enum

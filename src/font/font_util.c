@@ -1,21 +1,6 @@
-#include "sol_core.h"
 #include "font.h"
-#include "../render/render.h"
-
-void Load_Font(SolBank *bank)
-{
-    
-    for (int i = 0; i < SOL_FONT_COUNT; i++)
-    {
-        SolResource fontIceMetrics = Sol_LoadResource(fontResourceName[i][0]);
-        SolResource fontIceAtlas   = Sol_LoadResource(fontResourceName[i][1]);
-        if (!fontIceAtlas.data || !fontIceMetrics.data)
-            continue;
-
-        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
-        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[SOL_FONT_ICE].glyph);
-    }
-}
+#include "render/render.h"
+#include "sol_core.h"
 
 void Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs)
 {
@@ -100,6 +85,52 @@ TextBounds ParseBounds(const char *p, const char *end)
     return bounds;
 }
 
+void Sol_Draw_Text(const char *str, float x, float y, float size, vec4s color, SolFontId fontid)
+{
+    SolFont *font = Sol_Getbank()->fonts;
+
+    const int   COLS   = 16;
+    const int   ROWS   = 6;
+    const float CELL_W = 1.0f / COLS;
+    const float CELL_H = 1.0f / ROWS;
+    const float CHAR_W = size * 0.6f; // aspect ratio of one glyph
+    const float CHAR_H = size;
+
+    float cursorX = x;
+    for (const char *c = str; *c; c++)
+    {
+        ShaderPushText push = {0};
+
+        int ascii = (int)(*c) - 32;
+        if (ascii < 0 || ascii >= COLS * ROWS)
+        {
+            cursorX += CHAR_W;
+            return;
+        }
+
+        int       col      = ascii % COLS;
+        int       row      = ascii / COLS;
+        float     baseSize = size / 32.0f;
+        SolGlyph *g        = &font->glyph[(int)*c];
+
+        float pad = 0.2f * baseSize * (224.0f / 32.0f);
+        push.x    = cursorX + g->xoffset * size - pad;
+        push.y    = y - g->ytop * size - pad;
+        push.w    = g->uw * 224.0f * baseSize + pad * 2.0f;
+        push.h    = g->vh * 224.0f * baseSize + pad * 2.0f;
+        push.r    = ColorConvert(color.r);
+        push.g    = ColorConvert(color.g);
+        push.b    = ColorConvert(color.b);
+        push.a    = ColorConvert(color.a);
+        push.u    = g->u;
+        push.v    = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
+        push.uw   = g->uw;
+        push.vh   = g->vh;
+        cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
+
+        Render_Text(&push);
+    }
+}
 
 float Sol_MeasureText(const char *str, float size, SolFontId fontId)
 {

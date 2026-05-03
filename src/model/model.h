@@ -12,10 +12,8 @@ typedef struct
     mat4  bones[MAX_BONES];
 } AnimBlend;
 
-void     Load_Models(SolBank *bank);
 SolModel Parse_Model(SolResource res);
-
-void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends);
+void     Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends);
 
 const char *model_path[SOL_MODEL_COUNT];
 const i32   model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];

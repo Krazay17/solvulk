@@ -10,10 +10,10 @@
 #define vecCrs(a, b) glms_vec3_cross(a, b)
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
 
-#define SOL_COLOR(hex) (SolColor){.r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255}
+#define SOL_COLOR(hex) (vec4s){.r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255}
 
 #define SOL_COLORA(hex, alpha)                                                                                         \
-    (SolColor)                                                                                                         \
+    (vec4s)                                                                                                         \
     {                                                                                                                  \
         .r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = (alpha)                         \
     }
@@ -21,7 +21,7 @@
 extern const vec3s VECTOR_RADIAL_DIRECTIONS[4];
 
 SolVec3  Sol_Vec3_Add(SolVec3 a, SolVec3 b);
-SolColor Sol_Color_Lerp(SolColor base, SolColor target, float alpha);
+vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
 
 bool  Sol_Check_2d_Collision(vec2s a, vec4s b);
 vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);

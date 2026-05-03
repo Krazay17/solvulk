@@ -87,9 +87,9 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     shape->height    = height;
 
     CompUiView *uiEle      = Sol_UiView_Add(world, id);
-    uiEle->baseColor       = (SolColor){255, 0, 0, 255};
-    uiEle->borderColor     = (SolColor){0, 0, 0, 255};
-    uiEle->textColor       = (SolColor){0, 255, 0, 255};
+    uiEle->baseColor       = (vec4s){255, 0, 0, 255};
+    uiEle->borderColor     = (vec4s){0, 0, 0, 255};
+    uiEle->textColor       = (vec4s){0, 255, 0, 255};
     uiEle->borderThickness = 2.0f;
     uiEle->fontSize        = 16.0f;
     uiEle->textWidth       = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE);
@@ -110,9 +110,9 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text)
     // CompUiSlider *slider = Sol_Slider_Add
 
     CompUiView *v      = Sol_UiView_Add(world, id);
-    v->baseColor       = (SolColor){255, 0, 0, 255};
-    v->borderColor     = (SolColor){0, 0, 0, 255};
-    v->textColor       = (SolColor){0, 255, 0, 255};
+    v->baseColor       = (vec4s){255, 0, 0, 255};
+    v->borderColor     = (vec4s){0, 0, 0, 255};
+    v->textColor       = (vec4s){0, 255, 0, 255};
     v->borderThickness = 2.0f;
     v->fontSize        = 16.0f;
     v->textWidth       = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE);

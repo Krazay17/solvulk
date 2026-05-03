@@ -36,11 +36,11 @@ void UiView_Draw(World *world, double dt, double time)
 
         // --- DRAWING LOGIC ---
         SolRect  rect = {UISCALE(xform->pos.x), UISCALE(xform->pos.y), UISCALE(shape->width), UISCALE(shape->height)};
-        SolColor drawCol = view->baseColor;
+        vec4s drawCol = view->baseColor;
         if (interact->states & INTERACT_TOGGLED)
-            drawCol = (SolColor){80, 200, 80, 255};
+            drawCol = (vec4s){80, 200, 80, 255};
         drawCol =
-            Sol_Color_Lerp(drawCol, (SolColor){255, 255, 255, 255}, view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
+            Sol_Color_Lerp(drawCol, (vec4s){255, 255, 255, 255}, view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
         Sol_Draw_Rectangle(rect, drawCol, 0);
 

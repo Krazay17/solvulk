@@ -1,20 +1,12 @@
 #pragma once
-#include "sol_core.h"
 
-typedef struct SolBank
-{
-    SolFont  fonts[SOL_FONT_COUNT];
-    SolImage images[SOL_IMAGE_COUNT];
-    SolModel models[SOL_MODEL_COUNT];
-} SolBank;
+#include "sol_bank.h"
 
-int Sol_ReadFile(const char *filename, SolResource *outRes);
+#include "model/model.h"
+#include "font/font.h"
 
-void Sol_Load_Resources();
-SolBank *Sol_Getbank();
+extern const char *fontResourceName[SOL_FONT_COUNT][2];
 
-SOLAPI SolResource Sol_LoadResource(const char *resourceName);
-
-static const char *fontResourceName[SOL_FONT_COUNT][2] = {
-    [SOL_FONT_ICE] = {"ID_FONT_METRICS", "ID_FONT_ATLAS"},
-};
+void        Sol_Load_Resources();
+SolResource Sol_LoadResource(const char *resourceName);
+int         Sol_ReadFile(const char *filename, SolResource *outRes);

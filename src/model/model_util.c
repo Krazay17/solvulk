@@ -47,22 +47,6 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
-void Load_Models(SolBank *bank)
-{
-    for (int i = 0; i < SOL_MODEL_COUNT; i++)
-    {
-        SolResource res = Sol_LoadResource(model_path[i]);
-        if (res.data)
-        {
-            SolModel model = Parse_Model(res);
-            Sol_UploadModel(&model, i);
-            bank->models[i] = model;
-            if (res.isHeap)
-                free(res.data);
-        }
-    }
-}
-
 SolModel Parse_Model(SolResource res)
 {
     SolModel model = {0};

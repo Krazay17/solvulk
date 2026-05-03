@@ -22,7 +22,6 @@ SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
 SOLAPI float Sol_MeasureText(const char *str, float size, SolFontId id);
 
 SOLAPI void      Sol_Window_Resize(float width, float height);
-SOLAPI SolModel *Sol_GetModel(SolModelId id);
 
 // Needs free
 SOLAPI void Sol_FreeModel(SolModel *model);
@@ -60,7 +59,7 @@ static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size
             fprintf(stderr, "Failed to realloc");
             return 1;
         }
-        *data      = tmp;
+        *data     = tmp;
         *capacity = newCap;
     }
     return 0;

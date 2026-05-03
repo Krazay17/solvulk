@@ -213,17 +213,17 @@ typedef struct CompUiSlider
 
 typedef struct CompUiView
 {
-    SolColor baseColor;
-    SolColor textColor;
-    float    fontSize;
-    char     text[64];
-    float    textWidth;
+    vec4s baseColor;
+    vec4s textColor;
+    float fontSize;
+    char  text[64];
+    float textWidth;
 
     float hoverAnim;
     float clickAnim;
 
-    float    borderThickness;
-    SolColor borderColor;
+    float borderThickness;
+    vec4s borderColor;
 } CompUiView;
 
 typedef struct CompMovement
@@ -377,9 +377,8 @@ SOLAPI void Sol_System_Model_Draw(World *world, double dt, double time);
 SOLAPI void Sol_System_Line_Draw(World *world, double dt, double time);
 SOLAPI void UiView_Draw(World *world, double dt, double time);
 // Draw Calls
-SOLAPI void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness);
+SOLAPI void Sol_Draw_Rectangle(SolRect rect, vec4s color, float thickness);
 SOLAPI void Sol_Draw_Line(SolLine *lines, int count);
-void        Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId);
 void        Cam_Update_3D(World *world, double dt, double time, float alpha);
 void        Vital_Draw(World *world, double dt, double time);
 void        Crosshair_Draw(World *world, double dt, double time);

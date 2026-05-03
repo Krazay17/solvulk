@@ -26,6 +26,149 @@ static uint32_t       windowHeight;
 static SolDescriptor descriptors[DESC_COUNT];
 static SolPipe       pipes[PIPE_COUNT];
 
+static SolPipelineConfig pipe_config[PIPE_COUNT] = {
+    [PIPE_TEXT] =
+        {
+            .vertResource      = "ID_SHADER_TEXT_V",
+            .fragResource      = "ID_SHADER_TEXT_F",
+            .depthTest         = 0,
+            .alphaBlend        = 0,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(ShaderPushText),
+            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_ORTHO_UBO, DESC_FONT_ATLAS},
+            .descCount         = 2,
+        },
+    [PIPE_MODEL] =
+        {
+            .vertResource      = "ID_SHADER_MODEL_V",
+            .fragResource      = "ID_SHADER_MODEL_F",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolMaterial),
+            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .type              = VERTEX_TRI,
+            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO},
+            .descCount         = 3,
+        },
+    [PIPE_RECT] =
+        {
+            .vertResource      = "ID_SHADER_RECT_V",
+            .fragResource      = "ID_SHADER_RECT_F",
+            .depthTest         = 0,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(ShaderPushRect),
+            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_ORTHO_UBO},
+            .descCount         = 1,
+        },
+    [PIPE_LINE] =
+        {
+            .vertResource      = "ID_SHADER_LINE_V",
+            .fragResource      = "ID_SHADER_LINE_F",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = 0,
+            .pushStageFlags    = 0,
+            .type              = VERTEX_LINE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+            .descId            = {DESC_SCENE_UBO},
+            .descCount         = 1,
+        },
+    [PIPE_SPHERE] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_SPHERE_F",
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = 0,
+            .pushStageFlags    = 0,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+            .descCount         = 2,
+        },
+    [PIPE_MODEL_SKINNED] =
+        {
+            .vertResource      = "ID_SHADER_SKINNED_V",
+            .fragResource      = "ID_SHADER_MODEL_F",
+            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO, DESC_SKINNING_SSBO},
+            .descCount         = 4,
+            .type              = VERTEX_SKINNED,
+            .depthTest         = 1,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolMaterial),
+            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+};
+
+static SolDescriptorConfig desc_config[DESC_COUNT] = {
+    [DESC_ORTHO_UBO] =
+        {
+            .size       = sizeof(OrthoUBO),
+            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_UBO,
+        },
+    [DESC_SCENE_UBO] =
+        {
+            .size       = sizeof(SceneUBO),
+            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_UBO,
+        },
+    [DESC_MODEL_SSBO] =
+        {
+            .size       = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_FONT_ATLAS] =
+        {
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_IMAGE,
+            .imageId    = SOL_IMAGE_FONT,
+        },
+    [DESC_PARTICLE_SSBO] =
+        {
+            .size       = sizeof(VertexSSBO),
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_SPHERE_SSBO] =
+        {
+            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_FLAGS_SSBO] =
+        {
+            .size       = sizeof(FlagsSSBO) * MAX_MODEL_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_SKINNING_SSBO] =
+        {
+            .size       = sizeof(SkinningSSBO) * MAX_MODEL_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+
+};
+
 int Sol_Init_Vulkan(void *hwnd, void *hInstance)
 {
     if (SolVkInstance(&solvkstate) != 0)
@@ -187,17 +330,17 @@ void Sol_Submit_Sphere(vec4s pos, vec4s color)
     SphereSSBO *s = &sphereQueue.instances[sphereQueue.count++];
 
     s->pos   = pos;
-    s->color = (vec4s){ColorF(color.r), ColorF(color.g), ColorF(color.b), ColorF(color.a)};
+    s->color = (vec4s){ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)};
 }
 
-void Sol_Draw_Rectangle(SolRect rect, SolColor color, float thickness)
+void Sol_Draw_Rectangle(SolRect rect, vec4s color, float thickness)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_RECT);
 
     ShaderPushRect push = {
         .rec    = {rect.x, rect.y, rect.w, rect.h},
-        .c      = {ColorF(color.r), ColorF(color.g), ColorF(color.b), ColorF(color.a)},
+        .c      = {ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)},
         .extras = {thickness, 0, 0, 0},
     };
 
@@ -303,54 +446,13 @@ void Sol_Draw_Line(SolLine *lines, int count)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
-void Sol_Draw_Text(const char *str, float x, float y, float size, SolColor color, SolFontId fontId)
+void Render_Text(ShaderPushText *push)
 {
-    SolFont *font = &Sol_Getbank()->fonts[fontId];
-
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_TEXT);
 
-    ShaderPushText push;
-    const int      COLS   = 16;
-    const int      ROWS   = 6;
-    const float    CELL_W = 1.0f / COLS;
-    const float    CELL_H = 1.0f / ROWS;
-    const float    CHAR_W = size * 0.6f; // aspect ratio of one glyph
-    const float    CHAR_H = size;
-
-    float cursorX = x;
-    for (const char *c = str; *c; c++)
-    {
-        int ascii = (int)(*c) - 32;
-        if (ascii < 0 || ascii >= COLS * ROWS)
-        {
-            cursorX += CHAR_W;
-            continue;
-        }
-
-        int       col      = ascii % COLS;
-        int       row      = ascii / COLS;
-        float     baseSize = size / 32.0f;
-        SolGlyph *g        = &font->glyph[(int)*c];
-
-        float pad = 0.2f * baseSize * (224.0f / 32.0f);
-        push.x    = cursorX + g->xoffset * size - pad;
-        push.y    = y - g->ytop * size - pad;
-        push.w    = g->uw * 224.0f * baseSize + pad * 2.0f;
-        push.h    = g->vh * 224.0f * baseSize + pad * 2.0f;
-        push.r    = ColorF(color.r);
-        push.g    = ColorF(color.g);
-        push.b    = ColorF(color.b);
-        push.a    = ColorF(color.a);
-        push.u    = g->u;
-        push.v    = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
-        push.uw   = g->uw;
-        push.vh   = g->vh;
-        cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
-
-        vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText), &push);
-        vkCmdDraw(cmd, 6, 1, 0, 0);
-    }
+    vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText), &push);
+    vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
 void Sol_Begin_Draw()

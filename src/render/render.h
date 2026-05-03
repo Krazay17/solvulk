@@ -1,4 +1,5 @@
 #pragma once
+#include "render_types.h"
 #include "sol/types.h"
 #include <vulkan/vulkan.h>
 
@@ -85,13 +86,6 @@ typedef struct
 {
     mat4 bones[MAX_BONES];
 } SkinningSSBO;
-
-typedef struct
-{
-    float x, y, w, h;
-    float u, v, uw, vh;
-    float r, g, b, a;
-} ShaderPushText;
 
 typedef struct
 {
@@ -293,10 +287,7 @@ void Sol_UploadModel(SolModel *model, SolModelId id);
 
 VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void            Parse_Font_Metrics(const char *json, float atlasW, float atlasH, SolGlyph *glyphs);
-TextBounds      ParseBounds(const char *p, const char *end);
-
-void Render_Camera_Update(vec3 pos, vec3 target);
+void            Render_Camera_Update(vec3 pos, vec3 target);
 
 void Sol_Submit_Sphere(vec4s pos, vec4s color);
 void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
@@ -310,145 +301,4 @@ void Flush_Queue(void);
 void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Sol_Draw_Model_Skinned_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 
-static SolPipelineConfig pipe_config[PIPE_COUNT] = {
-    [PIPE_TEXT] =
-        {
-            .vertResource      = "ID_SHADER_TEXT_V",
-            .fragResource      = "ID_SHADER_TEXT_F",
-            .depthTest         = 0,
-            .alphaBlend        = 0,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(ShaderPushText),
-            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO, DESC_FONT_ATLAS},
-            .descCount         = 2,
-        },
-    [PIPE_MODEL] =
-        {
-            .vertResource      = "ID_SHADER_MODEL_V",
-            .fragResource      = "ID_SHADER_MODEL_F",
-            .depthTest         = 1,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(SolMaterial),
-            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .type              = VERTEX_TRI,
-            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO},
-            .descCount         = 3,
-        },
-    [PIPE_RECT] =
-        {
-            .vertResource      = "ID_SHADER_RECT_V",
-            .fragResource      = "ID_SHADER_RECT_F",
-            .depthTest         = 0,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(ShaderPushRect),
-            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO},
-            .descCount         = 1,
-        },
-    [PIPE_LINE] =
-        {
-            .vertResource      = "ID_SHADER_LINE_V",
-            .fragResource      = "ID_SHADER_LINE_F",
-            .depthTest         = 1,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = 0,
-            .pushStageFlags    = 0,
-            .type              = VERTEX_LINE,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-            .descId            = {DESC_SCENE_UBO},
-            .descCount         = 1,
-        },
-    [PIPE_SPHERE] =
-        {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_SPHERE_F",
-            .depthTest         = 1,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = 0,
-            .pushStageFlags    = 0,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 2,
-        },
-    [PIPE_MODEL_SKINNED] =
-        {
-            .vertResource      = "ID_SHADER_SKINNED_V",
-            .fragResource      = "ID_SHADER_MODEL_F",
-            .descId            = {DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_FLAGS_SSBO, DESC_SKINNING_SSBO},
-            .descCount         = 4,
-            .type              = VERTEX_SKINNED,
-            .depthTest         = 1,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(SolMaterial),
-            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        },
-};
-
-static SolDescriptorConfig desc_config[DESC_COUNT] = {
-    [DESC_ORTHO_UBO] =
-        {
-            .size       = sizeof(OrthoUBO),
-            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_UBO,
-        },
-    [DESC_SCENE_UBO] =
-        {
-            .size       = sizeof(SceneUBO),
-            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_UBO,
-        },
-    [DESC_MODEL_SSBO] =
-        {
-            .size       = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_FONT_ATLAS] =
-        {
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_IMAGE,
-            .imageId    = SOL_IMAGE_FONT,
-        },
-    [DESC_PARTICLE_SSBO] =
-        {
-            .size       = sizeof(VertexSSBO),
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_SPHERE_SSBO] =
-        {
-            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_FLAGS_SSBO] =
-        {
-            .size       = sizeof(FlagsSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_SKINNING_SSBO] =
-        {
-            .size       = sizeof(SkinningSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-
-};
+void Render_Text(ShaderPushText *push);

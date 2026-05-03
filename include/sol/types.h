@@ -33,7 +33,7 @@
 #define WORLD_FORWARD (vec3s){0, 0, -1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
-#define ColorF(x) (x / 255.0f)
+#define ColorConvert(x) (x / 255.0f)
 
 #define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 
@@ -190,11 +190,6 @@ typedef struct
 
 typedef struct
 {
-    uint8_t r, g, b, a;
-} SolColor;
-
-typedef struct
-{
     vec3s   pos, rot, scale;
     versors quat;
 } SolTransform;
@@ -208,25 +203,6 @@ typedef struct
 
 // ─── Font data ───────────────────────────────────────────────────
 
-typedef struct
-{
-    float u, v, uw, vh;
-    float xoffset;
-    float ytop;
-    float yoffset;
-    float yadvance;
-} SolGlyph;
-
-typedef struct
-{
-    float l, b, r, t;
-} TextBounds;
-
-typedef struct
-{
-    SolGlyph   glyph[128];
-    TextBounds bounds;
-} SolFont;
 
 typedef struct AiController
 {

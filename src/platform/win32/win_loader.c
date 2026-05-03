@@ -1,16 +1,45 @@
-#include "sol_core.h"
-#include "model/model.h"
-#include "font/font.h"
+#include "loader.h"
+#include "sol/types.h"
+#include "sol_bank.h"
+#include "render/render.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <vulkan/vulkan.h>
 
-SolBank bank = {0};
+const char *fontResourceName[SOL_FONT_COUNT][2] = {
+    [SOL_FONT_ICE] = {"ID_FONT_METRICS", "ID_FONT_ATLAS"},
+};
 
 void Sol_Load_Resources()
-{    
-    Load_Models(&bank);
-    Load_Font(&bank);
+{
+    SolBank *bank = Sol_Getbank();
+
+    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    {
+        SolResource res = Sol_LoadResource(model_path[i]);
+        if (res.data)
+        {
+            SolModel model = Parse_Model(res);
+            Sol_UploadModel(&model, i);
+            bank->models[i] = model;
+            if (res.isHeap)
+                free(res.data);
+        }
+    }
+
+    for (int i = 0; i < SOL_FONT_COUNT; i++)
+    {
+        SolResource fontIceMetrics = Sol_LoadResource(fontResourceName[i][0]);
+        SolResource fontIceAtlas   = Sol_LoadResource(fontResourceName[i][1]);
+        if (!fontIceAtlas.data || !fontIceMetrics.data)
+            continue;
+
+        // 
+        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[SOL_FONT_ICE].glyph);
+        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
+
+    }
 }
 
 Sol_Free_Resource(SolResource *res)
@@ -19,16 +48,6 @@ Sol_Free_Resource(SolResource *res)
     {
         free(res->data);
     }
-}
-
-SolBank *Sol_Getbank()
-{
-    return &bank;
-}
-
-SolModel *Sol_GetModel(SolModelId id)
-{
-    return &bank.models[id];
 }
 
 int Sol_ReadFile(const char *filename, SolResource *outRes)

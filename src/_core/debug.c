@@ -1,8 +1,20 @@
 #include "sol_core.h"
 
+#define MAX_DEBUGS 14
+#define MAX_STR_LEN 64
+
+typedef struct Debuggers
+{
+    int characterCount[MAX_DEBUGS];
+    char text[MAX_DEBUGS][MAX_STR_LEN];
+    float value[MAX_DEBUGS];
+    int count;
+} Debuggers;
+
 static Debuggers debuggers = {0};
 
 static void DebugFPS(double dt);
+void Sol_Debug_Draw(double dt);
 
 void Sol_Debug_Add(const char *text, float value)
 {
@@ -36,7 +48,15 @@ void Sol_Debug_Draw(double dt)
     {
         char buffer[MAX_STR_LEN];
         sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
-        Sol_Draw_Text(buffer, 6.0f, i * spacing + offset, 16.0f, (vec4s){255, 0, 122, 255}, SOL_FONT_ICE);
+        SolFontDesc fontDesc = {
+            .str   = buffer,
+            .x     = 6.0f,
+            .y     = i * spacing + offset,
+            .size  = 16.0f,
+            .color = (vec4s){255, 0, 122, 255},
+            .kind  = SOL_FONT_ICE,
+        };
+        Sol_Draw_Text(fontDesc);
     }
     DebugFPS(dt);
 
@@ -65,5 +85,13 @@ static void DebugFPS(double dt)
         count    = 0;
         total    = 0;
     }
-    Sol_Draw_Text(buffer, 6.0f, 24.0f, 24.0f, (vec4s){0, 255, 0, 255}, SOL_FONT_ICE);
+    SolFontDesc fontDesc = {
+        .str   = buffer,
+        .x     = 6.0f,
+        .y     = 24.0f,
+        .size  = 24.0f,
+        .color = (vec4s){0, 255, 0, 255},
+        .kind  = SOL_FONT_ICE,
+    };
+    Sol_Draw_Text(fontDesc);
 }

@@ -1,11 +1,16 @@
 #pragma once
 
+#include <assert.h>
+#include <limits.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "sol/types.h"
-#include "sol/world.h"
 
 #define SOL_VERSION 1.0
-
-
 
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
@@ -21,11 +26,9 @@ int        Sol_Init_Vulkan_Resources();
 SOLAPI void Sol_Render_Resize(uint32_t width, uint32_t height);
 SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
 
-SOLAPI float Sol_MeasureText(const char *str, float size, SolFontId id);
+SOLAPI float Sol_MeasureText(const char *str, float size, SolFontKind id);
 
-SOLAPI void      Sol_Window_Resize(float width, float height);
-
-// Needs free
+SOLAPI void Sol_Window_Resize(float width, float height);
 SOLAPI void Sol_FreeModel(SolModel *model);
 
 // called from WindowProc on main thread

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "base_types.h"
-#include "emitter_types.h"
-#include "event_types.h"
-#include "model_types.h"
+#include "base.h"
 
 #ifdef SOL_VULK_SHARED
 #ifdef SOL_BUILD_DLL
@@ -69,6 +66,14 @@ typedef enum
 
 typedef enum
 {
+    STRAFE_FWD,
+    STRAFE_LEFT,
+    STRAFE_BWD,
+    STRAFE_RIGHT,
+} StrafeDir;
+
+typedef enum
+{
     AI_IDLE,
     AI_FWD,
     AI_BWD,
@@ -96,18 +101,6 @@ typedef enum
     MOVE_FLY,
     MOVE_STATE_COUNT
 } MoveState;
-
-typedef enum
-{
-    SOL_IMAGE_FONT,
-    SOL_IMAGE_COUNT,
-} SolImageId;
-
-typedef enum
-{
-    SOL_FONT_ICE,
-    SOL_FONT_COUNT,
-} SolFontId;
 
 typedef enum
 {
@@ -256,13 +249,143 @@ typedef struct SolCamera
     mat4  viewProj;
 } SolCamera;
 
-typedef struct SolTri
+// ^^^^^^^^^^^^^^^^^^^^^^^^SKELETON^^^^^^^^^^^^^^^^^^^^^^^
+
+typedef struct SolLine
 {
-    int   entId;
-    vec3s a, b, c;
-    vec3s normal, center;
-    float bounds;
-} SolTri;
+    vec3s a, b;
+    vec3s aColor, bColor;
+    float ttl;
+} SolLine;
+
+typedef enum
+{
+    EVENT_NONE,
+    EVENT_PARTICLE,
+    EVENT_COLLISION,
+    EVENT_COUNT,
+} EventKind;
+
+typedef struct EventDesc
+{
+    EventKind kind;
+    u32 entA;
+    vec3s pos, normal;
+} EventDesc;
+
+typedef enum
+{
+    PARTICLE_ORB,
+    PARTICLE_COUNT,
+} ParticleKind;
+
+typedef enum
+{
+    EMITTER_FOUNTAIN,
+    EMITTER_COUNT,
+} EmitterKind;
+
+typedef struct Particle
+{
+    ParticleKind kind;
+    vec3s        pos, vel;
+    vec4s        color;
+    float        ttl, scale, startTtl;
+} Particle;
+
+typedef struct Emitter
+{
+    EmitterKind emitterKind;
+    vec3s       pos, vel;
+    float       ttl, rate, accumulator;
+    Particle    particle;
+    u32         burst;
+} Emitter;
+
+typedef enum
+{
+    SOL_FONT_ICE,
+    SOL_FONT_COUNT,
+} SolFontKind;
+
+typedef struct
+{
+    float u, v, uw, vh;
+    float xoffset;
+    float ytop;
+    float yoffset;
+    float yadvance;
+} SolGlyph;
+
+typedef struct
+{
+    float l, b, r, t;
+} TextBounds;
+
+typedef struct SolFont
+{
+    SolGlyph   glyph[128];
+    TextBounds bounds;
+} SolFont;
+
+typedef struct
+{
+    const char *str;
+    float       x, y, size;
+    vec4s       color;
+    SolFontKind kind;
+} SolFontDesc;
+
+typedef enum
+{
+    SOL_IMAGE_FONT,
+    SOL_IMAGE_COUNT,
+} SolImageId;
+
+typedef struct SolImage
+{
+    u32         width, height;
+    const void *pixels;
+} SolImage;
+
+typedef enum
+{
+    SOL_MODEL_WIZARD,
+    SOL_MODEL_DUDE,
+    SOL_MODEL_BOX,
+    SOL_MODEL_WORLD0,
+    SOL_MODEL_WORLD1,
+    SOL_MODEL_WORLD2,
+    SOL_MODEL_COUNT,
+} SolModelId;
+
+typedef enum
+{
+    ANIM_IDLE,
+    ANIM_WALK_FWD,
+    ANIM_WALK_BWD,
+    ANIM_WALK_LEFT,
+    ANIM_WALK_RIGHT,
+    ANIM_JUMP,
+    ANIM_FALL,
+    ANIM_DASH_FWD,
+    ANIM_DASH_BWD,
+    ANIM_DASH_LEFT,
+    ANIM_DASH_RIGHT,
+    ANIM_ABILITY0,
+    ANIM_ABILITY1,
+    ANIM_ABILITY2,
+    ANIM_ABILITY3,
+    ANIM_ABILITY4,
+    ANIM_ABILITY5,
+    ANIM_ABILITY6,
+    ANIM_ABILITY7,
+    ANIM_ABILITY8,
+    ANIM_ABILITY9,
+    ANIM_COUNT,
+} SolAnims;
+
+// ___________________________SKELETON___________________
 
 typedef struct SolMaterial
 {
@@ -270,8 +393,6 @@ typedef struct SolMaterial
     float metallic;
     float roughness;
 } SolMaterial;
-
-// ___________________________SKELETON___________________
 
 typedef struct SolVertex
 {
@@ -282,6 +403,14 @@ typedef struct SolVertex
     ivec4 boneIndices; // up to 4 bones per vertex (glTF default)
     vec4  boneWeights; // weights, sum = 1.0
 } SolVertex;
+
+typedef struct SolTri
+{
+    int   entId;
+    vec3s a, b, c;
+    vec3s normal, center;
+    float bounds;
+} SolTri;
 
 typedef struct SolBone
 {
@@ -320,7 +449,14 @@ typedef struct SolAnimation
     int             channelCount;
 } SolAnimation;
 
-// Skeleton attached to a model
+typedef struct
+{
+    int   animA, animB;
+    float seekA, seekB;
+    float blendFactor;
+    mat4  bones[MAX_BONES];
+} AnimBlend;
+
 typedef struct SolSkeleton
 {
     SolBone      *bones;
@@ -357,17 +493,44 @@ typedef struct SolModel
     SolModelId modelId;
 } SolModel;
 
-// ^^^^^^^^^^^^^^^^^^^^^^^^SKELETON^^^^^^^^^^^^^^^^^^^^^^^
-
-typedef struct SolImage
+typedef struct SolModelDraw
 {
-    u32         width, height;
-    const void *pixels;
-} SolImage;
+    vec3s   pos;
+    vec3s   scale;
+    versors rot;
 
-typedef struct SolLine
+    mat4 *bonePtr;
+
+    u32 modelId;
+    u32 flags;
+} SolModelDraw;
+
+
+typedef struct SolEvent
 {
-    vec3s a, b;
-    vec3s aColor, bColor;
-    float ttl;
-} SolLine;
+    u32   kind;
+    u32   entA, entB;
+    vec3s pos, normal;
+} SolEvent;
+
+typedef struct SolEvents
+{
+    SolEvent *event;
+
+    u32 count;
+    u32 capacity;
+} SolEvents;
+
+
+typedef struct
+{
+    float x, y, w, h;
+    float u, v, uw, vh;
+    float r, g, b, a;
+} ShaderPushText;
+
+typedef struct
+{
+    ShaderPushText *push;
+    u32 count;
+} ShaderPushTexts;

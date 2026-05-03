@@ -1,56 +1,5 @@
 #pragma once
-#include "render_types.h"
 #include "sol/types.h"
-#include <vulkan/vulkan.h>
-
-#define MAX_FRAMES_IN_FLIGHT 2
-
-typedef enum
-{
-    DESC_ORTHO_UBO,
-    DESC_SCENE_UBO,
-    DESC_MODEL_SSBO,
-    DESC_SKINNING_SSBO,
-    DESC_FONT_ATLAS,
-    DESC_PARTICLE_SSBO,
-    DESC_SPHERE_SSBO,
-    DESC_FLAGS_SSBO,
-    DESC_COUNT,
-} DescriptorId;
-
-typedef enum
-{
-    DESC_KIND_UBO,
-    DESC_KIND_SSBO,
-    DESC_KIND_IMAGE,
-} DescriptorKind;
-
-typedef enum PipelineId
-{
-    PIPE_MODEL,
-    PIPE_MODEL_SKINNED,
-    PIPE_TEXT,
-    PIPE_RECT,
-    PIPE_LINE,
-    PIPE_SPHERE,
-    PIPE_COUNT,
-} PipelineId;
-
-// ------Cpu data----------
-
-typedef struct SolDrawInstance
-{
-    vec3s   pos;
-    vec3s   scale;
-    versors rot;
-
-    mat4 *bonePtr;
-
-    u32 modelId;
-    u32 flags;
-} SolDrawInstance;
-
-// ─── Shader data (matches GLSL layouts) ──────────────────────────
 
 typedef struct
 {
@@ -77,15 +26,15 @@ typedef struct
 
 typedef struct
 {
+    mat4 bones[MAX_BONES];
+} SkinningSSBO;
+
+typedef struct
+{
     vec4 rec;
     vec4 c;
     vec4 extras;
 } ShaderPushRect;
-
-typedef struct
-{
-    mat4 bones[MAX_BONES];
-} SkinningSSBO;
 
 typedef struct
 {
@@ -103,202 +52,19 @@ typedef struct
     u32 flags;
 } FlagsSSBO;
 
-// Submission Que
+// void Render_Init();
+// void Render_Push_Model(SolModelDraw model);
+// void Render_Push_Model_Skinned(SolModelDraw model);
+// void Render_Push_Sphere(SolSphere sphere);
+// void Render_Push_Line(SolLine line);
 
-typedef struct
-{
-    u32        count;
-    ModelSSBO  instances[MAX_MODEL_INSTANCES];
-    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
-    SolModelId handles[MAX_MODEL_INSTANCES];
-} ModelSubmission;
+// void Render_Draw_Model(SolModelDraw draw);
+void Render_Draw_Model_Skinned();
+void Render_Draw_Sphere();
+void Render_Draw_Line();
 
-typedef struct
-{
-    u32          count;
-    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
-    FlagsSSBO    flags[MAX_MODEL_INSTANCES];
-    SkinningSSBO instances[MAX_MODEL_INSTANCES];
-    SolModelId   handles[MAX_MODEL_INSTANCES];
-} ModelSkinnedSubmission;
+void Render_3d();
+void Render_2d();
 
-typedef struct
-{
-    u32        count;
-    SphereSSBO instances[MAX_SPHERE_INSTANCES];
-} SphereSubmission;
 
-// ─── GPU data ──────────────────────────────────────────────
-typedef struct
-{
-    VkBuffer       vertexBuffer;
-    VkDeviceMemory vertexMemory;
-    VkBuffer       indexBuffer;
-    VkDeviceMemory indexMemory;
-    uint32_t       indexCount;
-    SolMaterial    material;
-} SolGpuMesh;
-
-typedef struct
-{
-    SolGpuMesh *meshes;
-    u32         mesh_count;
-} SolGpuModel;
-
-typedef struct SolLineVertex
-{
-    vec3s pos, color;
-} SolLineVertex;
-
-typedef struct
-{
-    VkImage        image;
-    VkDeviceMemory memory;
-    VkImageView    view;
-    VkSampler      sampler;
-} SolGpuImage;
-
-// ─── Reusable resource types ─────────────────────────────────────
-typedef struct
-{
-    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
-    void          *mapped[MAX_FRAMES_IN_FLIGHT];
-} SolFrameBuffer;
-
-typedef struct SolDescriptor
-{
-    DescriptorKind        kind;
-    VkDescriptorSetLayout layout;
-    VkDescriptorPool      pool;
-    VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
-
-    // Buffer-backed (UBO/SSBO)
-    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
-    void          *mapped[MAX_FRAMES_IN_FLIGHT];
-
-    // Image-backed (texture)
-    SolGpuImage image;
-} SolDescriptor;
-
-typedef struct SolDescriptorConfig
-{
-    VkDeviceSize       size;
-    VkDescriptorType   type;
-    VkShaderStageFlags stageFlags;
-    DescriptorKind     kind;
-    SolImageId         imageId;
-} SolDescriptorConfig;
-
-typedef struct SolPipe
-{
-    VkPipeline         pipeline;
-    VkPipelineLayout   layout;
-    uint32_t           pushSize;
-    VkShaderStageFlags pushStages;
-} SolPipe;
-
-// ─── Pipeline build configs ──────────────────────────────────────
-typedef enum
-{
-    VERTEX_SINGLE,
-    VERTEX_LINE,
-    VERTEX_TRI,
-    VERTEX_SKINNED,
-} VertexType;
-typedef struct
-{
-    const char         *vertResource;
-    const char         *fragResource;
-    VertexType          type;
-    int                 depthTest;
-    int                 alphaBlend;
-    VkCullModeFlags     cullMode;
-    uint32_t            pushRangeSize;
-    VkShaderStageFlags  pushStageFlags;
-    VkPrimitiveTopology primitiveTopology;
-
-    DescriptorId descId[DESC_COUNT];
-    u32          descCount;
-} SolPipelineConfig;
-
-// ─── Vulkan plumbing (exists once) ───────────────────────────────
-
-typedef struct SolVkState
-{
-    VkInstance       instance;
-    VkDevice         device;
-    VkPhysicalDevice physicalDevice;
-    VkQueue          graphicsQueue;
-    uint32_t         graphicsQueueFamily;
-    VkCommandPool    commandPool;
-
-    VkSurfaceKHR   surface;
-    VkSwapchainKHR swapchain;
-    VkFormat       swapchainImageFormat;
-    VkExtent2D     swapchainExtent;
-    VkImage        swapchainImages[8];
-    VkImageView    swapchainImageViews[8];
-    uint32_t       swapchainImageCount;
-
-    VkImage        depthImage;
-    VkDeviceMemory depthMemory;
-    VkImageView    depthImageView;
-
-    uint32_t        currentFrame;
-    uint32_t        currentImageIndex;
-    VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
-    VkSemaphore     imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkSemaphore     renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkFence         inFlightFences[MAX_FRAMES_IN_FLIGHT];
-} SolVkState;
-
-// ─── Vulkan init functions ───────────────────────────────────────
-
-VkResult SolVkInstance(SolVkState *vk);
-int      SolVkSurface(SolVkState *vk, HWND hwnd, HINSTANCE hInstance);
-int      SolVkPhysicalDevice(SolVkState *vk);
-int      SolVkDevice(SolVkState *vk);
-int      SolVkSwapchain(SolVkState *vk);
-int      SolVkImageViews(SolVkState *vk);
-int      SolVkDepthResources(SolVkState *vk);
-int      SolVkCommandPool(SolVkState *vk);
-int      SolVkSyncObjects(SolVkState *vk);
-
-// ─── Resource creation helpers ───────────────────────────────────
-
-int SolFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties,
-                      uint32_t *outIndex);
-
-int SolCreateBuffer(SolVkState *vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                    VkBuffer *outBuffer, VkDeviceMemory *outMemory);
-
-int Sol_CreateDescriptorImage(SolVkState *vk, VkImageView imageView, VkSampler sampler, VkShaderStageFlags stageFlags,
-                              SolDescriptor *out);
-
-int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *pipe);
-int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out);
-
-int  Sol_UploadImage(const void *pixels, u32 width, u32 height, VkFormat format, SolImageId id);
-void Sol_UploadModel(SolModel *model, SolModelId id);
-
-// ─── Render API (internal) ───────────────────────────────────────
-
-VkCommandBuffer Command_Buffer_Get(void);
-void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void            Render_Camera_Update(vec3 pos, vec3 target);
-
-void Sol_Submit_Sphere(vec4s pos, vec4s color);
-void Sol_Submit_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
-void Sol_Submit_Animated_Model(SolModelId handle, SolDrawInstance *inst);
-
-void Flush_Models(void);
-void Flush_Models_Skinned(void);
-void Flush_Spheres(void);
-void Flush_Queue(void);
-
-void Sol_Draw_Model_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-void Sol_Draw_Model_Skinned_Instanced(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-
-void Render_Text(ShaderPushText *push);
+void Sol_Draw_Sphere(vec4s pos, vec4s color);

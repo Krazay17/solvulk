@@ -1,36 +1,14 @@
 #pragma once
+#include "sol/sol.h"
 
-#include <sol/sol.h>
-
-#include "debug.h"
-#include "input.h"
-#include "loader.h"
-#include "sol_math.h"
-#include "platform.h"
 #include "profiler.h"
+#include "world/world.h"
+#include "resource/resource.h"
+#include "maths/sol_math.h"
+#include "maths/physx.h"
 
-#include "font/font.h"
-#include "buff/buff.h"
-#include "ability/ability.h"
-#include "physx/physx.h"
-#include "view/view.h"
-#include "vital/vital.h"
-#include "event/event.h"
-
-typedef void (*SingleFunc)(double dt, double time);
-
-typedef enum
-{
-    SINGLE_SYS_CAM,
-    SINGLE_SYS_COUNT,
-} SingleSystem;
-
-typedef struct SingleConfig
-{
-    SingleFunc step;
-    SingleFunc tick;
-    SingleFunc draw;
-} SingleConfig;
+#define SOL_TIMESTEP (1.0 / 60.0)
+#define MAX_WORLDS 4
 
 typedef struct SolState
 {
@@ -42,9 +20,6 @@ typedef struct SolState
     double        fps;
     bool          debug;
     u32           tickCounter, stepCounter;
-
-    SingleFunc singleSystems[MAX_SYSTEMS];
-    u32        singleCount;
 
     World   *worlds[MAX_WORLDS];
     uint16_t worldCount;
@@ -58,3 +33,11 @@ SOLAPI void World_Step(World *world, double dt, double time);
 SOLAPI void World_Tick(World *world, double dt, double time);
 SOLAPI void World_Draw3d(World *world, double dt, double time);
 SOLAPI void World_Draw2d(World *world, double dt, double time);
+
+extern const char *fontResourceName[SOL_FONT_COUNT][2];
+void               Sol_Load_Resources();
+SolResource        Sol_LoadResource(const char *resourceName);
+int                Sol_ReadFile(const char *filename, SolResource *outRes);
+
+void Sol_MessageBox(const char *text, const char *level);
+void Sol_Platform_LockCursor(bool lock);

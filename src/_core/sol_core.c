@@ -1,5 +1,4 @@
 #include "sol_core.h"
-#include "sol_bank.h"
 
 SolState solState = {0};
 
@@ -45,9 +44,6 @@ void Sol_Tick(double dt, double time)
     if (solState.needsResize)
         Sol_OnResize();
 
-    for (int i = 0; i < solState.singleCount; ++i)
-        if (solState.singleSystems[i])
-            solState.singleSystems[i](dt, time);
     for (int i = 0; i < solState.worldCount; ++i)
         World_Tick(solState.worlds[i], dt, time);
 
@@ -74,7 +70,7 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
     {
         Xform_Interpolate(solState.worlds[i], alpha);
-        Cam_Update_3D(solState.worlds[i], dt, time, alpha);
+        Sol_Cam3d_Tick(solState.worlds[i], dt, time, alpha);
     }
 
     Sol_Begin_Draw();

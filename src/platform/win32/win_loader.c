@@ -1,7 +1,4 @@
-#include "loader.h"
-#include "sol/types.h"
-#include "sol_bank.h"
-#include "render/render.h"
+#include "sol_core.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -13,7 +10,7 @@ const char *fontResourceName[SOL_FONT_COUNT][2] = {
 
 void Sol_Load_Resources()
 {
-    SolBank *bank = Sol_Getbank();
+    SolBank *bank = Sol_Bank_Get();
 
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {

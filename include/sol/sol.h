@@ -5,6 +5,8 @@
 
 #define SOL_VERSION 1.0
 
+
+
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Destroy();

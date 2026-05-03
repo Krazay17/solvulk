@@ -1,7 +1,7 @@
 #include "sol_core.h"
 #include "movement.h"
 
-#define JUMP_VEL 9.0f
+#define JUMP_VEL 8.0f
 #define JUMP_ALPHAMOD 1.66f
 #define JUMP_TIMER 0.2f
 #define JUMP_GROUND_COOLDOWN 0.1f

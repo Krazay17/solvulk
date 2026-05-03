@@ -27,6 +27,7 @@ void Physx_Init(World *world)
 CompBody *Sol_Body_Add(World *world, int id, CompBody init_body)
 {
     CompBody body     = init_body;
+    body.gravity      = glms_vec3_norm(body.gravity) > 0 ? body.gravity : SOL_PHYS_GRAV;
     body.height       = body.height ? body.height : 0.5f;
     body.radius       = body.radius ? body.radius : 0.5f;
     body.length       = body.length ? body.length : 0.5f;
@@ -82,7 +83,7 @@ void Physx_Step(World *world, double dt, double time)
             Xform_Teleport(xform, (vec3s){0, 15, 0});
         }
 
-        vec3s accel   = SOL_PHYS_GRAV;
+        vec3s accel   = body->gravity;
         accel         = glms_vec3_add(accel, body->force);
         accel         = glms_vec3_add(accel, body->impulse);
         body->impulse = (vec3s){0};

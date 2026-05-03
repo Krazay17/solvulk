@@ -3,8 +3,8 @@
 
 static bool  initialized = false;
 static vec3s arm;
-static float distance        = 10.0f;
-static float currentDistance = 10.0f;
+static float distance        = 6.5f;
+static float currentDistance = 6.5f;
 static float offset          = 1.3f;
 static float currentOffset   = 1.3f;
 

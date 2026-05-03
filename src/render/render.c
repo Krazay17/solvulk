@@ -451,7 +451,7 @@ void Render_Text(ShaderPushText *push)
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_TEXT);
 
-    vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText), &push);
+    vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText), push);
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 

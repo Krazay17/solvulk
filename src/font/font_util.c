@@ -87,48 +87,50 @@ TextBounds ParseBounds(const char *p, const char *end)
 
 void Sol_Draw_Text(const char *str, float x, float y, float size, vec4s color, SolFontId fontid)
 {
-    SolFont *font = Sol_Getbank()->fonts;
-
-    const int   COLS   = 16;
-    const int   ROWS   = 6;
-    const float CELL_W = 1.0f / COLS;
-    const float CELL_H = 1.0f / ROWS;
-    const float CHAR_W = size * 0.6f; // aspect ratio of one glyph
-    const float CHAR_H = size;
+    // Fix 1: Use the actual fontid to get the correct font
+    SolFont *font = &Sol_Getbank()->fonts[fontid];
 
     float cursorX = x;
+    float baseSize = size / 32.0f; // Calculate once outside the loop
+
     for (const char *c = str; *c; c++)
     {
-        ShaderPushText push = {0};
-
-        int ascii = (int)(*c) - 32;
-        if (ascii < 0 || ascii >= COLS * ROWS)
-        {
-            cursorX += CHAR_W;
-            return;
+        // Skip space (32) but advance cursor
+        if (*c == ' ') {
+            cursorX += font->glyph[' '].yadvance * size;
+            continue;
         }
 
-        int       col      = ascii % COLS;
-        int       row      = ascii / COLS;
-        float     baseSize = size / 32.0f;
-        SolGlyph *g        = &font->glyph[(int)*c];
+        ShaderPushText push = {0};
+        
+        // Fix 2: Use continue, not return
+        if ((unsigned char)*c >= 256) continue; 
+
+        SolGlyph *g = &font->glyph[(unsigned char)*c];
+
+        // Ensure we are actually getting valid glyph data
+        if (g->uw == 0) continue; 
 
         float pad = 0.2f * baseSize * (224.0f / 32.0f);
-        push.x    = cursorX + g->xoffset * size - pad;
-        push.y    = y - g->ytop * size - pad;
-        push.w    = g->uw * 224.0f * baseSize + pad * 2.0f;
-        push.h    = g->vh * 224.0f * baseSize + pad * 2.0f;
-        push.r    = ColorConvert(color.r);
-        push.g    = ColorConvert(color.g);
-        push.b    = ColorConvert(color.b);
-        push.a    = ColorConvert(color.a);
-        push.u    = g->u;
-        push.v    = 1.0f - g->v - g->vh; // flip for bottom-origin atlas
-        push.uw   = g->uw;
-        push.vh   = g->vh;
-        cursorX += g->yadvance * size; // only advance once, remove the CHAR_W line
+        
+        push.x   = cursorX + g->xoffset * size - pad;
+        push.y   = y - g->ytop * size - pad;
+        push.w   = g->uw * 224.0f * baseSize + pad * 2.0f;
+        push.h   = g->vh * 224.0f * baseSize + pad * 2.0f;
+        
+        push.r   = ColorConvert(color.r);
+        push.g   = ColorConvert(color.g);
+        push.b   = ColorConvert(color.b);
+        push.a   = ColorConvert(color.a);
+        
+        push.u   = g->u;
+        push.v   = 1.0f - g->v - g->vh; 
+        push.uw  = g->uw;
+        push.vh  = g->vh;
 
         Render_Text(&push);
+
+        cursorX += g->yadvance * size;
     }
 }
 

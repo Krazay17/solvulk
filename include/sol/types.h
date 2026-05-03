@@ -203,7 +203,6 @@ typedef struct
 
 // ─── Font data ───────────────────────────────────────────────────
 
-
 typedef struct AiController
 {
     vec3s    lookdir, wishdir;

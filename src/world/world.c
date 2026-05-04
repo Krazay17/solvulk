@@ -1,22 +1,21 @@
 #include "sol_core.h"
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
-    [WORLD_SYS_TIMER] = {.tick = Sol_Timer_Tick},
-    [WORLD_SYS_PHYSX] = {.init = Sol_Physx_Init, .step = Sol_Physx_Step},
-
-    [WORLD_SYS_CONTROLLER_LOCAL] = {.tick = Sol_System_Controller_Local_Tick},
-    [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
-    [WORLD_SYS_INTERACT]         = {.tick = System_Interact_Tick},
-    [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
-    [WORLD_SYS_COMBAT]           = {.init = Sol_Ability_Init, .tick = Sol_Ability_Tick, .step = Sol_Ability_Step},
-    [WORLD_SYS_BUFF]             = {.init = Sol_Buff_Init, .step = Sol_Buff_Step},
-    [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw3d = Sol_Vital_Draw},
-    [WORLD_SYS_MODEL]            = {.init = Sol_Model_Init, .draw3d = Sol_Model_Draw},
-    [WORLD_SYS_UI]               = {.draw3d = Sol_UiView_Draw},
-    [WORLD_SYS_LINE]             = {.init = Lines_Init, .tick = Sol_System_Line_Tick, .draw3d = Sol_Line_Draw},
+    [WORLD_SYS_TIMER]      = {.tick = Sol_Timer_Tick},
+    [WORLD_SYS_PHYSX]      = {.init = Sol_Physx_Init, .step = Sol_Physx_Step},
+    [WORLD_SYS_CONTROLLER] = {.init = Sol_Controller_Init},
+    [WORLD_SYS_XFORM]      = {.init = Sol_Xform_Init},
+    [WORLD_SYS_INTERACT]   = {.init = Sol_Interact_Init, .tick = System_Interact_Tick},
+    [WORLD_SYS_MOVEMENT]   = {.init = Sol_Movement_Init, .step = Sol_System_Movement_3d_Step},
+    [WORLD_SYS_COMBAT]     = {.init = Sol_Ability_Init, .tick = Sol_Ability_Tick, .step = Sol_Ability_Step},
+    [WORLD_SYS_BUFF]       = {.init = Sol_Buff_Init, .step = Sol_Buff_Step},
+    [WORLD_SYS_VITAL]      = {.init = Sol_Vital_Init, .step = Sol_Vital_Step, .draw3d = Sol_Vital_Draw},
+    [WORLD_SYS_MODEL]      = {.init = Sol_Model_Init, .draw3d = Sol_Model_Draw},
+    //[WORLD_SYS_UI]       = {.draw3d = Sol_Ui_Draw},
+    //[WORLD_SYS_LINE]     = {.init = Sol_Line_Init, .tick = Sol_Line_Tick, .draw3d = Sol_Line_Draw},
     [WORLD_SYS_EMITTER] = {.init = Emitter_Init, .tick = Emitter_Tick, .draw3d = Emitter_Draw, .step = Emitter_Step},
-    [WORLD_SYS_SPHERE]  = {.draw3d = Sol_Sphere_Draw, .step = Sol_Sphere_Step},
-    [WORLD_SYS_PICKUP]  = {.step = Pickup_Step},
+    [WORLD_SYS_SPHERE]  = {.init = Sol_Sphere_Init, .draw3d = Sol_Sphere_Draw, .step = Sol_Sphere_Step},
+    [WORLD_SYS_PICKUP]  = {.step = Sol_Pickup_Step},
     [WORLD_SYS_CAM]     = {.draw2d = Sol_Crosshair_Draw},
 };
 
@@ -113,7 +112,7 @@ void World_System_Add(World *world, WorldSystem system)
 int Sol_Create_Ent(World *world)
 {
     if (!world)
-        return;
+        return 0;
     for (int i = 1; i < MAX_ENTS; i++)
     {
         if (!world->actives[i])

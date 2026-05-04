@@ -156,21 +156,6 @@ typedef struct
 
 typedef struct
 {
-    float x, y, z;
-} SolVec3;
-
-typedef struct
-{
-    float x, y;
-} SolVec2;
-
-typedef struct
-{
-    float x, y, w, h;
-} SolRect;
-
-typedef struct
-{
     vec3s   pos, rot, scale;
     versors quat;
 } SolTransform;
@@ -240,7 +225,7 @@ typedef struct SolCamera
 typedef struct SolLine
 {
     vec3s a, b;
-    vec3s aColor, bColor;
+    vec4s aColor, bColor;
     float ttl;
 } SolLine;
 
@@ -541,3 +526,12 @@ typedef enum
     ABILITY_STATE_9,
     ABILITY_STATE_COUNT,
 } AbilityState;
+
+typedef enum
+{
+    INTERACT_HOVERED  = (1 << 0),
+    INTERACT_PRESSED  = (1 << 1),
+    INTERACT_CLICKED  = (1 << 2),
+    INTERACT_TOGGLED  = (1 << 3),
+    INTERACT_ISTOGGLE = (1 << 4),
+} InteractState;

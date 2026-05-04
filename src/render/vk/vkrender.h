@@ -57,7 +57,8 @@ typedef struct
 
 typedef struct SolLineVertex
 {
-    vec3s pos, color;
+    vec3s pos;
+    vec4s color;
 } SolLineVertex;
 
 typedef struct

@@ -1,5 +1,8 @@
+#include "physx.h"
 #include "sol_core.h"
 #include <omp.h>
+
+#include "xform/xform.h"
 
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
@@ -989,11 +992,21 @@ void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, C
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
 {
     SolRayResult result = Sol_Raycast(world, ray);
-    Sol_World_Line_Add(world, ray.pos, result.pos, (vec3s){1, 0, 0}, (vec3s){1, 0, 0}, debugDuration);
+    Sol_Line_Add(world, (LineDesc){
+                            .a      = ray.pos,
+                            .b      = result.pos,
+                            .colorA = (vec4s){1, 0, 0, 1},
+                            .colorB = (vec4s){1, 0, 0, 1},
+                            .ttl    = debugDuration,
+                        });
     if (result.hit)
-        Sol_World_Line_Add(world, result.pos,
-                           glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-                           (vec3s){0, 1, 0}, (vec3s){0, 1, 0}, debugDuration);
+        Sol_Line_Add(world, (LineDesc){
+                                .a      = result.pos,
+                                .b      = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+                                .colorA = (vec4s){0, 1, 0, 1},
+                                .colorB = (vec4s){0, 1, 0, 1},
+                                .ttl    = debugDuration,
+                            });
     return result;
 }
 

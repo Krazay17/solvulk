@@ -1,14 +1,35 @@
 #include "sol_core.h"
+#include "xform/xform.h"
+
+typedef struct CompVital
+{
+    u32   maxHealth, maxEnergy, maxMana;
+    u32   health, energy, mana;
+    bool  doesRespawn;
+    float deathTime, respawnTime;
+} CompVital;
 
 void Respawn(World *world, int id, CompVital *vital);
 void Die(World *world, int id, CompVital *vital);
 void Damage(World *world, int id, CompVital *vital, SolHit hit);
 
-CompVital *Sol_Vital_Add(World *world, int id, CompVital init)
+void Sol_Vital_Init(World *world)
 {
-    world->vitals[id] = init;
+    world->vitals = calloc(MAX_ENTS, sizeof(CompVital));
+}
+
+void Sol_Vital_Add(World *world, int id, VitalDesc desc)
+{
     world->masks[id] |= HAS_VITAL;
-    return &world->vitals[id];
+    CompVital vital = {
+        .maxHealth = desc.maxHealth,
+        .maxEnergy = desc.maxEnergy,
+        .maxMana   = desc.maxMana,
+        .health    = desc.maxHealth,
+        .energy    = desc.maxEnergy,
+        .mana      = desc.maxMana,
+    };
+    world->vitals[id] = vital;
 }
 
 void Sol_Vital_Remove(World *world, int id)
@@ -17,7 +38,7 @@ void Sol_Vital_Remove(World *world, int id)
     world->masks[id] &= ~HAS_VITAL;
 }
 
-void Vital_Step(World *world, double dt, double time)
+void Sol_Vital_Step(World *world, double dt, double time)
 {
     int required = HAS_VITAL;
     int count    = world->activeCount;

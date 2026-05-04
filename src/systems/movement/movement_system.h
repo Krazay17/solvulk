@@ -1,6 +1,18 @@
 #pragma once
-#include "estate.h"
 #include "sol/types.h"
+#include "estate.h"
+
+#include "xform/xform.h"
+#include "controller/controller.h"
+#include "physx/physx.h"
+
+typedef struct CompMovement
+{
+    vec3s        wishdir, updir, lockdir;
+    float        stateTimer;
+    MoveState    moveState;
+    MoveConfigId configId;
+} CompMovement;
 
 typedef struct
 {

@@ -2,6 +2,9 @@
 #include "sol/types.h"
 #include "estate.h"
 
+#include "controller/controller.h"
+#include "xform/xform.h"
+
 typedef struct
 {
     float lastEntered, elapsed, duration;

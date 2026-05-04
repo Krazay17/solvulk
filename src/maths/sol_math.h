@@ -24,7 +24,6 @@ extern const vec3s VECTOR_RADIAL_DIRECTIONS[4];
 
 // FUNCS------------------------------------
 
-SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b);
 vec4s   Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
 
 bool  Sol_Check_2d_Collision(vec2s a, vec4s b);

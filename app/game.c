@@ -9,9 +9,10 @@ static void SpawnPlayer(void *data)
     if (world->actives[world->playerID])
         Sol_Destroy_Ent(world, world->playerID);
 
-    player3d                         = Sol_Prefab_Pawn(world, (vec3s){0, 5, 0}, SOL_MODEL_DUDE, 2.0f);
-    CompController *playerController = Sol_ControllerLocal_Add(world, player3d);
-    world->bodies[player3d].gravity = (vec3s){0, -19.62f, 0};
+    player3d = Sol_Prefab_Pawn(world, (vec3s){0, 5, 0}, SOL_MODEL_DUDE, 2.0f);
+    Sol_Controller_Add(world, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
+
+    Sol_Physx_SetGrav(world, player3d, (vec3s){0, 19.62f, 0});
 }
 
 struct MakeWiz
@@ -30,28 +31,29 @@ void MakeAWizard(void *data)
     for (int i = 0; i < wizard->amount; i++)
     {
         int id = Sol_Prefab_Pawn(wizard->world, (vec3s){epsilonA, epsilonB, epsilonA}, SOL_MODEL_WIZARD, 2.8f);
-        Sol_ControllerAi_Add(wizard->world, id);
+        Sol_Controller_Add(wizard->world, id, (ControllerDesc){.kind = CONTROLLER_AI});
     }
 }
 
 void MakeABox(void *data)
 {
     World *world = (World *)data;
-    vec3s  pos   = world->controllers[world->playerID].aimpos;
+    vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
     int    id    = Sol_Prefab_Box(world, pos);
 }
 
 void MakeAEmitter(void *data)
 {
     World *world = (World *)data;
-    vec3s  pos   = world->controllers[world->playerID].aimpos;
+    vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
     Emitter_Add(world,
                 (Emitter){.pos      = pos,
                           .ttl      = 50.0f,
                           .rate     = 0.1f,
                           .burst    = 50,
                           .vel      = (vec3s){0, 0, 0},
-                          .particle = (Particle){.ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.15f}});
+                          .particle = (Particle){
+                              .ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.15f}});
 }
 
 void ClearEnts(void *data)
@@ -79,51 +81,43 @@ void Create_Sol_Game()
     SpawnPlayer(game);
     Sol_Prefab_Floor(game, (vec3s){0, -7, 0});
 
-    int           quitButton     = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
-    CompInteract *buttonInteract = Sol_Interact_Add(menu, quitButton);
-    buttonInteract->onClick      = (Callback){QuitApp};
+    int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
+    Sol_Interact_Add(menu, quitButton, (InteractDesc){.onClick = (Callback){QuitApp}});
 
-    int                   wizOneButton    = Sol_Prefab_Button(menu, (vec3s){10, 250, 0}, "1 Wizard");
-    CompInteract         *wizOneButtonInt = Sol_Interact_Add(menu, wizOneButton);
-    static struct MakeWiz wizOne          = {0};
-    wizOne.amount                         = 1;
-    wizOne.world                          = game;
-    wizOneButtonInt->onClick              = (Callback){MakeAWizard, &wizOne};
+    int                   wizOneButton = Sol_Prefab_Button(menu, (vec3s){10, 250, 0}, "1 Wizard");
+    static struct MakeWiz wizOne       = {0};
+    wizOne.amount                      = 1;
+    wizOne.world                       = game;
+    Sol_Interact_Add(menu, wizOneButton, (InteractDesc){.onClick = (Callback){MakeAWizard, &wizOne}});
 
     int                   wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "100 Wizards");
-    CompInteract         *interactButton2  = Sol_Interact_Add(menu, wizHundredButton);
     static struct MakeWiz wizhundred       = {0};
     wizhundred.amount                      = 100;
     wizhundred.world                       = game;
-    interactButton2->onHold                = (Callback){MakeAWizard, &wizhundred};
+    Sol_Interact_Add(menu, wizHundredButton, (InteractDesc){.onHold = (Callback){MakeAWizard, &wizhundred}});
 
-    int           button3         = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
-    CompInteract *interactButton3 = Sol_Interact_Add(menu, button3);
-    interactButton3->onClick      = (Callback){SpawnPlayer, game};
+    int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
+    Sol_Interact_Add(menu, button3, (InteractDesc){.onClick = (Callback){SpawnPlayer, game}});
 
-    int           button4         = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
-    CompInteract *interactButton4 = Sol_Interact_Add(menu, button4);
-    interactButton4->states |= INTERACT_ISTOGGLE;
-    interactButton4->onClick = (Callback){W_Set_Ontop, interactButton4};
+    int button4 = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
+    Sol_Interact_Add(menu, button4, (InteractDesc){.onClick = (Callback){W_Set_Ontop}});
 
-    int           buttonClearEnts         = Sol_Prefab_Button(menu, (vec3s){10, 450, 0}, "Clear Ents");
-    CompInteract *buttonClearEntsInteract = Sol_Interact_Add(menu, buttonClearEnts);
-    buttonClearEntsInteract->onClick      = (Callback){.callbackFunc = ClearEnts, .callbackData = game};
+    int buttonClearEnts = Sol_Prefab_Button(menu, (vec3s){10, 450, 0}, "Clear Ents");
+    Sol_Interact_Add(menu, buttonClearEnts,
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = ClearEnts, .callbackData = game}});
 
-    int           buttonColorSpheres    = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "ColorSpheres");
-    CompInteract *buttonColorSpheresInt = Sol_Interact_Add(menu, buttonColorSpheres);
-    buttonColorSpheresInt->onClick      = (Callback){.callbackFunc = ColorSpheres, .callbackData = game};
+    int buttonColorSpheres = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "ColorSpheres");
+    Sol_Interact_Add(menu, buttonColorSpheres,
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = ColorSpheres, .callbackData = game}});
 
-    int           fullscreen  = Sol_Prefab_Button(menu, (vec3s){10, 550, 0}, "FullScreen");
-    CompInteract *fullscreenI = Sol_Interact_Add(menu, fullscreen);
-    fullscreenI->states |= INTERACT_ISTOGGLE;
-    fullscreenI->onClick = (Callback){.callbackFunc = W_Set_Fullscreen, .callbackData = fullscreenI};
+    int fullscreen = Sol_Prefab_Button(menu, (vec3s){10, 550, 0}, "FullScreen");
+    Sol_Interact_Add(menu, fullscreen, (InteractDesc){.onClick = (Callback){.callbackFunc = W_Set_Fullscreen}});
 
-    int           boxButton  = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
-    CompInteract *boxButtonI = Sol_Interact_Add(menu, boxButton);
-    boxButtonI->onClick      = (Callback){.callbackFunc = MakeABox, .callbackData = game};
+    int boxButton = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
+    Sol_Interact_Add(menu, boxButton,
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = MakeABox, .callbackData = game}});
 
-    int           emitterButton  = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
-    CompInteract *emitterButtonI = Sol_Interact_Add(menu, emitterButton);
-    emitterButtonI->onHold       = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game};
+    int emitterButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
+    Sol_Interact_Add(menu, emitterButton,
+                     (InteractDesc){.onHold = (Callback){.callbackFunc = MakeAEmitter, .callbackData = game}});
 }

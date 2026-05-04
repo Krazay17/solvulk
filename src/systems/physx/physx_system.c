@@ -1,17 +1,8 @@
 #include "sol_core.h"
-#include "xform/xform_system.h"
+#include "physx.h"
 #include <omp.h>
 
-typedef struct CompBody
-{
-    vec3s  vel, impulse, force, groundNormal;
-    vec3s  gravity;
-    float  grounded, airtime;
-    float  radius, height, length;
-    float  mass, invMass, restitution;
-    Shape3 shape;
-    u8     group;
-} CompBody;
+#include "xform/xform.h"
 
 static u32        ents[MAX_ENTS];
 static SolContact contacts[MAX_ENTS];
@@ -29,6 +20,7 @@ struct PhysxTable
 
 void Sol_Physx_Init(World *world)
 {
+    world->bodies = calloc(MAX_ENTS, sizeof(CompBody));
     world->spatial = calloc(1, sizeof(WorldPhysx));
     SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
                       SPATIAL_STATIC_CELL_SIZE);
@@ -90,7 +82,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
 
         if (xform->pos.y < -15)
         {
-            Xform_Teleport(xform, (vec3s){0, 15, 0});
+            Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
         }
 
         vec3s accel   = body->gravity;
@@ -264,7 +256,6 @@ void Sol_Physx2d_Step(World *world, double dt, double time)
             // accel         = glms_vec3_add(accel, body->impulse);
             // body->impulse = (vec3s){0};
             // body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
-
         }
     }
 }
@@ -277,4 +268,9 @@ vec3s Sol_Physx_GetVel(World *world, int id)
 void Sol_Physx_SetVel(World *world, int id, vec3s vel)
 {
     world->bodies[id].vel = vel;
+}
+
+void Sol_Physx_SetGrav(World *world, int id, vec3s vel)
+{
+    world->bodies[id].gravity = vel;
 }

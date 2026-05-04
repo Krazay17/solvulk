@@ -2,7 +2,7 @@
 
 float stiffness = 5.0f;
 
-void Pickup_Step(World *world, double dt, double time)
+void Sol_Pickup_Step(World *world, double dt, double time)
 {
     SolMouse mouse    = Sol_Input_GetMouse();
     u32      required = HAS_INTERACT;
@@ -13,9 +13,6 @@ void Pickup_Step(World *world, double dt, double time)
             continue;
 
         CompFlags    *flags    = &world->flags[id];
-        CompXform    *xform    = &world->xforms[id];
-        CompBody     *body     = &world->bodies[id];
-        CompInteract *interact = &world->interacts[id];
 
         if (!Sol_Input_GetMouse().buttons[SOL_MOUSE_LEFT])
         {
@@ -25,11 +22,13 @@ void Pickup_Step(World *world, double dt, double time)
         if (world->flags[id].flags & EFLAG_PICKEDUP)
         {
             vec3s targetPos = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.dist = 20.0f}).pos;
-            body->vel       = vecSca(vecSub(targetPos, xform->pos), stiffness);
+            vec3s vel  = vecSca(vecSub(targetPos, Sol_Xform_GetPos(world, id)), stiffness);
+            Sol_Physx_SetVel(world, id, vel);
+            
             continue;
         }
 
-        if (interact->states & INTERACT_PRESSED)
+        if (Sol_Interact_GetState(world, id) & INTERACT_PRESSED)
         {
             world->flags[id].flags |= EFLAG_PICKEDUP;
         }

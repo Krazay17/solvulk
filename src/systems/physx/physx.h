@@ -1,5 +1,6 @@
 #pragma once
 #include "sol/types.h"
+#include "world/world.h"
 
 #define SPATIAL_NULL 0xFFFFFFFF
 
@@ -11,8 +12,18 @@
 #define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
-typedef struct CompBody   CompBody;
-typedef struct CompXform  CompXform;
+typedef struct CompBody
+{
+    vec3s  vel, impulse, force, groundNormal;
+    vec3s  gravity;
+    float  grounded, airtime;
+    float  radius, height, length;
+    float  mass, invMass, restitution;
+    Shape3 shape;
+    u8     group;
+} CompBody;
+
+typedef struct CompXform CompXform;
 typedef struct SolContact SolContact;
 
 typedef bool (*ShapeTriTest)(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit);
@@ -89,7 +100,7 @@ typedef struct PhysxGroup
 
     SolTri *tris;
     u32     triCount;
-    u32 capacity;
+    u32     capacity;
 
     PhysxEnts ents[MAX_ENTS];
     u32       entCount;

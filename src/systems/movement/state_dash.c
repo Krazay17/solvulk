@@ -1,5 +1,5 @@
-#include "movement_system.h"
 #include "sol_core.h"
+#include "movement_system.h"
 
 #define DASH_VEL 26.0f
 #define DASH_ALPHAMOD 1.2f

@@ -5,7 +5,6 @@
 #include "world/world.h"
 #include "resource/resource.h"
 #include "maths/sol_math.h"
-#include "maths/physx.h"
 #include "render/render.h"
 
 #define SOL_TIMESTEP (1.0 / 60.0)

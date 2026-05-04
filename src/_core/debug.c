@@ -43,7 +43,7 @@ void Sol_Debug_Draw(double dt)
         return;
     float offset  = 48.0f;
     float spacing = 24.0f;
-    Sol_Draw_Rectangle((SolRect){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){8, 0, 23, 222}, 0);
+    Render_Draw_Rectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){8, 0, 23, 222}, 0);
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];

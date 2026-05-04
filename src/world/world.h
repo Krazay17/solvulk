@@ -21,6 +21,7 @@ typedef struct SolEvents   SolEvents;
 typedef enum
 {
     WORLD_SYS_TIMER,
+    WORLD_SYS_XFORM,
     WORLD_SYS_PHYSX,
 
     WORLD_SYS_MOVEMENT,
@@ -30,9 +31,7 @@ typedef enum
     WORLD_SYS_BUFF,
     WORLD_SYS_VITAL,
 
-    WORLD_SYS_CONTROLLER_LOCAL,
-    WORLD_SYS_CONTROLLER_AI,
-
+    WORLD_SYS_CONTROLLER,
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
@@ -65,15 +64,15 @@ typedef struct World
     SystemFunc draw2dSystems[MAX_SYSTEMS];
     SystemFunc draw3dSystems[MAX_SYSTEMS];
 
-    int          activeEntities[MAX_ENTS];
-    Active       actives[MAX_ENTS];
-    Mask         masks[MAX_ENTS];
-    CompFlags    flags[MAX_ENTS];
+    int       activeEntities[MAX_ENTS];
+    Active    actives[MAX_ENTS];
+    Mask      masks[MAX_ENTS];
+    CompFlags flags[MAX_ENTS];
 
-    CompTimer    timers[MAX_ENTS];
-    CompInteract interacts[MAX_ENTS];
-    CompUiView   uiElements[MAX_ENTS];
+    CompTimer  timers[MAX_ENTS];
+    CompUi *uiElements;
 
+    CompInteract   *interacts;
     CompSphere     *spheres;
     CompVital      *vitals;
     CompXform      *xforms;
@@ -83,6 +82,10 @@ typedef struct World
     CompBuff       *buffs;
     CompModel      *models;
     CompAbility    *abilities;
+    WorldPhysx     *spatial;
+    WorldLines     *lines;
+    SolEmitters    *emitters;
+    SolEvents      *events;
 
     bool worldActive;
 
@@ -93,11 +96,6 @@ typedef struct World
     int activeCount;
     int playerID;
     u32 systemBits;
-
-    WorldPhysx  *spatial;
-    WorldLines  *lines;
-    SolEmitters *emitters;
-    SolEvents   *events;
 } World;
 
 World *World_Create(void);
@@ -118,41 +116,10 @@ void Sol_Flags_Remove(World *world, int id, EntFlags flags);
 int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
-int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere);
-int Sol_Prefab_Boxman(World *world, vec3s pos);
-
-// Add thing to world
-void Sol_World_Line_Add(World *world, vec3s a, vec3s b, vec3s color, vec3s bColor, float ttl);
+int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc);
 
 
-void         Sol_System_Camera_Tick(World *world, double dt, double time);
-SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
-
-void Lines_Init(World *world);
-void Sol_System_Line_Tick(World *world, double dt, double time);
-void Sol_Draw_Line(SolLine *lines, int count);
-
-CompUiView *Sol_UiView_Add(World *world, int id);
 CompTimer  *Sol_Timer_Add(World *world, int id, CompTimer init);
-void        Vital_Step(World *world, double dt, double time);
-void        Pickup_Step(World *world, double dt, double time);
 
 void Sol_Timer_Tick(World *world, double dt, double time);
 
-void Sol_Line_Draw(World *world, double dt, double time);
-void Sol_UiView_Draw(World *world, double dt, double time);
-
-void Sol_Draw_Rectangle(SolRect rect, vec4s color, float thickness);
-void Sol_Cam3d_Tick(World *world, double dt, double time, float alpha);
-void Sol_Vital_Draw(World *world, double dt, double time);
-void Sol_Crosshair_Draw(World *world, double dt, double time);
-
-void Emitter_Init(World *world);
-void Emitter_Add(World *world, Emitter e);
-void Emitter_Step(World *world, double dt, double time);
-void Emitter_Tick(World *world, double dt, double time);
-void Emitter_Draw(World *world, double dt, double time);
-
-void Sol_Event_Add(World *world, EventDesc desc);
-void Event_Init(World *world);
-void Event_Clear(World *world);

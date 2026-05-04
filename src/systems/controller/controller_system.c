@@ -1,3 +1,4 @@
+#include "controller.h"
 #include "sol_core.h"
 
 #define MAX_PITCH (GLM_PI_2 - 0.01f)
@@ -12,21 +13,15 @@ static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
 };
 
-typedef struct CompController
-{
-    vec3s              lookdir, wishdir, aimdir, aimpos, aimHitPos;
-    vec2s              wishdir2;
-    PlayerActionStates actionState;
-    float              yaw, pitch;
-    float              zoom;
-    u32                aimHitEnt;
-    ControllerKind     kind;
-} CompController;
-
 static void  LocalTick(World *world, int id, double dt, double time);
-static void  AiTick(World *world, double dt, double time);
+static void  AiTick(World *world, int id, double dt, double time);
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
+
+void Sol_Controller_Init(World *world)
+{
+    world->controllers = calloc(MAX_ENTS, sizeof(CompController));
+}
 
 void Sol_Controller_Add(World *world, int id, ControllerDesc desc)
 {
@@ -46,7 +41,8 @@ void Sol_Controller_Tick(World *world, double dt, double time)
             continue;
         if (world->controllers[id].kind == CONTROLLER_LOCAL)
             LocalTick(world, id, dt, time);
-        AiTick(world, dt, time);
+        else if (world->controllers[id].kind == CONTROLLER_AI)
+            AiTick(world, id, dt, time);
     }
 }
 
@@ -94,35 +90,27 @@ static void LocalTick(World *world, int id, double dt, double time)
 
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        vec3s pos = glms_vec3_add(*Sol_Xform_GetPos(world, id), glms_vec3_scale(lookdir, (float)dt * 60.0f));
+        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id), glms_vec3_scale(lookdir, (float)dt * 60.0f));
         Sol_Xform_SetPos(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
 }
 
-static void AiTick(World *world, double dt, double time)
+static void AiTick(World *world, int id, double dt, double time)
 {
-    int required = HAS_CONTROLLER_AI;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
-            continue;
+    CompController *controller = &world->controllers[id];
+    vec3s           myPos      = Sol_Xform_GetPos(world, id);
+    vec3s           playerPos  = Sol_Xform_GetPos(world, world->playerID);
+    vec3s           lookdir    = glms_vec3_normalize(glms_vec3_sub(playerPos, myPos));
+    float           yaw        = atan2f(lookdir.x, lookdir.z);
+    float           pitch      = asinf(lookdir.y);
 
-        CompController *controller = &world->controllers[id];
-        vec3s           myPos      = *Sol_Xform_GetPos(world, id);
-        vec3s           playerPos  = *Sol_Xform_GetPos(world, world->playerID);
-        vec3s           lookdir    = glms_vec3_normalize(glms_vec3_sub(playerPos, myPos));
-        float           yaw        = atan2f(lookdir.x, lookdir.z);
-        float           pitch      = asinf(lookdir.y);
+    controller->lookdir = lookdir;
+    controller->wishdir = lookdir;
+    controller->yaw     = yaw;
+    controller->pitch   = pitch;
 
-        controller->lookdir = lookdir;
-        controller->wishdir = lookdir;
-        controller->yaw     = yaw;
-        controller->pitch   = pitch;
-
-        Sol_Xform_SetYaw(world, id, yaw);
-    }
+    Sol_Xform_SetYaw(world, id, yaw);
 }
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
@@ -158,4 +146,9 @@ static vec2s GetWishDir2(uint32_t action)
         wishdir.x -= 1;
 
     return glms_vec2_normalize(wishdir);
+}
+
+vec3s Sol_Controller_GetAimPos(World *world, int id)
+{
+    return vecAdd(Sol_Xform_GetPos(world, id), vecSca(world->controllers[id].aimdir, 0.5f));
 }

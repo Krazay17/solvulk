@@ -1,15 +1,24 @@
 #include "sol_core.h"
-#include "xform_system.h"
+#include "xform.h"
+
+void Sol_Xform_Init(World *world)
+{
+    world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
+}
 
 void Sol_Xform_Add(World *world, int id, vec3s pos)
 {
-    world->xforms[id] = (CompXform){
+    if (!world)
+        return;
+
+    world->masks[id] |= HAS_XFORM;
+    CompXform xform = {
         .pos     = pos,
         .lastPos = pos,
         .drawPos = pos,
         .scale   = (vec3s){1.0f, 1.0f, 1.0f},
     };
-    world->masks[id] |= HAS_XFORM;
+    world->xforms[id] = xform;
 }
 
 void Xform_Snapshot(World *world)
@@ -58,14 +67,14 @@ void Xform_Interpolate(World *world, float alpha)
     }
 }
 
-void Xform_Teleport(CompXform *xform, vec3s pos)
+void Sol_Xform_Teleport(World *world, int id, vec3s pos)
 {
-    xform->pos = xform->lastPos = xform->drawPos = pos;
+    world->xforms[id].pos = world->xforms[id].lastPos = world->xforms[id].drawPos = pos;
 }
 
-vec3s *Sol_Xform_GetPos(World *world, int id)
+vec3s Sol_Xform_GetPos(World *world, int id)
 {
-    return &world->xforms[id].pos;
+    return world->xforms[id].pos;
 }
 
 void Sol_Xform_SetPos(World *world, int id, vec3s pos)

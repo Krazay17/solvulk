@@ -12,11 +12,6 @@ bool Sol_Check_2d_Collision(vec2s a, vec4s b)
     return !((a.x < b.x) | (a.x >= b.x + b.z) | (a.y < b.y) | (a.y >= b.y + b.w));
 }
 
-SolVec3 Sol_Vec3_Add(SolVec3 a, SolVec3 b)
-{
-    return (SolVec3){a.x + b.x, a.y + b.y, a.z + b.z};
-}
-
 float Sol_Lerp(float start, float end, float amount)
 {
     return start + amount * (end - start);

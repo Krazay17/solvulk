@@ -63,6 +63,7 @@ if(SOL_DEV_MODE)
     PUBLIC 
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/_core"
+        "${CMAKE_SOURCE_DIR}/src/systems"
     )
 endif()
 

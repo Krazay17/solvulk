@@ -302,13 +302,13 @@ void Sol_Draw_Sphere(vec4s pos, vec4s color)
     s->color = (vec4s){ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)};
 }
 
-void Sol_Draw_Rectangle(SolRect rect, vec4s color, float thickness)
+void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_RECT);
 
     ShaderPushRect push = {
-        .rec    = {rect.x, rect.y, rect.w, rect.h},
+        .rec    = {rect.x, rect.y, rect.z, rect.w},
         .c      = {ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)},
         .extras = {thickness, 0, 0, 0},
     };
@@ -391,7 +391,7 @@ void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t fi
     }
 }
 
-void Sol_Draw_Line(SolLine *lines, int count)
+void Render_Draw_Line(SolLine *lines, int count)
 {
     uint32_t frame = solvkstate.currentFrame;
 

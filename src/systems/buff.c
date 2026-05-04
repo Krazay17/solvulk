@@ -5,7 +5,7 @@
 typedef struct
 {
     BuffKind kind;
-    float duration
+    float duration;
 } Buff;
 typedef struct CompBuff
 {

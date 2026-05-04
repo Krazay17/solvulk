@@ -1,13 +1,7 @@
-#include "movement_system.h"
 #include "sol_core.h"
+#include "movement_system.h"
+#include "world/components.h"
 
-typedef struct CompMovement
-{
-    vec3s        wishdir, updir, lockdir;
-    float        stateTimer;
-    MoveState    moveState;
-    MoveConfigId configId;
-} CompMovement;
 
 const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
@@ -105,7 +99,12 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
 
 };
 
-void Sol_Movement_Add(World *world, int id, MovementDesc desc)
+void Sol_Movement_Init(World *world)
+{
+    world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
+}
+
+void Sol_Movement_Add(World *world, int id, MovementDesc desc) 
 {
     world->masks[id] |= HAS_MOVEMENT;
     CompMovement movement = {

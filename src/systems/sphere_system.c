@@ -1,5 +1,6 @@
 #include "sol_core.h"
-#include "xform/xform_system.h"
+#include "xform/xform.h"
+#include "world/components.h"
 
 typedef struct CompSphere
 {
@@ -7,7 +8,12 @@ typedef struct CompSphere
     vec4s color;
 } CompSphere;
 
-void Sol_Sphere_Add(World *world, int id, SphereDesc desc)
+void Sol_Sphere_Init(World *world)
+{
+    world->spheres = calloc(MAX_ENTS, sizeof(CompSphere));
+}
+
+void Sol_Sphere_Add(World *world, int id, SphereDesc desc) 
 {
     world->masks[id] |= HAS_SPHERE;
     CompSphere sphere = {

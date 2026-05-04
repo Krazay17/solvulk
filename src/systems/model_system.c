@@ -1,5 +1,8 @@
-#include "render/render.h"
 #include "sol_core.h"
+
+#include "xform/xform.h"
+#include "render/render.h"
+
 typedef enum
 {
     ANIM_GROUP_MOVEMENT,
@@ -50,12 +53,11 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
         CompXform    *xform     = &world->xforms[id];
         CompModel    *modelComp = &world->models[id];
-        CompInteract *interact  = (world->masks[id] & HAS_INTERACT) ? &world->interacts[id] : NULL;
 
         u32 flags = 0;
-        if (interact)
+        if (world->masks[id] & HAS_INTERACT)
         {
-            if (interact->states & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
+            if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
                 flags = 1;
         }
 

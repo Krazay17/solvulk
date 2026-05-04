@@ -1,4 +1,5 @@
 #include "ability_system.h"
+#include "controller/controller.h"
 #include "sol_core.h"
 
 // Defined in order of priority (highest priority first)

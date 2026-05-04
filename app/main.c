@@ -320,17 +320,21 @@ FILETIME get_last_write_time(const char *path)
 
 void W_Set_Ontop(void *data)
 {
-    CompInteract *interact = (CompInteract *)data;
-    bool          toggle   = interact->states & INTERACT_TOGGLED;
+    //CompInteract *interact = (CompInteract *)data;
+    //bool          toggle   = interact->states & INTERACT_TOGGLED;
+    static bool toggle;
+    toggle = !toggle;
     HWND          top      = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
     SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
 void W_Set_Fullscreen(void *data)
 {
-    CompInteract *interact = (CompInteract *)data;
-    bool          toggle   = interact->states & INTERACT_TOGGLED;
-    isFullscreen           = toggle;
+    //CompInteract *interact = (CompInteract *)data;
+    //bool          toggle   = interact->states & INTERACT_TOGGLED;
+    //isFullscreen           = toggle;
+    static bool toggle;
+    toggle = !toggle;
     u32 width              = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
     u32 height             = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
     

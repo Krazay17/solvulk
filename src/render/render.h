@@ -89,7 +89,8 @@ void Render_Push_Line(SolLine line);
 void Render_Draw_Model(SolModelDraw draw);
 void Render_Draw_Model_Skinned();
 void Render_Draw_Sphere();
-void Render_Draw_Line();
+void Render_Draw_Line(SolLine *lines, int count);
+void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness);
 
 void Render_3d();
 void Render_2d();

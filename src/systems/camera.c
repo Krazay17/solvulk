@@ -1,5 +1,9 @@
 #include "sol_core.h"
 
+#include "xform/xform.h"
+#include "controller/controller.h"
+#include "physx/physx.h"
+
 static bool  initialized = false;
 static vec3s arm;
 static float distance        = 6.5f;
@@ -86,19 +90,19 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
         return;
     int width  = Sol_GetState()->windowWidth / 2;
     int height = Sol_GetState()->windowHeight / 2;
-    Sol_Draw_Rectangle(
-        (SolRect){
+    Render_Draw_Rectangle(
+        (vec4s){
             .x = width,
             .y = height,
-            .h = 3,
+            .z = 3,
             .w = 12,
         },
         (vec4s){255, 0, 0, 255}, 0);
-    Sol_Draw_Rectangle(
-        (SolRect){
+    Render_Draw_Rectangle(
+        (vec4s){
             .x = width,
             .y = height,
-            .h = 12,
+            .z = 12,
             .w = 3,
         },
         (vec4s){255, 0, 0, 255}, 0);

@@ -31,9 +31,10 @@ void Spatial_Add(World *world, int id, CompBody *body)
 
     if (body->shape == SHAPE3_MOD)
     {
-        SolModel *model    = world->models[id].model;
-        u32       oldCount = group->triCount;
-        u32       newCount = oldCount + model->tri_count;
+        SolModel *model = Sol_Model_GetModel(world, id);
+        // SolModel *model    = world->models[id].model;
+        u32 oldCount = group->triCount;
+        u32 newCount = oldCount + model->tri_count;
 
         if (newCount > group->capacity)
         {
@@ -152,7 +153,9 @@ void Physx_Mass_Set(World *world, int id, float mass)
     world->bodies[id].mass = mass;
     if (mass == 0.0f)
         if (world->bodies[id].shape == SHAPE3_MOD)
-            Spatial_Add_Model(&world->spatial->staticGroup, id, world->models[id].model, &world->xforms[id], false);
+            Spatial_Add_Model(&world->spatial->staticGroup, id, Sol_Model_GetModel(world, id), &world->xforms[id],
+                              false);
+    // Spatial_Add_Model(&world->spatial->staticGroup, id, world->models[id].model, &world->xforms[id], false);
 }
 
 void Spatial_Hash_Tris(PhysxGroup *group)
@@ -247,7 +250,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &result))
                 {
                     Resolve_Dynamic_Pair(body, xform, other_body, other_xform, &result);
-                    //Sol_Event_Add(world, (EventDesc){.entA = id, .kind = EVENT_PARTICLE, .pos = result.point});
+                    // Sol_Event_Add(world, (EventDesc){.entA = id, .kind = EVENT_PARTICLE, .pos = result.point});
                 }
             }
             entry = ws->dynamicGroup.table.next[entry];
@@ -255,44 +258,44 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
     }
 }
 
-SolContact Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform)
-{
-    // SolContact   col   = {0};
-    // PhysxGroup  *group = &world->spatial->dynamicGroup;
-    // SpatialGrid *grid  = &group->grid;
+// SolContact Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform)
+// {
+// SolContact   col   = {0};
+// PhysxGroup  *group = &world->spatial->dynamicGroup;
+// SpatialGrid *grid  = &group->grid;
 
-    // int checks = 0;
-    // int ix     = (int)floorf((xform->pos.x - grid->min.x) / grid->cellSize);
-    // int iy     = (int)floorf((xform->pos.y - grid->min.y) / grid->cellSize);
-    // int iz     = (int)floorf((xform->pos.z - grid->min.z) / grid->cellSize);
+// int checks = 0;
+// int ix     = (int)floorf((xform->pos.x - grid->min.x) / grid->cellSize);
+// int iy     = (int)floorf((xform->pos.y - grid->min.y) / grid->cellSize);
+// int iz     = (int)floorf((xform->pos.z - grid->min.z) / grid->cellSize);
 
-    // for (int ox = -1; ox <= 1; ox++)
-    //     for (int oy = -1; oy <= 1; oy++)
-    //         for (int oz = -1; oz <= 1; oz++)
-    //         {
-    //             int cx = ix + ox, cy = iy + oy, cz = iz + oz;
-    //             if (cx < 0 || cx >= grid->dims.x || cy < 0 || cy >= grid->dims.y || cz < 0 || cz >= grid->dims.z)
-    //                 continue;
+// for (int ox = -1; ox <= 1; ox++)
+//     for (int oy = -1; oy <= 1; oy++)
+//         for (int oz = -1; oz <= 1; oz++)
+//         {
+//             int cx = ix + ox, cy = iy + oy, cz = iz + oz;
+//             if (cx < 0 || cx >= grid->dims.x || cy < 0 || cy >= grid->dims.y || cz < 0 || cz >= grid->dims.z)
+//                 continue;
 
-    //             u32 cell  = cx + cy * grid->dims.x + cz * grid->dims.x * grid->dims.y;
-    //             u32 start = grid->offsets[cell];
-    //             u32 end   = grid->offsets[cell + 1];
+//             u32 cell  = cx + cy * grid->dims.x + cz * grid->dims.x * grid->dims.y;
+//             u32 start = grid->offsets[cell];
+//             u32 end   = grid->offsets[cell + 1];
 
-    //             for (u32 e = start; e < end; e++)
-    //             {
-    //                 if (++checks > 1000)
-    //                     return col;
+//             for (u32 e = start; e < end; e++)
+//             {
+//                 if (++checks > 1000)
+//                     return col;
 
-    //                 int        otherId    = group->ents[grid->values[e]].id;
-    //                 CompBody  *otherBody  = &world->bodies[otherId];
-    //                 CompXform *otherXform = &world->xforms[otherId];
+//                 int        otherId    = group->ents[grid->values[e]].id;
+//                 CompBody  *otherBody  = &world->bodies[otherId];
+//                 CompXform *otherXform = &world->xforms[otherId];
 
-    //                 ShapePairTest resolver = shape_pair_test[body->shape][otherBody->shape];
-    //                 col                    = resolver(body, xform, otherBody, otherXform);
-    //             }
-    //         }
-    // return col;
-}
+//                 ShapePairTest resolver = shape_pair_test[body->shape][otherBody->shape];
+//                 col                    = resolver(body, xform, otherBody, otherXform);
+//             }
+//         }
+// return col;
+//}
 
 float Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal)
 {
@@ -467,9 +470,9 @@ void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit)
 
 void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, SolContact *hit)
 {
-    SpatialGrid *grid   = &group->grid;
+    SpatialGrid *grid      = &group->grid;
     ShapeTriTest shapeTest = shape_tri_test[body->shape];
-    int          checks = 0;
+    int          checks    = 0;
 
     // Compute capsule's AABB extents in cell units
     float halfH = (body->shape == SHAPE3_CAP) ? (body->height * 0.5f) : body->radius;
@@ -497,15 +500,13 @@ void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform,
                 {
                     if (++checks > 1000)
                         return;
-                    SolTri    *tri = &group->tris[grid->values[e]];
+                    SolTri *tri = &group->tris[grid->values[e]];
                     if (shapeTest(body, xform, tri, hit))
                     {
                         Resolve_Contact(body, xform, hit);
-                        
                     }
                 }
             }
-            
 }
 
 void collisions_grid_dynamic(CompBody *body, CompXform *xform, SubstepData substep_data, WorldPhysx *ws)
@@ -803,7 +804,7 @@ bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContac
     col->point       = closestP;
     col->penetration = penetration;
     col->normal      = normal;
-    col->didCollide = true;
+    col->didCollide  = true;
 
     return true;
 }
@@ -911,8 +912,8 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
     hit->normal =
         dist > 0.0001f ? glms_vec3_scale(glms_vec3_sub(bestCapsulePoint, bestTriPoint), 1.0f / dist) : tri->normal;
     hit->penetration = body->radius - dist;
-    hit->didCollide = true;
-    hit->point = bestTriPoint;
+    hit->didCollide  = true;
+    hit->point       = bestTriPoint;
 
     return true;
 }

@@ -1,7 +1,6 @@
 #include "sol_core.h"
 
 #define MAX_PITCH (GLM_PI_2 - 0.01f)
-
 float lookSens = 0.001f;
 
 static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
@@ -13,28 +12,48 @@ static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
 };
 
+typedef struct CompController
+{
+    vec3s              lookdir, wishdir, aimdir, aimpos, aimHitPos;
+    vec2s              wishdir2;
+    PlayerActionStates actionState;
+    float              yaw, pitch;
+    float              zoom;
+    u32                aimHitEnt;
+    ControllerKind     kind;
+} CompController;
+
+static void  LocalTick(World *world, int id, double dt, double time);
+static void  AiTick(World *world, double dt, double time);
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
 
-CompController *Sol_ControllerLocal_Add(World *world, int id)
+void Sol_Controller_Add(World *world, int id, ControllerDesc desc)
 {
-    world->playerID = id;
-    Sol_Flags_Remove(world, id, EFLAG_PICKUPABLE);
     world->masks[id] |= HAS_CONTROLLER;
-    return &world->controllers[id];
+
+    if (desc.kind == CONTROLLER_LOCAL)
+        world->playerID = id;
 }
 
-void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
+void Sol_Controller_Tick(World *world, double dt, double time)
 {
-    int id = world->playerID;
-    if (id < 0)
-        return;
+    int required = HAS_CONTROLLER;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+        if (world->controllers[id].kind == CONTROLLER_LOCAL)
+            LocalTick(world, id, dt, time);
+        AiTick(world, dt, time);
+    }
+}
+
+static void LocalTick(World *world, int id, double dt, double time)
+{
     SolMouse        mouse      = Sol_Input_GetMouse();
-    CompXform      *xform      = &world->xforms[id];
     CompController *controller = &world->controllers[id];
-    CompMovement   *movement   = &world->movements[id];
-    CompBody       *body       = &world->bodies[id];
-    CompAbility     *combat     = &world->abilities[id];
     float           yaw        = controller->yaw;
     float           pitch      = controller->pitch;
 
@@ -67,14 +86,7 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
     }
 
     vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
-    vec3s updir   = glms_vec3_normalize(glms_vec3_norm2(movement->updir) > 0 ? movement->updir : (vec3s){0, 1, 0});
-    vec3s wishdir = GetWishDir3(controller->actionState, lookdir, updir);
-
-    if (body && combat)
-    {
-        combat->attackPos = xform->pos;
-        combat->attackPos.y += body->height * 0.5f;
-    }
+    vec3s wishdir = GetWishDir3(controller->actionState, lookdir, WORLD_UP);
 
     controller->lookdir  = lookdir;
     controller->wishdir  = wishdir;
@@ -82,16 +94,42 @@ void Sol_System_Controller_Local_Tick(World *world, double dt, double time)
 
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        world->xforms[id].pos = glms_vec3_add(world->xforms[id].pos, glms_vec3_scale(lookdir, (float)dt * 60.0f));
-        world->bodies[id].vel = (vec3s){0, 0, 0};
+        vec3s pos = glms_vec3_add(*Sol_Xform_GetPos(world, id), glms_vec3_scale(lookdir, (float)dt * 60.0f));
+        Sol_Xform_SetPos(world, id, pos);
+        Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
+    }
+}
+
+static void AiTick(World *world, double dt, double time)
+{
+    int required = HAS_CONTROLLER_AI;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompController *controller = &world->controllers[id];
+        vec3s           myPos      = *Sol_Xform_GetPos(world, id);
+        vec3s           playerPos  = *Sol_Xform_GetPos(world, world->playerID);
+        vec3s           lookdir    = glms_vec3_normalize(glms_vec3_sub(playerPos, myPos));
+        float           yaw        = atan2f(lookdir.x, lookdir.z);
+        float           pitch      = asinf(lookdir.y);
+
+        controller->lookdir = lookdir;
+        controller->wishdir = lookdir;
+        controller->yaw     = yaw;
+        controller->pitch   = pitch;
+
+        Sol_Xform_SetYaw(world, id, yaw);
     }
 }
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
 {
     vec3s wishdir  = {0, 0, 0};
-    vec3s flatdir = lookdir;
-    flatdir.y = 0;
+    vec3s flatdir  = lookdir;
+    flatdir.y      = 0;
     vec3s rightdir = glms_vec3_normalize(glms_vec3_cross(flatdir, updir));
     if (action & ACTION_FWD)
         wishdir = glms_vec3_add(wishdir, flatdir);

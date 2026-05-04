@@ -80,13 +80,6 @@ typedef enum
 
 typedef enum
 {
-    MOVE_CONFIG_PLAYER,
-    MOVE_CONFIG_WIZARD,
-    MOVE_CONFIG_COUNT,
-} MoveConfigId;
-
-typedef enum
-{
     MOVE_IDLE,
     MOVE_WALK,
     MOVE_FALL,
@@ -290,7 +283,7 @@ typedef struct Particle
     ParticleKind kind;
     vec3s        pos, vel;
     vec4s        color;
-    float        ttl, scale, startTtl;
+    float        ttl, scale, span;
 } Particle;
 
 typedef struct Emitter

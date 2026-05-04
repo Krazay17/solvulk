@@ -9,13 +9,13 @@ typedef struct SolEmitters
     u32      emitter_count;
     u32      emitter_capacity;
 
-    Particle *particle_pool;
+    Particle *particle;
     u32       particle_count;
     u32       particle_capacity;
 } SolEmitters;
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
-static void Particle_Tick(World *world, double dt, double time);
+static void      Particle_Tick(World *world, double dt, double time);
 
 void Emitter_Init(World *world)
 {
@@ -27,7 +27,7 @@ void Emitter_Init(World *world)
 
     world->emitters->particle_count    = 0;
     world->emitters->particle_capacity = MAX_PARTICLES;
-    world->emitters->particle_pool     = calloc(world->emitters->particle_capacity, sizeof(Particle));
+    world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
 }
 
 void Emitter_Add(World *world, Emitter e)
@@ -36,7 +36,7 @@ void Emitter_Add(World *world, Emitter e)
     Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
 
     Emitter *em = &s->emitter[s->emitter_count];
-    *em = e;
+    *em         = e;
 
     for (int i = 0; i < em->burst; i++)
     {
@@ -101,16 +101,14 @@ static void Particle_Tick(World *world, double dt, double time)
 
     for (int i = 0; i < s->particle_count; i++)
     {
-        Particle *p = &s->particle_pool[i];
+        Particle *p = &s->particle[i];
         p->ttl -= fdt;
         if (p->ttl <= 0)
             continue;
         p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
 
-        s->particle_pool[write++] = *p;
+        s->particle[write++] = *p;
     }
-
-    // The count is now exactly how many particles we 'wrote'
     s->particle_count = write;
 }
 
@@ -120,8 +118,8 @@ void Emitter_Draw(World *world, double dt, double time)
     SolEmitters *s   = world->emitters;
     for (int i = 0; i < s->particle_count; i++)
     {
-        Particle *p           = &s->particle_pool[i];
-        float     t           = p->ttl / p->startTtl;
+        Particle *p           = &s->particle[i];
+        float     t           = p->ttl / p->span;
         float     visualScale = p->scale * t;
         Sol_Draw_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, p->color);
     }
@@ -129,11 +127,11 @@ void Emitter_Draw(World *world, double dt, double time)
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init)
 {
-    Sol_Realloc(&s->particle_pool, s->particle_count, &s->particle_capacity, sizeof(Particle));
+    Sol_Realloc(&s->particle, s->particle_count, &s->particle_capacity, sizeof(Particle));
 
-    Particle *p = &s->particle_pool[s->particle_count];
+    Particle *p = &s->particle[s->particle_count];
     memcpy(p, &init->particle, sizeof(Particle));
-    p->startTtl = p->ttl;
+    p->span = p->ttl;
     p->pos      = init->pos;
 
     s->particle_count++;

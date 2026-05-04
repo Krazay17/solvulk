@@ -1,6 +1,15 @@
 #include "sol_core.h"
+#include "xform/xform_system.h"
 
-CompInteract *Sol_Interact_Add(World *world, int id)
+typedef struct CompInteract
+{
+    u8       states;
+    float    value;
+    Callback onClick;
+    Callback onHold;
+} CompInteract;
+
+void Sol_Interact_Add(World *world, int id, InteractDesc desc)
 {
     CompInteract interact = {0};
     world->interacts[id]  = interact;

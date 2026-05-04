@@ -1,5 +1,13 @@
+#include "movement_system.h"
 #include "sol_core.h"
-#include "estates/move_states.h"
+
+typedef struct CompMovement
+{
+    vec3s        wishdir, updir, lockdir;
+    float        stateTimer;
+    MoveState    moveState;
+    MoveConfigId configId;
+} CompMovement;
 
 const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
@@ -97,17 +105,18 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
 
 };
 
-CompMovement *Sol_Movement_Add(World *world, int id, CompMovement init)
+void Sol_Movement_Add(World *world, int id, MovementDesc desc)
 {
-    CompMovement movement = init;
     world->masks[id] |= HAS_MOVEMENT;
-    return &world->movements[id];
+    CompMovement movement = {
+        .configId = desc.configId,
+    };
 }
 
 void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 {
-    float fdt = (float)dt;
-    int required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3;
+    float fdt      = (float)dt;
+    int   required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
@@ -124,7 +133,8 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             xform->quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
 
             const StateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
-            funcs->update(world, id, dt);
+            if (funcs->update)
+                funcs->update(world, id, dt);
         }
     }
     if (world->playerID < 0)
@@ -144,9 +154,9 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
         return false;
     const StateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
     if (!nextfunc->canEnter(world, id))
-    return false;
+        return false;
 
-    //printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
+    // printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
 
     prevfunc->exit(world, id);
     movement->moveState = nextState;
@@ -187,4 +197,3 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
         }
     }
 }
-

@@ -1,5 +1,17 @@
 #include "sol_core.h"
+#include "xform/xform_system.h"
 #include <omp.h>
+
+typedef struct CompBody
+{
+    vec3s  vel, impulse, force, groundNormal;
+    vec3s  gravity;
+    float  grounded, airtime;
+    float  radius, height, length;
+    float  mass, invMass, restitution;
+    Shape3 shape;
+    u8     group;
+} CompBody;
 
 static u32        ents[MAX_ENTS];
 static SolContact contacts[MAX_ENTS];
@@ -15,7 +27,7 @@ struct PhysxTable
     u32       count;
 };
 
-void Physx_Init(World *world)
+void Sol_Physx_Init(World *world)
 {
     world->spatial = calloc(1, sizeof(WorldPhysx));
     SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
@@ -24,23 +36,21 @@ void Physx_Init(World *world)
                       SPATIAL_DYNAMIC_CELL_SIZE);
 }
 
-CompBody *Sol_Body_Add(World *world, int id, CompBody init_body)
+void Sol_Body_Add(World *world, int id, BodyDesc desc)
 {
-    CompBody body     = init_body;
-    body.gravity      = glms_vec3_norm(body.gravity) > 0 ? body.gravity : SOL_PHYS_GRAV;
-    body.height       = body.height ? body.height : 0.5f;
-    body.radius       = body.radius ? body.radius : 0.5f;
-    body.length       = body.length ? body.length : 0.5f;
-    body.invMass      = body.mass > 0 ? 1.0f / body.mass : 0;
-    world->bodies[id] = body;
-
-    Spatial_Add(world, id, &world->bodies[id]);
-
     world->masks[id] |= HAS_BODY3;
-    return &world->bodies[id];
+    CompBody body = {
+        .gravity = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
+        .height  = desc.height ? desc.height : 0.5f,
+        .radius  = desc.radius ? desc.radius : 0.5f,
+        .length  = desc.length ? desc.length : 0.5f,
+        .invMass = desc.mass > 0 ? 1.0f / body.mass : 0,
+    };
+    world->bodies[id] = body;
+    Spatial_Add(world, id, &world->bodies[id]);
 }
 
-void Physx_Step(World *world, double dt, double time)
+void Sol_Physx_Step(World *world, double dt, double time)
 {
     if (Sol_GetState()->fps < 30)
         return;
@@ -240,7 +250,7 @@ CompBody *Sol_Body2_Add(World *world, int id)
     return &world->bodies[id];
 }
 
-void Sol_System_Step_Physx_2d(World *world, double dt, double time)
+void Sol_Physx2d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
     int   required = HAS_BODY2 | HAS_XFORM;
@@ -249,21 +259,22 @@ void Sol_System_Step_Physx_2d(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) == required)
         {
-            CompBody     *body     = &world->bodies[id];
-            CompMovement *movement = &world->movements[id];
-            CompXform    *xform    = &world->xforms[id];
+            // vec3s accel   = SOL_PHYS_GRAV;
+            // accel         = glms_vec3_add(accel, body->force);
+            // accel         = glms_vec3_add(accel, body->impulse);
+            // body->impulse = (vec3s){0};
+            // body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
 
-            vec3s accel   = SOL_PHYS_GRAV;
-            accel         = glms_vec3_add(accel, body->force);
-            accel         = glms_vec3_add(accel, body->impulse);
-            body->impulse = (vec3s){0};
-            body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
-
-            if (xform->pos.y + body->height >= Sol_GetState()->windowHeight)
-            {
-                xform->pos.y = Sol_GetState()->windowHeight - body->height;
-                body->vel.y  = 0;
-            }
         }
     }
+}
+
+vec3s Sol_Physx_GetVel(World *world, int id)
+{
+    return world->bodies[id].vel;
+}
+
+void Sol_Physx_SetVel(World *world, int id, vec3s vel)
+{
+    world->bodies[id].vel = vel;
 }

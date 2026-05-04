@@ -1,6 +1,7 @@
 #include "sol_core.h"
+#include "xform_system.h"
 
-CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
+void Sol_Xform_Add(World *world, int id, vec3s pos)
 {
     world->xforms[id] = (CompXform){
         .pos     = pos,
@@ -9,7 +10,6 @@ CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
         .scale   = (vec3s){1.0f, 1.0f, 1.0f},
     };
     world->masks[id] |= HAS_XFORM;
-    return &world->xforms[id];
 }
 
 void Xform_Snapshot(World *world)
@@ -61,4 +61,19 @@ void Xform_Interpolate(World *world, float alpha)
 void Xform_Teleport(CompXform *xform, vec3s pos)
 {
     xform->pos = xform->lastPos = xform->drawPos = pos;
+}
+
+vec3s *Sol_Xform_GetPos(World *world, int id)
+{
+    return &world->xforms[id].pos;
+}
+
+void Sol_Xform_SetPos(World *world, int id, vec3s pos)
+{
+    world->xforms[id].pos = pos;
+}
+
+void Sol_Xform_SetYaw(World *world, int id, float yaw)
+{
+    world->xforms[id].quat = Sol_Quat_FromYawPitch(yaw, 0);
 }

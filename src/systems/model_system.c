@@ -1,19 +1,44 @@
-#include "sol_core.h"
 #include "render/render.h"
-
-CompModel *Sol_Model_Add(World *world, int id, CompModel init)
+#include "sol_core.h"
+typedef enum
 {
-    CompModel model = init;
+    ANIM_GROUP_MOVEMENT,
+    ANIM_GROUP_ABILITY,
+    ANIM_GROUP_COUNT,
+} AnimGroupId;
+typedef struct
+{
+    i32   currentAnim, lastAnim;
+    float currentSeek, lastSeek;
+    float blendFactor, blendSpeed;
+} AnimGroup;
+typedef struct CompModel
+{
+    SolModelId modelId;
+    SolModel  *model;
+    bool       hasAnim;
+    float      yOffset;
+    AnimGroup  anim[ANIM_GROUP_COUNT];
+    mat4       bones[MAX_BONES];
+} CompModel;
+
+void Sol_Model_Init(World *world)
+{
+    world->models = calloc(MAX_ENTS, sizeof(CompModel));
+}
+
+void Sol_Model_Add(World *world, int id, ModelDesc desc)
+{
+    CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset};
     model.model     = &Sol_Bank_Get()->models[model.modelId];
     if (!model.model->skeleton.animationCount)
-        model.currentAnim = -1;
+        model.hasAnim = false;
 
     world->models[id] = model;
     world->masks[id] |= HAS_MODEL;
-    return &world->models[id];
 }
 
-void Sol_System_Model_Draw(World *world, double dt, double time)
+void Sol_Model_Draw(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
     int   required = HAS_XFORM | HAS_MODEL;
@@ -37,68 +62,74 @@ void Sol_System_Model_Draw(World *world, double dt, double time)
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
 
-        //Render_Push_Model((SolModelDraw){0});
-
-        if (modelComp->currentAnim < 0)
+        if (!modelComp->hasAnim)
         {
             Sol_Draw_Model(modelComp->modelId, drawPos, xform->drawScale, xform->drawQuat, flags);
         }
         else
         {
-            float duration         = modelComp->model->skeleton.animations[modelComp->currentAnim].duration;
-            modelComp->currentSeek = fmodf(modelComp->currentSeek + fdt, duration);
+            // TODO UPDATE FOR ANIM GROUP
 
-            bool isBlending = (modelComp->lastAnim >= 0 && modelComp->blendFactor < 1.0f);
+            // float duration         = modelComp->model->skeleton.animations[modelComp->currentAnim].duration;
+            // modelComp->currentSeek = fmodf(modelComp->currentSeek + fdt, duration);
 
-            if (isBlending)
-            {
-                float durationB     = modelComp->model->skeleton.animations[modelComp->lastAnim].duration;
-                modelComp->lastSeek = fmodf(modelComp->lastSeek + fdt, durationB);
+            // bool isBlending = (modelComp->lastAnim >= 0 && modelComp->blendFactor < 1.0f);
 
-                modelComp->blendFactor += fdt * modelComp->blendSpeed;
-                if (modelComp->blendFactor > 1.0f)
-                    modelComp->blendFactor = 1.0f;
-            }
-            else
-            {
-                modelComp->blendFactor = 1.0f; // Force to 100% Anim A
-            }
-            AnimBlend blends = {
-                .animA       = modelComp->currentAnim,
-                .animB       = modelComp->lastAnim,
-                .seekA       = modelComp->currentSeek,
-                .seekB       = modelComp->lastSeek,
-                .blendFactor = modelComp->blendFactor,
-            };
-            Sol_Skeleton_Pose(&modelComp->model->skeleton, &blends);
+            // if (isBlending)
+            // {
+            //     float durationB     = modelComp->model->skeleton.animations[modelComp->lastAnim].duration;
+            //     modelComp->lastSeek = fmodf(modelComp->lastSeek + fdt, durationB);
 
-            SolModelDraw drawInstance = {
-                .pos     = drawPos,
-                .rot     = xform->drawQuat,
-                .scale   = xform->drawScale,
-                .flags   = flags,
-                .bonePtr = blends.bones,
-            };
-            Sol_Draw_Model_Skinned(modelComp->modelId, &drawInstance);
+            //     modelComp->blendFactor += fdt * modelComp->blendSpeed;
+            //     if (modelComp->blendFactor > 1.0f)
+            //         modelComp->blendFactor = 1.0f;
+            // }
+            // else
+            // {
+            //     modelComp->blendFactor = 1.0f; // Force to 100% Anim A
+            // }
+            // AnimBlend blends = {
+            //     .animA       = modelComp->currentAnim,
+            //     .animB       = modelComp->lastAnim,
+            //     .seekA       = modelComp->currentSeek,
+            //     .seekB       = modelComp->lastSeek,
+            //     .blendFactor = modelComp->blendFactor,
+            // };
+            // Sol_Skeleton_Pose(&modelComp->model->skeleton, &blends);
+
+            // SolModelDraw drawInstance = {
+            //     .pos     = drawPos,
+            //     .rot     = xform->drawQuat,
+            //     .scale   = xform->drawScale,
+            //     .flags   = flags,
+            //     .bonePtr = blends.bones,
+            // };
+            // Sol_Draw_Model_Skinned(modelComp->modelId, &drawInstance);
         }
     }
 }
 
 void Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed)
 {
-    CompModel *model = &world->models[id];
-    if (!model->model->skeleton.animations)
-        return;
+    // TODO UPDATE FOR ANIM GROUP
+    // CompModel *model = &world->models[id];
+    // if (!model->model->skeleton.animations)
+    //     return;
 
-    i32 nextAnim = model_anim_map[model->modelId][anim];
-    if (nextAnim == model->currentAnim)
-        return;
+    // i32 nextAnim = model_anim_map[model->modelId][anim];
+    // if (nextAnim == model->currentAnim)
+    //     return;
 
-    model->lastAnim = model->currentAnim;
-    model->lastSeek = model->currentSeek;
+    // model->lastAnim = model->currentAnim;
+    // model->lastSeek = model->currentSeek;
 
-    model->currentAnim = nextAnim;
-    model->currentSeek = 0;
-    model->blendFactor = 0;
-    model->blendSpeed  = blendSpeed > 0 ? blendSpeed : 6.0f;
+    // model->currentAnim = nextAnim;
+    // model->currentSeek = 0;
+    // model->blendFactor = 0;
+    // model->blendSpeed  = blendSpeed > 0 ? blendSpeed : 6.0f;
+}
+
+SolModel *Sol_Model_GetModel(World *world, int id)
+{
+    return world->models[id].model;
 }

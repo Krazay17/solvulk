@@ -2,6 +2,23 @@
 #include "sol/types.h"
 #include "estate.h"
 
+typedef struct
+{
+    float lastEntered, elapsed, duration;
+} AbilityData;
+typedef struct CompAbility
+{
+    vec3s        attackPos, attackDir;
+    AbilityState state;
+    AbilityData  stateData[ABILITY_STATE_COUNT];
+} CompAbility;
+
+typedef struct
+{
+    PlayerActionStates actionBit;
+    AbilityState       targetState;
+} AbilityMapping;
+
 extern const StateFunc ability_state_func[];
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState state);

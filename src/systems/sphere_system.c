@@ -1,11 +1,20 @@
 #include "sol_core.h"
+#include "xform/xform_system.h"
 
-CompSphere *Sol_Sphere_Add(World *world, int id, CompSphere init)
+typedef struct CompSphere
 {
-    CompSphere sphere = init;
-    world->spheres[id] = sphere;
+    float radius;
+    vec4s color;
+} CompSphere;
+
+void Sol_Sphere_Add(World *world, int id, SphereDesc desc)
+{
     world->masks[id] |= HAS_SPHERE;
-    return &world->spheres[id];
+    CompSphere sphere = {
+        .radius = desc.radius,
+        .color = desc.color,
+    };
+    world->spheres[id] = sphere;
 }
 
 void Sol_Sphere_Step(World *world, double dt, double time)
@@ -20,8 +29,7 @@ void Sol_Sphere_Step(World *world, double dt, double time)
             continue;
         if (e->kind != EVENT_COLLISION)
             continue;
-        CompBody *body = &world->bodies[e->entA];
-        if (glms_vec3_norm(body->vel) < 1.0f)
+        if (glms_vec3_norm(Sol_Physx_GetVel(world, e->entA)) < 1.0f)
             continue;
 
         Emitter_Add(world, (Emitter){.pos      = e->pos,

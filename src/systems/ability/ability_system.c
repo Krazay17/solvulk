@@ -1,10 +1,5 @@
-#include "estates/ability_states.h"
+#include "ability_system.h"
 #include "sol_core.h"
-typedef struct
-{
-    PlayerActionStates actionBit;
-    AbilityState       targetState;
-} AbilityMapping;
 
 // Defined in order of priority (highest priority first)
 static const AbilityMapping ability_mappings[] = {
@@ -41,19 +36,19 @@ const StateFunc ability_state_func[] = {
     [ABILITY_STATE_9] = {0},
 };
 
-void Ability_Init(World *world)
+void Sol_Ability_Init(World *world)
 {
+    world->abilities = calloc(MAX_ENTS, sizeof(CompAbility));
 }
 
-CompAbility *Sol_Ability_Add(World *world, int id, CompAbility init)
+void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 {
-    CompAbility combat   = init;
+    CompAbility combat   = {0};
     world->abilities[id] = combat;
     world->masks[id] |= HAS_COMBAT;
-    return &world->abilities[id];
 }
 
-void Ability_Step(World *world, double dt, double time)
+void Sol_Ability_Step(World *world, double dt, double time)
 {
     int required = HAS_COMBAT;
     int count    = world->activeCount;
@@ -80,7 +75,7 @@ void Ability_Step(World *world, double dt, double time)
     }
 }
 
-void Ability_Tick(World *world, double dt, double time)
+void Sol_Ability_Tick(World *world, double dt, double time)
 {
     int required = HAS_COMBAT;
     int count    = world->activeCount;

@@ -1,14 +1,12 @@
-#include "ability_states.h"
+#include "ability_system.h"
 #include "sol_core.h"
 
 void IdleAbility_State_Update(World *world, int id, float dt)
 {
-    printf("IdleTick");
 }
 
 void IdleAbility_State_Enter(World *world, int id)
 {
-    
 }
 void IdleAbility_State_Exit(World *world, int id)
 {

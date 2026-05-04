@@ -4,9 +4,9 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
 {
     int id = Sol_Create_Ent(world);
 
-    CompXform *floorXform = Sol_Xform_Add(world, id, (vec3s){0, 0, 0});
-    CompModel *floorModel = Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_WORLD1});
-    CompBody  *floorBody  = Sol_Body_Add(world, id, (CompBody){.shape = SHAPE3_MOD});
+    Sol_Xform_Add(world, id, (vec3s){0, 0, 0});
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WORLD1});
+    Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
 
     // Sol_Interact_Add(world, id);
 
@@ -18,8 +18,8 @@ int Sol_Prefab_Box(World *world, vec3s pos)
 
     int id = Sol_Create_Ent(world);
     Sol_Xform_Add(world, id, pos);
-    Sol_Model_Add(world, id, (CompModel){.modelId = SOL_MODEL_BOX});
-    Sol_Body_Add(world, id, (CompBody){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
+    Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
     Sol_Interact_Add(world, id);
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
@@ -32,7 +32,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
     Sol_Xform_Add(world, id, pos);
     // Sol_Timer_Add(world, id, (CompTimer){.duration = 55.0f});
     Sol_Body_Add(world, id,
-                 (CompBody){
+                 (BodyDesc){
                      .radius      = sphere.radius,
                      .shape       = SHAPE3_SPH,
                      .mass        = 1.0f * sphere.radius,
@@ -46,14 +46,14 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, CompSphere sphere)
     return id;
 }
 
-int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height)
+int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelid, float height)
 {
-    int   id     = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world);
 
     CompXform *xform = Sol_Xform_Add(world, id, pos);
 
     Sol_Body_Add(world, id,
-                 (CompBody){
+                 (BodyDesc){
                      .height      = height,
                      .radius      = 0.5f,
                      .mass        = 1.0f,
@@ -63,10 +63,9 @@ int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height)
                  });
 
     CompMovement *movement = Sol_Movement_Add(world, id, (CompMovement){.configId = MOVE_CONFIG_PLAYER});
-    CompModel    *model    = Sol_Model_Add(world, id, (CompModel){.modelId = modelId});
-    model->yOffset         = -height * 0.5f;
+    Sol_Model_Add(world, id, (ModelDesc){.id = modelid, .yoffset = -height * 0.5f});
 
-    CompAbility *combat = Sol_Ability_Add(world, id, (CompAbility){0});
+    Sol_Ability_Add(world, id, (AbilityDesc){0});
     Sol_Interact_Add(world, id);
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
@@ -79,7 +78,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     float height = 50.0f;
     int   id     = Sol_Create_Ent(world);
 
-    CompXform *xform = Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Add(world, id, pos);
 
     CompShape *shape = Sol_Shape_Add(world, id);
     shape->type      = SHAPE2_REC;
@@ -128,7 +127,7 @@ int Sol_Prefab_Boxman(World *world, vec3s pos)
     int   id     = Sol_Create_Ent(world);
     // Sol_Movement_Add(world, id, (CompXform){.pos = pos});
     // Sol_Shape_Add(world, id, (CompShape){.type = SHAPE_RECTANGLE, .height = height, .width = radius});
-    // Sol_Body2_Add(world, id, (CompBody){
+    // Sol_Body2_Add(world, id, (BodyDesc){
     //                                 .radius = radius,
     //                                 .height = height,
     //                             });

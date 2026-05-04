@@ -1,4 +1,4 @@
-#include "ability_states.h"
+#include "ability_system.h"
 #include "sol_core.h"
 
 #define CLAW_DURATION 1.0f
@@ -20,7 +20,6 @@ void Claw_State_Enter(World *world, int id)
 {
     CompController *controller = &world->controllers[id];
     CompXform      *xform      = &world->xforms[id];
-    CompModel      *model      = &world->models[id];
     CompAbility    *combat     = &world->abilities[id];
 
     vec3s aimpos = controller->aimpos;

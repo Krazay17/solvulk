@@ -1,15 +1,7 @@
 #include "vkrender.h"
-#include "render/render.h"
 #include "sol_core.h"
 
 SolVkState solvkstate = {0};
-
-float     solAspectRatio;
-SolCamera renderCam = {
-    .fov      = 60.0f,
-    .nearClip = 0.2f,
-    .farClip  = 5000.0f,
-};
 
 static ModelSubmission        modelSubmission;
 static SphereSubmission       sphereQueue;
@@ -191,10 +183,9 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
 
-    windowWidth    = solvkstate.swapchainExtent.width;
-    windowHeight   = solvkstate.swapchainExtent.height;
-    solAspectRatio = (float)windowWidth / (float)windowHeight;
-
+    windowWidth  = solvkstate.swapchainExtent.width;
+    windowHeight = solvkstate.swapchainExtent.height;
+    
     return 0;
 }
 
@@ -220,7 +211,7 @@ int Sol_Init_Vulkan_Resources()
     Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                           &lineBuffer);
 
-    Sol_SetOrtho(windowWidth, windowHeight);
+    Vk_SetOrtho(windowWidth, windowHeight);
     return 0;
 }
 
@@ -252,7 +243,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     boundPipeline = id;
 }
 
-void Sol_SetOrtho(uint32_t width, uint32_t height)
+void Vk_SetOrtho(uint32_t width, uint32_t height)
 {
     mat4 ortho;
     glm_ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f, ortho);
@@ -264,11 +255,9 @@ void Sol_SetOrtho(uint32_t width, uint32_t height)
     }
 }
 
-void Sol_Render_Resize(uint32_t width, uint32_t height)
+void Remake_Swapchain(uint32_t width, uint32_t height)
 {
-    if (width == 0 || height == 0)
-        return;
-    vkDeviceWaitIdle(solvkstate.device);
+        vkDeviceWaitIdle(solvkstate.device);
 
     // destroy old
     vkDestroyImageView(solvkstate.device, solvkstate.depthImageView, NULL);
@@ -286,42 +275,21 @@ void Sol_Render_Resize(uint32_t width, uint32_t height)
     SolVkSwapchain(&solvkstate);
     SolVkImageViews(&solvkstate);
     SolVkDepthResources(&solvkstate);
-    Sol_SetOrtho(width, height);
-    Sol_GetState()->windowWidth  = (float)width;
-    Sol_GetState()->windowHeight = (float)height;
-    solAspectRatio               = (float)width / (float)height;
+
 }
 
-SolCamera *Sol_GetCamera()
-{
-    return &renderCam;
-}
-
-void Render_Camera_Update(vec3 pos, vec3 target)
-{
-    // 1. Update vectors
-    glm_vec3_copy(pos, renderCam.position);
-    glm_vec3_copy(target, renderCam.target);
-
-    // 2. View Matrix
-    glm_lookat(renderCam.position, renderCam.target, (vec3){0.0f, 1.0f, 0.0f}, renderCam.view);
-
-    // 3. Projection Matrix
-    glm_perspective(glm_rad(renderCam.fov), solAspectRatio, renderCam.nearClip, renderCam.farClip, renderCam.proj);
-    renderCam.proj[1][1] *= -1;
-
-    // 4. View Projection
-    glm_mat4_mul(renderCam.proj, renderCam.view, renderCam.viewProj);
-}
-
-void Sol_Begin_3D()
+void Sol_Begin_3D(SolCamera *cam)
 {
     SceneUBO *ubo = descriptors[DESC_SCENE_UBO].mapped[solvkstate.currentFrame];
-    memcpy(ubo->view, renderCam.view, sizeof(mat4));
-    memcpy(ubo->proj, renderCam.proj, sizeof(mat4));
-    memcpy(ubo->viewProjection, renderCam.viewProj, sizeof(mat4));
-    memcpy(ubo->cameraPos, renderCam.position, sizeof(vec3));
-    memcpy(ubo->sun, (vec4){0, 1.0f, 0.4f, 0.2f}, sizeof(vec4));
+    glm_mat4_copy(cam->view, ubo->view);
+    glm_mat4_copy(cam->proj, ubo->proj);
+    glm_mat4_copy(cam->viewProj, ubo->viewProjection);
+    vec4 pos = {cam->position[0], cam->position[1], cam->position[2], 1.0f};
+    glm_vec4_copy(pos, ubo->cameraPos);
+    ubo->sun[0] = 0.0f;
+    ubo->sun[1] = 1.0f;
+    ubo->sun[2] = 0.4f;
+    ubo->sun[3] = 0.2f;
 }
 
 void Sol_Draw_Sphere(vec4s pos, vec4s color)
@@ -518,7 +486,7 @@ void Sol_Begin_Draw()
     vkCmdPipelineBarrier(currentCmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          0, 0, NULL, 0, NULL, 1, &toRender);
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 0.0f}}};
+    VkClearValue clearColor = {{RENDER_CLEAR_COLOR}};
 
     VkRenderingAttachmentInfo colorAttachment = {0};
     colorAttachment.sType                     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -1112,7 +1080,7 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 }
 
-int Sol_UploadImage(const void *pixels, u32 width, u32 height, VkFormat format, SolImageId id)
+int Sol_UploadImage(const void *pixels, u32 width, u32 height, int format, SolImageId id)
 {
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;

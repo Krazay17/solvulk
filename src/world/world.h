@@ -87,17 +87,15 @@ typedef enum
     BUFF_COUNT,
 } BuffKind;
 
-typedef enum AbilityState
+typedef struct
 {
-    ABILITY_CLAW,
-    ABILITY_COUNT,
-} AbilityState;
-
+    float lastEntered, elapsed, duration;
+} AbilityData;
 typedef struct CompAbility
 {
-    AbilityState state;
     vec3s        attackPos, attackDir;
-    float        cooldown;
+    AbilityState state;
+    AbilityData  stateData[ABILITY_STATE_COUNT];
 } CompAbility;
 typedef struct
 {
@@ -345,6 +343,7 @@ void       Sol_System_Model_Draw(World *world, double dt, double time);
 void       Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed);
 
 CompAbility *Sol_Ability_Add(World *world, int id, CompAbility init);
+void         Ability_Step(World *world, double dt, double time);
 void         Ability_Tick(World *world, double dt, double time);
 
 CompInteract *Sol_Interact_Add(World *world, int id);

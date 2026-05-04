@@ -1,5 +1,4 @@
 #pragma once
-
 #include "base.h"
 
 #ifdef SOL_VULK_SHARED
@@ -12,9 +11,11 @@
 #define SOLAPI
 #endif
 
-#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
-#define SOL_PHYS_SUBSTEP 4
 #define SOL_PHYS_TIMESTEP 1.0f / 60.0f
+#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
+#define WORLD_FORWARD (vec3s){0, 0, -1.0f}
+#define WORLD_UP (vec3s){0, 1.0f, 0}
+#define WORLD_DOWN (vec3s){0, -1.0f, 0}
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -25,13 +26,7 @@
 #define MAX_LINE_VERTICES 0xffffff
 #define MAX_BONES 128
 
-#define MAX_DEVICE_QUERY 8
-#define MAX_QUEUE_FAMILIES 16
-#define WORLD_FORWARD (vec3s){0, 0, -1.0f}
-#define WORLD_UP (vec3s){0, 1.0f, 0}
-#define WORLD_DOWN (vec3s){0, -1.0f, 0}
 #define ColorConvert(x) (x / 255.0f)
-
 #define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 
 // Forwards
@@ -249,14 +244,19 @@ typedef struct SolCamera
     mat4  viewProj;
 } SolCamera;
 
-// ^^^^^^^^^^^^^^^^^^^^^^^^SKELETON^^^^^^^^^^^^^^^^^^^^^^^
-
 typedef struct SolLine
 {
     vec3s a, b;
     vec3s aColor, bColor;
     float ttl;
 } SolLine;
+
+typedef struct SolSphere
+{
+    vec3s pos;
+    vec4s color;
+    float radius;
+} SolSphere;
 
 typedef enum
 {
@@ -269,8 +269,8 @@ typedef enum
 typedef struct EventDesc
 {
     EventKind kind;
-    u32 entA;
-    vec3s pos, normal;
+    u32       entA;
+    vec3s     pos, normal;
 } EventDesc;
 
 typedef enum
@@ -505,7 +505,6 @@ typedef struct SolModelDraw
     u32 flags;
 } SolModelDraw;
 
-
 typedef struct SolEvent
 {
     u32   kind;
@@ -521,7 +520,6 @@ typedef struct SolEvents
     u32 capacity;
 } SolEvents;
 
-
 typedef struct
 {
     float x, y, w, h;
@@ -532,5 +530,21 @@ typedef struct
 typedef struct
 {
     ShaderPushText *push;
-    u32 count;
+    u32             count;
 } ShaderPushTexts;
+
+typedef enum 
+{
+    ABILITY_STATE_IDLE,
+    ABILITY_STATE_CLAW,
+    ABILITY_STATE_1,
+    ABILITY_STATE_2,
+    ABILITY_STATE_3,
+    ABILITY_STATE_4,
+    ABILITY_STATE_5,
+    ABILITY_STATE_6,
+    ABILITY_STATE_7,
+    ABILITY_STATE_8,
+    ABILITY_STATE_9,
+    ABILITY_STATE_COUNT,
+} AbilityState;

@@ -3,18 +3,16 @@
 SolState solState = {0};
 
 static double accumulator = 0.0;
-static void DebugFPS(double dt);
-static void Sol_OnResize();
+static void   DebugFPS(double dt);
+static void   Sol_OnResize();
 
 void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd    = hwnd;
     solState.isRunning = true;
-    int vulkInit       = Sol_Init_Vulkan(hwnd, hInstance);
-    printf("Vulkan Init code: %d\n", vulkInit);
-
     Sol_Load_Resources();
-    Sol_Init_Vulkan_Resources();
+
+    Render_Init(hwnd, hInstance);
 
     solState.debug = true;
 }
@@ -74,7 +72,7 @@ void Sol_Tick(double dt, double time)
     }
 
     Sol_Begin_Draw();
-    Sol_Begin_3D();
+    Sol_Begin_3D(Sol_GetCamera());
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw3d(solState.worlds[i], dt, time);

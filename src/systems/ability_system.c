@@ -1,4 +1,45 @@
+#include "estates/ability_states.h"
 #include "sol_core.h"
+typedef struct
+{
+    PlayerActionStates actionBit;
+    AbilityState       targetState;
+} AbilityMapping;
+
+// Defined in order of priority (highest priority first)
+static const AbilityMapping ability_mappings[] = {
+    {ACTION_ABILITY0, ABILITY_STATE_IDLE},
+    {ACTION_ABILITY1, ABILITY_STATE_CLAW},
+};
+#define MAPPING_COUNT (sizeof(ability_mappings) / sizeof(AbilityMapping))
+
+const StateFunc ability_state_func[] = {
+    [ABILITY_STATE_IDLE] =
+        {
+            .update   = IdleAbility_State_Update,
+            .enter    = IdleAbility_State_Enter,
+            .exit     = IdleAbility_State_Exit,
+            .canEnter = IdleAbility_State_CanEnter,
+            .canExit  = IdleAbility_State_CanExit,
+        },
+    [ABILITY_STATE_CLAW] =
+        {
+            .update   = Claw_State_Update,
+            .enter    = Claw_State_Enter,
+            .exit     = Claw_State_Exit,
+            .canEnter = Claw_State_CanEnter,
+            .canExit  = Claw_State_CanExit,
+        },
+    [ABILITY_STATE_1] = {0},
+    [ABILITY_STATE_2] = {0},
+    [ABILITY_STATE_3] = {0},
+    [ABILITY_STATE_4] = {0},
+    [ABILITY_STATE_5] = {0},
+    [ABILITY_STATE_6] = {0},
+    [ABILITY_STATE_7] = {0},
+    [ABILITY_STATE_8] = {0},
+    [ABILITY_STATE_9] = {0},
+};
 
 void Ability_Init(World *world)
 {
@@ -6,7 +47,7 @@ void Ability_Init(World *world)
 
 CompAbility *Sol_Ability_Add(World *world, int id, CompAbility init)
 {
-    CompAbility combat = init;
+    CompAbility combat   = init;
     world->abilities[id] = combat;
     world->masks[id] |= HAS_COMBAT;
     return &world->abilities[id];
@@ -21,7 +62,21 @@ void Ability_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-        CompAbility *ability = &world->abilities[id];
+        CompAbility    *ability    = &world->abilities[id];
+        CompController *controller = &world->controllers[id];
+
+        for (int m = 0; m < MAPPING_COUNT; m++)
+        {
+            if (controller->actionState & ability_mappings[m].actionBit)
+                if (Sol_Ability_SetState(world, id, ability_mappings[m].targetState))
+                    break;
+        }
+        if (ability->state != ABILITY_STATE_IDLE)
+        {
+            const StateFunc *funcs = &ability_state_func[ability->state];
+            if (funcs && funcs->update)
+                funcs->update(world, id, dt);
+        }
     }
 }
 
@@ -34,47 +89,30 @@ void Ability_Tick(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-        CompController *controller = &world->controllers[id];
-        CompXform      *xform      = &world->xforms[id];
-        CompModel      *model      = &world->models[id];
-        CompAbility    *combat     = &world->abilities[id];
-
-        vec3s aimpos = controller->aimpos;
-        vec3s aimdir = controller->aimdir;
-        combat->cooldown -= dt;
-        if (combat->cooldown <= 0)
-            combat->cooldown = 0;
-
-        if (controller->actionState & ACTION_ABILITY1 && combat->cooldown <= 0)
-        {
-            // SolRayResult result = Sol_RaycastD(world,
-            //                                    (SolRay){
-            //                                        .pos       = aimpos,
-            //                                        .dir       = aimdir,
-            //                                        .dist      = 50.0f,
-            //                                        .ignoreEnt = id,
-            //                                        .mask      = 1,
-            //                                    },
-            //                                    1.0f);
-            // if (result.hit)
-            // {
-            //     if (result.entId)
-            //         Sol_Buff_Add(world, result.entId,
-            //                      (CompBuff){.duration = 1.0f,
-            //                                 .kind     = BUFF_KNOCKBACK,
-            //                                 .hit      = (SolHit){.dir = aimdir, .power = 30.0f}});
-            // }
-
-            float min      = 0.2f;
-            float max      = 0.8f;
-            float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
-
-            int ball = Sol_Prefab_Ball(
-                world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
-                (CompSphere){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
-
-            Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
-            // combat->cooldown = 0.05f;
-        }
     }
+}
+
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
+{
+    if (nextState > ABILITY_STATE_COUNT)
+        return false;
+    CompAbility *ability = &world->abilities[id];
+    if (ability->state == nextState)
+        return false;
+    const StateFunc *prevfunc = &ability_state_func[ability->state];
+    if (!prevfunc->canExit || !prevfunc->canExit(world, id))
+        return false;
+    const StateFunc *nextfunc = &ability_state_func[nextState];
+    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id))
+        return false;
+
+    ability->stateData[ability->state].elapsed = 0;
+    prevfunc->exit(world, id);
+    ability->state = nextState;
+    nextfunc->enter(world, id);
+    ability->stateData[ability->state].lastEntered = (float)Sol_GetState()->gameTime;
+
+    Sol_Debug_Add("state", ability->state);
+
+    return true;
 }

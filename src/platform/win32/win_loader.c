@@ -2,7 +2,6 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <vulkan/vulkan.h>
 
 const char *fontResourceName[SOL_FONT_COUNT][2] = {
     [SOL_FONT_ICE] = {"ID_FONT_METRICS", "ID_FONT_ATLAS"},
@@ -17,8 +16,7 @@ void Sol_Load_Resources()
         SolResource res = Sol_LoadResource(model_path[i]);
         if (res.data)
         {
-            SolModel model = Parse_Model(res);
-            Sol_UploadModel(&model, i);
+            SolModel model  = Parse_Model(res);
             bank->models[i] = model;
             if (res.isHeap)
                 free(res.data);
@@ -32,9 +30,9 @@ void Sol_Load_Resources()
         if (!fontIceAtlas.data || !fontIceMetrics.data)
             continue;
 
-        // 
-        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[SOL_FONT_ICE].glyph);
-        Sol_UploadImage(fontIceAtlas.data, 224, 224, VK_FORMAT_R8G8B8A8_UNORM, SOL_IMAGE_FONT);
+        bank->images[i].pixels = fontIceAtlas.data;
+        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[i].glyph);
+        // Sol_UploadImage(fontIceAtlas.data, 224, 224, 37, SOL_IMAGE_FONT);
     }
 }
 

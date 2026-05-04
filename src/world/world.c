@@ -8,7 +8,7 @@ static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_CONTROLLER_AI]    = {.tick = Sol_System_Controller_Ai_Tick},
     [WORLD_SYS_INTERACT]         = {.tick = System_Interact_Tick},
     [WORLD_SYS_MOVEMENT]         = {.step = Sol_System_Movement_3d_Step},
-    [WORLD_SYS_COMBAT]           = {.tick = Ability_Tick},
+    [WORLD_SYS_COMBAT]           = {.tick = Ability_Tick, .step = Ability_Step},
     [WORLD_SYS_BUFF]             = {.step = Buff_Step},
     [WORLD_SYS_VITAL]            = {.step = Vital_Step, .draw3d = Sol_Vital_Draw},
     [WORLD_SYS_MODEL]            = {.draw3d = Sol_System_Model_Draw},

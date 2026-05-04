@@ -6,6 +6,7 @@
 #include "resource/resource.h"
 #include "maths/sol_math.h"
 #include "maths/physx.h"
+#include "render/render.h"
 
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
@@ -26,7 +27,7 @@ typedef struct SolState
 } SolState;
 
 SOLAPI void Sol_Begin_Draw();
-SOLAPI void Sol_Begin_3D();
+SOLAPI void Sol_Begin_3D(SolCamera *cam);
 SOLAPI void Sol_End_Draw();
 
 SOLAPI void World_Step(World *world, double dt, double time);

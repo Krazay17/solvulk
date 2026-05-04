@@ -17,14 +17,12 @@ SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Destroy();
 
 SOLAPI SolState  *Sol_GetState();
-SOLAPI SolCamera *Sol_GetCamera();
 SOLAPI double     Sol_GetGameTime();
 
 SOLAPI int Sol_Init_Vulkan(void *hwnd, void *hInstance);
 int        Sol_Init_Vulkan_Resources();
 
 SOLAPI void Sol_Render_Resize(uint32_t width, uint32_t height);
-SOLAPI void Sol_SetOrtho(uint32_t width, uint32_t height);
 
 SOLAPI float Sol_MeasureText(const char *str, float size, SolFontKind id);
 

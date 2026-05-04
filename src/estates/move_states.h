@@ -1,6 +1,6 @@
 #pragma once
-#include "sol/types.h"
 #include "estate.h"
+#include "sol/types.h"
 
 typedef struct
 {
@@ -8,9 +8,9 @@ typedef struct
 } MoveStateForce;
 
 extern const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT];
-extern const StateFunc  MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT];
+extern const StateFunc      MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT];
 
-bool      Sol_Movement_SetState(World *world, int id, MoveState state);
+bool Sol_Movement_SetState(World *world, int id, MoveState state);
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt);
 void Sol_Movement_Idle_Enter(World *world, int id);

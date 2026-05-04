@@ -1,6 +1,8 @@
 #pragma once
 #include "sol/types.h"
 
+#define RENDER_CLEAR_COLOR {0.0f, 0.0f, 0.0f, 1.0f}
+
 typedef struct
 {
     mat4 ortho2d;
@@ -52,19 +54,50 @@ typedef struct
     u32 flags;
 } FlagsSSBO;
 
-// void Render_Init();
-// void Render_Push_Model(SolModelDraw model);
-// void Render_Push_Model_Skinned(SolModelDraw model);
-// void Render_Push_Sphere(SolSphere sphere);
-// void Render_Push_Line(SolLine line);
+// Submission Que
 
-// void Render_Draw_Model(SolModelDraw draw);
+typedef struct
+{
+    u32        count;
+    ModelSSBO  instances[MAX_MODEL_INSTANCES];
+    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
+    SolModelId handles[MAX_MODEL_INSTANCES];
+} ModelSubmission;
+
+typedef struct
+{
+    u32          count;
+    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
+    FlagsSSBO    flags[MAX_MODEL_INSTANCES];
+    SkinningSSBO instances[MAX_MODEL_INSTANCES];
+    SolModelId   handles[MAX_MODEL_INSTANCES];
+} ModelSkinnedSubmission;
+
+typedef struct
+{
+    u32        count;
+    SphereSSBO instances[MAX_SPHERE_INSTANCES];
+} SphereSubmission;
+
+void Render_Init(void *hwnd, void *hInstance);
+void Render_Camera_Update(vec3 pos, vec3 target);
+void Render_Push_Model(SolModelDraw model);
+void Render_Push_Model_Skinned(SolModelDraw model);
+void Render_Push_Sphere(SolSphere sphere);
+void Render_Push_Line(SolLine line);
+
+void Render_Draw_Model(SolModelDraw draw);
 void Render_Draw_Model_Skinned();
 void Render_Draw_Sphere();
 void Render_Draw_Line();
 
 void Render_3d();
 void Render_2d();
+void Sol_Render_Resize(uint32_t width, uint32_t height);
+void Remake_Swapchain(uint32_t width, uint32_t height);
 
+void Sol_UploadModel(SolModel *model, SolModelId id);
+int  Sol_UploadImage(const void *pixels, u32 width, u32 height, int format, SolImageId id);
 
-void Sol_Draw_Sphere(vec4s pos, vec4s color);
+SolCamera *Sol_GetCamera();
+void       Sol_Draw_Sphere(vec4s pos, vec4s color);

@@ -1,8 +1,11 @@
 #pragma once
+#include "render/render.h"
 #include "sol/types.h"
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
+#define MAX_DEVICE_QUERY 8
+#define MAX_QUEUE_FAMILIES 16
 
 typedef enum
 {
@@ -34,34 +37,6 @@ typedef enum PipelineId
     PIPE_SPHERE,
     PIPE_COUNT,
 } PipelineId;
-
-// ------Cpu data----------
-
-
-// Submission Que
-
-typedef struct
-{
-    u32        count;
-    ModelSSBO  instances[MAX_MODEL_INSTANCES];
-    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
-    SolModelId handles[MAX_MODEL_INSTANCES];
-} ModelSubmission;
-
-typedef struct
-{
-    u32          count;
-    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
-    FlagsSSBO    flags[MAX_MODEL_INSTANCES];
-    SkinningSSBO instances[MAX_MODEL_INSTANCES];
-    SolModelId   handles[MAX_MODEL_INSTANCES];
-} ModelSkinnedSubmission;
-
-typedef struct
-{
-    u32        count;
-    SphereSSBO instances[MAX_SPHERE_INSTANCES];
-} SphereSubmission;
 
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
@@ -215,14 +190,10 @@ int Sol_CreateDescriptorImage(SolVkState *vk, VkImageView imageView, VkSampler s
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *pipe);
 int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out);
 
-int  Sol_UploadImage(const void *pixels, u32 width, u32 height, VkFormat format, SolImageId id);
-void Sol_UploadModel(SolModel *model, SolModelId id);
-
 // ─── Render API (internal) ───────────────────────────────────────
-
 VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void            Render_Camera_Update(vec3 pos, vec3 target);
+void     Vk_SetOrtho(uint32_t width, uint32_t height);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);

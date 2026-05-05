@@ -68,7 +68,7 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
     {
         Xform_Interpolate(solState.worlds[i], alpha);
-        Sol_Cam3d_Tick(solState.worlds[i], dt, time, alpha);
+        Sol_Camera_Tick(solState.worlds[i], dt, time, alpha);
     }
 
     Sol_Begin_Draw();

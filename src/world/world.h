@@ -23,19 +23,20 @@ typedef enum
     WORLD_SYS_TIMER,
     WORLD_SYS_XFORM,
     WORLD_SYS_PHYSX,
+    WORLD_SYS_CONTROLLER,
 
     WORLD_SYS_MOVEMENT,
+    WORLD_SYS_COMBAT,
     WORLD_SYS_INTERACT,
     WORLD_SYS_PICKUP,
-    WORLD_SYS_COMBAT,
     WORLD_SYS_BUFF,
     WORLD_SYS_VITAL,
 
-    WORLD_SYS_CONTROLLER,
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
     WORLD_SYS_SPHERE,
+
     WORLD_SYS_CAM,
     WORLD_SYS_UI,
     WORLD_SYS_COUNT,
@@ -59,40 +60,39 @@ typedef struct
 
 typedef struct World
 {
-    SystemFunc tickSystems[MAX_SYSTEMS];
     SystemFunc stepSystems[MAX_SYSTEMS];
-    SystemFunc draw2dSystems[MAX_SYSTEMS];
+    SystemFunc tickSystems[MAX_SYSTEMS];
     SystemFunc draw3dSystems[MAX_SYSTEMS];
+    SystemFunc draw2dSystems[MAX_SYSTEMS];
 
     int       activeEntities[MAX_ENTS];
     Active    actives[MAX_ENTS];
     Mask      masks[MAX_ENTS];
     CompFlags flags[MAX_ENTS];
 
-    CompTimer  timers[MAX_ENTS];
-    CompUi *uiElements;
-
-    CompInteract   *interacts;
-    CompSphere     *spheres;
-    CompVital      *vitals;
+    CompTimer      *timers;
+    SolEvents      *events;
     CompXform      *xforms;
     CompBody       *bodies;
     CompMovement   *movements;
+    CompModel      *models;
+    CompUi         *uiElements;
+    CompInteract   *interacts;
+    CompSphere     *spheres;
+    CompVital      *vitals;
     CompController *controllers;
     CompBuff       *buffs;
-    CompModel      *models;
     CompAbility    *abilities;
     WorldPhysx     *spatial;
     WorldLines     *lines;
     SolEmitters    *emitters;
-    SolEvents      *events;
 
     bool worldActive;
 
     int stepCount;
     int tickCount;
-    int draw3dCount;
     int draw2dCount;
+    int draw3dCount;
     int activeCount;
     int playerID;
     u32 systemBits;
@@ -117,9 +117,3 @@ int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc);
-
-
-CompTimer  *Sol_Timer_Add(World *world, int id, CompTimer init);
-
-void Sol_Timer_Tick(World *world, double dt, double time);
-

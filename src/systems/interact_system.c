@@ -17,9 +17,12 @@ void Sol_Interact_Init(World *world)
 
 void Sol_Interact_Add(World *world, int id, InteractDesc desc)
 {
-    CompInteract interact = {0};
-    world->interacts[id]  = interact;
     world->masks[id] |= HAS_INTERACT;
+    CompInteract *interact = &world->interacts[id];
+    interact->onClick      = desc.onClick;
+    interact->onHold       = desc.onHold;
+    interact->state        = desc.states;
+    interact->value        = desc.value;
 }
 
 void System_Interact_Tick(World *world, double dt, double time)
@@ -52,18 +55,16 @@ void System_Interact_Tick(World *world, double dt, double time)
         if (world->masks[id] & HAS_BODY3)
         {
             if (rayId == id)
-            {
                 collision = true;
-            }
         }
-        else
+        else if (world->masks[id] & HAS_BODY2)
         {
             vec2s mousePos = (vec2s){mouse.x, mouse.y};
             collision      = Sol_Check_2d_Collision(mousePos, (vec4s){
                                                                   UISCALE(xform->pos.x),
                                                                   UISCALE(xform->pos.y),
-                                                                  UISCALE(xform->width),
-                                                                  UISCALE(xform->height),
+                                                                  UISCALE(Sol_Physx_GetDims(world, id).x),
+                                                                  UISCALE(Sol_Physx_GetDims(world, id).y),
                                                               });
         }
         if (collision)

@@ -3,26 +3,21 @@
 
 typedef enum
 {
-    HAS_NONE              = 0,
-    HAS_XFORM             = (1 << 0),
-    HAS_BODY2             = (1 << 1),
-    HAS_BODY3             = (1 << 2),
-    HAS_TOUCH             = (1 << 3),
-    HAS_SHAPE             = (1 << 4),
-    HAS_INTERACT          = (1 << 5),
-    HAS_MODEL             = (1 << 6),
-    HAS_INFO              = (1 << 7),
-    HAS_UIVIEW            = (1 << 8),
-    HAS_MOVEMENT          = (1 << 9),
-    HAS_CONTROLLER        = (1 << 10),
-    HAS_CAMERA            = (1 << 13),
-    HAS_COMBAT            = (1 << 14),
-    HAS_BUFF              = (1 << 15),
-    HAS_VITAL             = (1 << 16),
-    HAS_SPHERE            = (1 << 17),
-    HAS_TIMER             = (1 << 18),
-    HAS_PICKUP            = (1 << 19),
-    HAS_EVENT             = (1 << 20),
+    HAS_NONE       = 0,
+    HAS_XFORM      = (1 << 0),
+    HAS_BODY2      = (1 << 1),
+    HAS_BODY3      = (1 << 2),
+    HAS_INTERACT   = (1 << 3),
+    HAS_MODEL      = (1 << 4),
+    HAS_UIVIEW     = (1 << 5),
+    HAS_MOVEMENT   = (1 << 6),
+    HAS_CONTROLLER = (1 << 7),
+    HAS_ABILITY    = (1 << 8),
+    HAS_BUFF       = (1 << 9),
+    HAS_VITAL      = (1 << 10),
+    HAS_SPHERE     = (1 << 11),
+    HAS_TIMER      = (1 << 12),
+    HAS_EVENT      = (1 << 13),
 } CompBits;
 
 // XFORM--------------
@@ -43,9 +38,8 @@ void  Sol_Xform_SetYaw(World *world, int id, float yaw);
 void  Sol_Xform_SetPos(World *world, int id, vec3s pos);
 
 // CAMERA----------------
-void Sol_Cam3d_Tick(World *world, double dt, double time, float alpha);
+void Sol_Camera_Tick(World *world, double dt, double time, float alpha);
 void Sol_Crosshair_Draw(World *world, double dt, double time);
-void Sol_System_Camera_Tick(World *world, double dt, double time);
 
 // MOVEMENT--------------
 typedef struct CompMovement CompMovement;
@@ -72,6 +66,7 @@ typedef struct
     float  radius, height, length;
     float  mass, restitution;
     Shape3 shape;
+    bool is2d;
     u8     group;
 } BodyDesc;
 void         Sol_Body_Add(World *world, int id, BodyDesc desc);
@@ -82,6 +77,7 @@ vec3s        Sol_Physx_GetVel(World *world, int id);
 void         Sol_Physx_SetVel(World *world, int id, vec3s vel);
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
 void         Sol_Physx_SetGrav(World *world, int id, vec3s vel);
+vec3s        Sol_Physx_GetDims(World *world, int id);
 
 // CONTROLLER------------
 typedef struct CompController CompController;
@@ -95,7 +91,7 @@ typedef struct
 {
     ControllerKind kind;
 } ControllerDesc;
-void Sol_Controller_Init(World *world);
+void  Sol_Controller_Init(World *world);
 void  Sol_Controller_Add(World *world, int id, ControllerDesc desc);
 void  Sol_Controller_Tick(World *world, double dt, double time);
 vec3s Sol_Controller_GetAimPos(World *world, int id);
@@ -112,11 +108,11 @@ typedef struct
     SolModelId id;
     float      yoffset;
 } ModelDesc;
-void      Sol_Model_Init(World *world);
-void      Sol_Model_Add(World *world, int id, ModelDesc desc);
-void      Sol_Model_Draw(World *world, double dt, double time);
-void      Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed);
-SolModel *Sol_Model_GetModel(World *world, int id);
+void       Sol_Model_Init(World *world);
+void       Sol_Model_Add(World *world, int id, ModelDesc desc);
+void       Sol_Model_Draw(World *world, double dt, double time);
+void       Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed);
+SolModelId Sol_Model_GetModelId(World *world, int id);
 
 // EMITTER--------------
 void Emitter_Init(World *world);
@@ -153,10 +149,14 @@ void Sol_Sphere_Draw(World *world, double dt, double time);
 void Sol_Sphere_ColorAll(World *world, vec4s color);
 
 // TIMER-----------------
-typedef struct CompTimer
+typedef struct CompTimer CompTimer;
+typedef struct
 {
     float elapsed, duration;
-} CompTimer;
+} TimerDesc;
+void Sol_Timer_Init(World *world);
+void Sol_Timer_Add(World *world, int id, TimerDesc init);
+void Sol_Timer_Tick(World *world, double dt, double time);
 
 // ABILITY---------------
 typedef struct CompAbility CompAbility;
@@ -238,8 +238,20 @@ typedef enum
 } UiKind;
 typedef struct
 {
-    UiKind kind;
+    UiKind      kind;
+    vec4s       baseColor;
+    vec4s       textColor;
+    float       fontSize;
+    const char *text;
+    float       textWidth;
+
+    float hoverAnim;
+    float clickAnim;
+
+    float borderThickness;
+    vec4s borderColor;
 } UiDesc;
+void Sol_Ui_Init(World *world);
 void Sol_Ui_Add(World *world, int id, UiDesc desc);
 void Sol_Ui_Draw(World *world, double dt, double time);
 

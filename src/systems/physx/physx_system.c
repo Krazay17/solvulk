@@ -1,5 +1,5 @@
-#include "sol_core.h"
 #include "physx.h"
+#include "sol_core.h"
 #include <omp.h>
 
 #include "xform/xform.h"
@@ -12,15 +12,10 @@ static SolProfiler prof_dynamic = {.name = "Dynamic"};
 
 static int prof_frame = 0;
 
-struct PhysxTable
-{
-    CompBody *bodies;
-    u32       count;
-};
-
 void Sol_Physx_Init(World *world)
 {
     world->bodies = calloc(MAX_ENTS, sizeof(CompBody));
+
     world->spatial = calloc(1, sizeof(WorldPhysx));
     SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
                       SPATIAL_STATIC_CELL_SIZE);
@@ -30,13 +25,23 @@ void Sol_Physx_Init(World *world)
 
 void Sol_Body_Add(World *world, int id, BodyDesc desc)
 {
-    world->masks[id] |= HAS_BODY3;
+    if (desc.is2d)
+        world->masks[id] |= HAS_BODY2;
+    else
+        world->masks[id] |= HAS_BODY3;
     CompBody body = {
-        .gravity = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
-        .height  = desc.height ? desc.height : 0.5f,
-        .radius  = desc.radius ? desc.radius : 0.5f,
-        .length  = desc.length ? desc.length : 0.5f,
-        .invMass = desc.mass > 0 ? 1.0f / body.mass : 0,
+        .mass        = desc.mass,
+        .shape       = desc.shape,
+        .group       = desc.group,
+        .gravity     = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
+        .invMass     = desc.mass > 0 ? 1.0f / desc.mass : 0,
+        .restitution = desc.restitution ? desc.restitution : 0.5f,
+        .dims =
+            (vec3s){
+                .x = desc.radius,
+                .y = desc.height,
+                .z = desc.length,
+            },
     };
     world->bodies[id] = body;
     Spatial_Add(world, id, &world->bodies[id]);
@@ -47,7 +52,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     if (Sol_GetState()->fps < 30)
         return;
     float       fdt      = (float)dt;
-    int         required = HAS_BODY3 | HAS_XFORM;
+    int         required = HAS_BODY3;
     int         i, j, k, l;
     int         count        = 0;
     int         activeCount  = world->activeCount;
@@ -79,7 +84,6 @@ void Sol_Physx_Step(World *world, double dt, double time)
         int        id    = ents[j];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
-
         if (xform->pos.y < -15)
         {
             Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
@@ -139,7 +143,7 @@ void Ground_Trace(World *world, int count)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin = vecSub(xform->pos, vecSca(WORLD_UP, body->height * 0.25f));
+        vec3s origin = vecSub(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.25f));
 
         body->grounded = 0; // Reset every frame
         for (int j = 0; j < 4; j++)
@@ -148,10 +152,10 @@ void Ground_Trace(World *world, int count)
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
 
             // Calculate ray start position
-            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->radius));
+            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x));
 
             SolRayResult result = Sol_Raycast(
-                world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->height * 0.3f, .ignoreEnt = id});
+                world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.3f, .ignoreEnt = id});
 
             if (result.hit && result.norm.y > 0.5f)
             {
@@ -273,4 +277,9 @@ void Sol_Physx_SetVel(World *world, int id, vec3s vel)
 void Sol_Physx_SetGrav(World *world, int id, vec3s vel)
 {
     world->bodies[id].gravity = vel;
+}
+
+vec3s Sol_Physx_GetDims(World *world, int id)
+{
+    return world->bodies[id].dims;
 }

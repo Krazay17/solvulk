@@ -14,10 +14,9 @@
 
 typedef struct CompBody
 {
-    vec3s  vel, impulse, force, groundNormal;
+    vec3s  vel, impulse, force, groundNormal, dims;
     vec3s  gravity;
     float  grounded, airtime;
-    float  radius, height, length;
     float  mass, invMass, restitution;
     Shape3 shape;
     u8     group;

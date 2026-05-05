@@ -46,12 +46,12 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 {
     CompAbility combat   = {0};
     world->abilities[id] = combat;
-    world->masks[id] |= HAS_COMBAT;
+    world->masks[id] |= HAS_ABILITY;
 }
 
 void Sol_Ability_Step(World *world, double dt, double time)
 {
-    int required = HAS_COMBAT;
+    int required = HAS_ABILITY;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {
@@ -78,7 +78,7 @@ void Sol_Ability_Step(World *world, double dt, double time)
 
 void Sol_Ability_Tick(World *world, double dt, double time)
 {
-    int required = HAS_COMBAT;
+    int required = HAS_ABILITY;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {

@@ -1,8 +1,21 @@
 #include "sol_core.h"
 
-CompTimer *Sol_Timer_Add(World *world, int id, CompTimer init)
+typedef struct CompTimer
 {
-    CompTimer timer = init;
+    float elapsed, duration;
+} CompTimer;
+
+void Sol_Timer_Init(World *world)
+{
+    world->timers = calloc(MAX_ENTS, sizeof(CompTimer));
+}
+
+void Sol_Timer_Add(World *world, int id, TimerDesc desc)
+{
+    CompTimer timer = {
+        .duration = desc.duration,
+        .elapsed = desc.elapsed,
+    };
 
     world->timers[id] = timer;
     world->masks[id] |= HAS_TIMER;

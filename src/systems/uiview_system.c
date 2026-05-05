@@ -38,16 +38,23 @@ void Sol_Ui_Add(World *world, int id, UiDesc desc)
 {
     if (!world || !world->uiElements)
         return;
+
     world->masks[id] |= HAS_UIVIEW;
-    CompUi ui = {
-        .kind = desc.kind,
-    };
-    world->uiElements[id] = ui;
+
+    CompUi *ui =&world->uiElements[id];
+    ui->kind            = desc.kind;
+    ui->baseColor       = desc.baseColor;
+    ui->borderColor     = desc.borderColor;
+    ui->textColor       = desc.textColor;
+    ui->borderThickness = desc.borderThickness;
+    ui->fontSize        = desc.fontSize;
+    ui->textWidth       = desc.textWidth;
+    strncpy_s(ui->text, sizeof(ui->text), desc.text, 64);
 }
 
 void Sol_Ui_Draw(World *world, double dt, double time)
 {
-    int   required = HAS_XFORM | HAS_SHAPE | HAS_UIVIEW;
+    int   required = HAS_XFORM | HAS_UIVIEW;
     float fdt      = (float)dt;
 
     for (int i = 0; i < world->activeCount; i++)
@@ -72,7 +79,8 @@ void Sol_Ui_Draw(World *world, double dt, double time)
         }
 
         // --- DRAWING LOGIC ---
-        vec4s rect    = {UISCALE(xform->pos.x), UISCALE(xform->pos.y), UISCALE(xform->width), UISCALE(xform->height)};
+        vec4s rect    = {UISCALE(xform->pos.x), UISCALE(xform->pos.y), UISCALE(Sol_Physx_GetDims(world, id).x),
+                         UISCALE(Sol_Physx_GetDims(world, id).y)};
         vec4s drawCol = view->baseColor;
         if (Sol_Interact_GetState(world, id) & INTERACT_TOGGLED)
             drawCol = (vec4s){80, 200, 80, 255};
@@ -90,8 +98,8 @@ void Sol_Ui_Draw(World *world, double dt, double time)
         // Text
         if (view->text[0] != '\0')
         {
-            float       tx       = rect.x + (rect.w * 0.5f) - (UISCALE(view->textWidth) * 0.5f);
-            float       ty       = rect.y + (rect.z * 0.5f) + (view->fontSize * 0.3f);
+            float       tx       = rect.x + (rect.z * 0.5f) - (UISCALE(view->textWidth) * 0.5f);
+            float       ty       = rect.y + (rect.w * 0.5f) + (view->fontSize * 0.3f);
             SolFontDesc fontDesc = {
                 .str   = view->text,
                 .x     = tx,

@@ -49,8 +49,6 @@ SOLAPI void Sol_Debug_Add(const char *text, float value);
 SolRayResult Sol_Raycast(World *world, SolRay ray);
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration);
 
-void Physx_Mass_Set(World *world, int id, float mass);
-
 static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
 {
     if (count >= *capacity)

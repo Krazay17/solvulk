@@ -13,7 +13,7 @@ static float currentOffset   = 1.3f;
 
 static float lerp_speed = 30.0f; // Higher is faster/tighter
 
-void Sol_Cam3d_Tick(World *world, double dt, double time, float alpha)
+void Sol_Camera_Tick(World *world, double dt, double time, float alpha)
 {
     int id = world->playerID;
     if (id < 0)
@@ -31,8 +31,8 @@ void Sol_Cam3d_Tick(World *world, double dt, double time, float alpha)
 
     if (body)
     {
-        anchor.y += body->height * 0.4f;
-        head.y += body->height * 0.4f;
+        anchor.y += body->dims.y * 0.4f;
+        head.y += body->dims.y * 0.4f;
     }
 
     if (!initialized)
@@ -82,6 +82,10 @@ void Sol_Cam3d_Tick(World *world, double dt, double time, float alpha)
     controller->aimdir    = vecDot(dir, lookdir) > 0.6f ? dir : lookdir;
     controller->aimHitEnt = aimTrace.entId;
     controller->aimpos    = head;
+
+    Sol_Debug_Add("CamX", camPos.x);
+    Sol_Debug_Add("CamY", camPos.y);
+    Sol_Debug_Add("CamZ", camPos.z);
 }
 
 void Sol_Crosshair_Draw(World *world, double dt, double time)

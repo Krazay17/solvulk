@@ -926,7 +926,7 @@ bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, 
 {
     vec3s delta     = glms_vec3_sub(aXform->pos, bXform->pos);
     float distSq    = glms_vec3_dot(delta, delta);
-    float radiusSum = aBody->dims.x + bBody->dims.y;
+    float radiusSum = aBody->dims.x + bBody->dims.x;
 
     if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
         return false;

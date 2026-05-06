@@ -1,7 +1,6 @@
-#include "sol_core.h"
 #include "movement_system.h"
+#include "sol_core.h"
 #include "world/components.h"
-
 
 const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
@@ -10,7 +9,6 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
             [MOVE_WALK]  = {.speed = 6.0f, .accell = 20.0f, .friction = 10.0f, .gravity = 9.81f},
             [MOVE_FALL]  = {.speed = 6.0f, .accell = 4.0f, .friction = 0.0f, .gravity = 9.81f},
             [MOVE_JUMP]  = {.speed = 6.0f, .accell = 10.0f, .friction = 0.0f, .gravity = 9.81f},
-            [MOVE_DASH]  = {.speed = 24.0f, .accell = 32.0f, .friction = 0.0f, .gravity = 0},
             [MOVE_SLIDE] = {.speed = 6.0f, .accell = 5.0f, .friction = 1.0f, .gravity = 9.81f},
             [MOVE_FLY]   = {.speed = 6.0f, .accell = 10.0f, .friction = 1.0f, .gravity = 0},
         },
@@ -60,14 +58,6 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
                     .canExit  = Sol_Movement_Jump_CanExit,
                     .canEnter = Sol_Movement_Jump_CanEnter,
                 },
-            [MOVE_DASH] =
-                {
-                    .enter    = Sol_Movement_Dash_Enter,
-                    .exit     = Sol_Movement_Dash_Exit,
-                    .update   = Sol_Movement_Dash_Update,
-                    .canExit  = Sol_Movement_Dash_CanExit,
-                    .canEnter = Sol_Movement_Dash_CanEnter,
-                },
             [MOVE_FLY] =
                 {
                     .enter    = Sol_Movement_Fly_Enter,
@@ -104,7 +94,7 @@ void Sol_Movement_Init(World *world)
     world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
 }
 
-void Sol_Movement_Add(World *world, int id, MovementDesc desc) 
+void Sol_Movement_Add(World *world, int id, MovementDesc desc)
 {
     world->masks[id] |= HAS_MOVEMENT;
     CompMovement movement = {
@@ -126,14 +116,24 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             CompBody     *body     = &world->bodies[id];
 
             CompController *controller = &world->controllers[id];
-            if (controller)
-                movement->wishdir = controller->wishdir;
+            xform->quat                = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
 
-            xform->quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
-
-            const StateFunc *funcs = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
+            const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
+            const StateFunc      *funcs  = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
             if (funcs->update)
                 funcs->update(world, id, dt);
+
+            vec3s vel        = body->vel;
+            vec3s wishdir    = controller->wishdir;
+            vec3s latwishdir = wishdir;
+            latwishdir.y     = 0;
+            latwishdir       = glms_vec3_normalize(latwishdir);
+            float dot        = glms_vec3_dot(latwishdir, body->groundNormal);
+            vec3s slopeDir   = glms_vec3_sub(latwishdir, glms_vec3_scale(body->groundNormal, dot));
+
+            vel       = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
+            vel       = ApplyAccel3(slopeDir, vel, forces->speed, forces->accell, fdt);
+            body->vel = vel;
         }
     }
     if (world->playerID < 0)
@@ -149,10 +149,10 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     if (movement->moveState == nextState)
         return false;
     const StateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->configId][movement->moveState];
-    if (!prevfunc->canExit(world, id))
+    if (!prevfunc->canExit(world, id, nextState))
         return false;
     const StateFunc *nextfunc = &MOVE_STATE_FUNCS[movement->configId][nextState];
-    if (!nextfunc->canEnter(world, id))
+    if (!nextfunc->canEnter(world, id, movement->moveState))
         return false;
 
     // printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
@@ -160,7 +160,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     prevfunc->exit(world, id);
     movement->moveState = nextState;
     nextfunc->enter(world, id);
-    Sol_Debug_Add("state", movement->moveState);
+    Sol_Debug_Add("Move State", movement->moveState);
 
     return true;
 }

@@ -277,7 +277,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void QuitApp(void *data)
+void QuitApp(World *world, int id, void *data)
 {
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }
@@ -318,27 +318,20 @@ FILETIME get_last_write_time(const char *path)
     return lastWriteTime;
 }
 
-void W_Set_Ontop(void *data)
+void W_Set_Ontop(int flags, void *data)
 {
-    //CompInteract *interact = (CompInteract *)data;
-    //bool          toggle   = interact->states & INTERACT_TOGGLED;
-    static bool toggle;
-    toggle = !toggle;
-    HWND          top      = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
+    bool toggle = (flags & INTERACT_TOGGLED);
+    HWND top    = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
     SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
-void W_Set_Fullscreen(void *data)
+void W_Set_Fullscreen(int flags, void *data)
 {
-    //CompInteract *interact = (CompInteract *)data;
-    //bool          toggle   = interact->states & INTERACT_TOGGLED;
-    //isFullscreen           = toggle;
-    static bool toggle;
-    toggle = !toggle;
-    u32 width              = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
-    u32 height             = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
-    
-    //ChangeDisplaySettings(0, CDS_FULLSCREEN);
+    bool toggle = (flags & INTERACT_TOGGLED);
+    u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
+    u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
+
+    // ChangeDisplaySettings(0, CDS_FULLSCREEN);
     SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
     Sol_GetState()->windowWidth  = width;
     Sol_GetState()->windowHeight = height;

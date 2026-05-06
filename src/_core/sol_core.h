@@ -2,6 +2,7 @@
 #include "sol/sol.h"
 
 #include "profiler.h"
+#include "camera.h"
 #include "world/world.h"
 #include "resource/resource.h"
 #include "maths/sol_math.h"
@@ -24,6 +25,8 @@ typedef struct SolState
     World   *worlds[MAX_WORLDS];
     uint16_t worldCount;
 } SolState;
+
+SolLook *Sol_Input_GetLook();
 
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_Begin_3D(SolCamera *cam);

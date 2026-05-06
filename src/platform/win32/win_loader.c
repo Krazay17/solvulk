@@ -16,7 +16,7 @@ void Sol_Load_Resources()
         SolResource res = Sol_LoadResource(model_path[i]);
         if (res.data)
         {
-            SolModel model  = Parse_Model(res);
+            SolModel model  = Parse_Model(res, i);
             bank->models[i] = model;
             if (res.isHeap)
                 free(res.data);

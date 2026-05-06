@@ -11,9 +11,7 @@ void Sol_Init(void *hwnd, void *hInstance)
     solState.g_hwnd    = hwnd;
     solState.isRunning = true;
     Sol_Load_Resources();
-
     Render_Init(hwnd, hInstance);
-
     solState.debug = true;
 }
 
@@ -68,11 +66,12 @@ void Sol_Tick(double dt, double time)
     for (int i = 0; i < solState.worldCount; ++i)
     {
         Xform_Interpolate(solState.worlds[i], alpha);
-        Sol_Camera_Tick(solState.worlds[i], dt, time, alpha);
+        // Sol_Camera_Tick(solState.worlds[i], dt, time, alpha);
     }
 
+    
     Sol_Begin_Draw();
-    Sol_Begin_3D(Sol_GetCamera());
+    Sol_Cam_Update(dt);
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw3d(solState.worlds[i], dt, time);

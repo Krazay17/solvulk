@@ -8,6 +8,7 @@
 typedef struct
 {
     float lastEntered, elapsed, duration;
+    vec3s dir, pos;
 } AbilityData;
 typedef struct CompAbility
 {
@@ -37,3 +38,9 @@ void Claw_State_Enter(World *world, int id);
 void Claw_State_Exit(World *world, int id);
 bool Claw_State_CanEnter(World *world, int id);
 bool Claw_State_CanExit(World *world, int id);
+
+void ADash_State_Update(World *world, int id, float dt);
+void ADash_State_Enter(World *world, int id);
+void ADash_State_Exit(World *world, int id);
+bool ADash_State_CanEnter(World *world, int id);
+bool ADash_State_CanExit(World *world, int id);

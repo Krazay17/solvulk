@@ -1,8 +1,8 @@
 #include "controller.h"
 #include "sol_core.h"
 
-#define MAX_PITCH (GLM_PI_2 - 0.01f)
-float lookSens = 0.001f;
+#include "physx/physx.h"
+#include "xform/xform.h"
 
 static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_0] = ACTION_ABILITY0, [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
@@ -26,7 +26,8 @@ void Sol_Controller_Init(World *world)
 void Sol_Controller_Add(World *world, int id, ControllerDesc desc)
 {
     world->masks[id] |= HAS_CONTROLLER;
-
+    CompController *controller = &world->controllers[id];
+    controller->kind           = desc.kind;
     if (desc.kind == CONTROLLER_LOCAL)
         world->playerID = id;
 }
@@ -48,30 +49,8 @@ void Sol_Controller_Tick(World *world, double dt, double time)
 
 static void LocalTick(World *world, int id, double dt, double time)
 {
-    SolMouse        mouse      = Sol_Input_GetMouse();
     CompController *controller = &world->controllers[id];
-    float           yaw        = controller->yaw;
-    float           pitch      = controller->pitch;
-
-    if (mouse.locked)
-    {
-        yaw -= mouse.dx * lookSens;
-        pitch -= mouse.dy * lookSens;
-
-        yaw = fmodf(yaw, 2.0f * GLM_PI);
-        if (yaw > GLM_PI)
-            yaw -= 2.0f * GLM_PI;
-        else if (yaw < -GLM_PI)
-            yaw += 2.0f * GLM_PI;
-
-        if (pitch > MAX_PITCH)
-            pitch = MAX_PITCH;
-        if (pitch < -MAX_PITCH)
-            pitch = -MAX_PITCH;
-    }
-
-    controller->yaw   = yaw;
-    controller->pitch = pitch;
+    SolLook        *look       = Sol_Input_GetLook();
 
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
@@ -81,16 +60,35 @@ static void LocalTick(World *world, int id, double dt, double time)
             controller->actionState &= ~action_binds[i];
     }
 
-    vec3s lookdir = glms_vec3_normalize(Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch));
-    vec3s wishdir = GetWishDir3(controller->actionState, lookdir, WORLD_UP);
+    vec3s head = world->xforms[id].drawPos;
+    head.y += world->bodies[id].dims.y * 0.4f;
+    Sol_Cam_Arm_Update(world, head, dt);
 
-    controller->lookdir  = lookdir;
-    controller->wishdir  = wishdir;
+    controller->yaw     = look->yaw;
+    controller->pitch   = look->pitch;
+    controller->lookdir = look->lookdir;
+    controller->wishdir  = GetWishDir3(controller->actionState, look->lookdir, WORLD_UP);
     controller->wishdir2 = GetWishDir2(controller->actionState);
+
+    controller->aimHitEnt = -1;
+    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
+                                                   .pos       = Sol_Cam_GetArm()->arm,
+                                                   .ignoreEnt = id,
+                                                   .mask      = 0b01,
+                                                   .dir       = look->lookdir,
+                                                   .dist      = 60.f,
+                                               });
+    vec3s        dir      = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, head));
+    controller->aimdir    = vecDot(dir, look->lookdir) > 0.6f ? dir : look->lookdir;
+    controller->aimHitEnt = aimTrace.entId;
+    controller->aimpos    = head;
+
+    // Debug Teleport
 
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id), glms_vec3_scale(lookdir, (float)dt * 60.0f));
+        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id),
+                                  glms_vec3_scale(Sol_Input_GetLook()->lookdir, (float)dt * 60.0f));
         Sol_Xform_SetPos(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
@@ -150,5 +148,6 @@ static vec2s GetWishDir2(uint32_t action)
 
 vec3s Sol_Controller_GetAimPos(World *world, int id)
 {
-    return vecAdd(Sol_Xform_GetPos(world, id), vecSca(world->controllers[id].aimdir, 0.5f));
+    CompController *controller = &world->controllers[id];
+    return vecAdd(controller->aimpos, vecSca(controller->aimdir, 0.5f));
 }

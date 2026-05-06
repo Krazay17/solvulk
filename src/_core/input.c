@@ -19,11 +19,28 @@ typedef struct
 } LocalInput;
 
 extern LocalInput local_input;
-LocalInput local_input = {0};
+LocalInput        local_input = {0};
 
 // maps SolKey to Windows virtual key codes
 static int keyMap[SOL_KEY_COUNT] = {
-   48, 49, 50, 51, 52, 53, 54, 55, 56, 56, 'W', 'A', 'S', 'D', 'F', SOL_KEYCODE_SPACE, SOL_KEYCODE_ESCAPE, SOL_KEYCODE_SHIFT,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    56,
+    'W',
+    'A',
+    'S',
+    'D',
+    'F',
+    SOL_KEYCODE_SPACE,
+    SOL_KEYCODE_ESCAPE,
+    SOL_KEYCODE_SHIFT,
 };
 
 static volatile bool  rawKeys[SOL_KEY_COUNT];
@@ -33,18 +50,19 @@ static volatile int   rawMouseX, rawMouseY;
 static volatile int   rawMouseDeltaX, rawMouseDeltaY;
 
 // snapshot read by game thread
-static bool  mouseLocked;
-static bool  keys[SOL_KEY_COUNT];
-static bool  keysPrev[SOL_KEY_COUNT];
-static bool  mouseButtons[SOL_MOUSE_COUNT];
-static bool  mouseButtonsPrev[SOL_MOUSE_COUNT];
-static float mouseWheelDelta;
-static int   mouseX, mouseY;
-static int   mouseDeltaX, mouseDeltaY;
+static bool    mouseLocked;
+static bool    keys[SOL_KEY_COUNT];
+static bool    keysPrev[SOL_KEY_COUNT];
+static bool    mouseButtons[SOL_MOUSE_COUNT];
+static bool    mouseButtonsPrev[SOL_MOUSE_COUNT];
+static float   mouseWheelDelta;
+static int     mouseX, mouseY;
+static int     mouseDeltaX, mouseDeltaY;
+static SolLook sol_look = {.sens = 0.001f};
 
 void Sol_Input_OnKey(int vkCode, bool down)
 {
-     Sol_Debug_Add("KeyCode", vkCode);
+    // Sol_Debug_Add("KeyCode", vkCode);
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (keyMap[i] == vkCode)
@@ -89,12 +107,14 @@ void Sol_Input_Update()
     for (int i = 0; i < SOL_MOUSE_COUNT; i++)
         mouseButtons[i] = rawMouseButtons[i];
 
-    mouseX             = rawMouseX;
-    mouseY             = rawMouseY;
-    mouseDeltaX        = rawMouseDeltaX;
-    rawMouseDeltaX     = 0;
-    mouseDeltaY        = rawMouseDeltaY;
-    rawMouseDeltaY     = 0;
+    mouseX = rawMouseX;
+    mouseY = rawMouseY;
+
+    mouseDeltaX    = rawMouseDeltaX;
+    rawMouseDeltaX = 0;
+    mouseDeltaY    = rawMouseDeltaY;
+    rawMouseDeltaY = 0;
+
     mouseWheelDelta    = rawMouseWheelDelta;
     rawMouseWheelDelta = 0;
 
@@ -105,6 +125,24 @@ void Sol_Input_Update()
     else
         mouseLocked = false;
     Sol_Platform_LockCursor(mouseLocked);
+
+    if (mouseLocked)
+    {
+        sol_look.yaw -= mouseDeltaX * sol_look.sens;
+        sol_look.pitch -= mouseDeltaY * sol_look.sens;
+
+        sol_look.yaw = fmodf(sol_look.yaw, 2.0f * GLM_PI);
+        if (sol_look.yaw > GLM_PI)
+            sol_look.yaw -= 2.0f * GLM_PI;
+        else if (sol_look.yaw < -GLM_PI)
+            sol_look.yaw += 2.0f * GLM_PI;
+
+        if (sol_look.pitch > MAX_PITCH)
+            sol_look.pitch = MAX_PITCH;
+        if (sol_look.pitch < -MAX_PITCH)
+            sol_look.pitch = -MAX_PITCH;
+    }
+    sol_look.lookdir = glms_normalize(Sol_Vec3_FromYawPitch(sol_look.yaw, sol_look.pitch));
 }
 
 bool Sol_Input_KeyDown(SolKey key)
@@ -133,4 +171,17 @@ SolMouse Sol_Input_GetMouse()
     m.locked = mouseLocked;
 
     return m;
+}
+
+void Sol_Input_SetYawPitch(float y, float p)
+{
+    if (!isnan(y))
+        sol_look.yaw = y;
+    if (!isnan(p))
+        sol_look.pitch = p;
+}
+
+SolLook *Sol_Input_GetLook()
+{
+    return &sol_look;
 }

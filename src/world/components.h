@@ -66,7 +66,7 @@ typedef struct
     float  radius, height, length;
     float  mass, restitution;
     Shape3 shape;
-    bool is2d;
+    bool   is2d;
     u8     group;
 } BodyDesc;
 void         Sol_Body_Add(World *world, int id, BodyDesc desc);
@@ -108,10 +108,11 @@ typedef struct
     SolModelId id;
     float      yoffset;
 } ModelDesc;
-void       Sol_Model_Init(World *world);
-void       Sol_Model_Add(World *world, int id, ModelDesc desc);
-void       Sol_Model_Draw(World *world, double dt, double time);
-void       Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed);
+void Sol_Model_Init(World *world);
+void Sol_Model_Add(World *world, int id, ModelDesc desc);
+void Sol_Model_Draw(World *world, double dt, double time);
+void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
+void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
 SolModelId Sol_Model_GetModelId(World *world, int id);
 
 // EMITTER--------------
@@ -227,6 +228,7 @@ void          Sol_Interact_Init(World *world);
 void          Sol_Interact_Add(World *world, int id, InteractDesc desc);
 void          System_Interact_Tick(World *world, double dt, double time);
 InteractState Sol_Interact_GetState(World *world, int id);
+bool          Sol_Interact_GetToggle(World *world, int id);
 
 // UI-------------
 typedef struct CompUi CompUi;

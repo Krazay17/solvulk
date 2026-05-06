@@ -1,11 +1,13 @@
-#include "ability_system.h"
-#include "controller/controller.h"
 #include "sol_core.h"
+#include "ability_system.h"
+
+#include "controller/controller.h"
 
 // Defined in order of priority (highest priority first)
 static const AbilityMapping ability_mappings[] = {
     {ACTION_ABILITY0, ABILITY_STATE_IDLE},
     {ACTION_ABILITY1, ABILITY_STATE_CLAW},
+    {ACTION_DASH, ABILITY_STATE_DASH},
 };
 #define MAPPING_COUNT (sizeof(ability_mappings) / sizeof(AbilityMapping))
 
@@ -18,6 +20,14 @@ const StateFunc ability_state_func[] = {
             .canEnter = IdleAbility_State_CanEnter,
             .canExit  = IdleAbility_State_CanExit,
         },
+    [ABILITY_STATE_DASH] =
+        {
+            .update   = ADash_State_Update,
+            .enter    = ADash_State_Enter,
+            .exit     = ADash_State_Exit,
+            .canEnter = ADash_State_CanEnter,
+            .canExit  = ADash_State_CanExit,
+        },
     [ABILITY_STATE_CLAW] =
         {
             .update   = Claw_State_Update,
@@ -26,7 +36,6 @@ const StateFunc ability_state_func[] = {
             .canEnter = Claw_State_CanEnter,
             .canExit  = Claw_State_CanExit,
         },
-    [ABILITY_STATE_1] = {0},
     [ABILITY_STATE_2] = {0},
     [ABILITY_STATE_3] = {0},
     [ABILITY_STATE_4] = {0},
@@ -93,13 +102,13 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     if (nextState > ABILITY_STATE_COUNT)
         return false;
     CompAbility *ability = &world->abilities[id];
-    if (ability->state == nextState)
-        return false;
+    // if (ability->state == nextState)
+    //     return false;
     const StateFunc *prevfunc = &ability_state_func[ability->state];
-    if (!prevfunc->canExit || !prevfunc->canExit(world, id))
+    if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
         return false;
     const StateFunc *nextfunc = &ability_state_func[nextState];
-    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id))
+    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state))
         return false;
 
     ability->stateData[ability->state].elapsed = 0;
@@ -107,8 +116,5 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     ability->state = nextState;
     nextfunc->enter(world, id);
     ability->stateData[ability->state].lastEntered = (float)Sol_GetState()->gameTime;
-
-    Sol_Debug_Add("state", ability->state);
-
     return true;
 }

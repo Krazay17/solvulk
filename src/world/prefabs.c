@@ -46,7 +46,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc)
     return id;
 }
 
-int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelid, float height)
+int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelid, float height, float radius)
 {
     int id = Sol_Create_Ent(world);
 
@@ -54,7 +54,7 @@ int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelid, float height)
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = height,
-                     .radius      = 0.5f,
+                     .radius      = radius,
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
                      .restitution = 0.1f,

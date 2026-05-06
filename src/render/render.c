@@ -44,6 +44,8 @@ void Render_Camera_Update(vec3 pos, vec3 target)
 
     // 4. View Projection
     glm_mat4_mul(renderCam.proj, renderCam.view, renderCam.viewProj);
+
+    Sol_Begin_3D(&renderCam);
 }
 
 SolCamera *Sol_GetCamera()

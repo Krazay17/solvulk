@@ -24,6 +24,7 @@ layout(set = 2, binding = 0) readonly buffer FlagsBuffer {
 
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
+    vec4 emissive;
     float metallic;
     float roughness;
 } material;
@@ -51,7 +52,12 @@ void main() {
     vec3 specColor = mix(vec3(0.04), color, material.metallic);
     vec3 specular = specColor * spec * (1.0 - material.roughness * 0.5);
 
-    vec4 finalRGB = vec4(ambient + diffuse + specular, alpha);
+    vec3 emissive_color = material.emissive.rgb;
+    float emissive_strength = material.emissive.a;
+    vec3 emissive = emissive_color * emissive_strength;
+
+    vec4 finalRGB = vec4(ambient + diffuse + specular + emissive, alpha);
+
     if ((instances[instanceIndex].flags & FLAG_FRESNEL) != 0u) {
             float fresnelTerm = 1.0 - max(dot(N, viewDir), 0.0);
             finalRGB.rgb += pow(fresnelTerm, 4.0) * vec3(1.0);

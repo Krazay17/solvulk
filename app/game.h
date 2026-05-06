@@ -8,6 +8,6 @@
 
 void Create_Sol_Game();
 
-void QuitApp(void *data);
-void W_Set_Ontop(void *data);
-void W_Set_Fullscreen(void *data);
+void QuitApp(int flags, void *data);
+void W_Set_Ontop(int flags, void *data);
+void W_Set_Fullscreen(int flags, void *data);

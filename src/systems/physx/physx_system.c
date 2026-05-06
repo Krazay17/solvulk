@@ -36,6 +36,7 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
         .gravity     = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
         .invMass     = desc.mass > 0 ? 1.0f / desc.mass : 0,
         .restitution = desc.restitution ? desc.restitution : 0.5f,
+        .vel         = desc.vel,
         .dims =
             (vec3s){
                 .x = desc.radius,
@@ -146,7 +147,7 @@ void Ground_Trace(World *world, int count)
         vec3s origin = vecSub(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.25f));
 
         body->grounded = 0; // Reset every frame
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 8; j++)
         {
             // Rotate the local offset by the entity's rotation
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);

@@ -84,7 +84,6 @@ typedef enum
     MOVE_WALK,
     MOVE_FALL,
     MOVE_JUMP,
-    MOVE_DASH,
     MOVE_SLIDE,
     MOVE_FLY,
     MOVE_STATE_COUNT
@@ -160,7 +159,7 @@ typedef struct
     versors quat;
 } SolTransform;
 
-typedef void (*CallbackFunc)(void *data);
+typedef void (*CallbackFunc)(int flags, void *);
 typedef struct
 {
     CallbackFunc callbackFunc;
@@ -200,6 +199,12 @@ typedef struct SolHit
     float power;
     u32   damage;
 } SolHit;
+
+typedef struct SolLook
+{
+    float yaw, pitch, sens;
+    vec3s lookdir;
+} SolLook;
 
 typedef struct SolRayResult
 {
@@ -368,6 +373,7 @@ typedef enum
 typedef struct SolMaterial
 {
     float baseColor[4];
+    float emissive[4];
     float metallic;
     float roughness;
 } SolMaterial;
@@ -427,13 +433,14 @@ typedef struct SolAnimation
     int             channelCount;
 } SolAnimation;
 
-typedef struct
-{
-    int   animA, animB;
-    float seekA, seekB;
-    float blendFactor;
-    mat4  bones[MAX_BONES];
-} AnimBlend;
+// typedef struct
+// {
+//     int   animA, animB;
+//     float seekA, seekB;
+//     float blendFactor;
+//     mat4  bones[MAX_BONES];
+//     u32   blend_mask[MAX_BONES];
+// } AnimBlend;
 
 typedef struct SolSkeleton
 {
@@ -441,6 +448,7 @@ typedef struct SolSkeleton
     int           boneCount;
     SolAnimation *animations;
     int           animationCount;
+
 } SolSkeleton;
 
 typedef struct SolMesh
@@ -511,11 +519,11 @@ typedef struct
     u32             count;
 } ShaderPushTexts;
 
-typedef enum 
+typedef enum
 {
     ABILITY_STATE_IDLE,
+    ABILITY_STATE_DASH,
     ABILITY_STATE_CLAW,
-    ABILITY_STATE_1,
     ABILITY_STATE_2,
     ABILITY_STATE_3,
     ABILITY_STATE_4,
@@ -529,9 +537,26 @@ typedef enum
 
 typedef enum
 {
-    INTERACT_HOVERED  = (1 << 0),
-    INTERACT_PRESSED  = (1 << 1),
-    INTERACT_CLICKED  = (1 << 2),
-    INTERACT_TOGGLED  = (1 << 3),
-    INTERACT_ISTOGGLE = (1 << 4),
+    INTERACT_HOVERED    = (1 << 0),
+    INTERACT_PRESSED    = (1 << 1),
+    INTERACT_CLICKED    = (1 << 2),
+    INTERACT_TOGGLED    = (1 << 3),
+    INTERACT_TOGGLEABLE = (1 << 4),
 } InteractState;
+
+typedef enum
+{
+    ANIM_LAYER_BASE,  // full body, always active
+    ANIM_LAYER_LOWER, // overrides legs
+    ANIM_LAYER_UPPER, // overrides torso/arms
+    ANIM_LAYER_OVERRIDE,
+    ANIM_LAYER_COUNT
+} AnimLayerId;
+
+typedef struct
+{
+    float       blendIn, blendOut, seek;
+    SolAnims    anim;
+    AnimLayerId layerId;
+    bool        force;
+} AnimDesc;

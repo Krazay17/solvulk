@@ -1,5 +1,6 @@
 #pragma once
 #include "sol/types.h"
+#include "model.h"
 
 typedef struct SolBank
 {
@@ -12,8 +13,8 @@ const char *model_path[SOL_MODEL_COUNT];
 const i32   model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 // FUNCS---------------------
-SolModel Parse_Model(SolResource res);
-void     Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends);
+SolModel Parse_Model(SolResource res, u32 id);
+void     Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 
 void Sol_Draw_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
 void Sol_Draw_Model_Skinned(SolModelId handle, SolModelDraw *inst);

@@ -18,6 +18,7 @@ void Sol_Interact_Init(World *world)
 void Sol_Interact_Add(World *world, int id, InteractDesc desc)
 {
     world->masks[id] |= HAS_INTERACT;
+    
     CompInteract *interact = &world->interacts[id];
     interact->onClick      = desc.onClick;
     interact->onHold       = desc.onHold;
@@ -75,17 +76,17 @@ void System_Interact_Tick(World *world, double dt, double time)
                 interact->state |= INTERACT_PRESSED;
 
                 if (interact->onHold.callbackFunc)
-                    interact->onHold.callbackFunc(interact->onHold.callbackData);
+                    interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
             }
             else if (wasPressed)
             {
                 interact->state |= INTERACT_CLICKED;
                 interact->state &= ~INTERACT_PRESSED;
-                if (interact->state & INTERACT_ISTOGGLE)
+                if (interact->state & INTERACT_TOGGLEABLE)
                     interact->state ^= INTERACT_TOGGLED;
 
                 if (interact->onClick.callbackFunc)
-                    interact->onClick.callbackFunc(interact->onClick.callbackData);
+                    interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
             }
         }
         else
@@ -98,4 +99,10 @@ void System_Interact_Tick(World *world, double dt, double time)
 InteractState Sol_Interact_GetState(World *world, int id)
 {
     return world->interacts[id].state;
+}
+
+bool Sol_Interact_GetToggle(World *world, int id)
+{
+    CompInteract *interact = &world->interacts[id];
+    return interact->state & INTERACT_TOGGLED;
 }

@@ -1,8 +1,8 @@
-#include "sol_core.h"
 #include "ability_system.h"
+#include "sol_core.h"
 
-#define CLAW_DURATION 1.0f
-#define CLAW_COOLDOWN 1.0f
+#define CLAW_DURATION 0.6f
+#define CLAW_COOLDOWN 0.6f
 
 void Claw_State_Update(World *world, int id, float dt)
 {
@@ -30,14 +30,18 @@ void Claw_State_Enter(World *world, int id)
     float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
 
     int ball = Sol_Prefab_Ball(
-        world, vecAdd(aimpos, vecSca(aimdir, 5.0f)), vecSca(aimdir, 25.0f),
+        world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f),
         (SphereDesc){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
-    Sol_Model_PlayAnim(world, id, ANIM_ABILITY0, 6.0f);
+    AnimDesc desc = {.anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+    Sol_Model_PlayAnim(world, id, desc);
 }
+
 void Claw_State_Exit(World *world, int id)
 {
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0.1);
 }
+
 bool Claw_State_CanEnter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];

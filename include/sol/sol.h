@@ -44,6 +44,7 @@ SOLAPI bool     Sol_Input_KeyDown(SolKey key);
 SOLAPI bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
 SOLAPI SolMouse Sol_Input_GetMouse();
 
+
 SOLAPI void Sol_Debug_Add(const char *text, float value);
 
 SolRayResult Sol_Raycast(World *world, SolRay ray);

@@ -1,10 +1,17 @@
 #include "sol_core.h"
 
-const vec3s VECTOR_RADIAL_DIRECTIONS[4] = {
-    { 1.0f, 0.0f,  0.0f}, // Forward
-    { 0.0f, 0.0f,  1.0f}, // Right
-    {-1.0f, 0.0f,  0.0f}, // Backward
-    { 0.0f, 0.0f, -1.0f}  // Left
+const vec3s VECTOR_RADIAL_DIRECTIONS[8] = {
+    // Cardinal Directions
+    {0.0f, 0.0f, 1.0f},  // South / Forward
+    {1.0f, 0.0f, 0.0f},  // East / Right
+    {0.0f, 0.0f, -1.0f}, // North / Backward
+    {-1.0f, 0.0f, 0.0f}, // West / Left
+
+    // Diagonal Directions
+    {0.7071f, 0.0f, 0.7071f},   // South-East
+    {0.7071f, 0.0f, -0.7071f},   // North-East
+    {-0.7071f, 0.0f, 1.0f},     // South-West
+    {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
 
 bool Sol_Check_2d_Collision(vec2s a, vec4s b)

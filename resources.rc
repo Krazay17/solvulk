@@ -18,4 +18,3 @@ ID_SHADER_SPHERE_V      RCDATA          "assets/shaders/sphere.vert.spv"
 ID_SHADER_SPHERE_F      RCDATA          "assets/shaders/sphere.frag.spv"
 ID_FONT_ATLAS           RCDATA          "assets/fonts/atlas.raw"
 ID_FONT_METRICS         RCDATA          "assets/fonts/atlas.json"
-

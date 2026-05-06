@@ -1,27 +1,8 @@
+#include "resource/model.h"
 #include "sol_core.h"
 
 #include "render/render.h"
 #include "xform/xform.h"
-
-typedef enum
-{
-    ANIM_GROUP_MOVEMENT,
-    ANIM_GROUP_ABILITY,
-    ANIM_GROUP_COUNT,
-} AnimGroupId;
-typedef struct
-{
-    i32   currentAnim, lastAnim;
-    float currentSeek, lastSeek;
-    float blendFactor, blendSpeed;
-} AnimGroup;
-typedef struct CompModel
-{
-    SolModelId modelId;
-    bool       hasAnim;
-    float      yOffset;
-    AnimGroup  anim[ANIM_GROUP_COUNT];
-} CompModel;
 
 void Sol_Model_Init(World *world)
 {
@@ -35,7 +16,14 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
     CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset};
     SolModel *m     = &Sol_Bank_Get()->models[desc.id];
     if (m->skeleton.animationCount > 0)
+    {
         model.hasAnim = true;
+        for (int i = 0; i < ANIM_LAYER_COUNT; i++)
+        {
+            model.layers[i].currentAnim = -1;
+            model.layers[i].currentSeek = 0;
+        }
+    }
 
     world->models[id] = model;
 }
@@ -44,6 +32,7 @@ void Sol_Model_Draw(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
     int   required = HAS_XFORM | HAS_MODEL;
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -62,73 +51,133 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
+
         if (!modelComp->hasAnim)
         {
             Sol_Draw_Model(modelComp->modelId, drawPos, xform->drawScale, xform->drawQuat, flags);
+            continue;
         }
-        else
+
+        SolModel *m = &Sol_Bank_Get()->models[modelComp->modelId];
+
+        for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
-            int j = 0;
-            SolModel *m = &Sol_Bank_Get()->models[modelComp->modelId];
-            float duration         = m->skeleton.animations[modelComp->anim[j].currentAnim].duration;
-            modelComp->anim[j].currentSeek = fmodf(modelComp->anim[j].currentSeek + fdt, duration);
+            AnimLayer *layer = &modelComp->layers[L];
+            if (layer->currentAnim < 0)
+                continue;
 
-            bool isBlending = (modelComp->anim[j].lastAnim >= 0 && modelComp->anim[j].blendFactor < 1.0f);
+            float dur          = m->skeleton.animations[layer->currentAnim].duration;
+            layer->currentSeek = fmodf(layer->currentSeek + fdt, dur);
 
-            if (isBlending)
+            if (layer->lastAnim >= 0 && layer->blendFactor < 1.0f)
             {
-                float durationB     = m->skeleton.animations[modelComp->anim[j].lastAnim].duration;
-                modelComp->anim[j].lastSeek = fmodf(modelComp->anim[j].lastSeek + fdt, durationB);
-
-                modelComp->anim[j].blendFactor += fdt * modelComp->anim[j].blendSpeed;
-                if (modelComp->anim[j].blendFactor > 1.0f)
-                    modelComp->anim[j].blendFactor = 1.0f;
+                float lastDur   = m->skeleton.animations[layer->lastAnim].duration;
+                layer->lastSeek = fmodf(layer->lastSeek + fdt, lastDur);
+                layer->blendFactor += fdt * layer->blendSpeed;
+                if (layer->blendFactor >= 1.0f)
+                {
+                    layer->blendFactor = 1.0f;
+                    layer->lastAnim    = -1;
+                }
             }
-            else
+
+            // Fade-out countdown
+            if (layer->fadeOut > 0.0f)
             {
-                modelComp->anim[j].blendFactor = 1.0f; // Force to 100% Anim A
+                layer->fadeOut -= fdt * layer->fadeOutSpeed;
+                if (layer->fadeOut < 0.0f)
+                    layer->fadeOut = 0.0f;
+                if (layer->fadeOut == 0.0f)
+                {
+                    layer->currentAnim = -1;
+                    layer->lastAnim    = -1;
+                }
             }
-            AnimBlend blends = {
-                .animA       = modelComp->anim[j].currentAnim,
-                .animB       = modelComp->anim[j].lastAnim,
-                .seekA       = modelComp->anim[j].currentSeek,
-                .seekB       = modelComp->anim[j].lastSeek,
-                .blendFactor = modelComp->anim[j].blendFactor,
-            };
-            Sol_Skeleton_Pose(&m->skeleton, &blends);
-
-            SolModelDraw drawInstance = {
-                .pos     = drawPos,
-                .rot     = xform->drawQuat,
-                .scale   = xform->drawScale,
-                .flags   = flags,
-                .bonePtr = blends.bones,
-            };
-            Sol_Draw_Model_Skinned(modelComp->modelId, &drawInstance);
         }
+
+        // Build pose request
+        mat4        bones[MAX_BONES];
+        PoseRequest req = {.outBones = bones};
+
+        for (int L = 0; L < ANIM_LAYER_COUNT; L++)
+        {
+            req.layers[L] = (AnimBlend){
+                .anim        = modelComp->layers[L].currentAnim,
+                .lastAnim    = modelComp->layers[L].lastAnim,
+                .seek        = modelComp->layers[L].currentSeek,
+                .lastSeek    = modelComp->layers[L].lastSeek,
+                .blendFactor = modelComp->layers[L].blendFactor,
+            };
+            req.masks[L]       = model_masks[modelComp->modelId].layers[L];
+            req.layerWeight[L] = (modelComp->layers[L].fadeOut > 0.0f) ? modelComp->layers[L].fadeOut : 1.0f;
+        }
+
+        Sol_Skeleton_Pose(&m->skeleton, &req);
+
+        SolModelDraw drawInstance = {
+            .pos     = drawPos,
+            .rot     = xform->drawQuat,
+            .scale   = xform->drawScale,
+            .flags   = flags,
+            .bonePtr = bones,
+        };
+        Sol_Draw_Model_Skinned(modelComp->modelId, &drawInstance);
     }
 }
 
-void Sol_Model_PlayAnim(World *world, int id, SolAnims anim, float blendSpeed)
+static DoPlayAnim(World *world, int id, SolAnims anim, float blendSpeed, AnimLayerId layerId, float seek)
 {
-    // TODO UPDATE FOR ANIM GROUP
-    int j = 0;
     CompModel *modelComp = &world->models[id];
+    AnimLayer *layer     = &modelComp->layers[layerId];
+    i32        nextAnim  = model_anim_map[modelComp->modelId][anim];
+    layer->lastAnim      = layer->currentAnim;
+    layer->lastSeek      = layer->currentSeek;
+    layer->currentAnim   = nextAnim;
+    layer->currentSeek   = seek;
+    layer->blendFactor   = 0;
+    layer->blendSpeed    = blendSpeed > 0 ? blendSpeed : 6.0f;
+    layer->fadeOut       = 0.0f;
+    layer->fadeOutSpeed  = 0.0f;
+}
 
-    i32 nextAnim = model_anim_map[modelComp->modelId][anim];
-    if (nextAnim == modelComp->anim[j].currentAnim)
+void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
+{
+    CompModel *modelComp = &world->models[id];
+    AnimLayer *layer     = &modelComp->layers[desc.layerId];
+    i32        nextAnim  = model_anim_map[modelComp->modelId][desc.anim];
+    if (!desc.force && nextAnim == layer->currentAnim)
         return;
-
-    modelComp->anim[j].lastAnim = modelComp->anim[j].currentAnim;
-    modelComp->anim[j].lastSeek = modelComp->anim[j].currentSeek;
-
-    modelComp->anim[j].currentAnim = nextAnim;
-    modelComp->anim[j].currentSeek = 0;
-    modelComp->anim[j].blendFactor = 0;
-    modelComp->anim[j].blendSpeed  = blendSpeed > 0 ? blendSpeed : 6.0f;
+    layer->lastAnim     = layer->currentAnim;
+    layer->lastSeek     = layer->currentSeek;
+    layer->currentAnim  = nextAnim;
+    layer->currentSeek  = desc.seek;
+    layer->blendFactor  = 0;
+    layer->blendSpeed   = desc.blendIn > 0 ? desc.blendIn : 6.0f;
+    layer->fadeOut      = 0.0f;
+    layer->fadeOutSpeed = desc.force ? 0 : desc.blendOut;
 }
 
 SolModelId Sol_Model_GetModelId(World *world, int id)
 {
     return world->models[id].modelId;
+}
+
+void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade)
+{
+    AnimLayer *layer = &world->models[id].layers[layerId];
+    if (layer->currentAnim < 0)
+        return;
+
+    if (fade <= 0.0f)
+    {
+        // Instant stop
+        layer->currentAnim = -1;
+        layer->lastAnim    = -1;
+        layer->fadeOut     = 0.0f;
+    }
+    else
+    {
+        layer->fadeOut      = 1.0f;
+        layer->fadeOutSpeed = 1.0f / fade;
+    }
 }

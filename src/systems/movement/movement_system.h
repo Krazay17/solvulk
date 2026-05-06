@@ -8,7 +8,7 @@
 
 typedef struct CompMovement
 {
-    vec3s        wishdir, updir, lockdir;
+    vec3s        updir, dashdir;
     float        stateTimer;
     MoveState    moveState;
     MoveConfigId configId;

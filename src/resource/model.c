@@ -1,8 +1,11 @@
-#include "sol_core.h"
+#include "model.h"
 #include "resource.h"
+#include "sol_core.h"
 
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
+
+SolModelMasks model_masks[SOL_MODEL_COUNT];
 
 const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_WIZARD] = "Wizard.glb", [SOL_MODEL_DUDE] = "Dude.glb",     [SOL_MODEL_BOX] = "Box.glb",
@@ -46,7 +49,7 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
-SolModel Parse_Model(SolResource res)
+SolModel Parse_Model(SolResource res, u32 id)
 {
     SolModel model = {0};
 
@@ -122,6 +125,7 @@ SolModel Parse_Model(SolResource res)
         }
     }
 
+    Init_Anim_Masks(id, &model.skeleton);
     cgltf_free(data);
     return model;
 }
@@ -346,12 +350,21 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
 
             // Material
             dst->material = (SolMaterial){.baseColor = {1, 1, 1, 1}, .roughness = 1.0f};
+            memset(dst->material.emissive, 0, sizeof(float) * 4);
             if (prim->material && prim->material->has_pbr_metallic_roughness)
             {
                 cgltf_pbr_metallic_roughness *pbr = &prim->material->pbr_metallic_roughness;
                 memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
+
                 dst->material.metallic  = pbr->metallic_factor;
                 dst->material.roughness = pbr->roughness_factor;
+
+                memcpy(dst->material.emissive, prim->material->emissive_factor, sizeof(float) * 3);
+                float strength = 1.0f;
+                if (prim->material->has_emissive_strength)
+                    strength = prim->material->emissive_strength.emissive_strength;
+
+                dst->material.emissive[3] = strength;
             }
 
             // Vertices — read local, transform to world, store
@@ -483,66 +496,149 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
     }
 }
 
-// Compute skinning matrices for one entity at one moment in time
-void Sol_Skeleton_Pose(SolSkeleton *skel, AnimBlend *blends)
+void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
 {
-    vec3   tA[MAX_BONES], tB[MAX_BONES];
-    versor rA[MAX_BONES], rB[MAX_BONES];
-    vec3   sA[MAX_BONES], sB[MAX_BONES];
-    mat4   world[MAX_BONES];
-
-    // Sample Animation A (Current)
-    Sample_Animation_Pose(skel, blends->animA, blends->seekA, tA, rA, sA);
-
-    // Sample Animation B (Old) and Blend
-    if (blends->animB >= 0 && blends->blendFactor < 1.0f)
-    {
-        Sample_Animation_Pose(skel, blends->animB, blends->seekB, tB, rB, sB);
-
-        for (int i = 0; i < skel->boneCount; i++)
-        {
-            glm_vec3_lerp(tB[i], tA[i], blends->blendFactor, tA[i]);
-            // Shortest path logic:
-            // If dot product is negative, nlerp will flip the long way.
-            // Use glm_quat_dot to check.
-            if (glm_quat_dot(rA[i], rB[i]) < 0.0f)
-            {
-                // Negate rB to align polarity with rA
-                rB[i][0] = -rB[i][0];
-                rB[i][1] = -rB[i][1];
-                rB[i][2] = -rB[i][2];
-                rB[i][3] = -rB[i][3];
+    vec3   poseT[MAX_BONES];
+    versor poseR[MAX_BONES];
+    vec3   poseS[MAX_BONES];
+    
+    // Rest pose
+    for (int i = 0; i < skel->boneCount; i++) {
+        memcpy(&poseT[i], &skel->bones[i].restTrans, sizeof(vec3));
+        memcpy(&poseR[i], &skel->bones[i].restRot,   sizeof(vec4));
+        memcpy(&poseS[i], &skel->bones[i].restScale, sizeof(vec3));
+    }
+    
+    // Pre-pass: when override is fading out, we still need the lower layers underneath
+    // for the fade to blend INTO. So we run lower layers first, then the override on top
+    // with its weight.
+    bool overrideActive = (req->layers[ANIM_LAYER_OVERRIDE].anim >= 0);
+    bool overrideFading = overrideActive && (req->layerWeight[ANIM_LAYER_OVERRIDE] < 0.999f);
+    
+    int  startLayer, endLayer;
+    if (overrideActive && !overrideFading) {
+        // Fully overriding — only run override
+        startLayer = ANIM_LAYER_OVERRIDE;
+        endLayer   = ANIM_LAYER_OVERRIDE + 1;
+    } else {
+        // Either not overriding at all, or overriding with partial weight (run all)
+        startLayer = 0;
+        endLayer   = ANIM_LAYER_COUNT;
+    }
+    
+    for (int L = startLayer; L < endLayer; L++) {
+        AnimBlend *blend  = &req->layers[L];
+        BoneMask  *mask   = &req->masks[L];
+        float      weight = req->layerWeight[L];
+        
+        if (blend->anim < 0 || weight < 0.001f) continue;
+        
+        // Sample current
+        vec3   layerT[MAX_BONES];
+        versor layerR[MAX_BONES];
+        vec3   layerS[MAX_BONES];
+        Sample_Animation_Pose(skel, blend->anim, blend->seek, layerT, layerR, layerS);
+        
+        // Cross-fade with previous in same layer
+        if (blend->lastAnim >= 0 && blend->blendFactor < 1.0f) {
+            vec3   prevT[MAX_BONES];
+            versor prevR[MAX_BONES];
+            vec3   prevS[MAX_BONES];
+            Sample_Animation_Pose(skel, blend->lastAnim, blend->lastSeek, prevT, prevR, prevS);
+            
+            for (int i = 0; i < skel->boneCount; i++) {
+                glm_vec3_lerp(prevT[i], layerT[i], blend->blendFactor, layerT[i]);
+                if (glm_quat_dot(layerR[i], prevR[i]) < 0.0f) {
+                    prevR[i][0] = -prevR[i][0]; prevR[i][1] = -prevR[i][1];
+                    prevR[i][2] = -prevR[i][2]; prevR[i][3] = -prevR[i][3];
+                }
+                glm_quat_nlerp(prevR[i], layerR[i], blend->blendFactor, layerR[i]);
+                glm_vec3_lerp(prevS[i], layerS[i], blend->blendFactor, layerS[i]);
             }
-
-            glm_quat_nlerp(rA[i], rB[i], 1.0f - blends->blendFactor, rA[i]);
-            glm_vec3_lerp(sB[i], sA[i], blends->blendFactor, sA[i]);
+        }
+        
+        // Apply to final pose
+        for (int i = 0; i < skel->boneCount; i++) {
+            if (!mask->layerOwns[i]) continue;
+            
+            if (weight >= 0.999f) {
+                memcpy(&poseT[i], &layerT[i], sizeof(vec3));
+                memcpy(&poseR[i], &layerR[i], sizeof(vec4));
+                memcpy(&poseS[i], &layerS[i], sizeof(vec3));
+            } else {
+                glm_vec3_lerp(poseT[i], layerT[i], weight, poseT[i]);
+                if (glm_quat_dot(poseR[i], layerR[i]) < 0.0f) {
+                    layerR[i][0] = -layerR[i][0]; layerR[i][1] = -layerR[i][1];
+                    layerR[i][2] = -layerR[i][2]; layerR[i][3] = -layerR[i][3];
+                }
+                glm_quat_nlerp(poseR[i], layerR[i], weight, poseR[i]);
+                glm_vec3_lerp(poseS[i], layerS[i], weight, poseS[i]);
+            }
         }
     }
-
-    // Combine into World Matrices
-    for (int i = 0; i < skel->boneCount; i++)
-    {
-        mat4 local;
-        // Build Local: T * R * S
+    
+    // Skinning matrices (same)
+    mat4 world[MAX_BONES];
+    for (int i = 0; i < skel->boneCount; i++) {
+        mat4 local, rotM;
         glm_mat4_identity(local);
-        glm_translate(local, tA[i]);
-
-        mat4 rotM;
-        glm_quat_mat4(rA[i], rotM);
+        glm_translate(local, poseT[i]);
+        glm_quat_mat4(poseR[i], rotM);
         glm_mat4_mul(local, rotM, local);
-
-        glm_scale(local, sA[i]);
-
+        glm_scale(local, poseS[i]);
+        
         int parent = skel->bones[i].parent;
-        if (parent < 0)
-        {
-            glm_mat4_copy(local, world[i]);
-        }
-        else
-        {
-            glm_mat4_mul(world[parent], local, world[i]);
-        }
-
-        glm_mat4_mul(world[i], skel->bones[i].inverseBind, blends->bones[i]);
+        if (parent < 0) glm_mat4_copy(local, world[i]);
+        else            glm_mat4_mul(world[parent], local, world[i]);
+        
+        glm_mat4_mul(world[i], skel->bones[i].inverseBind, req->outBones[i]);
     }
+}
+
+void Init_Anim_Masks(SolModelId modelId, SolSkeleton *skel)
+{
+    SolModelMasks *masks = &model_masks[modelId];
+    //SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
+    
+    // Reset all masks to false
+    memset(masks, 0, sizeof(*masks));
+    
+    // Base + Override own all bones
+    for (int i = 0; i < skel->boneCount; i++) {
+        masks->layers[ANIM_LAYER_BASE].layerOwns[i]     = true;
+        masks->layers[ANIM_LAYER_OVERRIDE].layerOwns[i] = true;
+    }
+    
+    // Build upper-body mask: spine, head, arms
+    const char *upperRoots[] = {"spine.001"};
+    for (int i = 0; i < sizeof(upperRoots) / sizeof(upperRoots[0]); i++) {
+        int rootIdx = Sol_Skeleton_FindBone(skel, upperRoots[i]);
+        if (rootIdx < 0) continue;
+        Mark_Bone_And_Descendants(skel, rootIdx, &masks->layers[ANIM_LAYER_UPPER]);
+    }
+    
+    // Lower owns whatever upper doesn't (everything below the upper root)
+    for (int i = 0; i < skel->boneCount; i++) {
+        masks->layers[ANIM_LAYER_LOWER].layerOwns[i] = 
+            !masks->layers[ANIM_LAYER_UPPER].layerOwns[i];
+    }
+}
+
+// Recursively mark a bone and all its children
+void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
+{
+    mask->layerOwns[boneIdx] = true;
+    for (int i = 0; i < skel->boneCount; i++) {
+        if (skel->bones[i].parent == boneIdx)
+            Mark_Bone_And_Descendants(skel, i, mask);
+    }
+}
+
+int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
+{
+    for (int i = 0; i < skel->boneCount; i++) {
+        if (strcmp(skel->bones[i].name, name) == 0)
+            return i;
+    }
+    return -1;
 }

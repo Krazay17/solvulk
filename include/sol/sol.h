@@ -9,8 +9,13 @@
 #include <string.h>
 
 #include "sol/types.h"
+#include "world.h"
 
 #define SOL_VERSION 1.0
+
+#define MAX_SYSTEMS 64
+#define MAX_ENTS (1 << 15)
+
 
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);

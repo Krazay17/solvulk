@@ -11,8 +11,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # --- Dependencies ---
-find_package(Vulkan REQUIRED)
 find_package(cglm REQUIRED)
+find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
@@ -53,6 +53,8 @@ target_include_directories(solvulk
     PRIVATE
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/_core"
+        "${CMAKE_SOURCE_DIR}/src/systems"
+        "${CMAKE_SOURCE_DIR}/vendored/"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -64,6 +66,7 @@ if(SOL_DEV_MODE)
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/_core"
         "${CMAKE_SOURCE_DIR}/src/systems"
+        "${CMAKE_SOURCE_DIR}/vendored"
     )
 endif()
 
@@ -85,7 +88,7 @@ if(WIN32)
     add_executable(solapp 
         "${CMAKE_SOURCE_DIR}/app/main.c"
         "${CMAKE_SOURCE_DIR}/app/game.c"
-        "${CMAKE_SOURCE_DIR}/resources.rc"
+        "${CMAKE_SOURCE_DIR}/assets/resources.rc"
     )
     #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
 else()
@@ -107,7 +110,7 @@ set_target_properties(solapp PROPERTIES
 #--------------------------------------
 # compile shaders
 #--------------------------------------
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/render/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 

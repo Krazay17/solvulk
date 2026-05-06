@@ -9,18 +9,16 @@ const char *fontResourceName[SOL_FONT_COUNT][2] = {
 
 void Sol_Load_Resources()
 {
-    SolBank *bank = Sol_Bank_Get();
-
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
         SolResource res = Sol_LoadResource(model_path[i]);
-        if (res.data)
-        {
-            SolModel model  = Parse_Model(res, i);
-            bank->models[i] = model;
-            if (res.isHeap)
-                free(res.data);
-        }
+        if (!res.data)
+            continue;
+
+        Parse_Model(res, i);
+
+        if (res.isHeap)
+            free(res.data);
     }
 
     for (int i = 0; i < SOL_FONT_COUNT; i++)
@@ -30,9 +28,7 @@ void Sol_Load_Resources()
         if (!fontIceAtlas.data || !fontIceMetrics.data)
             continue;
 
-        bank->images[i].pixels = fontIceAtlas.data;
-        Parse_Font_Metrics(fontIceMetrics.data, 224.0f, 224.0f, bank->fonts[i].glyph);
-        // Sol_UploadImage(fontIceAtlas.data, 224, 224, 37, SOL_IMAGE_FONT);
+        Parse_Font(fontIceMetrics, fontIceAtlas, i);
     }
 }
 

@@ -19,11 +19,10 @@ void Render_Init(void *hwnd, void *hInstance)
     int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
     printf("Vulkan Init code: %d\n", vulkInit);
 
-    SolBank *bank = Sol_Bank_Get();
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
-        Sol_UploadModel(&bank->models[i], i);
+        Sol_UploadModel(Sol_GetModel(i), i);
     for (int i = 0; i < SOL_IMAGE_COUNT; i++)
-        Sol_UploadImage(bank->images[i].pixels, 224, 224, 37, i);
+        Sol_UploadImage(Sol_GetFont(i), 224, 224, 37, i);
 
     Sol_Init_Vulkan_Resources();
     // solAspectRatio = Sol_GetState()->windowWidth / Sol_GetState()->windowHeight;

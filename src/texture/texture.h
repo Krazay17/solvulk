@@ -9,8 +9,14 @@ typedef enum
 typedef struct
 {
     SolTextureId id;
-    void *pixels;
-    float width, height;
+    void        *pixels;
+    u32          width, height;
 } SolTexture;
 
-void Parse_Texture(SolResource res, int id);
+const char *image_path[SOL_IMAGE_COUNT];
+SolImage    loaded_images[SOL_IMAGE_COUNT];
+
+SolImage *Sol_GetImage(SolImageId id);
+
+void      Sol_Load_Textures();
+SolImage *Parse_Texture(SolResource res, u32 id);

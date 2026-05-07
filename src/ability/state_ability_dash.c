@@ -25,6 +25,8 @@ void ADash_State_Update(World *world, int id, float dt)
 
 void ADash_State_Enter(World *world, int id)
 {
+    Sol_PlayAudio(SOL_AUDIO_WOONG);
+    
     CompAbility    *ability    = &world->abilities[id];
     CompController *controller = &world->controllers[id];
     AbilityData    *data       = &ability->stateData[ABILITY_STATE_DASH];

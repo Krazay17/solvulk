@@ -7,37 +7,6 @@
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 
-typedef enum
-{
-    DESC_ORTHO_UBO,
-    DESC_SCENE_UBO,
-    DESC_MODEL_SSBO,
-    DESC_SKINNING_SSBO,
-    DESC_FONT_ATLAS,
-    DESC_PARTICLE_SSBO,
-    DESC_SPHERE_SSBO,
-    DESC_FLAGS_SSBO,
-    DESC_COUNT,
-} DescriptorId;
-
-typedef enum
-{
-    DESC_KIND_UBO,
-    DESC_KIND_SSBO,
-    DESC_KIND_IMAGE,
-} DescriptorKind;
-
-typedef enum PipelineId
-{
-    PIPE_MODEL,
-    PIPE_MODEL_SKINNED,
-    PIPE_TEXT,
-    PIPE_RECT,
-    PIPE_LINE,
-    PIPE_SPHERE,
-    PIPE_COUNT,
-} PipelineId;
-
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
 {
@@ -194,7 +163,7 @@ int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDe
 // ─── Render API (internal) ───────────────────────────────────────
 VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void     Vk_SetOrtho(uint32_t width, uint32_t height);
+void            Vk_SetOrtho(uint32_t width, uint32_t height);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);

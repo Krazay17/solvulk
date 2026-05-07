@@ -16,13 +16,12 @@
 #define MAX_SYSTEMS 64
 #define MAX_ENTS (1 << 15)
 
-
 SOLAPI void Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void Sol_Tick(double dt, double time);
 SOLAPI void Sol_Destroy();
 
-SOLAPI SolState  *Sol_GetState();
-SOLAPI double     Sol_GetGameTime();
+SOLAPI SolState *Sol_GetState();
+SOLAPI double    Sol_GetGameTime();
 
 SOLAPI int Sol_Init_Vulkan(void *hwnd, void *hInstance);
 int        Sol_Init_Vulkan_Resources();
@@ -49,11 +48,24 @@ SOLAPI bool     Sol_Input_KeyDown(SolKey key);
 SOLAPI bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
 SOLAPI SolMouse Sol_Input_GetMouse();
 
-
 SOLAPI void Sol_Debug_Add(const char *text, float value);
 
 SolRayResult Sol_Raycast(World *world, SolRay ray);
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration);
+
+typedef enum
+{
+    SOL_AUDIO_BEEP1,
+    SOL_AUDIO_BEEP2,
+    SOL_AUDIO_DIGILOAD,
+    SOL_AUDIO_HIT,
+    SOL_AUDIO_MENUMUSIC,
+    SOL_AUDIO_SPACEGUN,
+    SOL_AUDIO_WOONG,
+    SOL_AUDIO_COUNT,
+} SolAudioId;
+int  Sol_Audio_Init();
+void Sol_PlayAudio(SolAudioId id);
 
 static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
 {

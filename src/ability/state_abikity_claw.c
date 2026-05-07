@@ -17,6 +17,8 @@ void Claw_State_Update(World *world, int id, float dt)
 
 void Claw_State_Enter(World *world, int id)
 {
+    Sol_PlayAudio(SOL_AUDIO_SPACEGUN);
+
     CompController *controller = &world->controllers[id];
     CompXform      *xform      = &world->xforms[id];
     CompAbility    *combat     = &world->abilities[id];
@@ -32,7 +34,8 @@ void Claw_State_Enter(World *world, int id)
         world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f),
         (SphereDesc){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
-    AnimDesc desc = {.anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+    AnimDesc desc = {
+        .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
     Sol_Model_PlayAnim(world, id, desc);
 }
 

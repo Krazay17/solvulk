@@ -1,5 +1,6 @@
-#include "vkrender.h"
 #include "sol_core.h"
+
+#include "vkrender.h"
 
 SolVkState solvkstate = {0};
 
@@ -13,8 +14,6 @@ static SolGpuImage    gpuImages[SOL_IMAGE_COUNT];
 static SolGpuModel    gpuModels[SOL_MODEL_COUNT];
 static SolFrameBuffer particleBuffer;
 static SolFrameBuffer lineBuffer;
-static uint32_t       windowWidth;
-static uint32_t       windowHeight;
 
 static SolDescriptor descriptors[DESC_COUNT];
 static SolPipe       pipes[PIPE_COUNT];
@@ -162,7 +161,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
 
 };
 
-int Sol_Init_Vulkan(void *hwnd, void *hInstance)
+int Render_Init(void *hwnd, void *hInstance)
 {
     if (SolVkInstance(&solvkstate) != 0)
         return 1;
@@ -183,13 +182,10 @@ int Sol_Init_Vulkan(void *hwnd, void *hInstance)
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
 
-    windowWidth  = solvkstate.swapchainExtent.width;
-    windowHeight = solvkstate.swapchainExtent.height;
-    
     return 0;
 }
 
-int Sol_Init_Vulkan_Resources()
+int Render_Init_Resources()
 {
     for (int i = 0; i < DESC_COUNT; i++)
     {
@@ -211,13 +207,18 @@ int Sol_Init_Vulkan_Resources()
     Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                           &lineBuffer);
 
-    Vk_SetOrtho(windowWidth, windowHeight);
+    Vk_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
     return 0;
 }
 
 VkCommandBuffer Command_Buffer_Get()
 {
     return solvkstate.commandBuffers[solvkstate.currentFrame];
+}
+
+void *Sol_GetDescriptorMapping(DescriptorId id)
+{
+    return descriptors[id].mapped[solvkstate.currentFrame];
 }
 
 void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
@@ -257,7 +258,7 @@ void Vk_SetOrtho(uint32_t width, uint32_t height)
 
 void Remake_Swapchain(uint32_t width, uint32_t height)
 {
-        vkDeviceWaitIdle(solvkstate.device);
+    vkDeviceWaitIdle(solvkstate.device);
 
     // destroy old
     vkDestroyImageView(solvkstate.device, solvkstate.depthImageView, NULL);
@@ -269,27 +270,9 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
 
     vkDestroySwapchainKHR(solvkstate.device, solvkstate.swapchain, NULL);
 
-    // recreate
-    solvkstate.swapchainExtent.width  = width;
-    solvkstate.swapchainExtent.height = height;
     SolVkSwapchain(&solvkstate);
     SolVkImageViews(&solvkstate);
     SolVkDepthResources(&solvkstate);
-
-}
-
-void Sol_Begin_3D(SolCamera *cam)
-{
-    SceneUBO *ubo = descriptors[DESC_SCENE_UBO].mapped[solvkstate.currentFrame];
-    glm_mat4_copy(cam->view, ubo->view);
-    glm_mat4_copy(cam->proj, ubo->proj);
-    glm_mat4_copy(cam->viewProj, ubo->viewProjection);
-    vec4 pos = {cam->position[0], cam->position[1], cam->position[2], 1.0f};
-    glm_vec4_copy(pos, ubo->cameraPos);
-    ubo->sun[0] = 0.0f;
-    ubo->sun[1] = 1.0f;
-    ubo->sun[2] = 0.4f;
-    ubo->sun[3] = 0.2f;
 }
 
 void Sol_Draw_Sphere(vec4s pos, vec4s color)
@@ -1065,6 +1048,8 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
 
     vkEndCommandBuffer(copyCmd);
 
+    // TODO POOL AND UPLOAD AT ONCE
+
     // 7. Submit and wait ONCE
     VkSubmitInfo submitInfo = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &copyCmd};
@@ -1080,8 +1065,13 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
     printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 }
 
-int Sol_UploadImage(const void *pixels, u32 width, u32 height, int format, SolImageId id)
+int Sol_UploadImage(SolImage *image, SolImageId id)
 {
+    const void  *pixels  = image->pixels;
+    u32          width   = image->width;
+    u32          height  = image->height;
+    int          format  = 37;
+
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;
 

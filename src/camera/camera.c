@@ -2,7 +2,7 @@
 
 #include "camera.h"
 
-SolCameraArm camArm = {
+SolCameraArm camera_arm = {
     .active     = false,
     .lerpspeed  = 20.0f,
     .distance   = 6.5f,
@@ -10,38 +10,52 @@ SolCameraArm camArm = {
     .wallbuffer = 0.5f,
 };
 
+SolCamera sol_camera = {
+    .fov      = 60.0f,
+    .nearClip = 0.2f,
+    .farClip  = 1000.0f,
+};
+
+SolCamera *Sol_GetCamera()
+{
+    return &sol_camera;
+}
+
 Sol_Cam_Arm_Update(World *world, vec3s head, double dt)
 {
     float fdt          = (float)dt;
     vec3s lookdir      = Sol_Input_GetLook()->lookdir;
     vec3s invDirection = glms_vec3_scale(lookdir, -1.0f);
-    float factor       = 1.0f - expf(-camArm.lerpspeed * fdt);
+    float factor       = 1.0f - expf(-camera_arm.lerpspeed * fdt);
     vec3s offsetvec    = glms_vec3_cross(lookdir, WORLD_UP);
 
-    if (camArm.distance <= 0)
+    if (camera_arm.distance <= 0)
     {
-        camArm.distance = 0;
-        camArm.arm = camArm.anchor = head;
+        camera_arm.distance = 0;
+        camera_arm.arm = camera_arm.anchor = head;
     }
     else
     {
-        vec3s anchor = vecAdd(head, vecSca(offsetvec, camArm.offset));
+        vec3s anchor = vecAdd(head, vecSca(offsetvec, camera_arm.offset));
 
         SolRayResult anchortrace = Raycast_Static_Grid_Walk(
-            world, (SolRay){.pos = anchor, .dir = offsetvec, .dist = camArm.offset + camArm.wallbuffer});
-        float targetOffset   = anchortrace.dist - camArm.wallbuffer;
-        camArm.currentOffset = Sol_Lerp(camArm.currentOffset, targetOffset, factor);
+            world, (SolRay){.pos = anchor, .dir = offsetvec, .dist = camera_arm.offset + camera_arm.wallbuffer});
+        float targetOffset       = anchortrace.dist - camera_arm.wallbuffer;
+        camera_arm.currentOffset = Sol_Lerp(camera_arm.currentOffset, targetOffset, factor);
 
-        camArm.anchor = glms_vec3_lerp(camArm.anchor, vecAdd(anchor, vecSca(offsetvec, camArm.currentOffset)), factor);
+        camera_arm.anchor =
+            glms_vec3_lerp(camera_arm.anchor, vecAdd(anchor, vecSca(offsetvec, camera_arm.currentOffset)), factor);
 
-        SolRayResult camDistTrace = Raycast_Static_Grid_Walk(
-            world, (SolRay){.pos = camArm.anchor, .dir = invDirection, .dist = camArm.distance + camArm.wallbuffer});
-        float targetDist = camDistTrace.dist - camArm.wallbuffer;
+        SolRayResult camDistTrace =
+            Raycast_Static_Grid_Walk(world, (SolRay){.pos  = camera_arm.anchor,
+                                                     .dir  = invDirection,
+                                                     .dist = camera_arm.distance + camera_arm.wallbuffer});
+        float targetDist = camDistTrace.dist - camera_arm.wallbuffer;
         if (targetDist < 0)
             targetDist = 0;
-        camArm.currentDistance = Sol_Lerp(camArm.currentDistance, targetDist, factor);
+        camera_arm.currentDistance = Sol_Lerp(camera_arm.currentDistance, targetDist, factor);
 
-        camArm.arm = glms_vec3_add(camArm.anchor, glms_vec3_scale(invDirection, camArm.currentDistance));
+        camera_arm.arm = glms_vec3_add(camera_arm.anchor, glms_vec3_scale(invDirection, camera_arm.currentDistance));
     }
 }
 
@@ -53,10 +67,12 @@ void Sol_Cam_Update(double dt)
     // Can shake here?
     float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
     if (Sol_Input_GetMouse().wheelV)
-        camArm.distance -= changeDist;
+        camera_arm.distance -= changeDist;
 
-//    camArm.pos = camArm.arm;
-    Render_Camera_Update(camArm.arm.raw, vecAdd(camArm.arm, look->lookdir).raw);
+    memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
+    memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
+
+    Render_Camera_Update(&sol_camera);
 }
 
 // void Sol_Camera_Tick(World *world, double dt, double time, float alpha)
@@ -164,5 +180,5 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
 
 SolCameraArm *Sol_Cam_GetArm()
 {
-    return &camArm;
+    return &camera_arm;
 }

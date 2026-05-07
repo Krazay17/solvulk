@@ -54,6 +54,16 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
+void Sol_Load_Models()
+{
+    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    {
+        SolResource res   = Sol_LoadResource(model_path[i]);
+        SolModel   *model = Parse_Model(res, i);
+        Sol_UploadModel(model, i);
+    }
+}
+
 SolModel *Parse_Model(SolResource res, u32 id)
 {
     SolModel *model = &loaded_models[id];

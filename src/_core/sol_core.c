@@ -10,8 +10,16 @@ void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd    = hwnd;
     solState.isRunning = true;
-    Sol_Load_Resources();
+
     Render_Init(hwnd, hInstance);
+    Sol_Load_Textures();
+    Sol_Load_Models();
+    Sol_Load_Fonts();
+    Render_Init_Resources();
+
+    if (Sol_Audio_Init() != 0)
+        printf("Audio failed to init");
+
     solState.debug = true;
 }
 
@@ -69,7 +77,6 @@ void Sol_Tick(double dt, double time)
         // Sol_Camera_Tick(solState.worlds[i], dt, time, alpha);
     }
 
-    
     Sol_Begin_Draw();
     Sol_Cam_Update(dt);
 

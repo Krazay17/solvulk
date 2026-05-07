@@ -2,8 +2,10 @@
 #include "sol/sol.h"
 
 #include "profiler.h"
-#include "camera/camera.h"
 #include "sol_math.h"
+#include "platform.h"
+
+#include "camera/camera.h"
 #include "render/render.h"
 #include "audio/audio.h"
 
@@ -99,7 +101,6 @@ typedef struct SolState
 SolLook *Sol_Input_GetLook();
 
 SOLAPI void Sol_Begin_Draw();
-SOLAPI void Sol_Begin_3D(SolCamera *cam);
 SOLAPI void Sol_End_Draw();
 
 SOLAPI void World_Step(World *world, double dt, double time);
@@ -108,9 +109,6 @@ SOLAPI void World_Draw3d(World *world, double dt, double time);
 SOLAPI void World_Draw2d(World *world, double dt, double time);
 
 extern const char *fontResourceName[SOL_FONT_COUNT][2];
-void               Sol_Load_Resources();
-SolResource        Sol_LoadResource(const char *resourceName);
-int                Sol_ReadFile(const char *filename, SolResource *outRes);
 
 void Sol_MessageBox(const char *text, const char *level);
 void Sol_Platform_LockCursor(bool lock);

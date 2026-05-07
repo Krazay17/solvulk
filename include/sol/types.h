@@ -146,19 +146,6 @@ typedef enum Shape2
 
 // Structs ----------------------------------------------------
 
-typedef struct
-{
-    void *data;
-    long  size;
-    int   isHeap;
-} SolResource;
-
-typedef struct
-{
-    vec3s   pos, rot, scale;
-    versors quat;
-} SolTransform;
-
 typedef void (*CallbackFunc)(int flags, void *);
 typedef struct
 {

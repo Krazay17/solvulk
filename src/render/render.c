@@ -1,12 +1,10 @@
-#include "render.h"
 #include "sol_core.h"
 
-float     solAspectRatio = 16.0f / 9.0f;
-SolCamera renderCam      = {
-    .fov      = 60.0f,
-    .nearClip = 0.2f,
-    .farClip  = 1000.0f,
-};
+#include "render.h"
+
+
+
+float solAspectRatio = 16.0f / 9.0f;
 
 void Render_Push_Model(SolModelDraw model)
 {
@@ -14,42 +12,28 @@ void Render_Push_Model(SolModelDraw model)
     // Render_Models(model.modelId);
 }
 
-void Render_Init(void *hwnd, void *hInstance)
+void Render_Camera_Update(SolCamera *cam)
 {
-    int vulkInit = Sol_Init_Vulkan(hwnd, hInstance);
-    printf("Vulkan Init code: %d\n", vulkInit);
+    // View Matrix
+    glm_lookat(cam->position, cam->target, (vec3){0.0f, 1.0f, 0.0f}, cam->view);
 
-    for (int i = 0; i < SOL_MODEL_COUNT; i++)
-        Sol_UploadModel(Sol_GetModel(i), i);
-    for (int i = 0; i < SOL_IMAGE_COUNT; i++)
-        Sol_UploadImage(Sol_GetFont(i), 224, 224, 37, i);
+    // Projection Matrix
+    glm_perspective(glm_rad(cam->fov), solAspectRatio, cam->nearClip, cam->farClip, cam->proj);
+    cam->proj[1][1] *= -1;
 
-    Sol_Init_Vulkan_Resources();
-    // solAspectRatio = Sol_GetState()->windowWidth / Sol_GetState()->windowHeight;
-}
+    // View Projection
+    glm_mat4_mul(cam->proj, cam->view, cam->viewProj);
 
-void Render_Camera_Update(vec3 pos, vec3 target)
-{
-    // 1. Update vectors
-    glm_vec3_copy(pos, renderCam.position);
-    glm_vec3_copy(target, renderCam.target);
-
-    // 2. View Matrix
-    glm_lookat(renderCam.position, renderCam.target, (vec3){0.0f, 1.0f, 0.0f}, renderCam.view);
-
-    // 3. Projection Matrix
-    glm_perspective(glm_rad(renderCam.fov), solAspectRatio, renderCam.nearClip, renderCam.farClip, renderCam.proj);
-    renderCam.proj[1][1] *= -1;
-
-    // 4. View Projection
-    glm_mat4_mul(renderCam.proj, renderCam.view, renderCam.viewProj);
-
-    Sol_Begin_3D(&renderCam);
-}
-
-SolCamera *Sol_GetCamera()
-{
-    return &renderCam;
+    SceneUBO *ubo = Sol_GetDescriptorMapping(DESC_SCENE_UBO);
+    glm_mat4_copy(cam->view, ubo->view);
+    glm_mat4_copy(cam->proj, ubo->proj);
+    glm_mat4_copy(cam->viewProj, ubo->viewProjection);
+    vec4 pos = {cam->position[0], cam->position[1], cam->position[2], 1.0f};
+    glm_vec4_copy(pos, ubo->cameraPos);
+    ubo->sun[0] = 0.0f;
+    ubo->sun[1] = 1.0f;
+    ubo->sun[2] = 0.4f;
+    ubo->sun[3] = 0.2f;
 }
 
 void Sol_Render_Resize(uint32_t width, uint32_t height)

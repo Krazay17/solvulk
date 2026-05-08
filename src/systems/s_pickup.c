@@ -1,3 +1,10 @@
+/*
+ * File: s_pickup.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Pickup!
+*/
 #include "sol_core.h"
 
 float stiffness = 5.0f;

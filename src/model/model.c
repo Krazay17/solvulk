@@ -33,6 +33,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
         },
 };
 
+static SolModel   *Parse_Model(SolResource res, u32 id);
 static SolSkeleton ParseSkeleton(cgltf_data *data);
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount,
@@ -54,7 +55,7 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
-void Sol_Load_Models()
+int Sol_Models_Init()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
@@ -62,9 +63,10 @@ void Sol_Load_Models()
         SolModel   *model = Parse_Model(res, i);
         Sol_UploadModel(model, i);
     }
+    return 0;
 }
 
-SolModel *Parse_Model(SolResource res, u32 id)
+static SolModel *Parse_Model(SolResource res, u32 id)
 {
     SolModel *model = &loaded_models[id];
 
@@ -224,7 +226,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             if (src->name)
             {
                 strncpy(anim->name, src->name, 63);
-                printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
+                // printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
             }
 
             anim->channelCount = (int)src->channels_count;

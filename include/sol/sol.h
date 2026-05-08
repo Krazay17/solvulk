@@ -1,3 +1,11 @@
+/*
+ * File: sol.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * ==== Sol Blade ====
+ */
+
 #pragma once
 
 #include <assert.h>
@@ -23,15 +31,11 @@ SOLAPI void Sol_Destroy();
 SOLAPI SolState *Sol_GetState();
 SOLAPI double    Sol_GetGameTime();
 
-SOLAPI int Sol_Init_Vulkan(void *hwnd, void *hInstance);
-int        Sol_Init_Vulkan_Resources();
-
 SOLAPI void Sol_Render_Resize(uint32_t width, uint32_t height);
 
 SOLAPI float Sol_MeasureText(const char *str, float size, SolFontKind id);
 
 SOLAPI void Sol_Window_Resize(float width, float height);
-SOLAPI void Sol_FreeModel(SolModel *model);
 
 // called from WindowProc on main thread
 SOLAPI void Sol_Input_OnKey(int vkCode, bool down);

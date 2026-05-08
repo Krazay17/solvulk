@@ -65,11 +65,10 @@ void Sol_Ability_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
         CompAbility    *ability    = &world->abilities[id];
-        CompController *controller = &world->controllers[id];
 
         for (int m = 0; m < MAPPING_COUNT; m++)
         {
-            if (controller->actionState & ability_mappings[m].actionBit)
+            if (Sol_GetActions(world, id) & ability_mappings[m].actionBit)
                 if (Sol_Ability_SetState(world, id, ability_mappings[m].targetState))
                     break;
         }

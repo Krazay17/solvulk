@@ -1,6 +1,119 @@
 #pragma once
 #include "sol/types.h"
 
+typedef struct SolMaterial
+{
+    float baseColor[4];
+    float emissive[4];
+    float metallic;
+    float roughness;
+} SolMaterial;
+
+typedef struct SolVertex
+{
+    vec3 position;
+    vec3 normal;
+    vec2 uv;
+
+    ivec4 boneIndices; // up to 4 bones per vertex (glTF default)
+    vec4  boneWeights; // weights, sum = 1.0
+} SolVertex;
+
+typedef struct SolBone
+{
+    char name[64];
+    int  parent;      // index into bones array, or -1 for root
+    mat4 inverseBind; // baked from glTF
+
+    // Local TRS at rest (used as default if no animation channel exists)
+    vec3s   restTrans;
+    versors restRot;
+    vec3s   restScale;
+} SolBone;
+
+// One animation channel = one bone's TRS curve
+typedef enum
+{
+    ANIM_PATH_TRANSLATION,
+    ANIM_PATH_ROTATION,
+    ANIM_PATH_SCALE,
+} AnimPath;
+
+typedef struct SolAnimChannel
+{
+    int      boneIndex; // which bone this affects
+    AnimPath path;      // T, R, or S
+    float   *times;     // keyframe timestamps, length = keyCount
+    float   *values;    // packed values: vec3 for T/S, vec4 (quat) for R
+    int      keyCount;
+} SolAnimChannel;
+
+typedef struct SolAnimation
+{
+    char            name[64];
+    float           duration; // longest keyframe time across all channels
+    SolAnimChannel *channels;
+    int             channelCount;
+} SolAnimation;
+
+// typedef struct
+// {
+//     int   animA, animB;
+//     float seekA, seekB;
+//     float blendFactor;
+//     mat4  bones[MAX_BONES];
+//     u32   blend_mask[MAX_BONES];
+// } AnimBlend;
+
+typedef struct SolSkeleton
+{
+    SolBone      *bones;
+    int           boneCount;
+    SolAnimation *animations;
+    int           animationCount;
+
+} SolSkeleton;
+
+typedef struct SolMesh
+{
+    uint32_t    vertexOffset;
+    uint32_t    vertexCount;
+    uint32_t    indexOffset;
+    uint32_t    indexCount;
+    SolMaterial material;
+} SolMesh;
+
+typedef struct SolModel
+{
+    SolVertex *vertices;
+    SolMesh   *meshes;
+    SolTri    *tris;
+    u32       *indices;
+
+    u32 vertex_count;
+    u32 mesh_count;
+    u32 tri_count;
+    u32 indice_count;
+
+    SolSkeleton skeleton;
+
+    mat4s *jointMatrices;
+
+    SolModelId modelId;
+} SolModel;
+
+typedef struct SolModelDraw
+{
+    vec3s   pos;
+    vec3s   scale;
+    versors rot;
+
+    mat4 *bonePtr;
+
+    u32 modelId;
+    u32 flags;
+} SolModelDraw;
+
 typedef struct BoneMask
 {
     bool layerOwns[MAX_BONES]; // for one layer
@@ -57,8 +170,7 @@ const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 SolModel *Sol_GetModel(SolModelId id);
 
-void      Sol_Load_Models();
-SolModel *Parse_Model(SolResource res, u32 id);
+int       Sol_Models_Init();
 void      Init_Anim_Masks(SolModelId modelId, SolSkeleton *skele);
 void      Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int       Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);

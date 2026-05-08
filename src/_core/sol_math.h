@@ -1,3 +1,10 @@
+/*
+ * File: sol.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Math!
+ */
 #pragma once
 #include "sol/types.h"
 #include <cglm/cglm.h>
@@ -24,9 +31,8 @@ extern const vec3s VECTOR_RADIAL_DIRECTIONS[8];
 
 // FUNCS------------------------------------
 
-vec4s   Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
+vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
 
-bool  Sol_Check_2d_Collision(vec2s a, vec4s b);
 vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
 
 vec3s   Sol_Vec3_FromYawPitch(float yaw, float pitch);
@@ -43,6 +49,11 @@ vec3s     ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, fl
 StrafeDir Get_StrafeDir(float x, float z, float xB, float zB);
 
 // INLINES-------------------
+
+static inline bool Sol_Check_2d_Collision(vec2s a, vec4s b)
+{
+    return !((a.x < b.x) | (a.x >= b.x + b.z) | (a.y < b.y) | (a.y >= b.y + b.w));
+}
 
 static inline vec3s ClosestPointOnTriangle(const vec3s p, const vec3s a, const vec3s b, const vec3s c)
 {
@@ -123,4 +134,14 @@ static inline void TransformNrm(const float m[16], const float in[3], float out[
         out[1] /= len;
         out[2] /= len;
     }
+}
+
+static inline float Sol_Lerp(float start, float end, float amount)
+{
+    return start + amount * (end - start);
+}
+
+static inline float Sol_YawFromQuat(versor q)
+{
+    return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
 }

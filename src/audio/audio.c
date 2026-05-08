@@ -1,3 +1,10 @@
+/*
+ * File: audio.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Audio!
+*/
 #include "sol_core.h"
 
 #define MINIAUDIO_IMPLEMENTATION
@@ -85,10 +92,6 @@ SolAudio *Parse_Audio(SolResource res, u32 id)
 
     ma_decoder_read_pcm_frames(&decoder, audio->pcmData, frameCount, NULL);
     ma_decoder_uninit(&decoder);
-
-    // Init audio buffer (this is what we'll play many copies of)
-    // ma_audio_buffer_config bufConfig = ma_audio_buffer_config_init(ma_format_f32, 2, frameCount, audio->pcmData,
-    // NULL); ma_audio_buffer_init(&bufConfig, &audio->buffer);
 
     audio->loaded = true;
     printf("Loaded audio %d: %llu frames (%.2f sec)\n", id, frameCount, (float)frameCount / 48000.0f);

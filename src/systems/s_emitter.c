@@ -1,3 +1,11 @@
+/*
+ * File: s_emitter.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Particle Emitter
+ * SolEmitters.emitter and SolEmitters.particle reallocs careful!
+*/
 #include "sol_core.h"
 
 #define MAX_EMITTERS 0xFFF

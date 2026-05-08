@@ -1,3 +1,10 @@
+/*
+ * File: s_buff.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Buffs!
+*/
 #include "sol_core.h"
 
 #define MAX_BUFFS 64

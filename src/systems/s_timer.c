@@ -1,3 +1,10 @@
+/*
+ * File: s_timer.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Timer!
+*/
 #include "sol_core.h"
 
 typedef struct CompTimer
@@ -19,7 +26,6 @@ void Sol_Timer_Add(World *world, int id, TimerDesc desc)
 
     world->timers[id] = timer;
     world->masks[id] |= HAS_TIMER;
-    return &world->timers[id];
 }
 
 void Sol_Timer_Tick(World *world, double dt, double time)

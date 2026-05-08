@@ -3,7 +3,6 @@
 #include "physx.h"
 #include <omp.h>
 
-
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
     [SHAPE3_CAP] = Collide_Capsule_Tri,
@@ -34,11 +33,9 @@ void Spatial_Add(World *world, int id, CompBody *body)
 
     if (body->shape == SHAPE3_MOD)
     {
-        SolModel *model = Sol_GetModel(Sol_Model_GetModelId(world, id));
-        printf("phys add model %d\n", model->vertex_count);
-        // SolModel *model    = world->models[id].model;
-        u32 oldCount = group->triCount;
-        u32 newCount = oldCount + model->tri_count;
+        SolModel *model    = Sol_GetModel(Sol_Model_GetModelId(world, id));
+        u32       oldCount = group->triCount;
+        u32       newCount = oldCount + model->tri_count;
 
         if (newCount > group->capacity)
         {
@@ -51,32 +48,6 @@ void Spatial_Add(World *world, int id, CompBody *body)
 
         group->ents[id].triIndexStart = oldCount;
         group->ents[id].triIndexCount = model->tri_count;
-    }
-}
-
-void Fill_Dynamic_Table(World *world, int count, int *ents)
-{
-    SpatialTable *table = &world->spatial->dynamicGroup.table;
-    SpatialTable_Clear(table);
-    for (int i = 0; i < count; i++)
-    {
-        u32   id  = ents[i];
-        vec3s pos = world->xforms[id].pos;
-        float r   = fmaxf(world->bodies[id].dims.x, world->bodies[id].dims.y * 0.5f);
-
-        int x0 = (int)floorf((pos.x - r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        int x1 = (int)floorf((pos.x + r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        int y0 = (int)floorf((pos.y - r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        int y1 = (int)floorf((pos.y + r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        int z0 = (int)floorf((pos.z - r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        int z1 = (int)floorf((pos.z + r) / SPATIAL_DYNAMIC_CELL_SIZE);
-        for (int x = x0; x <= x1; x++)
-            for (int y = y0; y <= y1; y++)
-                for (int z = z0; z <= z1; z++)
-                {
-                    u32 hash = hash_coords(x, y, z) & (table->size - 1);
-                    SpatialTable_Insert(table, hash, id);
-                }
     }
 }
 
@@ -120,6 +91,7 @@ void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform 
         Spatial_Hash_Tris(triGroup);
     }
 }
+
 static SolProfiler local_tris = {.name = "LocalTris"};
 void               Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)
 {
@@ -227,27 +199,25 @@ void Physx_Grid_Static_Rebuild(PhysxGroup *group)
 
 void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform)
 {
-    WorldPhysx *ws   = world->spatial;
-    SpatialCell cell = Spatial_Cell_Get(xform->pos, SPATIAL_DYNAMIC_CELL_SIZE);
-    SolContact  col  = {0};
+    SpatialTable *table  = &world->spatial->dynamicGroup.table;
+    SpatialCell   cell   = Spatial_Cell_Get(xform->pos, table->cellSize);
+    SolContact    result = {0};
     for (int n = 0; n < 27; n++)
     {
-        u32 entry = ws->dynamicGroup.table.head[cell.neighborHashes[n] & (ws->dynamicGroup.table.size - 1)];
+        u32 entry = table->head[cell.neighborHashes[n] & (table->size - 1)];
         while (entry != SPATIAL_NULL)
         {
-            u32 otherID = ws->dynamicGroup.table.value[entry];
+            u32 otherID = table->value[entry];
             if (id < otherID)
             {
                 CompBody  *other_body  = &world->bodies[otherID];
                 CompXform *other_xform = &world->xforms[otherID];
-                SolContact result      = {0};
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &result))
                 {
                     Resolve_Dynamic_Pair(body, xform, other_body, other_xform, &result);
-                    // Sol_Event_Add(world, (EventDesc){.entA = id, .kind = EVENT_PARTICLE, .pos = result.point});
                 }
             }
-            entry = ws->dynamicGroup.table.next[entry];
+            entry = table->next[entry];
         }
     }
 }
@@ -531,6 +501,7 @@ void spatial_hash_tris(SolTri *t, int count, SpatialTable *table, float cellSize
                     SpatialTable_Insert(table, hash_coords(x, y, z), i);
     }
 }
+
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size)
 {
     SpatialGrid *grid = &group->grid;
@@ -637,116 +608,6 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
     }
     printf("grid_static: %dx%dx%d cells, %u entries, worst cell: %u\n", grid->dims.x, grid->dims.y, grid->dims.z,
            totalEntries, worst);
-}
-
-SpatialCell Spatial_Cell_Get(vec3s pos, float cellSize)
-{
-    SpatialCell cell;
-    cell.ix = (int)floorf(pos.x / cellSize);
-    cell.iy = (int)floorf(pos.y / cellSize);
-    cell.iz = (int)floorf(pos.z / cellSize);
-
-    int n = 0;
-    for (int ox = -1; ox <= 1; ox++)
-        for (int oy = -1; oy <= 1; oy++)
-            for (int oz = -1; oz <= 1; oz++)
-                cell.neighborHashes[n++] = hash_coords(cell.ix + ox, cell.iy + oy, cell.iz + oz);
-    return cell;
-}
-
-void SpatialTable_Init(SpatialTable *table, u32 buckets, u32 capacity, float cellSize)
-{
-    table->head     = malloc(sizeof(u32) * buckets);
-    table->value    = malloc(sizeof(u32) * capacity);
-    table->next     = malloc(sizeof(u32) * capacity);
-    table->size     = buckets;
-    table->capacity = capacity;
-    table->cellSize = cellSize;
-    SpatialTable_Clear(table);
-}
-
-void SpatialTable_Clear(SpatialTable *table)
-{
-    memset(table->head, 0xFF, sizeof(u32) * table->size);
-    table->count = 0;
-}
-
-void SpatialTable_Free(SpatialTable *table)
-{
-    free(table->head);
-    free(table->value);
-    free(table->next);
-}
-
-void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value)
-{
-    assert(hash < table->size);
-    if (table->count >= table->capacity)
-        return;
-
-    u32 idx           = table->count++;
-    table->value[idx] = value;
-    table->next[idx]  = table->head[hash];
-    table->head[hash] = idx;
-}
-
-void SpatialTable_Compact(SpatialTable *table)
-{
-    // 1. Count entries per bucket
-    u32 *counts = calloc(table->size, sizeof(u32));
-    for (u32 i = 0; i < table->size; i++)
-    {
-        u32 entry = table->head[i];
-        while (entry != SPATIAL_NULL)
-        {
-            counts[i]++;
-            entry = table->next[entry];
-        }
-    }
-
-    // 2. Compute offsets (prefix sum)
-    u32 *offsets = malloc(table->size * sizeof(u32));
-    offsets[0]   = 0;
-    for (u32 i = 1; i < table->size; i++)
-        offsets[i] = offsets[i - 1] + counts[i - 1];
-
-    // 3. Copy values into sorted order
-    u32 *sorted = malloc(table->count * sizeof(u32));
-    u32 *cursor = malloc(table->size * sizeof(u32));
-    memcpy(cursor, offsets, table->size * sizeof(u32));
-
-    for (u32 i = 0; i < table->size; i++)
-    {
-        u32 entry = table->head[i];
-        while (entry != SPATIAL_NULL)
-        {
-            sorted[cursor[i]++] = table->value[entry];
-            entry               = table->next[entry];
-        }
-    }
-
-    // 4. Rebuild as contiguous — head points to start, next is just +1
-    memcpy(table->value, sorted, table->count * sizeof(u32));
-
-    for (u32 i = 0; i < table->size; i++)
-    {
-        if (counts[i] == 0)
-        {
-            table->head[i] = SPATIAL_NULL;
-        }
-        else
-        {
-            table->head[i] = offsets[i];
-            for (u32 j = 0; j < counts[i] - 1; j++)
-                table->next[offsets[i] + j] = offsets[i] + j + 1;
-            table->next[offsets[i] + counts[i] - 1] = SPATIAL_NULL;
-        }
-    }
-
-    free(sorted);
-    free(counts);
-    free(offsets);
-    free(cursor);
 }
 
 bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)

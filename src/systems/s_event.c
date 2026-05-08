@@ -1,3 +1,10 @@
+/*
+ * File: s_event.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Events!
+*/
 #include "sol_core.h"
 
 #define EVENT_INIT_SIZE 12

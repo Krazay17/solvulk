@@ -2,32 +2,30 @@
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt)
 {
-    CompController       *controller = &world->controllers[id];
     CompBody             *body       = &world->bodies[id];
 
-    if (controller->actionState & ACTION_JUMP)
+    if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return;
     if (!body->grounded)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return;
-    if (glms_vec3_norm(controller->wishdir) > 0)
+    if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0)
         if (Sol_Movement_SetState(world, id, MOVE_WALK))
             return;
 }
 
 void Sol_Movement_Idle_Enter(World *world, int id)
 {
-    CompController *controller = &world->controllers[id];
     CompBody       *body       = &world->bodies[id];
 
-    if (controller->actionState & ACTION_JUMP)
+    if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return;
     if (!body->grounded)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return;
-    if (glms_vec3_norm(controller->wishdir) > 0)
+    if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0)
         if (Sol_Movement_SetState(world, id, MOVE_WALK))
             return;
 
@@ -40,13 +38,13 @@ void Sol_Movement_Idle_Exit(World *world, int id)
     // todo
 }
 
-bool Sol_Movement_Idle_CanEnter(World *world, int id)
+bool Sol_Movement_Idle_CanEnter(World *world, int id, int last)
 {
     // todo
     return true;
 }
 
-bool Sol_Movement_Idle_CanExit(World *world, int id)
+bool Sol_Movement_Idle_CanExit(World *world, int id, int next)
 {
     // todo
     return true;

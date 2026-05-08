@@ -1,22 +1,27 @@
+/*
+ * File: sol.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * ==== Sol Blade ====
+ */
+
 #pragma once
 #include "sol/sol.h"
 
 #include "profiler.h"
 #include "sol_math.h"
-#include "platform.h"
 
 #include "camera/camera.h"
 #include "render/render.h"
-#include "audio/audio.h"
 
-#include "texture/texture.h"
-#include "model/model.h"
-#include "font/font.h"
-#include "xform/xform.h"
-#include "physx/physx.h"
 #include "ability/ability.h"
+#include "font/font.h"
+#include "model/model.h"
 #include "movement/movement.h"
-#include "controller/controller.h"
+#include "physx/physx.h"
+#include "texture/texture.h"
+#include "xform/xform.h"
 
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
@@ -26,6 +31,13 @@ typedef void (*SystemFunc)(World *, double, double);
 
 typedef bool     Active;
 typedef uint32_t Mask;
+
+typedef struct SolResource
+{
+    void *data;
+    long  size;
+    int   isHeap;
+} SolResource;
 
 typedef enum
 {
@@ -98,6 +110,11 @@ typedef struct SolState
     uint16_t worldCount;
 } SolState;
 
+SolResource Sol_LoadResource(const char *resourceName);
+int         Sol_ReadFile(const char *filename, SolResource *outRes);
+void        Sol_MessageBox(const char *text, const char *level);
+void        Sol_Platform_LockCursor(bool lock);
+
 SolLook *Sol_Input_GetLook();
 
 SOLAPI void Sol_Begin_Draw();
@@ -107,8 +124,3 @@ SOLAPI void World_Step(World *world, double dt, double time);
 SOLAPI void World_Tick(World *world, double dt, double time);
 SOLAPI void World_Draw3d(World *world, double dt, double time);
 SOLAPI void World_Draw2d(World *world, double dt, double time);
-
-extern const char *fontResourceName[SOL_FONT_COUNT][2];
-
-void Sol_MessageBox(const char *text, const char *level);
-void Sol_Platform_LockCursor(bool lock);

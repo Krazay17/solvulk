@@ -161,7 +161,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
 
 };
 
-int Render_Init(void *hwnd, void *hInstance)
+int Sol_Render_Init(void *hwnd, void *hInstance)
 {
     if (SolVkInstance(&solvkstate) != 0)
         return 1;
@@ -185,7 +185,7 @@ int Render_Init(void *hwnd, void *hInstance)
     return 0;
 }
 
-int Render_Init_Resources()
+int Sol_Render_Resource_Init()
 {
     for (int i = 0; i < DESC_COUNT; i++)
     {
@@ -208,6 +208,7 @@ int Render_Init_Resources()
                           &lineBuffer);
 
     Vk_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
+    
     return 0;
 }
 

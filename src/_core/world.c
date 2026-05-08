@@ -1,5 +1,11 @@
+/*
+ * File: world.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * World!
+*/
 #include "sol_core.h"
-
 
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER]      = {.init = Sol_Timer_Init, .tick = Sol_Timer_Tick},

@@ -1,3 +1,10 @@
+/*
+ * File: components.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Components!
+ */
 #pragma once
 #include "sol/types.h"
 
@@ -74,10 +81,14 @@ void         Sol_Physx_Init(World *world);
 void         Sol_Physx_Step(World *world, double dt, double time);
 void         Sol_Physx2d_Step(World *world, double dt, double time);
 vec3s        Sol_Physx_GetVel(World *world, int id);
-void         Sol_Physx_SetVel(World *world, int id, vec3s vel);
+vec3s        Sol_Physx_GetGround(World *world, int id);
 SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
 void         Sol_Physx_SetGrav(World *world, int id, vec3s vel);
 vec3s        Sol_Physx_GetDims(World *world, int id);
+void         Sol_Physx_SetVel(World *world, int id, vec3s vel);
+void         Sol_Physx_SetVelX(World *world, int id, float x);
+void         Sol_Physx_SetVelY(World *world, int id, float y);
+void         Sol_Physx_SetVelZ(World *world, int id, float z);
 
 // CONTROLLER------------
 typedef struct CompController CompController;
@@ -91,10 +102,19 @@ typedef struct
 {
     ControllerKind kind;
 } ControllerDesc;
-void  Sol_Controller_Init(World *world);
-void  Sol_Controller_Add(World *world, int id, ControllerDesc desc);
-void  Sol_Controller_Tick(World *world, double dt, double time);
-vec3s Sol_Controller_GetAimPos(World *world, int id);
+void       Sol_Controller_Init(World *world);
+void       Sol_Controller_Add(World *world, int id, ControllerDesc desc);
+void       Sol_Controller_Tick(World *world, double dt, double time);
+vec3s      Sol_Controller_GetAimPos(World *world, int id);
+SolActions Sol_GetActions(World *world, int id);
+vec3s      Sol_GetWishdir(World *world, int id);
+vec2s      Sol_GetWishdir2(World *world, int id);
+vec3s      Sol_GetLookdir(World *world, int id);
+vec3s      Sol_GetAimpos(World *world, int id);
+vec3s      Sol_GetAimdir(World *world, int id);
+float      Sol_GetYaw(World *world, int id);
+float      Sol_GetPitch(World *world, int id);
+StrafeDir  Sol_GetStrafedir(World *world, int id, float x, float z);
 
 // EVENT------------------
 void Sol_Event_Add(World *world, EventDesc desc);
@@ -108,11 +128,11 @@ typedef struct
     SolModelId id;
     float      yoffset;
 } ModelDesc;
-void Sol_Model_Init(World *world);
-void Sol_Model_Add(World *world, int id, ModelDesc desc);
-void Sol_Model_Draw(World *world, double dt, double time);
-void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
-void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
+void       Sol_Model_Init(World *world);
+void       Sol_Model_Add(World *world, int id, ModelDesc desc);
+void       Sol_Model_Draw(World *world, double dt, double time);
+void       Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
+void       Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
 SolModelId Sol_Model_GetModelId(World *world, int id);
 
 // EMITTER--------------
@@ -125,7 +145,7 @@ void Emitter_Tick(World *world, double dt, double time);
 void Emitter_Draw(World *world, double dt, double time);
 
 // LINE-----------------
-typedef struct CompLine CompLine;
+typedef struct CompLine   CompLine;
 typedef struct WorldLines WorldLines;
 
 typedef struct

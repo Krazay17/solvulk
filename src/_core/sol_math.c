@@ -14,16 +14,6 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[8] = {
     {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
 
-bool Sol_Check_2d_Collision(vec2s a, vec4s b)
-{
-    return !((a.x < b.x) | (a.x >= b.x + b.z) | (a.y < b.y) | (a.y >= b.y + b.w));
-}
-
-float Sol_Lerp(float start, float end, float amount)
-{
-    return start + amount * (end - start);
-}
-
 vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha)
 {
     float r = base.r + alpha * (target.r - base.r);
@@ -101,13 +91,3 @@ versors Sol_Quat_FromLookDira(vec3s lookDir)
     return (versors){q[0], q[1], q[2], q[3]};
 }
 
-float Sol_YawFromQuat(versor q)
-{
-    return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
-}
-float PulseAnim(float dt, float value, float speed)
-{
-    value += dt * speed;
-    value = (sinf(value) * 0.5f) + 0.5f;
-    return value;
-}

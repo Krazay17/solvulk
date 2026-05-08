@@ -1,3 +1,10 @@
+/*
+ * File: s_line.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Lines!
+*/
 #include "sol_core.h"
 
 #define MAX_WORLD_LINES 0xffffff

@@ -48,7 +48,6 @@ void Xform_Snapshot(World *world)
     Sol_Debug_Add("Z", playerXform->pos.z);
 }
 
-// system_xform.c
 void Xform_Interpolate(World *world, float alpha)
 {
     int i;

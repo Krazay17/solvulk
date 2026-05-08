@@ -1,3 +1,10 @@
+/*
+ * File: s_vital.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Vitals!
+*/
 #include "sol_core.h"
 #include "xform/xform.h"
 

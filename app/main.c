@@ -277,7 +277,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void QuitApp(World *world, int id, void *data)
+void QuitApp(int flags, void *data)
 {
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }

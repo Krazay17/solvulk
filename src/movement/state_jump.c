@@ -9,7 +9,6 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
     CompMovement   *movement   = &world->movements[id];
     CompBody       *body       = &world->bodies[id];
-    CompController *controller = &world->controllers[id];
     movement->stateTimer += dt;
     float alpha = JUMP_ALPHAMOD - (movement->stateTimer / JUMP_TIMER);
 
@@ -18,8 +17,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
     }
-
-    body->vel.y = JUMP_VEL * alpha;
+    Sol_Physx_SetVelY(world, id, JUMP_VEL * alpha);
 }
 
 void Sol_Movement_Jump_Enter(World *world, int id)
@@ -34,14 +32,14 @@ void Sol_Movement_Jump_Exit(World *world, int id)
 {
 }
 
-bool Sol_Movement_Jump_CanEnter(World *world, int id)
+bool Sol_Movement_Jump_CanEnter(World *world, int id, int last)
 {
     CompBody *body = &world->bodies[id];
 
     return body->grounded > JUMP_GROUND_COOLDOWN;
 }
 
-bool Sol_Movement_Jump_CanExit(World *world, int id)
+bool Sol_Movement_Jump_CanExit(World *world, int id, int next)
 {
     return true;
 }

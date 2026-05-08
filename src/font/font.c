@@ -1,26 +1,29 @@
 #include "sol_core.h"
 
-const char *font_path[SOL_FONT_COUNT]= {
+const char *font_path[SOL_FONT_COUNT] = {
     [SOL_FONT_ICE] = {"atlas.json"},
 };
 
 SolFont loaded_fonts[SOL_FONT_COUNT];
+
+static void Parse_Font(SolResource metrics, int id);
 
 SolFont *Sol_GetFont(SolFontKind kind)
 {
     return &loaded_fonts[kind];
 }
 
-void Sol_Load_Fonts()
+int Sol_Fonts_Init()
 {
-    for(int i =0; i < SOL_FONT_COUNT;i++)
+    for (int i = 0; i < SOL_FONT_COUNT; i++)
     {
         SolResource res = Sol_LoadResource(font_path[i]);
         Parse_Font(res, i);
     }
+    return 0;
 }
 
-void Parse_Font(SolResource metrics, int id)
+static void Parse_Font(SolResource metrics, int id)
 {
     SolFont    *font   = &loaded_fonts[id];
     SolGlyph   *glyphs = font->glyph;

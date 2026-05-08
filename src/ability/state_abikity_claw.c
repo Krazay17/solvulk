@@ -19,12 +19,11 @@ void Claw_State_Enter(World *world, int id)
 {
     Sol_PlayAudio(SOL_AUDIO_SPACEGUN);
 
-    CompController *controller = &world->controllers[id];
     CompXform      *xform      = &world->xforms[id];
     CompAbility    *combat     = &world->abilities[id];
 
-    vec3s aimpos = controller->aimpos;
-    vec3s aimdir = controller->aimdir;
+    vec3s aimpos = Sol_GetAimpos(world, id);
+    vec3s aimdir = Sol_GetAimdir(world, id);
 
     float min      = 0.2f;
     float max      = 0.8f;
@@ -44,7 +43,7 @@ void Claw_State_Exit(World *world, int id)
     Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0.1);
 }
 
-bool Claw_State_CanEnter(World *world, int id)
+bool Claw_State_CanEnter(World *world, int id, int last)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ABILITY_STATE_CLAW];
@@ -53,7 +52,7 @@ bool Claw_State_CanEnter(World *world, int id)
 
     return true;
 }
-bool Claw_State_CanExit(World *world, int id)
+bool Claw_State_CanExit(World *world, int id, int next)
 {
     return true;
 }

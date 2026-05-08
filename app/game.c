@@ -9,7 +9,7 @@ static void SpawnPlayer(int flags, void *data)
     if (gameWorld->actives[gameWorld->playerID])
         Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
-    player3d = Sol_Prefab_Pawn(gameWorld, (vec3s){0, 5, 0}, SOL_MODEL_DUDE, 2.0f, 0.35f);
+    player3d = Sol_Prefab_Player(gameWorld, (vec3s){0,5,0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
     Sol_Physx_SetGrav(gameWorld, player3d, (vec3s){0, -19.62f, 0});
 }
@@ -29,7 +29,7 @@ void MakeAWizard(int flags, void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Pawn(wizard->world, (vec3s){epsilonA, epsilonB, epsilonA}, SOL_MODEL_WIZARD, 2.8f, 0.5f);
+        int id = Sol_Prefab_Wizard(gameWorld, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
         Sol_Controller_Add(wizard->world, id, (ControllerDesc){.kind = CONTROLLER_AI});
     }
 }
@@ -76,6 +76,8 @@ void Create_Sol_Game()
     // CURL *curl = curl_easy_init();
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
+
+    Sol_PlayAudio(SOL_AUDIO_MENUMUSIC);
 
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});

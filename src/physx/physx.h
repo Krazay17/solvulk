@@ -3,14 +3,6 @@
 
 #define SPATIAL_NULL 0xFFFFFFFF
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 3.0f
-#define SPATIAL_DYNAMIC_SIZE (1 << 18)
-#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
-
-#define SPATIAL_STATIC_CELL_SIZE 1.5f
-#define SPATIAL_STATIC_SIZE (1 << 21)
-#define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
-
 typedef struct CompBody
 {
     vec3s  vel, impulse, force, groundNormal, dims;
@@ -21,9 +13,11 @@ typedef struct CompBody
     u8     group;
 } CompBody;
 
+typedef struct CompBody CompBody;
 typedef struct CompXform CompXform;
-typedef struct SolContact SolContact;
+typedef struct SolModel SolModel;
 
+typedef struct SolContact SolContact;
 typedef bool (*ShapeTriTest)(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit);
 typedef bool (*ShapePairTest)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb, SolContact *hit);
 
@@ -38,7 +32,6 @@ struct SolContact
 
 typedef struct GridWalker
 {
-    // Walk state
     int   ix, iy, iz;
     int   stepX, stepY, stepZ;
     float tMaxX, tMaxY, tMaxZ;

@@ -118,15 +118,16 @@ typedef struct SolRenderState
 
 extern SolRenderState sol_render_state;
 
-int  Render_Init(void *hwnd, void *hInstance);
-int  Render_Init_Resources();
+int  Sol_Render_Init(void *hwnd, void *hInstance);
+int  Sol_Render_Resource_Init();
+
 void Render_Camera_Update(SolCamera *cam);
-void Render_Push_Model(SolModelDraw model);
-void Render_Push_Model_Skinned(SolModelDraw model);
+// void Render_Push_Model(SolModelDraw model);
+// void Render_Push_Model_Skinned(SolModelDraw model);
 void Render_Push_Sphere(SolSphere sphere);
 void Render_Push_Line(SolLine line);
 
-void Render_Draw_Model(SolModelDraw draw);
+// void Render_Draw_Model(SolModelDraw draw);
 void Render_Draw_Model_Skinned();
 void Render_Draw_Sphere();
 void Render_Draw_Line(SolLine *lines, int count);
@@ -139,7 +140,7 @@ void  Sol_Render_Resize(uint32_t width, uint32_t height);
 void  Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
-void Sol_UploadModel(SolModel *model, SolModelId id);
+// void Sol_UploadModel(SolModel *model, SolModelId id);
 int  Sol_UploadImage(SolImage *image, SolImageId id);
 
 SolCamera *Sol_GetCamera();

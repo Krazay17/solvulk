@@ -1,17 +1,25 @@
+/*
+ * File: texture.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Textures!
+ */
 #include "sol_core.h"
 
 const char *image_path[SOL_IMAGE_COUNT] = {
     [SOL_IMAGE_FONT] = "atlas.raw",
 };
-
 SolImage loaded_images[SOL_IMAGE_COUNT];
+
+static SolImage *Parse_Texture(SolResource res, u32 id);
 
 SolImage *Sol_GetImage(SolImageId id)
 {
     return &loaded_images[id];
 }
 
-void Sol_Load_Textures()
+int Sol_Textures_Init()
 {
     for (int i = 0; i < SOL_IMAGE_COUNT; i++)
     {
@@ -19,9 +27,10 @@ void Sol_Load_Textures()
         SolImage   *image = Parse_Texture(res, i);
         Sol_UploadImage(image, i);
     }
+    return 0;
 }
 
-SolImage *Parse_Texture(SolResource res, u32 id)
+static SolImage *Parse_Texture(SolResource res, u32 id)
 {
     SolImage *image = &loaded_images[id];
     image->pixels   = res.data;

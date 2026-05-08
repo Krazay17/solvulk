@@ -1,8 +1,17 @@
-#include "physx.h"
 #include "sol_core.h"
+
+#include "physx.h"
 #include <omp.h>
 
 #include "xform/xform.h"
+
+#define SPATIAL_DYNAMIC_CELL_SIZE 3.0f
+#define SPATIAL_DYNAMIC_SIZE (1 << 18)
+#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
+
+#define SPATIAL_STATIC_CELL_SIZE 1.5f
+#define SPATIAL_STATIC_SIZE (1 << 21)
+#define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
 static u32        ents[MAX_ENTS];
 static SolContact contacts[MAX_ENTS];
@@ -265,6 +274,33 @@ void Sol_Physx2d_Step(World *world, double dt, double time)
     }
 }
 
+void Fill_Dynamic_Table(World *world, int count, int *ents)
+{
+    SpatialTable *table = &world->spatial->dynamicGroup.table;
+
+    SpatialTable_Clear(table);
+    for (int i = 0; i < count; i++)
+    {
+        u32   id  = ents[i];
+        vec3s pos = world->xforms[id].pos;
+        float r   = fmaxf(world->bodies[id].dims.x, world->bodies[id].dims.y * 0.5f);
+
+        int x0 = (int)floorf((pos.x - r) / table->cellSize);
+        int x1 = (int)floorf((pos.x + r) / table->cellSize);
+        int y0 = (int)floorf((pos.y - r) / table->cellSize);
+        int y1 = (int)floorf((pos.y + r) / table->cellSize);
+        int z0 = (int)floorf((pos.z - r) / table->cellSize);
+        int z1 = (int)floorf((pos.z + r) / table->cellSize);
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                {
+                    u32 hash = hash_coords(x, y, z) & (table->size - 1);
+                    SpatialTable_Insert(table, hash, id);
+                }
+    }
+}
+
 vec3s Sol_Physx_GetVel(World *world, int id)
 {
     return world->bodies[id].vel;
@@ -283,4 +319,22 @@ void Sol_Physx_SetGrav(World *world, int id, vec3s vel)
 vec3s Sol_Physx_GetDims(World *world, int id)
 {
     return world->bodies[id].dims;
+}
+
+vec3s Sol_Physx_GetGround(World *world, int id)
+{
+    return world->bodies[id].groundNormal;
+}
+
+void Sol_Physx_SetVelX(World *world, int id, float x)
+{
+    world->bodies[id].vel.x = x;
+}
+void Sol_Physx_SetVelY(World *world, int id, float y)
+{
+    world->bodies[id].vel.y = y;
+}
+void Sol_Physx_SetVelZ(World *world, int id, float z)
+{
+    world->bodies[id].vel.z = z;
 }

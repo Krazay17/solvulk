@@ -1,3 +1,10 @@
+/*
+ * File: s_sphere.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Spheres!
+*/
 #include "sol_core.h"
 
 typedef struct CompSphere

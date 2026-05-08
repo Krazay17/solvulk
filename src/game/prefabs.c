@@ -1,5 +1,29 @@
 #include "sol_core.h"
 
+int Sol_Prefab_Player(World *world, vec3s pos, float scale)
+{
+    vec2s dims = {.x = 0.35f, .y = 2.0f};
+
+    dims   = glms_vec2_scale(dims, scale);
+    int id = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .height      = dims.y,
+                     .radius      = dims.x,
+                     .mass        = 1.0f,
+                     .shape       = SHAPE3_CAP,
+                     .restitution = 0.1f,
+                     .group       = 1,
+                 });
+
+    Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f});
+    Sol_Ability_Add(world, id, (AbilityDesc){0});
+
+    return id;
+}
+
 int Sol_Prefab_Floor(World *world, vec3s pos)
 {
     int id = Sol_Create_Ent(world);
@@ -46,24 +70,47 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc)
     return id;
 }
 
-int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelid, float height, float radius)
+int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid)
 {
+    dims   = glms_vec2_scale(dims, scale);
     int id = Sol_Create_Ent(world);
-
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){
-                     .height      = height,
-                     .radius      = radius,
+                     .height      = dims.y,
+                     .radius      = dims.x,
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
                      .restitution = 0.1f,
                      .group       = 1,
                  });
 
-    Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
-    Sol_Model_Add(world, id, (ModelDesc){.id = modelid, .yoffset = -height * 0.5f});
+    Sol_Movement_Add(world, id, (MovementDesc){.configId = moveid});
+    Sol_Model_Add(world, id, (ModelDesc){.id = modelid, .yoffset = -dims.y * 0.5f});
+    Sol_Ability_Add(world, id, (AbilityDesc){0});
 
+    return id;
+}
+
+int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
+{
+    vec2s dims = {.x = 0.5f, .y = 2.8f};
+
+    dims   = glms_vec2_scale(dims, scale);
+    int id = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .height      = dims.y,
+                     .radius      = dims.x,
+                     .mass        = 1.0f,
+                     .shape       = SHAPE3_CAP,
+                     .restitution = 0.1f,
+                     .group       = 1,
+                 });
+
+    Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_WIZARD});
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
     Sol_Ability_Add(world, id, (AbilityDesc){0});
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);

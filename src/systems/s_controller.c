@@ -1,8 +1,27 @@
+/*
+ * File: s_controller.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Local Tick reads inputs and sets action states.
+ * Remote Tick sets action states directly.
+ * Ai Tick sets action states directly.
+ */
+
 #include "sol_core.h"
 
-#include "controller.h"
+typedef struct CompController
+{
+    vec3s          lookdir, wishdir, aimdir, aimpos, aimHitPos;
+    vec2s          wishdir2;
+    SolActions     actionState;
+    float          yaw, pitch;
+    float          zoom;
+    u32            aimHitEnt;
+    ControllerKind kind;
+} CompController;
 
-static const PlayerActionStates action_binds[SOL_KEY_COUNT] = {
+static const SolActions action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_0] = ACTION_ABILITY0, [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
     [SOL_KEY_3] = ACTION_ABILITY3, [SOL_KEY_4] = ACTION_ABILITY4, [SOL_KEY_5] = ACTION_ABILITY5,
     [SOL_KEY_6] = ACTION_ABILITY6, [SOL_KEY_7] = ACTION_ABILITY7, [SOL_KEY_8] = ACTION_ABILITY8,
@@ -62,9 +81,9 @@ static void LocalTick(World *world, int id, double dt, double time)
     head.y += world->bodies[id].dims.y * 0.4f;
     Sol_Cam_Arm_Update(world, head, dt);
 
-    controller->yaw     = look->yaw;
-    controller->pitch   = look->pitch;
-    controller->lookdir = look->lookdir;
+    controller->yaw      = look->yaw;
+    controller->pitch    = look->pitch;
+    controller->lookdir  = look->lookdir;
     controller->wishdir  = GetWishDir3(controller->actionState, look->lookdir, WORLD_UP);
     controller->wishdir2 = GetWishDir2(controller->actionState);
 
@@ -82,12 +101,11 @@ static void LocalTick(World *world, int id, double dt, double time)
     controller->aimpos    = head;
 
     // Debug Teleport
-
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
         vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id),
                                   glms_vec3_scale(Sol_Input_GetLook()->lookdir, (float)dt * 60.0f));
-        Sol_Xform_SetPos(world, id, pos);
+        Sol_Xform_Teleport(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
 }
@@ -101,12 +119,18 @@ static void AiTick(World *world, int id, double dt, double time)
     float           yaw        = atan2f(lookdir.x, lookdir.z);
     float           pitch      = asinf(lookdir.y);
 
+    Sol_Xform_SetYaw(world, id, yaw);
     controller->lookdir = lookdir;
     controller->wishdir = lookdir;
     controller->yaw     = yaw;
     controller->pitch   = pitch;
 
-    Sol_Xform_SetYaw(world, id, yaw);
+    if (((int)time % 6) == 0)
+    {
+        controller->actionState |= ACTION_JUMP;
+    }
+    else
+        controller->actionState &= ~ACTION_JUMP;
 }
 
 static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
@@ -148,4 +172,58 @@ vec3s Sol_Controller_GetAimPos(World *world, int id)
 {
     CompController *controller = &world->controllers[id];
     return vecAdd(controller->aimpos, vecSca(controller->aimdir, 0.5f));
+}
+
+SolActions Sol_GetActions(World *world, int id)
+{
+    return world->controllers[id].actionState;
+}
+
+vec3s Sol_GetWishdir(World *world, int id)
+{
+    return world->controllers[id].wishdir;
+}
+
+vec2s Sol_GetWishdir2(World *world, int id)
+{
+    return world->controllers[id].wishdir2;
+}
+
+vec3s Sol_GetLookdir(World *world, int id)
+{
+    return world->controllers[id].lookdir;
+}
+
+vec3s Sol_GetAimpos(World *world, int id)
+{
+    return world->controllers[id].aimpos;
+}
+
+vec3s Sol_GetAimdir(World *world, int id)
+{
+    return world->controllers[id].aimdir;
+}
+
+float Sol_GetYaw(World *world, int id)
+{
+    return world->controllers[id].yaw;
+}
+float Sol_GetPitch(World *world, int id)
+{
+    return world->controllers[id].pitch;
+}
+
+StrafeDir Sol_GetStrafedir(World *world, int id, float xIn, float zIn)
+{
+    float x = xIn ? xIn : world->controllers[id].wishdir.x;
+    float z = zIn ? zIn : world->controllers[id].wishdir.z;
+
+    float xB = world->controllers[id].lookdir.x;
+    float zB = world->controllers[id].lookdir.z;
+
+    float angle = atan2f(x, z) - atan2f(xB, zB);
+    if (angle < 0)
+        angle += 2.0f * M_PI;
+
+    return (int)((angle / (M_PI / 2.0f)) + 0.5f) % 4;
 }

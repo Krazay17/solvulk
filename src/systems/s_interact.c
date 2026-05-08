@@ -1,3 +1,10 @@
+/*
+ * File: s_interact.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-05-08
+ * Interact!
+*/
 #include "sol_core.h"
 
 typedef struct CompInteract

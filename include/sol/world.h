@@ -44,7 +44,9 @@ void Sol_Flags_Add(World *world, int id, EntFlags flags);
 void Sol_Flags_Remove(World *world, int id, EntFlags flags);
 
 // Add Prefab entity
+int Sol_Prefab_Player(World *world, vec3s pos, float scale);
+int Sol_Prefab_Wizard(World *world, vec3s pos, float scale);
 int Sol_Prefab_Floor(World *world, vec3s pos);
-int Sol_Prefab_Pawn(World *world, vec3s pos, SolModelId modelId, float height, float radius);
+int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc);

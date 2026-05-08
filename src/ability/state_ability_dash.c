@@ -28,17 +28,16 @@ void ADash_State_Enter(World *world, int id)
     Sol_PlayAudio(SOL_AUDIO_WOONG);
     
     CompAbility    *ability    = &world->abilities[id];
-    CompController *controller = &world->controllers[id];
     AbilityData    *data       = &ability->stateData[ABILITY_STATE_DASH];
 
-    data->dir = Sol_Vec3_FromYawPitch(controller->yaw, 0);
-    if (glms_vec3_norm(controller->wishdir) > 0 && vecDot(controller->wishdir, WORLD_UP) < 0.99f)
-        data->dir = controller->wishdir;
+    data->dir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
+    if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0 && vecDot(Sol_GetWishdir(world, id), WORLD_UP) < 0.99f)
+        data->dir = Sol_GetWishdir(world, id);
     data->dir.y = 0;
     data->dir   = glms_vec3_normalize(data->dir);
 
     AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE};
-    switch (Get_StrafeDir(data->dir.x, data->dir.z, controller->lookdir.x, controller->lookdir.z))
+    switch (Get_StrafeDir(data->dir.x, data->dir.z, Sol_GetLookdir(world, id).x, Sol_GetLookdir(world, id).z))
     {
     case STRAFE_FWD:
         desc.anim = ANIM_DASH_FWD;
@@ -64,7 +63,7 @@ void ADash_State_Exit(World *world, int id)
     Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0.15f);
 }
 
-bool ADash_State_CanEnter(World *world, int id)
+bool ADash_State_CanEnter(World *world, int id, int last)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];
@@ -74,7 +73,7 @@ bool ADash_State_CanEnter(World *world, int id)
     return true;
 }
 
-bool ADash_State_CanExit(World *world, int id, AbilityState next)
+bool ADash_State_CanExit(World *world, int id, int next)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];

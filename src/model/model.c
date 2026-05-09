@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "model.h"
+
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 

@@ -115,8 +115,8 @@ set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 set(SHADERS
-    ${SHADER_DIR}/model_skinned.vert
     ${SHADER_DIR}/model.vert
+    ${SHADER_DIR}/model_skinned.vert
     ${SHADER_DIR}/model.frag
     ${SHADER_DIR}/rect.vert
     ${SHADER_DIR}/rect.frag
@@ -124,7 +124,8 @@ set(SHADERS
     ${SHADER_DIR}/text.frag
     ${SHADER_DIR}/line.vert
     ${SHADER_DIR}/line.frag
-    ${SHADER_DIR}/sphere.vert
+    ${SHADER_DIR}/billboard.vert
+    ${SHADER_DIR}/billboard.frag
     ${SHADER_DIR}/sphere.frag
 )
 if(WIN32)

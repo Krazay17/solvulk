@@ -19,6 +19,7 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
 
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f});
+    Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
     Sol_Ability_Add(world, id, (AbilityDesc){0});
 
     return id;

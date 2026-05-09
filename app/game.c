@@ -11,7 +11,7 @@ static void SpawnPlayer(int flags, void *data)
 
     player3d = Sol_Prefab_Player(gameWorld, (vec3s){0,5,0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
-    Sol_Physx_SetGrav(gameWorld, player3d, (vec3s){0, -19.62f, 0});
+    //Sol_Physx_SetGrav(gameWorld, player3d, (vec3s){0, -19.62f, 0});
 }
 
 struct MakeWiz

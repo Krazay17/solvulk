@@ -115,6 +115,7 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform);
 void Fill_Dynamic_Table(World *world, int count, int *ents);
+void Physx_ParseModel(World *world, int id, PhysxGroup *group);
 
 // SolContact Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
 // SolContact Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);
@@ -143,7 +144,7 @@ SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray);
 float        Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
-void         Ground_Trace(World *world, int count);
+void         Ground_Trace(World *world, int count, float fdt);
 
 void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, SolContact *hit);
 void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform);

@@ -70,7 +70,6 @@ void Sol_Physx_Step(World *world, double dt, double time)
     PhysxGroup *staticGroup  = &ws->staticGroup;
     PhysxGroup *dynamicGroup = &ws->dynamicGroup;
     memset(contacts, 0, sizeof(contacts));
-
     Physx_Grid_Static_Rebuild(staticGroup);
 
     // Filter Entities
@@ -84,7 +83,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         ents[count++] = id;
     }
 
-    Ground_Trace(world, count);
+    Ground_Trace(world, count, fdt);
 
     Prof_Begin(&prof_static);
     // velocity and static collisions
@@ -138,7 +137,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     }
 }
 
-void Ground_Trace(World *world, int count)
+void Ground_Trace(World *world, int count, float fdt)
 {
     u32 required = HAS_BODY3 | HAS_XFORM | HAS_MOVEMENT;
     int i;
@@ -153,10 +152,10 @@ void Ground_Trace(World *world, int count)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin = vecSub(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.25f));
-
-        body->grounded = 0; // Reset every frame
-        for (int j = 0; j < 8; j++)
+        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.35f));
+        body->groundNormal  = (vec3s){0, 0, 0};
+        SolRayResult result = {0};
+        for (int j = 0; j < 9; j++)
         {
             // Rotate the local offset by the entity's rotation
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
@@ -164,15 +163,22 @@ void Ground_Trace(World *world, int count)
             // Calculate ray start position
             vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x));
 
-            SolRayResult result = Sol_Raycast(
-                world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.3f, .ignoreEnt = id});
+            result = Sol_Raycast(world,
+                                 (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.2f, .ignoreEnt = id});
 
             if (result.hit && result.norm.y > 0.5f)
-            {
-                body->grounded     = 1;
-                body->groundNormal = result.norm;
                 break;
-            }
+        }
+        if (result.hit && result.norm.y > 0.5f)
+        {
+            body->airtime = 0;
+            body->grounded += fdt;
+            body->groundNormal = result.norm;
+        }
+        else
+        {
+            body->grounded = 0;
+            body->airtime += fdt;
         }
     }
 }

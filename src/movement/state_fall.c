@@ -6,9 +6,9 @@ void Sol_Movement_Fall_Update(World *world, int id, float dt)
     if (body->grounded)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
-    // if (controller->actionState & ACTION_JUMP)
-    //     if (Sol_Movement_SetState(world, id, MOVE_FLY))
-    //         return;
+    if (Sol_GetActions(world, id) & ACTION_JUMP)
+        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+            return;
 }
 
 void Sol_Movement_Fall_Enter(World *world, int id)

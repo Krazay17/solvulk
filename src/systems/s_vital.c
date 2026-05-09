@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Vitals!
-*/
+ */
 #include "sol_core.h"
 #include "xform/xform.h"
 
@@ -69,6 +69,10 @@ void Sol_Vital_Draw(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
+        vec3s pos = Sol_Xform_GetPos(world, id);
+        pos.y += Sol_Physx_GetDims(world, id).y;
+
+        
     }
 }
 

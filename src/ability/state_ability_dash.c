@@ -56,6 +56,8 @@ void ADash_State_Enter(World *world, int id)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
+
+    
 }
 
 void ADash_State_Exit(World *world, int id)

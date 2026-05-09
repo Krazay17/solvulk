@@ -1,16 +1,9 @@
 #include "sol_core.h"
 
 #include "render.h"
-
-
+#include "model/model.h"
 
 float solAspectRatio = 16.0f / 9.0f;
-
-void Render_Push_Model(SolModelDraw model)
-{
-    // printf("Push model");
-    // Render_Models(model.modelId);
-}
 
 void Render_Camera_Update(SolCamera *cam)
 {
@@ -46,6 +39,7 @@ void Sol_Render_Resize(uint32_t width, uint32_t height)
     Sol_GetState()->windowHeight = (float)height;
     Remake_Swapchain(width, height);
 }
+
 
 // void Flush_Models(void)
 // {

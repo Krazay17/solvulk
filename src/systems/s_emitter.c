@@ -129,7 +129,7 @@ void Emitter_Draw(World *world, double dt, double time)
         Particle *p           = &s->particle[i];
         float     t           = p->ttl / p->span;
         float     visualScale = p->scale * t;
-        Sol_Draw_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, p->color);
+        Sol_Render_DrawSphere((vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, p->color);
     }
 }
 

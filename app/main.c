@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 720, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                             NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
         return 1;

@@ -25,6 +25,7 @@ typedef enum
     HAS_SPHERE     = (1 << 11),
     HAS_TIMER      = (1 << 12),
     HAS_EVENT      = (1 << 13),
+    HAS_AUDIO      = (1 << 14),
 } CompBits;
 
 // XFORM--------------
@@ -117,6 +118,12 @@ float      Sol_GetPitch(World *world, int id);
 StrafeDir  Sol_GetStrafedir(World *world, int id, float x, float z);
 
 // EVENT------------------
+typedef struct EventDesc
+{
+    EventKind kind;
+    u32       entA;
+    vec3s     pos, normal;
+} EventDesc;
 void Sol_Event_Add(World *world, EventDesc desc);
 void Event_Init(World *world);
 void Event_Clear(World *world);
@@ -134,6 +141,16 @@ void       Sol_Model_Draw(World *world, double dt, double time);
 void       Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
 void       Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
 SolModelId Sol_Model_GetModelId(World *world, int id);
+
+// AUDIO----------------
+typedef struct CompAudio CompAudio;
+typedef struct
+{
+    bool doesLoop, is3D;
+} AudioDesc;
+void Sol_World_Audio_Init(World *world);
+void Sol_World_Audio_Add(World *world, int id, AudioDesc desc);
+void Sol_World_Audio_Step(World *world, double dt, double time);
 
 // EMITTER--------------
 typedef struct SolEmitters SolEmitters;

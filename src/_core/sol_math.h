@@ -27,7 +27,7 @@
 
 // CONFIG-------------------------------
 
-extern const vec3s VECTOR_RADIAL_DIRECTIONS[8];
+extern const vec3s VECTOR_RADIAL_DIRECTIONS[9];
 
 // FUNCS------------------------------------
 

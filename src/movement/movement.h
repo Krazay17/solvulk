@@ -8,6 +8,7 @@ typedef struct CompMovement
     float        stateTimer;
     MoveState    moveState;
     MoveConfigId configId;
+    bool hasJumped;
 } CompMovement;
 
 typedef struct

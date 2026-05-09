@@ -7,6 +7,15 @@
 */
 #include "sol_core.h"
 
+typedef struct
+{
+    SystemInit init;
+    SystemFunc tick;
+    SystemFunc step;
+    SystemFunc draw2d;
+    SystemFunc draw3d;
+} SystemConfig;
+
 static SystemConfig world_systems[WORLD_SYS_COUNT] = {
     [WORLD_SYS_TIMER]      = {.init = Sol_Timer_Init, .tick = Sol_Timer_Tick},
     [WORLD_SYS_PHYSX]      = {.init = Sol_Physx_Init, .step = Sol_Physx_Step},

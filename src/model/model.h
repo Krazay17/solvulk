@@ -1,13 +1,21 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct SolMaterial
+#define MAX_BONES 128
+
+typedef struct
 {
-    float baseColor[4];
-    float emissive[4];
-    float metallic;
-    float roughness;
-} SolMaterial;
+    vec4 position;
+    vec4 scale;
+    vec4 rotation;
+    vec4 color;
+    vec4 material;
+} ModelSSBO;
+
+typedef struct
+{
+    mat4 bones[MAX_BONES];
+} BonesSSBO;
 
 typedef struct SolVertex
 {
@@ -56,22 +64,12 @@ typedef struct SolAnimation
     int             channelCount;
 } SolAnimation;
 
-// typedef struct
-// {
-//     int   animA, animB;
-//     float seekA, seekB;
-//     float blendFactor;
-//     mat4  bones[MAX_BONES];
-//     u32   blend_mask[MAX_BONES];
-// } AnimBlend;
-
 typedef struct SolSkeleton
 {
     SolBone      *bones;
     int           boneCount;
     SolAnimation *animations;
     int           animationCount;
-
 } SolSkeleton;
 
 typedef struct SolMesh
@@ -102,18 +100,6 @@ typedef struct SolModel
     SolModelId modelId;
 } SolModel;
 
-typedef struct SolModelDraw
-{
-    vec3s   pos;
-    vec3s   scale;
-    versors rot;
-
-    mat4 *bonePtr;
-
-    u32 modelId;
-    u32 flags;
-} SolModelDraw;
-
 typedef struct BoneMask
 {
     bool layerOwns[MAX_BONES]; // for one layer
@@ -133,14 +119,6 @@ typedef struct
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
 } AnimGroup;
-
-typedef struct CompModel
-{
-    SolModelId modelId;
-    bool       hasAnim;
-    float      yOffset;
-    AnimLayer  layers[ANIM_LAYER_COUNT];
-} CompModel;
 
 // Per model, per layer
 typedef struct SolModelMasks
@@ -164,6 +142,15 @@ typedef struct PoseRequest
     mat4     *outBones;                      // final skinning matrices
 } PoseRequest;
 
+// Component-------------
+typedef struct CompModel
+{
+    SolModelId modelId;
+    bool       hasAnim;
+    float      yOffset;
+    AnimLayer  layers[ANIM_LAYER_COUNT];
+} CompModel;
+
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];
 const char          *model_path[SOL_MODEL_COUNT];
 const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
@@ -176,5 +163,6 @@ void      Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *ma
 int       Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 
 void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
-void Sol_Draw_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags);
-void Sol_Draw_Model_Skinned(SolModelId handle, SolModelDraw *inst);
+
+void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags);
+void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones);

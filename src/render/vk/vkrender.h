@@ -165,10 +165,3 @@ VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
 void            Vk_SetOrtho(uint32_t width, uint32_t height);
 
-void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-
-void Flush_Models(void);
-void Flush_Models_Skinned(void);
-void Flush_Spheres(void);
-void Flush_Queue(void);

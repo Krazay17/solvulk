@@ -11,7 +11,6 @@
 #define SOLAPI
 #endif
 
-#define SOL_PHYS_TIMESTEP 1.0f / 60.0f
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define WORLD_FORWARD (vec3s){0, 0, -1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
@@ -19,12 +18,7 @@
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
-#define TARGET_ASPECT 16 / 9
-
-#define MAX_MODEL_INSTANCES (1 << 14)
-#define MAX_SPHERE_INSTANCES (1 << 22)
-#define MAX_LINE_VERTICES 0xffffff
-#define MAX_BONES 128
+#define TARGET_ASPECT 16.0f / 9.0f
 
 #define ColorConvert(x) (x / 255.0f)
 #define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
@@ -234,13 +228,6 @@ typedef enum
     EVENT_COUNT,
 } EventKind;
 
-typedef struct EventDesc
-{
-    EventKind kind;
-    u32       entA;
-    vec3s     pos, normal;
-} EventDesc;
-
 typedef enum
 {
     PARTICLE_ORB,
@@ -269,6 +256,14 @@ typedef struct Emitter
     Particle    particle;
     u32         burst;
 } Emitter;
+
+typedef struct SolMaterial
+{
+    float baseColor[4];
+    float emissive[4];
+    float metallic;
+    float roughness;
+} SolMaterial;
 
 typedef enum
 {

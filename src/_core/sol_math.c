@@ -1,7 +1,8 @@
 #include "sol_core.h"
 
-const vec3s VECTOR_RADIAL_DIRECTIONS[8] = {
+const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     // Cardinal Directions
+    {0.0f, 0.0f, 0.0f},
     {0.0f, 0.0f, 1.0f},  // South / Forward
     {1.0f, 0.0f, 0.0f},  // East / Right
     {0.0f, 0.0f, -1.0f}, // North / Backward
@@ -9,7 +10,7 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[8] = {
 
     // Diagonal Directions
     {0.7071f, 0.0f, 0.7071f},   // South-East
-    {0.7071f, 0.0f, -0.7071f},   // North-East
+    {0.7071f, 0.0f, -0.7071f},  // North-East
     {-0.7071f, 0.0f, 1.0f},     // South-West
     {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
@@ -90,4 +91,3 @@ versors Sol_Quat_FromLookDira(vec3s lookDir)
 
     return (versors){q[0], q[1], q[2], q[3]};
 }
-

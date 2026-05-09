@@ -17,7 +17,7 @@
 
 #include "ability/ability.h"
 #include "font/font.h"
-#include "model/model.h"
+//#include "model/model.h"
 #include "movement/movement.h"
 #include "physx/physx.h"
 #include "texture/texture.h"
@@ -26,12 +26,6 @@
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
 
-typedef void (*SystemInit)(World *);
-typedef void (*SystemFunc)(World *, double, double);
-
-typedef bool     Active;
-typedef uint32_t Mask;
-
 typedef struct SolResource
 {
     void *data;
@@ -39,22 +33,11 @@ typedef struct SolResource
     int   isHeap;
 } SolResource;
 
-typedef enum
-{
-    SYSTEM_STEP,
-    SYSTEM_TICK,
-    SYSTEM_DRAW,
-} SystemKind;
+typedef void (*SystemInit)(World *);
+typedef void (*SystemFunc)(World *, double, double);
 
-typedef struct
-{
-    SystemInit init;
-    SystemFunc tick;
-    SystemFunc step;
-    SystemFunc draw2d;
-    SystemFunc draw3d;
-} SystemConfig;
-
+typedef bool     Active;
+typedef uint32_t Mask;
 typedef struct World
 {
     SystemFunc stepSystems[MAX_SYSTEMS];
@@ -67,6 +50,7 @@ typedef struct World
     Mask      masks[MAX_ENTS];
     CompFlags flags[MAX_ENTS];
 
+    CompAudio      *audios;
     CompTimer      *timers;
     SolEvents      *events;
     CompXform      *xforms;
@@ -115,8 +99,6 @@ int         Sol_ReadFile(const char *filename, SolResource *outRes);
 void        Sol_MessageBox(const char *text, const char *level);
 void        Sol_Platform_LockCursor(bool lock);
 
-SolLook *Sol_Input_GetLook();
-
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_End_Draw();
 
@@ -124,3 +106,5 @@ SOLAPI void World_Step(World *world, double dt, double time);
 SOLAPI void World_Tick(World *world, double dt, double time);
 SOLAPI void World_Draw3d(World *world, double dt, double time);
 SOLAPI void World_Draw2d(World *world, double dt, double time);
+
+SolCamera *Sol_GetCamera();

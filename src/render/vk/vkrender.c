@@ -1,6 +1,24 @@
 #include "sol_core.h"
 
+#include "model/model.h"
 #include "vkrender.h"
+
+typedef struct
+{
+    u32        count;
+    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
+    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
+    SolModelId handles[MAX_MODEL_INSTANCES];
+} ModelSubmission;
+
+typedef struct
+{
+    u32        count;
+    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
+    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
+    BonesSSBO  bones[MAX_MODEL_INSTANCES];
+    SolModelId handles[MAX_MODEL_INSTANCES];
+} ModelSkinnedSubmission;
 
 SolVkState solvkstate = {0};
 
@@ -59,6 +77,20 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_ORTHO_UBO},
             .descCount         = 1,
         },
+    [PIPE_BILLBOARD] =
+        {
+            .vertResource      = "ID_SHADER_BILLBOARD_V",
+            .fragResource      = "ID_SHADER_BILLBOARD_F",
+            .depthTest         = 1,
+            .alphaBlend        = 0,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(BillboardSSBO),
+            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_FLAGS_SSBO},
+            .descCount         = 2,
+
+        },
     [PIPE_LINE] =
         {
             .vertResource      = "ID_SHADER_LINE_V",
@@ -75,7 +107,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_SPHERE] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
+            .vertResource      = "ID_SHADER_BILLBOARD_V",
             .fragResource      = "ID_SHADER_SPHERE_F",
             .depthTest         = 1,
             .alphaBlend        = 1,
@@ -153,7 +185,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
         },
     [DESC_SKINNING_SSBO] =
         {
-            .size       = sizeof(SkinningSSBO) * MAX_MODEL_INSTANCES,
+            .size       = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
             .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .kind       = DESC_KIND_SSBO,
@@ -208,7 +240,7 @@ int Sol_Render_Resource_Init()
                           &lineBuffer);
 
     Vk_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
-    
+
     return 0;
 }
 
@@ -276,7 +308,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-void Sol_Draw_Sphere(vec4s pos, vec4s color)
+void Sol_Render_DrawSphere(vec4s pos, vec4s color)
 {
     if (sphereQueue.count >= MAX_SPHERE_INSTANCES)
         return;
@@ -293,7 +325,7 @@ void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
 
     ShaderPushRect push = {
         .rec    = {rect.x, rect.y, rect.z, rect.w},
-        .c      = {ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)},
+        .color  = {ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)},
         .extras = {thickness, 0, 0, 0},
     };
 
@@ -301,44 +333,53 @@ void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
-void Sol_Draw_Model(SolModelId handle, vec3s pos, vec3s scale, versors quat, u32 flags)
+// void Render_Draw_Rect3D(BillboardSSBO ssbo)
+// {
+//     VkCommandBuffer cmd = Command_Buffer_Get();
+//     Bind_Pipeline(cmd, PIPE_BILLBOARD);
+
+//     //vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
+//     vkCmdDraw(cmd, 6, 1, 0, 0);
+// }
+
+void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags)
 {
     if (modelSubmission.count >= MAX_MODEL_INSTANCES)
         return;
-
     uint32_t slot                 = modelSubmission.count++;
     modelSubmission.handles[slot] = handle;
+    memcpy(&modelSubmission.modelSSBO[slot], inst, sizeof(ModelSSBO));
+    memcpy(&modelSubmission.flags[slot], flags, sizeof(FlagsSSBO));
 
-    ModelSSBO *inst   = &modelSubmission.instances[slot];
-    *inst             = (ModelSSBO){0};
-    inst->position[0] = pos.x;
-    inst->position[1] = pos.y;
-    inst->position[2] = pos.z;
-    inst->position[3] = 1.0f;
-    inst->scale[0]    = scale.x;
-    inst->scale[1]    = scale.y;
-    inst->scale[2]    = scale.z;
-    inst->scale[3]    = 1.0f;
-    memcpy(inst->rotation, &quat, sizeof(vec4));
+    //*inst             = (ModelSSBO){0};
+    // inst->position[0] = pos.x;
+    // inst->position[1] = pos.y;
+    // inst->position[2] = pos.z;
+    // inst->position[3] = 1.0f;
+    // inst->scale[0]    = scale.x;
+    // inst->scale[1]    = scale.y;
+    // inst->scale[2]    = scale.z;
+    // inst->scale[3]    = 1.0f;
+    // memcpy(inst->rotation, &quat, sizeof(vec4));
 
-    FlagsSSBO *f = &modelSubmission.flags[slot];
-    f->flags     = flags;
+    // FlagsSSBO *f = &modelSubmission.flags[slot];
+    // f->flags     = flags;
 }
 
-void Sol_Draw_Model_Skinned(SolModelId handle, SolModelDraw *inst)
+void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones)
 {
     if (skinningQueue.count >= MAX_MODEL_INSTANCES)
         return;
     uint32_t slot               = skinningQueue.count++;
     skinningQueue.handles[slot] = handle;
+    memcpy(&skinningQueue.modelSSBO[slot], inst, sizeof(ModelSSBO));
+    memcpy(&skinningQueue.flags[slot], flags, sizeof(FlagsSSBO));
+    memcpy(&skinningQueue.bones[slot], bones, sizeof(BonesSSBO));
 
-    memcpy(skinningQueue.modelSSBO[slot].position, &inst->pos, sizeof(vec3));
-    memcpy(skinningQueue.modelSSBO[slot].scale, &inst->scale, sizeof(vec3));
-    memcpy(skinningQueue.modelSSBO[slot].rotation, &inst->rot, sizeof(vec4));
-    skinningQueue.flags[slot].flags = inst->flags;
-
-    if (inst->bonePtr)
-        memcpy(skinningQueue.instances[slot].bones, inst->bonePtr, sizeof(mat4) * MAX_BONES);
+    // memcpy(skinningQueue.modelSSBO[slot].position, &inst->pos, sizeof(vec3));
+    // memcpy(skinningQueue.modelSSBO[slot].scale, &inst->scale, sizeof(vec3));
+    // memcpy(skinningQueue.modelSSBO[slot].rotation, &inst->rot, sizeof(vec4));
+    // skinningQueue.flags[slot].flags = inst->flags;
 }
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -527,7 +568,7 @@ void Flush_Models(void)
     for (int i = 0; i < modelSubmission.count; i++)
     {
         SolModelId h    = modelSubmission.handles[i];
-        gpu[cursors[h]] = modelSubmission.instances[i];
+        gpu[cursors[h]] = modelSubmission.modelSSBO[i];
         f[cursors[h]]   = modelSubmission.flags[i];
         cursors[h]++;
     }
@@ -560,9 +601,9 @@ void Flush_Models_Skinned(void)
         offsets[i] = offsets[i - 1] + counts[i - 1];
 
     // Write sorted into SSBO
-    ModelSSBO    *modelGpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
-    SkinningSSBO *boneGpu  = descriptors[DESC_SKINNING_SSBO].mapped[solvkstate.currentFrame];
-    FlagsSSBO    *flagGpu  = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
+    ModelSSBO *modelGpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
+    BonesSSBO *boneGpu  = descriptors[DESC_SKINNING_SSBO].mapped[solvkstate.currentFrame];
+    FlagsSSBO *flagGpu  = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
 
     uint32_t cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
@@ -582,7 +623,7 @@ void Flush_Models_Skinned(void)
 
         // 3. Write bones to the global slot
         // This ensures shader's gl_InstanceIndex points to the right matrices
-        boneGpu[globalIdx] = skinningQueue.instances[i];
+        boneGpu[globalIdx] = skinningQueue.bones[i];
 
         cursors[h]++;
     }
@@ -973,7 +1014,7 @@ int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDe
     return 0;
 }
 
-void Sol_UploadModel(SolModel *model, SolModelId modelId)
+int Sol_UploadModel(SolModel *model, SolModelId modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)
@@ -1064,14 +1105,16 @@ void Sol_UploadModel(SolModel *model, SolModelId modelId)
 
     gpuModels[modelId] = gpuModel;
     printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
+
+    return 0;
 }
 
 int Sol_UploadImage(SolImage *image, SolImageId id)
 {
-    const void  *pixels  = image->pixels;
-    u32          width   = image->width;
-    u32          height  = image->height;
-    int          format  = 37;
+    const void *pixels = image->pixels;
+    u32         width  = image->width;
+    u32         height = image->height;
+    int         format = 37;
 
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;

@@ -12,26 +12,25 @@
 #include "profiler.h"
 #include "sol_math.h"
 
-#include "camera/camera.h"
+#include "camera.h"
+#include "font.h"
+#include "model.h"
+#include "texture.h"
+
 #include "render/render.h"
+#include "resource/resource.h"
 
 #include "ability/ability.h"
-#include "font/font.h"
-//#include "model/model.h"
 #include "movement/movement.h"
 #include "physx/physx.h"
-#include "texture/texture.h"
 #include "xform/xform.h"
+
+// #include "model/model.h"
+// #include "font/font.h"
+// #include "texture/texture.h"
 
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
-
-typedef struct SolResource
-{
-    void *data;
-    long  size;
-    int   isHeap;
-} SolResource;
 
 typedef void (*SystemInit)(World *);
 typedef void (*SystemFunc)(World *, double, double);
@@ -94,10 +93,8 @@ typedef struct SolState
     uint16_t worldCount;
 } SolState;
 
-SolResource Sol_LoadResource(const char *resourceName);
-int         Sol_ReadFile(const char *filename, SolResource *outRes);
-void        Sol_MessageBox(const char *text, const char *level);
-void        Sol_Platform_LockCursor(bool lock);
+void Sol_MessageBox(const char *text, const char *level);
+void Sol_Platform_LockCursor(bool lock);
 
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_End_Draw();

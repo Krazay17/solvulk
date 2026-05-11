@@ -115,7 +115,7 @@ void Sol_Ui_Draw(World *world, double dt, double time)
                 .color = view->textColor,
                 .kind  = SOL_FONT_ICE,
             };
-            Sol_Draw_Text(fontDesc);
+            Sol_Render_Draw_Text(fontDesc);
         }
     }
 }

@@ -19,6 +19,7 @@
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
+#define MAX_BONES 128
 
 #define ColorConvert(x) (x / 255.0f)
 #define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
@@ -265,31 +266,12 @@ typedef struct SolMaterial
     float roughness;
 } SolMaterial;
 
+// FONT-----------------
 typedef enum
 {
     SOL_FONT_ICE,
     SOL_FONT_COUNT,
 } SolFontKind;
-
-typedef struct
-{
-    float u, v, uw, vh;
-    float xoffset;
-    float ytop;
-    float yoffset;
-    float yadvance;
-} SolGlyph;
-
-typedef struct
-{
-    float l, b, r, t;
-} TextBounds;
-
-typedef struct SolFont
-{
-    SolGlyph   glyph[128];
-    TextBounds bounds;
-} SolFont;
 
 typedef struct
 {
@@ -299,11 +281,18 @@ typedef struct
     SolFontKind kind;
 } SolFontDesc;
 
+// TEXTURE---------------
 typedef enum
 {
     SOL_IMAGE_FONT,
     SOL_IMAGE_COUNT,
 } SolImageId;
+
+typedef enum
+{
+    SOL_TEXTURE_ICEFONT,
+    SOL_TEXTURE_COUNT,
+} SolTextureId;
 
 typedef struct SolImage
 {
@@ -347,8 +336,6 @@ typedef enum
     ANIM_ABILITY9,
     ANIM_COUNT,
 } SolAnims;
-
-// ___________________________SKELETON___________________
 
 typedef struct SolTri
 {

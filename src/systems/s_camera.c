@@ -72,7 +72,7 @@ void Sol_Cam_Update(double dt)
     memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
     memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
 
-    Render_Camera_Update(&sol_camera);
+    Sol_Render_Camera_Update(&sol_camera);
 }
 
 // void Sol_Camera_Tick(World *world, double dt, double time, float alpha)
@@ -134,7 +134,7 @@ void Sol_Cam_Update(double dt)
 //     }
 //     target = glms_vec3_add(camPos, lookdir);
 
-//     Render_Camera_Update(camPos.raw, target.raw);
+//     Sol_Render_Camera_Update(camPos.raw, target.raw);
 
 //     controller->aimHitEnt = -1;
 //     SolRayResult aimTrace = Sol_Raycast(world, (SolRay){

@@ -1,22 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-#define MAX_BONES 128
-
-typedef struct
-{
-    vec4 position;
-    vec4 scale;
-    vec4 rotation;
-    vec4 color;
-    vec4 material;
-} ModelSSBO;
-
-typedef struct
-{
-    mat4 bones[MAX_BONES];
-} BonesSSBO;
-
 typedef struct SolVertex
 {
     vec3 position;
@@ -164,5 +148,3 @@ int       Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 
 void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 
-void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags);
-void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones);

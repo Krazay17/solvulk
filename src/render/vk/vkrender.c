@@ -1,6 +1,5 @@
 #include "sol_core.h"
 
-#include "model/model.h"
 #include "vkrender.h"
 
 typedef struct
@@ -20,11 +19,17 @@ typedef struct
     SolModelId handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
-SolVkState solvkstate = {0};
+typedef struct
+{
+    u32           count;
+    BillboardSSBO billboards[MAX_BILLBOARD_INSTANCES];
+} BillboardSubmission;
 
-static ModelSubmission        modelSubmission;
-static SphereSubmission       sphereQueue;
+static SolVkState solvkstate = {0};
+
+static ModelSubmission        modelQueue;
 static ModelSkinnedSubmission skinningQueue;
+static BillboardSubmission    billboardQueue;
 
 static u32            model_que_offset;
 static u32            boundPipeline;
@@ -87,9 +92,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(BillboardSSBO),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_FLAGS_SSBO},
-            .descCount         = 2,
-
+            .descId            = {DESC_SCENE_UBO, DESC_BILLBOARD_SSBO, DESC_FLAGS_SSBO},
+            .descCount         = 3,
         },
     [PIPE_LINE] =
         {
@@ -104,19 +108,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             .descId            = {DESC_SCENE_UBO},
             .descCount         = 1,
-        },
-    [PIPE_SPHERE] =
-        {
-            .vertResource      = "ID_SHADER_BILLBOARD_V",
-            .fragResource      = "ID_SHADER_SPHERE_F",
-            .depthTest         = 1,
-            .alphaBlend        = 1,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = 0,
-            .pushStageFlags    = 0,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 2,
         },
     [PIPE_MODEL_SKINNED] =
         {
@@ -162,18 +153,11 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
             .kind       = DESC_KIND_IMAGE,
             .imageId    = SOL_IMAGE_FONT,
         },
-    [DESC_PARTICLE_SSBO] =
+    [DESC_BILLBOARD_SSBO] =
         {
-            .size       = sizeof(VertexSSBO),
+            .size       = sizeof(BillboardSSBO) * MAX_BILLBOARD_INSTANCES,
             .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_SPHERE_SSBO] =
-        {
-            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_SSBO,
         },
     [DESC_FLAGS_SSBO] =
@@ -213,11 +197,28 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
         return 8;
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
-
+    if (Sol_Render_UploadAll() != 0)
+        return 10;
+    if (Sol_Render_BuildPipes() != 0)
+        return 11;
     return 0;
 }
 
-int Sol_Render_Resource_Init()
+int Sol_Render_UploadAll()
+{
+    for (int i = 0; i < SOL_IMAGE_COUNT; i++)
+    {
+        Sol_UploadImage(Sol_GetImage(i), i);
+    }
+
+    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    {
+        Sol_UploadModel(Sol_GetModel(i), i);
+    }
+    return 0;
+}
+
+int Sol_Render_BuildPipes()
 {
     for (int i = 0; i < DESC_COUNT; i++)
     {
@@ -239,7 +240,7 @@ int Sol_Render_Resource_Init()
     Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                           &lineBuffer);
 
-    Vk_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
+    Sol_Render_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
 
     return 0;
 }
@@ -252,6 +253,13 @@ VkCommandBuffer Command_Buffer_Get()
 void *Sol_GetDescriptorMapping(DescriptorId id)
 {
     return descriptors[id].mapped[solvkstate.currentFrame];
+}
+
+float Sol_Render_GetAspect(void)
+{
+    if (solvkstate.swapchainExtent.height == 0)
+        return 1.0f;
+    return (float)solvkstate.swapchainExtent.width / (float)solvkstate.swapchainExtent.height;
 }
 
 void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
@@ -277,7 +285,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     boundPipeline = id;
 }
 
-void Vk_SetOrtho(uint32_t width, uint32_t height)
+void Sol_Render_SetOrtho(uint32_t width, uint32_t height)
 {
     mat4 ortho;
     glm_ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f, ortho);
@@ -308,14 +316,14 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-void Sol_Render_DrawSphere(vec4s pos, vec4s color)
+void Sol_Render_Push_Sphere(vec4s pos, vec4s color)
 {
-    if (sphereQueue.count >= MAX_SPHERE_INSTANCES)
+    if (billboardQueue.count >= MAX_SPHERE_INSTANCES)
         return;
-    SphereSSBO *s = &sphereQueue.instances[sphereQueue.count++];
-
-    s->pos   = pos;
-    s->color = (vec4s){ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)};
+    BillboardSSBO *s = &billboardQueue.billboards[billboardQueue.count++];
+    vec4 c ={ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)};
+    memcpy(s->pos, &pos, sizeof(vec4));
+    memcpy(s->color, &c, sizeof(vec4));
 }
 
 void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
@@ -333,37 +341,14 @@ void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
-// void Render_Draw_Rect3D(BillboardSSBO ssbo)
-// {
-//     VkCommandBuffer cmd = Command_Buffer_Get();
-//     Bind_Pipeline(cmd, PIPE_BILLBOARD);
-
-//     //vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
-//     vkCmdDraw(cmd, 6, 1, 0, 0);
-// }
-
 void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags)
 {
-    if (modelSubmission.count >= MAX_MODEL_INSTANCES)
+    if (modelQueue.count >= MAX_MODEL_INSTANCES)
         return;
-    uint32_t slot                 = modelSubmission.count++;
-    modelSubmission.handles[slot] = handle;
-    memcpy(&modelSubmission.modelSSBO[slot], inst, sizeof(ModelSSBO));
-    memcpy(&modelSubmission.flags[slot], flags, sizeof(FlagsSSBO));
-
-    //*inst             = (ModelSSBO){0};
-    // inst->position[0] = pos.x;
-    // inst->position[1] = pos.y;
-    // inst->position[2] = pos.z;
-    // inst->position[3] = 1.0f;
-    // inst->scale[0]    = scale.x;
-    // inst->scale[1]    = scale.y;
-    // inst->scale[2]    = scale.z;
-    // inst->scale[3]    = 1.0f;
-    // memcpy(inst->rotation, &quat, sizeof(vec4));
-
-    // FlagsSSBO *f = &modelSubmission.flags[slot];
-    // f->flags     = flags;
+    uint32_t slot            = modelQueue.count++;
+    modelQueue.handles[slot] = handle;
+    memcpy(&modelQueue.modelSSBO[slot], inst, sizeof(ModelSSBO));
+    memcpy(&modelQueue.flags[slot], flags, sizeof(FlagsSSBO));
 }
 
 void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones)
@@ -375,11 +360,6 @@ void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO
     memcpy(&skinningQueue.modelSSBO[slot], inst, sizeof(ModelSSBO));
     memcpy(&skinningQueue.flags[slot], flags, sizeof(FlagsSSBO));
     memcpy(&skinningQueue.bones[slot], bones, sizeof(BonesSSBO));
-
-    // memcpy(skinningQueue.modelSSBO[slot].position, &inst->pos, sizeof(vec3));
-    // memcpy(skinningQueue.modelSSBO[slot].scale, &inst->scale, sizeof(vec3));
-    // memcpy(skinningQueue.modelSSBO[slot].rotation, &inst->rot, sizeof(vec4));
-    // skinningQueue.flags[slot].flags = inst->flags;
 }
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -437,7 +417,7 @@ void Render_Draw_Line(SolLine *lines, int count)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
-void Sol_Draw_Text(SolFontDesc desc)
+void Sol_Render_Draw_Text(SolFontDesc desc)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_TEXT);
@@ -545,13 +525,13 @@ void Sol_Begin_Draw()
 
 void Flush_Models(void)
 {
-    if (modelSubmission.count == 0)
+    if (modelQueue.count == 0)
         return;
 
     // Count per handle
     uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (int i = 0; i < modelSubmission.count; i++)
-        counts[modelSubmission.handles[i]]++;
+    for (int i = 0; i < modelQueue.count; i++)
+        counts[modelQueue.handles[i]]++;
 
     // Prefix sum
     uint32_t offsets[SOL_MODEL_COUNT] = {0};
@@ -565,11 +545,11 @@ void Flush_Models(void)
     uint32_t cursors[SOL_MODEL_COUNT];
     memcpy(cursors, offsets, sizeof(offsets));
 
-    for (int i = 0; i < modelSubmission.count; i++)
+    for (int i = 0; i < modelQueue.count; i++)
     {
-        SolModelId h    = modelSubmission.handles[i];
-        gpu[cursors[h]] = modelSubmission.modelSSBO[i];
-        f[cursors[h]]   = modelSubmission.flags[i];
+        SolModelId h    = modelQueue.handles[i];
+        gpu[cursors[h]] = modelQueue.modelSSBO[i];
+        f[cursors[h]]   = modelQueue.flags[i];
         cursors[h]++;
     }
 
@@ -581,8 +561,8 @@ void Flush_Models(void)
         }
     }
 
-    model_que_offset += modelSubmission.count;
-    modelSubmission.count = 0;
+    model_que_offset += modelQueue.count;
+    modelQueue.count = 0;
 }
 
 void Flush_Models_Skinned(void)
@@ -642,16 +622,16 @@ void Flush_Models_Skinned(void)
 
 void Flush_Spheres(void)
 {
-    if (sphereQueue.count == 0)
+    if (billboardQueue.count == 0)
         return;
 
-    SphereSSBO *gpu = descriptors[DESC_SPHERE_SSBO].mapped[solvkstate.currentFrame];
-    memcpy(gpu, sphereQueue.instances, sizeof(SphereSSBO) * sphereQueue.count);
+    BillboardSSBO *gpu = descriptors[DESC_BILLBOARD_SSBO].mapped[solvkstate.currentFrame];
+    memcpy(gpu, billboardQueue.billboards, sizeof(BillboardSSBO) * billboardQueue.count);
 
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_SPHERE);
-    vkCmdDraw(cmd, 6, sphereQueue.count, 0, 0);
-    sphereQueue.count = 0;
+    Bind_Pipeline(cmd, PIPE_BILLBOARD);
+    vkCmdDraw(cmd, 6, billboardQueue.count, 0, 0);
+    billboardQueue.count = 0;
 }
 
 void Flush_Queue(void)

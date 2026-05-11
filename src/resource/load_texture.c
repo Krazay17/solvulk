@@ -25,7 +25,6 @@ int Sol_Textures_Init()
     {
         SolResource res   = Sol_LoadResource(image_path[i]);
         SolImage   *image = Parse_Texture(res, i);
-        Sol_UploadImage(image, i);
     }
     return 0;
 }

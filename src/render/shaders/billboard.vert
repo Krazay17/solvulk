@@ -11,6 +11,9 @@ layout(set = 0, binding = 0) uniform Scene {
 struct Sphere {
     vec4 position;   // xyz = center, w = radius
     vec4 color;
+    vec4 params;
+    uint type;
+    uint _padding[3];
 };
 layout(set = 1, binding = 0) readonly buffer Spheres {
     Sphere spheres[];

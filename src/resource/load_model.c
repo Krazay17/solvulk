@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "model.h"
-
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
@@ -63,7 +61,6 @@ int Sol_Models_Init()
     {
         SolResource res   = Sol_LoadResource(model_path[i]);
         SolModel   *model = Parse_Model(res, i);
-        Sol_UploadModel(model, i);
     }
     return 0;
 }

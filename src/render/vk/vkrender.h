@@ -163,5 +163,4 @@ int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDe
 // ─── Render API (internal) ───────────────────────────────────────
 VkCommandBuffer Command_Buffer_Get(void);
 void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-void            Vk_SetOrtho(uint32_t width, uint32_t height);
 

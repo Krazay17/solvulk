@@ -31,8 +31,6 @@ SOLAPI void Sol_Destroy();
 SOLAPI SolState *Sol_GetState();
 SOLAPI double    Sol_GetGameTime();
 
-SOLAPI void Sol_Render_Resize(uint32_t width, uint32_t height);
-
 SOLAPI float Sol_MeasureText(const char *str, float size, SolFontKind id);
 
 SOLAPI void Sol_Window_Resize(float width, float height);

@@ -200,7 +200,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         Sol_GetState()->windowWidth  = width;
         Sol_GetState()->windowHeight = height;
         Sol_GetState()->needsResize  = true;
-        // Sol_Window_Resize(width, height);
         return 0;
     case WM_PAINT:
         ValidateRect(hwnd, NULL);

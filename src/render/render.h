@@ -4,10 +4,11 @@
 #define RENDER_CLEAR_COLOR {0.0f, 0.0f, 0.0f, 1.0f}
 
 #define MAX_MODEL_INSTANCES (1 << 14)
+#define MAX_BILLBOARD_INSTANCES (1 << 20)
 #define MAX_SPHERE_INSTANCES (1 << 22)
 #define MAX_LINE_VERTICES 0xffffff
 
-typedef struct SolModel     SolModel;
+typedef struct SolModel SolModel;
 
 typedef enum
 {
@@ -16,8 +17,7 @@ typedef enum
     DESC_MODEL_SSBO,
     DESC_SKINNING_SSBO,
     DESC_FONT_ATLAS,
-    DESC_PARTICLE_SSBO,
-    DESC_SPHERE_SSBO,
+    DESC_BILLBOARD_SSBO,
     DESC_FLAGS_SSBO,
     DESC_COUNT,
 } DescriptorId;
@@ -34,12 +34,19 @@ typedef enum PipelineId
     PIPE_MODEL,
     PIPE_MODEL_SKINNED,
     PIPE_TEXT,
+    PIPE_LINE,
     PIPE_RECT,
     PIPE_BILLBOARD,
-    PIPE_LINE,
-    PIPE_SPHERE,
     PIPE_COUNT,
 } PipelineId;
+
+typedef enum
+{
+    BILLBOARD_SPHERE,
+    BILLBOARD_RECT,
+    BILLBOARD_SPRITE,
+    BILLBOARD_COUNT,
+} BillboardKind;
 
 typedef struct
 {
@@ -64,64 +71,54 @@ typedef struct
 
 typedef struct
 {
-    vec4 pos;
+    vec4 position;
+    vec4 scale;
+    vec4 rotation;
     vec4 color;
-    vec4 params;
-    u64  fragtype;
+    vec4 material;
+} ModelSSBO;
+
+typedef struct
+{
+    mat4 bones[MAX_BONES];
+} BonesSSBO;
+
+typedef struct {
+    vec4 pos;        // xyz = world position, w = size (uniform scale)
+    vec4 color;      // base tint
+    vec4 params;     // type-specific (fill amount, glow strength, icon index, …)
+    u32 type;       // BILLBOARD_SPHERE, BILLBOARD_HEALTHBAR, …
+    u32 _padding[3]; // pad to 16 bytes for std430 alignment
 } BillboardSSBO;
-
-typedef struct
-{
-    vec4s pos; // xyz w=radius
-    vec4s color;
-} SphereSSBO;
-
-typedef struct
-{
-    vec3s vertex;
-} VertexSSBO;
 
 typedef struct
 {
     u32 flags;
 } FlagsSSBO;
 
-// Submission Que
-
-
-typedef struct
-{
-    u32        count;
-    SphereSSBO instances[MAX_SPHERE_INSTANCES];
-} SphereSubmission;
-
-typedef struct SolRenderState
-{
-    float aspect_ratio;
-
-} SolRenderState;
-
-extern SolRenderState sol_render_state;
-
 int Sol_Render_Init(void *hwnd, void *hInstance);
-int Sol_Render_Resource_Init();
+int Sol_Render_BuildPipes();
 
-void  Render_Camera_Update(SolCamera *cam);
+float Sol_Render_GetAspect(void);
+
+void  Sol_Render_SetOrtho(uint32_t width, uint32_t height);
+void  Sol_Render_Camera_Update(SolCamera *cam);
 void  Sol_Render_Resize(uint32_t width, uint32_t height);
 void  Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
-int Sol_UploadModel(SolModel *model, SolModelId id);
 int Sol_UploadImage(SolImage *image, SolImageId id);
+int Sol_UploadModel(SolModel *model, SolModelId id);
 
 // Single Draw rendering
 void Render_Draw_Line(SolLine *lines, int count);
 void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness);
-
-void Sol_Sphere_Buffer(vec4s pos, vec4s color);
+void Sol_Render_Draw_Text(SolFontDesc desc);
 
 // Instance rendering
-void Sol_Render_DrawSphere(vec4s pos, vec4s color);
+void Sol_Render_Push_Sphere(vec4s pos, vec4s color);
+void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags);
+void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones);
 
 void Flush_Models(void);
 void Flush_Models_Skinned(void);

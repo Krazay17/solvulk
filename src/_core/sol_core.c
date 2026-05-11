@@ -10,18 +10,17 @@ void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.g_hwnd = hwnd;
 
-    if (Sol_Render_Init(hwnd, hInstance) != 0)
-        printf("Render failed to init");
     if (Sol_Audio_Init() != 0)
         printf("Audio failed to init");
-    if (Sol_Models_Init() != 0)
-        printf("Models failed to init");
     if (Sol_Textures_Init() != 0)
         printf("Textures failed to init");
     if (Sol_Fonts_Init() != 0)
         printf("Fonts failed to init");
-    if (Sol_Render_Resource_Init() != 0)
-        printf("Render Resources failed to init");
+    if (Sol_Models_Init() != 0)
+        printf("Models failed to init");
+
+    if (Sol_Render_Init(hwnd, hInstance) != 0)
+        printf("Render failed to init");
 
     solState.debug     = true;
     solState.isRunning = true;

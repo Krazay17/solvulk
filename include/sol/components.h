@@ -45,6 +45,9 @@ vec3s Sol_Xform_GetPos(World *world, int id);
 void  Sol_Xform_SetYaw(World *world, int id, float yaw);
 void  Sol_Xform_SetPos(World *world, int id, vec3s pos);
 
+SolXform Sol_Xform_GetXform(World *world, int id);
+SolXform Sol_Xform_GetDrawXform(World *world, int id);
+
 // CAMERA----------------
 void Sol_Camera_Tick(World *world, double dt, double time, float alpha);
 void Sol_Crosshair_Draw(World *world, double dt, double time);

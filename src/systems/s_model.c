@@ -37,8 +37,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
 
-        CompXform   *xform     = &world->xforms[id];
-        CompModel   *modelComp = &world->models[id];
+        CompXform *xform     = &world->xforms[id];
+        CompModel *modelComp = &world->models[id];
 
         u32 flags = 0;
         if (world->masks[id] & HAS_INTERACT)
@@ -50,31 +50,33 @@ void Sol_Model_Draw(World *world, double dt, double time)
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
 
-        ModelSSBO modelSSBO = {0};
-        FlagsSSBO flagsSSBO = {0};
+        ModelPushDesc desc = {
+            .handle = modelComp->modelId,
+        };
 
-        modelSSBO.position[0] = drawPos.x;
-        modelSSBO.position[1] = drawPos.y;
-        modelSSBO.position[2] = drawPos.z;
-        modelSSBO.position[3] = 1.0f;
+        desc.position.x = drawPos.x;
+        desc.position.y = drawPos.y;
+        desc.position.z = drawPos.z;
+        desc.position.w = 1.0f;
 
-        modelSSBO.rotation[0] = xform->drawQuat.x;
-        modelSSBO.rotation[1] = xform->drawQuat.y;
-        modelSSBO.rotation[2] = xform->drawQuat.z;
-        modelSSBO.rotation[3] = xform->drawQuat.w;
+        desc.rotation.x = xform->drawQuat.x;
+        desc.rotation.y = xform->drawQuat.y;
+        desc.rotation.z = xform->drawQuat.z;
+        desc.rotation.w = xform->drawQuat.w;
 
-        modelSSBO.scale[0] = xform->drawScale.x;
-        modelSSBO.scale[1] = xform->drawScale.y;
-        modelSSBO.scale[2] = xform->drawScale.z;
-        modelSSBO.scale[3] = 1.0f;
+        desc.scale.x = xform->drawScale.x;
+        desc.scale.y = xform->drawScale.y;
+        desc.scale.z = xform->drawScale.z;
+        desc.scale.w = 1.0f;
 
-        flagsSSBO.flags = flags;
+        desc.flags = flags;
 
         if (!modelComp->hasAnim)
         {
-            Sol_Render_Push_Model(modelComp->modelId, &modelSSBO, &flagsSSBO);
+            Sol_Render_PushModel(desc);
             continue;
         }
+        desc.hasAnim = true;
 
         SolModel *m = Sol_GetModel(modelComp->modelId);
 
@@ -113,9 +115,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
             }
         }
 
-        // Build pose request
-        BonesSSBO   bonesSSBO = {0};
-        PoseRequest req       = {.outBones = bonesSSBO.bones};
+        mat4        bones[MAX_BONES];
+        PoseRequest req = {.outBones = bones};
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -130,7 +131,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
             req.layerWeight[L] = (modelComp->layers[L].fadeOut > 0.0f) ? modelComp->layers[L].fadeOut : 1.0f;
         }
         Sol_Skeleton_Pose(&m->skeleton, &req);
-        Sol_Render_Push_Model_Skinned(modelComp->modelId, &modelSSBO, &flagsSSBO, &bonesSSBO);
+        desc.bones = bones;
+        Sol_Render_PushModel(desc);
     }
 }
 

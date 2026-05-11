@@ -514,9 +514,9 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
 
 void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
 {
-    vec3   poseT[MAX_BONES];
-    versor poseR[MAX_BONES];
-    vec3   poseS[MAX_BONES];
+    static vec3   poseT[MAX_BONES];
+    static versor poseR[MAX_BONES];
+    static vec3   poseS[MAX_BONES];
 
     // Rest pose
     for (int i = 0; i < skel->boneCount; i++)

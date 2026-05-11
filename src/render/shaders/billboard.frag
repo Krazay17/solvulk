@@ -12,10 +12,14 @@ layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec4 fragColor;
 layout(location = 2) in vec4 fragSphereCenter;
 layout(location = 3) in vec3 fragRayOrigin;
+layout(location = 4) in vec2 fragUV;
+layout(location = 5) flat in uint fragType;
+layout(location = 6) in vec4 fragParams;
 
 layout(location = 0) out vec4 outColor;
 
-void main() {
+// --- SPHERE ---
+vec4 renderSphere() {
     vec3 rayDir = normalize(fragWorldPos - fragRayOrigin);
     vec3 oc = fragRayOrigin - fragSphereCenter.xyz;
     float r = fragSphereCenter.w;
@@ -34,23 +38,70 @@ void main() {
     vec4 clipPos = scene.viewProjection * vec4(hitPos, 1.0);
     gl_FragDepth = clipPos.z / clipPos.w;
     
-    // === Neon glow ===
-    // Fresnel: brighter at glancing angles (silhouette)
+    // Neon: brighter at silhouette
     vec3 viewDir = normalize(fragRayOrigin - hitPos);
-    float fresnel = 1.0 - max(dot(normal, viewDir), 0.0);
-    fresnel = pow(fresnel, 2.0);  // sharpen the edge
+    float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
     
-    // Core: solid color in the middle
     vec3 core = fragColor.rgb;
+    vec3 edge = fragColor.rgb * 2.0 + vec3(fresnel);
+    vec3 result = mix(core, edge, fresnel) * 1.3;
     
-    // Edge: hot bright color (boosted toward white at the rim)
-    vec3 edge = fragColor.rgb * 3.0 + vec3(1.0) * fresnel;
+    return vec4(result, fragColor.a);
+}
+
+// --- HEALTHBAR ---
+vec4 renderHealthbar() {
+    vec2 uv = fragUV;  // 0..1
     
-    // Mix core to edge based on fresnel
-    vec3 result = mix(core, edge, fresnel);
+    // Healthbar shape: wide and short, centered vertically in the quad.
+    // Bar occupies the middle 30% of the quad vertically.
+    float barTop    = 0.65;
+    float barBottom = 0.35;
     
-    // Boost overall intensity
-    result *= 1.5;
+    // Outside the bar region — transparent
+    if (uv.y < barBottom || uv.y > barTop) discard;
     
-    outColor = vec4(result, fragColor.a);
+    // Border (1 pixel-ish thick)
+    float borderThickness = 0.02;
+    bool inBorderH = uv.y < barBottom + borderThickness || uv.y > barTop - borderThickness;
+    bool inBorderV = uv.x < borderThickness || uv.x > 1.0 - borderThickness;
+    
+    if (inBorderH || inBorderV) {
+        return vec4(0.0, 0.0, 0.0, 1.0);  // black border
+    }
+    
+    // Inside the bar
+    float fill = clamp(fragParams.x, 0.0, 1.0);
+    vec3 emptyColor = vec3(0.15, 0.0, 0.0);
+    vec3 fillColor  = fragColor.rgb;
+    
+    vec3 col = (uv.x < fill) ? fillColor : emptyColor;
+    return vec4(col, 1.0);
+}
+
+// --- ICON ---
+vec4 renderIcon() {
+    // Circular cutout — replace with atlas sampling later
+    vec2 centered = fragUV * 2.0 - 1.0;
+    float dist = length(centered);
+    if (dist > 1.0) discard;
+    
+    float alpha = smoothstep(1.0, 0.85, dist) * fragColor.a;
+    return vec4(fragColor.rgb, alpha);
+}
+
+void main() {
+    if (fragType == 0u) {
+        outColor = renderSphere();
+        // renderSphere sets gl_FragDepth from ray hit
+    } else if (fragType == 1u) {
+        outColor = renderHealthbar();
+        gl_FragDepth = gl_FragCoord.z;  // natural depth
+    } else if (fragType == 2u) {
+        outColor = renderIcon();
+        gl_FragDepth = gl_FragCoord.z;  // natural depth
+    } else {
+        outColor = vec4(1.0, 0.0, 1.0, 1.0);
+        gl_FragDepth = gl_FragCoord.z;
+    }
 }

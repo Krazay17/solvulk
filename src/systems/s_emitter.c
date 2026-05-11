@@ -5,7 +5,7 @@
  * Created: 2026-05-08
  * Particle Emitter
  * SolEmitters.emitter and SolEmitters.particle reallocs careful!
-*/
+ */
 #include "sol_core.h"
 
 #define MAX_EMITTERS 0xFFF
@@ -129,7 +129,8 @@ void Emitter_Draw(World *world, double dt, double time)
         Particle *p           = &s->particle[i];
         float     t           = p->ttl / p->span;
         float     visualScale = p->scale * t;
-        Sol_Render_Push_Sphere((vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, p->color);
+        Sol_Render_PushBillboard(
+            (BillboardDesc){.pos = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, .color = p->color, .kind = BILLBOARD_SPHERE});
     }
 }
 
@@ -140,7 +141,7 @@ static Particle *Particle_Activate(SolEmitters *s, Emitter *init)
     Particle *p = &s->particle[s->particle_count];
     memcpy(p, &init->particle, sizeof(Particle));
     p->span = p->ttl;
-    p->pos      = init->pos;
+    p->pos  = init->pos;
 
     s->particle_count++;
 

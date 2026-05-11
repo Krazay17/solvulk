@@ -67,6 +67,25 @@ void Xform_Interpolate(World *world, float alpha)
         }
     }
 }
+SolXform Sol_Xform_GetXform(World *world, int id)
+{
+    CompXform *xform = &world->xforms[id];
+    return (SolXform) {
+        .pos = xform->pos,
+        .scale = xform->scale,
+        .quat = xform->quat,
+    };
+}
+
+SolXform Sol_Xform_GetDrawXform(World *world, int id)
+{
+    CompXform *xform = &world->xforms[id];
+    return (SolXform) {
+        .pos = xform->drawPos,
+        .scale = xform->drawScale,
+        .quat = xform->drawQuat,
+    };
+}
 
 void Sol_Xform_Teleport(World *world, int id, vec3s pos)
 {

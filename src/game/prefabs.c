@@ -115,6 +115,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     Sol_Ability_Add(world, id, (AbilityDesc){0});
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+    Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
 
     return id;
 }

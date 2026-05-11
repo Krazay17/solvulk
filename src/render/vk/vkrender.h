@@ -1,7 +1,8 @@
 #pragma once
+#include <vulkan/vulkan.h>
+
 #include "render/render.h"
 #include "sol/types.h"
-#include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_DEVICE_QUERY 8
@@ -45,6 +46,18 @@ typedef struct
     VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
     void          *mapped[MAX_FRAMES_IN_FLIGHT];
 } SolFrameBuffer;
+
+typedef struct
+{
+    VkDeviceSize       size;
+    VkShaderStageFlags stage;
+} SolFrameBufferConfig;
+
+typedef struct
+{
+    VkBuffer *buffers;
+    void     *mapped;
+} SolFrameBufferRef;
 
 typedef struct SolDescriptor
 {
@@ -161,6 +174,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
 int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out);
 
 // ─── Render API (internal) ───────────────────────────────────────
-VkCommandBuffer Command_Buffer_Get(void);
-void            Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
+VkCommandBuffer   Command_Buffer_Get(void);
+SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id);
 
+void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);

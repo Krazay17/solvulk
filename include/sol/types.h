@@ -139,6 +139,12 @@ typedef enum Shape2
 
 // Structs ----------------------------------------------------
 
+typedef struct
+{
+    vec3s   pos, rot, scale;
+    versors quat;
+} SolXform;
+
 typedef void (*CallbackFunc)(int flags, void *);
 typedef struct
 {

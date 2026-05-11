@@ -63,7 +63,7 @@ void Sol_Sphere_Draw(World *world, double dt, double time)
         CompXform  *xform  = &world->xforms[id];
         vec4s       pos    = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, sphere->radius};
 
-        Sol_Render_Push_Sphere(pos, sphere->color);
+        Sol_Render_PushBillboard((BillboardDesc){.pos = pos, .color = sphere->color, .kind = BILLBOARD_SPHERE});
     }
 }
 

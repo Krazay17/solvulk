@@ -1,45 +1,25 @@
 #include "sol_core.h"
 
+#include "render/render_internal.h"
 #include "vkrender.h"
-
-typedef struct
-{
-    u32        count;
-    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
-    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
-    SolModelId handles[MAX_MODEL_INSTANCES];
-} ModelSubmission;
-
-typedef struct
-{
-    u32        count;
-    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
-    FlagsSSBO  flags[MAX_MODEL_INSTANCES];
-    BonesSSBO  bones[MAX_MODEL_INSTANCES];
-    SolModelId handles[MAX_MODEL_INSTANCES];
-} ModelSkinnedSubmission;
-
-typedef struct
-{
-    u32           count;
-    BillboardSSBO billboards[MAX_BILLBOARD_INSTANCES];
-} BillboardSubmission;
 
 static SolVkState solvkstate = {0};
 
-static ModelSubmission        modelQueue;
-static ModelSkinnedSubmission skinningQueue;
-static BillboardSubmission    billboardQueue;
+static u32         boundPipeline;
+static SolGpuImage gpuImages[SOL_IMAGE_COUNT];
+static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
-static u32            model_que_offset;
-static u32            boundPipeline;
-static SolGpuImage    gpuImages[SOL_IMAGE_COUNT];
-static SolGpuModel    gpuModels[SOL_MODEL_COUNT];
-static SolFrameBuffer particleBuffer;
-static SolFrameBuffer lineBuffer;
+static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
+static SolDescriptor  descriptors[DESC_COUNT];
+static SolPipe        pipes[PIPE_COUNT];
 
-static SolDescriptor descriptors[DESC_COUNT];
-static SolPipe       pipes[PIPE_COUNT];
+static SolFrameBufferConfig buffer_config[FRAMEBUFFER_COUNT] = {
+    [FRAMEBUFFER_LINE] =
+        {
+            .size  = sizeof(SolLineVertex) * MAX_LINE_VERTICES,
+            .stage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        },
+};
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
     [PIPE_TEXT] =
@@ -87,8 +67,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .vertResource      = "ID_SHADER_BILLBOARD_V",
             .fragResource      = "ID_SHADER_BILLBOARD_F",
             .depthTest         = 1,
-            .alphaBlend        = 0,
-            .cullMode          = VK_CULL_MODE_NONE,
+            .alphaBlend        = 1,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
             .pushRangeSize     = sizeof(BillboardSSBO),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -157,7 +137,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
         {
             .size       = sizeof(BillboardSSBO) * MAX_BILLBOARD_INSTANCES,
             .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_SSBO,
         },
     [DESC_FLAGS_SSBO] =
@@ -237,8 +217,11 @@ int Sol_Render_BuildPipes()
         }
     }
 
-    Sol_CreateFrameBuffer(&solvkstate, sizeof(SolLineVertex) * MAX_LINE_VERTICES, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                          &lineBuffer);
+    for (int i = 0; i < FRAMEBUFFER_COUNT; i++)
+    {
+        Sol_CreateFrameBuffer(&solvkstate, buffer_config[i].size, buffer_config[i].stage,
+                              &frameBuffers[FRAMEBUFFER_LINE]);
+    }
 
     Sol_Render_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
 
@@ -253,6 +236,12 @@ VkCommandBuffer Command_Buffer_Get()
 void *Sol_GetDescriptorMapping(DescriptorId id)
 {
     return descriptors[id].mapped[solvkstate.currentFrame];
+}
+
+SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id)
+{
+    u32 frame = solvkstate.currentFrame;
+    return (SolFrameBufferRef){.buffers = &frameBuffers[id].buffers[frame], .mapped = frameBuffers[id].mapped[frame]};
 }
 
 float Sol_Render_GetAspect(void)
@@ -316,16 +305,6 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-void Sol_Render_Push_Sphere(vec4s pos, vec4s color)
-{
-    if (billboardQueue.count >= MAX_SPHERE_INSTANCES)
-        return;
-    BillboardSSBO *s = &billboardQueue.billboards[billboardQueue.count++];
-    vec4 c ={ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)};
-    memcpy(s->pos, &pos, sizeof(vec4));
-    memcpy(s->color, &c, sizeof(vec4));
-}
-
 void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
@@ -339,27 +318,6 @@ void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
 
     vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
     vkCmdDraw(cmd, 6, 1, 0, 0);
-}
-
-void Sol_Render_Push_Model(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags)
-{
-    if (modelQueue.count >= MAX_MODEL_INSTANCES)
-        return;
-    uint32_t slot            = modelQueue.count++;
-    modelQueue.handles[slot] = handle;
-    memcpy(&modelQueue.modelSSBO[slot], inst, sizeof(ModelSSBO));
-    memcpy(&modelQueue.flags[slot], flags, sizeof(FlagsSSBO));
-}
-
-void Sol_Render_Push_Model_Skinned(SolModelId handle, ModelSSBO *inst, FlagsSSBO *flags, BonesSSBO *bones)
-{
-    if (skinningQueue.count >= MAX_MODEL_INSTANCES)
-        return;
-    uint32_t slot               = skinningQueue.count++;
-    skinningQueue.handles[slot] = handle;
-    memcpy(&skinningQueue.modelSSBO[slot], inst, sizeof(ModelSSBO));
-    memcpy(&skinningQueue.flags[slot], flags, sizeof(FlagsSSBO));
-    memcpy(&skinningQueue.bones[slot], bones, sizeof(BonesSSBO));
 }
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
@@ -394,27 +352,6 @@ void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t fi
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
     }
-}
-
-void Render_Draw_Line(SolLine *lines, int count)
-{
-    uint32_t frame = solvkstate.currentFrame;
-
-    // Expand lines (a, b, color) into vertex pairs
-    SolLineVertex *verts = (SolLineVertex *)lineBuffer.mapped[frame];
-    for (int i = 0; i < count; i++)
-    {
-        verts[i * 2 + 0] = (SolLineVertex){.pos = lines[i].a, .color = lines[i].aColor};
-        verts[i * 2 + 1] = (SolLineVertex){.pos = lines[i].b, .color = lines[i].bColor};
-    }
-
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_LINE);
-
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(cmd, 0, 1, &lineBuffer.buffers[frame], &offset);
-
-    vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
 void Sol_Render_Draw_Text(SolFontDesc desc)
@@ -521,126 +458,6 @@ void Sol_Begin_Draw()
     VkRect2D scissor = {0};
     scissor.extent   = solvkstate.swapchainExtent;
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
-}
-
-void Flush_Models(void)
-{
-    if (modelQueue.count == 0)
-        return;
-
-    // Count per handle
-    uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (int i = 0; i < modelQueue.count; i++)
-        counts[modelQueue.handles[i]]++;
-
-    // Prefix sum
-    uint32_t offsets[SOL_MODEL_COUNT] = {0};
-    for (int i = 1; i < SOL_MODEL_COUNT; i++)
-        offsets[i] = offsets[i - 1] + counts[i - 1];
-
-    // Write sorted into SSBO
-    ModelSSBO *gpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
-    FlagsSSBO *f   = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
-
-    uint32_t cursors[SOL_MODEL_COUNT];
-    memcpy(cursors, offsets, sizeof(offsets));
-
-    for (int i = 0; i < modelQueue.count; i++)
-    {
-        SolModelId h    = modelQueue.handles[i];
-        gpu[cursors[h]] = modelQueue.modelSSBO[i];
-        f[cursors[h]]   = modelQueue.flags[i];
-        cursors[h]++;
-    }
-
-    for (int h = 0; h < SOL_MODEL_COUNT; h++)
-    {
-        if (counts[h] > 0)
-        {
-            Render_Model(h, counts[h], offsets[h]);
-        }
-    }
-
-    model_que_offset += modelQueue.count;
-    modelQueue.count = 0;
-}
-
-void Flush_Models_Skinned(void)
-{
-    if (skinningQueue.count == 0)
-        return;
-
-    // Count per handle
-    uint32_t counts[SOL_MODEL_COUNT] = {0};
-    for (int i = 0; i < skinningQueue.count; i++)
-        counts[skinningQueue.handles[i]]++;
-
-    // Prefix sum
-    uint32_t offsets[SOL_MODEL_COUNT] = {0};
-    for (int i = 1; i < SOL_MODEL_COUNT; i++)
-        offsets[i] = offsets[i - 1] + counts[i - 1];
-
-    // Write sorted into SSBO
-    ModelSSBO *modelGpu = descriptors[DESC_MODEL_SSBO].mapped[solvkstate.currentFrame];
-    BonesSSBO *boneGpu  = descriptors[DESC_SKINNING_SSBO].mapped[solvkstate.currentFrame];
-    FlagsSSBO *flagGpu  = descriptors[DESC_FLAGS_SSBO].mapped[solvkstate.currentFrame];
-
-    uint32_t cursors[SOL_MODEL_COUNT];
-    memcpy(cursors, offsets, sizeof(offsets));
-
-    for (int i = 0; i < skinningQueue.count; i++)
-    {
-        SolModelId h = skinningQueue.handles[i];
-
-        // GLOBAL INDEX = Base Offset + Local Sorted Position
-        uint32_t globalIdx = model_que_offset + cursors[h];
-
-        // 1. Write model data to the global slot
-        modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
-
-        // 2. Write flags to the global slot (Don't overwrite the static ones at index 0!)
-        flagGpu[globalIdx] = skinningQueue.flags[i];
-
-        // 3. Write bones to the global slot
-        // This ensures shader's gl_InstanceIndex points to the right matrices
-        boneGpu[globalIdx] = skinningQueue.bones[i];
-
-        cursors[h]++;
-    }
-
-    for (int h = 0; h < SOL_MODEL_COUNT; h++)
-    {
-        if (counts[h] > 0)
-        {
-            Render_Model_Skinned(h, counts[h], model_que_offset + offsets[h]);
-        }
-    }
-
-    model_que_offset += skinningQueue.count;
-    skinningQueue.count = 0;
-}
-
-void Flush_Spheres(void)
-{
-    if (billboardQueue.count == 0)
-        return;
-
-    BillboardSSBO *gpu = descriptors[DESC_BILLBOARD_SSBO].mapped[solvkstate.currentFrame];
-    memcpy(gpu, billboardQueue.billboards, sizeof(BillboardSSBO) * billboardQueue.count);
-
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_BILLBOARD);
-    vkCmdDraw(cmd, 6, billboardQueue.count, 0, 0);
-    billboardQueue.count = 0;
-}
-
-void Flush_Queue(void)
-{
-    Flush_Models();
-    Flush_Models_Skinned();
-    Flush_Spheres();
-
-    model_que_offset = 0;
 }
 
 void Sol_End_Draw()

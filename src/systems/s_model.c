@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-#include "model.h"
+#include "model/model.h"
 
 void Sol_Model_Init(World *world)
 {

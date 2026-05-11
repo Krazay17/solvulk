@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "camera.h"
-
 SolCameraArm camera_arm = {
     .active     = false,
     .lerpspeed  = 20.0f,

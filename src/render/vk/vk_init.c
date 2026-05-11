@@ -65,6 +65,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     {
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(devices[i], &props);
+        printf("Found GPU Device: %s\n", props.deviceName);
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
             vkstate->physicalDevice = devices[i];

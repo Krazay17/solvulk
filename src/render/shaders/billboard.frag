@@ -55,8 +55,8 @@ vec4 renderHealthbar() {
     
     // Healthbar shape: wide and short, centered vertically in the quad.
     // Bar occupies the middle 30% of the quad vertically.
-    float barTop    = 0.65;
-    float barBottom = 0.35;
+    float barTop    = 0.1;
+    float barBottom = 0.0;
     
     // Outside the bar region — transparent
     if (uv.y < barBottom || uv.y > barTop) discard;

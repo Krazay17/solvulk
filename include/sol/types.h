@@ -288,23 +288,12 @@ typedef struct
 } SolFontDesc;
 
 // TEXTURE---------------
-typedef enum
-{
-    SOL_IMAGE_FONT,
-    SOL_IMAGE_COUNT,
-} SolImageId;
 
 typedef enum
 {
     SOL_TEXTURE_ICEFONT,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
-
-typedef struct SolImage
-{
-    u32         width, height;
-    const void *pixels;
-} SolImage;
 
 typedef enum
 {

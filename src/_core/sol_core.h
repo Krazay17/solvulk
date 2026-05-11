@@ -9,25 +9,21 @@
 #pragma once
 #include "sol/sol.h"
 
+#include "camera.h"
 #include "profiler.h"
+#include "resource.h"
 #include "sol_math.h"
 
-#include "camera.h"
-#include "font.h"
-#include "model.h"
-#include "texture.h"
-
-#include "render/render.h"
-#include "resource/resource.h"
-
+#include "audio/audio.h"
 #include "ability/ability.h"
+#include "font/font.h"
+#include "model/model.h"
 #include "movement/movement.h"
 #include "physx/physx.h"
+#include "render/render.h"
+#include "render/render_internal.h"
+#include "texture/texture.h"
 #include "xform/xform.h"
-
-// #include "model/model.h"
-// #include "font/font.h"
-// #include "texture/texture.h"
 
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4

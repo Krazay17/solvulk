@@ -1,8 +1,5 @@
 #include "sol_core.h"
 
-#include "render.h"
-#include "render_internal.h"
-
 typedef struct
 {
     u32        count;

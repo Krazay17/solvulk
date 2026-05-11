@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Audio!
-*/
+ */
 #include "sol_core.h"
 
 #define MINIAUDIO_IMPLEMENTATION
@@ -41,18 +41,17 @@ static ma_engine    audio_engine;
 static SolAudio     loaded_audio[SOL_AUDIO_COUNT];
 static PlayingSound playing_pool[MAX_PLAYING_SOUNDS];
 
-void      Sol_Load_Audios();
-SolAudio *Parse_Audio(SolResource res, u32 id);
+static SolAudio *Parse_Audio(SolResource res, u32 id);
 
 int Sol_Audio_Init(void)
 {
     if (ma_engine_init(NULL, &audio_engine) != MA_SUCCESS)
         return -1;
-    Sol_Load_Audios();
+    Sol_Audio_LoadAll();
     return 0;
 }
 
-void Sol_Load_Audios(void)
+int Sol_Audio_LoadAll(void)
 {
     for (int i = 0; i < SOL_AUDIO_COUNT; i++)
     {
@@ -65,9 +64,11 @@ void Sol_Load_Audios(void)
         if (res.isHeap)
             free(res.data);
     }
+
+    return 0;
 }
 
-SolAudio *Parse_Audio(SolResource res, u32 id)
+static SolAudio *Parse_Audio(SolResource res, u32 id)
 {
     SolAudio *audio = &loaded_audio[id];
 
@@ -142,4 +143,8 @@ void Sol_PlayAudio(SolAudioId id)
         return;
     }
     // Pool full — drop the sound
+}
+
+void Sol_Audio_PlayAt(SolAudioId id, vec3s pos)
+{
 }

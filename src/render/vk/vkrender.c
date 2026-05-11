@@ -3,10 +3,13 @@
 #include "render/render_internal.h"
 #include "vkrender.h"
 
+#include "model/model.h"
+#include "texture/texture.h"
+
 static SolVkState solvkstate = {0};
 
 static u32         boundPipeline;
-static SolGpuImage gpuImages[SOL_IMAGE_COUNT];
+static SolGpuImage gpuImages[SOL_TEXTURE_COUNT];
 static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
 static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
@@ -131,7 +134,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
         {
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_IMAGE,
-            .imageId    = SOL_IMAGE_FONT,
+            .imageId    = SOL_TEXTURE_ICEFONT,
         },
     [DESC_BILLBOARD_SSBO] =
         {
@@ -186,7 +189,7 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
 
 int Sol_Render_UploadAll()
 {
-    for (int i = 0; i < SOL_IMAGE_COUNT; i++)
+    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
     {
         Sol_UploadImage(Sol_GetImage(i), i);
     }
@@ -906,7 +909,7 @@ int Sol_UploadModel(SolModel *model, SolModelId modelId)
     return 0;
 }
 
-int Sol_UploadImage(SolImage *image, SolImageId id)
+int Sol_UploadImage(SolTexture *image, SolTextureId id)
 {
     const void *pixels = image->pixels;
     u32         width  = image->width;

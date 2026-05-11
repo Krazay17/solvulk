@@ -8,6 +8,7 @@
 #define MAX_LINE_VERTICES 0xffffff
 
 typedef struct SolModel SolModel;
+typedef struct SolTexture SolTexture;
 
 typedef struct
 {
@@ -66,7 +67,7 @@ void  Sol_Render_Resize(uint32_t width, uint32_t height);
 void  Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
-int Sol_UploadImage(SolImage *image, SolImageId id);
+int Sol_UploadImage(SolTexture *image, SolTextureId id);
 int Sol_UploadModel(SolModel *model, SolModelId id);
 
 void Flush_Models(void);

@@ -1,8 +1,5 @@
 #include "sol_core.h"
 
-#include "render.h"
-#include "render_internal.h"
-
 void Sol_Render_Resize(uint32_t width, uint32_t height)
 {
     if (width == 0 || height == 0)

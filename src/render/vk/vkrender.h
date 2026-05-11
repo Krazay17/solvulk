@@ -81,7 +81,7 @@ typedef struct SolDescriptorConfig
     VkDescriptorType   type;
     VkShaderStageFlags stageFlags;
     DescriptorKind     kind;
-    SolImageId         imageId;
+    SolTextureId         imageId;
 } SolDescriptorConfig;
 
 typedef struct SolPipe

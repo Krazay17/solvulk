@@ -76,7 +76,7 @@ void Create_Sol_Game()
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
 
-    Sol_PlayAudio(SOL_AUDIO_MENUMUSIC);
+    // Sol_PlayAudio(SOL_AUDIO_MENUMUSIC);
 
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
@@ -122,4 +122,6 @@ void Create_Sol_Game()
     int emitterButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
     Sol_Interact_Add(menu, emitterButton,
                      (InteractDesc){.onHold = (Callback){.callbackFunc = MakeAEmitter, .callbackData = gameWorld}});
+
+                     
 }

@@ -67,8 +67,9 @@ typedef enum
     SOL_AUDIO_WOONG,
     SOL_AUDIO_COUNT,
 } SolAudioId;
-int  Sol_Audio_Init();
+
 void Sol_PlayAudio(SolAudioId id);
+void Sol_Audio_PlayAt(SolAudioId id, vec3s pos);
 
 static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
 {

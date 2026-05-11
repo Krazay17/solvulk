@@ -1,7 +1,3 @@
-#include "font.h"
-
-#include "render.h"
-#include "render_internal.h"
 #include "sol_core.h"
 
 ShaderPushTexts Prepare_Text(SolFontDesc desc)

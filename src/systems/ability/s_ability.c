@@ -45,6 +45,8 @@ const StateFunc ability_state_func[] = {
 
 void Sol_Ability_Init(World *world)
 {
+    world->stepSystems[world->stepCount++] = Sol_Ability_Step;
+
     world->abilities = calloc(MAX_ENTS, sizeof(CompAbility));
 }
 
@@ -64,7 +66,7 @@ void Sol_Ability_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-        CompAbility    *ability    = &world->abilities[id];
+        CompAbility *ability = &world->abilities[id];
 
         for (int m = 0; m < MAPPING_COUNT; m++)
         {

@@ -51,10 +51,10 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     return id;
 }
 
-int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc)
+int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, ShapeDesc desc)
 {
     int id = Sol_Create_Ent(world);
-    Sol_Sphere_Add(world, id, desc);
+    Sol_Shape_Add(world, id, desc);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){

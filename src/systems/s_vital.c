@@ -22,6 +22,9 @@ void Damage(World *world, int id, CompVital *vital, SolHit hit);
 
 void Sol_Vital_Init(World *world)
 {
+    world->stepSystems[world->stepCount++]     = Sol_Vital_Step;
+    world->draw3dSystems[world->draw3dCount++] = Sol_Vital_Draw;
+
     world->vitals = calloc(MAX_ENTS, sizeof(CompVital));
 }
 
@@ -70,17 +73,15 @@ void Sol_Vital_Draw(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
-        xform.pos.y += Sol_Physx_GetDims(world, id).y;
+        xform.pos.y += Sol_Physx_GetDims(world, id).y - 1.0f;
 
         CompVital *vital = &world->vitals[id];
-        float fill = vital->maxHealth > 0 
-                   ? (float)vital->health / (float)vital->maxHealth 
-                   : 0.0f;
+        float      fill  = vital->maxHealth > 0 ? (float)vital->health / (float)vital->maxHealth : 0.0f;
 
         Sol_Render_PushBillboard((BillboardDesc){
             .kind   = BILLBOARD_HEALTHBAR,
             .pos    = (vec4s){{xform.pos.x, xform.pos.y, xform.pos.z, 1.0f}},
-            .color  = (vec4s){{255.0f, 0.85f, 0.2f, 255.0f}},   // healthy green
+            .color  = (vec4s){{255.0f, 0.85f, 0.2f, 255.0f}}, // healthy green
             .params = (vec4s){{fill, 0.05f, 0.0f, 0.0f}},
         });
     }

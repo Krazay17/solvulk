@@ -23,9 +23,11 @@ static int prof_frame = 0;
 
 void Sol_Physx_Init(World *world)
 {
-    world->bodies = calloc(MAX_ENTS, sizeof(CompBody));
+    world->stepSystems[world->stepCount++] = Sol_Physx_Step;
 
+    world->bodies  = calloc(MAX_ENTS, sizeof(CompBody));
     world->spatial = calloc(1, sizeof(WorldPhysx));
+
     SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
                       SPATIAL_STATIC_CELL_SIZE);
     SpatialTable_Init(&world->spatial->dynamicGroup.table, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES,

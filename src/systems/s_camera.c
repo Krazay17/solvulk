@@ -14,12 +14,18 @@ SolCamera sol_camera = {
     .farClip  = 1000.0f,
 };
 
+void Sol_Cam_Init(World *world)
+{
+    u32 idx = world->draw2dCount++;
+    world->draw2dSystems[idx] = Sol_Crosshair_Draw;
+}
+
 SolCamera *Sol_GetCamera()
 {
     return &sol_camera;
 }
 
-Sol_Cam_Arm_Update(World *world, vec3s head, double dt)
+void Sol_Cam_Arm_Update(World *world, vec3s head, double dt)
 {
     float fdt          = (float)dt;
     vec3s lookdir      = Sol_Input_GetLook()->lookdir;

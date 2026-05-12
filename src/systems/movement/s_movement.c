@@ -66,6 +66,9 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
 
 void Sol_Movement_Init(World *world)
 {
+    u32 idx = world->stepCount++;
+    world->stepSystems[idx] = Sol_System_Movement_3d_Step;
+
     world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
 }
 

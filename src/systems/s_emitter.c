@@ -25,8 +25,13 @@ typedef struct SolEmitters
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
 
-void Emitter_Init(World *world)
+void Sol_Emitter_Init(World *world)
 {
+    u32 idx                       = world->tickCount++;
+    world->tickSystems[idx]       = Emitter_Tick;
+    u32 drawIdx                   = world->draw3dCount++;
+    world->draw3dSystems[drawIdx] = Emitter_Draw;
+
     world->emitters = malloc(sizeof(SolEmitters));
 
     world->emitters->emitter_count    = 0;
@@ -129,8 +134,10 @@ void Emitter_Draw(World *world, double dt, double time)
         Particle *p           = &s->particle[i];
         float     t           = p->ttl / p->span;
         float     visualScale = p->scale * t;
-        Sol_Render_PushBillboard(
-            (BillboardDesc){.pos = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale}, .color = p->color, .kind = BILLBOARD_SPHERE});
+
+        Sol_Render_PushQuad((QuadDesc){
+            .pos = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+        });
     }
 }
 

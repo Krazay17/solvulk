@@ -64,7 +64,7 @@ void ClearEnts(int flags, void *data)
 void ColorSpheres(int flags, void *data)
 {
     World *world = (World *)data;
-    Sol_Sphere_ColorAll(world, (vec4s){0, 255, 0, 255});
+    Sol_Shape_ColorAll(world, (vec4s){0, 255, 0, 255});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

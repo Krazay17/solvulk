@@ -4,6 +4,9 @@
 
 void Sol_Model_Init(World *world)
 {
+    u32 idx                   = world->draw3dCount++;
+    world->draw3dSystems[idx] = Sol_Model_Draw;
+
     world->models = calloc(MAX_ENTS, sizeof(CompModel));
 }
 

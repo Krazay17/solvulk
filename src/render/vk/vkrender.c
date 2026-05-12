@@ -1,10 +1,6 @@
 #include "sol_core.h"
 
-#include "render/render_internal.h"
 #include "vkrender.h"
-
-#include "model/model.h"
-#include "texture/texture.h"
 
 static SolVkState solvkstate = {0};
 
@@ -29,8 +25,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         {
             .vertResource      = "ID_SHADER_TEXT_V",
             .fragResource      = "ID_SHADER_TEXT_F",
-            .depthTest         = 0,
-            .alphaBlend        = 0,
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = sizeof(ShaderPushText),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
@@ -43,7 +37,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .vertResource      = "ID_SHADER_MODEL_V",
             .fragResource      = "ID_SHADER_MODEL_F",
             .depthTest         = 1,
-            .alphaBlend        = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -56,8 +51,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         {
             .vertResource      = "ID_SHADER_RECT_V",
             .fragResource      = "ID_SHADER_RECT_F",
-            .depthTest         = 0,
-            .alphaBlend        = 1,
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = sizeof(ShaderPushRect),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
@@ -65,12 +59,37 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_ORTHO_UBO},
             .descCount         = 1,
         },
+    [PIPE_SPHERE] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_SPHERE_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .descId            = {DESC_SCENE_UBO, DESC_SPHERE},
+            .descCount         = 2,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+    [PIPE_QUAD] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_QUAD_F",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ADDITIVE,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_SPRITE},
+            .descCount         = 3,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
     [PIPE_BILLBOARD] =
         {
             .vertResource      = "ID_SHADER_BILLBOARD_V",
             .fragResource      = "ID_SHADER_BILLBOARD_F",
             .depthTest         = 1,
-            .alphaBlend        = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
             .pushRangeSize     = sizeof(BillboardSSBO),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
@@ -83,7 +102,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .vertResource      = "ID_SHADER_LINE_V",
             .fragResource      = "ID_SHADER_LINE_F",
             .depthTest         = 1,
-            .alphaBlend        = 1,
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = 0,
             .pushStageFlags    = 0,
@@ -100,7 +119,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 4,
             .type              = VERTEX_SKINNED,
             .depthTest         = 1,
-            .alphaBlend        = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -135,6 +155,26 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             .kind       = DESC_KIND_IMAGE,
             .imageId    = SOL_TEXTURE_ICEFONT,
+        },
+    [DESC_SPHERE] =
+        {
+            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_QUAD] =
+        {
+            .size       = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
+            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
+            .kind       = DESC_KIND_SSBO,
+        },
+    [DESC_SPRITE] =
+        {
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .kind       = DESC_KIND_IMAGE,
+            .imageId    = SOL_TEXTURE_GFLAME, // single texture for now
         },
     [DESC_BILLBOARD_SSBO] =
         {
@@ -650,12 +690,13 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     // --- color blending (no blending, just write output) ---
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
     colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    if (config->alphaBlend)
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT; //| VK_COLOR_COMPONENT_A_BIT;
+    if (config->blendMode != BLEND_NONE)
     {
         colorBlendAttachment.blendEnable         = VK_TRUE;
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.dstColorBlendFactor =
+            (config->blendMode == BLEND_ADDITIVE) ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -700,7 +741,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
     depthStencil.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable                       = config->depthTest ? VK_TRUE : VK_FALSE;
-    depthStencil.depthWriteEnable                      = config->depthTest ? VK_TRUE : VK_FALSE;
+    depthStencil.depthWriteEnable                      = config->depthWrite ? VK_TRUE : VK_FALSE;
     depthStencil.depthCompareOp                        = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable                 = VK_FALSE;
     depthStencil.stencilTestEnable                     = VK_FALSE;

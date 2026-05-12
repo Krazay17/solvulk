@@ -31,7 +31,7 @@ void Claw_State_Enter(World *world, int id)
 
     int ball = Sol_Prefab_Ball(
         world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f),
-        (SphereDesc){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
+        (ShapeDesc){.radius = randSize, .color = (vec4s){rand() % 255, rand() % 255, rand() % 255, 255}});
 
     AnimDesc desc = {
         .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};

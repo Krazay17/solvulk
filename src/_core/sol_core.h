@@ -21,7 +21,7 @@
 #include "movement/movement.h"
 #include "physx/physx.h"
 #include "render/render.h"
-#include "render/render_internal.h"
+#include "render/render.h"
 #include "texture/texture.h"
 #include "xform/xform.h"
 
@@ -54,7 +54,7 @@ typedef struct World
     CompModel      *models;
     CompUi         *uiElements;
     CompInteract   *interacts;
-    CompSphere     *spheres;
+    CompShape     *spheres;
     CompVital      *vitals;
     CompController *controllers;
     CompBuff       *buffs;

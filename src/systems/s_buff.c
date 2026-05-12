@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Buffs!
-*/
+ */
 #include "sol_core.h"
 
 #define MAX_BUFFS 64
@@ -12,7 +12,7 @@
 typedef struct
 {
     BuffKind kind;
-    float duration;
+    float    duration;
 } Buff;
 typedef struct CompBuff
 {
@@ -23,6 +23,9 @@ typedef struct CompBuff
 
 void Sol_Buff_Init(World *world)
 {
+    u32 idx                 = world->stepCount++;
+    world->stepSystems[idx] = Sol_Buff_Step;
+
     world->buffs = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 

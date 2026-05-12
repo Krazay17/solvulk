@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Interact!
-*/
+ */
 #include "sol_core.h"
 
 typedef struct CompInteract
@@ -17,13 +17,16 @@ typedef struct CompInteract
 
 void Sol_Interact_Init(World *world)
 {
+    u32 idx                 = world->tickCount++;
+    world->tickSystems[idx] = System_Interact_Tick;
+
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
 }
 
 void Sol_Interact_Add(World *world, int id, InteractDesc desc)
 {
     world->masks[id] |= HAS_INTERACT;
-    
+
     CompInteract *interact = &world->interacts[id];
     interact->onClick      = desc.onClick;
     interact->onHold       = desc.onHold;

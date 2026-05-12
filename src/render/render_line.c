@@ -1,6 +1,4 @@
-#include "render.h"
-#include "render_internal.h"
-
+#include "sol_core.h"
 #include "render/vk/vkrender.h"
 
 void Render_Draw_Line(SolLine *lines, int count)

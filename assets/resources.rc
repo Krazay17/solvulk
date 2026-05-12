@@ -1,4 +1,6 @@
 //ID_NAME               TYPE            PATH
+gflame.png              RCDATA          "images/gflame.png"
+
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
 World1.glb              RCDATA          "models/World1.glb"
@@ -28,4 +30,7 @@ ID_SHADER_LINE_V        RCDATA          "shaders/line.vert.spv"
 ID_SHADER_LINE_F        RCDATA          "shaders/line.frag.spv"
 ID_SHADER_BILLBOARD_V   RCDATA          "shaders/billboard.vert.spv"
 ID_SHADER_BILLBOARD_F   RCDATA          "shaders/billboard.frag.spv"
+ID_SHADER_SPHERE_V      RCDATA          "shaders/sphere.vert.spv"
 ID_SHADER_SPHERE_F      RCDATA          "shaders/sphere.frag.spv"
+ID_SHADER_QUAD_V        RCDATA          "shaders/quad.vert.spv"
+ID_SHADER_QUAD_F        RCDATA          "shaders/quad.frag.spv"

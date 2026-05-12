@@ -12,6 +12,7 @@
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT] = "atlas.raw",
+    [SOL_TEXTURE_GFLAME] = "gflame.png",
 };
 SolTexture loaded_images[SOL_TEXTURE_COUNT];
 
@@ -61,6 +62,8 @@ static SolTexture *Parse_Texture(SolResource res, u32 id)
     image->height   = (u32)h;
     image->channels = 4; // we forced 4
     image->loaded   = true;
+
+    printf("Image upload width:%d\n", image->width);
 
     return image;
 }

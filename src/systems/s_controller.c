@@ -37,6 +37,8 @@ static vec2s GetWishDir2(uint32_t action);
 
 void Sol_Controller_Init(World *world)
 {
+    world->tickSystems[world->tickCount++] = Sol_Controller_Tick;
+
     world->controllers = calloc(MAX_ENTS, sizeof(CompController));
 }
 

@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * World!
-*/
+ */
 #include "sol_core.h"
 
 typedef struct
@@ -16,23 +16,25 @@ typedef struct
     SystemFunc draw3d;
 } SystemConfig;
 
-static SystemConfig world_systems[WORLD_SYS_COUNT] = {
-    [WORLD_SYS_TIMER]      = {.init = Sol_Timer_Init, .tick = Sol_Timer_Tick},
-    [WORLD_SYS_PHYSX]      = {.init = Sol_Physx_Init, .step = Sol_Physx_Step},
-    [WORLD_SYS_CONTROLLER] = {.init = Sol_Controller_Init, .tick = Sol_Controller_Tick},
-    [WORLD_SYS_XFORM]      = {.init = Sol_Xform_Init},
-    [WORLD_SYS_INTERACT]   = {.init = Sol_Interact_Init, .tick = System_Interact_Tick},
-    [WORLD_SYS_MOVEMENT]   = {.init = Sol_Movement_Init, .step = Sol_System_Movement_3d_Step},
-    [WORLD_SYS_COMBAT]     = {.init = Sol_Ability_Init, .tick = Sol_Ability_Tick, .step = Sol_Ability_Step},
-    [WORLD_SYS_BUFF]       = {.init = Sol_Buff_Init, .step = Sol_Buff_Step},
-    [WORLD_SYS_VITAL]      = {.init = Sol_Vital_Init, .step = Sol_Vital_Step, .draw3d = Sol_Vital_Draw},
-    [WORLD_SYS_MODEL]      = {.init = Sol_Model_Init, .draw3d = Sol_Model_Draw},
-    [WORLD_SYS_UI]         = {.init = Sol_Ui_Init, .draw2d = Sol_Ui_Draw},
-    [WORLD_SYS_LINE]       = {.init = Sol_Line_Init, .tick = Sol_Line_Tick, .draw3d = Sol_Line_Draw},
-    [WORLD_SYS_EMITTER]    = {.init = Emitter_Init, .tick = Emitter_Tick, .draw3d = Emitter_Draw, .step = Emitter_Step},
-    [WORLD_SYS_SPHERE]     = {.init = Sol_Sphere_Init, .draw3d = Sol_Sphere_Draw, .step = Sol_Sphere_Step},
-    [WORLD_SYS_PICKUP]     = {.step = Sol_Pickup_Step},
-    [WORLD_SYS_CAM]        = {.draw2d = Sol_Crosshair_Draw},
+static SystemInit init_system[WORLD_SYS_COUNT] = {
+    [WORLD_SYS_EVENT]      = Sol_Event_Init,
+    [WORLD_SYS_TIMER]      = Sol_Timer_Init,
+    [WORLD_SYS_PHYSX]      = Sol_Physx_Init,
+    [WORLD_SYS_CONTROLLER] = Sol_Controller_Init,
+    [WORLD_SYS_XFORM]      = Sol_Xform_Init,
+    [WORLD_SYS_INTERACT]   = Sol_Interact_Init,
+    [WORLD_SYS_MOVEMENT]   = Sol_Movement_Init,
+    [WORLD_SYS_COMBAT]     = Sol_Combat_Init,
+    [WORLD_SYS_ABILITY]    = Sol_Ability_Init,
+    [WORLD_SYS_BUFF]       = Sol_Buff_Init,
+    [WORLD_SYS_VITAL]      = Sol_Vital_Init,
+    [WORLD_SYS_MODEL]      = Sol_Model_Init,
+    [WORLD_SYS_UI]         = Sol_Ui_Init,
+    [WORLD_SYS_LINE]       = Sol_Line_Init,
+    [WORLD_SYS_EMITTER]    = Sol_Emitter_Init,
+    [WORLD_SYS_SHAPE]      = Sol_Shape_Init,
+    [WORLD_SYS_PICKUP]     = Sol_Pickup_Init,
+    [WORLD_SYS_CAM]        = Sol_Cam_Init,
 };
 
 World *World_Create(void)
@@ -57,8 +59,6 @@ World *World_Create_Default(void)
         for (int i = 0; i < WORLD_SYS_COUNT; i++)
             World_System_Add(world, i);
 
-    Event_Init(world);
-
     return world;
 }
 
@@ -76,6 +76,7 @@ void World_Step(World *world, double dt, double time)
     {
         world->stepSystems[i](world, dt, time);
     }
+    Sol_Event_Clear(world);
 }
 
 void World_Tick(World *world, double dt, double time)
@@ -111,18 +112,8 @@ void World_Draw2d(World *world, double dt, double time)
 
 void World_System_Add(World *world, WorldSystem system)
 {
-    if (!world)
-        return;
-    if (world_systems[system].init)
-        world_systems[system].init(world);
-    if (world_systems[system].step)
-        world->stepSystems[world->stepCount++] = world_systems[system].step;
-    if (world_systems[system].tick)
-        world->tickSystems[world->tickCount++] = world_systems[system].tick;
-    if (world_systems[system].draw3d)
-        world->draw3dSystems[world->draw3dCount++] = world_systems[system].draw3d;
-    if (world_systems[system].draw2d)
-        world->draw2dSystems[world->draw2dCount++] = world_systems[system].draw2d;
+    if (world && init_system[system])
+        init_system[system](world);
 }
 
 int Sol_Create_Ent(World *world)

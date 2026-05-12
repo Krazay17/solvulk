@@ -8,6 +8,13 @@
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
 
+typedef enum
+{
+    BLEND_NONE,
+    BLEND_ALPHA,
+    BLEND_ADDITIVE,
+} BlendMode;
+
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
 {
@@ -81,7 +88,7 @@ typedef struct SolDescriptorConfig
     VkDescriptorType   type;
     VkShaderStageFlags stageFlags;
     DescriptorKind     kind;
-    SolTextureId         imageId;
+    SolTextureId       imageId;
 } SolDescriptorConfig;
 
 typedef struct SolPipe
@@ -102,11 +109,13 @@ typedef enum
 } VertexType;
 typedef struct
 {
-    const char         *vertResource;
-    const char         *fragResource;
-    VertexType          type;
+    const char *vertResource;
+    const char *fragResource;
+    VertexType  type;
+
+    BlendMode           blendMode;
     int                 depthTest;
-    int                 alphaBlend;
+    int                 depthWrite;
     VkCullModeFlags     cullMode;
     uint32_t            pushRangeSize;
     VkShaderStageFlags  pushStageFlags;

@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Ui!
-*/
+ */
 #include "sol_core.h"
 #include "xform/xform.h"
 
@@ -38,6 +38,9 @@ typedef struct CompUi
 
 void Sol_Ui_Init(World *world)
 {
+    u32 idx                   = world->draw2dCount++;
+    world->draw2dSystems[idx] = Sol_Ui_Draw;
+
     world->uiElements = calloc(MAX_ENTS, sizeof(CompUi));
 }
 
@@ -48,7 +51,7 @@ void Sol_Ui_Add(World *world, int id, UiDesc desc)
 
     world->masks[id] |= HAS_UIVIEW;
 
-    CompUi *ui =&world->uiElements[id];
+    CompUi *ui          = &world->uiElements[id];
     ui->kind            = desc.kind;
     ui->baseColor       = desc.baseColor;
     ui->borderColor     = desc.borderColor;

@@ -7,6 +7,7 @@ typedef struct World World;
 
 typedef enum
 {
+    WORLD_SYS_EVENT,
     WORLD_SYS_TIMER,
     WORLD_SYS_XFORM,
     WORLD_SYS_PHYSX,
@@ -14,6 +15,7 @@ typedef enum
 
     WORLD_SYS_MOVEMENT,
     WORLD_SYS_COMBAT,
+    WORLD_SYS_ABILITY,
     WORLD_SYS_INTERACT,
     WORLD_SYS_PICKUP,
     WORLD_SYS_BUFF,
@@ -22,7 +24,7 @@ typedef enum
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
-    WORLD_SYS_SPHERE,
+    WORLD_SYS_SHAPE,
 
     WORLD_SYS_CAM,
     WORLD_SYS_UI,
@@ -49,4 +51,4 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale);
 int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
-int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, SphereDesc desc);
+int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, ShapeDesc desc);

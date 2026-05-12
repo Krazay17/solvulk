@@ -12,5 +12,7 @@ void Flush_Queue(void)
 {
     Flush_Models();
     Flush_Models_Skinned();
+    Flush_Spheres();
+    Flush_Quads();
     Flush_Billboards();
 }

@@ -71,6 +71,50 @@ typedef enum
 void Sol_PlayAudio(SolAudioId id);
 void Sol_Audio_PlayAt(SolAudioId id, vec3s pos);
 
+float Sol_Render_GetAspect(void);
+
+// Single Draw rendering
+void Render_Draw_Line(SolLine *lines, int count);
+void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness);
+void Sol_Render_Draw_Text(SolFontDesc desc);
+
+typedef struct
+{
+    vec4s pos;
+    vec4s color;
+    vec4s params;
+} SphereDesc;
+
+typedef enum
+{
+    BILLBOARD_HEALTHBAR,
+    BILLBOARD_ICON,
+    BILLBOARD_DAMAGE_NUMBER,
+} BillboardKind;
+
+typedef struct
+{
+    BillboardKind kind;
+    vec4s         pos;
+    vec4s         color;
+    vec4s         params;
+    u32           flags;
+} BillboardDesc;
+
+typedef struct
+{
+    vec4s        pos;
+    versors      rotation; // arbitrary rotation
+    vec4s        color;    // tint (additive)
+    vec4s        uv; // atlas region within texture
+} QuadDesc;
+
+// Instance rendering
+void Sol_Render_PushSphere(SphereDesc desc);
+void Sol_Render_PushQuad(QuadDesc desc);
+void Sol_Render_PushBillboard(BillboardDesc desc);
+void Sol_Render_PushModel(ModelPushDesc desc);
+
 static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
 {
     if (count >= *capacity)

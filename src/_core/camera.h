@@ -15,4 +15,4 @@ typedef struct
 
 void          Sol_Cam_Update(double dt);
 SolCameraArm *Sol_Cam_GetArm();
-Sol_Cam_Arm_Update(World *world, vec3s head, double dt);
+void Sol_Cam_Arm_Update(World *world, vec3s head, double dt);

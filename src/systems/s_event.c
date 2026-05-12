@@ -10,7 +10,7 @@
 #define EVENT_INIT_SIZE 12
 
 
-void Event_Init(World *w)
+void Sol_Event_Init(World *w)
 {
     w->events           = malloc(sizeof(SolEvents));
     w->events->count    = 0;
@@ -29,7 +29,7 @@ void Sol_Event_Add(World *w, EventDesc d)
     s->count++;
 }
 
-void Event_Clear(World *w)
+void Sol_Event_Clear(World *w)
 {
     if (w->events)
         w->events->count = 0;

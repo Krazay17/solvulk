@@ -27,7 +27,6 @@
 // Forwards
 typedef struct World     World;
 typedef struct SolState  SolState;
-typedef struct SolCamera SolCamera;
 
 // Enums
 typedef enum
@@ -84,12 +83,6 @@ typedef enum
 
 typedef enum
 {
-    SOL_TEX_REDSKY,
-    SOL_TEX_COUNT,
-} SolTexId;
-
-typedef enum
-{
     SOL_KEY_0,
     SOL_KEY_1,
     SOL_KEY_2,
@@ -137,9 +130,78 @@ typedef enum Shape2
     SHAPE2_CNT,
 } Shape2;
 
-// Structs ----------------------------------------------------
+typedef enum
+{
+    DESC_ORTHO_UBO,
+    DESC_SCENE_UBO,
+    DESC_MODEL_SSBO,
+    DESC_SKINNING_SSBO,
+    DESC_FONT_ATLAS,
+    DESC_FLAGS_SSBO,
+    DESC_BILLBOARD_SSBO,
+    DESC_SPHERE,
+    DESC_QUAD,
+    DESC_SPRITE,
+    DESC_COUNT,
+} DescriptorId;
 
-typedef struct
+typedef enum
+{
+    PIPE_MODEL,
+    PIPE_MODEL_SKINNED,
+    PIPE_TEXT,
+    PIPE_LINE,
+    PIPE_RECT,
+    PIPE_SPHERE,
+    PIPE_BILLBOARD,
+    PIPE_QUAD,
+    PIPE_COUNT,
+} PipelineId;
+
+typedef enum
+{
+    FRAMEBUFFER_LINE,
+    FRAMEBUFFER_COUNT,
+}FrameBufferId;
+
+typedef enum
+{
+    DESC_KIND_UBO,
+    DESC_KIND_SSBO,
+    DESC_KIND_IMAGE,
+} DescriptorKind;
+
+typedef enum
+{
+    SOL_MODEL_WIZARD,
+    SOL_MODEL_DUDE,
+    SOL_MODEL_BOX,
+    SOL_MODEL_WORLD0,
+    SOL_MODEL_WORLD1,
+    SOL_MODEL_WORLD2,
+    SOL_MODEL_COUNT,
+} SolModelId;
+
+typedef enum
+{
+    SOL_QUAD_GFLAME,
+    SOL_QUAD_COUNT,
+} SolQuadId;
+
+typedef struct ModelPushDesc
+{
+    SolModelId handle;
+    vec4s      position;
+    vec4s      scale;
+    vec4s      rotation;
+    vec4s      color;
+    vec4s      material;
+    u32        flags;
+    bool       hasAnim;
+    mat4      *bones;
+} ModelPushDesc;
+
+typedef struct SolXform
 {
     vec3s   pos, rot, scale;
     versors quat;
@@ -292,19 +354,9 @@ typedef struct
 typedef enum
 {
     SOL_TEXTURE_ICEFONT,
+    SOL_TEXTURE_GFLAME,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
-
-typedef enum
-{
-    SOL_MODEL_WIZARD,
-    SOL_MODEL_DUDE,
-    SOL_MODEL_BOX,
-    SOL_MODEL_WORLD0,
-    SOL_MODEL_WORLD1,
-    SOL_MODEL_WORLD2,
-    SOL_MODEL_COUNT,
-} SolModelId;
 
 typedef enum
 {

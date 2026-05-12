@@ -15,6 +15,10 @@ typedef struct CompTimer
 void Sol_Timer_Init(World *world)
 {
     world->timers = calloc(MAX_ENTS, sizeof(CompTimer));
+
+    u32 idx = world->tickCount++;
+    world->tickSystems[idx] = Sol_Timer_Tick;
+    
 }
 
 void Sol_Timer_Add(World *world, int id, TimerDesc desc)

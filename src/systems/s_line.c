@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Lines!
-*/
+ */
 #include "sol_core.h"
 
 #define MAX_WORLD_LINES 0xffffff
@@ -17,6 +17,9 @@ typedef struct WorldLines
 
 void Sol_Line_Init(World *world)
 {
+    u32 idx                   = world->draw3dCount++;
+    world->draw3dSystems[idx] = Sol_Line_Draw;
+
     world->lines = calloc(1, sizeof(WorldLines));
 }
 

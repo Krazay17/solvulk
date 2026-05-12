@@ -1,7 +1,4 @@
-#include "render.h"
-#include "render_internal.h"
-
-#include <cglm/struct.h>
+#include "sol_core.h"
 
 void Sol_Render_Camera_Update(SolCamera *cam)
 {

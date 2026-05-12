@@ -22,7 +22,7 @@ typedef enum
     HAS_ABILITY    = (1 << 8),
     HAS_BUFF       = (1 << 9),
     HAS_VITAL      = (1 << 10),
-    HAS_SPHERE     = (1 << 11),
+    HAS_SHAPE      = (1 << 11),
     HAS_TIMER      = (1 << 12),
     HAS_EVENT      = (1 << 13),
     HAS_AUDIO      = (1 << 14),
@@ -49,6 +49,7 @@ SolXform Sol_Xform_GetXform(World *world, int id);
 SolXform Sol_Xform_GetDrawXform(World *world, int id);
 
 // CAMERA----------------
+void Sol_Cam_Init(World *world);
 void Sol_Camera_Tick(World *world, double dt, double time, float alpha);
 void Sol_Crosshair_Draw(World *world, double dt, double time);
 
@@ -128,8 +129,8 @@ typedef struct EventDesc
     vec3s     pos, normal;
 } EventDesc;
 void Sol_Event_Add(World *world, EventDesc desc);
-void Event_Init(World *world);
-void Event_Clear(World *world);
+void Sol_Event_Init(World *world);
+void Sol_Event_Clear(World *world);
 
 // MODEL------------------
 typedef struct CompModel CompModel;
@@ -158,7 +159,7 @@ void Sol_World_Audio_Step(World *world, double dt, double time);
 // EMITTER--------------
 typedef struct SolEmitters SolEmitters;
 
-void Emitter_Init(World *world);
+void Sol_Emitter_Init(World *world);
 void Emitter_Add(World *world, Emitter e);
 void Emitter_Step(World *world, double dt, double time);
 void Emitter_Tick(World *world, double dt, double time);
@@ -180,17 +181,16 @@ void Sol_Line_Tick(World *world, double dt, double time);
 void Sol_Line_Draw(World *world, double dt, double time);
 
 // SPHERE----------------
-typedef struct CompSphere CompSphere;
+typedef struct CompShape CompShape;
 typedef struct
 {
     float radius;
     vec4s color;
-} SphereDesc;
-void Sol_Sphere_Init(World *world);
-void Sol_Sphere_Add(World *world, int id, SphereDesc desc);
-void Sol_Sphere_Step(World *world, double dt, double time);
-void Sol_Sphere_Draw(World *world, double dt, double time);
-void Sol_Sphere_ColorAll(World *world, vec4s color);
+} ShapeDesc;
+void Sol_Shape_Init(World *world);
+void Sol_Shape_Add(World *world, int id, ShapeDesc desc);
+void Sol_Shape_Draw(World *world, double dt, double time);
+void Sol_Shape_ColorAll(World *world, vec4s color);
 
 // TIMER-----------------
 typedef struct CompTimer CompTimer;
@@ -303,3 +303,7 @@ void Sol_Ui_Draw(World *world, double dt, double time);
 // PICKUP---------------
 void Sol_Pickup_Init(World *world);
 void Sol_Pickup_Step(World *world, double dt, double time);
+
+// COMBAT----------------
+void Sol_Combat_Init(World *world);
+void Sol_Combat_Step(World *world, double dt, double time);

@@ -12,6 +12,8 @@ typedef struct CompAudio
 
 void Sol_World_Audio_Init(World *world)
 {
+    u32 idx = world->stepCount++;
+    world->stepSystems[idx] = Sol_World_Audio_Step;
 }
 
 void Sol_World_Audio_Add(World *world, int id, AudioDesc desc)

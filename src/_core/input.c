@@ -4,43 +4,39 @@
 #define SOL_KEYCODE_ESCAPE 27
 #define SOL_KEYCODE_SHIFT 16
 
-typedef struct
-{
-    bool  mouseLocked;
-    bool  keys[SOL_KEY_COUNT];
-    bool  keysPrev[SOL_KEY_COUNT];
-    bool  mouseButtons[SOL_MOUSE_COUNT];
-    bool  mouseButtonsPrev[SOL_MOUSE_COUNT];
-    float mouseWheelDelta;
-    int   mouseX, mouseY;
-    int   mouseDeltaX, mouseDeltaY;
+// typedef struct
+// {
+//     bool  mouseLocked;
+//     bool  keys[SOL_KEY_COUNT];
+//     bool  keysPrev[SOL_KEY_COUNT];
+//     bool  mouseButtons[SOL_MOUSE_COUNT];
+//     bool  mouseButtonsPrev[SOL_MOUSE_COUNT];
+//     float mouseWheelDelta;
+//     int   mouseX, mouseY;
+//     int   mouseDeltaX, mouseDeltaY;
+//     u32   action;
+// } LocalInput;
+// static LocalInput local_input;
 
-    u32 action;
-} LocalInput;
-
-extern LocalInput local_input;
-LocalInput        local_input = {0};
-
-// maps SolKey to Windows virtual key codes
-static int keyMap[SOL_KEY_COUNT] = {
-    48,
-    49,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    56,
-    'W',
-    'A',
-    'S',
-    'D',
-    'F',
-    SOL_KEYCODE_SPACE,
-    SOL_KEYCODE_ESCAPE,
-    SOL_KEYCODE_SHIFT,
+static int keyMap[256] = {
+    [48]  = SOL_KEY_0,
+    [49]  = SOL_KEY_1,
+    [50]  = SOL_KEY_2,
+    [51]  = SOL_KEY_3,
+    [52]  = SOL_KEY_4,
+    [53]  = SOL_KEY_5,
+    [54]  = SOL_KEY_6,
+    [55]  = SOL_KEY_7,
+    [56]  = SOL_KEY_8,
+    [56]  = SOL_KEY_9,
+    ['W'] = SOL_KEY_W,
+    ['A'] = SOL_KEY_A,
+    ['S'] = SOL_KEY_S,
+    ['D'] = SOL_KEY_D,
+    ['F'] = SOL_KEY_F,
+    [32]  = SOL_KEY_SPACE,
+    [27]  = SOL_KEY_ESCAPE,
+    [16]  = SOL_KEY_SHIFT,
 };
 
 static volatile bool  rawKeys[SOL_KEY_COUNT];
@@ -60,17 +56,17 @@ static int     mouseX, mouseY;
 static int     mouseDeltaX, mouseDeltaY;
 static SolLook sol_look = {.sens = 0.001f};
 
+void Sol_Input_Init()
+{
+}
+
 void Sol_Input_OnKey(int vkCode, bool down)
 {
     // Sol_Debug_Add("KeyCode", vkCode);
-    for (int i = 0; i < SOL_KEY_COUNT; i++)
-    {
-        if (keyMap[i] == vkCode)
-        {
-            rawKeys[i] = down;
-            return;
-        }
-    }
+    if (vkCode < 0 || vkCode > 256)
+        return;
+    int solKey      = keyMap[vkCode];
+    rawKeys[solKey] = down;
 }
 
 void Sol_Input_OnMouseMove(int x, int y)
@@ -117,8 +113,6 @@ void Sol_Input_Update()
 
     mouseWheelDelta    = rawMouseWheelDelta;
     rawMouseWheelDelta = 0;
-
-    memcpy(local_input.keys, rawKeys, sizeof(bool) * SOL_KEY_COUNT);
 
     if (mouseButtons[SOL_MOUSE_RIGHT])
         mouseLocked = true;

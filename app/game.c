@@ -76,7 +76,7 @@ void Create_Sol_Game()
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
 
-    // Sol_PlayAudio(SOL_AUDIO_MENUMUSIC);
+    // Sol_Audio_Play(SOL_AUDIO_MENUMUSIC);
 
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});

@@ -99,7 +99,7 @@ static SolAudio *Parse_Audio(SolResource res, u32 id)
     return audio;
 }
 
-void Sol_PlayAudio(SolAudioId id)
+void Sol_Audio_Play(SolAudioId id)
 {
     if (id >= SOL_AUDIO_COUNT || !loaded_audio[id].loaded)
         return;

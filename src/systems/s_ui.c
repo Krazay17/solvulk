@@ -96,13 +96,13 @@ void Sol_Ui_Draw(World *world, double dt, double time)
             drawCol = (vec4s){80, 200, 80, 255};
         drawCol = Sol_Color_Lerp(drawCol, (vec4s){255, 255, 255, 255}, view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
-        Render_Draw_Rectangle(rect, drawCol, 0);
+        Sol_Render_DrawRectangle(rect, drawCol, 0);
 
         // Border
         if (view->borderThickness > 0 || isHovered)
         {
             float thickness = view->borderThickness + (view->clickAnim * 4.0f) + (view->hoverAnim * 2.0f);
-            Render_Draw_Rectangle(rect, view->borderColor, thickness);
+            Sol_Render_DrawRectangle(rect, view->borderColor, thickness);
         }
 
         // Text
@@ -118,7 +118,7 @@ void Sol_Ui_Draw(World *world, double dt, double time)
                 .color = view->textColor,
                 .kind  = SOL_FONT_ICE,
             };
-            Sol_Render_Draw_Text(fontDesc);
+            Sol_Render_DrawText(fontDesc);
         }
     }
 }

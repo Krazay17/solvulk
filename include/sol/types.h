@@ -188,18 +188,6 @@ typedef enum
     SOL_QUAD_COUNT,
 } SolQuadId;
 
-typedef struct ModelPushDesc
-{
-    SolModelId handle;
-    vec4s      position;
-    vec4s      scale;
-    vec4s      rotation;
-    vec4s      color;
-    vec4s      material;
-    u32        flags;
-    bool       hasAnim;
-    mat4      *bones;
-} ModelPushDesc;
 
 typedef struct SolXform
 {

@@ -17,7 +17,7 @@ void Claw_State_Update(World *world, int id, float dt)
 
 void Claw_State_Enter(World *world, int id)
 {
-    Sol_PlayAudio(SOL_AUDIO_SPACEGUN);
+    Sol_Audio_Play(SOL_AUDIO_SPACEGUN);
 
     CompXform      *xform      = &world->xforms[id];
     CompAbility    *combat     = &world->abilities[id];

@@ -348,7 +348,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-void Render_Draw_Rectangle(vec4s rect, vec4s color, float thickness)
+void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_RECT);
@@ -397,7 +397,7 @@ void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t fi
     }
 }
 
-void Sol_Render_Draw_Text(SolFontDesc desc)
+void Sol_Render_DrawText(SolFontDesc desc)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_TEXT);

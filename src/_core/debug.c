@@ -43,7 +43,7 @@ void Sol_Debug_Draw(double dt)
         return;
     float offset  = 48.0f;
     float spacing = 24.0f;
-    Render_Draw_Rectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){8, 0, 23, 222}, 0);
+    Sol_Render_DrawRectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){8, 0, 23, 222}, 0);
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];
@@ -56,7 +56,7 @@ void Sol_Debug_Draw(double dt)
             .color = (vec4s){255, 0, 122, 255},
             .kind  = SOL_FONT_ICE,
         };
-        Sol_Render_Draw_Text(fontDesc);
+        Sol_Render_DrawText(fontDesc);
     }
     DebugFPS(dt);
 
@@ -93,5 +93,5 @@ static void DebugFPS(double dt)
         .color = (vec4s){0, 255, 0, 255},
         .kind  = SOL_FONT_ICE,
     };
-    Sol_Render_Draw_Text(fontDesc);
+    Sol_Render_DrawText(fontDesc);
 }

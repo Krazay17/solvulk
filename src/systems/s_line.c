@@ -53,5 +53,5 @@ void Sol_Line_Draw(World *world, double dt, double time)
     WorldLines *lines = world->lines;
     if (lines->count == 0)
         return;
-    Render_Draw_Line(lines->lines, lines->count);
+    Sol_Render_DrawLine(lines->lines, lines->count);
 }

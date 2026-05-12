@@ -164,7 +164,7 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
         return;
     int width  = Sol_GetState()->windowWidth / 2;
     int height = Sol_GetState()->windowHeight / 2;
-    Render_Draw_Rectangle(
+    Sol_Render_DrawRectangle(
         (vec4s){
             .x = width,
             .y = height,
@@ -172,7 +172,7 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
             .w = 12,
         },
         (vec4s){255, 0, 0, 255}, 0);
-    Render_Draw_Rectangle(
+    Sol_Render_DrawRectangle(
         (vec4s){
             .x = width,
             .y = height,

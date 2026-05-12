@@ -1,7 +1,7 @@
 #include "sol_core.h"
 #include "render/vk/vkrender.h"
 
-void Render_Draw_Line(SolLine *lines, int count)
+void Sol_Render_DrawLine(SolLine *lines, int count)
 {
     SolFrameBufferRef ref = Sol_GetFrameBuffer(FRAMEBUFFER_LINE);
     SolLineVertex *verts = (SolLineVertex *)ref.mapped;

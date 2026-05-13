@@ -78,9 +78,7 @@ static void LocalTick(World *world, int id, double dt, double time)
         else
             controller->actionState &= ~action_binds[i];
     }
-
-    vec3s head = world->xforms[id].drawPos;
-    head.y += world->bodies[id].dims.y * 0.4f;
+vec3s head = Sol_Physx_GetHeadPos(world, id);
     Sol_Cam_Arm_Update(world, head, dt);
 
     controller->yaw      = look->yaw;

@@ -1,9 +1,7 @@
 #include "sol_core.h"
 
-#include "physx.h"
+#include "physx_i.h"
 #include <omp.h>
-
-#include "xform/xform.h"
 
 #define SPATIAL_DYNAMIC_CELL_SIZE 3.0f
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
@@ -126,7 +124,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
 
-        Collisions_Dynamic_Hashed(world, id, body, xform);
+        Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[k]);
     }
     Prof_EndEz(&prof_dynamic, true);
 
@@ -135,7 +133,12 @@ void Sol_Physx_Step(World *world, double dt, double time)
         if (!contacts[i].didCollide)
             continue;
         int id = ents[i];
-        Sol_Event_Add(world, (EventDesc){.entA = id, .pos = contacts[i].point, .kind = EVENT_COLLISION});
+        // Sol_Event_Add(world, (EventDesc){.entA = id, .pos = contacts[i].point, .kind = EVENT_COLLISION});
+        Sol_Event_Add(world, (SolEvent){.kind         = EVENT_COLLISION,
+                                        .as.collision = {.normal = contacts[i].normal,
+                                                         .pos    = contacts[i].point,
+                                                         .entA   = id,
+                                                         .entB   = contacts[i].entId}});
     }
 }
 
@@ -345,4 +348,14 @@ void Sol_Physx_SetVelY(World *world, int id, float y)
 void Sol_Physx_SetVelZ(World *world, int id, float z)
 {
     world->bodies[id].vel.z = z;
+}
+bool Sol_Physx_GetGrounded(World *world, int id)
+{
+    return world->bodies[id].grounded;
+}
+vec3s Sol_Physx_GetHeadPos(World *world, int id)
+{
+    vec3s head = world->xforms[id].pos;
+    head.y += world->bodies[id].dims.y * 0.4f;
+    return head;
 }

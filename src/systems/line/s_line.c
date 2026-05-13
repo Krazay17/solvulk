@@ -17,8 +17,7 @@ typedef struct WorldLines
 
 void Sol_Line_Init(World *world)
 {
-    u32 idx                   = world->draw3dCount++;
-    world->draw3dSystems[idx] = Sol_Line_Draw;
+    world->draw3dSystems[world->draw3dCount++] = Sol_Line_Draw;
 
     world->lines = calloc(1, sizeof(WorldLines));
 }

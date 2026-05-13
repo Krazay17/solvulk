@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-#include "physx.h"
+#include "physx_i.h"
 #include <omp.h>
 
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
@@ -130,24 +130,24 @@ void Physx_Grid_Static_Rebuild(PhysxGroup *group)
     }
 }
 
-void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform)
+void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform, SolContact *result)
 {
-    SpatialTable *table  = &world->spatial->dynamicGroup.table;
-    SpatialCell   cell   = Spatial_Cell_Get(xform->pos, table->cellSize);
-    SolContact    result = {0};
+    SpatialTable *table = &world->spatial->dynamicGroup.table;
+    SpatialCell   cell  = Spatial_Cell_Get(xform->pos, table->cellSize);
     for (int n = 0; n < 27; n++)
     {
         u32 entry = table->head[cell.neighborHashes[n] & (table->size - 1)];
         while (entry != SPATIAL_NULL)
         {
-            u32 otherID = table->value[entry];
+            u32 otherID   = table->value[entry];
+            result->entId = otherID;
             if (id < otherID)
             {
                 CompBody  *other_body  = &world->bodies[otherID];
                 CompXform *other_xform = &world->xforms[otherID];
-                if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &result))
+                if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, result))
                 {
-                    Resolve_Dynamic_Pair(body, xform, other_body, other_xform, &result);
+                    Resolve_Dynamic_Pair(body, xform, other_body, other_xform, result);
                 }
             }
             entry = table->next[entry];
@@ -774,26 +774,6 @@ void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, C
     bBody->vel = glms_vec3_sub(bBody->vel, glms_vec3_scale(impulse, bBody->invMass));
 }
 
-SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
-{
-    SolRayResult result = Sol_Raycast(world, ray);
-    Sol_Line_Add(world, (LineDesc){
-                            .a      = ray.pos,
-                            .b      = result.pos,
-                            .colorA = (vec4s){1, 0, 0, 1},
-                            .colorB = (vec4s){1, 0, 0, 1},
-                            .ttl    = debugDuration,
-                        });
-    if (result.hit)
-        Sol_Line_Add(world, (LineDesc){
-                                .a      = result.pos,
-                                .b      = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-                                .colorA = (vec4s){0, 1, 0, 1},
-                                .colorB = (vec4s){0, 1, 0, 1},
-                                .ttl    = debugDuration,
-                            });
-    return result;
-}
 
 SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray)
 {

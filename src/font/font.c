@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "font_i.h"
+
 const char *font_path[SOL_FONT_COUNT] = {
     [SOL_FONT_ICE] = {"atlas.json"},
 };

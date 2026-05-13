@@ -1,98 +1,67 @@
 #pragma once
 #include "sol/types.h"
 
-#define RENDER_CLEAR_COLOR {0.0f, 0.0f, 0.0f, 1.0f}
+#include "font/font.h"
 
-#define MAX_MODEL_INSTANCES (1 << 14)
-#define MAX_BILLBOARD_INSTANCES (1 << 20)
-#define MAX_SPHERE_INSTANCES (1 << 20)
-#define MAX_QUAD_INSTANCES (1 << 20)
-#define MAX_LINE_VERTICES 0xffffff
-
-typedef struct SolModel   SolModel;
-typedef struct SolTexture SolTexture;
+typedef struct SolCamera SolCamera;
 
 typedef struct
 {
-    mat4 ortho2d;
-} OrthoUBO;
+    vec4s pos;
+    vec4s color;
+    vec4s params;
+} SphereDesc;
 
+typedef enum
+{
+    BILLBOARD_HEALTHBAR,
+    BILLBOARD_ICON,
+    BILLBOARD_DAMAGE_NUMBER,
+} BillboardKind;
 typedef struct
 {
-    mat4 viewProjection;
-    mat4 view;
-    mat4 proj;
-    vec4 cameraPos;
-    vec4 sun;
-} SceneUBO;
+    BillboardKind kind;
+    vec4s         pos;
+    vec4s         color;
+    vec4s         params;
+    u32           flags;
+} BillboardDesc;
 
+typedef enum
+{
+    QUAD_CAMFACE,
+    QUAD_3D,
+} QuadKind;
 typedef struct
 {
-    vec4 rec;
-    vec4 color;
-    vec4 extras;
-} ShaderPushRect;
+    vec4s    pos;
+    versors  rotation;
+    vec4s    color;
+    vec4s    uv;
+    QuadKind kind;
+} QuadDesc;
 
-typedef struct
+typedef struct ModelPushDesc
 {
-    vec4 position;
-    vec4 scale;
-    vec4 rotation;
-    vec4 color;
-    vec4 material;
-} ModelSSBO;
+    SolModelId handle;
+    vec4s      position;
+    vec4s      scale;
+    vec4s      rotation;
+    vec4s      color;
+    vec4s      material;
+    u32        flags;
+    bool       hasAnim;
+    mat4      *bones;
+} ModelPushDesc;
 
-typedef struct
-{
-    mat4 bones[MAX_BONES];
-} BonesSSBO;
+void Sol_Render_Camera_Update(SolCamera *cam);
 
-typedef struct
-{
-    vec4 pos;         // xyz = world position, w = size (uniform scale)
-    vec4 color;       // base tint
-    vec4 params;      // type-specific (fill amount, glow strength, icon index, …)
-    u32  type;        // BILLBOARD_SPHERE, BILLBOARD_HEALTHBAR, …
-    u32  _padding[3]; // pad to 16 bytes for std430 alignment
-} BillboardSSBO;
+void Sol_Render_PushSphere(SphereDesc desc);
+void Sol_Render_PushBillboard(BillboardDesc desc);
+void Sol_Render_PushQuad(QuadDesc desc);
+void Sol_Render_PushModel(ModelPushDesc desc);
 
-typedef struct
-{
-    vec4 pos;
-    vec4 color;
-    vec4 params;
-} SphereSSBO;
-
-typedef struct
-{
-    vec4 pos;       // xyz + size
-    vec4 rotation;  // quaternion
-    vec4 color;     // tint
-    vec4 uv;        // atlas UV offset/scale (xy = offset, zw = size)
-} QuadSSBO;
-
-typedef struct
-{
-    u32 flags;
-} FlagsSSBO;
-
-int   Sol_Render_Init(void *hwnd, void *hInstance);
-int   Sol_Render_BuildPipes();
-void  Sol_Render_SetOrtho(uint32_t width, uint32_t height);
-void  Sol_Render_Camera_Update(SolCamera *cam);
-void  Sol_Render_Resize(uint32_t width, uint32_t height);
-void  Remake_Swapchain(uint32_t width, uint32_t height);
-void *Sol_GetDescriptorMapping(DescriptorId id);
-
-int Sol_UploadImage(SolTexture *image, SolTextureId id);
-int Sol_UploadModel(SolModel *model, SolModelId id);
-
-void Flush_Models(void);
-void Flush_Models_Skinned(void);
-void Flush_Spheres(void);
-void Flush_Quads(void);
-void Flush_Billboards(void);
-void Flush_Queue(void);
-
-void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+float Sol_Render_GetAspect(void);
+void  Sol_Render_DrawLine(SolLine *lines, int count);
+void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness);
+void  Sol_Render_DrawText(SolFontDesc desc);

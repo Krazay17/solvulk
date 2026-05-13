@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "movement_i.h"
+
 void Sol_Movement_Fly_Update(World *world, int id, float dt)
 {
     if (!(Sol_GetActions(world, id) & ACTION_JUMP))

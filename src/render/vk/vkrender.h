@@ -1,8 +1,7 @@
 #pragma once
-#include <vulkan/vulkan.h>
-
-#include "render/render.h"
 #include "sol/types.h"
+
+#include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_DEVICE_QUERY 8

@@ -1,6 +1,7 @@
 #include "sol_core.h"
 
-#include "physx.h"
+#include "physx_i.h"
+#include "model/model_i.h"
 
 void Physx_ParseModel(World *world, int id, PhysxGroup *group)
 {

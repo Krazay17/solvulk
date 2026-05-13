@@ -21,12 +21,9 @@
 #define TARGET_ASPECT 16.0f / 9.0f
 #define MAX_BONES 128
 
-#define ColorConvert(x) (x / 255.0f)
-#define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
-
 // Forwards
-typedef struct World     World;
-typedef struct SolState  SolState;
+typedef struct World    World;
+typedef struct SolState SolState;
 
 // Enums
 typedef enum
@@ -81,38 +78,6 @@ typedef enum
     MOVE_STATE_COUNT
 } MoveState;
 
-typedef enum
-{
-    SOL_KEY_0,
-    SOL_KEY_1,
-    SOL_KEY_2,
-    SOL_KEY_3,
-    SOL_KEY_4,
-    SOL_KEY_5,
-    SOL_KEY_6,
-    SOL_KEY_7,
-    SOL_KEY_8,
-    SOL_KEY_9,
-
-    SOL_KEY_W,
-    SOL_KEY_A,
-    SOL_KEY_S,
-    SOL_KEY_D,
-    SOL_KEY_F,
-    SOL_KEY_SPACE,
-    SOL_KEY_ESCAPE,
-    SOL_KEY_SHIFT,
-    SOL_KEY_COUNT
-} SolKey;
-
-typedef enum
-{
-    SOL_MOUSE_LEFT,
-    SOL_MOUSE_RIGHT,
-    SOL_MOUSE_MIDDLE,
-    SOL_MOUSE_COUNT
-} SolMouseButton;
-
 typedef enum Shape3
 {
     SHAPE3_SPH,
@@ -147,6 +112,13 @@ typedef enum
 
 typedef enum
 {
+    MOVE_CONFIG_PLAYER,
+    MOVE_CONFIG_WIZARD,
+    MOVE_CONFIG_COUNT,
+} MoveConfigId;
+
+typedef enum
+{
     PIPE_MODEL,
     PIPE_MODEL_SKINNED,
     PIPE_TEXT,
@@ -162,7 +134,7 @@ typedef enum
 {
     FRAMEBUFFER_LINE,
     FRAMEBUFFER_COUNT,
-}FrameBufferId;
+} FrameBufferId;
 
 typedef enum
 {
@@ -188,6 +160,11 @@ typedef enum
     SOL_QUAD_COUNT,
 } SolQuadId;
 
+typedef enum
+{
+    EFLAG_PICKUPABLE = (1 << 0),
+    EFLAG_PICKEDUP   = (1 << 1),
+} EntFlags;
 
 typedef struct SolXform
 {
@@ -204,64 +181,11 @@ typedef struct
 
 // ─── Font data ───────────────────────────────────────────────────
 
-typedef struct AiController
+typedef struct
 {
-    vec3s    lookdir, wishdir;
-    AiAction actionState;
-} AiController;
-
-typedef struct SolMouse
-{
-    int  x, y;
-    int  dx, dy;
-    int  wheelV;
-    bool locked;
-    bool buttons[SOL_MOUSE_COUNT];
-    bool buttonsPressed[SOL_MOUSE_COUNT];
-} SolMouse;
-
-typedef struct SolRay
-{
-    vec3s pos, dir;
-    float dist;
-    float min;
-    u8    mask;
-    u32   ignoreEnt;
-} SolRay;
-
-typedef struct SolHit
-{
-    vec3s pos, dir;
-    float power;
-    u32   damage;
-} SolHit;
-
-typedef struct SolLook
-{
-    float yaw, pitch, sens;
-    vec3s lookdir;
-} SolLook;
-
-typedef struct SolRayResult
-{
-    bool  hit;
-    vec3s pos, norm;
-    float dist;
-    u32   triIndex;
-    u32   entId;
-} SolRayResult;
-
-typedef struct SolCamera
-{
-    vec3  position;
-    vec3  target;
-    float fov;
-    float nearClip;
-    float farClip;
-    mat4  proj;
-    mat4  view;
-    mat4  viewProj;
-} SolCamera;
+    float radius;
+    vec4s color;
+} ShapeDesc;
 
 typedef struct SolLine
 {
@@ -279,14 +203,6 @@ typedef struct SolSphere
 
 typedef enum
 {
-    EVENT_NONE,
-    EVENT_PARTICLE,
-    EVENT_COLLISION,
-    EVENT_COUNT,
-} EventKind;
-
-typedef enum
-{
     PARTICLE_ORB,
     PARTICLE_COUNT,
 } ParticleKind;
@@ -297,23 +213,6 @@ typedef enum
     EMITTER_COUNT,
 } EmitterKind;
 
-typedef struct Particle
-{
-    ParticleKind kind;
-    vec3s        pos, vel;
-    vec4s        color;
-    float        ttl, scale, span;
-} Particle;
-
-typedef struct Emitter
-{
-    EmitterKind emitterKind;
-    vec3s       pos, vel;
-    float       ttl, rate, accumulator;
-    Particle    particle;
-    u32         burst;
-} Emitter;
-
 typedef struct SolMaterial
 {
     float baseColor[4];
@@ -321,21 +220,6 @@ typedef struct SolMaterial
     float metallic;
     float roughness;
 } SolMaterial;
-
-// FONT-----------------
-typedef enum
-{
-    SOL_FONT_ICE,
-    SOL_FONT_COUNT,
-} SolFontKind;
-
-typedef struct
-{
-    const char *str;
-    float       x, y, size;
-    vec4s       color;
-    SolFontKind kind;
-} SolFontDesc;
 
 // TEXTURE---------------
 
@@ -372,6 +256,16 @@ typedef enum
     ANIM_COUNT,
 } SolAnims;
 
+typedef struct SolVertex
+{
+    vec3 position;
+    vec3 normal;
+    vec2 uv;
+
+    ivec4 boneIndices; // up to 4 bones per vertex (glTF default)
+    vec4  boneWeights; // weights, sum = 1.0
+} SolVertex;
+
 typedef struct SolTri
 {
     int   entId;
@@ -379,21 +273,6 @@ typedef struct SolTri
     vec3s normal, center;
     float bounds;
 } SolTri;
-
-typedef struct SolEvent
-{
-    u32   kind;
-    u32   entA, entB;
-    vec3s pos, normal;
-} SolEvent;
-
-typedef struct SolEvents
-{
-    SolEvent *event;
-
-    u32 count;
-    u32 capacity;
-} SolEvents;
 
 typedef struct
 {
@@ -410,42 +289,9 @@ typedef struct
 
 typedef enum
 {
-    ABILITY_STATE_IDLE,
-    ABILITY_STATE_DASH,
-    ABILITY_STATE_CLAW,
-    ABILITY_STATE_2,
-    ABILITY_STATE_3,
-    ABILITY_STATE_4,
-    ABILITY_STATE_5,
-    ABILITY_STATE_6,
-    ABILITY_STATE_7,
-    ABILITY_STATE_8,
-    ABILITY_STATE_9,
-    ABILITY_STATE_COUNT,
-} AbilityState;
-
-typedef enum
-{
     INTERACT_HOVERED    = (1 << 0),
     INTERACT_PRESSED    = (1 << 1),
     INTERACT_CLICKED    = (1 << 2),
     INTERACT_TOGGLED    = (1 << 3),
     INTERACT_TOGGLEABLE = (1 << 4),
 } InteractState;
-
-typedef enum
-{
-    ANIM_LAYER_BASE,  // full body, always active
-    ANIM_LAYER_LOWER, // overrides legs
-    ANIM_LAYER_UPPER, // overrides torso/arms
-    ANIM_LAYER_OVERRIDE,
-    ANIM_LAYER_COUNT
-} AnimLayerId;
-
-typedef struct
-{
-    float       blendIn, blendOut, seek;
-    SolAnims    anim;
-    AnimLayerId layerId;
-    bool        force;
-} AnimDesc;

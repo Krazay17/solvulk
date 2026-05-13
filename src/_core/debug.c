@@ -11,7 +11,7 @@ typedef struct Debuggers
     int count;
 } Debuggers;
 
-static Debuggers debuggers = {0};
+static Debuggers debuggers;
 
 static void DebugFPS(double dt);
 void Sol_Debug_Draw(double dt);
@@ -94,4 +94,25 @@ static void DebugFPS(double dt)
         .kind  = SOL_FONT_ICE,
     };
     Sol_Render_DrawText(fontDesc);
+}
+
+SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
+{
+    SolRayResult result = Sol_Raycast(world, ray);
+    Sol_Line_Add(world, (LineDesc){
+                            .a      = ray.pos,
+                            .b      = result.pos,
+                            .colorA = (vec4s){1, 0, 0, 1},
+                            .colorB = (vec4s){1, 0, 0, 1},
+                            .ttl    = debugDuration,
+                        });
+    if (result.hit)
+        Sol_Line_Add(world, (LineDesc){
+                                .a      = result.pos,
+                                .b      = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+                                .colorA = (vec4s){0, 1, 0, 1},
+                                .colorB = (vec4s){0, 1, 0, 1},
+                                .ttl    = debugDuration,
+                            });
+    return result;
 }

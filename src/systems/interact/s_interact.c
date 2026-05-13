@@ -54,7 +54,6 @@ void System_Interact_Tick(World *world, double dt, double time)
             continue;
 
         CompInteract *interact   = &world->interacts[id];
-        CompXform    *xform      = &world->xforms[id];
         bool          wasPressed = interact->state & INTERACT_PRESSED;
         interact->state &= ~INTERACT_PRESSED;
         interact->state &= ~INTERACT_CLICKED;
@@ -70,8 +69,8 @@ void System_Interact_Tick(World *world, double dt, double time)
         {
             vec2s mousePos = (vec2s){mouse.x, mouse.y};
             collision      = Sol_Check_2d_Collision(mousePos, (vec4s){
-                                                                  UISCALE(xform->pos.x),
-                                                                  UISCALE(xform->pos.y),
+                                                                  UISCALE(Sol_Xform_GetPos(world, id).x),
+                                                                  UISCALE(Sol_Xform_GetPos(world, id).y),
                                                                   UISCALE(Sol_Physx_GetDims(world, id).x),
                                                                   UISCALE(Sol_Physx_GetDims(world, id).y),
                                                               });

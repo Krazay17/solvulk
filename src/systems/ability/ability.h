@@ -1,43 +1,30 @@
 #pragma once
 #include "sol/types.h"
-#include "estate.h"
+
+typedef enum
+{
+    ABILITY_STATE_IDLE,
+    ABILITY_STATE_DASH,
+    ABILITY_STATE_CLAW,
+    ABILITY_STATE_2,
+    ABILITY_STATE_3,
+    ABILITY_STATE_4,
+    ABILITY_STATE_5,
+    ABILITY_STATE_6,
+    ABILITY_STATE_7,
+    ABILITY_STATE_8,
+    ABILITY_STATE_9,
+    ABILITY_STATE_COUNT,
+} AbilityState;
 
 typedef struct
 {
-    float lastEntered, elapsed, duration;
-    vec3s dir, pos;
-} AbilityData;
-typedef struct CompAbility
-{
-    vec3s        attackPos, attackDir;
-    AbilityState state;
-    AbilityData  stateData[ABILITY_STATE_COUNT];
-} CompAbility;
+    u32 hasAbilies;
+} AbilityDesc;
 
-typedef struct
-{
-    SolActions actionBit;
-    AbilityState       targetState;
-} AbilityMapping;
+void Sol_Ability_Init(World *world);
+void Sol_Ability_Add(World *world, int id, AbilityDesc desc);
+void Sol_Ability_Step(World *world, double dt, double time);
+void Sol_Ability_Tick(World *world, double dt, double time);
 
-extern const StateFunc ability_state_func[];
-
-bool Sol_Ability_SetState(World *world, int id, AbilityState state);
-
-void IdleAbility_State_Update(World *world, int id, float dt);
-void IdleAbility_State_Enter(World *world, int id);
-void IdleAbility_State_Exit(World *world, int id);
-bool IdleAbility_State_CanEnter(World *world, int id, int last);
-bool IdleAbility_State_CanExit(World *world, int id, int next);
-
-void Claw_State_Update(World *world, int id, float dt);
-void Claw_State_Enter(World *world, int id);
-void Claw_State_Exit(World *world, int id);
-bool Claw_State_CanEnter(World *world, int id, int last);
-bool Claw_State_CanExit(World *world, int id, int next);
-
-void ADash_State_Update(World *world, int id, float dt);
-void ADash_State_Enter(World *world, int id);
-void ADash_State_Exit(World *world, int id);
-bool ADash_State_CanEnter(World *world, int id, int last);
-bool ADash_State_CanExit(World *world, int id, int next);
+AbilityState Sol_Ability_GetState(World *world, int id);

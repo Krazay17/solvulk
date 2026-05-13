@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "ability_i.h"
+
 void IdleAbility_State_Update(World *world, int id, float dt)
 {
 }

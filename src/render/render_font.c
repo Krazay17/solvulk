@@ -1,5 +1,8 @@
 #include "sol_core.h"
 
+#include "font/font_i.h"
+#include "render_i.h"
+
 ShaderPushTexts Prepare_Text(SolFontDesc desc)
 {
     const char *str   = desc.str;

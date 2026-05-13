@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "ability_i.h"
+
 // Defined in order of priority (highest priority first)
 static const AbilityMapping ability_mappings[] = {
     {ACTION_ABILITY0, ABILITY_STATE_IDLE},
@@ -100,8 +102,6 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     if (nextState > ABILITY_STATE_COUNT)
         return false;
     CompAbility *ability = &world->abilities[id];
-    // if (ability->state == nextState)
-    //     return false;
     const StateFunc *prevfunc = &ability_state_func[ability->state];
     if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
         return false;
@@ -115,4 +115,8 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     nextfunc->enter(world, id);
     ability->stateData[ability->state].lastEntered = (float)Sol_GetState()->gameTime;
     return true;
+}
+AbilityState Sol_Ability_GetState(World *world, int id)
+{
+    return world->abilities[id].state;
 }

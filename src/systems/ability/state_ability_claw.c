@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "ability_i.h"
+
 #define CLAW_DURATION 0.6f
 #define CLAW_COOLDOWN 0.6f
 

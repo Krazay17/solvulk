@@ -33,16 +33,10 @@ extern const vec3s VECTOR_RADIAL_DIRECTIONS[9];
 
 vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
 
-vec3s ClosestPointOnTriangle(vec3s p, vec3s a, vec3s b, vec3s c);
-
 vec3s   Sol_Vec3_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
-float   Sol_YawFromQuat(versor quat);
-
-float Sol_Lerp(float start, float end, float amount);
-float PulseAnim(float dt, float value, float speed);
 
 vec3s     ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt);
 vec3s     ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt);

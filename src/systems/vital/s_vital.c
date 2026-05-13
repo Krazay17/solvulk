@@ -6,7 +6,6 @@
  * Vitals!
  */
 #include "sol_core.h"
-#include "xform/xform.h"
 
 typedef struct CompVital
 {
@@ -35,7 +34,7 @@ void Sol_Vital_Add(World *world, int id, VitalDesc desc)
         .maxHealth = desc.maxHealth,
         .maxEnergy = desc.maxEnergy,
         .maxMana   = desc.maxMana,
-        .health    = desc.maxHealth,
+        .health    = 50,
         .energy    = desc.maxEnergy,
         .mana      = desc.maxMana,
     };
@@ -81,7 +80,7 @@ void Sol_Vital_Draw(World *world, double dt, double time)
         Sol_Render_PushBillboard((BillboardDesc){
             .kind   = BILLBOARD_HEALTHBAR,
             .pos    = (vec4s){{xform.pos.x, xform.pos.y, xform.pos.z, 1.0f}},
-            .color  = (vec4s){{255.0f, 0.85f, 0.2f, 255.0f}}, // healthy green
+            .color  = (vec4s){{255.0f, 0.85f, 122.2f, 255.0f}}, // healthy green
             .params = (vec4s){{fill, 0.05f, 0.0f, 0.0f}},
         });
     }

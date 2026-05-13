@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "movement_i.h"
+
 const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
         {
@@ -89,7 +91,6 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) == required)
         {
             CompMovement         *movement = &world->movements[id];
-            CompXform            *xform    = &world->xforms[id];
             const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
             vec3s                 vel      = Sol_Physx_GetVel(world, id);
 
@@ -107,7 +108,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
     }
     if (world->playerID > 0)
     {
-        float speed = glms_vec3_norm(world->bodies[world->playerID].vel);
+        float speed = glms_vec3_norm(Sol_Physx_GetVel(world, world->playerID));
         Sol_Debug_Add("Velocity", speed);
     }
 }
@@ -149,10 +150,9 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
         {
             return;
             CompMovement         *movement = &world->movements[id];
-            CompBody             *body     = &world->bodies[id];
             const MoveStateForce *force    = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
 
-            vec3s vel     = body->vel;
+            vec3s vel     = Sol_Physx_GetVel(world, id);
             vec2s wishdir = Sol_GetWishdir2(world, id);
 
             switch (movement->moveState)
@@ -162,10 +162,8 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
                     movement->moveState = MOVE_WALK;
                 break;
             }
-
-            vel = glms_vec3_add(body->vel, glms_vec3_scale((vec3s){wishdir.x, wishdir.y, 0}, force->accell * fdt));
-
-            body->vel = vel;
+            vel = glms_vec3_add(vel, glms_vec3_scale((vec3s){wishdir.x, wishdir.y, 0}, force->accell * fdt));
+            Sol_Physx_SetVel(world, id, vel);
         }
     }
 }

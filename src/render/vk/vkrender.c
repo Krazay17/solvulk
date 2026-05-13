@@ -1,5 +1,8 @@
 #include "sol_core.h"
 
+#include "model/model_i.h"
+#include "render/render_i.h"
+#include "texture/texture.h"
 #include "vkrender.h"
 
 static SolVkState solvkstate = {0};

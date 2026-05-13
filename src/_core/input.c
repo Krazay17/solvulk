@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "input.h"
+
 #define SOL_KEYCODE_SPACE 32
 #define SOL_KEYCODE_ESCAPE 27
 #define SOL_KEYCODE_SHIFT 16
@@ -28,7 +30,7 @@ static int keyMap[256] = {
     [54]  = SOL_KEY_6,
     [55]  = SOL_KEY_7,
     [56]  = SOL_KEY_8,
-    [56]  = SOL_KEY_9,
+    [57]  = SOL_KEY_9,
     ['W'] = SOL_KEY_W,
     ['A'] = SOL_KEY_A,
     ['S'] = SOL_KEY_S,

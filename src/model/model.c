@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "model_i.h"
+
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
@@ -365,7 +367,7 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
             }
 
             // Material
-            dst->material = (SolMaterial){.baseColor = {1, 1, 1, 1}, .roughness = 1.0f};
+            dst->material = (SolMaterial){.baseColor = {1.0f, 1.0f, 1.0f, 1.0f}, .roughness = 1.0f};
             memset(dst->material.emissive, 0, sizeof(float) * 4);
             if (prim->material && prim->material->has_pbr_metallic_roughness)
             {

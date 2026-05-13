@@ -1,26 +1,19 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct
+typedef enum
 {
-    float u, v, uw, vh;
-    float xoffset;
-    float ytop;
-    float yoffset;
-    float yadvance;
-} SolGlyph;
+    SOL_FONT_ICE,
+    SOL_FONT_COUNT,
+} SolFontKind;
 
 typedef struct
 {
-    float l, b, r, t;
-} TextBounds;
-
-typedef struct SolFont
-{
-    SolGlyph   glyph[128];
-    TextBounds bounds;
-} SolFont;
-
-SolFont *Sol_GetFont(SolFontKind kind);
+    const char *str;
+    float       x, y, size;
+    vec4s       color;
+    SolFontKind kind;
+} SolFontDesc;
 
 ShaderPushTexts Prepare_Text(SolFontDesc desc);
+float           Sol_MeasureText(const char *str, float size, SolFontKind id);

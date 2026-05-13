@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "ability_i.h"
+
 #define DASH_VEL 26.0f
 #define DASH_ALPHAMOD 1.2f
 #define DASH_DURATION 0.3f
@@ -7,7 +9,6 @@
 
 void ADash_State_Update(World *world, int id, float dt)
 {
-    CompBody    *body    = &world->bodies[id];
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->state];
     float       *elapsed = &data->elapsed;
@@ -17,18 +18,17 @@ void ADash_State_Update(World *world, int id, float dt)
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE);
         return;
     }
-
     float alpha = DASH_ALPHAMOD - (*elapsed / DASH_DURATION);
-    vec3s vel   = glms_vec3_scale(data->dir, alpha * DASH_VEL);
-    body->vel   = vel;
+
+    Sol_Physx_SetVel(world, id, glms_vec3_scale(data->dir, alpha * DASH_VEL));
 }
 
 void ADash_State_Enter(World *world, int id)
 {
     Sol_Audio_Play(SOL_AUDIO_WOONG);
-    
-    CompAbility    *ability    = &world->abilities[id];
-    AbilityData    *data       = &ability->stateData[ABILITY_STATE_DASH];
+
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];
 
     data->dir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
     if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0 && vecDot(Sol_GetWishdir(world, id), WORLD_UP) < 0.99f)
@@ -44,20 +44,18 @@ void ADash_State_Enter(World *world, int id)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_BWD:
-    desc.anim = ANIM_DASH_BWD;
+        desc.anim = ANIM_DASH_BWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_LEFT:
-    desc.anim = ANIM_DASH_LEFT;
+        desc.anim = ANIM_DASH_LEFT;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_RIGHT:
-    desc.anim = ANIM_DASH_RIGHT;
+        desc.anim = ANIM_DASH_RIGHT;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
-
-    
 }
 
 void ADash_State_Exit(World *world, int id)

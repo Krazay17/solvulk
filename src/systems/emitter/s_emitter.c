@@ -27,10 +27,8 @@ static void      Particle_Tick(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
-    u32 idx                       = world->tickCount++;
-    world->tickSystems[idx]       = Emitter_Tick;
-    u32 drawIdx                   = world->draw3dCount++;
-    world->draw3dSystems[drawIdx] = Emitter_Draw;
+    world->tickSystems[world->tickCount++]     = Emitter_Tick;
+    world->draw3dSystems[world->draw3dCount++] = Emitter_Draw;
 
     world->emitters = malloc(sizeof(SolEmitters));
 
@@ -43,7 +41,7 @@ void Sol_Emitter_Init(World *world)
     world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
 }
 
-void Emitter_Add(World *world, Emitter e)
+void Sol_Emitter_Add(World *world, Emitter e)
 {
     SolEmitters *s = world->emitters;
     Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
@@ -138,6 +136,8 @@ void Emitter_Draw(World *world, double dt, double time)
         Sol_Render_PushQuad((QuadDesc){
             .pos = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
         });
+
+        // Sol_Render_PushBillboard((BillboardDesc){.kind=})
     }
 }
 

@@ -9,7 +9,7 @@ static void SpawnPlayer(int flags, void *data)
     if (gameWorld->actives[gameWorld->playerID])
         Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
-    player3d = Sol_Prefab_Player(gameWorld, (vec3s){0,5,0}, 1.0f);
+    player3d = Sol_Prefab_Player(gameWorld, (vec3s){0, 5, 0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
 }
 
@@ -44,14 +44,14 @@ void MakeAEmitter(int flags, void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
-    Emitter_Add(world,
-                (Emitter){.pos      = pos,
-                          .ttl      = 50.0f,
-                          .rate     = 0.1f,
-                          .burst    = 50,
-                          .vel      = (vec3s){0, 0, 0},
-                          .particle = (Particle){
-                              .ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.15f}});
+    Sol_Emitter_Add(world,
+                    (Emitter){.pos      = pos,
+                              .ttl      = 50.0f,
+                              .rate     = 0.1f,
+                              .burst    = 50,
+                              .vel      = (vec3s){0, 0, 0},
+                              .particle = (Particle){
+                                  .ttl = 5.0f, .color = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255}, .scale = 0.15f}});
 }
 
 void ClearEnts(int flags, void *data)
@@ -75,6 +75,7 @@ void Create_Sol_Game()
     // CURL *curl = curl_easy_init();
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
+    Sol_Crosshair_Init(gameWorld);
 
     // Sol_Audio_Play(SOL_AUDIO_MENUMUSIC);
 
@@ -122,6 +123,4 @@ void Create_Sol_Game()
     int emitterButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
     Sol_Interact_Add(menu, emitterButton,
                      (InteractDesc){.onHold = (Callback){.callbackFunc = MakeAEmitter, .callbackData = gameWorld}});
-
-                     
 }

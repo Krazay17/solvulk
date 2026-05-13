@@ -1,4 +1,6 @@
 #include "sol_core.h"
+#include "render_i.h"
+
 
 typedef struct
 {

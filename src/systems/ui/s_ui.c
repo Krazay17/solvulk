@@ -6,7 +6,6 @@
  * Ui!
  */
 #include "sol_core.h"
-#include "xform/xform.h"
 
 typedef struct CompUiButton
 {
@@ -38,8 +37,7 @@ typedef struct CompUi
 
 void Sol_Ui_Init(World *world)
 {
-    u32 idx                   = world->draw2dCount++;
-    world->draw2dSystems[idx] = Sol_Ui_Draw;
+    world->draw2dSystems[world->draw2dCount++] = Sol_Ui_Draw;
 
     world->uiElements = calloc(MAX_ENTS, sizeof(CompUi));
 }
@@ -93,10 +91,12 @@ void Sol_Ui_Draw(World *world, double dt, double time)
                          UISCALE(Sol_Physx_GetDims(world, id).y)};
         vec4s drawCol = view->baseColor;
         if (Sol_Interact_GetState(world, id) & INTERACT_TOGGLED)
-            drawCol = (vec4s){80, 200, 80, 255};
-        drawCol = Sol_Color_Lerp(drawCol, (vec4s){255, 255, 255, 255}, view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
+            drawCol = (vec4s){80.0f, 200.0f, 80.0f, 255.0f};
+        drawCol = Sol_Color_Lerp(drawCol, (vec4s){255.0f, 255.0f, 255.0f, 255.0f},
+                                 view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
         Sol_Render_DrawRectangle(rect, drawCol, 0);
+        
 
         // Border
         if (view->borderThickness > 0 || isHovered)

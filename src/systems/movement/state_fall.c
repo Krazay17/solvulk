@@ -1,9 +1,10 @@
 #include "sol_core.h"
 
+#include "movement_i.h"
+
 void Sol_Movement_Fall_Update(World *world, int id, float dt)
 {
-    CompBody *body = &world->bodies[id];
-    if (body->grounded)
+    if (Sol_Physx_GetGrounded(world, id))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
     if (Sol_GetActions(world, id) & ACTION_JUMP)

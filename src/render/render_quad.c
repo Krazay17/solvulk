@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "render_i.h"
+
 #include "render/vk/vkrender.h"
 
 typedef struct
@@ -22,6 +24,7 @@ void Sol_Render_PushQuad(QuadDesc desc)
     memcpy(ssbo->rotation, desc.rotation.raw, sizeof(versor));
     desc.uv = (vec4s){{0, 0, 1.0f, 1.0f}};
     memcpy(ssbo->uv, desc.uv.raw, sizeof(vec4));
+    ssbo->type = desc.kind;
 }
 
 void Flush_Quads(void)

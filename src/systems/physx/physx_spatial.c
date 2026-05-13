@@ -5,7 +5,8 @@
  * Created: 2026-05-08
  * Physx spatial grid
 */
-#include "physx.h"
+#include "sol_core.h"
+#include "physx_i.h"
 
 SpatialCell Spatial_Cell_Get(vec3s pos, float cellSize)
 {

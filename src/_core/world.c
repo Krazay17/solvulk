@@ -20,6 +20,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_EVENT]      = Sol_Event_Init,
     [WORLD_SYS_TIMER]      = Sol_Timer_Init,
     [WORLD_SYS_PHYSX]      = Sol_Physx_Init,
+    [WORLD_SYS_PARENT]     = Sol_Parent_Init,
     [WORLD_SYS_CONTROLLER] = Sol_Controller_Init,
     [WORLD_SYS_XFORM]      = Sol_Xform_Init,
     [WORLD_SYS_INTERACT]   = Sol_Interact_Init,

@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "render_i.h"
+
 #include "render/vk/vkrender.h"
 
 typedef struct

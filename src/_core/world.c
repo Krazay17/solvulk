@@ -36,6 +36,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_SHAPE]      = Sol_Shape_Init,
     [WORLD_SYS_PICKUP]     = Sol_Pickup_Init,
     [WORLD_SYS_CAM]        = Sol_Cam_Init,
+    [WORLD_SYS_VIEW]       = Sol_View_Init,
 };
 
 World *World_Create(void)
@@ -73,9 +74,18 @@ void World_Step(World *world, double dt, double time)
 {
     if (!world || !world->worldActive)
         return;
+        
+    for (int i = 0; i < world->prestepCount; i++)
+    {
+        world->prestepSystems[i](world, dt, time);
+    }
     for (int i = 0; i < world->stepCount; i++)
     {
         world->stepSystems[i](world, dt, time);
+    }
+    for (int i = 0; i < world->poststepCount; i++)
+    {
+        world->poststepSystems[i](world, dt, time);
     }
     Sol_Event_Clear(world);
 }

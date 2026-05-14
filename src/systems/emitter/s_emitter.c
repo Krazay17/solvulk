@@ -53,8 +53,14 @@ void Sol_Emitter_Add(World *world, Emitter e)
     {
         Particle *p = Particle_Activate(s, em);
         p->scale    = (rand() % 100) * p->scale * 0.01f;
-        p->vel      = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f,
-                              ((float)(rand() % 100) / 50.0f) - 1.0f};
+        float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
+        float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
+
+        float speed = 1.0f;
+
+        p->vel.x = sinf(phi) * cosf(theta) * speed;
+        p->vel.y = sinf(phi) * sinf(theta) * speed;
+        p->vel.z = cosf(phi) * speed;
     }
     if (e.rate > 0)
         s->emitter_count++;
@@ -82,17 +88,26 @@ void Emitter_Tick(World *world, double dt, double time)
 
         e->pos = vecAdd(e->pos, vecSca(e->vel, fdt));
 
+        // Emitter spawn particle over time
         e->accumulator += fdt;
         if (e->rate > 0)
+            // substep spawn incase lag to spawn right amount
             while (e->accumulator >= e->rate)
             {
                 Particle *p = Particle_Activate(sys, e);
-
+                // Rewind lag to place particle unclumped
                 float offset = e->accumulator / fdt;
                 p->pos       = vecAdd(e->pos, vecSca(e->vel, -offset * fdt));
                 p->scale     = (rand() % 100) * p->scale * 0.01f;
-                p->vel       = (vec3s){((float)(rand() % 100) / 50.0f) - 1.0f, ((float)(rand() % 100) / 50.0f) - 1.0f,
-                                       ((float)(rand() % 100) / 50.0f) - 1.0f};
+                // Random spherical velocity
+                float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
+                float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
+
+                float speed = p->speed > 0 ? p->speed : 1.0f;
+
+                p->vel.x = sinf(phi) * cosf(theta) * speed;
+                p->vel.y = sinf(phi) * sinf(theta) * speed;
+                p->vel.z = cosf(phi) * speed;
 
                 e->accumulator -= e->rate;
             }
@@ -117,6 +132,7 @@ static void Particle_Tick(World *world, double dt, double time)
         if (p->ttl <= 0)
             continue;
         p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
+        p->rot += p->rotspeed * dt;
 
         s->particle[write++] = *p;
     }
@@ -132,12 +148,29 @@ void Emitter_Draw(World *world, double dt, double time)
         Particle *p           = &s->particle[i];
         float     t           = p->ttl / p->span;
         float     visualScale = p->scale * t;
+        vec4s     color       = p->color.a > 0 ? p->color : (vec4s){1, 1, 1, 1};
 
-        Sol_Render_PushQuad((QuadDesc){
-            .pos = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-        });
-
-        // Sol_Render_PushBillboard((BillboardDesc){.kind=})
+        switch (p->kind)
+        {
+        case PARTICLE_ORB:
+            Sol_Render_PushSphere((SphereDesc){
+                .pos   = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color = color,
+            });
+            break;
+        case PARTICLE_GFLAME:
+            Sol_Render_PushQuad((QuadDesc){
+                .pos      = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color    = color,
+                .rotation = (versors){p->rot, 0, 0, 1.0f},
+            });
+            break;
+        default:
+            Sol_Render_PushSphere((SphereDesc){
+                .pos   = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color = color,
+            });
+        }
     }
 }
 

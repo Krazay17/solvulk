@@ -34,30 +34,8 @@ typedef struct
 } TimerDesc;
 void Sol_Timer_Init(World *world);
 void Sol_Timer_Add(World *world, int id, TimerDesc init);
-void Sol_Timer_Tick(World *world, double dt, double time);
-
-// BUFF-----------------
-typedef struct CompBuff CompBuff;
-typedef enum
-{
-    BUFF_KNOCKBACK = (1 << 0),
-    BUFF_FIRE      = (1 << 1),
-    BUFF_COUNT,
-} BuffKind;
-typedef struct
-{
-    BuffKind kind;
-    float    duration;
-} BuffDesc;
-void Sol_Buff_Init(World *world);
-void Sol_Buff_Add(World *world, int id, BuffDesc desc);
-void Sol_Buff_Remove(World *world, int id, BuffKind kind);
-void Sol_Buff_Step(World *world, double dt, double time);
+void Sol_Timer_Step(World *world, double dt, double time);
 
 // PICKUP---------------
 void Sol_Pickup_Init(World *world);
 void Sol_Pickup_Step(World *world, double dt, double time);
-
-// COMBAT----------------
-void Sol_Combat_Init(World *world);
-void Sol_Combat_Step(World *world, double dt, double time);

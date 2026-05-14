@@ -20,7 +20,8 @@ void Sol_Render_PushQuad(QuadDesc desc)
 
     desc.color = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}};
     memcpy(ssbo->color, desc.color.raw, sizeof(vec4));
-    desc.rotation = (versors){{0, 0, 0, 1.0f}};
+    if (desc.rotation.w == 0)
+        desc.rotation = (versors){{0, 0, 0, 1.0f}};
     memcpy(ssbo->rotation, desc.rotation.raw, sizeof(versor));
     desc.uv = (vec4s){{0, 0, 1.0f, 1.0f}};
     memcpy(ssbo->uv, desc.uv.raw, sizeof(vec4));

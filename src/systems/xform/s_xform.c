@@ -28,18 +28,9 @@ void Xform_Snapshot(World *world)
         int id = world->activeEntities[i];
         if (world->masks[id] & HAS_XFORM)
         {
-            world->xforms[id].quat = Sol_Quat_FromYawPitch(Sol_GetYaw(world, id), 0); // -controller->pitch
-            vec3s pos = world->xforms[id].pos;
-            if (isnan(pos.x) || isnan(pos.y) || isnan(pos.z))
-            {
-                pos.x = 0;
-                pos.y = 5;
-                pos.z = 0;
-            }
             world->xforms[id].lastPos   = world->xforms[id].pos;
             world->xforms[id].lastQuat  = world->xforms[id].quat;
             world->xforms[id].lastScale = world->xforms[id].scale;
-
         }
     }
     if (world->playerID < 0)

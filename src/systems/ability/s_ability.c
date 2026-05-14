@@ -7,6 +7,7 @@ static const AbilityMapping ability_mappings[] = {
     {ACTION_ABILITY0, ABILITY_STATE_IDLE},
     {ACTION_ABILITY1, ABILITY_STATE_CLAW},
     {ACTION_DASH, ABILITY_STATE_DASH},
+    {ACTION_ABILITY2, ABILITY_STATE_SHIELD},
 };
 #define MAPPING_COUNT (sizeof(ability_mappings) / sizeof(AbilityMapping))
 
@@ -16,26 +17,33 @@ const StateFunc ability_state_func[] = {
             .update   = IdleAbility_State_Update,
             .enter    = IdleAbility_State_Enter,
             .exit     = IdleAbility_State_Exit,
-            .canEnter = IdleAbility_State_CanEnter,
             .canExit  = IdleAbility_State_CanExit,
+            .canEnter = IdleAbility_State_CanEnter,
         },
     [ABILITY_STATE_DASH] =
         {
             .update   = ADash_State_Update,
             .enter    = ADash_State_Enter,
             .exit     = ADash_State_Exit,
-            .canEnter = ADash_State_CanEnter,
             .canExit  = ADash_State_CanExit,
+            .canEnter = ADash_State_CanEnter,
         },
     [ABILITY_STATE_CLAW] =
         {
             .update   = Claw_State_Update,
             .enter    = Claw_State_Enter,
             .exit     = Claw_State_Exit,
-            .canEnter = Claw_State_CanEnter,
             .canExit  = Claw_State_CanExit,
+            .canEnter = Claw_State_CanEnter,
         },
-    [ABILITY_STATE_2] = {0},
+    [ABILITY_STATE_SHIELD] =
+        {
+            Shield_State_Update,
+            Shield_State_Enter,
+            Shield_State_Exit,
+            Shield_State_CanExit,
+            Shield_State_CanEnter,
+        },
     [ABILITY_STATE_3] = {0},
     [ABILITY_STATE_4] = {0},
     [ABILITY_STATE_5] = {0},
@@ -101,7 +109,7 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
 {
     if (nextState > ABILITY_STATE_COUNT)
         return false;
-    CompAbility *ability = &world->abilities[id];
+    CompAbility     *ability  = &world->abilities[id];
     const StateFunc *prevfunc = &ability_state_func[ability->state];
     if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
         return false;

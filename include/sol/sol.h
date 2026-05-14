@@ -25,6 +25,8 @@
 #include "world.h"
 #include "components.h"
 
+#include "combat/combat.h"
+#include "buff/buff.h"
 #include "view/view.h"
 #include "render/render.h"
 #include "parent/parent.h"

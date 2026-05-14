@@ -4,7 +4,7 @@
 
 void Sol_Movement_Walk_Update(World *world, int id, float dt)
 {
-    CompMovement   *movement   = &world->movements[id];
+    CompMovement *movement = &world->movements[id];
     if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return;
@@ -35,6 +35,9 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
+    float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
+    Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 }
 
 void Sol_Movement_Walk_Enter(World *world, int id)

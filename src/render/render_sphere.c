@@ -17,10 +17,10 @@ void Sol_Render_PushSphere(SphereDesc desc)
     u32         idx  = sphereQueue.count++;
     SphereSSBO *ssbo = &sphereQueue.instances[idx];
     memcpy(ssbo->pos, desc.pos.raw, sizeof(vec4));
-    ssbo->color[0] = ColorConvert(desc.color.r);
-    ssbo->color[1] = ColorConvert(desc.color.g);
-    ssbo->color[2] = ColorConvert(desc.color.b);
-    ssbo->color[3] = ColorConvert(desc.color.a);
+    ssbo->color[0] = desc.color.r;
+    ssbo->color[1] = desc.color.g;
+    ssbo->color[2] = desc.color.b;
+    ssbo->color[3] = desc.color.a;
 }
 
 void Flush_Spheres(void)

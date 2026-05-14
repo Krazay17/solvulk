@@ -23,10 +23,10 @@ void Sol_Render_PushBillboard(BillboardDesc desc)
     memcpy(gpu->pos, desc.pos.raw, sizeof(vec4));
     memcpy(gpu->params, desc.params.raw, sizeof(vec4));
 
-    gpu->color[0] = ColorConvert(desc.color.r);
-    gpu->color[1] = ColorConvert(desc.color.g);
-    gpu->color[2] = ColorConvert(desc.color.b);
-    gpu->color[3] = ColorConvert(desc.color.a);
+    gpu->color[0] = desc.color.r;
+    gpu->color[1] = desc.color.g;
+    gpu->color[2] = desc.color.b;
+    gpu->color[3] = desc.color.a;
     gpu->type     = (u32)desc.kind;
 
     billboardQueue.flags[idx].flags = desc.flags;

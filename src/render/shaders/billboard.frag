@@ -12,13 +12,13 @@ vec4 renderHealthbar() {
     vec2 uv = fragUV;  // 0..1
     
     // Bar occupies the middle vertical strip of the quad
-    float barTop    = 0.65;
-    float barBottom = 0.5;
+    float barTop    = 0.55;
+    float barBottom = 0.45;
     
     if (uv.y < barBottom || uv.y > barTop) discard;
     
     // Border
-    float borderThickness = 0.025;
+    float borderThickness = fragParams.y;
     bool inBorderV = uv.x < borderThickness || uv.x > 1.0 - borderThickness;
     bool inBorderH = uv.y < barBottom + borderThickness || uv.y > barTop - borderThickness;
     

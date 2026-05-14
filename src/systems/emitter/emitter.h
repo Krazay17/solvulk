@@ -6,7 +6,8 @@ typedef struct Particle
     ParticleKind kind;
     vec3s        pos, vel;
     vec4s        color;
-    float        ttl, scale, span;
+    float        ttl, scale, span, speed;
+    float        rot, rotspeed;
 } Particle;
 
 typedef struct Emitter

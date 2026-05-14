@@ -81,7 +81,9 @@ static void LocalTick(World *world, int id, double dt, double time)
     vec3s head = Sol_Physx_GetHeadPos(world, id);
     Sol_Cam_Arm_Update(world, head, dt);
 
-    controller->yaw      = look->yaw;
+    controller->yaw        = look->yaw;
+    world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+
     controller->pitch    = look->pitch;
     controller->lookdir  = look->lookdir;
     controller->wishdir  = GetWishDir3(controller->actionState, look->lookdir, WORLD_UP);

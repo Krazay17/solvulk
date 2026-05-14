@@ -139,8 +139,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
         u32 entry = table->head[cell.neighborHashes[n] & (table->size - 1)];
         while (entry != SPATIAL_NULL)
         {
-            u32 otherID   = table->value[entry];
-            result->entId = otherID;
+            u32 otherID = table->value[entry];
             if (id < otherID)
             {
                 CompBody  *other_body  = &world->bodies[otherID];
@@ -148,6 +147,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, result))
                 {
                     Resolve_Dynamic_Pair(body, xform, other_body, other_xform, result);
+                    result->entId = otherID;
                 }
             }
             entry = table->next[entry];
@@ -773,7 +773,6 @@ void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, C
     aBody->vel = glms_vec3_add(aBody->vel, glms_vec3_scale(impulse, aBody->invMass));
     bBody->vel = glms_vec3_sub(bBody->vel, glms_vec3_scale(impulse, bBody->invMass));
 }
-
 
 SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray)
 {

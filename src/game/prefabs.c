@@ -67,6 +67,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, ShapeDesc desc)
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+    Sol_Combat_Add(world, id, (CombatDesc){.dealsdamage = true});
 
     return id;
 }

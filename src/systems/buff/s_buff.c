@@ -7,19 +7,7 @@
  */
 #include "sol_core.h"
 
-#define MAX_BUFFS 64
-
-typedef struct
-{
-    BuffKind kind;
-    float    duration;
-} Buff;
-typedef struct CompBuff
-{
-    Buff   buffs[MAX_BUFFS];
-    u32    count;
-    SolHit lasthit;
-} CompBuff;
+#include "buff_i.h"
 
 void Sol_Buff_Init(World *world)
 {
@@ -36,16 +24,34 @@ void Sol_Buff_Add(World *world, int id, BuffDesc desc)
     if (buff->count >= MAX_BUFFS)
         return;
     world->masks[id] |= HAS_BUFF;
+    u32 infinite = desc.addKind == BUFFADD_INF ? 1 : 0;
+    // check if we have buff already
     for (int i = 0; i < buff->count; i++)
     {
         Buff *b = &buff->buffs[i];
         if (desc.kind == b->kind)
         {
-            b->duration += desc.duration;
+            switch (desc.addKind)
+            {
+            case BUFFADD_ADD_DURATION:
+                b->duration += desc.duration;
+                break;
+            case BUFFADD_SET_DURATION:
+                b->duration = desc.duration;
+                break;
+            case BUFFADD_INF:
+                b->inf = 1;
+                break;
+            case BUFFADD_MULTIPLY:
+                goto addAnotherBuff;
+            }
             return;
         }
     }
-    buff->buffs[buff->count++] = (Buff){.kind = desc.kind, .duration = desc.duration};
+// fallthrough: add buff if dont have
+addAnotherBuff:
+    buff->buffs[buff->count++] =
+        (Buff){.kind = desc.kind, .duration = desc.duration, .inf = infinite, .freq = desc.freq};
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
@@ -78,13 +84,25 @@ void Sol_Buff_Step(World *world, double dt, double time)
         for (int j = 0; j < buff->count; j++)
         {
             Buff *b = &buff->buffs[j];
+            b->accum += fdt;
             b->duration -= fdt;
-            if (b->duration <= 0)
+            if (b->duration <= 0 && !b->inf)
                 continue;
 
-            if (b->kind & BUFF_KNOCKBACK)
+            switch (b->kind)
             {
-                // Sol_Physx_SetVel(world, id, glms_vec3_scale(buff->lasthit.dir, buff->lasthit.power));
+            case BUFFKIND_FIRE:
+                Sol_Movement_SetSpeedMod(world, id, 0.5f);
+                float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
+                if (b->accum > interval)
+                {
+                    b->accum -= interval;
+                    Sol_Vital_Damage(world, id, 2);
+                    printf("Fire tick!\n");
+                }
+                break;
+            default:
+                printf("no buff kind\n");
             }
             buff->buffs[write++] = *b;
         }
@@ -93,4 +111,14 @@ void Sol_Buff_Step(World *world, double dt, double time)
         if (buff->count <= 0)
             world->masks[id] &= ~HAS_BUFF;
     }
+}
+
+bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
+{
+    for (int i = 0; i < world->buffs[id].count; i++)
+    {
+        if (world->buffs[id].buffs[i].kind == kind)
+            return true;
+    }
+    return false;
 }

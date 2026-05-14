@@ -4,7 +4,7 @@
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
  * Timer!
-*/
+ */
 #include "sol_core.h"
 
 typedef struct CompTimer
@@ -14,25 +14,23 @@ typedef struct CompTimer
 
 void Sol_Timer_Init(World *world)
 {
-    world->timers = calloc(MAX_ENTS, sizeof(CompTimer));
+    world->stepSystems[world->stepCount++] = Sol_Timer_Step;
 
-    u32 idx = world->tickCount++;
-    world->tickSystems[idx] = Sol_Timer_Tick;
-    
+    world->timers = calloc(MAX_ENTS, sizeof(CompTimer));
 }
 
 void Sol_Timer_Add(World *world, int id, TimerDesc desc)
 {
     CompTimer timer = {
         .duration = desc.duration,
-        .elapsed = desc.elapsed,
+        .elapsed  = desc.elapsed,
     };
 
     world->timers[id] = timer;
     world->masks[id] |= HAS_TIMER;
 }
 
-void Sol_Timer_Tick(World *world, double dt, double time)
+void Sol_Timer_Step(World *world, double dt, double time)
 {
     int required = HAS_TIMER;
     for (int i = 0; i < world->activeCount; i++)

@@ -7,7 +7,10 @@
 
 #define WAdd2d(w) w->draw2dSystems[w->draw2dCount++]
 #define WAdd3d(w) w->draw3dSystems[w->draw3dCount++]
+#define WAddPrestep(w) w->prestepSystems[w->prestepCount++]
 #define WAddStep(w) w->stepSystems[w->stepCount++]
+#define WAddPoststep(w) w->poststepSystems[w->poststepCount++]
+#define WAddTick(w) w->tickSystems[w->tickCount++]
 
 typedef enum
 {
@@ -28,32 +31,40 @@ typedef enum
     HAS_EVENT      = (1 << 13),
     HAS_AUDIO      = (1 << 14),
     HAS_PARENT     = (1 << 15),
+    HAS_COMBAT     = (1 << 16),
 } CompBits;
 
 typedef enum
 {
-    WORLD_SYS_EVENT,
-    WORLD_SYS_TIMER,
+    // Misc
     WORLD_SYS_XFORM,
-    WORLD_SYS_PHYSX,
+    WORLD_SYS_EVENT,
+
+    // Tick
     WORLD_SYS_CONTROLLER,
-    WORLD_SYS_PARENT,
-
-    WORLD_SYS_MOVEMENT,
-    WORLD_SYS_COMBAT,
-    WORLD_SYS_ABILITY,
     WORLD_SYS_INTERACT,
-    WORLD_SYS_PICKUP,
-    WORLD_SYS_BUFF,
-    WORLD_SYS_VITAL,
 
+    // Step
+    WORLD_SYS_TIMER,
+    WORLD_SYS_PICKUP,
+    WORLD_SYS_PHYSX,
+    WORLD_SYS_PARENT,
+    WORLD_SYS_BUFF,
+    WORLD_SYS_ABILITY,
+    WORLD_SYS_COMBAT,
+    WORLD_SYS_VITAL,
+    WORLD_SYS_MOVEMENT,
+
+    // Draw
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
     WORLD_SYS_SHAPE,
-
-    WORLD_SYS_CAM,
     WORLD_SYS_UI,
+
+    WORLD_SYS_VIEW,
+    WORLD_SYS_CAM,
+
     WORLD_SYS_COUNT,
 } WorldSystem;
 
@@ -64,6 +75,7 @@ typedef bool     Active;
 typedef uint32_t Mask;
 
 typedef struct CompParent     CompParent;
+typedef struct CompCombat     CompCombat;
 typedef struct CompAudio      CompAudio;
 typedef struct CompTimer      CompTimer;
 typedef struct CompXform      CompXform;
@@ -89,7 +101,9 @@ typedef struct CompFlags
 
 typedef struct World
 {
+    SystemFunc prestepSystems[MAX_SYSTEMS];
     SystemFunc stepSystems[MAX_SYSTEMS];
+    SystemFunc poststepSystems[MAX_SYSTEMS];
     SystemFunc tickSystems[MAX_SYSTEMS];
     SystemFunc draw3dSystems[MAX_SYSTEMS];
     SystemFunc draw2dSystems[MAX_SYSTEMS];
@@ -113,6 +127,7 @@ typedef struct World
     CompController *controllers;
     CompBuff       *buffs;
     CompAbility    *abilities;
+    CompCombat     *combats;
 
     SolEvents   *events;
     WorldPhysx  *spatial;
@@ -121,7 +136,9 @@ typedef struct World
 
     bool worldActive;
 
+    int prestepCount;
     int stepCount;
+    int poststepCount;
     int tickCount;
     int draw2dCount;
     int draw3dCount;
@@ -146,4 +163,4 @@ void Sol_Destroy_Ent(World *world, int id);
 void Sol_Flags_Add(World *world, int id, EntFlags flags);
 void Sol_Flags_Remove(World *world, int id, EntFlags flags);
 
-int  Sol_World_GetEntCount(World *world);
+int Sol_World_GetEntCount(World *world);

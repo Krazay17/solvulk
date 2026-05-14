@@ -1,16 +1,17 @@
 #pragma once
 #include "sol/sol.h"
 
-#include "movement.h"
 #include "estate.h"
+#include "movement.h"
 
 typedef struct CompMovement
 {
     vec3s        updir, dashdir;
     float        stateTimer;
+    float        speedMod;
     MoveState    moveState;
     MoveConfigId configId;
-    bool hasJumped;
+    bool         hasJumped;
 } CompMovement;
 
 typedef struct
@@ -20,6 +21,8 @@ typedef struct
 
 extern const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT];
 extern const StateFunc      MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
+
+void Sol_Movement_Prestep(World *world, double dt, double time);
 
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
 

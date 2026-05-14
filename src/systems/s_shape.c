@@ -43,7 +43,6 @@ void Sol_Shape_Draw(World *world, double dt, double time)
         vec4s      pos   = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, shape->radius};
 
         Sol_Render_PushSphere((SphereDesc){.pos = pos, .color = shape->color});
-//        printf("color R:%f, G:%f, B:%f\n", shape->color.r, shape->color.g, shape->color.b);
     }
 }
 

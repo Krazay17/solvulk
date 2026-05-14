@@ -87,6 +87,7 @@ typedef struct AnimLayer
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
     float fadeOut, fadeOutSpeed;
+    float playRate;
 } AnimLayer;
 
 typedef struct

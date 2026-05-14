@@ -5,7 +5,6 @@
 void IdleAbility_State_Update(World *world, int id, float dt)
 {
 }
-
 void IdleAbility_State_Enter(World *world, int id)
 {
 }

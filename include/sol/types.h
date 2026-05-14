@@ -204,6 +204,7 @@ typedef struct SolSphere
 typedef enum
 {
     PARTICLE_ORB,
+    PARTICLE_GFLAME,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -295,3 +296,10 @@ typedef enum
     INTERACT_TOGGLED    = (1 << 3),
     INTERACT_TOGGLEABLE = (1 << 4),
 } InteractState;
+
+typedef struct SolHit
+{
+    vec3s pos, dir;
+    float power;
+    u32   damage;
+} SolHit;

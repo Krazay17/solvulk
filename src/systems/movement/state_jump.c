@@ -45,7 +45,7 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id, int last)
     CompMovement *movement = &world->movements[id];
     CompBody     *body     = &world->bodies[id];
     
-    return !movement->hasJumped && body->airtime < JUMP_BUFFER && !(Sol_Ability_GetState(world, id) & ABILITY_STATE_DASH);
+    return !movement->hasJumped && body->airtime < JUMP_BUFFER && (Sol_Ability_GetState(world, id) != ABILITY_STATE_DASH);
 }
 
 bool Sol_Movement_Jump_CanExit(World *world, int id, int next)

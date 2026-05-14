@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-void Sol_Crosshair_Init(World *world)
+void Sol_View_Crosshair(World *world)
 {
     WAdd2d(world) = Sol_Crosshair_Draw;
 }

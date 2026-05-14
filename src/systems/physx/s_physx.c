@@ -133,7 +133,6 @@ void Sol_Physx_Step(World *world, double dt, double time)
         if (!contacts[i].didCollide)
             continue;
         int id = ents[i];
-        // Sol_Event_Add(world, (EventDesc){.entA = id, .pos = contacts[i].point, .kind = EVENT_COLLISION});
         Sol_Event_Add(world, (SolEvent){.kind         = EVENT_COLLISION,
                                         .as.collision = {.normal = contacts[i].normal,
                                                          .pos    = contacts[i].point,
@@ -315,6 +314,18 @@ void Fill_Dynamic_Table(World *world, int count, int *ents)
 vec3s Sol_Physx_GetVel(World *world, int id)
 {
     return world->bodies[id].vel;
+}
+
+float Sol_Physx_GetSpeed(World *world, int id)
+{
+    return glms_vec3_norm(Sol_Physx_GetVel(world, id));
+}
+
+float Sol_Physx_GetLatSpeed(World *world, int id)
+{
+    vec3s vel = Sol_Physx_GetVel(world, id);
+    vel.y = 0;
+    return glms_vec3_norm(vel);
 }
 
 void Sol_Physx_SetVel(World *world, int id, vec3s vel)

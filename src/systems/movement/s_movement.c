@@ -68,8 +68,8 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
 
 void Sol_Movement_Init(World *world)
 {
-    u32 idx = world->stepCount++;
-    world->stepSystems[idx] = Sol_System_Movement_3d_Step;
+    WAddPrestep(world) = Sol_Movement_Prestep;
+    WAddStep(world)    = Sol_System_Movement_3d_Step;
 
     world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
 }
@@ -79,6 +79,16 @@ void Sol_Movement_Add(World *world, int id, MovementDesc desc)
     world->masks[id] |= HAS_MOVEMENT;
     CompMovement *movementComp = &world->movements[id];
     movementComp->configId     = desc.configId;
+}
+
+void Sol_Movement_Prestep(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (world->masks[id] & HAS_MOVEMENT)
+            world->movements[id].speedMod = 1.0f;
+    }
 }
 
 void Sol_System_Movement_3d_Step(World *world, double dt, double time)
@@ -94,13 +104,19 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
             vec3s                 vel      = Sol_Physx_GetVel(world, id);
 
+            float finalSpeed = forces->speed * movement->speedMod;
+
+            // if (Sol_Buff_HasBuff(world, id, BUFFKIND_FIRE))
+            //     finalSpeed /= 2.0f;
+            // if (Sol_Ability_GetState(world, id) == ABILITY_STATE_SHIELD)
+            //     finalSpeed /= 2.0f;
             vec3s latwishdir = Sol_GetWishdir(world, id);
             latwishdir.y     = 0;
             latwishdir       = glms_vec3_normalize(latwishdir);
             float dot        = glms_vec3_dot(latwishdir, Sol_Physx_GetGround(world, id));
-            vec3s slopeDir = glms_vec3_sub(latwishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
-            vel            = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
-            vel            = ApplyAccel3(slopeDir, vel, forces->speed, forces->accell, fdt);
+            vec3s slopeDir   = glms_vec3_sub(latwishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
+            vel              = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
+            vel              = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
             Sol_Physx_SetVel(world, id, vel);
 
             MOVE_STATE_FUNCS[movement->moveState].update(world, id, dt);
@@ -166,4 +182,9 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
             Sol_Physx_SetVel(world, id, vel);
         }
     }
+}
+
+void Sol_Movement_SetSpeedMod(World *world, int id, float amnt)
+{
+    world->movements[id].speedMod *= amnt;
 }

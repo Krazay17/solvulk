@@ -139,3 +139,8 @@ static inline float Sol_YawFromQuat(versor q)
 {
     return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
 }
+
+static inline float Sol_RandRange(float a, float b)
+{
+    return Sol_Lerp(a, b, (float)rand() / (float)RAND_MAX);
+}

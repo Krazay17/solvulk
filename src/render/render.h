@@ -55,6 +55,7 @@ typedef struct ModelPushDesc
 } ModelPushDesc;
 
 void Sol_Render_Camera_Update(SolCamera *cam);
+void Sol_Render_Resize(uint32_t width, uint32_t height);
 
 void Sol_Render_PushSphere(SphereDesc desc);
 void Sol_Render_PushBillboard(BillboardDesc desc);

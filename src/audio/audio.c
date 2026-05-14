@@ -10,8 +10,12 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
-#define SOL_CHANNELS 2
-#define SOL_SAMPLERATE 48000
+#define DEVICE_FORMAT ma_format_f32
+#define DEVICE_CHANNELS 2
+#define DEVICE_SAMPLE_RATE 48000
+#define DEVICE_SAMPLE_RATE_F 48000.0f
+
+#define MAX_SINEWAVES 4
 
 #define MAX_PLAYING_SOUNDS 32
 
@@ -28,6 +32,7 @@ typedef struct
     size_t          pcmSize;
     ma_audio_buffer buffer; // decoded PCM, used as data source
     bool            loaded;
+    float           duration;
 } SolAudio;
 
 typedef struct
@@ -37,17 +42,49 @@ typedef struct
     bool                inUse;
 } PlayingSound;
 
+typedef struct
+{
+    ma_waveform wave;
+    ma_sound    sound;
+    bool        active;
+} SoundWave;
+
+static SolAudio loaded_audio[SOL_AUDIO_COUNT];
+
 static ma_engine    audio_engine;
-static SolAudio     loaded_audio[SOL_AUDIO_COUNT];
 static PlayingSound playing_pool[MAX_PLAYING_SOUNDS];
 
+static SoundWave sine_pool[MAX_SINEWAVES];
+
 static SolAudio *Parse_Audio(SolResource res, u32 id);
+static void      data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
+{
+    ma_waveform *pSineWave = (ma_waveform *)pDevice->pUserData;
+    if (pSineWave)
+        ma_waveform_read_pcm_frames(pSineWave, pOutput, frameCount, NULL);
+}
 
 int Sol_Audio_Init(void)
 {
-    if (ma_engine_init(NULL, &audio_engine) != MA_SUCCESS)
+    ma_engine_config eConfig = {
+        .periodSizeInMilliseconds = 5,
+    };
+    if (ma_engine_init(&eConfig, &audio_engine) != MA_SUCCESS)
         return -1;
+    ma_engine_set_volume(&audio_engine, 0.5);
+
     Sol_Audio_LoadAll();
+
+    for (int i = 0; i < MAX_SINEWAVES; i++)
+    {
+        ma_waveform_config waveConfig = ma_waveform_config_init(ma_format_f32, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE,
+                                                                ma_waveform_type_sine, 0.1, 444);
+        ma_waveform_init(&waveConfig, &sine_pool[i].wave);
+
+        ma_result result =
+            ma_sound_init_from_data_source(&audio_engine, &sine_pool[i].wave, 0, NULL, &sine_pool[i].sound);
+    }
+
     return 0;
 }
 
@@ -74,7 +111,7 @@ static SolAudio *Parse_Audio(SolResource res, u32 id)
 
     // Decode the entire audio file into PCM frames in memory
     ma_decoder        decoder;
-    ma_decoder_config decConfig = ma_decoder_config_init(ma_format_f32, 2, 48000);
+    ma_decoder_config decConfig = ma_decoder_config_init(DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE);
     if (ma_decoder_init_memory(res.data, res.size, &decConfig, &decoder) != MA_SUCCESS)
     {
         printf("Decode failed: %d\n", id);
@@ -94,8 +131,9 @@ static SolAudio *Parse_Audio(SolResource res, u32 id)
     ma_decoder_read_pcm_frames(&decoder, audio->pcmData, frameCount, NULL);
     ma_decoder_uninit(&decoder);
 
-    audio->loaded = true;
-    printf("Loaded audio %d: %llu frames (%.2f sec)\n", id, frameCount, (float)frameCount / 48000.0f);
+    audio->loaded   = true;
+    audio->duration = (float)frameCount / DEVICE_SAMPLE_RATE_F;
+    printf("Loaded audio %d: %llu frames (%.2f sec)\n", id, frameCount, audio->duration);
     return audio;
 }
 
@@ -127,7 +165,8 @@ void Sol_Audio_Play(SolAudioId id)
         }
 
         // Init this slot's own buffer ref pointing at the shared PCM data
-        if (ma_audio_buffer_ref_init(ma_format_f32, 2, audio->pcmData, audio->frameCount, &ps->bufferRef) != MA_SUCCESS)
+        if (ma_audio_buffer_ref_init(DEVICE_FORMAT, DEVICE_CHANNELS, audio->pcmData, audio->frameCount,
+                                     &ps->bufferRef) != MA_SUCCESS)
             return;
 
         // Init the sound from this slot's ref (independent cursor)
@@ -145,6 +184,36 @@ void Sol_Audio_Play(SolAudioId id)
     // Pool full — drop the sound
 }
 
+void Sol_Audio_SetVolume(float volume)
+{
+    ma_engine_set_volume(&audio_engine, volume);
+}
+
 void Sol_Audio_PlayAt(SolAudioId id, vec3s pos)
 {
+}
+
+void Sol_Audio_PlaySine(int i)
+{
+    SoundWave *sound = &sine_pool[i];
+    sound->active    = !sound->active;
+    if (sound->active)
+        ma_sound_start(&sound->sound);
+    else
+        ma_sound_stop(&sound->sound);
+}
+
+void Sol_Audio_SetVolumeSine(int i, float volume)
+{
+    ma_sound_set_volume(&sine_pool[i].sound, volume);
+    if (!sine_pool[i].active)
+    {
+        sine_pool->active = true;
+        ma_sound_start(&sine_pool[i].sound);
+    }
+}
+
+void Sol_Audio_SineFreq(int i, float freq)
+{
+    ma_waveform_set_frequency(&sine_pool[i].wave, (double)freq * (float)(i + 1));
 }

@@ -77,6 +77,7 @@ void Create_Sol_Game()
     gameWorld   = World_Create_Default();
     Sol_Crosshair_Init(gameWorld);
 
+    // Sol_Audio_Beep();
     // Sol_Audio_Play(SOL_AUDIO_MENUMUSIC);
 
     SpawnPlayer(0, 0);

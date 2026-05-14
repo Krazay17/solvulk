@@ -78,7 +78,7 @@ static void LocalTick(World *world, int id, double dt, double time)
         else
             controller->actionState &= ~action_binds[i];
     }
-vec3s head = Sol_Physx_GetHeadPos(world, id);
+    vec3s head = Sol_Physx_GetHeadPos(world, id);
     Sol_Cam_Arm_Update(world, head, dt);
 
     controller->yaw      = look->yaw;
@@ -108,6 +108,31 @@ vec3s head = Sol_Physx_GetHeadPos(world, id);
         Sol_Xform_Teleport(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
+
+    float freq = (GLM_PI_2f + look->pitch) * 200.0f;
+    Sol_Debug_Add("Freq", freq);
+
+    Sol_Audio_SineFreq(0, freq);
+    Sol_Audio_SineFreq(1, freq);
+    Sol_Audio_SineFreq(2, freq);
+    Sol_Audio_SineFreq(3, freq);
+
+    if (Sol_Input_KeyDown(SOL_KEY_2))
+        Sol_Audio_SetVolumeSine(0, 0.5f);
+    else
+        Sol_Audio_SetVolumeSine(0, 0);
+    if (Sol_Input_KeyDown(SOL_KEY_3))
+        Sol_Audio_SetVolumeSine(1, 0.5f);
+    else
+        Sol_Audio_SetVolumeSine(1, 0);
+    if (Sol_Input_KeyDown(SOL_KEY_4))
+        Sol_Audio_SetVolumeSine(2, 0.5f);
+    else
+        Sol_Audio_SetVolumeSine(2, 0);
+    if (Sol_Input_KeyDown(SOL_KEY_5))
+        Sol_Audio_SetVolumeSine(3, 0.5f);
+    else
+        Sol_Audio_SetVolumeSine(3, 0);
 }
 
 static void AiTick(World *world, int id, double dt, double time)

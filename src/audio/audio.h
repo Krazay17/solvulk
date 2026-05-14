@@ -18,3 +18,7 @@ int Sol_Audio_LoadAll();
 
 void Sol_Audio_Play(SolAudioId id);
 void Sol_Audio_PlayAt(SolAudioId id, vec3s pos);
+void Sol_Audio_SetVolume(float volume);
+void Sol_Audio_PlaySine(int i);
+void Sol_Audio_SineFreq(int i, float freq);
+void Sol_Audio_SetVolumeSine(int i, float volume);

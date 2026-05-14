@@ -82,7 +82,6 @@ int Sol_Render_Init(void *hwnd, void *hInstance);
 int Sol_Render_BuildPipes();
 
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height);
-void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Remake_Swapchain(uint32_t width, uint32_t height);
 
 void *Sol_GetDescriptorMapping(DescriptorId id);

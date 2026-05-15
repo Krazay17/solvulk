@@ -127,11 +127,11 @@ void Sol_Input_Update()
         sol_look.yaw -= mouseDeltaX * sol_look.sens;
         sol_look.pitch -= mouseDeltaY * sol_look.sens;
 
-        sol_look.yaw = fmodf(sol_look.yaw, 2.0f * GLM_PI);
-        if (sol_look.yaw > GLM_PI)
-            sol_look.yaw -= 2.0f * GLM_PI;
-        else if (sol_look.yaw < -GLM_PI)
-            sol_look.yaw += 2.0f * GLM_PI;
+        sol_look.yaw = fmodf(sol_look.yaw, 2.0f * GLM_PIf);
+        if (sol_look.yaw > GLM_PIf)
+            sol_look.yaw -= 2.0f * GLM_PIf;
+        else if (sol_look.yaw < -GLM_PIf)
+            sol_look.yaw += 2.0f * GLM_PIf;
 
         if (sol_look.pitch > MAX_PITCH)
             sol_look.pitch = MAX_PITCH;

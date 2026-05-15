@@ -5,16 +5,23 @@
 
 typedef struct Debuggers
 {
-    int characterCount[MAX_DEBUGS];
-    char text[MAX_DEBUGS][MAX_STR_LEN];
+    int   characterCount[MAX_DEBUGS];
+    char  text[MAX_DEBUGS][MAX_STR_LEN];
     float value[MAX_DEBUGS];
-    int count;
+    int   count;
 } Debuggers;
+
+// TODO FIGURE OUT THIS UNION THING
+// typedef union {
+//     float value;
+//     u32   value;
+// } DebugData;
+
 
 static Debuggers debuggers;
 
 static void DebugFPS(double dt);
-void Sol_Debug_Draw(double dt);
+void        Sol_Debug_Draw(double dt);
 
 void Sol_Debug_Add(const char *text, float value)
 {

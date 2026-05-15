@@ -37,6 +37,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_PICKUP]     = Sol_Pickup_Init,
     [WORLD_SYS_CAM]        = Sol_Cam_Init,
     [WORLD_SYS_VIEW]       = Sol_View_Init,
+    [WORLD_SYS_OWNER]      = Sol_Owner_Init,
 };
 
 World *World_Create(void)
@@ -74,7 +75,7 @@ void World_Step(World *world, double dt, double time)
 {
     if (!world || !world->worldActive)
         return;
-        
+
     for (int i = 0; i < world->prestepCount; i++)
     {
         world->prestepSystems[i](world, dt, time);
@@ -138,7 +139,7 @@ int Sol_Create_Ent(World *world)
             world->actives[i]                           = true;
             world->masks[i]                             = HAS_NONE;
             world->activeEntities[world->activeCount++] = i;
-            Sol_Debug_Add("Entities", world->activeCount);
+            Sol_Debug_Add("Entities", (float)world->activeCount);
             return i;
         }
     }

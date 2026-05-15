@@ -26,9 +26,7 @@ typedef struct SolCamera
 void Sol_Cam_Init(World *world);
 void Sol_Cam_Update(double dt);
 
-void Sol_Camera_Tick(World *world, double dt, double time, float alpha);
 void Sol_Cam_Arm_Update(World *world, vec3s head, double dt);
-void Sol_Crosshair_Draw(World *world, double dt, double time);
 
 SolCamera    *Sol_GetCamera();
 SolCameraArm *Sol_Cam_GetArm();

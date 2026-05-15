@@ -20,9 +20,9 @@
 #define MAX_PLAYING_SOUNDS 32
 
 static const char *audio_path[SOL_AUDIO_COUNT] = {
-    [SOL_AUDIO_BEEP1] = "Beep1.wav",  [SOL_AUDIO_BEEP2] = "Beep2.wav",         [SOL_AUDIO_DIGILOAD] = "DigiLoad.mp3",
-    [SOL_AUDIO_HIT] = "Hit.wav",      [SOL_AUDIO_MENUMUSIC] = "MenuMusic.mp3", [SOL_AUDIO_SPACEGUN] = "SpaceGun.mp3",
-    [SOL_AUDIO_WOONG] = "Woong1.wav",
+    [SOL_AUDIO_BEEP1] = "Beep1.wav",  [SOL_AUDIO_BEEP2] = "Beep2.wav",          [SOL_AUDIO_DIGILOAD] = "DigiLoad.mp3",
+    [SOL_AUDIO_HIT] = "Hit.wav",      [SOL_AUDIO_MENUMUSIC] = "MenuMusic.mp3",  [SOL_AUDIO_SPACEGUN] = "SpaceGun.mp3",
+    [SOL_AUDIO_WOONG] = "Woong1.wav", [SOL_AUDIO_FIREBALL] = "fireballUse.mp3", [SOL_AUDIO_DASH] = "dash.mp3",
 };
 
 typedef struct

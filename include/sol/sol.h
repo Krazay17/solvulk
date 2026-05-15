@@ -25,6 +25,7 @@
 #include "world.h"
 #include "components.h"
 
+#include "owner/owner.h"
 #include "combat/combat.h"
 #include "buff/buff.h"
 #include "view/view.h"

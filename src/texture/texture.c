@@ -14,7 +14,7 @@
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT] = "atlas.raw",
-    [SOL_TEXTURE_GFLAME] = "gflame.png",
+    [SOL_TEXTURE_GFLAME]  = "gflame.png",
 };
 SolTexture loaded_images[SOL_TEXTURE_COUNT];
 

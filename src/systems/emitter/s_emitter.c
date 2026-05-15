@@ -8,6 +8,8 @@
  */
 #include "sol_core.h"
 
+#include "emitter_i.h"
+
 #define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
 
@@ -56,7 +58,7 @@ void Sol_Emitter_Add(World *world, Emitter e)
         float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
         float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
 
-        float speed = 1.0f;
+        float speed = p->speed;
 
         p->vel.x = sinf(phi) * cosf(theta) * speed;
         p->vel.y = sinf(phi) * sinf(theta) * speed;

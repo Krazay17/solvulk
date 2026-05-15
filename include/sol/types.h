@@ -299,6 +299,7 @@ typedef enum
 
 typedef struct SolHit
 {
+    u32   source, target;
     vec3s pos, dir;
     float power;
     u32   damage;

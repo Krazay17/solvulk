@@ -33,6 +33,7 @@ static void Sol_View_Buff_Tick(World *world, double dt, double time)
                                                    .kind  = PARTICLE_GFLAME,
                                                    .ttl   = 1.0f,
                                                    .scale = 0.25f,
+                                                   .speed = 1.0f,
                                                },
                                        });
                 break;

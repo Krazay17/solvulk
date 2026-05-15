@@ -324,7 +324,7 @@ float Sol_Physx_GetSpeed(World *world, int id)
 float Sol_Physx_GetLatSpeed(World *world, int id)
 {
     vec3s vel = Sol_Physx_GetVel(world, id);
-    vel.y = 0;
+    vel.y     = 0;
     return glms_vec3_norm(vel);
 }
 

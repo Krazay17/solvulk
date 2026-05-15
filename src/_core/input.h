@@ -1,7 +1,7 @@
 #pragma once
 #include "sol/base.h"
 
-#define MAX_PITCH (GLM_PI_2 - 0.01f)
+#define MAX_PITCH (GLM_PI_2f - 0.01f)
 
 typedef enum
 {

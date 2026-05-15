@@ -19,7 +19,7 @@ void Claw_State_Update(World *world, int id, float dt)
 
 void Claw_State_Enter(World *world, int id)
 {
-    Sol_Audio_Play(SOL_AUDIO_SPACEGUN);
+    Sol_Audio_Play(SOL_AUDIO_FIREBALL);
 
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
@@ -34,7 +34,7 @@ void Claw_State_Enter(World *world, int id)
     float randG    = min + (float)rand() / (float)RAND_MAX * (max - min);
     float randB    = min + (float)rand() / (float)RAND_MAX * (max - min);
 
-    int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f),
+    int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f), id,
                                (ShapeDesc){.radius = randSize, .color = (vec4s){randR, randG, randB, 1}});
 
     AnimDesc desc = {

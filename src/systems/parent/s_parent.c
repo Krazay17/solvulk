@@ -2,7 +2,8 @@
 
 void Sol_Parent_Init(World *world)
 {
-    world->stepSystems[world->stepCount++] = Sol_Parent_Step;
+    WAddStep(world) = Sol_Parent_Step;
+    world->parents  = calloc(MAX_ENTS, sizeof(CompParent));
 }
 
 void Sol_Parent_Add(World *world, int id, CompParent desc)
@@ -23,7 +24,7 @@ void Sol_Parent_Step(World *world, double dt, double time)
         CompParent *parent = &world->parents[id];
         CompXform  *xform  = &world->xforms[id];
 
-        xform->pos = vecAdd(parent->localOffset, world->xforms[parent->parentId].pos);
+        xform->pos  = vecAdd(parent->localOffset, world->xforms[parent->parentId].pos);
         xform->quat = glms_quat_add(parent->localQuat, world->xforms[parent->parentId].quat);
     }
 }

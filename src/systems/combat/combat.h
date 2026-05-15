@@ -7,6 +7,5 @@ typedef struct
 }CombatDesc;
 
 void Sol_Combat_Init(World *world);
-void Sol_Combat_Step(World *world, double dt, double time);
 
-void Sol_Combat_Add(World *world, int id, CombatDesc desc);
+void Sol_Contact_Add(World *world, int id, CombatDesc desc);

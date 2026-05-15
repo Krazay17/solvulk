@@ -9,7 +9,7 @@
 
 #include "event.h"
 
-#define MAX_EVENTS 12
+#define MAX_EVENTS 256
 
 void Sol_Event_Init(World *w)
 {

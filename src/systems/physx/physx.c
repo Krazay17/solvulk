@@ -147,6 +147,13 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, result))
                 {
                     Resolve_Dynamic_Pair(body, xform, other_body, other_xform, result);
+                    Sol_Event_Add(world, (SolEvent){.kind         = EVENT_COLLISION,
+                                                    .as.collision = {
+                                                        .normal = result->normal,
+                                                        .pos    = result->point,
+                                                        .entA   = id,
+                                                        .entB   = otherID,
+                                                    }});
                     result->entId = otherID;
                 }
             }

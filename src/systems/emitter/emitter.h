@@ -20,7 +20,5 @@ typedef struct Emitter
 } Emitter;
 
 void Sol_Emitter_Init(World *world);
+
 void Sol_Emitter_Add(World *world, Emitter e);
-void Emitter_Step(World *world, double dt, double time);
-void Emitter_Tick(World *world, double dt, double time);
-void Emitter_Draw(World *world, double dt, double time);

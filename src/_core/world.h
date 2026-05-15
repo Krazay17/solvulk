@@ -31,7 +31,8 @@ typedef enum
     HAS_EVENT      = (1 << 13),
     HAS_AUDIO      = (1 << 14),
     HAS_PARENT     = (1 << 15),
-    HAS_COMBAT     = (1 << 16),
+    HAS_CONTACT    = (1 << 16),
+    HAS_OWNER      = (1 << 17),
 } CompBits;
 
 typedef enum
@@ -49,6 +50,7 @@ typedef enum
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
     WORLD_SYS_PARENT,
+    WORLD_SYS_OWNER,
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
     WORLD_SYS_COMBAT,
@@ -75,7 +77,7 @@ typedef bool     Active;
 typedef uint32_t Mask;
 
 typedef struct CompParent     CompParent;
-typedef struct CompCombat     CompCombat;
+typedef struct CompContact    CompContact;
 typedef struct CompAudio      CompAudio;
 typedef struct CompTimer      CompTimer;
 typedef struct CompXform      CompXform;
@@ -93,6 +95,7 @@ typedef struct SolEvents      SolEvents;
 typedef struct WorldPhysx     WorldPhysx;
 typedef struct WorldLines     WorldLines;
 typedef struct SolEmitters    SolEmitters;
+typedef struct CompOwner      CompOwner;
 
 typedef struct CompFlags
 {
@@ -127,7 +130,8 @@ typedef struct World
     CompController *controllers;
     CompBuff       *buffs;
     CompAbility    *abilities;
-    CompCombat     *combats;
+    CompContact    *contacts;
+    CompOwner      *owners;
 
     SolEvents   *events;
     WorldPhysx  *spatial;

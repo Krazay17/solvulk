@@ -98,7 +98,6 @@ void Sol_Buff_Step(World *world, double dt, double time)
                 {
                     b->accum -= interval;
                     Sol_Vital_Damage(world, id, 2);
-                    printf("Fire tick!\n");
                 }
                 break;
             default:

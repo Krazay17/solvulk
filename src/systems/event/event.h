@@ -20,6 +20,7 @@ typedef struct
             int   attacker;
             float damage;
         } Death;
+        SolHit hit;
     } as;
 } SolEvent;
 

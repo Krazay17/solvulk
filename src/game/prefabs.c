@@ -51,7 +51,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     return id;
 }
 
-int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, ShapeDesc desc)
+int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc desc)
 {
     int id = Sol_Create_Ent(world);
     Sol_Shape_Add(world, id, desc);
@@ -67,7 +67,8 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, ShapeDesc desc)
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
-    Sol_Combat_Add(world, id, (CombatDesc){.dealsdamage = true});
+    Sol_Contact_Add(world, id, (CombatDesc){.dealsdamage = true});
+    Sol_Owner_Add(world, id, ownerId);
 
     return id;
 }

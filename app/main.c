@@ -29,7 +29,7 @@ LRESULT CALLBACK    WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 // HOT REALOAD
 #define SOL_FUNC(ret, name, ...)                                                                                       \
-    typedef ret (*name##_fn)(__VA_ARGS__);                                                                             \
+    typedef ret (*name##_fn)(__VA_ARGS__);                                                                            \
     name##_fn pfn_##name;
 #include "sol/functions.inc"
 #undef SOL_FUNC

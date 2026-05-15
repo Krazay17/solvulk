@@ -13,7 +13,7 @@ ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
     [SHAPE3_CAP][SHAPE3_CAP] = Collide_Sphere_Sphere,
     [SHAPE3_CAP][SHAPE3_SPH] = Collide_Sphere_Sphere,
-    [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Sphere,
+    [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
 };
 
 RaycastTest ray_shape_test[SHAPE3_CNT] = {
@@ -719,6 +719,55 @@ bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, Com
     vec3s     *pos = &aXform->pos;
 
     // TODO
+
+    return true;
+}
+
+bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
+{
+    // a = sphere, b = capsule
+    // Capsule is vertical: center at bXform->pos, height = dims.y (total), radius = dims.x.
+    // The "spine" (central line segment) runs from bottom hemisphere center to top hemisphere center.
+    // Half the height minus the radius gives the spine half-length.
+
+    float capsuleRadius   = bBody->dims.x;
+    float capsuleHalfSpan = (bBody->dims.y * 0.5f) - capsuleRadius;
+    if (capsuleHalfSpan < 0.0f) capsuleHalfSpan = 0.0f;  // degenerate: capsule is just a sphere
+
+    // Spine endpoints (assumes capsule is Y-axis aligned)
+    vec3s spineTop    = {{bXform->pos.x, bXform->pos.y + capsuleHalfSpan, bXform->pos.z}};
+    vec3s spineBottom = {{bXform->pos.x, bXform->pos.y - capsuleHalfSpan, bXform->pos.z}};
+
+    // Find closest point on the spine to the sphere center
+    vec3s spineDir   = glms_vec3_sub(spineTop, spineBottom);
+    vec3s sphereDir  = glms_vec3_sub(aXform->pos, spineBottom);
+    
+    float spineLenSq = glms_vec3_dot(spineDir, spineDir);
+    float t;
+    if (spineLenSq < 0.0001f) {
+        t = 0.0f;   // degenerate spine, just use bottom point
+    } else {
+        t = glms_vec3_dot(sphereDir, spineDir) / spineLenSq;
+        t = fmaxf(0.0f, fminf(1.0f, t));   // clamp to [0, 1]
+    }
+    
+    vec3s closestOnSpine = glms_vec3_add(spineBottom, glms_vec3_scale(spineDir, t));
+
+    // Now it's sphere-vs-sphere between aXform->pos and closestOnSpine
+    vec3s delta     = glms_vec3_sub(aXform->pos, closestOnSpine);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aBody->dims.x + capsuleRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    hit->normal      = glms_vec3_scale(delta, 1.0f / distance);
+    hit->penetration = radiusSum - distance;
+
+    // Contact point on the capsule's surface, facing the sphere
+    hit->point = glms_vec3_add(closestOnSpine, glms_vec3_scale(hit->normal, capsuleRadius));
 
     return true;
 }

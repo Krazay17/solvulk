@@ -8,13 +8,14 @@
 
 typedef struct
 {
+    vec3s    dir, pos;
     BuffKind kind;
-    float    duration, accum, freq;
-    u32      inf;
+    float    duration, accum, initialDuration;
+    float    freq, power;
+    u32      inf, source;
 } Buff;
 typedef struct CompBuff
 {
-    Buff   buffs[MAX_BUFFS];
-    u32    count;
-    SolHit lasthit;
+    Buff buffs[MAX_BUFFS];
+    u32  count;
 } CompBuff;

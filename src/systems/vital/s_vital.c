@@ -33,7 +33,7 @@ void Sol_Vital_Add(World *world, int id, VitalDesc desc)
         .maxHealth = desc.maxHealth,
         .maxEnergy = desc.maxEnergy,
         .maxMana   = desc.maxMana,
-        .health    = 50,
+        .health    = desc.maxHealth,
         .energy    = desc.maxEnergy,
         .mana      = desc.maxMana,
     };
@@ -85,6 +85,7 @@ void Damage(World *world, int id, CompVital *vital, SolHit hit)
 
 void Die(World *world, int id, CompVital *vital)
 {
+    Sol_Destroy_Ent(world, id);
 }
 
 void Sol_Vital_Damage(World *world, int id, u32 amnt)
@@ -102,11 +103,11 @@ void Sol_Vital_Damage(World *world, int id, u32 amnt)
     }
 }
 
-float Sol_Vital_GetHealth(World *world, int id)
+u32 Sol_Vital_GetHealth(World *world, int id)
 {
     return world->vitals[id].health;
 }
-float Sol_Vital_GetMaxHealth(World *world, int id)
+u32 Sol_Vital_GetMaxHealth(World *world, int id)
 {
     return world->vitals[id].maxHealth;
 }

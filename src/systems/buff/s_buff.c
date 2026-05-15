@@ -17,9 +17,13 @@ void Sol_Buff_Init(World *world)
     world->buffs = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_Add(World *world, int id, BuffDesc desc)
+void Sol_Buff_Clear(World *world, int id)
 {
+    memset(&world->buffs[id], 0, sizeof(CompBuff));
+}
 
+void Sol_Buff_Add(World *world, int id, BuffDesc desc, const SolHit *hit)
+{
     CompBuff *buff = &world->buffs[id];
     if (buff->count >= MAX_BUFFS)
         return;
@@ -50,8 +54,21 @@ void Sol_Buff_Add(World *world, int id, BuffDesc desc)
     }
 // fallthrough: add buff if dont have
 addAnotherBuff:
-    buff->buffs[buff->count++] =
-        (Buff){.kind = desc.kind, .duration = desc.duration, .inf = infinite, .freq = desc.freq};
+    Buff new_buff = {.kind = desc.kind, .duration = desc.duration, .inf = infinite, .freq = desc.freq};
+    if (hit)
+    {
+        switch (desc.kind)
+        {
+        case BUFFKIND_KNOCKBACK:
+            new_buff.dir   = hit->dir;
+            new_buff.power = hit->power;
+            break;
+        case BUFFKIND_FIRE:
+            new_buff.source = hit->source;
+            break;
+        }
+    }
+    buff->buffs[buff->count++] = new_buff;
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
@@ -99,6 +116,9 @@ void Sol_Buff_Step(World *world, double dt, double time)
                     b->accum -= interval;
                     Sol_Vital_Damage(world, id, 2);
                 }
+                break;
+            case BUFFKIND_KNOCKBACK:
+                Sol_Physx_SetVel(world, id, vecSca(b->dir, b->power));
                 break;
             default:
                 printf("no buff kind\n");

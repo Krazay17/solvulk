@@ -24,5 +24,5 @@ typedef struct
 } UiDesc;
 
 void Sol_Ui_Init(World *world);
+
 void Sol_Ui_Add(World *world, int id, UiDesc desc);
-void Sol_Ui_Draw(World *world, double dt, double time);

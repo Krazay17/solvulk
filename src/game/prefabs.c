@@ -7,6 +7,7 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
     dims   = glms_vec2_scale(dims, scale);
     int id = Sol_Create_Ent(world);
     Sol_Xform_Add(world, id, pos);
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f});
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -18,7 +19,6 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
                  });
 
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f});
     Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
     Sol_Ability_Add(world, id, (AbilityDesc){0});
 
@@ -32,8 +32,6 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WORLD1});
     Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
-
-    // Sol_Interact_Add(world, id);
 
     return id;
 }
@@ -67,7 +65,19 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc d
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
-    Sol_Contact_Add(world, id, (CombatDesc){.dealsdamage = true});
+
+    static BuffDesc buffs[] = {
+        {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
+        {.kind = BUFFKIND_FIRE, .duration = 2.0f, .freq = 0.25f},
+    };
+    Sol_Contact_Add(world, id,
+                    (ContactDesc){.hit = (SolHit){
+                                      .damage    = 10,
+                                      .kind      = DAMAGEKIND_FIRE,
+                                      .buffs     = buffs,
+                                      .power     = 25.0f,
+                                      .buffcount = 2,
+                                  }});
     Sol_Owner_Add(world, id, ownerId);
 
     return id;
@@ -97,11 +107,12 @@ int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId
 
 int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 {
-    vec2s dims = {.x = 0.5f, .y = 2.8f};
+    vec2s dims = {.x = 0.5f, .y = 3.0f};
 
     dims   = glms_vec2_scale(dims, scale);
     int id = Sol_Create_Ent(world);
     Sol_Xform_Add(world, id, pos);
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -111,9 +122,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
                      .restitution = 0.1f,
                      .group       = 1,
                  });
-
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_WIZARD});
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
     Sol_Ability_Add(world, id, (AbilityDesc){0});
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
@@ -146,4 +155,3 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 
     return id;
 }
-

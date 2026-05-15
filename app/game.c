@@ -11,7 +11,7 @@ static void SpawnPlayer(int flags, void *data)
 
     player3d = Sol_Prefab_Player(gameWorld, (vec3s){0, 5, 0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
-    Sol_Buff_Add(gameWorld, player3d, (BuffDesc){.duration = 10.0f, .kind = BUFFKIND_FIRE, .freq = 0.5f});
+    Sol_Buff_Add(gameWorld, player3d, (BuffDesc){.duration = 2.0f, .kind = BUFFKIND_FIRE, .freq = 0.5f}, NULL);
 }
 
 struct MakeWiz
@@ -19,7 +19,6 @@ struct MakeWiz
     World *world;
     u32    amount;
 };
-
 void MakeAWizard(int flags, void *data)
 {
     static int      posInc;

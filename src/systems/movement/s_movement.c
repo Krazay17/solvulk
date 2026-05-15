@@ -79,6 +79,7 @@ void Sol_Movement_Add(World *world, int id, MovementDesc desc)
     world->masks[id] |= HAS_MOVEMENT;
     CompMovement *movementComp = &world->movements[id];
     movementComp->configId     = desc.configId;
+    Sol_Movement_SetState(world, id, MOVE_IDLE);
 }
 
 void Sol_Movement_Prestep(World *world, double dt, double time)

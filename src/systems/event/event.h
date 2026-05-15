@@ -1,12 +1,14 @@
 #pragma once
 #include "sol/types.h"
+#include "combat/combat_types.h"
 
 typedef enum
 {
     EVENT_COLLISION,
+    EVENT_HIT,
     EVENT_DEATH,
 } EventKind;
-typedef struct
+typedef struct SolEvent
 {
     EventKind kind;
     union {

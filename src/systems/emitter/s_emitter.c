@@ -8,8 +8,6 @@
  */
 #include "sol_core.h"
 
-#include "emitter_i.h"
-
 #define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
 
@@ -26,6 +24,8 @@ typedef struct SolEmitters
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
+static void      Emitter_Tick(World *world, double dt, double time);
+static void      Emitter_Draw(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
@@ -68,11 +68,7 @@ void Sol_Emitter_Add(World *world, Emitter e)
         s->emitter_count++;
 }
 
-void Emitter_Step(World *world, double dt, double time)
-{
-}
-
-void Emitter_Tick(World *world, double dt, double time)
+static void Emitter_Tick(World *world, double dt, double time)
 {
     if (!world->emitters)
         return;
@@ -121,27 +117,7 @@ void Emitter_Tick(World *world, double dt, double time)
     Particle_Tick(world, dt, time);
 }
 
-static void Particle_Tick(World *world, double dt, double time)
-{
-    float        fdt   = (float)dt;
-    SolEmitters *s     = world->emitters;
-    int          write = 0;
-
-    for (int i = 0; i < s->particle_count; i++)
-    {
-        Particle *p = &s->particle[i];
-        p->ttl -= fdt;
-        if (p->ttl <= 0)
-            continue;
-        p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
-        p->rot += p->rotspeed * dt;
-
-        s->particle[write++] = *p;
-    }
-    s->particle_count = write;
-}
-
-void Emitter_Draw(World *world, double dt, double time)
+static void Emitter_Draw(World *world, double dt, double time)
 {
     float        fdt = (float)dt;
     SolEmitters *s   = world->emitters;
@@ -174,6 +150,26 @@ void Emitter_Draw(World *world, double dt, double time)
             });
         }
     }
+}
+
+static void Particle_Tick(World *world, double dt, double time)
+{
+    float        fdt   = (float)dt;
+    SolEmitters *s     = world->emitters;
+    int          write = 0;
+
+    for (int i = 0; i < s->particle_count; i++)
+    {
+        Particle *p = &s->particle[i];
+        p->ttl -= fdt;
+        if (p->ttl <= 0)
+            continue;
+        p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
+        p->rot += p->rotspeed * dt;
+
+        s->particle[write++] = *p;
+    }
+    s->particle_count = write;
 }
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init)

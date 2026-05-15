@@ -1,5 +1,6 @@
-#include "buff/buff_i.h"
 #include "sol_core.h"
+
+#include "buff/buff_i.h"
 
 static void Sol_View_Buff_Tick(World *world, double dt, double time);
 static void Sol_View_Buff_Draw(World *world, double dt, double time);

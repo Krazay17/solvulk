@@ -296,11 +296,3 @@ typedef enum
     INTERACT_TOGGLED    = (1 << 3),
     INTERACT_TOGGLEABLE = (1 << 4),
 } InteractState;
-
-typedef struct SolHit
-{
-    u32   source, target;
-    vec3s pos, dir;
-    float power;
-    u32   damage;
-} SolHit;

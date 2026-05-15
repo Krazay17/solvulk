@@ -2,14 +2,14 @@
 
 #include "vital/vital.h"
 
-static Sol_View_Healthbar_Draw(World *world, double dt, double time);
+static Healthbar_Draw(World *world, double dt, double time);
 
 void Sol_View_Healthbar(World *world)
 {
-    WAdd3d(world) = Sol_View_Healthbar_Draw;
+    WAdd3d(world) = Healthbar_Draw;
 }
 
-static Sol_View_Healthbar_Draw(World *world, double dt, double time)
+static Healthbar_Draw(World *world, double dt, double time)
 {
     int required = HAS_VITAL;
     int count    = world->activeCount;
@@ -21,9 +21,9 @@ static Sol_View_Healthbar_Draw(World *world, double dt, double time)
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
         xform.pos.y += Sol_Physx_GetDims(world, id).y - 1.0f;
 
-        float health    = Sol_Vital_GetHealth(world, id);
-        float maxHealth = Sol_Vital_GetMaxHealth(world, id);
-        float fill      = maxHealth > 0 ? health / maxHealth : 0.0f;
+        u32   health    = Sol_Vital_GetHealth(world, id);
+        u32 maxHealth = Sol_Vital_GetMaxHealth(world, id);
+        float fill      = maxHealth > 0 ? (float)health / (float)maxHealth : 0.0f;
 
         Sol_Render_PushBillboard((BillboardDesc){
             .kind   = BILLBOARD_HEALTHBAR,

@@ -35,10 +35,11 @@ typedef struct CompUi
     vec4s borderColor;
 } CompUi;
 
+static void Button_Tick(World *world, double dt, double time);
+
 void Sol_Ui_Init(World *world)
 {
-    world->draw2dSystems[world->draw2dCount++] = Sol_Ui_Draw;
-
+    WAdd2d(world)     = Button_Tick;
     world->uiElements = calloc(MAX_ENTS, sizeof(CompUi));
 }
 
@@ -60,7 +61,7 @@ void Sol_Ui_Add(World *world, int id, UiDesc desc)
     strncpy_s(ui->text, sizeof(ui->text), desc.text, 64);
 }
 
-void Sol_Ui_Draw(World *world, double dt, double time)
+static void Button_Tick(World *world, double dt, double time)
 {
     int   required = HAS_XFORM | HAS_UIVIEW;
     float fdt      = (float)dt;
@@ -96,7 +97,6 @@ void Sol_Ui_Draw(World *world, double dt, double time)
                                  view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
         Sol_Render_DrawRectangle(rect, drawCol, 0);
-        
 
         // Border
         if (view->borderThickness > 0 || isHovered)

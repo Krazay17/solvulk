@@ -6,6 +6,7 @@
 
 #define SPATIAL_NULL 0xFFFFFFFF
 
+// dims.x = radius/width, dims.y = height
 typedef struct CompBody
 {
     vec3s  vel, impulse, force, groundNormal, dims;
@@ -159,6 +160,8 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
 bool Collide_Box_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
 void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit);
 
+
+bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);

@@ -25,6 +25,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_XFORM]      = Sol_Xform_Init,
     [WORLD_SYS_INTERACT]   = Sol_Interact_Init,
     [WORLD_SYS_MOVEMENT]   = Sol_Movement_Init,
+    [WORLD_SYS_CONTACT]    = Sol_Contact_Init,
     [WORLD_SYS_COMBAT]     = Sol_Combat_Init,
     [WORLD_SYS_ABILITY]    = Sol_Ability_Init,
     [WORLD_SYS_BUFF]       = Sol_Buff_Init,
@@ -38,6 +39,28 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_CAM]        = Sol_Cam_Init,
     [WORLD_SYS_VIEW]       = Sol_View_Init,
     [WORLD_SYS_OWNER]      = Sol_Owner_Init,
+};
+static SystemClear clear_system[WORLD_SYS_COUNT] = {
+    // [WORLD_SYS_PHYSX]      = Sol_Physx_Clear,
+    // [WORLD_SYS_PARENT]     = Sol_Parent_Clear,
+    // [WORLD_SYS_CONTROLLER] = Sol_Controller_Clear,
+    // [WORLD_SYS_XFORM]      = Sol_Xform_Clear,
+    // [WORLD_SYS_INTERACT]   = Sol_Interact_Clear,
+    // [WORLD_SYS_MOVEMENT]   = Sol_Movement_Clear,
+    // [WORLD_SYS_CONTACT]    = Sol_Contact_Clear,
+    // [WORLD_SYS_COMBAT]     = Sol_Combat_Clear,
+    // [WORLD_SYS_ABILITY]    = Sol_Ability_Clear,
+    [WORLD_SYS_BUFF] = Sol_Buff_Clear,
+    // [WORLD_SYS_VITAL]      = Sol_Vital_Clear,
+    // [WORLD_SYS_MODEL]      = Sol_Model_Clear,
+    // [WORLD_SYS_UI]         = Sol_Ui_Clear,
+    // [WORLD_SYS_LINE]       = Sol_Line_Clear,
+    // [WORLD_SYS_EMITTER]    = Sol_Emitter_Clear,
+    // [WORLD_SYS_SHAPE]      = Sol_Shape_Clear,
+    // [WORLD_SYS_PICKUP]     = Sol_Pickup_Clear,
+    // [WORLD_SYS_CAM]        = Sol_Cam_Clear,
+    // [WORLD_SYS_VIEW]       = Sol_View_Clear,
+    // [WORLD_SYS_OWNER]      = Sol_Owner_Clear,
 };
 
 World *World_Create(void)
@@ -161,11 +184,17 @@ void Sol_Destroy_Ent(World *world, int id)
     */
     world->actives[id] = false;
     world->masks[id]   = 0;
+    for (int i = 0; i < WORLD_SYS_COUNT; i++)
+    {
+        if (clear_system[i])
+            clear_system[i](world, id);
+    }
     for (int i = 0; i < world->activeCount; i++)
     {
         if (world->activeEntities[i] == id)
         {
             world->activeEntities[i] = world->activeEntities[--world->activeCount];
+            Sol_Debug_Add("Entities", (float)world->activeCount);
             break;
         }
     }

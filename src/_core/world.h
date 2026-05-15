@@ -33,6 +33,7 @@ typedef enum
     HAS_PARENT     = (1 << 15),
     HAS_CONTACT    = (1 << 16),
     HAS_OWNER      = (1 << 17),
+    COMPONENT_COUNT,
 } CompBits;
 
 typedef enum
@@ -53,6 +54,7 @@ typedef enum
     WORLD_SYS_OWNER,
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
+    WORLD_SYS_CONTACT,
     WORLD_SYS_COMBAT,
     WORLD_SYS_VITAL,
     WORLD_SYS_MOVEMENT,
@@ -71,13 +73,13 @@ typedef enum
 } WorldSystem;
 
 typedef void (*SystemInit)(World *);
+typedef void (*SystemClear)(World *, int);
 typedef void (*SystemFunc)(World *, double, double);
 
 typedef bool     Active;
 typedef uint32_t Mask;
 
 typedef struct CompParent     CompParent;
-typedef struct CompContact    CompContact;
 typedef struct CompAudio      CompAudio;
 typedef struct CompTimer      CompTimer;
 typedef struct CompXform      CompXform;
@@ -96,6 +98,7 @@ typedef struct WorldPhysx     WorldPhysx;
 typedef struct WorldLines     WorldLines;
 typedef struct SolEmitters    SolEmitters;
 typedef struct CompOwner      CompOwner;
+typedef struct CompContact    CompContact;
 
 typedef struct CompFlags
 {
@@ -130,8 +133,8 @@ typedef struct World
     CompController *controllers;
     CompBuff       *buffs;
     CompAbility    *abilities;
-    CompContact    *contacts;
     CompOwner      *owners;
+    CompContact    *contacts;
 
     SolEvents   *events;
     WorldPhysx  *spatial;

@@ -32,7 +32,7 @@ static const SolActions action_binds[SOL_KEY_COUNT] = {
 
 static void  LocalTick(World *world, int id, double dt, double time);
 static void  AiTick(World *world, int id, double dt, double time);
-static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir);
+static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
 
 void Sol_Controller_Init(World *world)
@@ -81,12 +81,25 @@ static void LocalTick(World *world, int id, double dt, double time)
     vec3s head = Sol_Physx_GetHeadPos(world, id);
     Sol_Cam_Arm_Update(world, head, dt);
 
-    controller->yaw        = look->yaw;
-    world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+    if (glms_vec3_norm(controller->wishdir) > 0.001f)
+    {
+        float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
+        versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
+
+        // Smoothly turn the model toward the movement direction
+        float turn_speed = 10.0f; // Higher numbers = faster turns
+        float factor     = 1.0f - expf(-turn_speed * (float)dt);
+
+        world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
+    }
+
+    controller->yaw = look->yaw;
+    if (Sol_Input_GetMouse().locked)
+        world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
 
     controller->pitch    = look->pitch;
     controller->lookdir  = look->lookdir;
-    controller->wishdir  = GetWishDir3(controller->actionState, look->lookdir, WORLD_UP);
+    controller->wishdir  = CalcWishdir3(controller->actionState, look->lookdir, WORLD_UP);
     controller->wishdir2 = GetWishDir2(controller->actionState);
 
     controller->aimHitEnt = -1;
@@ -160,7 +173,7 @@ static void AiTick(World *world, int id, double dt, double time)
         controller->actionState &= ~ACTION_JUMP;
 }
 
-static vec3s GetWishDir3(uint32_t action, vec3s lookdir, vec3s updir)
+static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
 {
     vec3s wishdir  = {0, 0, 0};
     vec3s flatdir  = lookdir;
@@ -201,6 +214,11 @@ vec3s Sol_Controller_GetAimPos(World *world, int id)
     return vecAdd(controller->aimpos, vecSca(controller->aimdir, 0.5f));
 }
 
+vec3s Sol_Controller_GetWishdir(World *world, int id)
+{
+    return world->controllers[id].wishdir;
+}
+
 SolActions Sol_GetActions(World *world, int id)
 {
     return world->controllers[id].actionState;
@@ -238,19 +256,4 @@ float Sol_GetYaw(World *world, int id)
 float Sol_GetPitch(World *world, int id)
 {
     return world->controllers[id].pitch;
-}
-
-StrafeDir Sol_GetStrafedir(World *world, int id, float xIn, float zIn)
-{
-    float x = xIn ? xIn : world->controllers[id].wishdir.x;
-    float z = zIn ? zIn : world->controllers[id].wishdir.z;
-
-    float xB = world->controllers[id].lookdir.x;
-    float zB = world->controllers[id].lookdir.z;
-
-    float angle = atan2f(x, z) - atan2f(xB, zB);
-    if (angle < 0)
-        angle += 2.0f * M_PI;
-
-    return (int)((angle / (M_PI / 2.0f)) + 0.5f) % 4;
 }

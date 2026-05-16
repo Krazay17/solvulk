@@ -36,8 +36,9 @@ void ADash_State_Enter(World *world, int id)
     data->dir.y = 0;
     data->dir   = glms_vec3_normalize(data->dir);
 
+    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
     AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE};
-    switch (Get_StrafeDir(data->dir.x, data->dir.z, Sol_GetLookdir(world, id).x, Sol_GetLookdir(world, id).z))
+    switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
     {
     case STRAFE_FWD:
         desc.anim = ANIM_DASH_FWD;

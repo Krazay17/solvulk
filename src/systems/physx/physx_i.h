@@ -5,6 +5,30 @@
 #include "physx.h"
 
 #define SPATIAL_NULL 0xFFFFFFFF
+#define MAX_CONTACTS_PER_ENTITY 8
+
+typedef struct CompBody  CompBody;
+typedef struct CompXform CompXform;
+typedef struct SolModel  SolModel;
+
+typedef struct SolContact SolContact;
+typedef bool (*ShapeTriTest)(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit);
+typedef bool (*ShapePairTest)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb, SolContact *hit);
+
+typedef float (*RaycastTest)(SolRay ray, CompXform *xform, CompBody *body, vec3s *normal);
+
+struct SolContact
+{
+    u32   entId;
+    vec3s pos, normal;
+    float penetration;
+    bool  didCollide;
+};
+typedef struct
+{
+    SolContact records[MAX_CONTACTS_PER_ENTITY];
+    u32        count;
+} EntityContacts;
 
 // dims.x = radius/width, dims.y = height
 typedef struct CompBody
@@ -16,24 +40,6 @@ typedef struct CompBody
     Shape3 shape;
     u8     group;
 } CompBody;
-
-typedef struct CompBody CompBody;
-typedef struct CompXform CompXform;
-typedef struct SolModel SolModel;
-
-typedef struct SolContact SolContact;
-typedef bool (*ShapeTriTest)(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit);
-typedef bool (*ShapePairTest)(CompBody *aa, CompXform *ab, CompBody *ba, CompXform *bb, SolContact *hit);
-
-typedef float (*RaycastTest)(SolRay ray, CompXform *xform, CompBody *body, vec3s *normal);
-
-struct SolContact
-{
-    u32 entId;
-    vec3s point, normal;
-    float penetration;
-    bool  didCollide;
-};
 
 typedef struct GridWalker
 {
@@ -115,7 +121,6 @@ typedef struct
 } SubstepData;
 
 void Spatial_Add(World *world, int id, CompBody *body);
-void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform *xform, bool hash);
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size);
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform);
@@ -130,6 +135,8 @@ void SpatialTable_Clear(SpatialTable *table);
 void SpatialTable_Free(SpatialTable *table);
 void SpatialTable_Insert(SpatialTable *table, u32 hash, u32 value);
 void SpatialTable_Compact(SpatialTable *table);
+
+int Spatial_QueryEntsAABB(SpatialTable *table, vec3s min, vec3s max, int *candidates, int maxCount);
 
 // Per-entity substep count based on speed
 SubstepData Substep_Get(CompBody *body, float fdt);
@@ -151,8 +158,9 @@ float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
 void         Ground_Trace(World *world, int count, float fdt);
 
-void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, SolContact *hit);
-void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform, SolContact *contact);
+void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, CompXform *xform,
+                            EntityContacts *contacts);
+void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform, EntityContacts *contacts);
 
 bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit);
 bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
@@ -160,11 +168,22 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
 bool Collide_Box_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *col);
 void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit);
 
+bool SphereCast_VsSphere(vec3s rayPos, vec3s rayDir, float rayLen, float castRadius, vec3s spherePos,
+                         float sphereRadius, SolRayResult *hit);
+bool SphereCast_VsCapsule(vec3s rayPos, vec3s rayDir, float rayLen, float castRadius, vec3s capPos, float capRadius,
+                          float capHeight, SolRayResult *hit);
 
-bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Capsule_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Capsule_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+void Add_Contact(EntityContacts *c, u32 otherId, vec3s normal, vec3s pos);
+
+void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
+                                    vec3s p2, vec3s q2, // segment B: p2 → q2
+                                    vec3s *outA, vec3s *outB);
 
 static inline u32 hash_coords(int x, int y, int z)
 {

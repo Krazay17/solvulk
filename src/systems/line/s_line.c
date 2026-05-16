@@ -15,9 +15,13 @@ typedef struct WorldLines
     int     count;
 } WorldLines;
 
+static void Line_Tick(World *world, double dt, double time);
+static void Line_Draw(World *world, double dt, double time);
+
 void Sol_Line_Init(World *world)
 {
-    world->draw3dSystems[world->draw3dCount++] = Sol_Line_Draw;
+    WAddTick(world) = Line_Tick;
+    WAdd3d(world)   = Line_Draw;
 
     world->lines = calloc(1, sizeof(WorldLines));
 }
@@ -32,7 +36,7 @@ void Sol_Line_Add(World *world, LineDesc desc)
     lines->lines[lines->count++] = (SolLine){desc.a, desc.b, desc.colorA, desc.colorB, desc.ttl};
 }
 
-void Sol_Line_Tick(World *world, double dt, double time)
+static void Line_Tick(World *world, double dt, double time)
 {
     WorldLines *lines = world->lines;
     int         write = 0;
@@ -47,7 +51,7 @@ void Sol_Line_Tick(World *world, double dt, double time)
     lines->count = write;
 }
 
-void Sol_Line_Draw(World *world, double dt, double time)
+static void Line_Draw(World *world, double dt, double time)
 {
     WorldLines *lines = world->lines;
     if (lines->count == 0)

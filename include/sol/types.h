@@ -12,7 +12,7 @@
 #endif
 
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
-#define WORLD_FORWARD (vec3s){0, 0, -1.0f}
+#define WORLD_FORWARD (vec3s){0, 0, 1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
 
@@ -164,7 +164,7 @@ typedef enum
 {
     EFLAG_PICKUPABLE = (1 << 0),
     EFLAG_PICKEDUP   = (1 << 1),
-} EntFlags;
+} EFlag;
 
 typedef struct SolXform
 {

@@ -18,6 +18,7 @@ typedef struct SolCamera
     mat4  viewProj;
     vec3  position;
     vec3  target;
+    vec3  up;
     float fov;
     float nearClip;
     float farClip;

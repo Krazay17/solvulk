@@ -38,12 +38,3 @@ vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float 
     }
     return vel;
 }
-
-StrafeDir Get_StrafeDir(float x, float z, float xB, float zB)
-{
-    float angle = atan2f(x, z) - atan2f(xB, zB);
-    if (angle < 0)
-        angle += 2.0f * M_PI;
-
-    return (int)((angle / (M_PI / 2.0f)) + 0.5f) % 4;
-}

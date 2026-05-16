@@ -16,7 +16,11 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
             return;
 
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
-    switch (Sol_GetStrafedir(world, id, 0, 0))
+    float    x    = Sol_Controller_GetWishdir(world, id).x;
+    float    z    = Sol_Controller_GetWishdir(world, id).z;
+    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
+
+    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
     {
     case STRAFE_FWD:
         desc.anim = ANIM_WALK_FWD;

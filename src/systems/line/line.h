@@ -9,6 +9,5 @@ typedef struct
 } LineDesc;
 
 void Sol_Line_Init(World *world);
+
 void Sol_Line_Add(World *world, LineDesc desc);
-void Sol_Line_Tick(World *world, double dt, double time);
-void Sol_Line_Draw(World *world, double dt, double time);

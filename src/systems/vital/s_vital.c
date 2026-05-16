@@ -86,10 +86,28 @@ void Damage(World *world, int id, CompVital *vital, SolHit hit)
 void Die(World *world, int id, CompVital *vital)
 {
     Sol_Destroy_Ent(world, id);
+    Sol_Emitter_Add(world, (Emitter){
+        .burst = 80,
+        .pos = Sol_Xform_GetPos(world, id),
+        .particle = (Particle){
+            .color = {
+                .r = 1.0f,
+                .g = 0,
+                .b = 0,
+                .a = 0.5f
+            },
+            .kind = PARTICLE_ORB,
+            .scale = 0.5f,
+            .ttl = 0.5f,
+            .speed = 5.0f,
+        }
+    });
 }
 
 void Sol_Vital_Damage(World *world, int id, u32 amnt)
 {
+    if(!(world->masks[id] & HAS_VITAL))
+    return;
     CompVital *vital = &world->vitals[id];
 
     if (amnt >= vital->health)

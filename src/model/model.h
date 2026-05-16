@@ -21,7 +21,7 @@ typedef struct
 typedef struct
 {
     SolModelId id;
-    float      yoffset;
+    float      yoffset, yawOffset;
 } ModelDesc;
 
 void Sol_Model_Init(World *world);

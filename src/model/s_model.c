@@ -14,7 +14,7 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
 {
     world->masks[id] |= HAS_MODEL;
 
-    CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset};
+    CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset, .yawOffset = desc.yawOffset};
     SolModel *m     = Sol_GetModel(desc.id);
     if (m->skeleton.animationCount > 0)
     {
@@ -146,13 +146,18 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     i32        nextAnim  = model_anim_map[modelComp->modelId][desc.anim];
     if (!desc.force && nextAnim == layer->currentAnim)
         return;
-    layer->lastAnim     = layer->currentAnim;
-    layer->lastSeek     = layer->currentSeek;
-    layer->currentAnim  = nextAnim;
-    layer->currentSeek  = desc.seek;
-    layer->playRate     = desc.speed;
-    layer->blendFactor  = 0;
-    layer->blendSpeed   = desc.blendIn > 0 ? desc.blendIn : 6.0f;
+
+    if (layer->blendFactor > 0.5f)
+    {
+        layer->lastAnim     = layer->currentAnim;
+        layer->lastSeek     = layer->currentSeek;
+        layer->blendFactor  = 0;
+    }
+    layer->currentAnim = nextAnim;
+    layer->currentSeek = desc.seek;
+    layer->playRate    = desc.speed;
+    layer->blendSpeed  = desc.blendIn > 0 ? desc.blendIn : 6.0f;
+
     layer->fadeOut      = 0.0f;
     layer->fadeOutSpeed = desc.force ? 0 : desc.blendOut;
 }

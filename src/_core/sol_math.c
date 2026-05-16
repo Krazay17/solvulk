@@ -2,10 +2,10 @@
 
 const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     // Cardinal Directions
-    {0.0f, 0.0f, 0.0f},
     {0.0f, 0.0f, 1.0f},  // South / Forward
-    {1.0f, 0.0f, 0.0f},  // East / Right
+    {0.0f, 0.0f, 0.0f},
     {0.0f, 0.0f, -1.0f}, // North / Backward
+    {1.0f, 0.0f, 0.0f},  // East / Right
     {-1.0f, 0.0f, 0.0f}, // West / Left
 
     // Diagonal Directions

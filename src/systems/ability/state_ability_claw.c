@@ -27,15 +27,17 @@ void Claw_State_Enter(World *world, int id)
     vec3s aimpos = Sol_GetAimpos(world, id);
     vec3s aimdir = Sol_GetAimdir(world, id);
 
-    float min      = 0.2f;
-    float max      = 0.8f;
-    float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
-    float randR    = min + (float)rand() / (float)RAND_MAX * (max - min);
-    float randG    = min + (float)rand() / (float)RAND_MAX * (max - min);
-    float randB    = min + (float)rand() / (float)RAND_MAX * (max - min);
+    // float min      = 0.2f;
+    // float max      = 0.8f;
+    // float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
+    // float randR    = min + (float)rand() / (float)RAND_MAX * (max - min);
+    // float randG    = min + (float)rand() / (float)RAND_MAX * (max - min);
+    // float randB    = min + (float)rand() / (float)RAND_MAX * (max - min);
 
-    int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f), id,
-                               (ShapeDesc){.radius = randSize, .color = (vec4s){randR, randG, randB, 1}});
+    // int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f), id,
+    //                            (ShapeDesc){.radius = randSize, .color = (vec4s){randR, randG, randB, 1}});
+    int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 50.0f), id,
+                               (ShapeDesc){.radius = 0.5, .color = (vec4s){0, 1, 0, 1}});
 
     AnimDesc desc = {
         .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};

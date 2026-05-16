@@ -200,12 +200,12 @@ void Sol_Destroy_Ent(World *world, int id)
     }
 }
 
-void Sol_Flags_Add(World *world, int id, EntFlags flags)
+void Sol_Flags_Add(World *world, int id, EFlag flags)
 {
     world->flags[id].flags |= flags;
 }
 
-void Sol_Flags_Remove(World *world, int id, EntFlags flags)
+void Sol_Flags_Remove(World *world, int id, EFlag flags)
 {
     world->flags[id].flags &= ~flags;
 }

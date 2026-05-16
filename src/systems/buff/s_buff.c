@@ -24,6 +24,8 @@ void Sol_Buff_Clear(World *world, int id)
 
 void Sol_Buff_Add(World *world, int id, BuffDesc desc, const SolHit *hit)
 {
+    if (!(world->masks[id] & HAS_BUFF))
+        return;
     CompBuff *buff = &world->buffs[id];
     if (buff->count >= MAX_BUFFS)
         return;
@@ -60,7 +62,7 @@ addAnotherBuff:
         switch (desc.kind)
         {
         case BUFFKIND_KNOCKBACK:
-            new_buff.dir   = hit->dir;
+            new_buff.dir   = glms_normalize(hit->dir);
             new_buff.power = hit->power;
             break;
         case BUFFKIND_FIRE:

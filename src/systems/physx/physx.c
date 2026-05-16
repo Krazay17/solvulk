@@ -1,7 +1,6 @@
 #include "sol_core.h"
 
 #include "physx_i.h"
-#include <omp.h>
 
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
@@ -11,8 +10,8 @@ ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
 
 ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
-    [SHAPE3_CAP][SHAPE3_CAP] = Collide_Sphere_Sphere,
-    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Sphere_Sphere,
+    [SHAPE3_CAP][SHAPE3_CAP] = Collide_Capsule_Capsule,
+    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere,
     [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
 };
 
@@ -22,20 +21,6 @@ RaycastTest ray_shape_test[SHAPE3_CNT] = {
     [SHAPE3_BOX] = NULL,
     [SHAPE3_MOD] = NULL,
 };
-
-void Spatial_Add(World *world, int id, CompBody *body)
-{
-    CompXform  *xform = &world->xforms[id];
-    PhysxGroup *group = body->mass == 0 ? &world->spatial->staticGroup : &world->spatial->dynamicGroup;
-
-    group->ents[id].id = id;
-    group->entCount++;
-
-    if (body->shape == SHAPE3_MOD)
-    {
-        Physx_ParseModel(world, id, group);
-    }
-}
 
 // SolContact Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver)
 // {
@@ -130,7 +115,7 @@ void Physx_Grid_Static_Rebuild(PhysxGroup *group)
     }
 }
 
-void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform, SolContact *result)
+void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *xform, EntityContacts *contacts)
 {
     SpatialTable *table = &world->spatial->dynamicGroup.table;
     SpatialCell   cell  = Spatial_Cell_Get(xform->pos, table->cellSize);
@@ -144,17 +129,13 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
             {
                 CompBody  *other_body  = &world->bodies[otherID];
                 CompXform *other_xform = &world->xforms[otherID];
-                if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, result))
+                SolContact contact     = {0};
+                if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &contact))
                 {
-                    Resolve_Dynamic_Pair(body, xform, other_body, other_xform, result);
-                    Sol_Event_Add(world, (SolEvent){.kind         = EVENT_COLLISION,
-                                                    .as.collision = {
-                                                        .normal = result->normal,
-                                                        .pos    = result->point,
-                                                        .entA   = id,
-                                                        .entB   = otherID,
-                                                    }});
-                    result->entId = otherID;
+                    contact.entId = otherID;
+                    Resolve_Dynamic_Pair(body, xform, other_body, other_xform, &contact);
+
+                    Add_Contact(contacts, contact.entId, contact.normal, contact.pos);
                 }
             }
             entry = table->next[entry];
@@ -372,7 +353,7 @@ void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit)
     }
 }
 
-void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform, SolContact *hit)
+void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, CompXform *xform, EntityContacts *contacts)
 {
     SpatialGrid *grid      = &group->grid;
     ShapeTriTest shapeTest = shape_tri_test[body->shape];
@@ -404,13 +385,57 @@ void Collisions_Static_Grid(PhysxGroup *group, CompBody *body, CompXform *xform,
                 {
                     if (++checks > 1000)
                         return;
-                    SolTri *tri = &group->tris[grid->values[e]];
-                    if (shapeTest(body, xform, tri, hit))
+                    SolTri    *tri     = &group->tris[grid->values[e]];
+                    SolContact contact = {0};
+                    if (shapeTest(body, xform, tri, &contact))
                     {
-                        Resolve_Contact(body, xform, hit);
+                        Resolve_Contact(body, xform, &contact);
+
+                        Add_Contact(contacts, tri->entId, contact.normal, contact.pos);
                     }
                 }
             }
+}
+
+void Add_Contact(EntityContacts *c, u32 otherId, vec3s normal, vec3s pos)
+{
+    // Dedupe: don't add if otherId is already in the list
+    for (u32 i = 0; i < c->count; i++)
+    {
+        if (c->records[i].entId == otherId)
+            return;
+    }
+    if (c->count >= MAX_CONTACTS_PER_ENTITY)
+        return;
+    c->records[c->count] = (SolContact){.entId = otherId, .normal = normal, .pos = pos};
+    c->count++;
+}
+
+void Fill_Dynamic_Table(World *world, int count, int *ents)
+{
+    SpatialTable *table = &world->spatial->dynamicGroup.table;
+
+    SpatialTable_Clear(table);
+    for (int i = 0; i < count; i++)
+    {
+        u32   id  = ents[i];
+        vec3s pos = world->xforms[id].pos;
+        float r   = fmaxf(world->bodies[id].dims.x, world->bodies[id].dims.y * 0.5f);
+
+        int x0 = (int)floorf((pos.x - r) / table->cellSize);
+        int x1 = (int)floorf((pos.x + r) / table->cellSize);
+        int y0 = (int)floorf((pos.y - r) / table->cellSize);
+        int y1 = (int)floorf((pos.y + r) / table->cellSize);
+        int z0 = (int)floorf((pos.z - r) / table->cellSize);
+        int z1 = (int)floorf((pos.z + r) / table->cellSize);
+        for (int x = x0; x <= x1; x++)
+            for (int y = y0; y <= y1; y++)
+                for (int z = z0; z <= z1; z++)
+                {
+                    u32 hash = hash_coords(x, y, z) & (table->size - 1);
+                    SpatialTable_Insert(table, hash, id);
+                }
+    }
 }
 
 void collisions_grid_dynamic(CompBody *body, CompXform *xform, SubstepData substep_data, WorldPhysx *ws)
@@ -562,8 +587,8 @@ bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)
         body->vel.y     = 0;
         hit->didCollide = true;
         hit->normal     = (vec3s){0, 1, 0};
-        hit->point      = xform->pos;
-        hit->point.y    = 0;
+        hit->pos        = xform->pos;
+        hit->pos.y      = 0;
     }
     else
     {
@@ -596,7 +621,7 @@ bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContac
     vec3s normal      = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : tri->normal;
     float penetration = body->dims.x - dist;
 
-    col->point       = closestP;
+    col->pos         = closestP;
     col->penetration = penetration;
     col->normal      = normal;
     col->didCollide  = true;
@@ -613,8 +638,8 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
     float  boundsSq        = maxDist * maxDist;
     float  distSq          = glms_vec3_norm2(glms_vec3_sub(*pos, tri->center));
 
-    // if (distSq > boundsSq)
-    //     return false;
+    if (distSq > boundsSq)
+        return false;
 
     vec3s a = *pos;
     a.y += halfHeight;
@@ -708,7 +733,7 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
         dist > 0.0001f ? glms_vec3_scale(glms_vec3_sub(bestCapsulePoint, bestTriPoint), 1.0f / dist) : tri->normal;
     hit->penetration = body->dims.x - dist;
     hit->didCollide  = true;
-    hit->point       = bestTriPoint;
+    hit->pos         = bestTriPoint;
 
     return true;
 }
@@ -723,6 +748,56 @@ bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, Com
     return true;
 }
 
+bool Collide_Capsule_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
+{
+    // Build both spines (Y-axis aligned capsules)
+    float aRadius   = aBody->dims.x;
+    float aHalfSpan = (aBody->dims.y * 0.5f) - aRadius;
+    if (aHalfSpan < 0.0f)
+        aHalfSpan = 0.0f;
+
+    float bRadius   = bBody->dims.x;
+    float bHalfSpan = (bBody->dims.y * 0.5f) - bRadius;
+    if (bHalfSpan < 0.0f)
+        bHalfSpan = 0.0f;
+
+    vec3s aTop    = {{aXform->pos.x, aXform->pos.y + aHalfSpan, aXform->pos.z}};
+    vec3s aBottom = {{aXform->pos.x, aXform->pos.y - aHalfSpan, aXform->pos.z}};
+
+    vec3s bTop    = {{bXform->pos.x, bXform->pos.y + bHalfSpan, bXform->pos.z}};
+    vec3s bBottom = {{bXform->pos.x, bXform->pos.y - bHalfSpan, bXform->pos.z}};
+
+    // Find closest points between the two spine segments
+    vec3s closestA, closestB;
+    Closest_Points_Segment_Segment(aBottom, aTop, bBottom, bTop, &closestA, &closestB);
+
+    // Sphere-sphere from these closest points
+    vec3s delta     = glms_vec3_sub(closestA, closestB);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aRadius + bRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    hit->normal      = glms_vec3_scale(delta, 1.0f / distance);
+    hit->penetration = radiusSum - distance;
+    hit->pos         = glms_vec3_add(closestB, glms_vec3_scale(hit->normal, bRadius));
+
+    return true;
+}
+
+bool Collide_Capsule_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
+{
+    bool result = Collide_Sphere_Capsule(bBody, bXform, aBody, aXform, hit);
+    if (result)
+    {
+        hit->normal = glms_vec3_negate(hit->normal);
+    }
+    return result;
+}
+
 bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
 {
     // a = sphere, b = capsule
@@ -732,25 +807,29 @@ bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody,
 
     float capsuleRadius   = bBody->dims.x;
     float capsuleHalfSpan = (bBody->dims.y * 0.5f) - capsuleRadius;
-    if (capsuleHalfSpan < 0.0f) capsuleHalfSpan = 0.0f;  // degenerate: capsule is just a sphere
+    if (capsuleHalfSpan < 0.0f)
+        capsuleHalfSpan = 0.0f; // degenerate: capsule is just a sphere
 
     // Spine endpoints (assumes capsule is Y-axis aligned)
     vec3s spineTop    = {{bXform->pos.x, bXform->pos.y + capsuleHalfSpan, bXform->pos.z}};
     vec3s spineBottom = {{bXform->pos.x, bXform->pos.y - capsuleHalfSpan, bXform->pos.z}};
 
     // Find closest point on the spine to the sphere center
-    vec3s spineDir   = glms_vec3_sub(spineTop, spineBottom);
-    vec3s sphereDir  = glms_vec3_sub(aXform->pos, spineBottom);
-    
+    vec3s spineDir  = glms_vec3_sub(spineTop, spineBottom);
+    vec3s sphereDir = glms_vec3_sub(aXform->pos, spineBottom);
+
     float spineLenSq = glms_vec3_dot(spineDir, spineDir);
     float t;
-    if (spineLenSq < 0.0001f) {
-        t = 0.0f;   // degenerate spine, just use bottom point
-    } else {
-        t = glms_vec3_dot(sphereDir, spineDir) / spineLenSq;
-        t = fmaxf(0.0f, fminf(1.0f, t));   // clamp to [0, 1]
+    if (spineLenSq < 0.0001f)
+    {
+        t = 0.0f; // degenerate spine, just use bottom point
     }
-    
+    else
+    {
+        t = glms_vec3_dot(sphereDir, spineDir) / spineLenSq;
+        t = fmaxf(0.0f, fminf(1.0f, t)); // clamp to [0, 1]
+    }
+
     vec3s closestOnSpine = glms_vec3_add(spineBottom, glms_vec3_scale(spineDir, t));
 
     // Now it's sphere-vs-sphere between aXform->pos and closestOnSpine
@@ -767,7 +846,7 @@ bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody,
     hit->penetration = radiusSum - distance;
 
     // Contact point on the capsule's surface, facing the sphere
-    hit->point = glms_vec3_add(closestOnSpine, glms_vec3_scale(hit->normal, capsuleRadius));
+    hit->pos = glms_vec3_add(closestOnSpine, glms_vec3_scale(hit->normal, capsuleRadius));
 
     return true;
 }
@@ -787,7 +866,7 @@ bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, 
     hit->penetration = radiusSum - distance;
 
     // Contact point is halfway between the two surfaces
-    hit->point = glms_vec3_add(bXform->pos, glms_vec3_scale(hit->normal, bBody->dims.x));
+    hit->pos = glms_vec3_add(bXform->pos, glms_vec3_scale(hit->normal, bBody->dims.x));
 
     return true;
 }
@@ -1171,4 +1250,73 @@ SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray)
     }
 
     return result;
+}
+
+bool SphereCast_VsSphere(vec3s rayPos, vec3s rayDir, float rayLen, float castRadius, vec3s spherePos,
+                         float sphereRadius, SolRayResult *hit)
+{
+    float combinedR = castRadius + sphereRadius;
+
+    vec3s m = glms_vec3_sub(rayPos, spherePos);
+    float b = glms_vec3_dot(m, rayDir);
+    float c = glms_vec3_dot(m, m) - combinedR * combinedR;
+
+    // Ray starts already inside? Hit at start.
+    if (c < 0.0f)
+    {
+        hit->pos  = rayPos;
+        hit->dist = 0.0f;
+        hit->norm = glms_vec3_normalize(glms_vec3_sub(rayPos, spherePos));
+        return true;
+    }
+
+    // Ray pointing away from sphere
+    if (b > 0.0f)
+        return false;
+
+    float discr = b * b - c;
+    if (discr < 0.0f)
+        return false;
+
+    float t = -b - sqrtf(discr);
+    if (t > rayLen)
+        return false;
+    if (t < 0.0f)
+        t = 0.0f;
+
+    hit->dist        = t;
+    vec3s castCenter = glms_vec3_add(rayPos, glms_vec3_scale(rayDir, t));
+    hit->pos         = castCenter; // could refine to surface
+    hit->norm        = glms_vec3_normalize(glms_vec3_sub(castCenter, spherePos));
+    return true;
+}
+
+bool SphereCast_VsCapsule(vec3s rayPos, vec3s rayDir, float rayLen, float castRadius, vec3s capPos, float capRadius,
+                          float capHeight, SolRayResult *hit)
+{
+    float combinedR = castRadius + capRadius;
+    float halfSpan  = capHeight * 0.5f - capRadius;
+    if (halfSpan < 0)
+        halfSpan = 0;
+
+    vec3s spineTop    = {{capPos.x, capPos.y + halfSpan, capPos.z}};
+    vec3s spineBottom = {{capPos.x, capPos.y - halfSpan, capPos.z}};
+    vec3s rayEnd      = glms_vec3_add(rayPos, glms_vec3_scale(rayDir, rayLen));
+
+    vec3s closestRay, closestSpine;
+    Closest_Points_Segment_Segment(rayPos, rayEnd, spineBottom, spineTop, &closestRay, &closestSpine);
+
+    vec3s delta  = glms_vec3_sub(closestRay, closestSpine);
+    float distSq = glms_vec3_dot(delta, delta);
+
+    if (distSq >= combinedR * combinedR)
+        return false;
+
+    // Approximate hit distance as distance from rayPos to closestRay
+    float t = glms_vec3_norm(glms_vec3_sub(closestRay, rayPos));
+
+    hit->dist = t;
+    hit->pos  = closestSpine;
+    hit->norm = (distSq > 0.0001f) ? glms_vec3_normalize(delta) : (vec3s){{0, 1, 0}};
+    return true;
 }

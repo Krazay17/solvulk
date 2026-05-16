@@ -11,8 +11,8 @@
 #define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
-static u32        ents[MAX_ENTS];
-static SolContact contacts[MAX_ENTS];
+static u32            ents[MAX_ENTS];
+static EntityContacts contacts[MAX_ENTS];
 
 static SolProfiler prof_static  = {.name = "Static"};
 static SolProfiler prof_dynamic = {.name = "Dynamic"};
@@ -93,7 +93,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         int        id    = ents[j];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
-        if (xform->pos.y < -15)
+        if (xform->pos.y < -25)
         {
             Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
         }
@@ -108,7 +108,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         for (int s = 0; s < substep.substeps; s++)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
-            Collisions_Static_Grid(staticGroup, body, xform, &contacts[j]);
+            Collisions_Static_Grid(world, staticGroup, body, xform, &contacts[j]);
         }
     }
     Prof_EndEz(&prof_static, true);
@@ -130,14 +130,21 @@ void Sol_Physx_Step(World *world, double dt, double time)
 
     for (int i = 0; i < count; i++)
     {
-        if (!contacts[i].didCollide)
-            continue;
         int id = ents[i];
-        Sol_Event_Add(world, (SolEvent){.kind         = EVENT_COLLISION,
-                                        .as.collision = {.normal = contacts[i].normal,
-                                                         .pos    = contacts[i].point,
-                                                         .entA   = id,
-                                                         .entB   = contacts[i].entId}});
+        for (u32 j = 0; j < contacts[i].count; j++)
+        {
+            SolContact *r = &contacts[i].records[j];
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind = EVENT_COLLISION,
+                                     .as.collision =
+                                         {
+                                             .entA   = id,
+                                             .entB   = r->entId,
+                                             .normal = r->normal,
+                                             .pos    = r->pos,
+                                         },
+                                 });
+        }
     }
 }
 
@@ -145,7 +152,7 @@ void Ground_Trace(World *world, int count, float fdt)
 {
     u32 required = HAS_BODY3 | HAS_XFORM | HAS_MOVEMENT;
     int i;
-#pragma omp parallel for if (count > 500) shared(contacts) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = ents[i];
@@ -156,7 +163,7 @@ void Ground_Trace(World *world, int count, float fdt)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.35f));
+        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.2f));
         body->groundNormal  = (vec3s){0, 0, 0};
         SolRayResult result = {0};
         for (int j = 0; j < 9; j++)
@@ -165,11 +172,14 @@ void Ground_Trace(World *world, int count, float fdt)
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
 
             // Calculate ray start position
-            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x));
+            float forwardStep = 1.0f;
+            if (j == 0)
+                forwardStep = 1.25f;
+            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * forwardStep));
 
-            result = Sol_Raycast(world,
-                                 (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.2f, .ignoreEnt = id});
-
+            result = Sol_Raycast(
+                world,
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.4f, .ignoreEnt = id, .mask = 0b1});
             if (result.hit && result.norm.y > 0.5f)
                 break;
         }
@@ -189,18 +199,10 @@ void Ground_Trace(World *world, int count, float fdt)
 
 SolRayResult Sol_Raycast(World *world, SolRay ray)
 {
-    SolRayResult result = {0};
-    result.dist         = ray.dist;
-    WorldPhysx *ws      = world->spatial;
+    WorldPhysx *ws = world->spatial;
 
-    float dirLen = glms_vec3_norm(ray.dir);
-    if (dirLen < FLOATING_EPSILON)
-    {
-        result.pos = ray.pos;
-        return result;
-    }
-    ray.dir          = glms_vec3_scale(ray.dir, 1.0f / dirLen);
-    result.pos       = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist));
+    SolRayResult result = {.dist = ray.dist, .pos = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist))};
+
     SolRayResult sub = {0};
 
     sub = Raycast_Static_Grid_Walk(world, ray);
@@ -212,6 +214,60 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
         result = sub;
 
     return result;
+}
+
+int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results, int maxResults)
+{
+    if (!results || maxResults <= 0)
+        return 0;
+
+    int hitCount = 0;
+
+    // Normalize the ray direction
+    vec3s rayDir   = glms_vec3_normalize(ray.dir);
+    float rayLen   = ray.dist;
+    vec3s sweepEnd = glms_vec3_add(ray.pos, glms_vec3_scale(rayDir, rayLen));
+
+    // Broadphase: build AABB around the entire sweep + radius margin
+    vec3s expand = (vec3s){{radius, radius, radius}};
+    vec3s boxMin = glms_vec3_sub(glms_vec3_minv(ray.pos, sweepEnd), expand);
+    vec3s boxMax = glms_vec3_add(glms_vec3_maxv(ray.pos, sweepEnd), expand);
+
+    int candidates[256];
+    int candCount = Spatial_QueryEntsAABB(&world->spatial->dynamicGroup.table, boxMin, boxMax, candidates, 256);
+
+    for (int i = 0; i < candCount; i++)
+    {
+        int otherID = candidates[i];
+
+        if (!(world->masks[otherID] & HAS_BODY3))
+            continue;
+
+        CompBody  *body  = &world->bodies[otherID];
+        CompXform *xform = &world->xforms[otherID];
+
+        SolRayResult hit;
+        bool         didHit = false;
+
+        switch (body->shape)
+        {
+        case SHAPE3_SPH:
+            didHit = SphereCast_VsSphere(ray.pos, rayDir, rayLen, radius, xform->pos, body->dims.x, &hit);
+            break;
+        case SHAPE3_CAP:
+            didHit =
+                SphereCast_VsCapsule(ray.pos, rayDir, rayLen, radius, xform->pos, body->dims.x, body->dims.y, &hit);
+            break;
+        }
+
+        if (didHit && hitCount < maxResults)
+        {
+            hit.entId           = otherID;
+            results[hitCount++] = hit;
+        }
+    }
+
+    return hitCount;
 }
 
 // dont fill pos or dir in ray
@@ -281,33 +337,6 @@ void Sol_Physx2d_Step(World *world, double dt, double time)
             // body->impulse = (vec3s){0};
             // body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
         }
-    }
-}
-
-void Fill_Dynamic_Table(World *world, int count, int *ents)
-{
-    SpatialTable *table = &world->spatial->dynamicGroup.table;
-
-    SpatialTable_Clear(table);
-    for (int i = 0; i < count; i++)
-    {
-        u32   id  = ents[i];
-        vec3s pos = world->xforms[id].pos;
-        float r   = fmaxf(world->bodies[id].dims.x, world->bodies[id].dims.y * 0.5f);
-
-        int x0 = (int)floorf((pos.x - r) / table->cellSize);
-        int x1 = (int)floorf((pos.x + r) / table->cellSize);
-        int y0 = (int)floorf((pos.y - r) / table->cellSize);
-        int y1 = (int)floorf((pos.y + r) / table->cellSize);
-        int z0 = (int)floorf((pos.z - r) / table->cellSize);
-        int z1 = (int)floorf((pos.z + r) / table->cellSize);
-        for (int x = x0; x <= x1; x++)
-            for (int y = y0; y <= y1; y++)
-                for (int z = z0; z <= z1; z++)
-                {
-                    u32 hash = hash_coords(x, y, z) & (table->size - 1);
-                    SpatialTable_Insert(table, hash, id);
-                }
     }
 }
 

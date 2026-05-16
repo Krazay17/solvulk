@@ -1,7 +1,7 @@
 #include "sol_core.h"
 
-#include "physx_i.h"
 #include "model/model_i.h"
+#include "physx_i.h"
 
 void Physx_ParseModel(World *world, int id, PhysxGroup *group)
 {
@@ -21,28 +21,6 @@ void Physx_ParseModel(World *world, int id, PhysxGroup *group)
 
     group->ents[id].triIndexStart = oldCount;
     group->ents[id].triIndexCount = model->tri_count;
-}
-
-void Spatial_Add_Model(PhysxGroup *triGroup, int id, SolModel *model, CompXform *xform, bool hash)
-{
-    //SolModel *model    = Physx_ParseModel(world, id);
-    u32       oldCount = triGroup->triCount;
-    u32       newCount = oldCount + model->tri_count;
-
-    triGroup->tris     = realloc(triGroup->tris, sizeof(SolTri) * newCount);
-    triGroup->triCount = newCount;
-    Transform_Tris_LocalToWorld(triGroup->tris, id, oldCount, model, xform);
-
-    triGroup->ents[id].triIndexStart = oldCount;
-    triGroup->ents[id].triIndexCount = model->tri_count;
-    triGroup->ents[id].id            = id;
-    triGroup->entCount++;
-
-    if (hash)
-    {
-        SpatialTable_Clear(&triGroup->table);
-        Spatial_Hash_Tris(triGroup);
-    }
 }
 
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform)

@@ -28,7 +28,7 @@ static void Sol_View_Buff_Tick(World *world, double dt, double time)
             case BUFFKIND_FIRE:
                 Sol_Emitter_Add(world, (Emitter){
                                            .pos   = x->pos,
-                                           .burst = 10,
+                                           .burst = 1,
                                            .particle =
                                                (Particle){
                                                    .kind  = PARTICLE_GFLAME,

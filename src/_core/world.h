@@ -102,7 +102,7 @@ typedef struct CompContact    CompContact;
 
 typedef struct CompFlags
 {
-    EntFlags flags;
+    EFlag flags;
 } CompFlags;
 
 typedef struct World
@@ -167,7 +167,7 @@ void World_Draw2d(World *world, double dt, double time);
 int  Sol_Create_Ent(World *world);
 void Sol_Destroy_Ent(World *world, int id);
 
-void Sol_Flags_Add(World *world, int id, EntFlags flags);
-void Sol_Flags_Remove(World *world, int id, EntFlags flags);
+void Sol_Flags_Add(World *world, int id, EFlag flags);
+void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 int Sol_World_GetEntCount(World *world);

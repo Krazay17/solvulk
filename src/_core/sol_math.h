@@ -144,3 +144,18 @@ static inline float Sol_RandRange(float a, float b)
 {
     return Sol_Lerp(a, b, (float)rand() / (float)RAND_MAX);
 }
+
+static inline vec3s Sol_RotFromQuat(versors quat)
+{
+    mat4s mat = glms_quat_mat4(quat);
+    return glms_mat4_mulv3(mat, WORLD_FORWARD, 1.0f);
+}
+
+static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
+{
+    float angle = atan2f(x, z) - atan2f(bX, bZ);
+    if (angle < 0)
+        angle += 2.0f * (float)M_PI;
+
+    return (int)((angle / ((float)M_PI / 2.0f)) + 0.5f) % 4;
+}

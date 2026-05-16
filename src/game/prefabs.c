@@ -1,5 +1,60 @@
 #include "sol/sol.h"
 
+// static BuffDesc buffs[] = {
+//     {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
+//     {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
+// };
+
+static ImpactList impact_list = {
+    .impacts[0] =
+        {
+            .kind = IMPACT_DIRECT,
+            .hit =
+                {
+                    .damage = 50,
+                    .kind   = DAMAGEKIND_FIRE,
+                    .buffs =
+                        {
+                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
+                            {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
+                        },
+                    .power     = 5.0f,
+                    .buffcount = 2,
+                },
+            .emitter =
+                {
+                    .burst = 500,
+                    .particle =
+                        {
+                            .ttl   = 0.5f,
+                            .scale = 0.3f,
+                            .color = {1, 1, 1, 1},
+                            .kind  = PARTICLE_GFLAME,
+                            .speed = 13.0f,
+                        },
+                },
+        },
+    .impacts[1] =
+        {
+            .kind = IMPACT_AOE,
+            .hit =
+                {
+                    .damage = 100,
+                    .kind   = DAMAGEKIND_FIRE,
+                    .buffs =
+                        {
+                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
+                            {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
+                        },
+                    .power     = 5.0f,
+                    .buffcount = 2,
+                },
+            .radius = 5.0f,
+        },
+
+    .impactCount = 3,
+};
+
 int Sol_Prefab_Player(World *world, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.35f, .y = 2.0f};
@@ -7,7 +62,7 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
     dims   = glms_vec2_scale(dims, scale);
     int id = Sol_Create_Ent(world);
     Sol_Xform_Add(world, id, pos);
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f});
+    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f, .yawOffset = GLM_PI_2f});
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -66,18 +121,11 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc d
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
-    static BuffDesc buffs[] = {
-        {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
-        {.kind = BUFFKIND_FIRE, .duration = 2.0f, .freq = 0.25f},
-    };
     Sol_Contact_Add(world, id,
-                    (ContactDesc){.hit = (SolHit){
-                                      .damage    = 10,
-                                      .kind      = DAMAGEKIND_FIRE,
-                                      .buffs     = buffs,
-                                      .power     = 25.0f,
-                                      .buffcount = 2,
-                                  }});
+                    (ContactDesc){
+                        .impacts = impact_list,
+                        //.bounces = 0,
+                    });
     Sol_Owner_Add(world, id, ownerId);
 
     return id;

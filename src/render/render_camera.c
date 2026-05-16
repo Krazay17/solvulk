@@ -3,9 +3,6 @@
 
 void Sol_Render_Camera_Update(SolCamera *cam)
 {
-    // View Matrix
-    glm_lookat(cam->position, cam->target, (vec3){0.0f, 1.0f, 0.0f}, cam->view);
-
     // Projection Matrix
     glm_perspective(glm_rad(cam->fov), Sol_Render_GetAspect(), cam->nearClip, cam->farClip, cam->proj);
     cam->proj[1][1] *= -1;

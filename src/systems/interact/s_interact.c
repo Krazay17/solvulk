@@ -30,8 +30,9 @@ void Sol_Interact_Add(World *world, int id, InteractDesc desc)
     CompInteract *interact = &world->interacts[id];
     interact->onClick      = desc.onClick;
     interact->onHold       = desc.onHold;
-    interact->state        = desc.states;
     interact->value        = desc.value;
+    if (desc.toggleable)
+        interact->state |= INTERACT_TOGGLEABLE;
 }
 
 void System_Interact_Tick(World *world, double dt, double time)

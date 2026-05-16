@@ -87,6 +87,14 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
 
+    int floor2 = Sol_Create_Ent(gameWorld);
+    Sol_Xform_Add(gameWorld, floor2, (vec3s){0, 25, 0});
+    Sol_Model_Add(gameWorld, floor2, (ModelDesc){.id = SOL_MODEL_BOX});
+    Sol_Body_Add(gameWorld, floor2,
+                 (BodyDesc){.shape = SHAPE3_SPH, .mass = 100.0f, .radius = 1.0f, .group = 0b11, .restitution = 0.1f});
+    Sol_Interact_Add(gameWorld, floor2, (InteractDesc){0});
+    Sol_Flags_Add(gameWorld, floor2, EFLAG_PICKUPABLE);
+
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Add(menu, quitButton, (InteractDesc){.onClick = (Callback){QuitApp}});
 
@@ -106,7 +114,7 @@ void Create_Sol_Game()
     Sol_Interact_Add(menu, button3, (InteractDesc){.onClick = (Callback){SpawnPlayer, gameWorld}});
 
     int button4 = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
-    Sol_Interact_Add(menu, button4, (InteractDesc){.states = INTERACT_TOGGLEABLE, .onClick = (Callback){W_Set_Ontop}});
+    Sol_Interact_Add(menu, button4, (InteractDesc){.toggleable = true, .onClick = (Callback){W_Set_Ontop}});
 
     int buttonClearEnts = Sol_Prefab_Button(menu, (vec3s){10, 450, 0}, "Clear Ents");
     Sol_Interact_Add(menu, buttonClearEnts,
@@ -117,9 +125,8 @@ void Create_Sol_Game()
                      (InteractDesc){.onClick = (Callback){.callbackFunc = ColorSpheres, .callbackData = gameWorld}});
 
     int fullscreen = Sol_Prefab_Button(menu, (vec3s){10, 550, 0}, "FullScreen");
-    Sol_Interact_Add(
-        menu, fullscreen,
-        (InteractDesc){.states = INTERACT_TOGGLEABLE, .onClick = (Callback){.callbackFunc = W_Set_Fullscreen}});
+    Sol_Interact_Add(menu, fullscreen,
+                     (InteractDesc){.toggleable = true, .onClick = (Callback){.callbackFunc = W_Set_Fullscreen}});
 
     int boxButton = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
     Sol_Interact_Add(menu, boxButton,

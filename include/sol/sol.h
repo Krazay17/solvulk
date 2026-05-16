@@ -27,6 +27,7 @@
 
 #include "owner/owner.h"
 #include "combat/combat.h"
+#include "contact/contact.h"
 #include "buff/buff.h"
 #include "view/view.h"
 #include "render/render.h"
@@ -74,7 +75,7 @@ static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size
         void *tmp    = realloc(*data, size * newCap);
         if (!tmp)
         {
-            fprintf(stderr, "Failed to realloc");
+            fprintf(stderr, "Failed to realloc\n");
             return 1;
         }
         *data     = tmp;

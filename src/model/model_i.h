@@ -124,7 +124,7 @@ typedef struct CompModel
 {
     SolModelId modelId;
     bool       hasAnim;
-    float      yOffset;
+    float      yOffset, yawOffset;
     AnimLayer  layers[ANIM_LAYER_COUNT];
 } CompModel;
 

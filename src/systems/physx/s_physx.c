@@ -93,10 +93,12 @@ void Sol_Physx_Step(World *world, double dt, double time)
         int        id    = ents[j];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
-        if (xform->pos.y < -25)
+        if (xform->pos.y < -500.0f)
         {
             Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
         }
+        if (body->vel.y < -100.0f)
+            body->vel.y = -100.0f;
 
         vec3s accel   = body->gravity;
         accel         = glms_vec3_add(accel, body->force);

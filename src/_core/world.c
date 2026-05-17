@@ -182,8 +182,9 @@ void Sol_Destroy_Ent(World *world, int id)
         activeEnts [0][1][2]
                    '6''1''3'
     */
-    world->actives[id] = false;
-    world->masks[id]   = 0;
+    world->actives[id]     = false;
+    world->masks[id]       = 0;
+    world->flags[id].flags = 0;
     for (int i = 0; i < WORLD_SYS_COUNT; i++)
     {
         if (clear_system[i])

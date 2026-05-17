@@ -76,6 +76,7 @@ void Sol_Cam_Update(double dt)
     memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
     memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
 
+    
     glm_vec3_lerp(sol_camera.up, (vec3){0.0f, 1.0f, 0.0f}, 1.0f - expf(-10.0f * (float)dt), sol_camera.up);
 
     glm_lookat(sol_camera.position, sol_camera.target, sol_camera.up, sol_camera.view);

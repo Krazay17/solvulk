@@ -31,3 +31,4 @@ vec3s      Sol_GetAimdir(World *world, int id);
 float      Sol_GetYaw(World *world, int id);
 float      Sol_GetPitch(World *world, int id);
 vec3s      Sol_Controller_GetWishdir(World *world, int id);
+SolActions Sol_Controller_GetActionState(World *world, int id);

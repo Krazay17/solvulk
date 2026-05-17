@@ -26,7 +26,6 @@ void Sol_Event_Add(World *w, SolEvent d)
         return;
     if (s->count >= s->capacity)
         return;
-    //Sol_Realloc(&s->event, s->count, &s->capacity, sizeof(SolEvent));
 
     s->event[s->count] = d;
     s->count++;

@@ -6,7 +6,7 @@
 typedef struct
 {
     ImpactList impacts;
-    u32    bounces;
+    u32        bounces;
 } ContactDesc;
 
 void Sol_Contact_Init(World *world);

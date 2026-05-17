@@ -6,8 +6,8 @@
 
 typedef struct
 {
-    float lastEntered, elapsed, duration;
     vec3s dir, pos;
+    float lastEntered, elapsed, duration, accum;
 } AbilityData;
 typedef struct CompAbility
 {
@@ -18,8 +18,8 @@ typedef struct CompAbility
 
 typedef struct
 {
-    SolActions actionBit;
-    AbilityState       targetState;
+    SolActions   actionBit;
+    AbilityState targetState;
 } AbilityMapping;
 
 extern const StateFunc ability_state_func[];
@@ -49,4 +49,3 @@ void Shield_State_Enter(World *world, int id);
 void Shield_State_Exit(World *world, int id);
 bool Shield_State_CanExit(World *world, int id, int next);
 bool Shield_State_CanEnter(World *world, int id, int last);
-

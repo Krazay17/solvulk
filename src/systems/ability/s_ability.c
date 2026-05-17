@@ -117,11 +117,12 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state))
         return false;
 
-    ability->stateData[ability->state].elapsed = 0;
     prevfunc->exit(world, id);
-    ability->state = nextState;
-    nextfunc->enter(world, id);
+    ability->state                                 = nextState;
+    ability->stateData[ability->state].elapsed     = 0;
+    ability->stateData[ability->state].accum       = 0;
     ability->stateData[ability->state].lastEntered = (float)Sol_GetState()->gameTime;
+    nextfunc->enter(world, id);
     return true;
 }
 AbilityState Sol_Ability_GetState(World *world, int id)

@@ -112,6 +112,12 @@ typedef enum
 
 typedef enum
 {
+    FXKIND_FIREBALL_HIT,
+    FXKIND_FIRE_APPLY,
+}FxKind;
+
+typedef enum
+{
     MOVE_CONFIG_PLAYER,
     MOVE_CONFIG_WIZARD,
     MOVE_CONFIG_COUNT,

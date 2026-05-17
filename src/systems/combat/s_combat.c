@@ -16,7 +16,7 @@ static void Combat_Step(World *world, double dt, double time)
         SolEvent *e = &world->events->event[i];
         if (e->kind != EVENT_HIT)
             continue;
-
+        vec3s pos = e->as.hit.pos;
         for (int i = 0; i < e->as.hit.buffcount; i++)
         {
             Sol_Buff_Add(world, e->as.hit.target, e->as.hit.buffs[i], &e->as.hit);
@@ -25,18 +25,11 @@ static void Combat_Step(World *world, double dt, double time)
         switch (e->as.hit.kind)
         {
         case DAMAGEKIND_FIRE:
-            // Sol_Emitter_Add(world, (Emitter){
-            //                            .burst = 200,
-            //                            .pos   = e->as.hit.pos,
-            //                            .particle =
-            //                                (Particle){
-            //                                    .ttl   = 0.5f,
-            //                                    .scale = 0.3f,
-            //                                    .color = (vec4s){1, 1, 1, 1},
-            //                                    .kind  = PARTICLE_GFLAME,
-            //                                    .speed = 5.0f,
-            //                                },
-            //                        });
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind        = EVENT_FX,
+                                     .as.fx.kind  = FXKIND_FIRE_APPLY,
+                                     .as.fx.pos   = pos,
+                                 });
             break;
         }
 

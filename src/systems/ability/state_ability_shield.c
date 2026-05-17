@@ -4,7 +4,43 @@
 
 void Shield_State_Update(World *world, int id, float dt)
 {
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
+
+    if (!(Sol_Controller_GetActionState(world, id) & ACTION_ABILITY2))
+        Sol_Ability_SetState(world, id, 0);
+
     Sol_Movement_SetSpeedMod(world, id, 0.5f);
+
+    data->accum += (float)dt;
+    if (data->accum > 0.5f)
+    {
+        data->accum = 0;
+        SolRayResult results[256];
+        int          hits = Sol_SphereCast(world, (SolRay){.pos = Sol_Xform_GetPos(world, id)}, 5.0f, results, 256);
+        Sol_Event_Add(world, (SolEvent){
+                                 .kind       = EVENT_FX,
+                                 .as.fx.pos  = Sol_Xform_GetPos(world, id),
+                                 .as.fx.kind = FXKIND_FIREBALL_HIT,
+                             });
+        for (int i = 0; i < hits; i++)
+        {
+            SolRayResult result = results[i];
+            if (result.entId == id)
+                continue;
+
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind          = EVENT_HIT,
+                                     .as.hit.pos    = result.pos,
+                                     .as.hit.target = result.entId,
+                                     .as.hit.damage = 20,
+                                 });
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind       = EVENT_FX,
+                                     .as.fx.pos  = result.pos,
+                                     .as.fx.kind = FXKIND_FIREBALL_HIT,
+                                 });
+        }
+    }
 }
 
 void Shield_State_Enter(World *world, int id)
@@ -17,6 +53,9 @@ void Shield_State_Exit(World *world, int id)
 
 bool Shield_State_CanEnter(World *world, int id, int last)
 {
+    CompAbility *ability = &world->abilities[id];
+    if (ability->state == ABILITY_STATE_SHIELD)
+        return false;
     return true;
 }
 

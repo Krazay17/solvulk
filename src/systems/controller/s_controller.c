@@ -208,6 +208,11 @@ static vec2s GetWishDir2(uint32_t action)
     return glms_vec2_normalize(wishdir);
 }
 
+SolActions Sol_Controller_GetActionState(World *world, int id)
+{
+    return world->controllers[id].actionState;
+}
+
 vec3s Sol_Controller_GetAimPos(World *world, int id)
 {
     CompController *controller = &world->controllers[id];

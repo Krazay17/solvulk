@@ -11,7 +11,7 @@ static ImpactList impact_list = {
             .kind = IMPACT_DIRECT,
             .hit =
                 {
-                    .damage = 50,
+                    .damage = 25,
                     .kind   = DAMAGEKIND_FIRE,
                     .buffs =
                         {
@@ -21,25 +21,13 @@ static ImpactList impact_list = {
                     .power     = 5.0f,
                     .buffcount = 2,
                 },
-            .emitter =
-                {
-                    .burst = 500,
-                    .particle =
-                        {
-                            .ttl   = 0.5f,
-                            .scale = 0.3f,
-                            .color = {1, 1, 1, 1},
-                            .kind  = PARTICLE_GFLAME,
-                            .speed = 13.0f,
-                        },
-                },
         },
     .impacts[1] =
         {
             .kind = IMPACT_AOE,
             .hit =
                 {
-                    .damage = 100,
+                    .damage = 25,
                     .kind   = DAMAGEKIND_FIRE,
                     .buffs =
                         {
@@ -52,7 +40,7 @@ static ImpactList impact_list = {
             .radius = 5.0f,
         },
 
-    .impactCount = 3,
+    .impactCount = 2,
 };
 
 int Sol_Prefab_Player(World *world, vec3s pos, float scale)

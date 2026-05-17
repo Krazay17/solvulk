@@ -56,11 +56,11 @@ static void Contact_Step(World *world, double dt, double time)
                     if (world->owners[proj].ownerId != other)
                     {
                         impact->hit.target = other;
-                        impact->hit.pos    = e->as.collision.pos;
+                        impact->hit.pos    = pos;
                         impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
                         Sol_Event_Add(world, (SolEvent){.kind = EVENT_HIT, .as.hit = impact->hit});
-                        impact->emitter.pos = pos;
-                        Sol_Emitter_Add(world, impact->emitter);
+                        Sol_Event_Add(
+                            world, (SolEvent){.kind = EVENT_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
                     }
                 }
                 else if (impact->kind == IMPACT_AOE)

@@ -1,28 +1,35 @@
 #pragma once
-#include "sol/types.h"
 #include "combat/combat_types.h"
+#include "sol/types.h"
 
 typedef enum
 {
     EVENT_COLLISION,
     EVENT_HIT,
+    EVENT_FX,
     EVENT_DEATH,
 } EventKind;
 typedef struct SolEvent
 {
     EventKind kind;
     union {
+        SolHit hit;
         struct
         {
-            u32   entA, entB;
             vec3s pos, normal, vel;
+            u32   entA, entB;
         } collision;
         struct
         {
             int   attacker;
             float damage;
-        } Death;
-        SolHit hit;
+        } death;
+        struct
+        {
+            vec3s pos, rot;
+            u32   kind;
+            float scale;
+        } fx;
     } as;
 } SolEvent;
 

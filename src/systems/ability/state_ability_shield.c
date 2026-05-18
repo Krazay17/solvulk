@@ -10,18 +10,27 @@ void Shield_State_Update(World *world, int id, float dt)
         Sol_Ability_SetState(world, id, 0);
 
     Sol_Movement_SetSpeedMod(world, id, 0.5f);
+    vec3s pos = Sol_Xform_GetPos(world, id);
 
     data->accum += (float)dt;
     if (data->accum > 0.5f)
     {
         data->accum = 0;
         SolRayResult results[256];
-        int          hits = Sol_SphereCast(world, (SolRay){.pos = Sol_Xform_GetPos(world, id)}, 5.0f, results, 256);
+        int          hits = Sol_SphereCast(world, (SolRay){.pos = pos}, 5.0f, results, 256);
+        // Sol_Event_Add(world, (SolEvent){
+        //                          .kind       = EVENT_FX,
+        //                          .as.fx.pos  = Sol_Xform_GetPos(world, id),
+        //                          .as.fx.kind = FXKIND_FIREBALL_HIT,
+        //                      });
+
         Sol_Event_Add(world, (SolEvent){
                                  .kind       = EVENT_FX,
-                                 .as.fx.pos  = Sol_Xform_GetPos(world, id),
-                                 .as.fx.kind = FXKIND_FIREBALL_HIT,
+                                 .as.fx.kind = FXKIND_SHIELD_BURST,
+                                 .as.fx.pos  = pos,
+                                 .sourceId   = id,
                              });
+
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -29,15 +38,20 @@ void Shield_State_Update(World *world, int id, float dt)
                 continue;
 
             Sol_Event_Add(world, (SolEvent){
-                                     .kind          = EVENT_HIT,
-                                     .as.hit.pos    = result.pos,
-                                     .as.hit.target = result.entId,
-                                     .as.hit.damage = 20,
+                                     .kind             = EVENT_HIT,
+                                     .as.hit.pos       = result.pos,
+                                     .as.hit.target    = result.entId,
+                                     .as.hit.damage    = 20,
+                                     .as.hit.power     = 25.0f,
+                                     .as.hit.dir       = vecSub(result.pos, pos),
+                                     .as.hit.buffs     = {{.kind = BUFFKIND_KNOCKBACK, .duration = 0.2f}},
+                                     .as.hit.buffcount = 1,
                                  });
             Sol_Event_Add(world, (SolEvent){
                                      .kind       = EVENT_FX,
                                      .as.fx.pos  = result.pos,
-                                     .as.fx.kind = FXKIND_FIREBALL_HIT,
+                                     .as.fx.kind = FXKIND_SHIELD_HIT,
+                                     .targetId   = result.entId,
                                  });
         }
     }

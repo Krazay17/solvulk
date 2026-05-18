@@ -128,8 +128,10 @@ set(SHADERS
     ${SHADER_DIR}/billboard.frag
     ${SHADER_DIR}/sphere.vert
     ${SHADER_DIR}/sphere.frag
-    ${SHADER_DIR}/quad.vert
-    ${SHADER_DIR}/quad.frag
+    ${SHADER_DIR}/sprite.vert
+    ${SHADER_DIR}/sprite.frag
+    ${SHADER_DIR}/skybox.vert
+    ${SHADER_DIR}/skybox.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")

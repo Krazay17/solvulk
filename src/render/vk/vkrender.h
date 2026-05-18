@@ -121,10 +121,17 @@ typedef struct
     uint32_t            pushRangeSize;
     VkShaderStageFlags  pushStageFlags;
     VkPrimitiveTopology primitiveTopology;
+    VkCompareOp         depthCompareOp;
 
     DescriptorId descId[DESC_COUNT];
     u32          descCount;
 } SolPipelineConfig;
+
+typedef struct SolImageUploadConfig
+{
+    u32 Uwrap;
+
+} SolImageUploadConfig;
 
 // ─── Vulkan plumbing (exists once) ───────────────────────────────
 

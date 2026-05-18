@@ -94,12 +94,13 @@ void Die(World *world, int id, CompVital *vital)
                 .r = 1.0f,
                 .g = 0,
                 .b = 0,
-                .a = 0.5f
+                .a = 1.0f
             },
-            .kind = PARTICLE_ORB,
-            .scale = 0.5f,
-            .ttl = 0.5f,
-            .speed = 5.0f,
+            .kind = PARTICLE_BLOOD,
+            .scale = 0.4f,
+            .ttl = 1.5f,
+            .speed = 2.0f,
+            .scaleout = .5f
         }
     });
 }

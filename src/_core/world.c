@@ -132,7 +132,6 @@ void World_Draw3d(World *world, double dt, double time)
     {
         world->draw3dSystems[i](world, dt, time);
     }
-    Flush_Queue();
 }
 
 void World_Draw2d(World *world, double dt, double time)

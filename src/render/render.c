@@ -10,9 +10,10 @@ void Sol_Render_Resize(uint32_t width, uint32_t height)
 
 void Flush_Queue(void)
 {
+    Flush_Skybox();
     Flush_Models();
     Flush_Models_Skinned();
     Flush_Spheres();
-    Flush_Quads();
+    Flush_Sprites();
     Flush_Billboards();
 }

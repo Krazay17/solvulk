@@ -92,6 +92,26 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     return id;
 }
 
+int Sol_Prefab_Clouds(World *world, vec3s pos)
+{
+    Sol_Emitter_Add(world, (Emitter){.pos      = pos,
+                                     .burst    = 1000,
+                                     .inf      = 1,
+                                     .rate     = 0.1f,
+                                     .particle = (Particle){
+                                        .randScale = 1,
+                                         .ttl      = 120.0f,
+                                         .color    = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
+                                         .scale    = 40.0f,
+                                         .kind     = PARTICLE_CLOUD,
+                                         .rotspeed = Sol_RandRange(-.1f, .1f),
+                                         .speed    = 1.0f,
+                                         .offset   = 100.0f,
+                                         .scalein  = 0.05f,
+                                         .scaleout = 0.05f,
+                                     }});
+}
+
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc desc)
 {
     int id = Sol_Create_Ent(world);

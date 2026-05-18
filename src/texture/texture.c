@@ -16,7 +16,9 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]       = "atlas.raw",
     [SOL_TEXTURE_GFLAME]        = "gflame.png",
     [SOL_TEXTURE_SPIKEPARTICLE] = "SpikeParticle.png",
-    [SOL_TEXTURE_CLOUD]         = "CloudParticle.png",
+    [SOL_TEXTURE_CLOUDPARTICLE] = "CloudParticle.png",
+    [SOL_TEXTURE_BLOODPARTICLE] = "BloodParticle.png",
+    [SOL_TEXTURE_REDSKY]        = "RedSky.webp",
 };
 SolTexture loaded_images[SOL_TEXTURE_COUNT];
 

@@ -22,6 +22,5 @@ typedef struct
     BuffKind kind;
     BuffAdd  addKind;
     float    duration, freq;
-    vec3s    pos, dir;
     u32      initialDamage;
 } BuffDesc;

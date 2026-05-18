@@ -140,6 +140,7 @@ typedef struct World
     WorldPhysx  *spatial;
     WorldLines  *lines;
     SolEmitters *emitters;
+    u32 skyboxId;
 
     bool worldActive;
 

@@ -19,6 +19,10 @@ static SolImageDescriptor  image_array_descriptor;
 
 static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
 
+static SolImageUploadConfig image_upload[SOL_TEXTURE_COUNT] = {
+    [SOL_TEXTURE_REDSKY] = {.Uwrap = VK_SAMPLER_ADDRESS_MODE_REPEAT},
+};
+
 static SolFrameBufferConfig buffer_config[FRAMEBUFFER_COUNT] = {
     [FRAMEBUFFER_LINE] =
         {
@@ -78,7 +82,31 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 2,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
-    [PIPE_QUAD] =
+    [PIPE_SPHERE_FX] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_SPHERE_F",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ADDITIVE,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .descId            = {DESC_SCENE_UBO, DESC_SPHERE},
+            .descCount         = 2,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+    [PIPE_SPRITE] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_QUAD_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_IMAGES},
+            .descCount         = 3,
+        },
+    [PIPE_SPRITE_FX] =
         {
             .vertResource      = "ID_SHADER_QUAD_V",
             .fragResource      = "ID_SHADER_QUAD_F",
@@ -134,6 +162,19 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
+    [PIPE_SKYBOX] =
+        {
+            .vertResource      = "ID_SHADER_SKYBOX_V",
+            .fragResource      = "ID_SHADER_SKYBOX_F",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_NONE,
+            .depthCompareOp    = VK_COMPARE_OP_LESS_OR_EQUAL,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_IMAGES},
+            .descCount         = 2,
+        },
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {
@@ -166,7 +207,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                                      .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                  }},
     [DESC_QUAD]           = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                              .as.buffer =
                                  {
                                      .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
@@ -752,9 +793,9 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     depthStencil.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable                       = config->depthTest ? VK_TRUE : VK_FALSE;
     depthStencil.depthWriteEnable                      = config->depthWrite ? VK_TRUE : VK_FALSE;
-    depthStencil.depthCompareOp                        = VK_COMPARE_OP_LESS;
-    depthStencil.depthBoundsTestEnable                 = VK_FALSE;
-    depthStencil.stencilTestEnable                     = VK_FALSE;
+    depthStencil.depthCompareOp        = config->depthCompareOp != 0 ? config->depthCompareOp : VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable     = VK_FALSE;
 
     // --- create the pipeline ---
     VkGraphicsPipelineCreateInfo pipelineInfo = {0};
@@ -1158,7 +1199,7 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id)
         .sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter    = VK_FILTER_LINEAR,
         .minFilter    = VK_FILTER_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeU = image_upload[id].Uwrap ? image_upload[id].Uwrap : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
     };

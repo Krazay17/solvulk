@@ -12,6 +12,7 @@ typedef enum
 typedef struct SolEvent
 {
     EventKind kind;
+    u32       sourceId, targetId;
     union {
         SolHit hit;
         struct

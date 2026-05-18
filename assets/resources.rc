@@ -2,6 +2,9 @@
 gflame.png              RCDATA          "images/gflame.png"
 SpikeParticle.png       RCDATA          "images/SpikeParticle2.png"
 CloudParticle.png       RCDATA          "images/CloudParticle.png"
+BloodParticle.png       RCDATA          "images/BloodParticle2.png"
+RedSky.webp             RCDATA          "images/RedSky2.png"
+
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
@@ -36,5 +39,8 @@ ID_SHADER_BILLBOARD_V   RCDATA          "shaders/billboard.vert.spv"
 ID_SHADER_BILLBOARD_F   RCDATA          "shaders/billboard.frag.spv"
 ID_SHADER_SPHERE_V      RCDATA          "shaders/sphere.vert.spv"
 ID_SHADER_SPHERE_F      RCDATA          "shaders/sphere.frag.spv"
-ID_SHADER_QUAD_V        RCDATA          "shaders/quad.vert.spv"
-ID_SHADER_QUAD_F        RCDATA          "shaders/quad.frag.spv"
+ID_SHADER_QUAD_V        RCDATA          "shaders/sprite.vert.spv"
+ID_SHADER_QUAD_F        RCDATA          "shaders/sprite.frag.spv"
+ID_SHADER_SKYBOX_V      RCDATA          "shaders/skybox.vert.spv"
+ID_SHADER_SKYBOX_F      RCDATA          "shaders/skybox.frag.spv"
+

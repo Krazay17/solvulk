@@ -5,6 +5,26 @@
 
 typedef struct SolCamera SolCamera;
 
+typedef enum
+{
+    PIPE_MODEL,
+    PIPE_MODEL_SKINNED,
+    
+    PIPE_TEXT,
+    PIPE_RECT,
+    PIPE_LINE,
+    
+    PIPE_SPHERE,
+    PIPE_SPHERE_FX,
+    PIPE_SPRITE,
+    PIPE_SPRITE_FX,
+    
+    PIPE_SKYBOX,
+    PIPE_BILLBOARD,
+
+    PIPE_COUNT,
+} PipelineId;
+
 typedef struct SolLineVertex
 {
     vec3s pos;
@@ -16,6 +36,7 @@ typedef struct
     vec4s pos;
     vec4s color;
     vec4s params;
+    bool  isfx;
 } SphereDesc;
 
 typedef enum
@@ -35,18 +56,19 @@ typedef struct
 
 typedef enum
 {
-    QUAD_CAMFACE,
-    QUAD_3D,
-} QuadKind;
+    SPRITE_CAMFACE,
+    SPRITE_3D,
+} SpriteKind;
 typedef struct
 {
     vec4s        pos;
     versors      rotation;
     vec4s        color;
     vec4s        uv;
-    QuadKind     kind;
+    SpriteKind   kind;
     SolTextureId textureId;
-} QuadDesc;
+    bool         isfx;
+} SpriteDesc;
 
 typedef struct ModelPushDesc
 {
@@ -66,10 +88,12 @@ void Sol_Render_Resize(uint32_t width, uint32_t height);
 
 void Sol_Render_PushSphere(SphereDesc desc);
 void Sol_Render_PushBillboard(BillboardDesc desc);
-void Sol_Render_PushQuad(QuadDesc desc);
+void Sol_Render_PushSprite(SpriteDesc desc);
 void Sol_Render_PushModel(ModelPushDesc desc);
 
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
 void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness);
 void  Sol_Render_DrawText(SolFontDesc desc);
+
+void Sol_Render_SkyboxSet(World *world, SolTextureId textureId);

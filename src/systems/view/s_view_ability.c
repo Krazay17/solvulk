@@ -31,7 +31,8 @@ static void Sol_View_Ability_Draw(World *world, double dt, double time)
             break;
         case ABILITY_STATE_SHIELD:
             Sol_Render_PushSphere((SphereDesc){
-                .color = (vec4s){.r = 0.25f, .g = 0.1f, .b = 0.5f, .a = 0.2f},
+                .isfx  = true,
+                .color = (vec4s){0.25f, 0.1f, 0.5f, 0.2f},
                 .pos   = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f},
             });
             break;

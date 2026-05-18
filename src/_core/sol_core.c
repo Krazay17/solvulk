@@ -91,6 +91,8 @@ void Sol_Tick(double dt, double time)
 
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw3d(solState.worlds[i], dt, time);
+        
+    Flush_Queue();
     for (int i = solState.worldCount - 1; i >= 0; --i)
         World_Draw2d(solState.worlds[i], dt, time);
 

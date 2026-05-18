@@ -100,6 +100,8 @@ typedef enum
 {
     FXKIND_FIREBALL_HIT,
     FXKIND_FIRE_APPLY,
+    FXKIND_SHIELD_BURST,
+    FXKIND_SHIELD_HIT,
 }FxKind;
 
 typedef enum
@@ -108,19 +110,6 @@ typedef enum
     MOVE_CONFIG_WIZARD,
     MOVE_CONFIG_COUNT,
 } MoveConfigId;
-
-typedef enum
-{
-    PIPE_MODEL,
-    PIPE_MODEL_SKINNED,
-    PIPE_TEXT,
-    PIPE_LINE,
-    PIPE_RECT,
-    PIPE_SPHERE,
-    PIPE_BILLBOARD,
-    PIPE_QUAD,
-    PIPE_COUNT,
-} PipelineId;
 
 typedef enum
 {
@@ -178,15 +167,6 @@ typedef struct SolLine
     vec4s aColor, bColor;
     float ttl;
 } SolLine;
-
-typedef enum
-{
-    PARTICLE_ORB,
-    PARTICLE_GFLAME,
-    PARTICLE_SPIKEY,
-    PARTICLE_CLOUD,
-    PARTICLE_COUNT,
-} ParticleKind;
 
 typedef enum
 {

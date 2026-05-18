@@ -24,20 +24,11 @@ void Claw_State_Enter(World *world, int id)
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
 
-    vec3s aimpos = Sol_GetAimpos(world, id);
-    vec3s aimdir = Sol_GetAimdir(world, id);
+    float velocity = 50.0f;
 
-    // float min      = 0.2f;
-    // float max      = 0.8f;
-    // float randSize = min + (float)rand() / (float)RAND_MAX * (max - min);
-    // float randR    = min + (float)rand() / (float)RAND_MAX * (max - min);
-    // float randG    = min + (float)rand() / (float)RAND_MAX * (max - min);
-    // float randB    = min + (float)rand() / (float)RAND_MAX * (max - min);
-
-    // int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 35.0f), id,
-    //                            (ShapeDesc){.radius = randSize, .color = (vec4s){randR, randG, randB, 1}});
-    int ball = Sol_Prefab_Ball(world, vecAdd(aimpos, vecSca(aimdir, 1.0f)), vecSca(aimdir, 50.0f), id,
-                               (ShapeDesc){.radius = 0.5, .color = (vec4s){0, 1, 0, 1}});
+    int ball =
+        Sol_Prefab_Ball(world, Sol_Controller_GetShootpos(world, id, 0.5f), vecSca(Sol_GetAimdir(world, id), velocity),
+                        id, (ShapeDesc){.radius = 0.5, .color = (vec4s){0, 1, 0, 1}});
 
     AnimDesc desc = {
         .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
@@ -46,7 +37,7 @@ void Claw_State_Enter(World *world, int id)
 
 void Claw_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0.1);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0.1f);
 }
 
 bool Claw_State_CanEnter(World *world, int id, int last)

@@ -3,7 +3,7 @@ gflame.png              RCDATA          "images/gflame.png"
 SpikeParticle.png       RCDATA          "images/SpikeParticle2.png"
 CloudParticle.png       RCDATA          "images/CloudParticle.png"
 BloodParticle.png       RCDATA          "images/BloodParticle2.png"
-RedSky.webp             RCDATA          "images/RedSky2.png"
+RedSky.webp             RCDATA          "images/RedSky.webp"
 
 
 Wizard.glb              RCDATA          "models/Wizard.glb"

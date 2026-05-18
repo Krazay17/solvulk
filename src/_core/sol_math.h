@@ -159,3 +159,8 @@ static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 
     return (int)((angle / ((float)M_PI / 2.0f)) + 0.5f) % 4;
 }
+
+static inline float Sol_RandRange2(float min, float max)
+{
+    return min + (float)rand() / (float)RAND_MAX * (max - min);
+}

@@ -17,11 +17,13 @@ typedef struct Debuggers
 //     u32   value;
 // } DebugData;
 
-
 static Debuggers debuggers;
+static double    fps;
+static double    total, throttle;
+static char      fpsbuffer[64];
+static int       count;
 
-static void DebugFPS(double dt);
-void        Sol_Debug_Draw(double dt);
+void Sol_Debug_Draw(double dt);
 
 void Sol_Debug_Add(const char *text, float value)
 {
@@ -65,19 +67,25 @@ void Sol_Debug_Draw(double dt)
         };
         Sol_Render_DrawText(fontDesc);
     }
-    DebugFPS(dt);
+
+    SolFontDesc fontDesc = {
+        .str   = fpsbuffer,
+        .x     = 6.0f,
+        .y     = 24.0f,
+        .size  = 24.0f,
+        .color = (vec4s){0, 255, 0, 255},
+        .kind  = SOL_FONT_ICE,
+    };
+    Sol_Render_DrawText(fontDesc);
 
     // static int limiter;
     // if(limiter++ % 100 == 0)
     // printf("rand %d\n", rand()%255);
 }
 
-static void DebugFPS(double dt)
+void DebugFPS(double dt)
 {
-    SolState     *state = Sol_GetState();
-    static double total, throttle;
-    static char   buffer[64];
-    static int    count;
+    SolState *state = Sol_GetState();
     if (dt < FLOATING_EPSILON)
         return;
     state->fps = 1.0 / dt;
@@ -87,20 +95,11 @@ static void DebugFPS(double dt)
     if ((throttle += dt) > 0.1)
     {
         float currentFps = total / count;
-        snprintf(buffer, sizeof(buffer), "Fps: %.0f", currentFps);
+        snprintf(fpsbuffer, sizeof(fpsbuffer), "Fps: %.0f", currentFps);
         throttle = 0;
         count    = 0;
         total    = 0;
     }
-    SolFontDesc fontDesc = {
-        .str   = buffer,
-        .x     = 6.0f,
-        .y     = 24.0f,
-        .size  = 24.0f,
-        .color = (vec4s){0, 255, 0, 255},
-        .kind  = SOL_FONT_ICE,
-    };
-    Sol_Render_DrawText(fontDesc);
 }
 
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)

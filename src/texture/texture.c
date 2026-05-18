@@ -12,6 +12,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "webp/decode.h"
+
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]       = "atlas.raw",
     [SOL_TEXTURE_GFLAME]        = "gflame.png",
@@ -49,6 +51,14 @@ static SolTexture *Parse_Texture(SolResource res, u32 id)
         image->height = 224;
         image->width  = 224;
         image->loaded = true;
+        return image;
+    }
+
+    if (strstr(image_path[id], ".webp"))
+    {
+        int      width, height;
+        int      info = WebPGetInfo(res.data, res.size, &width, &height);
+        image->pixels = WebPDecodeRGBA(res.data, res.size, &image->width, &image->height);
         return image;
     }
 

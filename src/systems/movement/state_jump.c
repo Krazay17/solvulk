@@ -31,7 +31,7 @@ void Sol_Movement_Jump_Enter(World *world, int id)
     AnimDesc desc          = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE};
     Sol_Model_PlayAnim(world, id, desc);
 
-    Sol_Physx_SetVelY(world, id, 10.0f);
+    Sol_Physx_SetVelY(world, id, 8.0f);
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)

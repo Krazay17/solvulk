@@ -29,7 +29,7 @@ LRESULT CALLBACK    WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 // HOT REALOAD
 #define SOL_FUNC(ret, name, ...)                                                                                       \
-    typedef ret (*name##_fn)(__VA_ARGS__);                                                                            \
+    typedef ret (*name##_fn)(__VA_ARGS__);                                                                             \
     name##_fn pfn_##name;
 #include "sol/functions.inc"
 #undef SOL_FUNC
@@ -132,8 +132,9 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
         double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
         lastTime       = currentTime;
         POINT cursorPos;
-
         GetCursorPos(&cursorPos);
+        DebugFPS(dt);
+        dt *= Sol_GetState()->timescale;
         Sol_Tick(dt, runTime);
 
         QueryPerformanceFrequency(&freq);
@@ -211,6 +212,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             SetCursor(NULL);
             return true;
         }
+        break;
+    case WM_SYSKEYDOWN:
+        Sol_Input_OnKey(wParam, true);
+        break;
+    case WM_SYSKEYUP:
+        Sol_Input_OnKey(wParam, false);
         break;
     case WM_KEYDOWN:
         Sol_Input_OnKey((int)wParam, true);

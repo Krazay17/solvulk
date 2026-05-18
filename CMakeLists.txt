@@ -25,8 +25,9 @@ if(WIN32)
     file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-    set(PLATFORM_LIBS user32 gdi32 dwmapi)
-    target_link_libraries(solvulk PRIVATE ${PLATFORM_LIBS})
+    set(PLATFORM_LIBS user32 gdi32 dwmapi
+        "${CMAKE_SOURCE_DIR}/extern/libwebp/lib/libwebp.lib"
+    )
 else()
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
@@ -67,6 +68,7 @@ if(SOL_DEV_MODE)
         "${CMAKE_SOURCE_DIR}/src/_core"
         "${CMAKE_SOURCE_DIR}/src/systems"
         "${CMAKE_SOURCE_DIR}/vendored"
+        "${CMAKE_SOURCE_DIR}/extern/libwebp/include"
     )
 endif()
 
@@ -155,6 +157,37 @@ add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 
 add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
+
+#--------------------------------------
+# compile textures
+#--------------------------------------
+# set(IMAGE_DIR "${CMAKE_SOURCE_DIR}/assets/images")
+# set(CIMAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/cimages")
+# file(MAKE_DIRECTORY ${CIMAGE_OUTPUT_DIR})
+# set(IMAGES
+#     ${IMAGE_DIR}/RedSky2.png
+# )
+# set(TEXCONV_EXE ${CMAKE_SOURCE_DIR}/tools/texconv.exe)
+# foreach(IMAGE ${IMAGES})
+#     get_filename_component(IMAGE_NAME ${IMAGE} NAME)
+#     set(IMAGE_OUTPUT "${CIMAGE_OUTPUT_DIR}/${IMAGE_NAME}.dds")
+#     add_custom_command(
+#         OUTPUT ${IMAGE_OUTPUT}
+#         COMMAND ${TEXCONV_EXE}
+#             -f BC7_UNORM
+#             -m 0
+#             -y
+#             -o ${CIMAGE_OUTPUT_DIR}
+#             ${IMAGE}
+#         DEPENDS ${IMAGE}
+#         COMMENT "Converting texture: ${IMAGE_NAME}"
+#     )
+#     list(APPEND CIMAGE_OUTPUTS ${IMAGE_OUTPUT})
+# endforeach()
+
+# add_custom_target(images DEPENDS ${CIMAGE_OUTPUTS})
+# add_dependencies(solvulk images)
+# add_dependencies(solapp images)
 
 #---- Server App ----
 add_executable(solvulk_server src_server/main.c)

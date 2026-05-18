@@ -181,7 +181,7 @@ void Ground_Trace(World *world, int count, float fdt)
 
             result = Sol_Raycast(
                 world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.4f, .ignoreEnt = id, .mask = 0b1});
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.5f, .ignoreEnt = id, .mask = 0b1});
             if (result.hit && result.norm.y > 0.5f)
                 break;
         }
@@ -359,11 +359,6 @@ float Sol_Physx_GetLatSpeed(World *world, int id)
     return glms_vec3_norm(vel);
 }
 
-void Sol_Physx_SetVel(World *world, int id, vec3s vel)
-{
-    world->bodies[id].vel = vel;
-}
-
 void Sol_Physx_SetGrav(World *world, int id, vec3s vel)
 {
     world->bodies[id].gravity = vel;
@@ -379,6 +374,15 @@ vec3s Sol_Physx_GetGround(World *world, int id)
     return world->bodies[id].groundNormal;
 }
 
+void Sol_Physx_SetVel(World *world, int id, vec3s vel)
+{
+    world->bodies[id].vel = vel;
+}
+void Sol_Physx_SetVellat(World *world, int id, vec3s vel)
+{
+    world->bodies[id].vel.x = vel.x;
+    world->bodies[id].vel.z = vel.z;
+}
 void Sol_Physx_SetVelX(World *world, int id, float x)
 {
     world->bodies[id].vel.x = x;

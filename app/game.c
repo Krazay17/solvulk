@@ -66,8 +66,10 @@ void ColorSpheres(int flags, void *data)
 void Create_Sol_Game()
 {
     // CURL *curl = curl_easy_init();
-    World *menu = World_Create_Default();
-    gameWorld   = World_Create_Default();
+    World *menu       = World_Create_Default();
+    menu->worldActive = false;
+    Sol_Input_SetLocked(true);
+    gameWorld = World_Create_Default();
     Sol_View_Crosshair(gameWorld);
 
     // Sol_Audio_Beep();

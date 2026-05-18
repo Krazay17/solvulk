@@ -8,6 +8,7 @@ static void   Sol_OnResize();
 
 void Sol_Init(void *hwnd, void *hInstance)
 {
+    solState.timescale = 1.0;
     solState.g_hwnd = hwnd;
     i32 res;
 
@@ -46,13 +47,14 @@ double Sol_GetGameTime()
 
 void Sol_Tick(double dt, double time)
 {
-    solState.gameTime = time;
+    solState.gameTime += dt;
     solState.tickCounter++;
     Sol_Input_Update();
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {
-        solState.debug = !solState.debug;
+        // solState.debug = !solState.debug;
         solState.worlds[0]->worldActive ^= 1;
+        Sol_Input_SetLocked(!solState.worlds[0]->worldActive);
         // solState.isRunning = false;
     }
 
@@ -123,4 +125,9 @@ static void Sol_OnResize()
     {
         Sol_Render_Resize(solState.windowWidth, solState.windowHeight);
     }
+}
+
+void Sol_State_SetTimescale(float timescale)
+{
+    solState.timescale = timescale;
 }

@@ -8,8 +8,8 @@
 #pragma once
 #include "sol/sol.h"
 
-#include "profiler.h"
 #include "event/event.h"
+#include "profiler.h"
 
 typedef struct SolState
 {
@@ -17,8 +17,7 @@ typedef struct SolState
     volatile bool needsResize;
     float         windowWidth, windowHeight;
     void         *g_hwnd;
-    double        gameTime;
-    double        fps;
+    double        gameTime, timescale, fps;
     bool          debug;
     u32           tickCounter, stepCounter;
 
@@ -32,3 +31,4 @@ void Sol_Platform_LockCursor(bool lock);
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_End_Draw();
 
+void Sol_State_SetTimescale(float timescale);

@@ -75,7 +75,7 @@ static void Fx_Event(World *world, double dt, double time)
                                                  .scale    = 6.0f,
                                                  .scalein  = 1.0f,
                                                  .kind     = PARTICLE_ORB,
-                                                 .color    = (vec4s){0.25f, 0.1f, 0.5f, 0.2f},
+                                                 .color    = (vec4s){0.25f, 0.1f, 0.5f, 0.6f},
                                                  .ttl      = 0.2f,
                                                  .followId = e->sourceId,
                                              }});

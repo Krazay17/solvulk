@@ -32,6 +32,7 @@ typedef enum
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
     SOL_KEY_SHIFT,
+    SOL_KEY_ALT,
     SOL_KEY_COUNT
 } SolKey;
 
@@ -40,7 +41,7 @@ typedef struct SolMouse
     int  x, y;
     int  dx, dy;
     int  wheelV;
-    bool locked;
+    bool locked, togglelocked;
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];
 } SolMouse;
@@ -61,3 +62,4 @@ bool     Sol_Input_KeyDown(SolKey key);
 bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
 SolMouse Sol_Input_GetMouse();
 SolLook *Sol_Input_GetLook();
+void     Sol_Input_SetLocked(bool lock);

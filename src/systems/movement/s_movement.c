@@ -6,11 +6,11 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
         {
             [MOVE_IDLE]  = {.speed = 0, .accell = 0, .friction = 20.0f, .gravity = 0},
-            [MOVE_WALK]  = {.speed = 6.0f, .accell = 20.0f, .friction = 10.0f, .gravity = 9.81f},
-            [MOVE_FALL]  = {.speed = 6.0f, .accell = 5.0f, .friction = 0.0f, .gravity = 16.0f},
-            [MOVE_JUMP]  = {.speed = 6.0f, .accell = 5.0f, .friction = 0.0f, .gravity = 9.81f},
-            [MOVE_SLIDE] = {.speed = 6.0f, .accell = 5.0f, .friction = 1.0f, .gravity = 9.81f},
-            [MOVE_FLY]   = {.speed = 6.0f, .accell = 9.0f, .friction = 1.0f, .gravity = 0},
+            [MOVE_WALK]  = {.speed = 6.0f, .accell = 25.0f, .friction = 10.0f, .gravity = 9.81f},
+            [MOVE_FALL]  = {.speed = 4.0f, .accell = 7.0f, .friction = 0.0f, .gravity = 16.0f},
+            [MOVE_JUMP]  = {.speed = 4.0f, .accell = 7.0f, .friction = 0.0f, .gravity = 9.81f},
+            [MOVE_SLIDE] = {.speed = 4.0f, .accell = 7.0f, .friction = 1.0f, .gravity = 9.81f},
+            [MOVE_FLY]   = {.speed = 4.0f, .accell = 7.0f, .friction = 1.0f, .gravity = 0},
         },
     [MOVE_CONFIG_WIZARD] =
         {
@@ -107,10 +107,6 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 
             float finalSpeed = forces->speed * movement->speedMod;
 
-            // if (Sol_Buff_HasBuff(world, id, BUFFKIND_FIRE))
-            //     finalSpeed /= 2.0f;
-            // if (Sol_Ability_GetState(world, id) == ABILITY_STATE_SHIELD)
-            //     finalSpeed /= 2.0f;
             vec3s latwishdir = Sol_GetWishdir(world, id);
             latwishdir.y     = 0;
             latwishdir       = glms_vec3_normalize(latwishdir);
@@ -118,7 +114,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             vec3s slopeDir   = glms_vec3_sub(latwishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
             vel              = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
             vel              = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
-            Sol_Physx_SetVel(world, id, vel);
+            Sol_Physx_SetVellat(world, id, vel);
 
             MOVE_STATE_FUNCS[movement->moveState].update(world, id, dt);
         }

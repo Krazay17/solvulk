@@ -45,6 +45,8 @@ static void Contact_Step(World *world, double dt, double time)
             else
                 continue;
 
+            if (world->owners[proj].ownerId == other)
+                continue;
             CompContact *c = &world->contacts[proj];
 
             for (int i = 0; i < c->impacts.impactCount; i++)
@@ -53,15 +55,12 @@ static void Contact_Step(World *world, double dt, double time)
 
                 if (impact->kind == IMPACT_DIRECT)
                 {
-                    if (world->owners[proj].ownerId != other)
-                    {
-                        impact->hit.target = other;
-                        impact->hit.pos    = pos;
-                        impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
-                        Sol_Event_Add(world, (SolEvent){.kind = EVENT_HIT, .as.hit = impact->hit});
-                        Sol_Event_Add(
-                            world, (SolEvent){.kind = EVENT_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
-                    }
+                    impact->hit.target = other;
+                    impact->hit.pos    = pos;
+                    impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
+                    Sol_Event_Add(world, (SolEvent){.kind = EVENT_HIT, .as.hit = impact->hit});
+                    Sol_Event_Add(world,
+                                  (SolEvent){.kind = EVENT_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
                 }
                 else if (impact->kind == IMPACT_AOE)
                 {

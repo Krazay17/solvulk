@@ -94,8 +94,20 @@ static void LocalTick(World *world, int id, double dt, double time)
     }
 
     controller->yaw = look->yaw;
-    if (Sol_Input_GetMouse().locked)
+
+    SolMouse mouse = Sol_Input_GetMouse();
+    if (mouse.locked)
         world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+
+    if (mouse.togglelocked)
+    {
+        if (mouse.buttons[SOL_MOUSE_LEFT])
+            controller->actionState |= ACTION_ABILITY1;
+        if (mouse.buttons[SOL_MOUSE_RIGHT])
+            controller->actionState |= ACTION_ABILITY2;
+    }
+    else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
+        controller->actionState |= ACTION_FWD;
 
     controller->pitch    = look->pitch;
     controller->lookdir  = look->lookdir;
@@ -261,4 +273,11 @@ float Sol_GetYaw(World *world, int id)
 float Sol_GetPitch(World *world, int id)
 {
     return world->controllers[id].pitch;
+}
+
+vec3s Sol_Controller_GetShootpos(World *world, int id, float offset)
+{
+    vec3s head = world->controllers[id].aimpos;
+    vec3s dir  = world->controllers[id].aimdir;
+    return vecAdd(head, vecSca(dir, offset));
 }

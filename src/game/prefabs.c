@@ -150,7 +150,7 @@ int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId
                      .radius      = dims.x,
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
-                     .restitution = 0.1f,
+                     .restitution = 0.01f,
                      .group       = 1,
                  });
 

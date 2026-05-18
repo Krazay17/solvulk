@@ -4,10 +4,10 @@
 
 vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
-    vec3s       vel   = prevvel;
-    const float speed = glms_vec3_norm(vel);
+    const float speed = glms_vec3_norm(prevvel);
     if (speed < 0.01f)
-        return (vec3s){0.0f, 0.0f, 0.0f};
+        return GLMS_VEC3_ZERO;
+    vec3s       vel      = prevvel;
     const float drop     = speed * friction * dt;
     const float newspeed = fmaxf(0.0f, speed - drop);
     vel                  = glms_vec3_scale(vel, newspeed / speed);
@@ -17,10 +17,10 @@ vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 
 vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
 {
-    vec3s vel = prevvel;
-
     if (glms_vec3_norm(wishdir) == 0)
-        return vel;
+        return prevvel;
+
+    vec3s       vel       = prevvel;
     const float dotdir    = glms_vec3_dot(wishdir, glms_vec3_normalize(vel));
     float       lerpalpha = (1.0f - dotdir) * 0.5f;
 

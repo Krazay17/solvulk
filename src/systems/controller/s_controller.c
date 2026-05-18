@@ -190,6 +190,7 @@ static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
     vec3s wishdir  = {0, 0, 0};
     vec3s flatdir  = lookdir;
     flatdir.y      = 0;
+    flatdir        = glms_vec3_normalize(flatdir);
     vec3s rightdir = glms_vec3_normalize(glms_vec3_cross(flatdir, updir));
     if (action & ACTION_FWD)
         wishdir = glms_vec3_add(wishdir, flatdir);

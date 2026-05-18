@@ -242,6 +242,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         Sol_Input_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         return 0;
+    case WM_WINDOWPOSCHANGED:
+        RECT rect;
+        if (GetWindowRect(hwnd, &rect))
+        {
+            Sol_GetState()->windowX      = rect.left;
+            Sol_GetState()->windowY      = rect.top;
+            Sol_GetState()->windowWidth  = rect.right - rect.left;
+            Sol_GetState()->windowHeight = rect.bottom - rect.top;
+        }
+        return 0;
     case WM_LBUTTONDOWN:
         Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, true);
         if (isFullscreen)

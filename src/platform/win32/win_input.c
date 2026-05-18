@@ -25,3 +25,8 @@ void Sol_Platform_LockCursor(bool lock)
         ShowCursor(TRUE);
     }
 }
+
+void Sol_Platform_SetCursorpos(int x, int y)
+{
+    SetCursorPos(x, y);
+}

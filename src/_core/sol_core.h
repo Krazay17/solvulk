@@ -15,7 +15,8 @@ typedef struct SolState
 {
     volatile bool isRunning;
     volatile bool needsResize;
-    float         windowWidth, windowHeight;
+    int           windowWidth, windowHeight;
+    int           windowX, windowY;
     void         *g_hwnd;
     double        gameTime, timescale, fps;
     bool          debug;
@@ -27,6 +28,7 @@ typedef struct SolState
 
 void Sol_MessageBox(const char *text, const char *level);
 void Sol_Platform_LockCursor(bool lock);
+void Sol_Platform_SetCursorpos(int x, int y);
 
 SOLAPI void Sol_Begin_Draw();
 SOLAPI void Sol_End_Draw();

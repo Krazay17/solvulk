@@ -55,7 +55,7 @@
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
 
-#define UISCALE(x) (x * min(Sol_GetState()->windowWidth / WINDOW_WIDTH, Sol_GetState()->windowHeight / WINDOW_HEIGHT))
+#define UISCALE(x) (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 #define ColorConvert(x) (x / 255.0f)
 
 SOLAPI void      Sol_Init(void *hwnd, void *hInstance);

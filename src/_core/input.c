@@ -103,7 +103,7 @@ void Sol_Input_Update()
     rawMouseWheelDelta = 0;
 
     if (Sol_Input_KeyPressed(SOL_KEY_ALT))
-        toggleLocked = !toggleLocked;
+        Sol_Input_SetLocked(!toggleLocked);
 
     if (mouseButtons[SOL_MOUSE_RIGHT] || toggleLocked)
         mouseLocked = true;
@@ -174,5 +174,9 @@ SolLook *Sol_Input_GetLook()
 
 void Sol_Input_SetLocked(bool lock)
 {
+    int width  = (int)((float)(Sol_GetState()->windowX + Sol_GetState()->windowWidth * 0.5f));
+    int height = (int)((float)(Sol_GetState()->windowY + Sol_GetState()->windowHeight * 0.5f));
+    Sol_Platform_SetCursorpos(width, height);
+
     toggleLocked = lock;
 }

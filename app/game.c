@@ -44,17 +44,19 @@ void MakeAEmitter(int flags, void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
+    //    Sol_Event_Add(world, (SolEvent){.kind = EVENT_FX, .as.fx.kind=FXKIND_FIREBALL_HIT, .as.fx.pos=pos});
     Sol_Emitter_Add(world, (Emitter){.pos      = pos,
-                                     .ttl      = 50.0f,
-                                     .rate     = 0.1f,
-                                     .burst    = 50,
-                                     .vel      = (vec3s){0, 0, 0},
+                                     .burst    = 1000,
+                                     .inf      = 1,
+                                     .rate = 0.1f,
                                      .particle = (Particle){
-                                         .ttl      = 5.0f,
-                                         .color    = (vec4s){.r = 255, .g = 0, .b = 55, .a = 255},
-                                         .scale    = 0.15f,
-                                         .kind     = PARTICLE_GFLAME,
-                                         .rotspeed = Sol_RandRange(-5.0f, 5.0f),
+                                         .ttl      = 120.0f,
+                                         .color    = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
+                                         .scale    = 40.0f,
+                                         .kind     = PARTICLE_CLOUD,
+                                         .rotspeed = Sol_RandRange(-.2f, .2f),
+                                         .speed    = 1.0f,
+                                         .offset   = 100.0f,
                                      }});
 }
 
@@ -83,9 +85,10 @@ void Create_Sol_Game()
 
     // Sol_Audio_Beep();
     // Sol_Audio_Play(SOL_AUDIO_MENUMUSIC);
-
+    
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
+    MakeAEmitter(0, gameWorld);
 
     int floor2 = Sol_Create_Ent(gameWorld);
     Sol_Xform_Add(gameWorld, floor2, (vec3s){0, 25, 0});

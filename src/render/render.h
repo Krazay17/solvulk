@@ -5,6 +5,12 @@
 
 typedef struct SolCamera SolCamera;
 
+typedef struct SolLineVertex
+{
+    vec3s pos;
+    vec4s color;
+} SolLineVertex;
+
 typedef struct
 {
     vec4s pos;
@@ -34,11 +40,12 @@ typedef enum
 } QuadKind;
 typedef struct
 {
-    vec4s    pos;
-    versors  rotation;
-    vec4s    color;
-    vec4s    uv;
-    QuadKind kind;
+    vec4s        pos;
+    versors      rotation;
+    vec4s        color;
+    vec4s        uv;
+    QuadKind     kind;
+    SolTextureId textureId;
 } QuadDesc;
 
 typedef struct ModelPushDesc

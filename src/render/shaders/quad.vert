@@ -14,7 +14,8 @@ struct Quad {
     vec4 color;
     vec4 uv;
     uint type;
-    uint _pad[3];
+    uint tid;
+    uint _pad[2];
 };
 
 layout(set = 1, binding = 0) readonly buffer Quads {
@@ -28,6 +29,7 @@ const vec2 CORNERS[6] = vec2[](
 
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out vec4 fragColor;
+layout(location = 2) flat out uint textureId;
 
 vec3 rotateByQuat(vec4 q, vec3 v) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
@@ -61,6 +63,7 @@ void main() {
     vec2 uvLocal = vec2(corner.x, -corner.y) * 0.5 + 0.5;   // Y-flip for texture
     fragUV = q.uv.xy + uvLocal * q.uv.zw;
     fragColor = q.color;
+    textureId = q.tid;
     
     gl_Position = scene.viewProjection * vec4(worldPos, 1.0);
 }

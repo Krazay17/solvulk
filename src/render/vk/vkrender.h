@@ -1,18 +1,12 @@
 #pragma once
 #include "sol/types.h"
 
+#include "render/render_i.h"
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_DEVICE_QUERY 8
 #define MAX_QUEUE_FAMILIES 16
-
-typedef enum
-{
-    BLEND_NONE,
-    BLEND_ALPHA,
-    BLEND_ADDITIVE,
-} BlendMode;
 
 // ─── GPU data ──────────────────────────────────────────────
 typedef struct
@@ -30,12 +24,6 @@ typedef struct
     SolGpuMesh *meshes;
     u32         mesh_count;
 } SolGpuModel;
-
-typedef struct SolLineVertex
-{
-    vec3s pos;
-    vec4s color;
-} SolLineVertex;
 
 typedef struct
 {
@@ -65,29 +53,43 @@ typedef struct
     void     *mapped;
 } SolFrameBufferRef;
 
-typedef struct SolDescriptor
+typedef struct SolBufferDescriptor
 {
     DescriptorKind        kind;
     VkDescriptorSetLayout layout;
     VkDescriptorPool      pool;
-    VkDescriptorSet       sets[MAX_FRAMES_IN_FLIGHT];
 
-    // Buffer-backed (UBO/SSBO)
-    VkBuffer       buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory memory[MAX_FRAMES_IN_FLIGHT];
-    void          *mapped[MAX_FRAMES_IN_FLIGHT];
+    VkDescriptorSet sets[MAX_FRAMES_IN_FLIGHT];
+    VkBuffer        buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory  memory[MAX_FRAMES_IN_FLIGHT];
+    void           *mapped[MAX_FRAMES_IN_FLIGHT];
 
     // Image-backed (texture)
     SolGpuImage image;
-} SolDescriptor;
+} SolBufferDescriptor;
+
+typedef struct SolImageDescriptor
+{
+    VkDescriptorSetLayout layout;
+    VkDescriptorPool      pool;
+    VkDescriptorSet       set;
+} SolImageDescriptor;
 
 typedef struct SolDescriptorConfig
 {
-    VkDeviceSize       size;
-    VkDescriptorType   type;
-    VkShaderStageFlags stageFlags;
     DescriptorKind     kind;
-    SolTextureId       imageId;
+    VkShaderStageFlags stageFlags;
+    union {
+        struct
+        {
+            VkDeviceSize     size;
+            VkDescriptorType type;
+        } buffer;
+        struct
+        {
+            int count;
+        } image;
+    } as;
 } SolDescriptorConfig;
 
 typedef struct SolPipe
@@ -176,10 +178,11 @@ int SolCreateBuffer(SolVkState *vk, VkDeviceSize size, VkBufferUsageFlags usage,
                     VkBuffer *outBuffer, VkDeviceMemory *outMemory);
 
 int Sol_CreateDescriptorImage(SolVkState *vk, VkImageView imageView, VkSampler sampler, VkShaderStageFlags stageFlags,
-                              SolDescriptor *out);
+                              SolBufferDescriptor *out);
 
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *pipe);
-int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out);
+int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, SolBufferDescriptor *out);
+int Sol_ImageDescriptor_Build(SolVkState *vkstate, SolGpuImage *images, SolImageDescriptor *out);
 
 // ─── Render API (internal) ───────────────────────────────────────
 VkCommandBuffer   Command_Buffer_Get(void);

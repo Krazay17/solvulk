@@ -15,5 +15,4 @@ typedef struct
     SolFontKind kind;
 } SolFontDesc;
 
-ShaderPushTexts Prepare_Text(SolFontDesc desc);
 float           Sol_MeasureText(const char *str, float size, SolFontKind id);

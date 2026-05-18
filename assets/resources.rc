@@ -1,5 +1,7 @@
 //ID_NAME               TYPE            PATH
 gflame.png              RCDATA          "images/gflame.png"
+SpikeParticle.png       RCDATA          "images/SpikeParticle2.png"
+CloudParticle.png       RCDATA          "images/CloudParticle.png"
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"

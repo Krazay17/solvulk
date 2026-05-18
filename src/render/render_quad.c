@@ -18,14 +18,16 @@ void Sol_Render_PushQuad(QuadDesc desc)
     QuadSSBO *ssbo = &quadQueue.instances[idx];
     memcpy(ssbo->pos, desc.pos.raw, sizeof(vec4));
 
-    desc.color = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}};
+    if (desc.color.a == 0)
+        desc.color = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}};
     memcpy(ssbo->color, desc.color.raw, sizeof(vec4));
     if (desc.rotation.w == 0)
         desc.rotation = (versors){{0, 0, 0, 1.0f}};
     memcpy(ssbo->rotation, desc.rotation.raw, sizeof(versor));
     desc.uv = (vec4s){{0, 0, 1.0f, 1.0f}};
     memcpy(ssbo->uv, desc.uv.raw, sizeof(vec4));
-    ssbo->type = desc.kind;
+    ssbo->type      = desc.kind;
+    ssbo->textureId = desc.textureId;
 }
 
 void Flush_Quads(void)

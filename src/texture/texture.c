@@ -13,8 +13,10 @@
 #include "stb_image.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT] = "atlas.raw",
-    [SOL_TEXTURE_GFLAME]  = "gflame.png",
+    [SOL_TEXTURE_ICEFONT]       = "atlas.raw",
+    [SOL_TEXTURE_GFLAME]        = "gflame.png",
+    [SOL_TEXTURE_SPIKEPARTICLE] = "SpikeParticle.png",
+    [SOL_TEXTURE_CLOUD]         = "CloudParticle.png",
 };
 SolTexture loaded_images[SOL_TEXTURE_COUNT];
 

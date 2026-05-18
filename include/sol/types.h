@@ -95,20 +95,6 @@ typedef enum Shape2
     SHAPE2_CNT,
 } Shape2;
 
-typedef enum
-{
-    DESC_ORTHO_UBO,
-    DESC_SCENE_UBO,
-    DESC_MODEL_SSBO,
-    DESC_SKINNING_SSBO,
-    DESC_FONT_ATLAS,
-    DESC_FLAGS_SSBO,
-    DESC_BILLBOARD_SSBO,
-    DESC_SPHERE,
-    DESC_QUAD,
-    DESC_SPRITE,
-    DESC_COUNT,
-} DescriptorId;
 
 typedef enum
 {
@@ -141,13 +127,6 @@ typedef enum
     FRAMEBUFFER_LINE,
     FRAMEBUFFER_COUNT,
 } FrameBufferId;
-
-typedef enum
-{
-    DESC_KIND_UBO,
-    DESC_KIND_SSBO,
-    DESC_KIND_IMAGE,
-} DescriptorKind;
 
 typedef enum
 {
@@ -200,17 +179,12 @@ typedef struct SolLine
     float ttl;
 } SolLine;
 
-typedef struct SolSphere
-{
-    vec3s pos;
-    vec4s color;
-    float radius;
-} SolSphere;
-
 typedef enum
 {
     PARTICLE_ORB,
     PARTICLE_GFLAME,
+    PARTICLE_SPIKEY,
+    PARTICLE_CLOUD,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -229,13 +203,6 @@ typedef struct SolMaterial
 } SolMaterial;
 
 // TEXTURE---------------
-
-typedef enum
-{
-    SOL_TEXTURE_ICEFONT,
-    SOL_TEXTURE_GFLAME,
-    SOL_TEXTURE_COUNT,
-} SolTextureId;
 
 typedef enum
 {
@@ -280,19 +247,6 @@ typedef struct SolTri
     vec3s normal, center;
     float bounds;
 } SolTri;
-
-typedef struct
-{
-    float x, y, w, h;
-    float u, v, uw, vh;
-    float r, g, b, a;
-} ShaderPushText;
-
-typedef struct
-{
-    ShaderPushText *push;
-    u32             count;
-} ShaderPushTexts;
 
 typedef enum
 {

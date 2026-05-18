@@ -7,7 +7,7 @@ typedef struct Particle
     vec3s        pos, vel;
     vec4s        color;
     float        ttl, scale, span, speed;
-    float        rot, rotspeed;
+    float        rot, rotspeed, offset;
 } Particle;
 
 typedef struct Emitter
@@ -16,7 +16,7 @@ typedef struct Emitter
     vec3s       pos, vel;
     float       ttl, rate, accumulator;
     Particle    particle;
-    u32         burst;
+    u32         burst, inf;
 } Emitter;
 
 void Sol_Emitter_Init(World *world);

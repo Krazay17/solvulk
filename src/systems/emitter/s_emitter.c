@@ -25,12 +25,12 @@ typedef struct SolEmitters
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
 static void      Emitter_Tick(World *world, double dt, double time);
-static void      Emitter_Draw(World *world, double dt, double time);
+static void      Particle_Draw(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
     world->tickSystems[world->tickCount++]     = Emitter_Tick;
-    world->draw3dSystems[world->draw3dCount++] = Emitter_Draw;
+    world->draw3dSystems[world->draw3dCount++] = Particle_Draw;
 
     world->emitters = malloc(sizeof(SolEmitters));
 
@@ -63,6 +63,7 @@ void Sol_Emitter_Add(World *world, Emitter e)
         p->vel.x = sinf(phi) * cosf(theta) * speed;
         p->vel.y = sinf(phi) * sinf(theta) * speed;
         p->vel.z = cosf(phi) * speed;
+        p->pos   = vecAdd(em->pos, vecSca(p->vel, p->offset));
     }
     if (e.rate > 0)
         s->emitter_count++;
@@ -80,9 +81,12 @@ static void Emitter_Tick(World *world, double dt, double time)
     for (int i = 0; i < sys->emitter_count; i++)
     {
         Emitter *e = &sys->emitter[i];
-        e->ttl -= fdt;
-        if (e->ttl <= 0)
-            continue;
+        if (!e->inf)
+        {
+            e->ttl -= fdt;
+            if (e->ttl <= 0)
+                continue;
+        }
 
         e->pos = vecAdd(e->pos, vecSca(e->vel, fdt));
 
@@ -94,9 +98,9 @@ static void Emitter_Tick(World *world, double dt, double time)
             {
                 Particle *p = Particle_Activate(sys, e);
                 // Rewind lag to place particle unclumped
-                float offset = e->accumulator / fdt;
-                p->pos       = vecAdd(e->pos, vecSca(e->vel, -offset * fdt));
-                p->scale     = (rand() % 100) * p->scale * 0.01f;
+                float lagOffset = e->accumulator / fdt;
+                p->pos          = vecAdd(e->pos, vecSca(e->vel, -lagOffset * fdt));
+                p->scale        = (rand() % 100) * p->scale * 0.01f;
                 // Random spherical velocity
                 float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
                 float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
@@ -106,6 +110,7 @@ static void Emitter_Tick(World *world, double dt, double time)
                 p->vel.x = sinf(phi) * cosf(theta) * speed;
                 p->vel.y = sinf(phi) * sinf(theta) * speed;
                 p->vel.z = cosf(phi) * speed;
+                p->pos   = vecAdd(e->pos, vecSca(p->vel, p->offset));
 
                 e->accumulator -= e->rate;
             }
@@ -117,7 +122,7 @@ static void Emitter_Tick(World *world, double dt, double time)
     Particle_Tick(world, dt, time);
 }
 
-static void Emitter_Draw(World *world, double dt, double time)
+static void Particle_Draw(World *world, double dt, double time)
 {
     float        fdt = (float)dt;
     SolEmitters *s   = world->emitters;
@@ -138,9 +143,26 @@ static void Emitter_Draw(World *world, double dt, double time)
             break;
         case PARTICLE_GFLAME:
             Sol_Render_PushQuad((QuadDesc){
-                .pos      = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color    = color,
-                .rotation = (versors){p->rot, 0, 0, 1.0f},
+                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color     = color,
+                .rotation  = (versors){p->rot, 0, 0, 1.0f},
+                .textureId = SOL_TEXTURE_GFLAME,
+            });
+            break;
+        case PARTICLE_SPIKEY:
+            Sol_Render_PushQuad((QuadDesc){
+                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color     = color,
+                .rotation  = (versors){p->rot, 0, 0, 1.0f},
+                .textureId = SOL_TEXTURE_SPIKEPARTICLE,
+            });
+            break;
+        case PARTICLE_CLOUD:
+            Sol_Render_PushQuad((QuadDesc){
+                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
+                .color     = color,
+                .rotation  = (versors){p->rot, 0, 0, 1.0f},
+                .textureId = SOL_TEXTURE_CLOUD,
             });
             break;
         default:

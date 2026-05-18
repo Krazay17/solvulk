@@ -95,6 +95,8 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     VkPhysicalDeviceProperties selectedProps;
     vkGetPhysicalDeviceProperties(vkstate->physicalDevice, &selectedProps);
 
+    // VkPhysicalDeviceFeatures
+
     printf("%s\n", selectedProps.deviceName);
 
     return 0;
@@ -433,7 +435,7 @@ int Sol_CreateFrameBuffer(SolVkState *vkstate, VkDeviceSize size, VkBufferUsageF
 }
 
 int Sol_CreateDescriptorImage(SolVkState *vkstate, VkImageView imageView, VkSampler sampler,
-                              VkShaderStageFlags stageFlags, SolDescriptor *out)
+                              VkShaderStageFlags stageFlags, SolBufferDescriptor *out)
 {
     VkDescriptorSetLayoutBinding binding = {
         .binding         = 0,
@@ -470,7 +472,7 @@ int Sol_CreateDescriptorImage(SolVkState *vkstate, VkImageView imageView, VkSamp
     VkDescriptorSet set;
     vkAllocateDescriptorSets(vkstate->device, &allocInfo, &set);
 
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT;i++)
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         out->sets[i] = set;
     }
@@ -481,12 +483,76 @@ int Sol_CreateDescriptorImage(SolVkState *vkstate, VkImageView imageView, VkSamp
         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
     VkWriteDescriptorSet write = {
-        .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet          = set,
+        .sType  = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = set,
+        //.dstArrayElement
         .dstBinding      = 0,
         .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,
         .pImageInfo      = &imageInfo,
+    };
+    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+
+    return 0;
+}
+
+int Sol_CreateDescriptorImageArray(SolVkState *vkstate, SolGpuImage *images, int imageCount, SolBufferDescriptor *out)
+{
+    VkDescriptorSetLayoutBinding binding = {
+        .binding         = 0,
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = imageCount,
+        .stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings    = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &out->layout);
+
+    VkDescriptorPoolSize poolSize = {
+        .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = imageCount,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets       = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes    = &poolSize,
+    };
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &out->pool);
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool     = out->pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts        = &out->layout,
+    };
+
+    VkDescriptorSet set;
+    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &set);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        out->sets[i] = set;
+    }
+
+    VkDescriptorImageInfo imageInfo[SOL_TEXTURE_COUNT];
+    for (int i = 0; i < imageCount; i++)
+    {
+        imageInfo->sampler     = images[i].sampler;
+        imageInfo->imageView   = images[i].view;
+        imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    VkWriteDescriptorSet write = {
+        .sType  = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = set,
+        .dstBinding      = 0,
+        .dstArrayElement = 0,
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = imageCount,
+        .pImageInfo      = imageInfo,
     };
     vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
 

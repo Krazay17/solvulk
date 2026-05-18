@@ -25,6 +25,7 @@
 #include "world.h"
 #include "components.h"
 
+#include "texture/texture.h"
 #include "owner/owner.h"
 #include "combat/combat.h"
 #include "contact/contact.h"

@@ -7,13 +7,17 @@
 
 static SolVkState solvkstate = {0};
 
-static u32         boundPipeline;
+static u32 boundPipeline;
+
 static SolGpuImage gpuImages[SOL_TEXTURE_COUNT];
 static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
+static SolPipe pipes[PIPE_COUNT];
+
+static SolBufferDescriptor descriptors[DESC_COUNT];
+static SolImageDescriptor  image_array_descriptor;
+
 static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
-static SolDescriptor  descriptors[DESC_COUNT];
-static SolPipe        pipes[PIPE_COUNT];
 
 static SolFrameBufferConfig buffer_config[FRAMEBUFFER_COUNT] = {
     [FRAMEBUFFER_LINE] =
@@ -32,7 +36,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(ShaderPushText),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO, DESC_FONT_ATLAS},
+            .descId            = {DESC_ORTHO_UBO, DESC_IMAGES},
             .descCount         = 2,
         },
     [PIPE_MODEL] =
@@ -82,9 +86,9 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_NONE,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_SPRITE},
-            .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_IMAGES},
+            .descCount         = 3,
         },
     [PIPE_BILLBOARD] =
         {
@@ -133,75 +137,65 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {
-    [DESC_ORTHO_UBO] =
-        {
-            .size       = sizeof(OrthoUBO),
-            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_UBO,
-        },
-    [DESC_SCENE_UBO] =
-        {
-            .size       = sizeof(SceneUBO),
-            .type       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_UBO,
-        },
-    [DESC_MODEL_SSBO] =
-        {
-            .size       = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_FONT_ATLAS] =
-        {
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_IMAGE,
-            .imageId    = SOL_TEXTURE_ICEFONT,
-        },
-    [DESC_SPHERE] =
-        {
-            .size       = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_QUAD] =
-        {
-            .size       = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_SPRITE] =
-        {
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_IMAGE,
-            .imageId    = SOL_TEXTURE_GFLAME, // single texture for now
-        },
-    [DESC_BILLBOARD_SSBO] =
-        {
-            .size       = sizeof(BillboardSSBO) * MAX_BILLBOARD_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_FLAGS_SSBO] =
-        {
-            .size       = sizeof(FlagsSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-    [DESC_SKINNING_SSBO] =
-        {
-            .size       = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
-            .type       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .kind       = DESC_KIND_SSBO,
-        },
-
+    [DESC_ORTHO_UBO]      = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(OrthoUBO),
+                                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                 }},
+    [DESC_SCENE_UBO]      = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(SceneUBO),
+                                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                 }},
+    [DESC_MODEL_SSBO]     = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_SPHERE]         = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(SphereSSBO) * MAX_SPHERE_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_QUAD]           = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_BILLBOARD_SSBO] = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(BillboardSSBO) * MAX_BILLBOARD_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_FLAGS_SSBO]     = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(FlagsSSBO) * MAX_MODEL_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_SKINNING_SSBO]  = {.kind       = DESC_KIND_BUFFER,
+                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                             .as.buffer =
+                                 {
+                                     .size = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
+                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                 }},
+    [DESC_IMAGES]         = {.kind       = DESC_KIND_IMAGES,
+                             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                             .as.image   = {.count = SOL_TEXTURE_COUNT}},
 };
 
 int Sol_Render_Init(void *hwnd, void *hInstance)
@@ -249,10 +243,14 @@ int Sol_Render_BuildPipes()
 {
     for (int i = 0; i < DESC_COUNT; i++)
     {
-        if (Sol_Descriptor_Build(&solvkstate, &desc_config[i], &descriptors[i]) != 0)
+        SolDescriptorConfig *cfg = &desc_config[i];
+        if (cfg->kind == DESC_KIND_BUFFER)
         {
-            Sol_MessageBox("DESC ERROR", NULL);
-            return 9;
+            Sol_BufferDescriptor_Build(&solvkstate, cfg, &descriptors[i]);
+        }
+        else if (cfg->kind == DESC_KIND_IMAGES)
+        {
+            Sol_ImageDescriptor_Build(&solvkstate, gpuImages, &image_array_descriptor);
         }
     }
     for (int i = 0; i < PIPE_COUNT; i++)
@@ -303,18 +301,23 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     if (id == boundPipeline)
         return;
 
-    SolPipe           *pipe = &pipes[id];
-    SolPipelineConfig *cfg  = &pipe_config[id];
-
+    SolPipe *pipe = &pipes[id];
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->pipeline);
+
+    SolPipelineConfig *cfg = &pipe_config[id];
 
     if (cfg->descCount > 0)
     {
         VkDescriptorSet sets[4];
         for (u32 i = 0; i < cfg->descCount; i++)
         {
-            sets[i] = descriptors[cfg->descId[i]].sets[solvkstate.currentFrame];
+            DescriptorId did = cfg->descId[i];
+            if (desc_config[did].kind == DESC_KIND_IMAGES)
+                sets[i] = image_array_descriptor.set;
+            else
+                sets[i] = descriptors[did].sets[solvkstate.currentFrame];
         }
+
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->layout, 0, cfg->descCount, sets, 0, NULL);
     }
 
@@ -563,8 +566,11 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     u32                   layoutCount = 0;
     for (int i = 0; i < config->descCount; i++)
     {
-        DescriptorId id        = config->descId[i];
-        layouts[layoutCount++] = descriptors[id].layout;
+        DescriptorId id = config->descId[i];
+        if (desc_config[id].kind == DESC_KIND_IMAGES)
+            layouts[layoutCount++] = image_array_descriptor.layout;
+        else
+            layouts[layoutCount++] = descriptors[id].layout;
     }
 
     // --- load shader bytecode ---
@@ -781,16 +787,68 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     return 0;
 }
 
-int Sol_Descriptor_Build(SolVkState *vkstate, SolDescriptorConfig *config, SolDescriptor *out)
+int Sol_ImageDescriptor_Build(SolVkState *vkstate, SolGpuImage *images, SolImageDescriptor *out)
 {
-    if (config->kind == DESC_KIND_IMAGE)
+    VkDescriptorSetLayoutBinding binding = {
+        .binding         = 0,
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = SOL_TEXTURE_COUNT,
+        .stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings    = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &out->layout);
+
+    VkDescriptorPoolSize poolSize = {
+        .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = SOL_TEXTURE_COUNT,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .maxSets       = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes    = &poolSize,
+    };
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &out->pool);
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool     = out->pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts        = &out->layout,
+    };
+
+    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &out->set);
+
+    VkDescriptorImageInfo imageInfo[SOL_TEXTURE_COUNT];
+    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
     {
-        Sol_CreateDescriptorImage(&solvkstate, gpuImages[config->imageId].view, gpuImages[config->imageId].sampler,
-                                  VK_SHADER_STAGE_FRAGMENT_BIT, out);
-        return 0;
+        imageInfo[i].sampler     = images[i].sampler;
+        imageInfo[i].imageView   = images[i].view;
+        imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    VkDeviceSize       size       = config->size;
-    VkDescriptorType   type       = config->type;
+
+    VkWriteDescriptorSet write = {
+        .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet          = out->set,
+        .dstBinding      = 0,
+        .dstArrayElement = 0,
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = SOL_TEXTURE_COUNT,
+        .pImageInfo      = imageInfo,
+    };
+    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
+
+    return 0;
+}
+
+int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, SolBufferDescriptor *out)
+{
+    VkDeviceSize       size       = config->as.buffer.size;
+    VkDescriptorType   type       = config->as.buffer.type;
     VkShaderStageFlags stageFlags = config->stageFlags;
 
     // 1. Descriptor set layout

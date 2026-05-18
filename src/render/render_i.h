@@ -12,6 +12,46 @@
 typedef struct SolModel   SolModel;
 typedef struct SolTexture SolTexture;
 
+typedef enum
+{
+    DESC_KIND_BUFFER,
+    DESC_KIND_IMAGES,
+} DescriptorKind;
+
+typedef enum
+{
+    DESC_ORTHO_UBO,
+    DESC_SCENE_UBO,
+    DESC_MODEL_SSBO,
+    DESC_SKINNING_SSBO,
+    DESC_FLAGS_SSBO,
+    DESC_BILLBOARD_SSBO,
+    DESC_SPHERE,
+    DESC_QUAD,
+    DESC_IMAGES,
+    DESC_COUNT,
+} DescriptorId;
+
+typedef enum
+{
+    BLEND_NONE,
+    BLEND_ALPHA,
+    BLEND_ADDITIVE,
+} BlendMode;
+
+typedef struct
+{
+    float x, y, w, h;
+    float u, v, uw, vh;
+    float r, g, b, a;
+} ShaderPushText;
+
+typedef struct
+{
+    ShaderPushText *push;
+    u32             count;
+} ShaderPushTexts;
+
 typedef struct
 {
     mat4 ortho2d;
@@ -70,7 +110,8 @@ typedef struct
     vec4 color;    // tint
     vec4 uv;       // atlas UV offset/scale (xy = offset, zw = size)
     u32  type;
-    u32  _pad[3];
+    u32  textureId;
+    u32  _pad[2];
 } QuadSSBO;
 
 typedef struct
@@ -98,3 +139,5 @@ void Flush_Queue(void);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+
+ShaderPushTexts Prepare_Text(SolFontDesc desc);

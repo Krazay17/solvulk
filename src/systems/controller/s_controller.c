@@ -204,8 +204,8 @@ static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
     if (action & ACTION_LEFT)
         wishdir = glms_vec3_sub(wishdir, rightdir);
 
-    if (action & ACTION_JUMP)
-        wishdir = glms_vec3_add(wishdir, updir);
+    // if (action & ACTION_JUMP)
+    //     wishdir = glms_vec3_add(wishdir, updir);
 
     return glms_vec3_normalize(wishdir);
 }

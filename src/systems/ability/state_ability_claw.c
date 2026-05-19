@@ -42,14 +42,12 @@ void Claw_State_Exit(World *world, int id)
 
 bool Claw_State_CanEnter(World *world, int id, int last)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ABILITY_STATE_CLAW];
-    if (data->lastEntered + CLAW_COOLDOWN > (float)Sol_GetState()->gameTime)
-        return false;
-
-    return true;
+    AbilityData *data    = &world->abilities[id].stateData[ABILITY_STATE_CLAW];
+    return !(data->lastEntered + CLAW_COOLDOWN > (float)Sol_GetState()->gameTime);
 }
+
 bool Claw_State_CanExit(World *world, int id, int next)
 {
-    return true;
+    AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
+    return data->elapsed >= CLAW_DURATION * 0.7f;
 }

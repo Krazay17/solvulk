@@ -9,7 +9,7 @@ static void   Sol_OnResize();
 void Sol_Init(void *hwnd, void *hInstance)
 {
     solState.timescale = 1.0;
-    solState.g_hwnd = hwnd;
+    solState.g_hwnd    = hwnd;
     i32 res;
 
     res = Sol_Audio_Init();
@@ -45,63 +45,6 @@ double Sol_GetGameTime()
     return solState.gameTime;
 }
 
-void Sol_Tick(double dt, double time)
-{
-    solState.gameTime += dt;
-    solState.tickCounter++;
-    Sol_Input_Update();
-    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
-    {
-        // solState.debug = !solState.debug;
-        solState.worlds[0]->worldActive ^= 1;
-        Sol_Input_SetLocked(!solState.worlds[0]->worldActive);
-        // solState.isRunning = false;
-    }
-
-    if (solState.needsResize)
-        Sol_OnResize();
-
-    for (int i = 0; i < solState.worldCount; ++i)
-        World_Tick(solState.worlds[i], dt, time);
-
-    // Step at limited timestep -------
-    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
-    if (accumulator >= SOL_TIMESTEP)
-        for (int i = 0; i < solState.worldCount; ++i)
-            Xform_Snapshot(solState.worlds[i]);
-
-    while (accumulator >= SOL_TIMESTEP)
-    {
-        for (int i = 0; i < solState.worldCount; ++i)
-        {
-            World_Step(solState.worlds[i], SOL_TIMESTEP, time);
-        }
-
-        solState.stepCounter++;
-        accumulator -= SOL_TIMESTEP;
-    }
-    // ---------------------------------
-
-    float alpha = (float)(accumulator / SOL_TIMESTEP);
-    for (int i = 0; i < solState.worldCount; ++i)
-    {
-        Xform_Interpolate(solState.worlds[i], alpha);
-    }
-
-    Sol_Begin_Draw();
-    Sol_Cam_Update(dt);
-
-    for (int i = solState.worldCount - 1; i >= 0; --i)
-        World_Draw3d(solState.worlds[i], dt, time);
-        
-    Flush_Queue();
-    for (int i = solState.worldCount - 1; i >= 0; --i)
-        World_Draw2d(solState.worlds[i], dt, time);
-
-    Sol_Debug_Draw(dt);
-    Sol_End_Draw();
-}
-
 void Sol_Destroy()
 {
     for (int i = 0; i < solState.worldCount; i++)
@@ -130,4 +73,83 @@ static void Sol_OnResize()
 void Sol_State_SetTimescale(float timescale)
 {
     solState.timescale = timescale;
+}
+
+void Sol_State_SetActiveworld(World *world)
+{
+    solState.activeWorld = world;
+}
+
+void Sol_Tick(double dt, double time)
+{
+    solState.gameTime += dt;
+    solState.tickCounter++;
+    Sol_Input_Update();
+    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
+    {
+        solState.worlds[0]->worldActive ^= 1;
+        Sol_Input_SetLocked(!solState.worlds[0]->worldActive);
+        // solState.isRunning = false;
+    }
+
+    if (solState.needsResize)
+        Sol_OnResize();
+
+    for (int i = 0; i < solState.worldCount; ++i)
+    {
+        if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+            continue;
+        World_Tick(solState.worlds[i], dt, time);
+    }
+
+    // ######### STEP AND INTERP #########
+    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
+    for (int i = 0; i < solState.worldCount; ++i)
+    {
+        if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+            continue;
+        if (accumulator >= SOL_TIMESTEP)
+            Xform_Snapshot(solState.worlds[i]);
+    }
+    while (accumulator >= SOL_TIMESTEP)
+    {
+        for (int i = 0; i < solState.worldCount; ++i)
+        {
+            if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+                continue;
+            World_Step(solState.worlds[i], SOL_TIMESTEP, time);
+        }
+        accumulator -= SOL_TIMESTEP;
+    }
+    float alpha = (float)(accumulator / SOL_TIMESTEP);
+    for (int i = 0; i < solState.worldCount; ++i)
+    {
+        if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+            continue;
+        Xform_Interpolate(solState.worlds[i], alpha);
+    }
+    // ######### END STEP AND INTERP #########
+
+    Sol_Begin_Draw();
+
+    for (int i = solState.worldCount - 1; i >= 0; --i)
+    {
+        if (!solState.worlds[i]->doesRender || !solState.worlds[i]->worldActive)
+            continue;
+        Sol_Cam_Update(solState.worlds[i], dt);
+        World_Draw3d(solState.worlds[i], dt, time);
+    }
+    Sol_Render_DrawSkybox();
+    Sol_Render_Flush3D();
+
+    for (int i = solState.worldCount - 1; i >= 0; --i)
+    {
+        if (!solState.worlds[i]->doesRender || !solState.worlds[i]->worldActive)
+            continue;
+        World_Draw2d(solState.worlds[i], dt, time);
+    }
+    Sol_Render_Flush2D();
+
+    Sol_Debug_Draw(dt);
+    Sol_End_Draw();
 }

@@ -22,6 +22,7 @@ typedef struct SolState
     bool          debug;
     u32           tickCounter, stepCounter;
 
+    World   *activeWorld;
     World   *worlds[MAX_WORLDS];
     uint16_t worldCount;
 } SolState;

@@ -2,14 +2,12 @@
 
 #include "vital/vital.h"
 
-static Healthbar_Draw(World *world, double dt, double time);
-
 void Sol_View_Healthbar(World *world)
 {
-    WAdd3d(world) = Healthbar_Draw;
+    WAdd3d(world) = Sol_View_Healthbar_Draw;
 }
 
-static Healthbar_Draw(World *world, double dt, double time)
+void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 {
     int required = HAS_VITAL;
     int count    = world->activeCount;

@@ -68,9 +68,7 @@ void Shield_State_Exit(World *world, int id)
 bool Shield_State_CanEnter(World *world, int id, int last)
 {
     CompAbility *ability = &world->abilities[id];
-    if (ability->state == ABILITY_STATE_SHIELD)
-        return false;
-    return true;
+    return !(ability->state == ABILITY_STATE_SHIELD);
 }
 
 bool Shield_State_CanExit(World *world, int id, int next)

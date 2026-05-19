@@ -352,4 +352,34 @@ SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri)
     return result;
 }
 
+```CMAKE
+#--------------------------------------
+# compile textures
+#--------------------------------------
+set(IMAGE_DIR "${CMAKE_SOURCE_DIR}/assets/images")
+set(CIMAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/cimages")
+file(MAKE_DIRECTORY ${CIMAGE_OUTPUT_DIR})
+set(IMAGES
+    ${IMAGE_DIR}/RedSky2.png
+)
+set(TEXCONV_EXE ${CMAKE_SOURCE_DIR}/tools/texconv.exe)
+foreach(IMAGE ${IMAGES})
+    get_filename_component(IMAGE_NAME ${IMAGE} NAME)
+    set(IMAGE_OUTPUT "${CIMAGE_OUTPUT_DIR}/${IMAGE_NAME}.dds")
+    add_custom_command(
+        OUTPUT ${IMAGE_OUTPUT}
+        COMMAND ${TEXCONV_EXE}
+            -f BC7_UNORM
+            -m 0
+            -y
+            -o ${CIMAGE_OUTPUT_DIR}
+            ${IMAGE}
+        DEPENDS ${IMAGE}
+        COMMENT "Converting texture: ${IMAGE_NAME}"
+    )
+    list(APPEND CIMAGE_OUTPUTS ${IMAGE_OUTPUT})
+endforeach()
+add_custom_target(images DEPENDS ${CIMAGE_OUTPUTS})
+add_dependencies(solvulk images)
+add_dependencies(solapp images)
 ```

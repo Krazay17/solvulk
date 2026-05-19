@@ -25,12 +25,13 @@ typedef struct SolEmitters
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
 static void      Emitter_Tick(World *world, double dt, double time);
-static void      Particle_Draw(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
-    world->tickSystems[world->tickCount++]     = Emitter_Tick;
-    world->draw3dSystems[world->draw3dCount++] = Particle_Draw;
+    world->tickSystems[world->tickCount++] = Emitter_Tick;
+
+    // TODO MOVE TO CLIENT INIT
+    world->draw3dSystems[world->draw3dCount++] = Sol_View_Particle_Draw;
 
     world->emitters = malloc(sizeof(SolEmitters));
 
@@ -59,16 +60,6 @@ void Sol_Emitter_Add(World *world, Emitter e)
     for (int i = 0; i < em->burst; i++)
     {
         Particle *p = Particle_Activate(s, em);
-        p->scale    = p->randScale ? (rand() % 100) * p->scale * 0.01f : p->scale;
-        float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
-        float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
-
-        float speed = p->speed;
-
-        p->vel.x = sinf(phi) * cosf(theta) * speed;
-        p->vel.y = sinf(phi) * sinf(theta) * speed;
-        p->vel.z = cosf(phi) * speed;
-        p->pos   = vecAdd(em->pos, vecSca(p->vel, p->offset));
     }
     if (e.rate > 0)
         s->emitter_count++;
@@ -108,19 +99,7 @@ static void Emitter_Tick(World *world, double dt, double time)
                 Particle *p = Particle_Activate(sys, e);
                 // Rewind lag to place particle unclumped
                 float lagOffset = e->accumulator / fdt;
-                p->pos          = vecAdd(e->pos, vecSca(e->vel, -lagOffset * fdt));
-                p->scale        = (rand() % 100) * p->scale * 0.01f;
-                // Random spherical velocity
-                float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
-                float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
-
-                float speed = p->speed > 0 ? p->speed : 1.0f;
-
-                p->vel.x = sinf(phi) * cosf(theta) * speed;
-                p->vel.y = sinf(phi) * sinf(theta) * speed;
-                p->vel.z = cosf(phi) * speed;
-                p->pos   = vecAdd(e->pos, vecSca(p->vel, p->offset));
-
+                p->pos          = vecAdd(p->pos, vecSca(p->vel, -lagOffset * fdt));
                 e->accumulator -= e->rate;
             }
 
@@ -129,78 +108,6 @@ static void Emitter_Tick(World *world, double dt, double time)
     world->emitters->emitter_count = write;
 
     Particle_Tick(world, dt, time);
-}
-
-static void Particle_Draw(World *world, double dt, double time)
-{
-    float        fdt = (float)dt;
-    SolEmitters *s   = world->emitters;
-    for (int i = 0; i < s->particle_count; i++)
-    {
-        Particle *p           = &s->particle[i];
-        float     t           = p->ttl / p->span;
-        float     visualScale = p->scale;
-
-        if ((1.0f - t) < p->scalein)
-            visualScale = p->scale * ((1.0f - t) / p->scalein);
-        if (t < p->scaleout)
-            visualScale = p->scale * (t / p->scaleout);
-
-        vec4s color = p->color.a > 0 ? p->color : (vec4s){1, 1, 1, 1};
-
-        switch (p->kind)
-        {
-        case PARTICLE_ORB:
-            Sol_Render_PushSphere((SphereDesc){
-                .pos   = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color = color,
-                .isfx  = true,
-            });
-            break;
-        case PARTICLE_GFLAME:
-            Sol_Render_PushSprite((SpriteDesc){
-                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color     = color,
-                .rotation  = (versors){p->rot, 0, 0, 1.0f},
-                .textureId = SOL_TEXTURE_GFLAME,
-                .isfx      = true,
-            });
-            break;
-        case PARTICLE_SPIKEY:
-            Sol_Render_PushSprite((SpriteDesc){
-                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color     = color,
-                .rotation  = (versors){p->rot, 0, 0, 1.0f},
-                .textureId = SOL_TEXTURE_SPIKEPARTICLE,
-                .isfx      = true,
-            });
-            break;
-        case PARTICLE_CLOUD:
-            Sol_Render_PushSprite((SpriteDesc){
-                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color     = color,
-                .rotation  = (versors){p->rot, 0, 0, 1.0f},
-                .textureId = SOL_TEXTURE_CLOUDPARTICLE,
-                .isfx      = true,
-            });
-            break;
-        case PARTICLE_BLOOD:
-            Sol_Render_PushSprite((SpriteDesc){
-                .pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color     = color,
-                .rotation  = (versors){p->rot, 0, 0, 1.0f},
-                .textureId = SOL_TEXTURE_BLOODPARTICLE,
-                .isfx      = false,
-            });
-            break;
-        default:
-            Sol_Render_PushSphere((SphereDesc){
-                .pos   = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale},
-                .color = color,
-                .isfx  = true,
-            });
-        }
-    }
 }
 
 static void Particle_Tick(World *world, double dt, double time)
@@ -216,10 +123,12 @@ static void Particle_Tick(World *world, double dt, double time)
         if (p->ttl <= 0)
             continue;
 
+        // p->pos = Sol_Xform_GetPos(world, p->followId);
+        vec3s finalvel = p->vel;
         if (p->followId)
-            p->pos = Sol_Xform_GetPos(world, p->followId);
-        else
-            p->pos = vecAdd(p->pos, vecSca(p->vel, fdt));
+            finalvel = vecAdd(p->vel, Sol_Physx_GetVel(world, p->followId));
+
+        p->pos = vecAdd(p->pos, vecSca(finalvel, fdt));
 
         p->rot += p->rotspeed * dt;
 
@@ -228,17 +137,37 @@ static void Particle_Tick(World *world, double dt, double time)
     s->particle_count = write;
 }
 
-static Particle *Particle_Activate(SolEmitters *s, Emitter *init)
+static Particle *Particle_Activate(SolEmitters *s, Emitter *e)
 {
     Sol_Realloc(&s->particle, s->particle_count, &s->particle_capacity, sizeof(Particle));
 
-    Particle *p = &s->particle[s->particle_count];
-    memcpy(p, &init->particle, sizeof(Particle));
-    p->span = p->ttl;
-    p->pos  = init->pos;
+    switch (e->particle.kind) {}
 
-    s->particle_count++;
+    Particle *p = &s->particle[s->particle_count++];
+    memcpy(p, &e->particle, sizeof(Particle));
+    p->span = p->ttl;
+
+    p->scale    = p->randScale ? (rand() % 100) * p->scale * 0.01f : p->scale;
+    float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi
+    float phi   = acosf(2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f); // 0 to pi
+
+    float speed = p->speed;
+
+    p->vel.x = sinf(phi) * cosf(theta) * speed;
+    p->vel.y = sinf(phi) * sinf(theta) * speed;
+    p->vel.z = cosf(phi) * speed;
+    p->pos   = vecAdd(e->pos, vecSca(p->vel, p->offset));
 
     Sol_Debug_Add("Particles", (float)s->particle_count);
     return p;
+}
+
+u32 Sol_Emitter_GetParticleCount(World *world)
+{
+    return world->emitters->particle_count;
+}
+
+Particle *Sol_Emitter_GetParticles(World *world)
+{
+    return world->emitters->particle;
 }

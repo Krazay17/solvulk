@@ -4,14 +4,8 @@
 
 #include "render/vk/vkrender.h"
 
-typedef struct
-{
-    u32      count;
-    QuadSSBO instances[MAX_QUAD_INSTANCES];
-} SpriteQueue;
-
-static SpriteQueue spriteQueue;
-static SpriteQueue spriteFxQueue;
+SpriteQueue spriteQueue;
+SpriteQueue spriteFxQueue;
 
 void Sol_Render_PushSprite(SpriteDesc desc)
 {

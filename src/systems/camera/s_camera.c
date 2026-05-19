@@ -58,17 +58,19 @@ void Sol_Cam_Arm_Update(World *world, vec3s head, double dt)
         if (targetDist < 0)
             targetDist = 0;
         camera_arm.currentDistance = Sol_Lerp(camera_arm.currentDistance, targetDist, factor);
-        
+
         camera_arm.arm = glms_vec3_add(camera_arm.anchor, glms_vec3_scale(invDirection, camera_arm.currentDistance));
     }
 }
 
-void Sol_Cam_Update(double dt)
+void Sol_Cam_Update(World *world, double dt)
 {
     // float    fdt  = (float)dt;
+    SolCamera *camera = world->activeCamera;
+    if (!camera)
+        return;
     SolLook *look = Sol_Input_GetLook();
 
-    // Can shake here?
     float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
     if (Sol_Input_GetMouse().wheelV)
         camera_arm.distance -= changeDist;
@@ -76,15 +78,19 @@ void Sol_Cam_Update(double dt)
     memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
     memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
 
-    
     glm_vec3_lerp(sol_camera.up, (vec3){0.0f, 1.0f, 0.0f}, 1.0f - expf(-10.0f * (float)dt), sol_camera.up);
 
     glm_lookat(sol_camera.position, sol_camera.target, sol_camera.up, sol_camera.view);
 
-    Sol_Render_Camera_Update(&sol_camera);
+    Sol_Render_Camera_Update(camera);
 }
 
 SolCameraArm *Sol_Cam_GetArm()
 {
     return &camera_arm;
+}
+
+void Sol_Cam_SetActivecam(World *world)
+{
+    world->activeCamera = &sol_camera;
 }

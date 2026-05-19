@@ -65,6 +65,7 @@ SOLAPI SolState *Sol_GetState();
 SOLAPI double    Sol_GetGameTime();
 SOLAPI void      Sol_Window_Resize(float width, float height);
 
+
 void Sol_Debug_Add(const char *text, float value);
 void DebugFPS(double dt);
 

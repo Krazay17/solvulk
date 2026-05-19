@@ -1,13 +1,11 @@
 #include "sol_core.h"
 
-static void Sol_View_Crosshair_Draw(World *world, double dt, double time);
-
 void Sol_View_Crosshair(World *world)
 {
     WAdd2d(world) = Sol_View_Crosshair_Draw;
 }
 
-static void Sol_View_Crosshair_Draw(World *world, double dt, double time)
+void Sol_View_Crosshair_Draw(World *world, double dt, double time)
 {
     float width  = (float)Sol_GetState()->windowWidth / 2;
     float height = (float)Sol_GetState()->windowHeight / 2;

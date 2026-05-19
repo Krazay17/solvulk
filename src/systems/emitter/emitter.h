@@ -32,4 +32,6 @@ typedef struct Emitter
 
 void Sol_Emitter_Init(World *world);
 
-void Sol_Emitter_Add(World *world, Emitter e);
+void      Sol_Emitter_Add(World *world, Emitter e);
+u32       Sol_Emitter_GetParticleCount(World *world);
+Particle *Sol_Emitter_GetParticles(World *world);

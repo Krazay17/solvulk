@@ -11,10 +11,8 @@
 
 void Sol_Buff_Init(World *world)
 {
-    u32 idx                 = world->stepCount++;
-    world->stepSystems[idx] = Sol_Buff_Step;
-
-    world->buffs = calloc(MAX_ENTS, sizeof(CompBuff));
+    world->stepSystems[world->stepCount++] = Sol_Buff_Step;
+    world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
 void Sol_Buff_Clear(World *world, int id)

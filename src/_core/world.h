@@ -99,6 +99,7 @@ typedef struct WorldLines     WorldLines;
 typedef struct SolEmitters    SolEmitters;
 typedef struct CompOwner      CompOwner;
 typedef struct CompContact    CompContact;
+typedef struct SolCamera      SolCamera;
 
 typedef struct CompFlags
 {
@@ -140,9 +141,12 @@ typedef struct World
     WorldPhysx  *spatial;
     WorldLines  *lines;
     SolEmitters *emitters;
-    u32 skyboxId;
+    u32          skyboxId;
+    SolCamera   *activeCamera;
 
     bool worldActive;
+    bool doesSimulate;
+    bool doesRender;
 
     int prestepCount;
     int stepCount;
@@ -155,10 +159,14 @@ typedef struct World
     u32 systemBits;
 } World;
 
-World *World_Create(void);
-World *World_Create_Default(void);
-void   World_Destroy(World *world);
-void   World_System_Add(World *world, WorldSystem system);
+World     *World_Create(void);
+World     *World_Create_Default(void);
+void       Sol_State_SetActiveworld(World *world);
+void       World_SetDoesrender(World *world, bool doesRender);
+SolCamera *Sol_World_GetActivecamera(World *world);
+
+void World_Destroy(World *world);
+void World_System_Add(World *world, WorldSystem system);
 
 void World_Step(World *world, double dt, double time);
 void World_Tick(World *world, double dt, double time);
@@ -172,3 +180,4 @@ void Sol_Flags_Add(World *world, int id, EFlag flags);
 void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 int Sol_World_GetEntCount(World *world);
+void Sol_World_SetActive(World *world, bool active);

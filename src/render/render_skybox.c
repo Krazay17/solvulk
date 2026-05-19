@@ -17,5 +17,12 @@ void Flush_Skybox()
         return;
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_SKYBOX);
-    vkCmdDraw(cmd, 3, 1, 0, 0); // 3 vertices, 1 instance
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+}
+
+void Sol_Render_DrawSkybox()
+{
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Bind_Pipeline(cmd, PIPE_SKYBOX);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
 }

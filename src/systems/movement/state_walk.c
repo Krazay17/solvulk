@@ -27,15 +27,23 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_BWD:
+    case STRAFE_BWD_RIGHT:
+    case STRAFE_BWD_LEFT:
         desc.anim = ANIM_WALK_BWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_LEFT:
+    case STRAFE_FWD_LEFT:
         desc.anim = ANIM_WALK_LEFT;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_RIGHT:
+    case STRAFE_FWD_RIGHT:
         desc.anim = ANIM_WALK_RIGHT;
+        Sol_Model_PlayAnim(world, id, desc);
+        break;
+    default:
+        desc.anim = ANIM_WALK_FWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }

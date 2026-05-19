@@ -1,15 +1,13 @@
 #include "ability/ability_i.h"
 #include "sol_core.h"
 
-static void Sol_View_Ability_Draw(World *world, double dt, double time);
 void        Sol_View_Ability(World *world)
 {
     WAdd3d(world) = Sol_View_Ability_Draw;
 }
 
-static void Sol_View_Ability_Draw(World *world, double dt, double time)
+void Sol_View_Ability_Draw(World *world, double dt, double time)
 {
-
     int required = HAS_ABILITY;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)

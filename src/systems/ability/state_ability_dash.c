@@ -41,10 +41,14 @@ void ADash_State_Enter(World *world, int id)
     switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
     {
     case STRAFE_FWD:
+    case STRAFE_FWD_LEFT:
+    case STRAFE_FWD_RIGHT:
         desc.anim = ANIM_DASH_FWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_BWD:
+    case STRAFE_BWD_LEFT:
+    case STRAFE_BWD_RIGHT:
         desc.anim = ANIM_DASH_BWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
@@ -54,6 +58,10 @@ void ADash_State_Enter(World *world, int id)
         break;
     case STRAFE_RIGHT:
         desc.anim = ANIM_DASH_RIGHT;
+        Sol_Model_PlayAnim(world, id, desc);
+        break;
+    default:
+        desc.anim = ANIM_DASH_FWD;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
@@ -66,21 +74,12 @@ void ADash_State_Exit(World *world, int id)
 
 bool ADash_State_CanEnter(World *world, int id, int last)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];
-    if (data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime)
-        return false;
-
-    return true;
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_DASH];
+    return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
 }
 
 bool ADash_State_CanExit(World *world, int id, int next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];
-
-    if (data->elapsed > DASH_DURATION)
-        return true;
-    else
-        return false;
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_DASH];
+    return data->elapsed >= DASH_DURATION * 0.9f;
 }

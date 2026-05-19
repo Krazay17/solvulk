@@ -173,15 +173,11 @@ void Ground_Trace(World *world, int count, float fdt)
             // Rotate the local offset by the entity's rotation
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
 
-            // Calculate ray start position
-            float forwardStep = 1.0f;
-            if (j == 0)
-                forwardStep = 1.25f;
-            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * forwardStep));
+            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x));
 
             result = Sol_Raycast(
                 world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.5f, .ignoreEnt = id, .mask = 0b1});
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.4f, .ignoreEnt = id, .mask = 0b1});
             if (result.hit && result.norm.y > 0.5f)
                 break;
         }
@@ -373,7 +369,11 @@ vec3s Sol_Physx_GetGround(World *world, int id)
 {
     return world->bodies[id].groundNormal;
 }
-
+void Sol_Physx_AddVel(World *world, int id, vec3s addvel)
+{
+    vec3s *vel = &world->bodies[id].vel;
+    *vel       = vecAdd(*vel, addvel);
+}
 void Sol_Physx_SetVel(World *world, int id, vec3s vel)
 {
     world->bodies[id].vel = vel;

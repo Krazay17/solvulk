@@ -25,9 +25,10 @@ typedef struct SolCamera
 } SolCamera;
 
 void Sol_Cam_Init(World *world);
-void Sol_Cam_Update(double dt);
+void Sol_Cam_Update(World *world, double dt);
 
 void Sol_Cam_Arm_Update(World *world, vec3s head, double dt);
 
 SolCamera    *Sol_GetCamera();
 SolCameraArm *Sol_Cam_GetArm();
+void Sol_Cam_SetActivecam(World *world);

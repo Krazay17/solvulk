@@ -51,9 +51,13 @@ typedef enum
 typedef enum
 {
     STRAFE_FWD,
+    STRAFE_FWD_LEFT,
     STRAFE_LEFT,
+    STRAFE_BWD_LEFT,
     STRAFE_BWD,
+    STRAFE_BWD_RIGHT,
     STRAFE_RIGHT,
+    STRAFE_FWD_RIGHT,
 } StrafeDir;
 
 typedef enum
@@ -95,14 +99,13 @@ typedef enum Shape2
     SHAPE2_CNT,
 } Shape2;
 
-
 typedef enum
 {
     FXKIND_FIREBALL_HIT,
     FXKIND_FIRE_APPLY,
     FXKIND_SHIELD_BURST,
     FXKIND_SHIELD_HIT,
-}FxKind;
+} FxKind;
 
 typedef enum
 {

@@ -31,7 +31,9 @@ void Sol_Movement_Jump_Enter(World *world, int id)
     AnimDesc desc          = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE};
     Sol_Model_PlayAnim(world, id, desc);
 
-    Sol_Physx_SetVelY(world, id, 8.0f);
+    Sol_Physx_SetVelY(world, id, 0);
+    vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.5f));
+    Sol_Physx_AddVel(world, id, vecSca(dir, 8.0f));
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)
@@ -44,8 +46,9 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id, int last)
 {
     CompMovement *movement = &world->movements[id];
     CompBody     *body     = &world->bodies[id];
-    
-    return !movement->hasJumped && body->airtime < JUMP_BUFFER && (Sol_Ability_GetState(world, id) != ABILITY_STATE_DASH);
+
+    return !movement->hasJumped && body->airtime < JUMP_BUFFER &&
+           (Sol_Ability_GetState(world, id) != ABILITY_STATE_DASH);
 }
 
 bool Sol_Movement_Jump_CanExit(World *world, int id, int next)

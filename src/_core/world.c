@@ -68,11 +68,13 @@ World *World_Create(void)
     World *world = calloc(1, sizeof(World));
     if (world)
     {
-        world->worldActive = true;
+        world->worldActive  = true;
+        world->doesSimulate = true;
+        world->doesRender   = true;
+        world->playerID     = -1;
 
         SolState *state                    = Sol_GetState();
         state->worlds[state->worldCount++] = world;
-        world->playerID                    = -1;
     }
 
     return world;
@@ -96,9 +98,6 @@ void World_Destroy(World *world)
 
 void World_Step(World *world, double dt, double time)
 {
-    if (!world || !world->worldActive)
-        return;
-
     for (int i = 0; i < world->prestepCount; i++)
     {
         world->prestepSystems[i](world, dt, time);
@@ -116,8 +115,6 @@ void World_Step(World *world, double dt, double time)
 
 void World_Tick(World *world, double dt, double time)
 {
-    if (!world || !world->worldActive)
-        return;
     for (int i = 0; i < world->tickCount; i++)
     {
         world->tickSystems[i](world, dt, time);
@@ -126,8 +123,6 @@ void World_Tick(World *world, double dt, double time)
 
 void World_Draw3d(World *world, double dt, double time)
 {
-    if (!world || !world->worldActive)
-        return;
     for (int i = 0; i < world->draw3dCount; i++)
     {
         world->draw3dSystems[i](world, dt, time);
@@ -136,8 +131,6 @@ void World_Draw3d(World *world, double dt, double time)
 
 void World_Draw2d(World *world, double dt, double time)
 {
-    if (!world || !world->worldActive)
-        return;
     for (int i = 0; i < world->draw2dCount; i++)
     {
         world->draw2dSystems[i](world, dt, time);
@@ -213,4 +206,16 @@ void Sol_Flags_Remove(World *world, int id, EFlag flags)
 int Sol_World_GetEntCount(World *world)
 {
     return world->activeCount;
+}
+void World_SetDoesrender(World *world, bool doesRender)
+{
+    world->doesRender = doesRender;
+}
+SolCamera *Sol_World_GetActivecamera(World *world)
+{
+    return world->activeCamera;
+}
+void Sol_World_SetActive(World *world, bool active)
+{
+    world->worldActive = active;
 }

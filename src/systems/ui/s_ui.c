@@ -35,11 +35,9 @@ typedef struct CompUi
     vec4s borderColor;
 } CompUi;
 
-static void Button_Tick(World *world, double dt, double time);
-
 void Sol_Ui_Init(World *world)
 {
-    WAdd2d(world)     = Button_Tick;
+    WAdd2d(world)     = Button_Draw;
     world->uiElements = calloc(MAX_ENTS, sizeof(CompUi));
 }
 
@@ -61,7 +59,7 @@ void Sol_Ui_Add(World *world, int id, UiDesc desc)
     strncpy_s(ui->text, sizeof(ui->text), desc.text, 64);
 }
 
-static void Button_Tick(World *world, double dt, double time)
+void Button_Draw(World *world, double dt, double time)
 {
     int   required = HAS_XFORM | HAS_UIVIEW;
     float fdt      = (float)dt;

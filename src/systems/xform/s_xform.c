@@ -8,7 +8,7 @@ void Sol_Xform_Init(World *world)
 
 void Sol_Xform_Add(World *world, int id, vec3s pos)
 {
-    if (!world)
+    if (!world || id < 0)
         return;
 
     world->masks[id] |= HAS_XFORM;

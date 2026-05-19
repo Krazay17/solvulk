@@ -99,16 +99,16 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
                                      .inf      = 1,
                                      .rate     = 0.1f,
                                      .particle = (Particle){
-                                        .randScale = 1,
-                                         .ttl      = 120.0f,
-                                         .color    = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
-                                         .scale    = 40.0f,
-                                         .kind     = PARTICLE_CLOUD,
-                                         .rotspeed = Sol_RandRange(-.1f, .1f),
-                                         .speed    = 1.0f,
-                                         .offset   = 100.0f,
-                                         .scalein  = 0.05f,
-                                         .scaleout = 0.05f,
+                                         .randScale = 1,
+                                         .ttl       = 120.0f,
+                                         .color     = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
+                                         .scale     = 40.0f,
+                                         .kind      = PARTICLE_CLOUD,
+                                         .rotspeed  = Sol_RandRange(-.1f, .1f),
+                                         .speed     = 1.0f,
+                                         .offset    = 100.0f,
+                                         .scalein   = 0.05f,
+                                         .scaleout  = 0.05f,
                                      }});
 }
 
@@ -167,6 +167,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 
     dims   = glms_vec2_scale(dims, scale);
     int id = Sol_Create_Ent(world);
+    if (id < 0)
+        return -1;
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
     Sol_Body_Add(world, id,

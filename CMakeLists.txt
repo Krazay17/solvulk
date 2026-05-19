@@ -88,16 +88,19 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 if(WIN32)
     add_executable(solapp 
-        "${CMAKE_SOURCE_DIR}/app/main.c"
-        "${CMAKE_SOURCE_DIR}/app/game.c"
+        "${CMAKE_SOURCE_DIR}/app/client/main.c"
+        "${CMAKE_SOURCE_DIR}/app/client/game.c"
         "${CMAKE_SOURCE_DIR}/assets/resources.rc"
     )
     #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
 else()
-    add_executable(solapp "${CMAKE_SOURCE_DIR}/app/linmain.c")
+    add_executable(solapp
+    "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
+    "${CMAKE_SOURCE_DIR}/app/client/game.c"
+    )
 endif()
 
-target_include_directories(solapp PRIVATE "${CMAKE_SOURCE_DIR}/app")
+target_include_directories(solapp PRIVATE "${CMAKE_SOURCE_DIR}/app/client")
 
 if(HOT_RELOAD)
     target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
@@ -158,43 +161,12 @@ add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
 
-#--------------------------------------
-# compile textures
-#--------------------------------------
-# set(IMAGE_DIR "${CMAKE_SOURCE_DIR}/assets/images")
-# set(CIMAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/cimages")
-# file(MAKE_DIRECTORY ${CIMAGE_OUTPUT_DIR})
-# set(IMAGES
-#     ${IMAGE_DIR}/RedSky2.png
-# )
-# set(TEXCONV_EXE ${CMAKE_SOURCE_DIR}/tools/texconv.exe)
-# foreach(IMAGE ${IMAGES})
-#     get_filename_component(IMAGE_NAME ${IMAGE} NAME)
-#     set(IMAGE_OUTPUT "${CIMAGE_OUTPUT_DIR}/${IMAGE_NAME}.dds")
-#     add_custom_command(
-#         OUTPUT ${IMAGE_OUTPUT}
-#         COMMAND ${TEXCONV_EXE}
-#             -f BC7_UNORM
-#             -m 0
-#             -y
-#             -o ${CIMAGE_OUTPUT_DIR}
-#             ${IMAGE}
-#         DEPENDS ${IMAGE}
-#         COMMENT "Converting texture: ${IMAGE_NAME}"
-#     )
-#     list(APPEND CIMAGE_OUTPUTS ${IMAGE_OUTPUT})
-# endforeach()
-
-# add_custom_target(images DEPENDS ${CIMAGE_OUTPUTS})
-# add_dependencies(solvulk images)
-# add_dependencies(solapp images)
-
 #---- Server App ----
-add_executable(solvulk_server src_server/main.c)
+add_executable(solvulk_server app/server/main.c)
 
 target_include_directories(solvulk_server 
 PRIVATE
-    "src_server"
+    "app/server"
     "vendored/enet/include"
 )
 

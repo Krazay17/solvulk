@@ -30,7 +30,7 @@ static void Contact_Step(World *world, double dt, double time)
         vec3s     pos = e->as.collision.pos;
         switch (e->kind)
         {
-        case EVENT_COLLISION:
+        case EVENTKIND_COLLISION:
             int proj, other;
             if (world->masks[e->as.collision.entA] & HAS_CONTACT)
             {
@@ -51,16 +51,24 @@ static void Contact_Step(World *world, double dt, double time)
 
             for (int i = 0; i < c->impacts.impactCount; i++)
             {
-                Impact *impact = &c->impacts.impacts[i];
+                Impact *impact     = &c->impacts.impacts[i];
+                impact->hit.source = Sol_Owner_GetOwner(world, proj);
 
                 if (impact->kind == IMPACT_DIRECT)
                 {
+                    impact->hit.vel    = Sol_Physx_GetVel(world, proj);
                     impact->hit.target = other;
-                    impact->hit.pos    = pos;
-                    impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
-                    Sol_Event_Add(world, (SolEvent){.kind = EVENT_HIT, .as.hit = impact->hit});
+                    if (Sol_Combat_IsReflecting(world, other))
+                    {
+                        Sol_Owner_SetOwner(world, proj, other);
+                        Sol_Physx_SetVel(world, proj, vecSca(Sol_Physx_GetVel(world, proj), -1.0f));
+                        goto breakout;
+                    }
+                    impact->hit.pos = pos;
+                    impact->hit.dir = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
+                    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
                     Sol_Event_Add(world,
-                                  (SolEvent){.kind = EVENT_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
+                                  (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
                 }
                 else if (impact->kind == IMPACT_AOE)
                 {
@@ -75,7 +83,7 @@ static void Contact_Step(World *world, double dt, double time)
                             impact->hit.target = result.entId;
                             impact->hit.pos    = result.pos;
                             impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
-                            Sol_Event_Add(world, (SolEvent){.kind = EVENT_HIT, .as.hit = impact->hit});
+                            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
                         }
                     }
                 }
@@ -86,6 +94,8 @@ static void Contact_Step(World *world, double dt, double time)
             else
                 c->bounces--;
             break;
+
+            breakout:;
         }
     }
 }

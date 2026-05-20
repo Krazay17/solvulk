@@ -11,15 +11,14 @@ static ImpactList impact_list = {
             .kind = IMPACT_DIRECT,
             .hit =
                 {
-                    .damage = 25,
+                    .damage = 15,
                     .kind   = DAMAGEKIND_FIRE,
-                    .buffs =
-                        {
-                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
-                            {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
-                        },
-                    .power     = 5.0f,
-                    .buffcount = 2,
+                    // .buffs =
+                    //     {
+                    //         {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
+                    //     },
+                    // .power     = 5.0f,
+                    // .buffcount = 1,
                 },
         },
     .impacts[1] =
@@ -27,17 +26,17 @@ static ImpactList impact_list = {
             .kind = IMPACT_AOE,
             .hit =
                 {
-                    .damage = 25,
+                    .damage = 10,
                     .kind   = DAMAGEKIND_FIRE,
                     .buffs =
                         {
-                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
-                            {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
+                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.1f, .addKind = BUFFADD_SET_DURATION},
+                            {.kind = BUFFKIND_FIRE, .duration = 3.0f, .freq = 0.5f, .addKind = BUFFADD_SET_DURATION},
                         },
-                    .power     = 5.0f,
+                    .power     = 10.0f,
                     .buffcount = 2,
                 },
-            .radius = 5.0f,
+            .radius = 4.0f,
         },
 
     .impactCount = 2,
@@ -125,6 +124,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc d
                      .restitution = 0.5f,
                      .vel         = vel,
                      .group       = 0b10,
+                     .ignoreTeam = 1,
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
@@ -132,9 +132,9 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc d
     Sol_Contact_Add(world, id,
                     (ContactDesc){
                         .impacts = impact_list,
-                        //.bounces = 0,
                     });
-    Sol_Owner_Add(world, id, ownerId);
+    Sol_Owner_SetOwner(world, id, ownerId);
+    Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
 
     return id;
 }
@@ -185,6 +185,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
+    Sol_Owner_Add(world, id, (OwnerDesc){.team = 1});
 
     return id;
 }

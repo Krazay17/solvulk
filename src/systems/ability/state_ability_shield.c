@@ -18,14 +18,9 @@ void Shield_State_Update(World *world, int id, float dt)
         data->accum = 0;
         SolRayResult results[256];
         int          hits = Sol_SphereCast(world, (SolRay){.pos = pos}, 5.0f, results, 256);
-        // Sol_Event_Add(world, (SolEvent){
-        //                          .kind       = EVENT_FX,
-        //                          .as.fx.pos  = Sol_Xform_GetPos(world, id),
-        //                          .as.fx.kind = FXKIND_FIREBALL_HIT,
-        //                      });
 
         Sol_Event_Add(world, (SolEvent){
-                                 .kind       = EVENT_FX,
+                                 .kind       = EVENTKIND_FX,
                                  .as.fx.kind = FXKIND_SHIELD_BURST,
                                  .as.fx.pos  = pos,
                                  .sourceId   = id,
@@ -34,11 +29,23 @@ void Shield_State_Update(World *world, int id, float dt)
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            if (result.entId == id)
+            if (!Sol_Vital_GetHostile(world, id, result.entId))
                 continue;
 
             Sol_Event_Add(world, (SolEvent){
-                                     .kind             = EVENT_HIT,
+                                     .kind       = EVENTKIND_FX,
+                                     .as.fx.pos  = result.pos,
+                                     .as.fx.kind = FXKIND_SHIELD_HIT,
+                                     .targetId   = result.entId,
+                                 });
+            if (world->flags[result.entId].flags & EFLAG_PROJECTILE)
+            {
+                Sol_Physx_SetVel(world, result.entId, vecSca(Sol_Physx_GetVel(world, result.entId), -1.0f));
+                Sol_Owner_SetOwner(world, result.entId, id);
+                continue;
+            }
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind             = EVENTKIND_HIT,
                                      .as.hit.pos       = result.pos,
                                      .as.hit.target    = result.entId,
                                      .as.hit.damage    = 20,
@@ -47,22 +54,18 @@ void Shield_State_Update(World *world, int id, float dt)
                                      .as.hit.buffs     = {{.kind = BUFFKIND_KNOCKBACK, .duration = 0.2f}},
                                      .as.hit.buffcount = 1,
                                  });
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind       = EVENT_FX,
-                                     .as.fx.pos  = result.pos,
-                                     .as.fx.kind = FXKIND_SHIELD_HIT,
-                                     .targetId   = result.entId,
-                                 });
         }
     }
 }
 
 void Shield_State_Enter(World *world, int id)
 {
+    Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
 }
 
 void Shield_State_Exit(World *world, int id)
 {
+    Sol_Combat_RemoveFlags(world, id, COMBATFLAG_REFLECTING);
 }
 
 bool Shield_State_CanEnter(World *world, int id, int last)

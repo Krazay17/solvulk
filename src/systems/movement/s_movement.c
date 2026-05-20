@@ -173,12 +173,12 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
             const MoveStateForce *force    = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
 
             vec3s vel     = Sol_Physx_GetVel(world, id);
-            vec2s wishdir = Sol_GetWishdir2(world, id);
+            vec3s wishdir = Sol_GetWishdir2(world, id);
 
             switch (movement->moveState)
             {
             case MOVE_IDLE:
-                if (glms_vec2_norm(wishdir) > 0)
+                if (glms_vec3_norm(wishdir) > 0)
                     movement->moveState = MOVE_WALK;
                 break;
             }

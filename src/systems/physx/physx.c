@@ -127,7 +127,10 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
             u32 otherID = table->value[entry];
             if (id < otherID)
             {
+                
                 CompBody  *other_body  = &world->bodies[otherID];
+                if((body->ignoreTeam || other_body->ignoreTeam) && !Sol_Owner_GetHostile(world, id, otherID))
+                    goto skip;
                 CompXform *other_xform = &world->xforms[otherID];
                 SolContact contact     = {0};
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &contact))
@@ -138,6 +141,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                     Add_Contact(contacts, contact.entId, contact.normal, contact.pos);
                 }
             }
+            skip:;
             entry = table->next[entry];
         }
     }

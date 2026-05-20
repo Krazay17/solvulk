@@ -18,7 +18,7 @@ typedef struct SolHit
     BuffDesc   buffs[MAX_BUFFS_HIT];
     u32        buffcount;
     u32        source, target;
-    vec3s      pos, dir;
+    vec3s      pos, dir, vel;
     float      power;
     u32        damage;
 } SolHit;

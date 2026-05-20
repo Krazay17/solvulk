@@ -25,8 +25,8 @@ typedef struct
     float  radius, height, length;
     float  mass, restitution;
     Shape3 shape;
-    bool   is2d;
     u8     group;
+    bool   is2d, ignoreTeam;
 } BodyDesc;
 
 void         Sol_Body_Add(World *world, int id, BodyDesc desc);

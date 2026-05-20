@@ -3,5 +3,13 @@
 
 #include "combat_types.h"
 
-void Sol_Combat_Init(World *world);
+typedef enum
+{
+    COMBATFLAG_REFLECTING = (1 << 0),
+} CombatFlags;
 
+void Sol_Combat_Init(World *world);
+bool Sol_Combat_IsReflecting(World *world, int id);
+void Sol_Combat_AddFlags(World *world, int id, CombatFlags flags);
+void Sol_Combat_RemoveFlags(World *world, int id, CombatFlags flags);
+void Sol_Combat_ClearFlags(World *world, int id, CombatFlags flags);

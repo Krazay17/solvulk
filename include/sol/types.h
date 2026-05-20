@@ -62,17 +62,6 @@ typedef enum
 
 typedef enum
 {
-    AI_IDLE,
-    AI_FWD,
-    AI_BWD,
-    AI_LEFT,
-    AI_RIGHT,
-    AI_JUMP,
-    AI_DASH,
-} AiAction;
-
-typedef enum
-{
     MOVE_IDLE,
     MOVE_WALK,
     MOVE_FALL,
@@ -141,6 +130,7 @@ typedef enum
 {
     EFLAG_PICKUPABLE = (1 << 0),
     EFLAG_PICKEDUP   = (1 << 1),
+    EFLAG_PROJECTILE = (1 << 2),
 } EFlag;
 
 typedef struct SolXform

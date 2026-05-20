@@ -4,10 +4,10 @@
 
 typedef enum
 {
-    EVENT_COLLISION,
-    EVENT_HIT,
-    EVENT_FX,
-    EVENT_DEATH,
+    EVENTKIND_COLLISION,
+    EVENTKIND_HIT,
+    EVENTKIND_FX,
+    EVENTKIND_DEATH,
 } EventKind;
 typedef struct SolEvent
 {

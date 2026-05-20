@@ -24,10 +24,10 @@ void Claw_State_Enter(World *world, int id)
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
 
-    float velocity = 50.0f;
+    float velocity = 40.0f;
 
     int ball =
-        Sol_Prefab_Ball(world, Sol_Controller_GetShootpos(world, id, 0.5f), vecSca(Sol_GetAimdir(world, id), velocity),
+        Sol_Prefab_Ball(world, Sol_Controller_GetShootpos(world, id, 0.4f), vecSca(Sol_GetAimdir(world, id), velocity),
                         id, (ShapeDesc){.radius = 0.5, .color = (vec4s){0, 1, 0, 1}});
 
     AnimDesc desc = {
@@ -42,7 +42,7 @@ void Claw_State_Exit(World *world, int id)
 
 bool Claw_State_CanEnter(World *world, int id, int last)
 {
-    AbilityData *data    = &world->abilities[id].stateData[ABILITY_STATE_CLAW];
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_CLAW];
     return !(data->lastEntered + CLAW_COOLDOWN > (float)Sol_GetState()->gameTime);
 }
 

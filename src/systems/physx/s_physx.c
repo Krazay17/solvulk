@@ -46,6 +46,7 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
         .invMass     = desc.mass > 0 ? 1.0f / desc.mass : 0,
         .restitution = desc.restitution ? desc.restitution : 0.5f,
         .vel         = desc.vel,
+        .ignoreTeam  = desc.ignoreTeam,
         .dims =
             (vec3s){
                 .x = desc.radius,
@@ -95,6 +96,11 @@ void Sol_Physx_Step(World *world, double dt, double time)
         CompXform *xform = &world->xforms[id];
         if (xform->pos.y < -500.0f)
         {
+            if (world->flags[id].flags & EFLAG_PROJECTILE)
+            {
+                Sol_Destroy_Ent(world, id);
+                continue;
+            }
             Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
         }
         if (body->vel.y < -100.0f)
@@ -137,7 +143,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         {
             SolContact *r = &contacts[i].records[j];
             Sol_Event_Add(world, (SolEvent){
-                                     .kind = EVENT_COLLISION,
+                                     .kind = EVENTKIND_COLLISION,
                                      .as.collision =
                                          {
                                              .entA   = id,

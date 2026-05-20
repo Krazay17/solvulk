@@ -14,25 +14,26 @@
 
 typedef enum
 {
-    HAS_NONE       = 0,
-    HAS_XFORM      = (1 << 0),
-    HAS_BODY2      = (1 << 1),
-    HAS_BODY3      = (1 << 2),
-    HAS_INTERACT   = (1 << 3),
-    HAS_MODEL      = (1 << 4),
-    HAS_UIVIEW     = (1 << 5),
-    HAS_MOVEMENT   = (1 << 6),
-    HAS_CONTROLLER = (1 << 7),
-    HAS_ABILITY    = (1 << 8),
-    HAS_BUFF       = (1 << 9),
-    HAS_VITAL      = (1 << 10),
-    HAS_SHAPE      = (1 << 11),
-    HAS_TIMER      = (1 << 12),
-    HAS_EVENT      = (1 << 13),
-    HAS_AUDIO      = (1 << 14),
-    HAS_PARENT     = (1 << 15),
-    HAS_CONTACT    = (1 << 16),
-    HAS_OWNER      = (1 << 17),
+    HAS_NONE         = 0,
+    HAS_XFORM        = (1 << 0),
+    HAS_BODY2        = (1 << 1),
+    HAS_BODY3        = (1 << 2),
+    HAS_INTERACT     = (1 << 3),
+    HAS_MODEL        = (1 << 4),
+    HAS_UIVIEW       = (1 << 5),
+    HAS_MOVEMENT     = (1 << 6),
+    HAS_CONTROLLER   = (1 << 7),
+    HAS_AICONTROLLER = (1 << 18),
+    HAS_ABILITY      = (1 << 8),
+    HAS_BUFF         = (1 << 9),
+    HAS_VITAL        = (1 << 10),
+    HAS_SHAPE        = (1 << 11),
+    HAS_TIMER        = (1 << 12),
+    HAS_EVENT        = (1 << 13),
+    HAS_AUDIO        = (1 << 14),
+    HAS_PARENT       = (1 << 15),
+    HAS_CONTACT      = (1 << 16),
+    HAS_OWNER        = (1 << 17),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -50,12 +51,14 @@ typedef enum
     WORLD_SYS_TIMER,
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
-    WORLD_SYS_PARENT,
     WORLD_SYS_OWNER,
-    WORLD_SYS_BUFF,
+    WORLD_SYS_PARENT,
     WORLD_SYS_ABILITY,
     WORLD_SYS_CONTACT,
     WORLD_SYS_COMBAT,
+    WORLD_SYS_BUFF,
+    // reacts
+    WORLD_SYS_AICONTROLLER,
     WORLD_SYS_VITAL,
     WORLD_SYS_MOVEMENT,
 
@@ -79,27 +82,29 @@ typedef void (*SystemFunc)(World *, double, double);
 typedef bool     Active;
 typedef uint32_t Mask;
 
-typedef struct CompParent     CompParent;
-typedef struct CompAudio      CompAudio;
-typedef struct CompTimer      CompTimer;
-typedef struct CompXform      CompXform;
-typedef struct CompBody       CompBody;
-typedef struct CompMovement   CompMovement;
-typedef struct CompModel      CompModel;
-typedef struct CompUi         CompUi;
-typedef struct CompInteract   CompInteract;
-typedef struct CompShape      CompShape;
-typedef struct CompVital      CompVital;
-typedef struct CompController CompController;
-typedef struct CompBuff       CompBuff;
-typedef struct CompAbility    CompAbility;
-typedef struct SolEvents      SolEvents;
-typedef struct WorldPhysx     WorldPhysx;
-typedef struct WorldLines     WorldLines;
-typedef struct SolEmitters    SolEmitters;
-typedef struct CompOwner      CompOwner;
-typedef struct CompContact    CompContact;
-typedef struct SolCamera      SolCamera;
+typedef struct CompAiController CompAiController;
+typedef struct CompCombat       CompCombat;
+typedef struct CompParent       CompParent;
+typedef struct CompAudio        CompAudio;
+typedef struct CompTimer        CompTimer;
+typedef struct CompXform        CompXform;
+typedef struct CompBody         CompBody;
+typedef struct CompMovement     CompMovement;
+typedef struct CompModel        CompModel;
+typedef struct CompUi           CompUi;
+typedef struct CompInteract     CompInteract;
+typedef struct CompShape        CompShape;
+typedef struct CompVital        CompVital;
+typedef struct CompController   CompController;
+typedef struct CompBuff         CompBuff;
+typedef struct CompAbility      CompAbility;
+typedef struct SolEvents        SolEvents;
+typedef struct WorldPhysx       WorldPhysx;
+typedef struct WorldLines       WorldLines;
+typedef struct SolEmitters      SolEmitters;
+typedef struct CompOwner        CompOwner;
+typedef struct CompContact      CompContact;
+typedef struct SolCamera        SolCamera;
 
 typedef struct CompFlags
 {
@@ -120,22 +125,24 @@ typedef struct World
     Mask      masks[MAX_ENTS];
     CompFlags flags[MAX_ENTS];
 
-    CompParent     *parents;
-    CompAudio      *audios;
-    CompTimer      *timers;
-    CompXform      *xforms;
-    CompBody       *bodies;
-    CompMovement   *movements;
-    CompModel      *models;
-    CompUi         *uiElements;
-    CompInteract   *interacts;
-    CompShape      *spheres;
-    CompVital      *vitals;
-    CompController *controllers;
-    CompBuff       *buffs;
-    CompAbility    *abilities;
-    CompOwner      *owners;
-    CompContact    *contacts;
+    CompParent       *parents;
+    CompAudio        *audios;
+    CompTimer        *timers;
+    CompXform        *xforms;
+    CompBody         *bodies;
+    CompMovement     *movements;
+    CompModel        *models;
+    CompUi           *uiElements;
+    CompInteract     *interacts;
+    CompShape        *spheres;
+    CompVital        *vitals;
+    CompController   *controllers;
+    CompBuff         *buffs;
+    CompAbility      *abilities;
+    CompOwner        *owners;
+    CompContact      *contacts;
+    CompAiController *aicontrollers;
+    CompCombat       *combats;
 
     SolEvents   *events;
     WorldPhysx  *spatial;
@@ -179,5 +186,5 @@ void Sol_Destroy_Ent(World *world, int id);
 void Sol_Flags_Add(World *world, int id, EFlag flags);
 void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
-int Sol_World_GetEntCount(World *world);
+int  Sol_World_GetEntCount(World *world);
 void Sol_World_SetActive(World *world, bool active);

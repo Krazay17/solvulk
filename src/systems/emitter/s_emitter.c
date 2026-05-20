@@ -123,7 +123,6 @@ static void Particle_Tick(World *world, double dt, double time)
         if (p->ttl <= 0)
             continue;
 
-        // p->pos = Sol_Xform_GetPos(world, p->followId);
         vec3s finalvel = p->vel;
         if (p->followId)
             finalvel = vecAdd(p->vel, Sol_Physx_GetVel(world, p->followId));

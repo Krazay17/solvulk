@@ -14,11 +14,11 @@ typedef struct CompVital
     u32   health, energy, mana;
     bool  doesRespawn;
     float deathTime, respawnTime;
+    u32   team;
 } CompVital;
 
 void Respawn(World *world, int id, CompVital *vital);
-void Die(World *world, int id, CompVital *vital);
-void Damage(World *world, int id, CompVital *vital, SolHit hit);
+void Die(World *world, int id, SolHit hit);
 
 void Sol_Vital_Init(World *world)
 {
@@ -36,6 +36,7 @@ void Sol_Vital_Add(World *world, int id, VitalDesc desc)
         .health    = desc.maxHealth,
         .energy    = desc.maxEnergy,
         .mana      = desc.maxMana,
+        .team      = desc.team,
     };
     world->vitals[id] = vital;
 }
@@ -73,52 +74,34 @@ void Respawn(World *world, int id, CompVital *vital)
     xform->pos.z = 0;
 }
 
-void Damage(World *world, int id, CompVital *vital, SolHit hit)
+void Die(World *world, int id, SolHit hit)
 {
-    vital->health -= hit.damage;
-    if (vital->health <= 0)
-    {
-        vital->health = 0;
-        Die(world, id, vital);
-    }
-}
-
-void Die(World *world, int id, CompVital *vital)
-{
+    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.attacker = hit.source, .sourceId = id});
     Sol_Destroy_Ent(world, id);
-    Sol_Emitter_Add(world, (Emitter){
-        .burst = 80,
-        .pos = Sol_Xform_GetPos(world, id),
-        .particle = (Particle){
-            .color = {
-                .r = 1.0f,
-                .g = 0,
-                .b = 0,
-                .a = 1.0f
-            },
-            .kind = PARTICLE_BLOOD,
-            .scale = 0.4f,
-            .ttl = 1.5f,
-            .speed = 2.0f,
-            .scaleout = .5f
-        }
-    });
+    Sol_Emitter_Add(world, (Emitter){.burst    = 80,
+                                     .pos      = Sol_Xform_GetPos(world, id),
+                                     .particle = (Particle){.color    = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
+                                                            .kind     = PARTICLE_BLOOD,
+                                                            .scale    = 0.4f,
+                                                            .ttl      = 1.5f,
+                                                            .speed    = 2.0f,
+                                                            .scaleout = .5f}});
 }
 
-void Sol_Vital_Damage(World *world, int id, u32 amnt)
+void Sol_Vital_Damage(World *world, int id, SolHit hit)
 {
-    if(!(world->masks[id] & HAS_VITAL))
-    return;
+    if (!(world->masks[id] & HAS_VITAL))
+        return;
     CompVital *vital = &world->vitals[id];
 
-    if (amnt >= vital->health)
+    if (hit.damage >= vital->health)
     {
         vital->health = 0;
-        Die(world, id, vital);
+        Die(world, id, hit);
     }
     else
     {
-        vital->health -= amnt;
+        vital->health -= hit.damage;
     }
 }
 
@@ -129,4 +112,20 @@ u32 Sol_Vital_GetHealth(World *world, int id)
 u32 Sol_Vital_GetMaxHealth(World *world, int id)
 {
     return world->vitals[id].maxHealth;
+}
+
+u32 Sol_Vital_GetTeam(World *world, int id)
+{
+    return world->vitals[id].team;
+}
+u32 Sol_Vital_GetHostile(World *world, int id, int target)
+{
+    u32 teamA = world->vitals[id].team;
+    u32 teamB = world->vitals[target].team;
+
+    return teamA == 0 || teamA != teamB;
+}
+bool Sol_Vital_GetIsalive(World *world, int id)
+{
+    return world->vitals[id].health > 0;
 }

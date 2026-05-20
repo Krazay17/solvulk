@@ -12,7 +12,7 @@ void Fx_Event(World *world, double dt, double time)
     for (int i = 0; i < world->events->count; i++)
     {
         SolEvent *e = &world->events->event[i];
-        if (e->kind != EVENT_FX)
+        if (e->kind != EVENTKIND_FX)
             continue;
         vec3s pos   = e->as.fx.pos;
         vec3s rot   = e->as.fx.rot;

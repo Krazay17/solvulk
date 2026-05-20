@@ -21,25 +21,24 @@ typedef struct
 // void State_Update(World *world, int id, float dt);
 // void State_Enter(World *world, int id);
 // void State_Exit(World *world, int id);
-// bool State_CanExit(World *world, int id);
-// bool State_CanEnter(World *world, int id);
+// bool State_CanExit(World *world, int id, u32 nextState);
+// bool State_CanEnter(World *world, int id, u32 lastState);
 
-// bool SetState(World *world, int id, void *nextState)
+// bool SetState(World *world, int id, u32 nextState)
 // {
 //     void *currentState;
 //     if (currentState == nextState)
 //         return false;
 //     const StateFunc *prevfunc = &state_func[currentState];
-//     if (!prevfunc->canExit(world, id))
+//     if (!prevfunc->canExit(world, id, nextState))
 //         return false;
 //     const StateFunc *nextfunc = &state_func[nextState];
-//     if (!nextfunc->canEnter(world, id))
+//     if (!nextfunc->canEnter(world, id, currentState))
 //         return false;
 
 //     prevfunc->exit(world, id);
 //     currentState = nextState;
 //     nextfunc->enter(world, id);
-//     Sol_Debug_Add("state", currentState);
 
 //     return true;
 // }

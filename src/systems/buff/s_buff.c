@@ -35,11 +35,11 @@ void Sol_Buff_Add(World *world, int id, BuffDesc desc, const SolHit *hit)
         {
             switch (desc.addKind)
             {
-            case BUFFADD_ADD_DURATION:
-                b->duration += desc.duration;
-                break;
             case BUFFADD_SET_DURATION:
                 b->duration = desc.duration;
+                break;
+            case BUFFADD_ADD_DURATION:
+                b->duration += desc.duration;
                 break;
             case BUFFADD_INF:
                 b->inf = 1;
@@ -107,12 +107,12 @@ void Sol_Buff_Step(World *world, double dt, double time)
             switch (b->kind)
             {
             case BUFFKIND_FIRE:
-                Sol_Movement_SetSpeedMod(world, id, 0.5f);
+                Sol_Movement_SetSpeedMod(world, id, 0.3f);
                 float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
                 if (b->accum > interval)
                 {
                     b->accum -= interval;
-                    Sol_Vital_Damage(world, id, 2);
+                    Sol_Vital_Damage(world, id, (SolHit){.damage = 2, .source = b->source});
                 }
                 break;
             case BUFFKIND_KNOCKBACK:

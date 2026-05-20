@@ -11,7 +11,8 @@ static void SpawnPlayer(int flags, void *data)
 
     player3d = Sol_Prefab_Player(gameWorld, (vec3s){0, 5, 0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
-    //Sol_Buff_Add(gameWorld, player3d, (BuffDesc){.duration = 2.0f, .kind = BUFFKIND_FIRE, .freq = 0.5f}, NULL);
+    Sol_Owner_Add(gameWorld, player3d, (OwnerDesc){.team = 0});
+    // Sol_Buff_Add(gameWorld, player3d, (BuffDesc){.duration = 2.0f, .kind = BUFFKIND_FIRE, .freq = 0.5f}, NULL);
 }
 
 struct MakeWiz
@@ -29,7 +30,7 @@ void MakeAWizard(int flags, void *data)
     for (int i = 0; i < wizard->amount; i++)
     {
         int id = Sol_Prefab_Wizard(gameWorld, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
-        Sol_Controller_Add(wizard->world, id, (ControllerDesc){.kind = CONTROLLER_AI});
+        Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
     }
 }
 
@@ -44,22 +45,20 @@ void MakeAEmitter(int flags, void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
-    Sol_Event_Add(world, (SolEvent){.kind = EVENT_FX, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.pos = pos});
-    Sol_Emitter_Add(world, (Emitter){
-        .burst =100,
-        .rate = 0.1f,
-        .pos = pos,
-        .inf = 1,
-        .particle = {
-            .speed =5.0f,
-            .ttl =5.0f,
-            .randScale = 1,
-            .kind = PARTICLE_SPIKEY,
-            .rot = Sol_RandRange2(-2.0f, 2.0f),
-            .rotspeed = 3.0f,
-            .scalein = 0.2f,
-        }
-    });
+    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.pos = pos});
+    Sol_Emitter_Add(world, (Emitter){.burst    = 100,
+                                     .rate     = 0.1f,
+                                     .pos      = pos,
+                                     .inf      = 1,
+                                     .particle = {
+                                         .speed     = 5.0f,
+                                         .ttl       = 5.0f,
+                                         .randScale = 1,
+                                         .kind      = PARTICLE_SPIKEY,
+                                         .rot       = Sol_RandRange2(-2.0f, 2.0f),
+                                         .rotspeed  = 3.0f,
+                                         .scalein   = 0.2f,
+                                     }});
 }
 
 void ClearEnts(int flags, void *data)
@@ -84,7 +83,7 @@ void Create_Sol_Game()
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
     Sol_World_SetActive(menu, false);
-    //menu->worldActive = false;
+    // menu->worldActive = false;
     Sol_Cam_SetActivecam(gameWorld);
     Sol_Input_SetLocked(true);
     Sol_View_Crosshair(gameWorld);

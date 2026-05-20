@@ -26,6 +26,7 @@ void ADash_State_Update(World *world, int id, float dt)
 void ADash_State_Enter(World *world, int id)
 {
     Sol_Audio_Play(SOL_AUDIO_DASH);
+    Sol_Buff_Add(world, id, (BuffDesc){.duration=.2f, .kind=BUFFKIND_INVULN}, NULL);
 
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];

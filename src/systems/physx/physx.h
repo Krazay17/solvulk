@@ -51,3 +51,4 @@ float        Sol_Physx_GetLatSpeed(World *world, int id);
 int          Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results, int maxResults);
 void         Sol_Physx_SetVellat(World *world, int id, vec3s vel);
 void         Sol_Physx_AddVel(World *world, int id, vec3s addvel);
+void Sol_Physx_Impulse(World*world, int id, vec3s impulse);

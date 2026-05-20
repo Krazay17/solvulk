@@ -30,13 +30,14 @@ layout(push_constant) uniform MeshMaterial {
 } material;
 
 const uint FLAG_FRESNEL = 1u << 0;
+const uint FLAG_YELLOW = 1u << 1;
 
 void main() {
     vec3 N = normalize(fragNormal);
     vec3 lightDir = normalize(scene.sun.xyz);
     float NdotL = max(dot(N, lightDir), 0.0);
 
-    vec3 color = fragColor.a > 0.0 ? fragColor.rgb : material.baseColor.rgb;
+    vec3 color = fragColor.a > 0.0 ? fragColor.rgb + material.baseColor.rgb : material.baseColor.rgb;
     float alpha = fragColor.a > 0.0 ? fragColor.a : material.baseColor.a;
 
     // Metals reflect the base color, dielectrics reflect white
@@ -61,6 +62,9 @@ void main() {
     if ((instances[instanceIndex].flags & FLAG_FRESNEL) != 0u) {
             float fresnelTerm = 1.0 - max(dot(N, viewDir), 0.0);
             finalRGB.rgb += pow(fresnelTerm, 4.0) * vec3(1.0);
+        }
+    if ((instances[instanceIndex].flags & FLAG_YELLOW) != 0u) {
+            finalRGB.rgb += vec3(1.0,1.0,0);
         }
 
     outColor = finalRGB;

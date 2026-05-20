@@ -5,7 +5,7 @@
 //     {.kind = BUFFKIND_FIRE, .duration = 5.0f, .freq = 0.2f},
 // };
 
-static ImpactList impact_list = {
+static ImpactList fireball_impacts = {
     .impacts[0] =
         {
             .kind = IMPACT_DIRECT,
@@ -30,13 +30,13 @@ static ImpactList impact_list = {
                     .kind   = DAMAGEKIND_FIRE,
                     .buffs =
                         {
-                            {.kind = BUFFKIND_KNOCKBACK, .duration = 0.1f, .addKind = BUFFADD_SET_DURATION},
+                       //     {.kind = BUFFKIND_KNOCKBACK, .duration = 0.1f, .addKind = BUFFADD_SET_DURATION},
                             {.kind = BUFFKIND_FIRE, .duration = 3.0f, .freq = 0.5f, .addKind = BUFFADD_SET_DURATION},
                         },
                     .power     = 10.0f,
-                    .buffcount = 2,
+                    .buffcount = 1,
                 },
-            .radius = 4.0f,
+            .radius = 3.0f,
         },
 
     .impactCount = 2,
@@ -111,27 +111,54 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
                                      }});
 }
 
-int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc desc)
+int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc shape, ContactDesc contact)
 {
     int id = Sol_Create_Ent(world);
-    Sol_Shape_Add(world, id, desc);
+    Sol_Shape_Add(world, id, shape);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){
-                     .radius      = desc.radius,
+                     .radius      = shape.radius,
                      .shape       = SHAPE3_SPH,
-                     .mass        = 1.0f * desc.radius,
+                     .mass        = 1.0f * shape.radius,
                      .restitution = 0.5f,
                      .vel         = vel,
                      .group       = 0b10,
-                     .ignoreTeam = 1,
+                     .ignoreTeam  = 1,
+                 });
+    Sol_Interact_Add(world, id, (InteractDesc){0});
+    Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+
+    Sol_Contact_Add(world, id, contact);
+    Sol_Owner_SetOwner(world, id, ownerId);
+    Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
+
+    return id;
+}
+
+int Sol_Prefab_Fireball(World *world, vec3s pos, vec3s vel, int ownerId)
+{
+    ShapeDesc shape = {.radius = 0.3f, .color = {1, 0, 0, 1}};
+
+    int id = Sol_Create_Ent(world);
+    Sol_Shape_Add(world, id, shape);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .radius      = shape.radius,
+                     .shape       = SHAPE3_SPH,
+                     .mass        = 1.0f * shape.radius,
+                     .restitution = 0.5f,
+                     .vel         = vel,
+                     .group       = 0b10,
+                     .ignoreTeam  = 1,
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
     Sol_Contact_Add(world, id,
                     (ContactDesc){
-                        .impacts = impact_list,
+                        .impacts = fireball_impacts,
                     });
     Sol_Owner_SetOwner(world, id, ownerId);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);

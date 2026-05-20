@@ -20,6 +20,8 @@ static void Combat_Step(World *world, double dt, double time)
         case EVENTKIND_HIT:
             if (!Sol_Owner_GetHostile(world, e->as.hit.source, e->as.hit.target))
                 break;
+            if (Sol_Buff_HasBuff(world, e->as.hit.target, BUFFKIND_INVULN))
+                break;
             vec3s pos = e->as.hit.pos;
             for (int i = 0; i < e->as.hit.buffcount; i++)
             {
@@ -36,6 +38,8 @@ static void Combat_Step(World *world, double dt, double time)
                                      });
                 break;
             }
+            if(e->as.hit.power)
+            Sol_Physx_Impulse(world, e->as.hit.target, vecSca(e->as.hit.dir, e->as.hit.power));
 
             Sol_Vital_Damage(world, e->as.hit.target, e->as.hit);
 

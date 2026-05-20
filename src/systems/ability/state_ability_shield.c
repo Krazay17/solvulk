@@ -2,6 +2,9 @@
 
 #include "ability_i.h"
 
+#define SHIELD_COOLDOWN 1.0f
+#define PULSERATE 0.5f
+
 void Shield_State_Update(World *world, int id, float dt)
 {
     AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
@@ -13,7 +16,7 @@ void Shield_State_Update(World *world, int id, float dt)
     vec3s pos = Sol_Xform_GetPos(world, id);
 
     data->accum += (float)dt;
-    if (data->accum > 0.5f)
+    if (data->accum > PULSERATE)
     {
         data->accum = 0;
         SolRayResult results[256];
@@ -40,7 +43,9 @@ void Shield_State_Update(World *world, int id, float dt)
                                  });
             if (world->flags[result.entId].flags & EFLAG_PROJECTILE)
             {
-                Sol_Physx_SetVel(world, result.entId, vecSca(Sol_Physx_GetVel(world, result.entId), -1.0f));
+                Sol_Physx_SetVel(
+                    world, result.entId,
+                    Sol_RedirectVel(Sol_Physx_GetVel(world, result.entId), Sol_Controller_GetAimdir(world, id)));
                 Sol_Owner_SetOwner(world, result.entId, id);
                 continue;
             }
@@ -60,6 +65,8 @@ void Shield_State_Update(World *world, int id, float dt)
 
 void Shield_State_Enter(World *world, int id)
 {
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
+    data->accum = PULSERATE;
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
 }
 
@@ -71,7 +78,9 @@ void Shield_State_Exit(World *world, int id)
 bool Shield_State_CanEnter(World *world, int id, int last)
 {
     CompAbility *ability = &world->abilities[id];
-    return !(ability->state == ABILITY_STATE_SHIELD);
+    AbilityData *data    = &ability->stateData[ABILITY_STATE_SHIELD];
+    return !(ability->state == ABILITY_STATE_SHIELD) &&
+           !(data->lastEntered + SHIELD_COOLDOWN > (float)Sol_GetGameTime());
 }
 
 bool Shield_State_CanExit(World *world, int id, int next)

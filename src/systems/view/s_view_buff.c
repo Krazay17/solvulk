@@ -12,6 +12,11 @@ void Sol_View_Buff(World *world)
 
 static void Sol_View_Buff_Tick(World *world, double dt, double time)
 {
+    static float accum = 0;
+    accum += (float)dt;
+    if (accum < 0.1f)
+        return;
+    accum        = 0;
     int required = HAS_BUFF;
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -26,19 +31,15 @@ static void Sol_View_Buff_Tick(World *world, double dt, double time)
             switch (b->buffs[i].kind)
             {
             case BUFFKIND_FIRE:
-                Sol_Emitter_Add(world, (Emitter){
-                                           .pos   = x->pos,
-                                           .burst = 1,
-                                           .particle =
-                                               (Particle){
-                                                   .kind  = PARTICLE_GFLAME,
-                                                   .ttl   = 1.0f,
-                                                   .scale = 0.25f,
-                                                   .speed = 1.0f,
-                                                   .scalein = .2f,
-                                                   .scaleout = .2f,
-                                               },
-                                       });
+                Sol_Emitter_Add(world, (Emitter){.pos      = x->pos,
+                                                 .burst    = 10,
+                                                 .particle = (Particle){.kind     = PARTICLE_FIRE,
+                                                                        .ttl      = 1.0f,
+                                                                        .color    = {.85f, 0.07f, 0.05f, 0.7f},
+                                                                        .scale    = 0.25f,
+                                                                        .speed    = 1.0f,
+                                                                        .scalein  = .2f,
+                                                                        .scaleout = .2f}});
                 break;
             }
         }
@@ -60,6 +61,8 @@ void Sol_View_Buff_Draw(World *world, double dt, double time)
             switch (b->buffs[i].kind)
             {
             case BUFFKIND_FIRE:
+                break;
+            case BUFFKIND_INVULN:
                 break;
             }
         }

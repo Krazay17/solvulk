@@ -6,6 +6,8 @@
 #define MAX_BUFFS 64
 #define BASE_TICK_INTERVAL 1.0f
 
+#define BuffBit(a) (1 << a)
+
 typedef struct
 {
     vec3s    dir, pos;
@@ -18,4 +20,5 @@ typedef struct CompBuff
 {
     Buff buffs[MAX_BUFFS];
     u32  count;
+    u32  activeKindsMask;
 } CompBuff;

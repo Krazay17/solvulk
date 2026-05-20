@@ -26,9 +26,8 @@ void Claw_State_Enter(World *world, int id)
 
     float velocity = 40.0f;
 
-    int ball =
-        Sol_Prefab_Ball(world, Sol_Controller_GetShootpos(world, id, 0.4f), vecSca(Sol_GetAimdir(world, id), velocity),
-                        id, (ShapeDesc){.radius = 0.5, .color = (vec4s){0, 1, 0, 1}});
+    int ball = Sol_Prefab_Fireball(world, Sol_Controller_GetShootpos(world, id, 0.4f),
+                                   vecSca(Sol_Controller_GetAimdir(world, id), velocity), id);
 
     AnimDesc desc = {
         .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
@@ -49,5 +48,5 @@ bool Claw_State_CanEnter(World *world, int id, int last)
 bool Claw_State_CanExit(World *world, int id, int next)
 {
     AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
-    return data->elapsed >= CLAW_DURATION * 0.7f;
+    return data->elapsed >= CLAW_DURATION * 0.6f;
 }

@@ -1,10 +1,10 @@
 #include "sol_core.h"
 
 static SolTextureId texture_map[] = {
-    [PARTICLE_GFLAME] = SOL_TEXTURE_GFLAME,
+    [PARTICLE_FIRE] = SOL_TEXTURE_FIREPARTICLE,
     [PARTICLE_BLOOD]  = SOL_TEXTURE_BLOODPARTICLE,
     [PARTICLE_CLOUD]  = SOL_TEXTURE_CLOUDPARTICLE,
-    [PARTICLE_SPIKEY] = SOL_TEXTURE_SPIKEPARTICLE,
+    [PARTICLE_SHOCK] = SOL_TEXTURE_SHOCKPARTICLE,
 };
 
 void Sol_View_Particle_Draw(World *world, double dt, double time)

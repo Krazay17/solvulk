@@ -61,14 +61,16 @@ static void Contact_Step(World *world, double dt, double time)
                     if (Sol_Combat_IsReflecting(world, other))
                     {
                         Sol_Owner_SetOwner(world, proj, other);
-                        Sol_Physx_SetVel(world, proj, vecSca(Sol_Physx_GetVel(world, proj), -1.0f));
+                        Sol_Physx_SetVel(
+                            world, proj,
+                            Sol_RedirectVel(Sol_Physx_GetVel(world, proj), Sol_Controller_GetAimdir(world, other)));
                         goto breakout;
                     }
                     impact->hit.pos = pos;
                     impact->hit.dir = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
                     Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
-                    Sol_Event_Add(world,
-                                  (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
+                    Sol_Event_Add(
+                        world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
                 }
                 else if (impact->kind == IMPACT_AOE)
                 {
@@ -95,7 +97,7 @@ static void Contact_Step(World *world, double dt, double time)
                 c->bounces--;
             break;
 
-            breakout:;
+        breakout:;
         }
     }
 }

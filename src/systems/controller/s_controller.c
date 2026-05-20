@@ -233,7 +233,7 @@ vec3s Sol_GetAimpos(World *world, int id)
     return world->controllers[id].aimpos;
 }
 
-vec3s Sol_GetAimdir(World *world, int id)
+vec3s Sol_Controller_GetAimdir(World *world, int id)
 {
     return world->controllers[id].aimdir;
 }

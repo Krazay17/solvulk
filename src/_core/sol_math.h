@@ -153,24 +153,24 @@ static inline vec3s Sol_RotFromQuat(versors quat)
 
 static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 {
-// 1. Get the relative angle between velocity and facing direction
+    // 1. Get the relative angle between velocity and facing direction
     float angle = atan2f(x, z) - atan2f(bX, bZ);
-    
+
     // 2. Keep the angle strictly positive within [0, 2PI]
     if (angle < 0.0f)
         angle += 2.0f * GLM_PIf;
-        
-    // 3. Offset by half a wedge (22.5 degrees) so cardinal directions 
+
+    // 3. Offset by half a wedge (22.5 degrees) so cardinal directions
     // sit right in the middle of our integer sectors instead of on the edges.
     angle += GLM_PI_4f * 0.5f;
-    
+
     // 4. Handle wrapping after the offset addition
     if (angle >= 2.0f * GLM_PIf)
         angle -= 2.0f * GLM_PIf;
-        
+
     // 5. Use floorf to establish clean boundaries, then cast
     int sector = (int)floorf(angle / GLM_PI_4f);
-    
+
     // Safety clamp to guarantee it maps to your 0-7 enum range
     return (StrafeDir)(sector & 7);
 }
@@ -178,4 +178,13 @@ static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 static inline float Sol_RandRange2(float min, float max)
 {
     return min + (float)rand() / (float)RAND_MAX * (max - min);
+}
+
+/// @brief Redirects Velocity
+/// @param vel incoming vel vector
+/// @param dir Target direction (must be normalized)
+static inline vec3s Sol_RedirectVel(vec3s vel, vec3s dir)
+{
+    float mag = glms_vec3_norm(vel);
+    return vecSca(dir, mag);
 }

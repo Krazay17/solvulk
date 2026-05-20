@@ -54,7 +54,7 @@ void MakeAEmitter(int flags, void *data)
                                          .speed     = 5.0f,
                                          .ttl       = 5.0f,
                                          .randScale = 1,
-                                         .kind      = PARTICLE_SPIKEY,
+                                         .kind      = PARTICLE_SHOCK,
                                          .rot       = Sol_RandRange2(-2.0f, 2.0f),
                                          .rotspeed  = 3.0f,
                                          .scalein   = 0.2f,
@@ -94,6 +94,16 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
 
+    float spacing = 4.0f;
+    for (int i = -5; i < 5; i++)
+    {
+        for (int j = -5; j < 5; j++)
+        {
+            int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
+            Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
+        }
+    }
+
     Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
@@ -116,7 +126,7 @@ void Create_Sol_Game()
 
     int                   wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "100 Wizards");
     static struct MakeWiz wizhundred       = {0};
-    wizhundred.amount                      = 100;
+    wizhundred.amount                      = 1;
     wizhundred.world                       = gameWorld;
     Sol_Interact_Add(menu, wizHundredButton, (InteractDesc){.onHold = (Callback){MakeAWizard, &wizhundred}});
 

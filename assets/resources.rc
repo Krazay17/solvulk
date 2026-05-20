@@ -1,8 +1,8 @@
 //ID_NAME               TYPE            PATH
-gflame.png              RCDATA          "images/gflame.png"
-SpikeParticle.png       RCDATA          "images/SpikeParticle2.png"
+FireParticle.png        RCDATA          "images/FireParticle4.png"
+ShockParticle.png       RCDATA          "images/ShockParticle.png"
 CloudParticle.png       RCDATA          "images/CloudParticle.png"
-BloodParticle.png       RCDATA          "images/BloodParticle2.png"
+BloodParticle.png       RCDATA          "images/BloodParticle.png"
 RedSky.webp             RCDATA          "images/RedSky.webp"
 
 

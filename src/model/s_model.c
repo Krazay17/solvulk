@@ -45,8 +45,10 @@ void Sol_Model_Draw(World *world, double dt, double time)
         if (world->masks[id] & HAS_INTERACT)
         {
             if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
-                flags = 1;
+                flags |= (1 << 0);
         }
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
+            flags |= (1 << 1);
 
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
@@ -148,9 +150,9 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 
     if (layer->blendFactor > 0.5f)
     {
-        layer->lastAnim     = layer->currentAnim;
-        layer->lastSeek     = layer->currentSeek;
-        layer->blendFactor  = 0;
+        layer->lastAnim    = layer->currentAnim;
+        layer->lastSeek    = layer->currentSeek;
+        layer->blendFactor = 0;
     }
     layer->currentAnim = nextAnim;
     layer->currentSeek = desc.seek;
@@ -192,4 +194,8 @@ void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float spe
     if (layer->currentAnim < 0)
         return;
     layer->playRate = speedDif;
+}
+
+void Sol_Model_SetTint(World *world, int id, vec4s color)
+{
 }

@@ -411,3 +411,7 @@ vec3s Sol_Physx_GetHeadPos(World *world, int id)
     head.y += world->bodies[id].dims.y * 0.4f;
     return head;
 }
+void Sol_Physx_Impulse(World*world, int id, vec3s impulse)
+{
+    world->bodies[id].impulse = impulse;
+}

@@ -14,6 +14,7 @@ typedef enum
     BUFFKIND_KNOCKBACK,
     BUFFKIND_FIRE,
     BUFFKIND_SPEED,
+    BUFFKIND_INVULN,
     BUFFKIND_COUNT,
 } BuffKind;
 

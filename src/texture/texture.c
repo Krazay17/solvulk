@@ -16,8 +16,8 @@
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]       = "atlas.raw",
-    [SOL_TEXTURE_GFLAME]        = "gflame.png",
-    [SOL_TEXTURE_SPIKEPARTICLE] = "SpikeParticle.png",
+    [SOL_TEXTURE_FIREPARTICLE]  = "FireParticle.png",
+    [SOL_TEXTURE_SHOCKPARTICLE] = "ShockParticle.png",
     [SOL_TEXTURE_CLOUDPARTICLE] = "CloudParticle.png",
     [SOL_TEXTURE_BLOODPARTICLE] = "BloodParticle.png",
     [SOL_TEXTURE_REDSKY]        = "RedSky.webp",
@@ -56,8 +56,8 @@ static SolTexture *Parse_Texture(SolResource res, u32 id)
 
     if (strstr(image_path[id], ".webp"))
     {
-        int      width, height;
-        int      info = WebPGetInfo(res.data, res.size, &width, &height);
+        int width, height;
+        int info      = WebPGetInfo(res.data, res.size, &width, &height);
         image->pixels = WebPDecodeRGBA(res.data, res.size, &image->width, &image->height);
         return image;
     }

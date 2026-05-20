@@ -67,6 +67,7 @@ addAnotherBuff:
         }
     }
     buff->buffs[buff->count++] = new_buff;
+    buff->activeKindsMask |= BuffBit(desc.kind);
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
@@ -94,8 +95,9 @@ void Sol_Buff_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
 
-        CompBuff *buff  = &world->buffs[id];
-        int       write = 0;
+        CompBuff *buff    = &world->buffs[id];
+        int       write   = 0;
+        int       newmask = 0;
         for (int j = 0; j < buff->count; j++)
         {
             Buff *b = &buff->buffs[j];
@@ -118,12 +120,13 @@ void Sol_Buff_Step(World *world, double dt, double time)
             case BUFFKIND_KNOCKBACK:
                 Sol_Physx_SetVel(world, id, vecSca(b->dir, b->power));
                 break;
-            default:
-                printf("no buff kind\n");
             }
+
             buff->buffs[write++] = *b;
+            newmask |= BuffBit(b->kind);
         }
-        buff->count = write;
+        buff->count           = write;
+        buff->activeKindsMask = newmask;
 
         if (buff->count <= 0)
             world->masks[id] &= ~HAS_BUFF;
@@ -132,10 +135,5 @@ void Sol_Buff_Step(World *world, double dt, double time)
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 {
-    for (int i = 0; i < world->buffs[id].count; i++)
-    {
-        if (world->buffs[id].buffs[i].kind == kind)
-            return true;
-    }
-    return false;
+    return (world->buffs[id].activeKindsMask & BuffBit(kind)) != 0;
 }

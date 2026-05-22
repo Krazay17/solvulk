@@ -1,9 +1,9 @@
 #include "sol_core.h"
 
 static SolTextureId texture_map[] = {
-    [PARTICLE_FIRE] = SOL_TEXTURE_FIREPARTICLE,
-    [PARTICLE_BLOOD]  = SOL_TEXTURE_BLOODPARTICLE,
-    [PARTICLE_CLOUD]  = SOL_TEXTURE_CLOUDPARTICLE,
+    [PARTICLE_FIRE]  = SOL_TEXTURE_FIREPARTICLE,
+    [PARTICLE_BLOOD] = SOL_TEXTURE_BLOODPARTICLE,
+    [PARTICLE_CLOUD] = SOL_TEXTURE_CLOUDPARTICLE,
     [PARTICLE_SHOCK] = SOL_TEXTURE_SHOCKPARTICLE,
 };
 
@@ -16,9 +16,13 @@ void Sol_View_Particle_Draw(World *world, double dt, double time)
 
     for (int i = 0; i < count; i++)
     {
-        Particle *p           = &particles[i];
-        float     t           = p->ttl / p->span;
-        float     visualScale = p->scale;
+        Particle *p = &particles[i];
+
+        if (p->ttl > p->span)
+            continue;
+
+        float t           = p->ttl / p->span;
+        float visualScale = p->scale;
 
         if ((1.0f - t) < p->scalein)
             visualScale = p->scale * ((1.0f - t) / p->scalein);

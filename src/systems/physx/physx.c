@@ -129,7 +129,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
             {
                 
                 CompBody  *other_body  = &world->bodies[otherID];
-                if((body->ignoreTeam || other_body->ignoreTeam) && !Sol_Owner_GetHostile(world, id, otherID))
+                if((body->ignoreFriendly || other_body->ignoreFriendly) && !Sol_Owner_GetHostile(world, id, otherID))
                     goto skip;
                 CompXform *other_xform = &world->xforms[otherID];
                 SolContact contact     = {0};

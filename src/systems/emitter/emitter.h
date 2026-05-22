@@ -16,9 +16,9 @@ typedef struct Particle
     ParticleKind kind;
     vec3s        pos, vel;
     vec4s        color;
-    float        ttl, scale, span, speed;
+    float        ttl, scale, span, speed, delay;
     float        rot, rotspeed, offset, scalein, scaleout;
-    u32          randScale, followId;
+    u32          randScale, followId, randLife, randScaleout;
 } Particle;
 
 typedef struct Emitter

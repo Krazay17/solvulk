@@ -83,13 +83,13 @@ void Create_Sol_Game()
     World *menu = World_Create_Default();
     gameWorld   = World_Create_Default();
     Sol_World_SetActive(menu, false);
+    Sol_State_SetActiveworld(gameWorld);
     // menu->worldActive = false;
     Sol_Cam_SetActivecam(gameWorld);
     Sol_Input_SetLocked(true);
     Sol_View_Crosshair(gameWorld);
 
     // Sol_Audio_Beep();
-    // Sol_Audio_Play(SOL_AUDIO_MENUMUSIC);
 
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});

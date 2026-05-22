@@ -2,69 +2,25 @@
 
 #include "ability_i.h"
 
-// Defined in order of priority (highest priority first)
-static const AbilityMapping ability_mappings[] = {
-    {ACTION_ABILITY0, ABILITY_STATE_IDLE},
-    {ACTION_ABILITY1, ABILITY_STATE_CLAW},
-    {ACTION_DASH, ABILITY_STATE_DASH},
-    {ACTION_ABILITY2, ABILITY_STATE_SHIELD},
-};
-#define MAPPING_COUNT (sizeof(ability_mappings) / sizeof(AbilityMapping))
-
-const StateFunc ability_state_func[] = {
-    [ABILITY_STATE_IDLE] =
-        {
-            .update   = IdleAbility_State_Update,
-            .enter    = IdleAbility_State_Enter,
-            .exit     = IdleAbility_State_Exit,
-            .canExit  = IdleAbility_State_CanExit,
-            .canEnter = IdleAbility_State_CanEnter,
-        },
-    [ABILITY_STATE_DASH] =
-        {
-            .update   = ADash_State_Update,
-            .enter    = ADash_State_Enter,
-            .exit     = ADash_State_Exit,
-            .canExit  = ADash_State_CanExit,
-            .canEnter = ADash_State_CanEnter,
-        },
-    [ABILITY_STATE_CLAW] =
-        {
-            .update   = Claw_State_Update,
-            .enter    = Claw_State_Enter,
-            .exit     = Claw_State_Exit,
-            .canExit  = Claw_State_CanExit,
-            .canEnter = Claw_State_CanEnter,
-        },
-    [ABILITY_STATE_SHIELD] =
-        {
-            Shield_State_Update,
-            Shield_State_Enter,
-            Shield_State_Exit,
-            Shield_State_CanExit,
-            Shield_State_CanEnter,
-        },
-    [ABILITY_STATE_3] = {0},
-    [ABILITY_STATE_4] = {0},
-    [ABILITY_STATE_5] = {0},
-    [ABILITY_STATE_6] = {0},
-    [ABILITY_STATE_7] = {0},
-    [ABILITY_STATE_8] = {0},
-    [ABILITY_STATE_9] = {0},
-};
+#define MAPPING_COUNT(maps) (sizeof(maps) / sizeof(AbilityMapping))
 
 void Sol_Ability_Init(World *world)
 {
     world->stepSystems[world->stepCount++] = Sol_Ability_Step;
+    world->abilities                       = calloc(MAX_ENTS, sizeof(CompAbility));
 
-    world->abilities = calloc(MAX_ENTS, sizeof(CompAbility));
+    Ability_Scripts_Init();
 }
 
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 {
-    CompAbility combat   = {0};
-    world->abilities[id] = combat;
+    CompAbility a = {0};
+    memcpy(a.ability_mappings, desc.abilityMapping, sizeof(AbilityMapping) * ABILITY_STATE_COUNT);
+    for (int i = 0; i < ABILITY_STATE_COUNT; i++)
+        a.stateData[i].lastEntered = -FLT_MAX;
+
     world->masks[id] |= HAS_ABILITY;
+    world->abilities[id] = a;
 }
 
 void Sol_Ability_Step(World *world, double dt, double time)
@@ -78,12 +34,22 @@ void Sol_Ability_Step(World *world, double dt, double time)
             continue;
         CompAbility *ability = &world->abilities[id];
 
-        for (int m = 0; m < MAPPING_COUNT; m++)
+        SolActions actions = Sol_GetActions(world, id);
+        for (int m = 0; m < ABILITY_STATE_COUNT; m++)
         {
-            if (Sol_GetActions(world, id) & ability_mappings[m].actionBit)
-                if (Sol_Ability_SetState(world, id, ability_mappings[m].targetState))
-                    break;
+            AbilityMapping *map = &ability->ability_mappings[m];
+            if (map->actionBit == 0)
+                continue;
+
+            bool pressed                              = (actions & map->actionBit) != 0;
+            ability->stateData[map->targetState].held = pressed;
+
+            if (pressed)
+            {
+                Sol_Ability_SetState(world, id, map->targetState);
+            }
         }
+
         if (ability->state != ABILITY_STATE_IDLE)
         {
             const StateFunc *funcs = &ability_state_func[ability->state];
@@ -111,20 +77,23 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
         return false;
     CompAbility     *ability  = &world->abilities[id];
     const StateFunc *prevfunc = &ability_state_func[ability->state];
+    const StateFunc *nextfunc = &ability_state_func[nextState];
+
+    // TODO force skip checks
     if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
         return false;
-    const StateFunc *nextfunc = &ability_state_func[nextState];
-    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state))
+    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state, nextState))
         return false;
 
     prevfunc->exit(world, id);
     ability->state                                 = nextState;
     ability->stateData[ability->state].elapsed     = 0;
     ability->stateData[ability->state].accum       = 0;
-    ability->stateData[ability->state].lastEntered = (float)Sol_GetState()->gameTime;
+    ability->stateData[ability->state].lastEntered = (float)Sol_GetGameTime();
     nextfunc->enter(world, id);
     return true;
 }
+
 AbilityState Sol_Ability_GetState(World *world, int id)
 {
     return world->abilities[id].state;

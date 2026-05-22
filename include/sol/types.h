@@ -190,6 +190,10 @@ typedef enum
     ANIM_DASH_BWD,
     ANIM_DASH_LEFT,
     ANIM_DASH_RIGHT,
+    ANIM_CHARGE_LEFT,
+    ANIM_CHARGE_RIGHT,
+    ANIM_ATTACK_LEFT,
+    ANIM_ATTACK_RIGHT,
     ANIM_ABILITY0,
     ANIM_ABILITY1,
     ANIM_ABILITY2,
@@ -201,7 +205,7 @@ typedef enum
     ANIM_ABILITY8,
     ANIM_ABILITY9,
     ANIM_COUNT,
-} SolAnims;
+} SolAnimId;
 
 typedef struct SolVertex
 {

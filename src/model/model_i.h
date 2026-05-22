@@ -119,20 +119,21 @@ typedef struct PoseRequest
     mat4     *outBones;                      // final skinning matrices
 } PoseRequest;
 
-
 typedef struct CompModel
 {
+    mat4       bones[MAX_BONES];
+    AnimLayer  layers[ANIM_LAYER_COUNT];
     SolModelId modelId;
     bool       hasAnim;
     float      yOffset, yawOffset;
-    AnimLayer  layers[ANIM_LAYER_COUNT];
 } CompModel;
 
+extern SolModel      loaded_models[SOL_MODEL_COUNT];
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];
 const char          *model_path[SOL_MODEL_COUNT];
 const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
-SolModel  *Sol_GetModel(SolModelId id);
+SolModel *Sol_GetModel(SolModelId id);
 
 int  Sol_Models_Init();
 void Init_Anim_Masks(SolModelId modelId, SolSkeleton *skele);

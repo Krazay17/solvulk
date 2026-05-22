@@ -143,7 +143,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
         return false;
     if (!prevfunc->canExit(world, id, nextState))
         return false;
-    if (!nextfunc->canEnter(world, id, movement->moveState))
+    if (!nextfunc->canEnter(world, id, movement->moveState, (u32)nextState))
         return false;
 
     // printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);

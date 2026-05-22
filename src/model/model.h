@@ -13,7 +13,7 @@ typedef enum
 typedef struct
 {
     float       blendIn, blendOut, seek, speed;
-    SolAnims    anim;
+    SolAnimId   anim;
     AnimLayerId layerId;
     bool        force;
 } AnimDesc;
@@ -30,6 +30,7 @@ void Sol_Model_Draw(World *world, double dt, double time);
 
 SolModelId Sol_Model_GetModelId(World *world, int id);
 
-void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
-void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
-void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float speedDif);
+void  Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
+void  Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
+void  Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float speedDif);
+vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name);

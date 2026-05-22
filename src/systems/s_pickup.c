@@ -15,7 +15,6 @@ void Sol_Pickup_Init(World *world)
     world->stepSystems[idx] = Sol_Pickup_Step;
 }
 
-
 void Sol_Pickup_Step(World *world, double dt, double time)
 {
     SolMouse mouse    = Sol_Input_GetMouse();

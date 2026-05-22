@@ -25,7 +25,7 @@ void ADash_State_Update(World *world, int id, float dt)
 
 void ADash_State_Enter(World *world, int id)
 {
-    Sol_Audio_Play(SOL_AUDIO_DASH);
+    Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 0.0f);
     Sol_Buff_Add(world, id, (BuffDesc){.duration=.2f, .kind=BUFFKIND_INVULN}, NULL);
 
     CompAbility *ability = &world->abilities[id];
@@ -73,14 +73,15 @@ void ADash_State_Exit(World *world, int id)
     Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0.15f);
 }
 
-bool ADash_State_CanEnter(World *world, int id, int last)
-{
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_DASH];
-    return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
-}
-
-bool ADash_State_CanExit(World *world, int id, int next)
+bool ADash_State_CanExit(World *world, int id, u32 next)
 {
     AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_DASH];
     return data->elapsed >= DASH_DURATION * 0.9f;
 }
+
+bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next)
+{
+    AbilityData *data = &world->abilities[id].stateData[next];
+    return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
+}
+

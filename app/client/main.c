@@ -345,7 +345,7 @@ void W_Set_Fullscreen(int flags, void *data)
 {
     bool toggle = (flags & INTERACT_TOGGLED);
     u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
-    u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) : WINDOW_HEIGHT;
+    u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
 
     // ChangeDisplaySettings(0, CDS_FULLSCREEN);
     SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);

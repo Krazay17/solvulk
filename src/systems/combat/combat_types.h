@@ -8,13 +8,13 @@
 
 typedef enum
 {
-    DAMAGEKIND_NORMAL,
-    DAMAGEKIND_FIRE,
-    DAMAGEKIND_ICE,
-} DamageKind;
+    HITKIND_NORMAL,
+    HITKIND_FIRE,
+    HITKIND_ICE,
+} HitKind;
 typedef struct SolHit
 {
-    DamageKind kind;
+    HitKind kind;
     BuffDesc   buffs[MAX_BUFFS_HIT];
     u32        buffcount;
     u32        source, target;

@@ -39,14 +39,14 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
     else
         world->masks[id] |= HAS_BODY3;
     CompBody body = {
-        .mass        = desc.mass,
-        .shape       = desc.shape,
-        .group       = desc.group,
-        .gravity     = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
-        .invMass     = desc.mass > 0 ? 1.0f / desc.mass : 0,
-        .restitution = desc.restitution ? desc.restitution : 0.5f,
-        .vel         = desc.vel,
-        .ignoreTeam  = desc.ignoreTeam,
+        .mass           = desc.mass,
+        .shape          = desc.shape,
+        .group          = desc.group,
+        .gravity        = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
+        .invMass        = desc.mass > 0 ? 1.0f / desc.mass : 0,
+        .restitution    = desc.restitution ? desc.restitution : 0.5f,
+        .vel            = desc.vel,
+        .ignoreFriendly = desc.ignoreFriendly,
         .dims =
             (vec3s){
                 .x = desc.radius,
@@ -275,11 +275,11 @@ int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results
 }
 
 // dont fill pos or dir in ray
-SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray)
+SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ray)
 {
     SolCamera *cam  = Sol_GetCamera();
-    float      winW = Sol_GetState()->windowWidth;
-    float      winH = Sol_GetState()->windowHeight;
+    float      winW = (float)Sol_GetState()->windowWidth;
+    float      winH = (float)Sol_GetState()->windowHeight;
 
     // 1. Convert screen pixel → NDC [-1, 1]
     float ndcX = (2.0f * screenX / winW) - 1.0f;
@@ -411,7 +411,7 @@ vec3s Sol_Physx_GetHeadPos(World *world, int id)
     head.y += world->bodies[id].dims.y * 0.4f;
     return head;
 }
-void Sol_Physx_Impulse(World*world, int id, vec3s impulse)
+void Sol_Physx_Impulse(World *world, int id, vec3s impulse)
 {
     world->bodies[id].impulse = impulse;
 }

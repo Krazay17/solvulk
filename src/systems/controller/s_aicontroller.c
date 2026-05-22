@@ -117,7 +117,7 @@ bool Ai_SetState(World *world, int id, AiState nextState)
     if (!prevfunc->canExit(world, id, nextState))
         return false;
     const StateFunc *nextfunc = &state_func[nextState];
-    if (!nextfunc->canEnter(world, id, aicontroller->state))
+    if (!nextfunc->canEnter(world, id, aicontroller->state, (u32)nextState))
         return false;
 
     prevfunc->exit(world, id);

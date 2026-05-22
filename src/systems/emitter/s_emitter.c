@@ -122,14 +122,17 @@ static void Particle_Tick(World *world, double dt, double time)
         p->ttl -= fdt;
         if (p->ttl <= 0)
             continue;
+            
+        if (p->ttl < p->span)
+        {
+            vec3s finalvel = p->vel;
+            if (p->followId)
+                finalvel = vecAdd(p->vel, Sol_Physx_GetVel(world, p->followId));
 
-        vec3s finalvel = p->vel;
-        if (p->followId)
-            finalvel = vecAdd(p->vel, Sol_Physx_GetVel(world, p->followId));
+            p->pos = vecAdd(p->pos, vecSca(finalvel, fdt));
 
-        p->pos = vecAdd(p->pos, vecSca(finalvel, fdt));
-
-        p->rot += p->rotspeed * dt;
+            p->rot += p->rotspeed * dt;
+        }
 
         s->particle[write++] = *p;
     }
@@ -144,7 +147,10 @@ static Particle *Particle_Activate(SolEmitters *s, Emitter *e)
 
     Particle *p = &s->particle[s->particle_count++];
     memcpy(p, &e->particle, sizeof(Particle));
-    p->span = p->ttl;
+    p->scaleout = p->randScaleout ? (rand() % 100) * p->scaleout * 0.01f : p->scaleout;
+    p->ttl      = p->randLife ? (rand() % 100) * p->ttl * 0.01f : p->ttl;
+    p->span     = p->ttl;
+    p->ttl += p->delay;
 
     p->scale    = p->randScale ? (rand() % 100) * p->scale * 0.01f : p->scale;
     float theta = ((float)rand() / (float)RAND_MAX) * 2.0f * 3.14159f;    // 0 to 2pi

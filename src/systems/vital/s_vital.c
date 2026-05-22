@@ -78,13 +78,13 @@ void Die(World *world, int id, SolHit hit)
 {
     Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.attacker = hit.source, .sourceId = id});
     Sol_Destroy_Ent(world, id);
-    Sol_Emitter_Add(world, (Emitter){.burst    = 80,
+    Sol_Emitter_Add(world, (Emitter){.burst    = 40,
                                      .pos      = Sol_Xform_GetPos(world, id),
                                      .particle = (Particle){.color    = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
                                                             .kind     = PARTICLE_BLOOD,
                                                             .scale    = 0.4f,
                                                             .ttl      = 1.5f,
-                                                            .speed    = 2.0f,
+                                                            .speed    = 3.0f,
                                                             .scaleout = .5f}});
 }
 

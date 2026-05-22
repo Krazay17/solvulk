@@ -25,6 +25,7 @@
 #include "world.h"
 #include "components.h"
 
+#include "model/model.h"
 #include "texture/texture.h"
 #include "owner/owner.h"
 #include "combat/combat.h"
@@ -41,7 +42,6 @@
 #include "emitter/emitter.h"
 #include "interact/interact.h"
 #include "line/line.h"
-#include "model/model.h"
 #include "movement/movement.h"
 #include "physx/physx.h"
 #include "ui/ui.h"
@@ -62,6 +62,7 @@ SOLAPI void      Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);
 SOLAPI void      Sol_Destroy();
 SOLAPI SolState *Sol_GetState();
+void Sol_State_SetActiveworld(World *world);
 SOLAPI double    Sol_GetGameTime();
 SOLAPI void      Sol_Window_Resize(float width, float height);
 

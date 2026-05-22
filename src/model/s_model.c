@@ -119,8 +119,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
             }
         }
 
-        mat4        bones[MAX_BONES];
-        PoseRequest req = {.outBones = bones};
+        // mat4        bones[MAX_BONES];
+        PoseRequest req = {.outBones = modelComp->bones};
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -135,7 +135,7 @@ void Sol_Model_Draw(World *world, double dt, double time)
             req.layerWeight[L] = (modelComp->layers[L].fadeOut > 0.0f) ? modelComp->layers[L].fadeOut : 1.0f;
         }
         Sol_Skeleton_Pose(&m->skeleton, &req);
-        desc.bones = bones;
+        desc.bones = modelComp->bones;
         Sol_Render_PushModel(desc);
     }
 }
@@ -198,4 +198,56 @@ void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float spe
 
 void Sol_Model_SetTint(World *world, int id, vec4s color)
 {
+}
+
+vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name)
+{
+    CompModel   *model    = &world->models[id];
+    SolSkeleton *skeleton = &loaded_models[model->modelId].skeleton;
+    CompXform   *xform    = &world->xforms[id];
+
+    int boneIdx = -1;
+    for (int i = 0; i < skeleton->boneCount; i++)
+    {
+        if (strstr(skeleton->bones[i].name, name))
+        {
+            boneIdx = i;
+            break;
+        }
+    }
+    if (boneIdx < 0)
+        return (vec3s){{0, 0, 0}};
+
+    // Get the bone's bind position in model space (from inverseBind)
+    // inverseBind transforms model-space to bone-local. Its inverse goes the other way.
+    // The bone's origin in model space at bind pose is: inverse(inverseBind) * (0,0,0,1)
+    // Equivalently: -inverseBind[3].xyz with rotation undone, OR just invert and grab translation.
+    mat4 bindPose;
+    glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
+    vec3 bindPos = {bindPose[3][0], bindPose[3][1], bindPose[3][2]};
+
+    // Transform bind position by the current skinning matrix to get current model-space pos
+    vec4 bindPos4 = {bindPos[0], bindPos[1], bindPos[2], 1.0f};
+    vec4 modelSpacePos;
+    glm_mat4_mulv(model->bones[boneIdx], bindPos4, modelSpacePos);
+
+    // Now apply the entity's world transform (position + rotation + scale)
+    vec3 scaledPos = {
+        modelSpacePos[0] * xform->drawScale.x,
+        modelSpacePos[1] * xform->drawScale.y,
+        modelSpacePos[2] * xform->drawScale.z,
+    };
+
+    // Rotate by entity quat
+    vec3 rotated;
+    glm_quat_rotatev(xform->drawQuat.raw, scaledPos, rotated);
+
+    // Translate
+    vec3s worldPos = {{
+        rotated[0] + xform->drawPos.x,
+        rotated[1] + xform->drawPos.y + model->yOffset,
+        rotated[2] + xform->drawPos.z,
+    }};
+
+    return worldPos;
 }

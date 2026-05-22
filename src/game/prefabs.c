@@ -12,7 +12,7 @@ static ImpactList fireball_impacts = {
             .hit =
                 {
                     .damage = 15,
-                    .kind   = DAMAGEKIND_FIRE,
+                    .kind   = HITKIND_FIRE,
                     // .buffs =
                     //     {
                     //         {.kind = BUFFKIND_KNOCKBACK, .duration = 0.5f},
@@ -27,10 +27,9 @@ static ImpactList fireball_impacts = {
             .hit =
                 {
                     .damage = 10,
-                    .kind   = DAMAGEKIND_FIRE,
+                    .kind   = HITKIND_FIRE,
                     .buffs =
                         {
-                       //     {.kind = BUFFKIND_KNOCKBACK, .duration = 0.1f, .addKind = BUFFADD_SET_DURATION},
                             {.kind = BUFFKIND_FIRE, .duration = 3.0f, .freq = 0.5f, .addKind = BUFFADD_SET_DURATION},
                         },
                     .power     = 10.0f,
@@ -62,7 +61,14 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
 
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
     Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
-    Sol_Ability_Add(world, id, (AbilityDesc){0});
+    Sol_Ability_Add(world, id,
+                    (AbilityDesc){.abilityMapping = {
+                                      {ACTION_DASH, ABILITY_STATE_DASH},
+                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALL},
+                                      {ACTION_ABILITY2, ABILITY_STATE_SHIELD},
+                                      {ACTION_ABILITY3, ABILITY_STATE_CLAW},
+                                      {ACTION_ABILITY4, ABILITY_STATE_FIREBALLVOLLEY},
+                                  }});
 
     return id;
 }
@@ -118,13 +124,13 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc s
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){
-                     .radius      = shape.radius,
-                     .shape       = SHAPE3_SPH,
-                     .mass        = 1.0f * shape.radius,
-                     .restitution = 0.5f,
-                     .vel         = vel,
-                     .group       = 0b10,
-                     .ignoreTeam  = 1,
+                     .radius         = shape.radius,
+                     .shape          = SHAPE3_SPH,
+                     .mass           = 1.0f * shape.radius,
+                     .restitution    = 0.5f,
+                     .vel            = vel,
+                     .group          = 0b10,
+                     .ignoreFriendly = 1,
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
@@ -136,30 +142,58 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc s
     return id;
 }
 
-int Sol_Prefab_Fireball(World *world, vec3s pos, vec3s vel, int ownerId)
+int Sol_Prefab_Fireball(World *world, int ownerId, vec3s pos, vec3s vel, float radius, u32 damage)
 {
-    ShapeDesc shape = {.radius = 0.3f, .color = {1, 0, 0, 1}};
+    ShapeDesc shape = {.radius = radius, .color = {1, 0, 0, 1}};
 
     int id = Sol_Create_Ent(world);
     Sol_Shape_Add(world, id, shape);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){
-                     .radius      = shape.radius,
-                     .shape       = SHAPE3_SPH,
-                     .mass        = 1.0f * shape.radius,
-                     .restitution = 0.5f,
-                     .vel         = vel,
-                     .group       = 0b10,
-                     .ignoreTeam  = 1,
+                     .radius         = shape.radius * 0.5f,
+                     .shape          = SHAPE3_SPH,
+                     .mass           = 1.0f * shape.radius,
+                     .restitution    = 0.5f,
+                     .vel            = vel,
+                     .group          = 0b10,
+                     .ignoreFriendly = 1,
                  });
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
     Sol_Contact_Add(world, id,
-                    (ContactDesc){
-                        .impacts = fireball_impacts,
-                    });
+                    (ContactDesc){.impacts = {
+                                      .impactCount = 2,
+                                      .impacts[0] =
+                                          {
+                                              .kind   = IMPACT_DIRECT,
+                                              .radius = radius,
+                                              .hit =
+                                                  {
+                                                      .kind   = HITKIND_FIRE,
+                                                      .damage = damage,
+                                                  },
+                                          },
+                                      .impacts[1] =
+                                          {
+                                              .kind   = IMPACT_AOE,
+                                              .radius = radius * 2.0f,
+                                              .hit =
+                                                  {
+                                                      .damage    = damage / 2,
+                                                      .kind      = HITKIND_FIRE,
+                                                      .buffs     = {{
+                                                          .kind     = BUFFKIND_FIRE,
+                                                          .addKind  = BUFFADD_SET_DURATION,
+                                                          .duration = 3.0f,
+                                                          .freq     = 0.5f,
+                                                      }},
+                                                      .power     = 10.0f,
+                                                      .buffcount = 1,
+                                                  },
+                                          },
+                                  }});
     Sol_Owner_SetOwner(world, id, ownerId);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
 
@@ -208,7 +242,10 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
                      .group       = 1,
                  });
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_WIZARD});
-    Sol_Ability_Add(world, id, (AbilityDesc){0});
+    Sol_Ability_Add(world, id,
+                    (AbilityDesc){.abilityMapping = {
+                                      {.actionBit = ACTION_ABILITY1, .targetState = ABILITY_STATE_FIREBALLVOLLEY},
+                                  }});
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});

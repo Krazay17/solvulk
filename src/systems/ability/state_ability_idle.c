@@ -11,11 +11,11 @@ void IdleAbility_State_Enter(World *world, int id)
 void IdleAbility_State_Exit(World *world, int id)
 {
 }
-bool IdleAbility_State_CanEnter(World *world, int id, int last)
+bool IdleAbility_State_CanExit(World *world, int id, u32 next)
 {
     return true;
 }
-bool IdleAbility_State_CanExit(World *world, int id, int next)
+bool IdleAbility_State_CanEnter(World *world, int id, u32 last, u32 next)
 {
     return true;
 }

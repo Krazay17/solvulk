@@ -130,6 +130,9 @@ void Sol_Tick(double dt, double time)
     }
     // ######### END STEP AND INTERP #########
 
+    if (solState.activeWorld)
+        Sol_Audio_Update(Sol_Xform_GetPos(solState.activeWorld, solState.activeWorld->playerID), Sol_Controller_GetAimdir(solState.activeWorld, solState.activeWorld->playerID));
+
     Sol_Begin_Draw();
 
     for (int i = solState.worldCount - 1; i >= 0; --i)

@@ -5,9 +5,7 @@
  * Created: 2026-05-08
  * Local Tick reads inputs and sets action states.
  * Remote Tick sets action states directly.
- * Ai Tick sets action states directly.
  */
-
 #include "sol_core.h"
 
 #include "controller_i.h"
@@ -23,7 +21,6 @@ static const SolActions action_binds[SOL_KEY_COUNT] = {
 
 static void  Sol_Controller_Tick(World *world, double dt, double time);
 static void  LocalTick(World *world, int id, double dt, double time);
-static void  AiTick(World *world, int id, double dt, double time);
 static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
 
@@ -98,8 +95,12 @@ static void LocalTick(World *world, int id, double dt, double time)
     {
         if (mouse.buttons[SOL_MOUSE_LEFT])
             controller->actionState |= ACTION_ABILITY1;
+        else
+            controller->actionState &= ~ACTION_ABILITY1;
         if (mouse.buttons[SOL_MOUSE_RIGHT])
             controller->actionState |= ACTION_ABILITY2;
+        else
+            controller->actionState &= ~ACTION_ABILITY2;
     }
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_FWD;
@@ -252,4 +253,12 @@ vec3s Sol_Controller_GetShootpos(World *world, int id, float offset)
     vec3s head = world->controllers[id].aimpos;
     vec3s dir  = world->controllers[id].aimdir;
     return vecAdd(head, vecSca(dir, offset));
+}
+
+SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
+{
+    vec3s pos = Sol_Controller_GetShootpos(world, id, 0.3f);
+    vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
+    
+    return (SolShoot){.pos = pos, .vel = vel};
 }

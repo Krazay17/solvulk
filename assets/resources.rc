@@ -1,4 +1,5 @@
 //ID_NAME               TYPE            PATH
+
 FireParticle.png        RCDATA          "images/FireParticle4.png"
 ShockParticle.png       RCDATA          "images/ShockParticle.png"
 CloudParticle.png       RCDATA          "images/CloudParticle.png"
@@ -22,6 +23,7 @@ SpaceGun.mp3            RCDATA          "sounds/SpaceGun.mp3"
 Woong1.wav              RCDATA          "sounds/Woong1.wav"
 dash.mp3                RCDATA          "sounds/dash.mp3"
 fireballUse.mp3         RCDATA          "sounds/fireballUse.mp3"
+FireballImpact.mp3      RCDATA          "sounds/FireballImpact.mp3"
 
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"

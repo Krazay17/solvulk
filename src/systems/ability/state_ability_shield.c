@@ -18,9 +18,10 @@ void Shield_State_Update(World *world, int id, float dt)
     data->accum += (float)dt;
     if (data->accum > PULSERATE)
     {
+        Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 0.1f);
         data->accum = 0;
         SolRayResult results[256];
-        int          hits = Sol_SphereCast(world, (SolRay){.pos = pos}, 5.0f, results, 256);
+        int          hits = Sol_SphereCast(world, (SolRay){.pos = pos}, 4.0f, results, 256);
 
         Sol_Event_Add(world, (SolEvent){
                                  .kind       = EVENTKIND_FX,
@@ -66,7 +67,7 @@ void Shield_State_Update(World *world, int id, float dt)
 void Shield_State_Enter(World *world, int id)
 {
     AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
-    data->accum = PULSERATE;
+    data->accum       = PULSERATE;
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
 }
 
@@ -75,15 +76,15 @@ void Shield_State_Exit(World *world, int id)
     Sol_Combat_RemoveFlags(world, id, COMBATFLAG_REFLECTING);
 }
 
-bool Shield_State_CanEnter(World *world, int id, int last)
-{
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ABILITY_STATE_SHIELD];
-    return !(ability->state == ABILITY_STATE_SHIELD) &&
-           !(data->lastEntered + SHIELD_COOLDOWN > (float)Sol_GetGameTime());
-}
-
-bool Shield_State_CanExit(World *world, int id, int next)
+bool Shield_State_CanExit(World *world, int id, u32 next)
 {
     return true;
+}
+
+bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next)
+{
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[next];
+    return !(ability->state == ABILITY_STATE_SHIELD) &&
+           !(data->lastEntered + SHIELD_COOLDOWN > (float)Sol_GetGameTime());
 }

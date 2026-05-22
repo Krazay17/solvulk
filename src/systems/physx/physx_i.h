@@ -39,7 +39,7 @@ typedef struct CompBody
     float  mass, invMass, restitution;
     Shape3 shape;
     u8     group;
-    bool   ignoreTeam;
+    bool   ignoreFriendly;
 } CompBody;
 
 typedef struct GridWalker

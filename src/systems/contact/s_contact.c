@@ -48,6 +48,7 @@ static void Contact_Step(World *world, double dt, double time)
             if (world->owners[proj].ownerId == other)
                 continue;
             CompContact *c = &world->contacts[proj];
+            vec3s projPos = Sol_Xform_GetPos(world, proj);
 
             for (int i = 0; i < c->impacts.impactCount; i++)
             {
@@ -70,13 +71,13 @@ static void Contact_Step(World *world, double dt, double time)
                     impact->hit.dir = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
                     Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
                     Sol_Event_Add(
-                        world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = pos, .as.fx.kind = FXKIND_FIREBALL_HIT});
+                        world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = projPos, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.scale = impact->radius});
                 }
                 else if (impact->kind == IMPACT_AOE)
                 {
                     SolRayResult results[256];
 
-                    int hits = Sol_SphereCast(world, (SolRay){.pos = pos}, impact->radius, results, 256);
+                    int hits = Sol_SphereCast(world, (SolRay){.pos = projPos}, impact->radius, results, 256);
                     for (int i = 0; i < hits; i++)
                     {
                         SolRayResult result = results[i];

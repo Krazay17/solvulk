@@ -6,46 +6,56 @@
 
 typedef struct
 {
-    vec3s dir, pos;
-    float lastEntered, elapsed, duration, accum;
+    vec3s  dir, pos;
+    bool   held;
+    float  elapsed, duration, accum, recovery, power;
+    double lastEntered;
+    u32    stage;
 } AbilityData;
 typedef struct CompAbility
 {
-    vec3s        attackPos, attackDir;
-    AbilityState state;
-    AbilityData  stateData[ABILITY_STATE_COUNT];
+    vec3s          attackPos, attackDir;
+    AbilityState   state;
+    AbilityData    stateData[ABILITY_STATE_COUNT];
+    AbilityMapping ability_mappings[ABILITY_STATE_COUNT];
 } CompAbility;
-
-typedef struct
-{
-    SolActions   actionBit;
-    AbilityState targetState;
-} AbilityMapping;
 
 extern const StateFunc ability_state_func[];
 
-bool Sol_Ability_SetState(World *world, int id, AbilityState state);
+void Ability_Scripts_Init(void);
+
+void Script_State_Update(World *world, int id, float dt);
+void Script_State_Enter(World *world, int id);
+void Script_State_Exit(World *world, int id);
+bool Script_State_CanExit(World *world, int id, u32 nextState);
+bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next);
 
 void IdleAbility_State_Update(World *world, int id, float dt);
 void IdleAbility_State_Enter(World *world, int id);
 void IdleAbility_State_Exit(World *world, int id);
-bool IdleAbility_State_CanExit(World *world, int id, int next);
-bool IdleAbility_State_CanEnter(World *world, int id, int last);
+bool IdleAbility_State_CanExit(World *world, int id, u32 next);
+bool IdleAbility_State_CanEnter(World *world, int id, u32 last, u32 next);
 
 void Claw_State_Update(World *world, int id, float dt);
 void Claw_State_Enter(World *world, int id);
 void Claw_State_Exit(World *world, int id);
-bool Claw_State_CanExit(World *world, int id, int next);
-bool Claw_State_CanEnter(World *world, int id, int last);
+bool Claw_State_CanExit(World *world, int id, u32 next);
+bool Claw_State_CanEnter(World *world, int id, u32 last, u32 next);
 
 void ADash_State_Update(World *world, int id, float dt);
 void ADash_State_Enter(World *world, int id);
 void ADash_State_Exit(World *world, int id);
-bool ADash_State_CanExit(World *world, int id, int next);
-bool ADash_State_CanEnter(World *world, int id, int last);
+bool ADash_State_CanExit(World *world, int id, u32 next);
+bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next);
 
 void Shield_State_Update(World *world, int id, float dt);
 void Shield_State_Enter(World *world, int id);
 void Shield_State_Exit(World *world, int id);
-bool Shield_State_CanExit(World *world, int id, int next);
-bool Shield_State_CanEnter(World *world, int id, int last);
+bool Shield_State_CanExit(World *world, int id, u32 next);
+bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next);
+
+void Fireball_State_Update(World *world, int id, float dt);
+void Fireball_State_Enter(World *world, int id);
+void Fireball_State_Exit(World *world, int id);
+bool Fireball_State_CanExit(World *world, int id, u32 next);
+bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next);

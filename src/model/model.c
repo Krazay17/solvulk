@@ -5,35 +5,7 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
-SolModel loaded_models[SOL_MODEL_COUNT] = {0};
-
-SolModelMasks model_masks[SOL_MODEL_COUNT];
-
-const char *model_path[SOL_MODEL_COUNT] = {
-    [SOL_MODEL_WIZARD] = "Wizard.glb", [SOL_MODEL_DUDE] = "Dude.glb",     [SOL_MODEL_BOX] = "Box.glb",
-    [SOL_MODEL_WORLD0] = "World0.glb", [SOL_MODEL_WORLD1] = "World1.glb", [SOL_MODEL_WORLD2] = "World2.glb",
-};
-
-const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
-    [SOL_MODEL_WIZARD] =
-        {
-            [ANIM_IDLE] = 0,       [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 1,   [ANIM_WALK_LEFT] = 1,
-            [ANIM_WALK_RIGHT] = 1, [ANIM_JUMP] = 1,      [ANIM_FALL] = 1,       [ANIM_DASH_FWD] = 1,
-            [ANIM_DASH_BWD] = 1,   [ANIM_DASH_LEFT] = 1, [ANIM_DASH_RIGHT] = 1, [ANIM_ABILITY0] = 2,
-            [ANIM_ABILITY1] = 2,   [ANIM_ABILITY2] = 2,  [ANIM_ABILITY3] = 2,   [ANIM_ABILITY4] = 2,
-            [ANIM_ABILITY5] = 2,   [ANIM_ABILITY6] = 2,  [ANIM_ABILITY7] = 2,   [ANIM_ABILITY8] = 2,
-            [ANIM_ABILITY9] = 2,
-        },
-    [SOL_MODEL_DUDE] =
-        {
-            [ANIM_IDLE] = 2,        [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 18,  [ANIM_WALK_LEFT] = 11,
-            [ANIM_WALK_RIGHT] = 10, [ANIM_JUMP] = 4,      [ANIM_FALL] = 3,       [ANIM_DASH_FWD] = 6,
-            [ANIM_DASH_BWD] = 8,    [ANIM_DASH_LEFT] = 7, [ANIM_DASH_RIGHT] = 9, [ANIM_ABILITY0] = 15,
-            [ANIM_ABILITY1] = 15,   [ANIM_ABILITY2] = 15, [ANIM_ABILITY3] = 15,  [ANIM_ABILITY4] = 15,
-            [ANIM_ABILITY5] = 15,   [ANIM_ABILITY6] = 15, [ANIM_ABILITY7] = 15,  [ANIM_ABILITY8] = 15,
-            [ANIM_ABILITY9] = 15,
-        },
-};
+SolModel loaded_models[SOL_MODEL_COUNT];
 
 static SolModel   *Parse_Model(SolResource res, u32 id);
 static SolSkeleton ParseSkeleton(cgltf_data *data);
@@ -43,11 +15,6 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
 static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
 static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
-SolModel *Sol_GetModel(SolModelId id)
-{
-    return &loaded_models[id];
-}
-
 void Sol_FreeModel(SolModel *model)
 {
     free(model->vertices);
@@ -55,6 +22,11 @@ void Sol_FreeModel(SolModel *model)
     free(model->meshes);
     free(model->tris);
     memset(model, 0, sizeof(SolModel));
+}
+
+SolModel *Sol_GetModel(SolModelId id)
+{
+    return &loaded_models[id];
 }
 
 int Sol_Models_Init()
@@ -227,7 +199,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             if (src->name)
             {
                 strncpy(anim->name, src->name, 63);
-                // printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
+                printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
             }
 
             anim->channelCount = (int)src->channels_count;
@@ -651,7 +623,7 @@ void Init_Anim_Masks(SolModelId modelId, SolSkeleton *skel)
     }
 
     // Build upper-body mask: spine, head, arms
-    const char *upperRoots[] = {"spine.001"};
+    const char *upperRoots[] = {"spine.002"};
     for (int i = 0; i < sizeof(upperRoots) / sizeof(upperRoots[0]); i++)
     {
         int rootIdx = Sol_Skeleton_FindBone(skel, upperRoots[i]);

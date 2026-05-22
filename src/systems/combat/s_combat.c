@@ -30,7 +30,7 @@ static void Combat_Step(World *world, double dt, double time)
 
             switch (e->as.hit.kind)
             {
-            case DAMAGEKIND_FIRE:
+            case HITKIND_FIRE:
                 Sol_Event_Add(world, (SolEvent){
                                          .kind       = EVENTKIND_FX,
                                          .as.fx.kind = FXKIND_FIRE_APPLY,
@@ -47,7 +47,6 @@ static void Combat_Step(World *world, double dt, double time)
                 Sol_AiController_SetLastHit(world, e->as.hit.target, e->as.hit.source, e->as.hit.damage);
             break;
         case EVENTKIND_DEATH:
-            printf("DEATH %d\n", e->as.death.attacker);
             Sol_AiController_TargetDied(world, e->as.death.attacker, e->sourceId);
             break;
         }

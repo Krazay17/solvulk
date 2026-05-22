@@ -168,7 +168,6 @@ typedef struct World
 
 World     *World_Create(void);
 World     *World_Create_Default(void);
-void       Sol_State_SetActiveworld(World *world);
 void       World_SetDoesrender(World *world, bool doesRender);
 SolCamera *Sol_World_GetActivecamera(World *world);
 
@@ -188,3 +187,4 @@ void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 int  Sol_World_GetEntCount(World *world);
 void Sol_World_SetActive(World *world, bool active);
+void Sol_World_SetPlayerWorld(World *world);

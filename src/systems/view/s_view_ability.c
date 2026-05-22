@@ -1,7 +1,8 @@
-#include "ability/ability_i.h"
 #include "sol_core.h"
 
-void        Sol_View_Ability(World *world)
+#include "ability/ability_i.h"
+
+void Sol_View_Ability(World *world)
 {
     WAdd3d(world) = Sol_View_Ability_Draw;
 }
@@ -21,7 +22,19 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
 
         switch (ability->state)
         {
-        case ABILITY_STATE_IDLE:
+        case ABILITY_STATE_FIREBALL:
+            AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
+            if (data->stage > 0)
+                break;
+            vec3s pos = Sol_Model_GetBoneXform(world, id, "hand.L");
+            pos = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), data->power));
+            pos = vecAdd(pos, vecSca(WORLD_UP, data->power));
+            Sol_Render_PushSphere((SphereDesc){
+                .isfx  = false,
+                .color = (vec4s){1.0f, 0, 0, 0.8f},
+                .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
+            });
+
             break;
         case ABILITY_STATE_DASH:
             break;
@@ -33,20 +46,6 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
                 .color = (vec4s){0.25f, 0.1f, 0.5f, 0.2f},
                 .pos   = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f},
             });
-            break;
-        case ABILITY_STATE_3:
-            break;
-        case ABILITY_STATE_4:
-            break;
-        case ABILITY_STATE_5:
-            break;
-        case ABILITY_STATE_6:
-            break;
-        case ABILITY_STATE_7:
-            break;
-        case ABILITY_STATE_8:
-            break;
-        case ABILITY_STATE_9:
             break;
         }
     }

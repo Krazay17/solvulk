@@ -26,7 +26,7 @@ typedef struct
     float  mass, restitution;
     Shape3 shape;
     u8     group;
-    bool   is2d, ignoreTeam;
+    bool   is2d, ignoreFriendly;
 } BodyDesc;
 
 void         Sol_Body_Add(World *world, int id, BodyDesc desc);
@@ -36,7 +36,7 @@ void         Sol_Physx2d_Step(World *world, double dt, double time);
 vec3s        Sol_Physx_GetVel(World *world, int id);
 vec3s        Sol_Physx_GetGround(World *world, int id);
 bool         Sol_Physx_GetGrounded(World *world, int id);
-SolRayResult Sol_ScreenRaycast(World *world, float screenX, float screenY, SolRay ray);
+SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ray);
 void         Sol_Physx_SetGrav(World *world, int id, vec3s vel);
 vec3s        Sol_Physx_GetDims(World *world, int id);
 void         Sol_Physx_SetVel(World *world, int id, vec3s vel);
@@ -51,4 +51,4 @@ float        Sol_Physx_GetLatSpeed(World *world, int id);
 int          Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results, int maxResults);
 void         Sol_Physx_SetVellat(World *world, int id, vec3s vel);
 void         Sol_Physx_AddVel(World *world, int id, vec3s addvel);
-void Sol_Physx_Impulse(World*world, int id, vec3s impulse);
+void         Sol_Physx_Impulse(World *world, int id, vec3s impulse);

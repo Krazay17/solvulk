@@ -77,7 +77,9 @@ void Sol_Cam_Update(World *world, double dt)
 
     memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
     memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
-
+    memcpy(sol_camera.anchor, camera_arm.anchor.raw, sizeof(vec3));
+    glm_vec3_sub(sol_camera.position, sol_camera.target, sol_camera.dir);
+    glm_vec3_normalize(sol_camera.dir);
     glm_vec3_lerp(sol_camera.up, (vec3){0.0f, 1.0f, 0.0f}, 1.0f - expf(-10.0f * (float)dt), sol_camera.up);
 
     glm_lookat(sol_camera.position, sol_camera.target, sol_camera.up, sol_camera.view);
@@ -93,4 +95,9 @@ SolCameraArm *Sol_Cam_GetArm()
 void Sol_Cam_SetActivecam(World *world)
 {
     world->activeCamera = &sol_camera;
+}
+
+SolCamera *Sol_Cam_GetCam(World *world)
+{
+    return world->activeCamera;
 }

@@ -171,7 +171,7 @@ void Ground_Trace(World *world, int count, float fdt)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.2f));
+        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.25f));
         body->groundNormal  = (vec3s){0, 0, 0};
         SolRayResult result = {0};
         for (int j = 0; j < 9; j++)
@@ -414,4 +414,12 @@ vec3s Sol_Physx_GetHeadPos(World *world, int id)
 void Sol_Physx_Impulse(World *world, int id, vec3s impulse)
 {
     world->bodies[id].impulse = impulse;
+}
+float Sol_Physx_GetHeight(World *world, int id)
+{
+    return world->bodies[id].dims.y;
+}
+void Sol_Physx_SetHeight(World *world, int id, float height)
+{
+    world->bodies[id].dims.y = height;
 }

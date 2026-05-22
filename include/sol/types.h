@@ -28,13 +28,14 @@ typedef struct SolState SolState;
 // Enums
 typedef enum
 {
-    ACTION_NONE  = 0,
-    ACTION_FWD   = (1 << 0),
-    ACTION_BWD   = (1 << 1),
-    ACTION_LEFT  = (1 << 2),
-    ACTION_RIGHT = (1 << 3),
-    ACTION_JUMP  = (1 << 4),
-    ACTION_DASH  = (1 << 5),
+    ACTION_NONE   = 0,
+    ACTION_FWD    = (1 << 0),
+    ACTION_BWD    = (1 << 1),
+    ACTION_LEFT   = (1 << 2),
+    ACTION_RIGHT  = (1 << 3),
+    ACTION_JUMP   = (1 << 4),
+    ACTION_CROUCH = (1 << 16),
+    ACTION_DASH   = (1 << 5),
 
     ACTION_ABILITY0 = (1 << 6),
     ACTION_ABILITY1 = (1 << 7),
@@ -47,29 +48,6 @@ typedef enum
     ACTION_ABILITY8 = (1 << 14),
     ACTION_ABILITY9 = (1 << 15),
 } SolActions;
-
-typedef enum
-{
-    STRAFE_FWD,
-    STRAFE_FWD_LEFT,
-    STRAFE_LEFT,
-    STRAFE_BWD_LEFT,
-    STRAFE_BWD,
-    STRAFE_BWD_RIGHT,
-    STRAFE_RIGHT,
-    STRAFE_FWD_RIGHT,
-} StrafeDir;
-
-typedef enum
-{
-    MOVE_IDLE,
-    MOVE_WALK,
-    MOVE_FALL,
-    MOVE_JUMP,
-    MOVE_SLIDE,
-    MOVE_FLY,
-    MOVE_STATE_COUNT
-} MoveState;
 
 typedef enum Shape3
 {
@@ -184,6 +162,14 @@ typedef enum
     ANIM_WALK_BWD,
     ANIM_WALK_LEFT,
     ANIM_WALK_RIGHT,
+    ANIM_CROUCHWALK_FWD,
+    ANIM_CROUCHWALK_BWD,
+    ANIM_CROUCHWALK_LEFT,
+    ANIM_CROUCHWALK_RIGHT,
+    ANIM_SLIDE_FWD,
+    ANIM_SLIDE_BWD,
+    ANIM_SLIDE_LEFT,
+    ANIM_SLIDE_RIGHT,
     ANIM_JUMP,
     ANIM_FALL,
     ANIM_DASH_FWD,

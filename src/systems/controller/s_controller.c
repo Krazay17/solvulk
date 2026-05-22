@@ -17,6 +17,7 @@ static const SolActions action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_9] = ACTION_ABILITY9, [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,
     [SOL_KEY_S] = ACTION_BWD,      [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
     [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
+    [SOL_KEY_CTRL] = ACTION_CROUCH,
 };
 
 static void  Sol_Controller_Tick(World *world, double dt, double time);
@@ -193,6 +194,11 @@ static vec2s GetWishDir2(uint32_t action)
     return glms_vec2_normalize(wishdir);
 }
 
+bool Sol_Controller_IsActionState(World *world, int id, SolActions mask)
+{
+    return (world->controllers[id].actionState & mask) != 0;
+}
+
 SolActions Sol_Controller_GetActionState(World *world, int id)
 {
     return world->controllers[id].actionState;
@@ -259,6 +265,6 @@ SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
 {
     vec3s pos = Sol_Controller_GetShootpos(world, id, 0.3f);
     vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
-    
+
     return (SolShoot){.pos = pos, .vel = vel};
 }

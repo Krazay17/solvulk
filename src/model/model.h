@@ -34,3 +34,5 @@ void  Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
 void  Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float fade);
 void  Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float speedDif);
 vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name);
+float Sol_Model_GetOffsetY(World *world, int id);
+void Sol_Model_SetOffsetY(World *world, int id, float offset);

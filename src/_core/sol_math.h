@@ -40,7 +40,6 @@ versors Sol_Quat_FromLookDira(vec3s lookDir);
 
 vec3s     ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt);
 vec3s     ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt);
-StrafeDir Get_StrafeDir(float x, float z, float xB, float zB);
 
 // INLINES-------------------
 
@@ -130,7 +129,7 @@ static inline void TransformNrm(const float m[16], const float in[3], float out[
     }
 }
 
-static inline float Sol_Lerp(float start, float end, float amount)
+static inline float Sol_Math_Lerp(float start, float end, float amount)
 {
     return start + amount * (end - start);
 }
@@ -140,9 +139,9 @@ static inline float Sol_YawFromQuat(versor q)
     return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
 }
 
-static inline float Sol_RandRange(float a, float b)
+static inline float Sol_Math_RandRange(float a, float b)
 {
-    return Sol_Lerp(a, b, (float)rand() / (float)RAND_MAX);
+    return Sol_Math_Lerp(a, b, (float)rand() / (float)RAND_MAX);
 }
 
 static inline vec3s Sol_RotFromQuat(versors quat)
@@ -151,31 +150,7 @@ static inline vec3s Sol_RotFromQuat(versors quat)
     return glms_mat4_mulv3(mat, WORLD_FORWARD, 1.0f);
 }
 
-static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
-{
-    // 1. Get the relative angle between velocity and facing direction
-    float angle = atan2f(x, z) - atan2f(bX, bZ);
-
-    // 2. Keep the angle strictly positive within [0, 2PI]
-    if (angle < 0.0f)
-        angle += 2.0f * GLM_PIf;
-
-    // 3. Offset by half a wedge (22.5 degrees) so cardinal directions
-    // sit right in the middle of our integer sectors instead of on the edges.
-    angle += GLM_PI_4f * 0.5f;
-
-    // 4. Handle wrapping after the offset addition
-    if (angle >= 2.0f * GLM_PIf)
-        angle -= 2.0f * GLM_PIf;
-
-    // 5. Use floorf to establish clean boundaries, then cast
-    int sector = (int)floorf(angle / GLM_PI_4f);
-
-    // Safety clamp to guarantee it maps to your 0-7 enum range
-    return (StrafeDir)(sector & 7);
-}
-
-static inline float Sol_RandRange2(float min, float max)
+static inline float Sol_Math_RandRange2(float min, float max)
 {
     return min + (float)rand() / (float)RAND_MAX * (max - min);
 }

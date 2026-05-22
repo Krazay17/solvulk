@@ -55,7 +55,7 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
                      .radius      = dims.x,
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
-                     .restitution = 0.1f,
+                     .restitution = 0.01f,
                      .group       = 1,
                  });
 
@@ -109,7 +109,7 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
                                          .color     = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
                                          .scale     = 40.0f,
                                          .kind      = PARTICLE_CLOUD,
-                                         .rotspeed  = Sol_RandRange(-.1f, .1f),
+                                         .rotspeed  = Sol_Math_RandRange(-.1f, .1f),
                                          .speed     = 1.0f,
                                          .offset    = 100.0f,
                                          .scalein   = 0.05f,

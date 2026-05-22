@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cglm/types-struct.h>
 #include <stdbool.h>
 #include <stdint.h>

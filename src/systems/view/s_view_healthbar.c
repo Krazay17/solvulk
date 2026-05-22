@@ -17,7 +17,7 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
-        xform.pos.y += Sol_Physx_GetDims(world, id).y - 1.0f;
+        xform.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
 
         u32   health    = Sol_Vital_GetHealth(world, id);
         u32 maxHealth = Sol_Vital_GetMaxHealth(world, id);

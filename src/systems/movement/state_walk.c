@@ -2,24 +2,33 @@
 
 #include "movement_i.h"
 
-void Sol_Movement_Walk_Update(World *world, int id, float dt)
+static bool LeaveState(World *world, int id)
 {
-    CompMovement *movement = &world->movements[id];
     if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
-            return;
+            return true;
     if (!Sol_Physx_GetGrounded(world, id))
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
-            return;
+            return true;
+    if (Sol_GetActions(world, id) & ACTION_CROUCH)
+        if (Sol_Movement_SetState(world, id, MOVE_CROUCH))
+            return true;
     if (glms_vec3_norm(Sol_GetWishdir(world, id)) == 0)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
-            return;
+            return true;
+    return false;
+}
 
+void Sol_Movement_Walk_Update(World *world, int id, float dt)
+{
+    if (LeaveState(world, id))
+        return;
+    CompMovement *movement = &world->movements[id];
+
+    float x   = Sol_Controller_GetWishdir(world, id).x;
+    float z   = Sol_Controller_GetWishdir(world, id).z;
+    vec3s rot = Sol_RotFromQuat(world->xforms[id].quat);
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
-    float    x    = Sol_Controller_GetWishdir(world, id).x;
-    float    z    = Sol_Controller_GetWishdir(world, id).z;
-    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-
     switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
     {
     case STRAFE_FWD:
@@ -54,6 +63,8 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
 
 void Sol_Movement_Walk_Enter(World *world, int id)
 {
+    if (LeaveState(world, id))
+        return;
 }
 
 void Sol_Movement_Walk_Exit(World *world, int id)

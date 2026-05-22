@@ -55,7 +55,7 @@ void MakeAEmitter(int flags, void *data)
                                          .ttl       = 5.0f,
                                          .randScale = 1,
                                          .kind      = PARTICLE_SHOCK,
-                                         .rot       = Sol_RandRange2(-2.0f, 2.0f),
+                                         .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                          .rotspeed  = 3.0f,
                                          .scalein   = 0.2f,
                                      }});

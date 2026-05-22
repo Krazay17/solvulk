@@ -144,7 +144,7 @@ void Fx_Event(World *world, double dt, double time)
                                                           .randScale = 1,
                                                           .kind      = PARTICLE_SHOCK,
                                                           .color     = (vec4s){0.25f, 0.1f, 0.5f, 0.6f},
-                                                          .rot       = Sol_RandRange2(-2.0f, 2.0f),
+                                                          .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                                           .rotspeed  = 6.0f,
                                                           .followId  = e->sourceId,
                                                           .scaleout  = 0.2f,
@@ -170,7 +170,7 @@ void Fx_Event(World *world, double dt, double time)
                                                           .randScale = 1,
                                                           .kind      = PARTICLE_SHOCK,
                                                           .color     = (vec4s){0.25f, 0.1f, 1.0f, 1.0f},
-                                                          .rot       = Sol_RandRange2(-2.0f, 2.0f),
+                                                          .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                                           .rotspeed  = 6.0f,
                                                           .scaleout  = 0.2f,
                                                           .scalein   = 0.2f}});

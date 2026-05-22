@@ -41,6 +41,7 @@ vec3s      Sol_Controller_GetWishdir(World *world, int id);
 SolActions Sol_Controller_GetActionState(World *world, int id);
 vec3s      Sol_Controller_GetShootpos(World *world, int id, float offset);
 SolShoot   Sol_Controller_GetShoot(World *world, int id, float speed);
+bool       Sol_Controller_IsActionState(World *world, int id, SolActions mask);
 
 void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage);
 void Sol_AiController_TargetDied(World *world, int id, int target);

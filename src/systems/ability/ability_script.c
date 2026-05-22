@@ -115,7 +115,6 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
     switch (a->kind)
     {
     case ACTIONKIND_SPAWN_PROJECTILE:
-        printf("speed: %f\n", a->as.spawn.speed);
         Sol_Prefab_Fireball(world, id, Sol_Controller_GetAimPos(world, id),
                             vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed), 0.4f, 15);
         break;

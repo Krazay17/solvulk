@@ -22,6 +22,7 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
         {
             model.layers[i].currentAnim = -1;
             model.layers[i].currentSeek = 0;
+            model.layers[i].blendFactor = 0;
         }
     }
     world->models[id] = model;
@@ -250,4 +251,14 @@ vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name)
     }};
 
     return worldPos;
+}
+
+float Sol_Model_GetOffsetY(World *world, int id)
+{
+    return world->models[id].yawOffset;
+}
+void Sol_Model_SetOffsetY(World *world, int id, float offset)
+{
+    CompModel *model = &world->models[id];
+    model->yOffset   = offset;
 }

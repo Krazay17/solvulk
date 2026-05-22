@@ -20,24 +20,24 @@ Anim: 1 fwd
 Anim: 2 attack1
 
 Dude anims:
-Anim: 0 run
-Anim: 1 idle
-Anim: 2 fall
-Anim: 3 jump
-Anim: 4 frontFlip
-Anim: 5 dash
-Anim: 6 dashLeft
-Anim: 7 dashBwd
-Anim: 8 dashRight
-Anim: 9 strafeRight
-Anim: 10 strafeLeft
-Anim: 11 fallLeft
-Anim: 12 fallRight
+Anim: 0 idle
+Anim: 1 WalkFwd
+Anim: 2 WalkLeft
+Anim: 3 WalkBwd
+Anim: 4 WalkRight
+Anim: 5 fall
+Anim: 6 jump
+Anim: 7 frontFlip
+Anim: 8 dash
+Anim: 9 dashLeft
+Anim: 10 dashBwd
+Anim: 11 dashRight
+Anim: 12 fallLeft
 Anim: 13 fallBwd
-Anim: 14 attackRight
-Anim: 15 attackLeft
-Anim: 16 attackSpell
-Anim: 17 runBwd
+Anim: 14 fallRight
+Anim: 15 attackRight
+Anim: 16 attackLeft
+Anim: 17 attackSpell
 Anim: 18 blade
 Anim: 19 bladeAir
 Anim: 20 runStopLeft
@@ -46,6 +46,7 @@ Anim: 22 runStopRight
 Anim: 23 knockback
 Anim: 24 spinSlash
 Anim: 25 LeftCharge
+Anim: 26 CrouchWalkFwd
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
     [SOL_MODEL_WIZARD] =
@@ -59,11 +60,37 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
         },
     [SOL_MODEL_DUDE] =
         {
-            [ANIM_IDLE] = 1,         [ANIM_WALK_FWD] = 0,      [ANIM_WALK_BWD] = 17,  [ANIM_WALK_LEFT] = 10,
-            [ANIM_WALK_RIGHT] = 9,   [ANIM_JUMP] = 3,          [ANIM_FALL] = 2,       [ANIM_DASH_FWD] = 5,
-            [ANIM_DASH_BWD] = 7,     [ANIM_DASH_LEFT] = 6,     [ANIM_DASH_RIGHT] = 8, [ANIM_CHARGE_LEFT] = 25,
-            [ANIM_ATTACK_LEFT] = 15, [ANIM_ATTACK_RIGHT] = 14, [ANIM_ABILITY0] = 14,  [ANIM_ABILITY1] = 14,
-            [ANIM_ABILITY2] = 14,    [ANIM_ABILITY3] = 14,     [ANIM_ABILITY4] = 25,  [ANIM_ABILITY5] = 14,
-            [ANIM_ABILITY6] = 14,    [ANIM_ABILITY7] = 14,     [ANIM_ABILITY8] = 14,  [ANIM_ABILITY9] = 14,
+            [ANIM_IDLE]             = 0,
+            [ANIM_WALK_FWD]         = 1,
+            [ANIM_WALK_LEFT]        = 2,
+            [ANIM_WALK_BWD]         = 3,
+            [ANIM_WALK_RIGHT]       = 4,
+            [ANIM_JUMP]             = 6,
+            [ANIM_FALL]             = 5,
+            [ANIM_DASH_FWD]         = 8,
+            [ANIM_DASH_LEFT]        = 9,
+            [ANIM_DASH_BWD]         = 10,
+            [ANIM_DASH_RIGHT]       = 11,
+            [ANIM_CHARGE_LEFT]      = 25,
+            [ANIM_ATTACK_LEFT]      = 16,
+            [ANIM_ATTACK_RIGHT]     = 15,
+            [ANIM_ABILITY0]         = 15,
+            [ANIM_ABILITY1]         = 15,
+            [ANIM_ABILITY2]         = 15,
+            [ANIM_ABILITY3]         = 15,
+            [ANIM_ABILITY4]         = 25,
+            [ANIM_ABILITY5]         = 15,
+            [ANIM_ABILITY6]         = 15,
+            [ANIM_ABILITY7]         = 15,
+            [ANIM_ABILITY8]         = 15,
+            [ANIM_ABILITY9]         = 15,
+            [ANIM_CROUCHWALK_FWD]   = 26,
+            [ANIM_CROUCHWALK_BWD]   = 26,
+            [ANIM_CROUCHWALK_LEFT]  = 26,
+            [ANIM_CROUCHWALK_RIGHT] = 26,
+            [ANIM_SLIDE_FWD]        = 27,
+            [ANIM_SLIDE_BWD]        = 27,
+            [ANIM_SLIDE_LEFT]       = 27,
+            [ANIM_SLIDE_RIGHT]      = 27,
         },
 };

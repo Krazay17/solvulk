@@ -33,6 +33,7 @@ typedef enum
     SOL_KEY_ESCAPE,
     SOL_KEY_SHIFT,
     SOL_KEY_ALT,
+    SOL_KEY_CTRL,
     SOL_KEY_COUNT
 } SolKey;
 

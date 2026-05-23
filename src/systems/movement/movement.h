@@ -21,6 +21,7 @@ typedef enum
     MOVE_CROUCH,
     MOVE_SLIDE,
     MOVE_WALLRUN,
+    MOVE_WALLJUMP,
     MOVE_FLY,
     MOVE_STATE_COUNT
 } MoveState;

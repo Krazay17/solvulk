@@ -7,7 +7,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
             [MOVE_WALK]    = {.speed = 6.0f, .accell = 25.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_FALL]    = {.speed = 4.0f, .accell = 7.0f, .friction = 0.1f, .gravity = 16.0f},
-            [MOVE_WALLRUN] = {.speed = 6.0f, .accell = 7.0f, .friction = 0.1f, .gravity = 1.0f},
+            [MOVE_WALLRUN] = {.speed = 6.0f, .accell = 7.0f, .friction = 4.0f, .gravity = 4.0f},
             [MOVE_JUMP]    = {.speed = 4.0f, .accell = 7.0f, .friction = 0.1f, .gravity = 9.81f},
             [MOVE_SLIDE]   = {.speed = 3.5f, .accell = 1.0f, .friction = .5f, .gravity = 9.81f},
             [MOVE_FLY]     = {.speed = 4.0f, .accell = 7.0f, .friction = 1.0f, .gravity = 0},
@@ -89,5 +89,13 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Wallrun_State_Exit,
             Wallrun_State_CanExit,
             Wallrun_State_CanEnter,
+        },
+    [MOVE_WALLJUMP] =
+        {
+            Walljump_State_Update,
+            Walljump_State_Enter,
+            Walljump_State_Exit,
+            Walljump_State_CanExit,
+            Walljump_State_CanEnter,
         },
 };

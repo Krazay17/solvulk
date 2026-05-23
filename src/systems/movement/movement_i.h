@@ -6,7 +6,9 @@
 
 typedef struct
 {
-    float elapsed;
+    double lastEntered, lastExited;
+    float  elapsed;
+    vec3s  enterVel, surfaceNormal;
 } MoveStateData;
 
 typedef struct CompMovement
@@ -17,7 +19,7 @@ typedef struct CompMovement
     float         speedMod;
     MoveState     moveState;
     MoveConfigId  configId;
-    bool          hasJumped;
+    bool          hasJumped, wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
 } CompMovement;
 
@@ -83,3 +85,9 @@ void Wallrun_State_Enter(World *world, int id);
 void Wallrun_State_Exit(World *world, int id);
 bool Wallrun_State_CanExit(World *world, int id, u32 nextState);
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState);
+
+void Walljump_State_Update(World *world, int id, float dt);
+void Walljump_State_Enter(World *world, int id);
+void Walljump_State_Exit(World *world, int id);
+bool Walljump_State_CanExit(World *world, int id, u32 nextState);
+bool Walljump_State_CanEnter(World *world, int id, u32 lastState, u32 nextState);

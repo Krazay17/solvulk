@@ -17,7 +17,7 @@ static bool LeaveState(World *world, int id)
     if (!(Sol_GetActions(world, id) & ACTION_CROUCH))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
-    if (Sol_GetActions(world, id) & ACTION_JUMP)
+    if (world->movements[id].wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
     if (!Sol_Physx_GetGrounded(world, id))

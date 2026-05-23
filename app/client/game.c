@@ -94,15 +94,15 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
 
-    float spacing = 4.0f;
-    for (int i = -5; i < 5; i++)
-    {
-        for (int j = -5; j < 5; j++)
-        {
-            int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
-            Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
-        }
-    }
+    // float spacing = 4.0f;
+    // for (int i = -5; i < 5; i++)
+    // {
+    //     for (int j = -5; j < 5; j++)
+    //     {
+    //         int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
+    //         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
+    //     }
+    // }
 
     Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});

@@ -46,6 +46,10 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             vec3s wishdir  = Sol_GetWishdir(world, id);
             vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
 
+            bool isJumpDown                = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
+            movement->wantsJump            = isJumpDown && !movement->jumpPressedLastFrame;
+            movement->jumpPressedLastFrame = isJumpDown;
+
             switch (movement->moveState)
             {
             case MOVE_WALK:
@@ -86,7 +90,11 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     // printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
 
     prevfunc->exit(world, id);
-    movement->moveState = nextState;
+    movement->stateData[movement->moveState].lastExited = Sol_GetGameTime();
+
+    movement->moveState                                  = nextState;
+    movement->stateData[movement->moveState].lastEntered = Sol_GetGameTime();
+    movement->stateData[movement->moveState].elapsed     = 0.0f;
     nextfunc->enter(world, id);
 
     Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[movement->configId][movement->moveState].gravity, 0});

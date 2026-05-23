@@ -4,7 +4,8 @@
 
 static bool LeaveState(World *world, int id)
 {
-    if (Sol_GetActions(world, id) & ACTION_JUMP)
+    CompMovement *move = &world->movements[id];
+    if (move->wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
     if (!Sol_Physx_GetGrounded(world, id))

@@ -78,13 +78,12 @@ void Shield_State_Exit(World *world, int id)
 
 bool Shield_State_CanExit(World *world, int id, u32 next)
 {
-    return true;
+    return next != ABILITY_STATE_SHIELD;
 }
 
 bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[next];
-    return !(ability->state == ABILITY_STATE_SHIELD) &&
-           !(data->lastEntered + SHIELD_COOLDOWN > (float)Sol_GetGameTime());
+    return !(data->lastEntered + SHIELD_COOLDOWN > (float)Sol_GetGameTime());
 }

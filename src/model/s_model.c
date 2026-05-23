@@ -91,8 +91,9 @@ void Sol_Model_Draw(World *world, double dt, double time)
                 continue;
 
             float dur          = m->skeleton.animations[layer->currentAnim].duration;
-            float speed        = layer->playRate > 0 ? layer->playRate * fdt : fdt;
-            layer->currentSeek = fmodf(layer->currentSeek + speed, dur);
+            float speed        = layer->playRate != 0 ? layer->playRate * fdt : fdt;
+            float newSeek      = layer->currentSeek + speed;
+            layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
 
             if (layer->lastAnim >= 0 && layer->blendFactor < 1.0f)
             {

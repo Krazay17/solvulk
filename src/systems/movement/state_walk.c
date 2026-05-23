@@ -4,7 +4,8 @@
 
 static bool LeaveState(World *world, int id)
 {
-    if (Sol_GetActions(world, id) & ACTION_JUMP)
+    CompMovement *move = &world->movements[id];
+    if (move->wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
     if (!Sol_Physx_GetGrounded(world, id))
@@ -25,9 +26,9 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
         return;
     CompMovement *movement = &world->movements[id];
 
-    float x   = Sol_Controller_GetWishdir(world, id).x;
-    float z   = Sol_Controller_GetWishdir(world, id).z;
-    vec3s rot = Sol_RotFromQuat(world->xforms[id].quat);
+    float    x    = Sol_Controller_GetWishdir(world, id).x;
+    float    z    = Sol_Controller_GetWishdir(world, id).z;
+    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
     switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
     {

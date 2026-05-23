@@ -8,7 +8,7 @@ typedef struct
 {
     double lastEntered, lastExited;
     float  elapsed;
-    vec3s  enterVel, surfaceNormal;
+    vec3s  enterVel, surfaceNormal, dir;
 } MoveStateData;
 
 typedef struct CompMovement

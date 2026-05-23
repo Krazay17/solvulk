@@ -384,6 +384,10 @@ void Sol_Physx_SetVel(World *world, int id, vec3s vel)
 {
     world->bodies[id].vel = vel;
 }
+void Sol_Physx_BlendVel(World *world, int id, vec3s vel, float amnt)
+{
+    glms_vec3_lerp(world->bodies[id].vel, vel, amnt);
+}
 void Sol_Physx_SetVellat(World *world, int id, vec3s vel)
 {
     world->bodies[id].vel.x = vel.x;

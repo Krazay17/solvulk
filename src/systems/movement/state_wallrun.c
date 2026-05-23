@@ -9,7 +9,7 @@ static void CheckWall(World *world, int id, SolRayResult *result)
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
-    float      radius = dims.x * 3.5f;
+    float      radius = dims.x * 3.0f;
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
@@ -17,7 +17,7 @@ static void CheckWall(World *world, int id, SolRayResult *result)
             vec3s finalPos = pos;
             finalPos.y += (float)i * 0.5f;
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
-            *result = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
+            *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
 
             if (result->hit)
                 return;
@@ -119,6 +119,8 @@ void Wallrun_State_Enter(World *world, int id)
         return;
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
+    if (Sol_Physx_GetVel(world, id).y < 1.0f)
+        Sol_Physx_SetVelY(world, id, 0.0f);
 
     data->enterVel = Sol_Physx_GetVel(world, id);
 }

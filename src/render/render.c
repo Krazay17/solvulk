@@ -17,8 +17,9 @@ void Sol_Render_Flush3D(void)
     //Flush_Skybox();
     Flush_Models();
     Flush_Spheres();
-    Flush_Sprites();
-    Flush_Billboards();
+    Flush_Quads();
+    //Flush_Sprites();
+    //Flush_Billboards();
 }
 
 void Sol_Render_Flush2D(void)

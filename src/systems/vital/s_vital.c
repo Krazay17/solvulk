@@ -30,13 +30,14 @@ void Sol_Vital_Add(World *world, int id, VitalDesc desc)
 {
     world->masks[id] |= HAS_VITAL;
     CompVital vital = {
-        .maxHealth = desc.maxHealth,
-        .maxEnergy = desc.maxEnergy,
-        .maxMana   = desc.maxMana,
-        .health    = desc.maxHealth,
-        .energy    = desc.maxEnergy,
-        .mana      = desc.maxMana,
-        .team      = desc.team,
+        .maxHealth   = desc.maxHealth,
+        .maxEnergy   = desc.maxEnergy,
+        .maxMana     = desc.maxMana,
+        .health      = desc.maxHealth,
+        .energy      = desc.maxEnergy,
+        .mana        = desc.maxMana,
+        .team        = desc.team,
+        .lastHitTime = -100.0f,
     };
     world->vitals[id] = vital;
 }

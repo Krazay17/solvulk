@@ -9,6 +9,7 @@ typedef enum
     PARTICLE_CLOUD,
     PARTICLE_BLOOD,
     PARTICLE_FIREBALL,
+    PARTICLE_FIREBALL1,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -18,7 +19,7 @@ typedef struct Particle
     vec3s        pos, vel;
     vec4s        color;
     float        ttl, scale, span, speed, delay;
-    float        rot, rotspeed, offset, scalein, scaleout;
+    float        rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
     u32          randScale, followId, randLife, randScaleout;
 } Particle;
 

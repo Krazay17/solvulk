@@ -63,7 +63,7 @@ static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
     const float speed = glms_vec3_norm(prevvel);
-    if (speed < 0.01f)
+    if (speed < 0.1f)
         return GLMS_VEC3_ZERO;
     vec3s       vel      = prevvel;
     const float drop     = speed * friction * dt;

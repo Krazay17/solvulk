@@ -94,7 +94,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE},
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
@@ -106,7 +106,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE},
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
@@ -118,46 +118,58 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE},
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+            .descCount         = 3,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+    [PIPE_FIREBALL1] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_FIREBALL1_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
     [PIPE_SPRITE] =
         {
             .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_QUAD_F",
+            .fragResource      = "ID_SHADER_SPRITE_F",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_IMAGES},
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
-    [PIPE_SPRITE_FX] =
+    [PIPE_SPRITE_ADD] =
         {
             .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_QUAD_F",
+            .fragResource      = "ID_SHADER_SPRITE_F",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD, DESC_IMAGES},
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
-    [PIPE_BILLBOARD] =
+    [PIPE_HEALTHBAR] =
         {
-            .vertResource      = "ID_SHADER_BILLBOARD_V",
-            .fragResource      = "ID_SHADER_BILLBOARD_F",
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_HEALTHBAR_F",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .pushRangeSize     = sizeof(BillboardSSBO),
+            .pushRangeSize     = sizeof(QuadSSBO),
             .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_BILLBOARD_SSBO},
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO},
             .descCount         = 2,
         },
     [PIPE_LINE] =
@@ -191,65 +203,58 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {
-    [DESC_GAME_UBO]       = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(GameUtilUBO),
-                                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                 }},
-    [DESC_ORTHO_UBO]      = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(OrthoUBO),
-                                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                 }},
-    [DESC_SCENE_UBO]      = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(SceneUBO),
-                                     .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                 }},
-    [DESC_MODEL_SSBO]     = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
-                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 }},
-    [DESC_SPHERE]         = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES,
-                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 }},
-    [DESC_QUAD]           = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
-                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 }},
-    [DESC_BILLBOARD_SSBO] = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(BillboardSSBO) * MAX_QUAD_INSTANCES,
-                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 }},
-    [DESC_SKINNING_SSBO]  = {.kind       = DESC_KIND_BUFFER,
-                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                             .as.buffer =
-                                 {
-                                     .size = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
-                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                 }},
-    [DESC_IMAGES]         = {.kind       = DESC_KIND_IMAGES,
-                             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                             .as.image   = {.count = SOL_TEXTURE_COUNT}},
+    [DESC_GAME_UBO]      = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(GameUtilUBO),
+                                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                }},
+    [DESC_ORTHO_UBO]     = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(OrthoUBO),
+                                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                }},
+    [DESC_SCENE_UBO]     = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(SceneUBO),
+                                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                }},
+    [DESC_MODEL_SSBO]    = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(ModelSSBO) * MAX_MODEL_INSTANCES,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_SKINNING_SSBO] = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_SPHERE_SSBO]   = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_QUAD_SSBO]     = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_IMAGES]        = {.kind       = DESC_KIND_IMAGES,
+                            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            .as.image   = {.count = SOL_TEXTURE_COUNT}},
 };
 
 int Sol_Render_Init(void *hwnd, void *hInstance)

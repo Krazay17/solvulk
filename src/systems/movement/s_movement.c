@@ -38,16 +38,20 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) == required)
         {
-            CompMovement         *movement   = &world->movements[id];
-            const MoveStateForce *forces     = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
-            float                 finalSpeed = forces->speed * movement->speedMod;
+            CompMovement         *movement = &world->movements[id];
+            const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
 
-            bool isJumpDown                = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
-            movement->wantsJump            = isJumpDown && !movement->jumpPressedLastFrame;
+            bool isJumpDown = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
+
+            if (isJumpDown && !movement->jumpPressedLastFrame)
+                movement->wantsJump = true;
+            else if (!isJumpDown)
+                movement->wantsJump = false;
             movement->jumpPressedLastFrame = isJumpDown;
 
-            vec3s vel     = Sol_Physx_GetVel(world, id);
-            vec3s wishdir = Sol_GetWishdir(world, id);
+            vec3s vel        = Sol_Physx_GetVel(world, id);
+            vec3s wishdir    = Sol_GetWishdir(world, id);
+            float finalSpeed = forces->speed * movement->speedMod;
 
             switch (movement->moveState)
             {
@@ -62,9 +66,9 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
                 vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
                 Sol_Physx_SetVellat(world, id, vel);
             }
-            
+
             MOVE_STATE_FUNCS[movement->moveState].update(world, id, dt);
-            
+
             CrouchHeight(world, id, fdt);
         }
     }

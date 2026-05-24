@@ -35,12 +35,12 @@ void Sol_Movement_Fall_Exit(World *world, int id)
 {
 }
 
-bool Sol_Movement_Fall_CanEnter(World *world, int id, int last)
+bool Sol_Movement_Fall_CanExit(World *world, int id, u32 next)
+{
+    return true;
+}
+bool Sol_Movement_Fall_CanEnter(World *world, int id, u32 last, u32 next)
 {
     return true;
 }
 
-bool Sol_Movement_Fall_CanExit(World *world, int id, int next)
-{
-    return true;
-}

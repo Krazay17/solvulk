@@ -1,5 +1,12 @@
 #version 450
 
+layout(location = 0) out vec2 fragUV;
+layout(location = 1) out vec4 fragColor;
+layout(location = 2) out vec4 fragExtra;
+layout(location = 3) flat out uint fragType;
+layout(location = 4) flat out uint fragTextureId;
+layout(location = 5) flat out uint fragFlags;
+
 layout(set = 0, binding = 0) uniform Scene {
     mat4 viewProjection;
     mat4 view;
@@ -9,13 +16,15 @@ layout(set = 0, binding = 0) uniform Scene {
 } scene;
 
 struct Quad {
-    vec4 pos;       // xyz + size
-    vec4 rotation;  // quaternion OR rotation.x = spin angle (radians)
+    vec4 pos;       // xyz = world position, w = size
+    vec4 rot;       // quaternion OR rot.x = spin angle
     vec4 color;
     vec4 uv;
-    uint type;
-    uint tid;
-    uint _pad[2];
+    vec4 extra;
+    uint type;      // QUADTYPE_FACECAM (0) or QUADTYPE_QUAT (1)
+    uint flags;
+    uint textureId;
+    uint _pad;
 };
 
 layout(set = 1, binding = 0) readonly buffer Quads {
@@ -27,24 +36,22 @@ const vec2 CORNERS[6] = vec2[](
     vec2(-1, -1), vec2( 1,  1), vec2(-1,  1)
 );
 
-layout(location = 0) out vec2 fragUV;
-layout(location = 1) out vec4 fragColor;
-layout(location = 2) flat out uint textureId;
-
 vec3 rotateByQuat(vec4 q, vec3 v) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
 void main() {
     Quad q = quads[gl_InstanceIndex];
-    
     vec2 corner = CORNERS[gl_VertexIndex];
     float size = q.pos.w;
     vec3 worldPos;
     
-    if (q.type == 0u) {
-        // QUAD_CAMERAFACE — camera-facing with optional 2D spin
-        float angle = q.rotation.x;
+    // Explicitly mapping to your QuadType Enum
+    const uint QUADTYPE_FACECAM = 0u;
+    const uint QUADTYPE_QUAT    = 1u;
+    
+    if (q.type == QUADTYPE_FACECAM) {
+        float angle = q.rot.x;
         float c = cos(angle);
         float s = sin(angle);
         vec2 spun = vec2(corner.x * c - corner.y * s,
@@ -55,15 +62,19 @@ void main() {
         
         worldPos = q.pos.xyz + right * spun.x * size + up * spun.y * size;
     } else {
-        // QUAD_3D — arbitrary rotation via quaternion
+        // QUADTYPE_QUAT
         vec3 localPos = vec3(corner.x, corner.y, 0.0) * size;
-        worldPos = q.pos.xyz + rotateByQuat(q.rotation, localPos);
+        worldPos = q.pos.xyz + rotateByQuat(q.rot, localPos);
     }
     
-    vec2 uvLocal = vec2(corner.x, -corner.y) * 0.5 + 0.5;   // Y-flip for texture
+    vec2 uvLocal = vec2(corner.x, -corner.y) * 0.5 + 0.5;   
     fragUV = q.uv.xy + uvLocal * q.uv.zw;
-    fragColor = q.color;
-    textureId = q.tid;
+    
+    fragColor     = q.color;
+    fragExtra     = q.extra;    
+    fragType      = q.type;
+    fragTextureId = q.textureId;
+    fragFlags     = q.flags;
     
     gl_Position = scene.viewProjection * vec4(worldPos, 1.0);
 }

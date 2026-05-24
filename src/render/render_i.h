@@ -19,9 +19,8 @@ typedef enum
     DESC_SCENE_UBO,
     DESC_MODEL_SSBO,
     DESC_SKINNING_SSBO,
-    DESC_BILLBOARD_SSBO,
-    DESC_SPHERE,
-    DESC_QUAD,
+    DESC_QUAD_SSBO,
+    DESC_SPHERE_SSBO,
     DESC_IMAGES,
     DESC_COUNT,
 } DescriptorId;
@@ -32,7 +31,6 @@ typedef enum
     BLEND_ALPHA,
     BLEND_ADDITIVE,
 } BlendMode;
-
 
 int Sol_Render_Init(void *hwnd, void *hInstance);
 int Sol_Render_BuildPipes();
@@ -46,12 +44,11 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id);
 int Sol_UploadModel(SolModel *model, SolModelId id);
 
 void Flush_Skybox(void);
- void Flush_Models(void);
-// void Flush_Models_Skinned(void);
-
+void Flush_Models(void);
+void Flush_Quads(void);
 void Flush_Spheres(void);
-void Flush_Sprites(void);
-void Flush_Billboards(void);
+// void Flush_Sprites(void);
+// void Flush_Billboards(void);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);

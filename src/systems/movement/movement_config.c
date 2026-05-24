@@ -3,7 +3,7 @@
 const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
     [MOVE_CONFIG_PLAYER] =
         {
-            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 20.0f, .gravity = 9.81f},
+            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 25.0f, .gravity = 9.81f},
             [MOVE_WALK]    = {.speed = 6.0f, .accell = 25.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_FALL]    = {.speed = 4.0f, .accell = 7.0f, .friction = 0.1f, .gravity = 16.0f},
@@ -14,7 +14,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
         },
     [MOVE_CONFIG_WIZARD] =
         {
-            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 15.0f, .gravity = 9.81f},
+            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 25.0f, .gravity = 9.81f},
             [MOVE_WALK]    = {.speed = 5.0f, .accell = 20.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_FALL]    = {.speed = 5.0f, .accell = 3.5f, .friction = 0.1f, .gravity = 9.81f},

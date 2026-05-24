@@ -10,7 +10,7 @@ static void CheckWall(World *world, int id, SolRayResult *result)
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
     float      radius = dims.x * 3.0f;
-    for (int i = -1; i < 2; i++)
+    for (int i = -1; i < 1; i++)
     {
         for (int j = 1; j < 9; j++)
         {

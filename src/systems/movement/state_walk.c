@@ -66,18 +66,20 @@ void Sol_Movement_Walk_Enter(World *world, int id)
 {
     if (LeaveState(world, id))
         return;
+
+    CompMovement *move = &world->movements[id];
 }
 
 void Sol_Movement_Walk_Exit(World *world, int id)
 {
 }
-bool Sol_Movement_Walk_CanEnter(World *world, int id, int next)
+
+bool Sol_Movement_Walk_CanExit(World *world, int id, u32 next)
 {
     // todo
     return true;
 }
-
-bool Sol_Movement_Walk_CanExit(World *world, int id, int next)
+bool Sol_Movement_Walk_CanEnter(World *world, int id, u32 last, u32 next)
 {
     // todo
     return true;

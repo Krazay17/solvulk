@@ -43,13 +43,13 @@ void Sol_Movement_Idle_Exit(World *world, int id)
     // todo
 }
 
-bool Sol_Movement_Idle_CanEnter(World *world, int id, int last)
+bool Sol_Movement_Idle_CanExit(World *world, int id, u32 next)
 {
     // todo
     return true;
 }
 
-bool Sol_Movement_Idle_CanExit(World *world, int id, int next)
+bool Sol_Movement_Idle_CanEnter(World *world, int id, u32 last, u32 next)
 {
     // todo
     return true;

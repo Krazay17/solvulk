@@ -129,15 +129,16 @@ set(SHADERS
     ${SHADER_DIR}/text.frag
     ${SHADER_DIR}/line.vert
     ${SHADER_DIR}/line.frag
-    ${SHADER_DIR}/billboard.vert
-    ${SHADER_DIR}/billboard.frag
     ${SHADER_DIR}/sphere.vert
     ${SHADER_DIR}/sphere.frag
-    ${SHADER_DIR}/sprite.vert
-    ${SHADER_DIR}/sprite.frag
     ${SHADER_DIR}/skybox.vert
     ${SHADER_DIR}/skybox.frag
     ${SHADER_DIR}/fireball.frag
+    ${SHADER_DIR}/fireball1.frag
+
+    ${SHADER_DIR}/quad.vert
+    ${SHADER_DIR}/healthbar.frag
+    ${SHADER_DIR}/sprite.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")

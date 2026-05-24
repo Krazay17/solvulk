@@ -21,11 +21,13 @@ typedef enum
     PIPE_SPHERE,
     PIPE_SPHERE_FX,
     PIPE_FIREBALL,
+    PIPE_FIREBALL1,
+
     PIPE_SPRITE,
-    PIPE_SPRITE_FX,
+    PIPE_SPRITE_ADD,
+    PIPE_HEALTHBAR,
 
     PIPE_SKYBOX,
-    PIPE_BILLBOARD,
 
     PIPE_COUNT,
 } PipelineId;
@@ -88,33 +90,12 @@ typedef struct
 
 typedef struct
 {
-    vec4 pos;    // xyz = world position, w = size (uniform scale)
-    vec4 color;  // base tint
-    vec4 params; // type-specific (fill amount, glow strength, icon index, …)
-    u32  type;   // BILLBOARD_SPHERE, BILLBOARD_HEALTHBAR, …
-    u32  flags;
-    u32  _padding[2]; // pad to 16 bytes for std430 alignment
-} BillboardSSBO;
-
-typedef struct
-{
     vec4 pos;
     vec4 color;
     vec4 params;
     u32  type;
     u32  _padding[3];
 } SphereSSBO;
-
-typedef struct
-{
-    vec4 pos;      // xyz + size
-    vec4 rotation; // quaternion
-    vec4 color;    // tint
-    vec4 uv;       // atlas UV offset/scale (xy = offset, zw = size)
-    u32  type;
-    u32  textureId;
-    u32  _pad[2];
-} QuadSSBO;
 
 typedef struct SolLineVertex
 {
@@ -129,21 +110,6 @@ typedef struct
     vec4s params;
     bool  isfx;
 } SphereDesc;
-
-typedef enum
-{
-    BILLBOARD_HEALTHBAR,
-    BILLBOARD_ICON,
-    BILLBOARD_DAMAGE_NUMBER,
-} BillboardKind;
-typedef struct
-{
-    BillboardKind kind;
-    vec4s         pos;
-    vec4s         color;
-    vec4s         params;
-    u32           flags;
-} BillboardDesc;
 
 typedef enum
 {
@@ -230,22 +196,22 @@ static inline SphereSSBO *Sol_Render_GetNext_Sphere(bool isfx)
     return &q->instances[q->count++];
 }
 
-typedef struct
-{
-    u32      count;
-    QuadSSBO instances[MAX_QUAD_INSTANCES];
-} SpriteQueue;
-extern SpriteQueue      spriteQueue;
-extern SpriteQueue      spriteFxQueue;
-static inline QuadSSBO *Sol_Render_GetNext_Sprite(bool isfx)
-{
-    SpriteQueue *q = isfx ? &spriteFxQueue : &spriteQueue;
+// typedef struct
+// {
+//     u32      count;
+//     QuadSSBO instances[MAX_QUAD_INSTANCES];
+// } SpriteQueue;
+// extern SpriteQueue      spriteQueue;
+// extern SpriteQueue      spriteFxQueue;
+// static inline QuadSSBO *Sol_Render_GetNext_Sprite(bool isfx)
+// {
+//     SpriteQueue *q = isfx ? &spriteFxQueue : &spriteQueue;
 
-    if (q->count >= MAX_QUAD_INSTANCES)
-        return NULL;
+//     if (q->count >= MAX_QUAD_INSTANCES)
+//         return NULL;
 
-    return &q->instances[q->count++];
-}
+//     return &q->instances[q->count++];
+// }
 
 typedef struct
 {
@@ -253,12 +219,58 @@ typedef struct
     SphereSSBO instances[MAX_QUAD_INSTANCES];
 } FireballQueue;
 extern FireballQueue      fireballQueue;
-static inline SphereSSBO *Sol_Render_GetNext_Fireball(void)
+static inline SphereSSBO *Sol_Render_GetNext_Fireball()
 {
     FireballQueue *q = &fireballQueue;
     if (q->count >= MAX_QUAD_INSTANCES)
         return NULL;
 
+    return &q->instances[q->count++];
+}
+
+typedef enum
+{
+    QUADKIND_SPRITE,
+    QUADKIND_SPRITE_ADD,
+    QUADKIND_HEALTH,
+} QuadKind;
+typedef enum
+{
+    QUADTYPE_FACECAM,
+    QUADTYPE_QUAT,
+} QuadType;
+typedef struct
+{
+    vec4 pos, rot, color, uv, extra;
+    u32  type, flags, textureId, _pad;
+} QuadSSBO;
+typedef struct
+{
+    u32      count;
+    QuadSSBO instances[MAX_QUAD_INSTANCES];
+} QuadQueue;
+extern QuadQueue        healthQueue;
+extern QuadQueue        spriteQueue0;
+extern QuadQueue        spriteQueue1;
+static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
+{
+    QuadQueue *q;
+    switch (kind)
+    {
+    case QUADKIND_SPRITE:
+        q = &spriteQueue0;
+        break;
+    case QUADKIND_SPRITE_ADD:
+        q = &spriteQueue1;
+        break;
+    case QUADKIND_HEALTH:
+        q = &healthQueue;
+        break;
+    }
+
+    if (q->count >= MAX_QUAD_INSTANCES)
+        return NULL;
+    
     return &q->instances[q->count++];
 }
 
@@ -270,7 +282,7 @@ void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
 
-void Sol_Render_PushBillboard(BillboardDesc desc);
+// void Sol_Render_PushBillboard(BillboardDesc desc);
 
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);

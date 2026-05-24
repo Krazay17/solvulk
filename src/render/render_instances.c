@@ -4,13 +4,14 @@
 
 ModelSubmission        modelQueue;
 ModelSkinnedSubmission skinningQueue;
+
 SphereQueue   sphereQueue;
 SphereQueue   sphereFxQueue;
 FireballQueue fireballQueue;
 
-SpriteQueue spriteQueue;
-SpriteQueue spriteFxQueue;
-
+QuadQueue healthQueue;
+QuadQueue spriteQueue0;
+QuadQueue spriteQueue1;
 
 void Flush_Models(void)
 {
@@ -116,7 +117,7 @@ void Flush_Models(void)
 
 void Flush_Spheres(void)
 {
-    SphereSSBO     *gpu = Sol_GetDescriptorMapping(DESC_SPHERE);
+    SphereSSBO     *gpu = Sol_GetDescriptorMapping(DESC_SPHERE_SSBO);
     VkCommandBuffer cmd = Command_Buffer_Get();
 
     u32 currentOffset = 0;
@@ -155,28 +156,64 @@ void Flush_Spheres(void)
     }
 }
 
-void Flush_Sprites(void)
+// void Flush_Sprites(void)
+// {
+//     QuadSSBO       *gpu = Sol_GetDescriptorMapping(DESC_QUAD_SSBO);
+//     VkCommandBuffer cmd = Command_Buffer_Get();
+
+//     // Copy solid sprites starting at slot 0
+//     u32 solidCount = spriteQueue.count;
+//     memcpy(gpu, spriteQueue.instances, sizeof(QuadSSBO) * solidCount);
+
+//     // Copy FX sprites starting at slot `solidCount`
+//     u32 fxCount = spriteFxQueue.count;
+//     memcpy(gpu + solidCount, spriteFxQueue.instances, sizeof(QuadSSBO) * fxCount);
+
+//     // Draw solid sprites
+//     Bind_Pipeline(cmd, PIPE_SPRITE);
+//     vkCmdDraw(cmd, 6, solidCount, 0, 0);
+
+//     // Draw FX sprites, using firstInstance to start at slot solidCount
+//     Bind_Pipeline(cmd, PIPE_SPRITE_FX);
+//     vkCmdDraw(cmd, 6, fxCount, 0, solidCount); // ← firstInstance = solidCount
+
+//     spriteQueue.count   = 0;
+//     spriteFxQueue.count = 0;
+// }
+
+void Flush_Quads()
 {
-    QuadSSBO *gpu = Sol_GetDescriptorMapping(DESC_QUAD);
+    QuadSSBO       *gpu           = Sol_GetDescriptorMapping(DESC_QUAD_SSBO);
+    VkCommandBuffer cmd           = Command_Buffer_Get();
+    u32             currentOffset = 0;
+
+    u32 healthCount = healthQueue.count;
+    if (healthCount > 0)
+    {
+        memcpy(gpu + currentOffset, healthQueue.instances, sizeof(QuadSSBO) * healthCount);
+        Bind_Pipeline(cmd, PIPE_HEALTHBAR);
+        vkCmdDraw(cmd, 6, healthCount, 0, currentOffset);
+        currentOffset += healthCount;
+        healthQueue.count = 0;
+    }
     
-    // Copy solid sprites starting at slot 0
-    u32 solidCount = spriteQueue.count;
-    memcpy(gpu, spriteQueue.instances, sizeof(QuadSSBO) * solidCount);
-    
-    // Copy FX sprites starting at slot `solidCount`
-    u32 fxCount = spriteFxQueue.count;
-    memcpy(gpu + solidCount, spriteFxQueue.instances, sizeof(QuadSSBO) * fxCount);
-    
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    
-    // Draw solid sprites
-    Bind_Pipeline(cmd, PIPE_SPRITE);
-    vkCmdDraw(cmd, 6, solidCount, 0, 0);
-    
-    // Draw FX sprites, using firstInstance to start at slot solidCount
-    Bind_Pipeline(cmd, PIPE_SPRITE_FX);
-    vkCmdDraw(cmd, 6, fxCount, 0, solidCount);   // ← firstInstance = solidCount
-    
-    spriteQueue.count = 0;
-    spriteFxQueue.count = 0;
+    u32 spriteCount0 = spriteQueue0.count;
+    if (spriteCount0 > 0)
+    {
+        memcpy(gpu + currentOffset, spriteQueue0.instances, sizeof(QuadSSBO) * spriteCount0);
+        Bind_Pipeline(cmd, PIPE_SPRITE);
+        vkCmdDraw(cmd, 6, spriteCount0, 0, currentOffset);
+        currentOffset += spriteCount0;
+        spriteQueue0.count = 0;
+    }
+
+    u32 spriteCount1 = spriteQueue1.count;
+    if (spriteCount1 > 0)
+    {
+        memcpy(gpu + currentOffset, spriteQueue1.instances, sizeof(QuadSSBO) * spriteCount1);
+        Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
+        vkCmdDraw(cmd, 6, spriteCount1, 0, currentOffset);
+        currentOffset += spriteCount1;
+        spriteQueue1.count = 0;
+    }
 }

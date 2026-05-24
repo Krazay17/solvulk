@@ -14,7 +14,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
         },
     [MOVE_CONFIG_WIZARD] =
         {
-            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 15.0f, .gravity = 0},
+            [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 15.0f, .gravity = 9.81f},
             [MOVE_WALK]    = {.speed = 5.0f, .accell = 20.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = 9.81f},
             [MOVE_FALL]    = {.speed = 5.0f, .accell = 3.5f, .friction = 0.1f, .gravity = 9.81f},

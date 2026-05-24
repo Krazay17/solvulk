@@ -64,3 +64,4 @@ bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
 SolMouse Sol_Input_GetMouse();
 SolLook *Sol_Input_GetLook();
 void     Sol_Input_SetLocked(bool lock);
+void     Sol_Input_Clear();

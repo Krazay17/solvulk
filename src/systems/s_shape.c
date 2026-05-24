@@ -9,8 +9,9 @@
 
 typedef struct CompShape
 {
-    float radius;
-    vec4s color;
+    ShapeKind kind;
+    float     radius;
+    vec4s     color;
 } CompShape;
 
 void Sol_Shape_Init(World *world)
@@ -24,6 +25,7 @@ void Sol_Shape_Add(World *world, int id, ShapeDesc desc)
 {
     world->masks[id] |= HAS_SHAPE;
     CompShape sphere = {
+        .kind   = desc.kind,
         .radius = desc.radius,
         .color  = desc.color,
     };
@@ -41,8 +43,22 @@ void Sol_Shape_Draw(World *world, double dt, double time)
         CompShape *shape = &world->spheres[id];
         CompXform *xform = &world->xforms[id];
         vec4s      pos   = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, shape->radius};
-
-        Sol_Render_PushSphere((SphereDesc){.pos = pos, .color = shape->color});
+        switch (shape->kind)
+        {
+        case SHAPEKIND_FIREBALL: {
+            SphereSSBO *p = Sol_Render_GetNext_Fireball();
+            memcpy(p->pos, &pos, sizeof(p->pos));
+            memcpy(p->color, &shape->color, sizeof(p->color));
+        }
+        break;
+        
+        default: {
+            SphereSSBO *o = Sol_Render_GetNext_Sphere(false);
+            memcpy(o->pos, &pos, sizeof(o->pos));
+            memcpy(o->color, &shape->color, sizeof(o->color));
+        }
+        break;
+        }
     }
 }
 

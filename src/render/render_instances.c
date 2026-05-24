@@ -1,0 +1,182 @@
+#include "render_i.h"
+
+#include "render/vk/vkrender.h"
+
+ModelSubmission        modelQueue;
+ModelSkinnedSubmission skinningQueue;
+SphereQueue   sphereQueue;
+SphereQueue   sphereFxQueue;
+FireballQueue fireballQueue;
+
+SpriteQueue spriteQueue;
+SpriteQueue spriteFxQueue;
+
+
+void Flush_Models(void)
+{
+    // Always reset the frame allocation tracker to 0 at the start of flushing
+    u32 model_que_offset = 0;
+
+    // Early exit only if both queues are empty
+    if (modelQueue.count == 0 && skinningQueue.count == 0)
+        return;
+
+    ModelSSBO *modelGpu = Sol_GetDescriptorMapping(DESC_MODEL_SSBO);
+
+    // ==========================================
+    // 1. STATIC MODELS PASS
+    // ==========================================
+    if (modelQueue.count > 0)
+    {
+        // Count per handle
+        uint32_t counts[SOL_MODEL_COUNT] = {0};
+        for (int i = 0; i < modelQueue.count; i++)
+            counts[modelQueue.handles[i]]++;
+
+        // Prefix sum
+        uint32_t offsets[SOL_MODEL_COUNT] = {0};
+        for (int i = 1; i < SOL_MODEL_COUNT; i++)
+            offsets[i] = offsets[i - 1] + counts[i - 1];
+
+        // Write sorted into SSBO
+        uint32_t cursors[SOL_MODEL_COUNT];
+        memcpy(cursors, offsets, sizeof(offsets));
+
+        for (int i = 0; i < modelQueue.count; i++)
+        {
+            SolModelId h = modelQueue.handles[i];
+            // Since model_que_offset is 0 here, we map straight to the buffer start
+            modelGpu[cursors[h]] = modelQueue.modelSSBO[i];
+            cursors[h]++;
+        }
+
+        // Dispatch commands
+        for (int h = 0; h < SOL_MODEL_COUNT; h++)
+        {
+            if (counts[h] > 0)
+            {
+                Render_Model(h, counts[h], offsets[h]);
+            }
+        }
+
+        // Shift forward by static model footprint
+        model_que_offset += modelQueue.count;
+        modelQueue.count = 0;
+    }
+
+    // ==========================================
+    // 2. SKINNED MODELS PASS
+    // ==========================================
+    if (skinningQueue.count > 0)
+    {
+        BonesSSBO *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
+
+        // Count per handle
+        uint32_t counts[SOL_MODEL_COUNT] = {0};
+        for (int i = 0; i < skinningQueue.count; i++)
+            counts[skinningQueue.handles[i]]++;
+
+        // Prefix sum (Local to skinning allocation space)
+        uint32_t offsets[SOL_MODEL_COUNT] = {0};
+        for (int i = 1; i < SOL_MODEL_COUNT; i++)
+            offsets[i] = offsets[i - 1] + counts[i - 1];
+
+        uint32_t cursors[SOL_MODEL_COUNT];
+        memcpy(cursors, offsets, sizeof(offsets));
+
+        for (int i = 0; i < skinningQueue.count; i++)
+        {
+            SolModelId h = skinningQueue.handles[i];
+
+            // GLOBAL INDEX = Current Queue Offset + Local Sorted Bucket Index
+            uint32_t globalIdx = model_que_offset + cursors[h];
+
+            // Write both model params and transformations to mirrored index offsets
+            modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
+            boneGpu[globalIdx]  = skinningQueue.bones[i];
+
+            cursors[h]++;
+        }
+
+        // Dispatch commands
+        for (int h = 0; h < SOL_MODEL_COUNT; h++)
+        {
+            if (counts[h] > 0)
+            {
+                // Push draw call offset forward into the buffer using model_que_offset
+                Render_Model_Skinned(h, counts[h], model_que_offset + offsets[h]);
+            }
+        }
+
+        // Clean up allocation pointers
+        model_que_offset += skinningQueue.count;
+        skinningQueue.count = 0;
+    }
+}
+
+void Flush_Spheres(void)
+{
+    SphereSSBO     *gpu = Sol_GetDescriptorMapping(DESC_SPHERE);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+
+    u32 currentOffset = 0;
+
+    // 1. Regular Spheres
+    u32 solidCount = sphereQueue.count;
+    if (solidCount > 0)
+    {
+        memcpy(gpu + currentOffset, sphereQueue.instances, sizeof(SphereSSBO) * solidCount);
+        Bind_Pipeline(cmd, PIPE_SPHERE);
+        vkCmdDraw(cmd, 6, solidCount, 0, currentOffset);
+        currentOffset += solidCount;
+        sphereQueue.count = 0;
+    }
+
+    // 2. FX Spheres
+    u32 fxCount = sphereFxQueue.count;
+    if (fxCount > 0)
+    {
+        memcpy(gpu + currentOffset, sphereFxQueue.instances, sizeof(SphereSSBO) * fxCount);
+        Bind_Pipeline(cmd, PIPE_SPHERE_FX);
+        vkCmdDraw(cmd, 6, fxCount, 0, currentOffset);
+        currentOffset += fxCount;
+        sphereFxQueue.count = 0;
+    }
+
+    // 3. Fireballs
+    u32 fireballCount = fireballQueue.count;
+    if (fireballCount > 0)
+    {
+        memcpy(gpu + currentOffset, fireballQueue.instances, sizeof(SphereSSBO) * fireballCount);
+        Bind_Pipeline(cmd, PIPE_FIREBALL);
+        vkCmdDraw(cmd, 6, fireballCount, 0, currentOffset);
+        currentOffset += fireballCount;
+        fireballQueue.count = 0;
+    }
+}
+
+void Flush_Sprites(void)
+{
+    QuadSSBO *gpu = Sol_GetDescriptorMapping(DESC_QUAD);
+    
+    // Copy solid sprites starting at slot 0
+    u32 solidCount = spriteQueue.count;
+    memcpy(gpu, spriteQueue.instances, sizeof(QuadSSBO) * solidCount);
+    
+    // Copy FX sprites starting at slot `solidCount`
+    u32 fxCount = spriteFxQueue.count;
+    memcpy(gpu + solidCount, spriteFxQueue.instances, sizeof(QuadSSBO) * fxCount);
+    
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    
+    // Draw solid sprites
+    Bind_Pipeline(cmd, PIPE_SPRITE);
+    vkCmdDraw(cmd, 6, solidCount, 0, 0);
+    
+    // Draw FX sprites, using firstInstance to start at slot solidCount
+    Bind_Pipeline(cmd, PIPE_SPRITE_FX);
+    vkCmdDraw(cmd, 6, fxCount, 0, solidCount);   // ← firstInstance = solidCount
+    
+    spriteQueue.count = 0;
+    spriteFxQueue.count = 0;
+}

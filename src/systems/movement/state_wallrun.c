@@ -2,7 +2,7 @@
 
 #include "movement_i.h"
 
-#define COOLDOWN 0.5
+#define COOLDOWN 0.25
 
 static void CheckWall(World *world, int id, SolRayResult *result)
 {
@@ -75,8 +75,8 @@ void Wallrun_State_Update(World *world, int id, float dt)
     dirToWall       = glms_vec3_normalize(dirToWall);
 
     // ANIMATION
-    float    x           = dirToWall.x; // Sol_Controller_GetWishdir(world, id).x;
-    float    z           = dirToWall.z; // Sol_Controller_GetWishdir(world, id).z;
+    float    x           = dirToWall.x;
+    float    z           = dirToWall.z;
     vec3s    rot         = Sol_RotFromQuat(world->xforms[id].quat);
     AnimDesc desc        = {.layerId = ANIM_LAYER_BASE};
     float    animReverse = 1.0f;

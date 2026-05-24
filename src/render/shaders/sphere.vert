@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
@@ -12,9 +12,11 @@ struct Sphere {
     vec4 pos;       // xyz = world position, w = radius
     vec4 color;
     vec4 params;    // params.x = glow intensity (optional)
+    uint kind;
+    uint _padding[3];
 };
 
-layout(set = 1, binding = 0) readonly buffer Spheres {
+layout(set = 2, binding = 0) readonly buffer Spheres {
     Sphere spheres[];
 };
 

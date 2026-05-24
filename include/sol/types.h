@@ -126,12 +126,6 @@ typedef struct
 
 // ─── Font data ───────────────────────────────────────────────────
 
-typedef struct
-{
-    float radius;
-    vec4s color;
-} ShapeDesc;
-
 typedef struct SolLine
 {
     vec3s a, b;
@@ -219,3 +213,14 @@ typedef enum
     INTERACT_TOGGLED    = (1 << 3),
     INTERACT_TOGGLEABLE = (1 << 4),
 } InteractState;
+
+typedef enum
+{
+    SOL_TEXTURE_ICEFONT,
+    SOL_TEXTURE_FIREPARTICLE,
+    SOL_TEXTURE_SHOCKPARTICLE,
+    SOL_TEXTURE_CLOUDPARTICLE,
+    SOL_TEXTURE_BLOODPARTICLE,
+    SOL_TEXTURE_REDSKY,
+    SOL_TEXTURE_COUNT,
+} SolTextureId;

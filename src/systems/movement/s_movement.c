@@ -42,19 +42,19 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             const MoveStateForce *forces     = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
             float                 finalSpeed = forces->speed * movement->speedMod;
 
-            vec3s vel      = Sol_Physx_GetVel(world, id);
-            vec3s wishdir  = Sol_GetWishdir(world, id);
-            vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
-
             bool isJumpDown                = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
             movement->wantsJump            = isJumpDown && !movement->jumpPressedLastFrame;
             movement->jumpPressedLastFrame = isJumpDown;
 
+            vec3s vel     = Sol_Physx_GetVel(world, id);
+            vec3s wishdir = Sol_GetWishdir(world, id);
+
             switch (movement->moveState)
             {
             case MOVE_WALK:
-                vel = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
-                vel = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
+                vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
+                vel            = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
+                vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
                 Sol_Physx_SetVel(world, id, vel);
                 break;
             default:
@@ -62,9 +62,10 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
                 vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
                 Sol_Physx_SetVellat(world, id, vel);
             }
-            CrouchHeight(world, id, fdt);
-
+            
             MOVE_STATE_FUNCS[movement->moveState].update(world, id, dt);
+            
+            CrouchHeight(world, id, fdt);
         }
     }
     if (world->playerID > 0)

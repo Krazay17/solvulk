@@ -43,16 +43,16 @@ void Fx_Event(World *world, double dt, double time)
                                                           .kind     = PARTICLE_ORB,
                                                           .color    = (vec4s){1, 0, 0, 0.9f},
                                                           .ttl      = 0.5f}});
-            // DELAYED RED
+            // DELAYED FIREBALL
             Sol_Emitter_Add(world, (Emitter){.burst    = 1,
                                              .pos      = pos,
                                              .particle = {.scale    = 2.0f * scale,
                                                           .scalein  = 0.4f,
-                                                          .scaleout = 0.4f,
-                                                          .kind     = PARTICLE_ORB,
+                                                          .scaleout = 0.6f,
+                                                          .kind     = PARTICLE_FIREBALL,
                                                           .color    = (vec4s){1, 0, 0, 0.9f},
-                                                          .delay    = 0.3f,
-                                                          .ttl      = .3f}});
+                                                          .delay    = 0.2f,
+                                                          .ttl      = .16f}});
             // QUICK WHITE
             Sol_Emitter_Add(world, (Emitter){.burst    = 1,
                                              .pos      = pos,

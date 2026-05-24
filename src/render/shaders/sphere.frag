@@ -1,12 +1,16 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 0, binding = 0) uniform Util {
+    double time;
+};
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
     vec4 sun;
 } scene;
+
 
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec4 fragColor;

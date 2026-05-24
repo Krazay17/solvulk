@@ -31,39 +31,78 @@ void Sol_View_Particle_Draw(World *world, double dt, double time)
 
         vec4s color = p->color.a > 0 ? p->color : (vec4s){1, 1, 1, 1};
 
-        if (p->kind == PARTICLE_ORB)
+        switch (p->kind)
         {
-            SphereSSBO *sphereSSBO = Sol_Render_GetNext_Sphere(true);
-
-            sphereSSBO->pos[0]   = p->pos.x;
-            sphereSSBO->pos[1]   = p->pos.y;
-            sphereSSBO->pos[2]   = p->pos.z;
-            sphereSSBO->pos[3]   = visualScale;
-            sphereSSBO->color[0] = color.r;
-            sphereSSBO->color[1] = color.g;
-            sphereSSBO->color[2] = color.b;
-            sphereSSBO->color[3] = color.a;
+        case PARTICLE_ORB: {
+            SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
+            o->pos[0]     = p->pos.x;
+            o->pos[1]     = p->pos.y;
+            o->pos[2]     = p->pos.z;
+            o->pos[3]     = visualScale;
+            o->color[0]   = color.r;
+            o->color[1]   = color.g;
+            o->color[2]   = color.b;
+            o->color[3]   = color.a;
         }
-        else
-        {
-            QuadSSBO *quadSSBO    = Sol_Render_GetNext_Sprite(p->kind != PARTICLE_BLOOD);
-            quadSSBO->pos[0]      = p->pos.x;
-            quadSSBO->pos[1]      = p->pos.y;
-            quadSSBO->pos[2]      = p->pos.z;
-            quadSSBO->pos[3]      = visualScale;
-            quadSSBO->color[0]    = color.r;
-            quadSSBO->color[1]    = color.g;
-            quadSSBO->color[2]    = color.b;
-            quadSSBO->color[3]    = color.a;
-            quadSSBO->uv[0]       = 0;
-            quadSSBO->uv[1]       = 0;
-            quadSSBO->uv[2]       = 1.0f;
-            quadSSBO->uv[3]       = 1.0f;
-            quadSSBO->rotation[0] = p->rot;
-            quadSSBO->rotation[1] = 0;
-            quadSSBO->rotation[2] = 0;
-            quadSSBO->rotation[3] = 1.0f;
-            quadSSBO->textureId   = texture_map[p->kind];
+        break;
+
+        case PARTICLE_FIREBALL: {
+            SphereSSBO *o = Sol_Render_GetNext_Fireball();
+            o->pos[0]     = p->pos.x;
+            o->pos[1]     = p->pos.y;
+            o->pos[2]     = p->pos.z;
+            o->pos[3]     = visualScale;
+            o->color[0]   = color.r;
+            o->color[1]   = color.g;
+            o->color[2]   = color.b;
+            o->color[3]   = color.a;
+        }
+        break;
+
+        case PARTICLE_BLOOD: {
+            QuadSSBO *o    = Sol_Render_GetNext_Sprite(false);
+            o->pos[0]      = p->pos.x;
+            o->pos[1]      = p->pos.y;
+            o->pos[2]      = p->pos.z;
+            o->pos[3]      = visualScale;
+            o->color[0]    = color.r;
+            o->color[1]    = color.g;
+            o->color[2]    = color.b;
+            o->color[3]    = color.a;
+            o->uv[0]       = 0;
+            o->uv[1]       = 0;
+            o->uv[2]       = 1.0f;
+            o->uv[3]       = 1.0f;
+            o->rotation[0] = p->rot;
+            o->rotation[1] = 0;
+            o->rotation[2] = 0;
+            o->rotation[3] = 1.0f;
+            o->textureId   = texture_map[p->kind];
+        }
+        break;
+
+        default: {
+            QuadSSBO *o    = Sol_Render_GetNext_Sprite(true);
+            o->pos[0]      = p->pos.x;
+            o->pos[1]      = p->pos.y;
+            o->pos[2]      = p->pos.z;
+            o->pos[3]      = visualScale;
+            o->color[0]    = color.r;
+            o->color[1]    = color.g;
+            o->color[2]    = color.b;
+            o->color[3]    = color.a;
+            o->uv[0]       = 0;
+            o->uv[1]       = 0;
+            o->uv[2]       = 1.0f;
+            o->uv[3]       = 1.0f;
+            o->rotation[0] = p->rot;
+            o->rotation[1] = 0;
+            o->rotation[2] = 0;
+            o->rotation[3] = 1.0f;
+            o->textureId   = texture_map[p->kind];
+        }
+        break;
+        
         }
     }
 }

@@ -10,9 +10,11 @@ layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec3 fragWorldPos;
 layout(location = 3) flat out int instanceIndex;
+layout(location = 4) flat out uint flags;
+layout(location = 5) flat out float fragHitTime;
 
 // UBO
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
@@ -25,8 +27,12 @@ struct ModelData {
     vec4 scale;
     vec4 rotation;
     vec4 color;
-    vec4 material;};
-layout(set = 1, binding = 0) readonly buffer Models {
+    vec4 material;
+    uint flags;
+    float hitTime;
+    uint _padding[2];
+};
+layout(set = 2, binding = 0) readonly buffer Models {
     ModelData models[];};
 
 #define MAX_BONES 128
@@ -68,7 +74,8 @@ void main() {
     fragNormal   = rot * normalize(skinnedNormal);
     fragColor    = inst.color;
     instanceIndex = gl_InstanceIndex;
-    
+    flags = inst.flags;   
+    fragHitTime = inst.hitTime;
     gl_Position = scene.viewProjection * vec4(worldPos, 1.0);
     
 }

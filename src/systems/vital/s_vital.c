@@ -13,7 +13,7 @@ typedef struct CompVital
     u32   maxHealth, maxEnergy, maxMana;
     u32   health, energy, mana;
     bool  doesRespawn;
-    float deathTime, respawnTime;
+    float deathTime, respawnTime, lastHitTime;
     u32   team;
 } CompVital;
 
@@ -84,7 +84,7 @@ void Die(World *world, int id, SolHit hit)
                                                             .kind     = PARTICLE_BLOOD,
                                                             .scale    = 0.4f,
                                                             .ttl      = 1.5f,
-                                                            .speed    = 3.0f,
+                                                            .speed    = 2.5f,
                                                             .scaleout = .5f}});
 }
 
@@ -102,6 +102,7 @@ void Sol_Vital_Damage(World *world, int id, SolHit hit)
     else
     {
         vital->health -= hit.damage;
+        vital->lastHitTime = (float)Sol_GetGameTime();
     }
 }
 
@@ -128,4 +129,8 @@ u32 Sol_Vital_GetHostile(World *world, int id, int target)
 bool Sol_Vital_GetIsalive(World *world, int id)
 {
     return world->vitals[id].health > 0;
+}
+float Sol_Vital_GetLastHitTime(World *world, int id)
+{
+    return world->vitals[id].lastHitTime;
 }

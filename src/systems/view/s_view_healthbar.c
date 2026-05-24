@@ -22,7 +22,7 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
         u32   health    = Sol_Vital_GetHealth(world, id);
         u32 maxHealth = Sol_Vital_GetMaxHealth(world, id);
         float fill      = maxHealth > 0 ? (float)health / (float)maxHealth : 0.0f;
-
+        
         Sol_Render_PushBillboard((BillboardDesc){
             .kind   = BILLBOARD_HEALTHBAR,
             .pos    = (vec4s){{xform.pos.x, xform.pos.y, xform.pos.z, 1.0f}},

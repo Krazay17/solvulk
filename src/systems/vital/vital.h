@@ -19,3 +19,4 @@ u32  Sol_Vital_GetMaxHealth(World *world, int id);
 u32  Sol_Vital_GetTeam(World *world, int id);
 u32  Sol_Vital_GetHostile(World *world, int id, int target);
 bool Sol_Vital_GetIsalive(World *world, int id);
+float Sol_Vital_GetLastHitTime(World *world, int id);

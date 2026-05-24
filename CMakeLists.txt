@@ -137,6 +137,7 @@ set(SHADERS
     ${SHADER_DIR}/sprite.frag
     ${SHADER_DIR}/skybox.vert
     ${SHADER_DIR}/skybox.frag
+    ${SHADER_DIR}/fireball.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")

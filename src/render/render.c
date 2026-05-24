@@ -2,6 +2,8 @@
 
 #include "render_i.h"
 
+
+
 void Sol_Render_Resize(uint32_t width, uint32_t height)
 {
     if (width == 0 || height == 0)
@@ -14,7 +16,6 @@ void Sol_Render_Flush3D(void)
 {
     //Flush_Skybox();
     Flush_Models();
-    Flush_Models_Skinned();
     Flush_Spheres();
     Flush_Sprites();
     Flush_Billboards();

@@ -2,9 +2,9 @@
 
 #include "ability_i.h"
 
-#define RECOVERYTIME 0.4f
+#define RECOVERYTIME 0.3f
 #define DURATION 0.6f
-#define COOLDOWN 0.6f
+#define COOLDOWN 0.2f
 #define MAX_RAMP 3.0f
 
 float velocity = 40.0f;
@@ -18,7 +18,7 @@ void Fireball_State_Update(World *world, int id, float dt)
     float oldElapsed = data->elapsed;
     data->elapsed += dt;
 
-    float power = data->power = fminf(data->elapsed, MAX_RAMP);
+    float power = data->power = fmaxf(0.4f, fminf(data->elapsed, MAX_RAMP));
 
     switch (data->stage)
     {

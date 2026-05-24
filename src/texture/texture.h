@@ -1,17 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-typedef enum
-{
-    SOL_TEXTURE_ICEFONT,
-    SOL_TEXTURE_FIREPARTICLE,
-    SOL_TEXTURE_SHOCKPARTICLE,
-    SOL_TEXTURE_CLOUDPARTICLE,
-    SOL_TEXTURE_BLOODPARTICLE,
-    SOL_TEXTURE_REDSKY,
-    SOL_TEXTURE_COUNT,
-} SolTextureId;
-
 typedef struct SolTexture
 {
     SolTextureId id;

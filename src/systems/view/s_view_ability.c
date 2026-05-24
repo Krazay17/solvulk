@@ -22,31 +22,39 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
 
         switch (ability->state)
         {
-        case ABILITY_STATE_FIREBALL:
+        case ABILITY_STATE_FIREBALL: {
+
             AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
             if (data->stage > 0)
                 break;
             vec3s pos = Sol_Model_GetBoneXform(world, id, "hand.L");
-            pos = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), data->power));
-            pos = vecAdd(pos, vecSca(WORLD_UP, data->power));
-            Sol_Render_PushSphere((SphereDesc){
-                .isfx  = false,
-                .color = (vec4s){1.0f, 0, 0, 0.8f},
-                .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
-            });
+            pos       = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), data->power));
+            pos       = vecAdd(pos, vecSca(WORLD_UP, data->power));
 
-            break;
+            SphereSSBO *push = Sol_Render_GetNext_Fireball();
+            push->pos[0]     = pos.x;
+            push->pos[1]     = pos.y;
+            push->pos[2]     = pos.z;
+            push->pos[3]     = data->power;
+            memcpy(push->color, (vec4){1, 0, 0, 0.8f}, sizeof(vec4));
+        }
+        break;
         case ABILITY_STATE_DASH:
             break;
         case ABILITY_STATE_CLAW:
             break;
-        case ABILITY_STATE_SHIELD:
-            Sol_Render_PushSphere((SphereDesc){
-                .isfx  = true,
-                .color = (vec4s){0.25f, 0.1f, 0.5f, 0.2f},
-                .pos   = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f},
-            });
-            break;
+        case ABILITY_STATE_SHIELD: {
+            SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
+            o->pos[0]     = xform->drawPos.x;
+            o->pos[1]     = xform->drawPos.y;
+            o->pos[2]     = xform->drawPos.z;
+            o->pos[3]     = 1.0f;
+            o->color[0]   = 0.25f;
+            o->color[1]   = 0.1f;
+            o->color[2]   = 0.5f;
+            o->color[3]   = 0.25f;
+        }
+        break;
         }
     }
 }

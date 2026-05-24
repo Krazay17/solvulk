@@ -180,3 +180,11 @@ void Sol_Input_SetLocked(bool lock)
 
     toggleLocked = lock;
 }
+
+void Sol_Input_Clear()
+{
+    memset(&rawKeys, 0, sizeof(rawKeys));
+    memset(&rawMouseButtons, 0, sizeof(rawMouseButtons));
+    memset(&keys, 0, sizeof(keys));
+    memset(&mouseButtons, 0, sizeof(mouseButtons));
+}

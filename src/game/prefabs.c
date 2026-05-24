@@ -144,7 +144,7 @@ int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc s
 
 int Sol_Prefab_Fireball(World *world, int ownerId, vec3s pos, vec3s vel, float radius, u32 damage)
 {
-    ShapeDesc shape = {.radius = radius, .color = {1, 0, 0, 1}};
+    ShapeDesc shape = {.radius = radius, .color = {1, 0, 0, 1}, .kind = SHAPEKIND_FIREBALL};
 
     int id = Sol_Create_Ent(world);
     Sol_Shape_Add(world, id, shape);

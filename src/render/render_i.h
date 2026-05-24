@@ -14,11 +14,11 @@ typedef enum
 
 typedef enum
 {
+    DESC_GAME_UBO,
     DESC_ORTHO_UBO,
     DESC_SCENE_UBO,
     DESC_MODEL_SSBO,
     DESC_SKINNING_SSBO,
-    DESC_FLAGS_SSBO,
     DESC_BILLBOARD_SSBO,
     DESC_SPHERE,
     DESC_QUAD,
@@ -46,8 +46,9 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id);
 int Sol_UploadModel(SolModel *model, SolModelId id);
 
 void Flush_Skybox(void);
-void Flush_Models(void);
-void Flush_Models_Skinned(void);
+ void Flush_Models(void);
+// void Flush_Models_Skinned(void);
+
 void Flush_Spheres(void);
 void Flush_Sprites(void);
 void Flush_Billboards(void);

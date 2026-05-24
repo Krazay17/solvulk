@@ -4,24 +4,21 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec3 fragWorldPos;
 layout(location = 3) flat in int instanceIndex;
+layout(location = 4) flat in uint flags;
+layout(location = 5) flat in float fragHitTime;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 0, binding = 0) uniform Util {
+    double time;
+};
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProj;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
     vec4 sun;
 } scene;
-
-struct Flags{
-    uint flags;
-};
-layout(set = 2, binding = 0) readonly buffer FlagsBuffer {
-    Flags instances[];
-};
-
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
     vec4 emissive;
@@ -31,6 +28,7 @@ layout(push_constant) uniform MeshMaterial {
 
 const uint FLAG_FRESNEL = 1u << 0;
 const uint FLAG_YELLOW = 1u << 1;
+const uint FLAG_DAMAGED = 1u << 2;
 
 void main() {
     vec3 N = normalize(fragNormal);
@@ -59,13 +57,21 @@ void main() {
 
     vec4 finalRGB = vec4(ambient + diffuse + specular + emissive, alpha);
 
-    if ((instances[instanceIndex].flags & FLAG_FRESNEL) != 0u) {
+    if ((flags & FLAG_FRESNEL) != 0u) {
             float fresnelTerm = 1.0 - max(dot(N, viewDir), 0.0);
-            finalRGB.rgb += pow(fresnelTerm, 4.0) * vec3(1.0);
-        }
-    if ((instances[instanceIndex].flags & FLAG_YELLOW) != 0u) {
-            finalRGB.rgb += vec3(1.0,1.0,0);
-        }
+            finalRGB.rgb += pow(fresnelTerm, 4.0) * vec3(1.0);}
+    if ((flags & FLAG_YELLOW) != 0u) {
+            finalRGB.rgb += vec3(1.0,1.0,0);}
+
+    // 1. Calculate how long ago the hit happened
+    float timeSinceHit = float(time) - fragHitTime;
+
+    // 2. If it's within our 0.3 second window, apply a fading white flash
+    if (timeSinceHit >= 0.0 && timeSinceHit < 0.3) {
+        // Linear fade out over the 0.3 seconds
+        float flashAlpha = 1.0 - (timeSinceHit / 0.3); 
+        // Pure white flash mix
+        finalRGB.rgb = mix(finalRGB.rgb, vec3(1.0, 1.0, 1.0), flashAlpha * 0.8);}
 
     outColor = finalRGB;
 }

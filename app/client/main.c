@@ -160,6 +160,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    case WM_KILLFOCUS:
+        Sol_Input_SetLocked(false);
+        Sol_Input_Clear();
+        break;
     case WM_DESTROY:
         InterlockedExchange(&g_running, 0);
         PostQuitMessage(0);

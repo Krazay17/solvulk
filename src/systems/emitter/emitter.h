@@ -8,6 +8,7 @@ typedef enum
     PARTICLE_SHOCK,
     PARTICLE_CLOUD,
     PARTICLE_BLOOD,
+    PARTICLE_FIREBALL,
     PARTICLE_COUNT,
 } ParticleKind;
 

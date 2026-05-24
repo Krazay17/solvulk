@@ -42,47 +42,42 @@ void Sol_Model_Draw(World *world, double dt, double time)
         CompXform *xform     = &world->xforms[id];
         CompModel *modelComp = &world->models[id];
 
-        u32 flags = 0;
+        ModelSSBO modelSSBO = {0};
         if (world->masks[id] & HAS_INTERACT)
-        {
             if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
-                flags |= (1 << 0);
-        }
+                modelSSBO.flags |= (1 << 0);
+
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
-            flags |= (1 << 1);
+            modelSSBO.flags |= (1 << 1);
+
+        if (world->masks[id] & HAS_VITAL)
+            modelSSBO.hitTime = Sol_Vital_GetLastHitTime(world, id);
+        else
+            modelSSBO.hitTime = -100.0f;
 
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
 
-        ModelPushDesc desc = {
-            .handle = modelComp->modelId,
-        };
-
-        desc.position.x = drawPos.x;
-        desc.position.y = drawPos.y;
-        desc.position.z = drawPos.z;
-        desc.position.w = 1.0f;
-
-        desc.rotation.x = xform->drawQuat.x;
-        desc.rotation.y = xform->drawQuat.y;
-        desc.rotation.z = xform->drawQuat.z;
-        desc.rotation.w = xform->drawQuat.w;
-
-        desc.scale.x = xform->drawScale.x;
-        desc.scale.y = xform->drawScale.y;
-        desc.scale.z = xform->drawScale.z;
-        desc.scale.w = 1.0f;
-
-        desc.flags = flags;
+        modelSSBO.position[0] = drawPos.x;
+        modelSSBO.position[1] = drawPos.y;
+        modelSSBO.position[2] = drawPos.z;
+        modelSSBO.position[3] = 1.0f;
+        modelSSBO.rotation[0] = xform->drawQuat.x;
+        modelSSBO.rotation[1] = xform->drawQuat.y;
+        modelSSBO.rotation[2] = xform->drawQuat.z;
+        modelSSBO.rotation[3] = xform->drawQuat.w;
+        modelSSBO.scale[0]    = xform->drawScale.x;
+        modelSSBO.scale[1]    = xform->drawScale.y;
+        modelSSBO.scale[2]    = xform->drawScale.z;
+        modelSSBO.scale[3]    = 1.0f;
 
         if (!modelComp->hasAnim)
         {
-            Sol_Render_PushModel(desc);
+            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, NULL);
             continue;
         }
-        desc.hasAnim = true;
-
-        SolModel *m = Sol_GetModel(modelComp->modelId);
+        BonesSSBO bonesSSBO = {0};
+        SolModel *m         = Sol_GetModel(modelComp->modelId);
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -121,8 +116,7 @@ void Sol_Model_Draw(World *world, double dt, double time)
             }
         }
 
-        // mat4        bones[MAX_BONES];
-        PoseRequest req = {.outBones = modelComp->bones};
+        PoseRequest req = {.outBones = bonesSSBO.bones};
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -137,8 +131,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
             req.layerWeight[L] = (modelComp->layers[L].fadeOut > 0.0f) ? modelComp->layers[L].fadeOut : 1.0f;
         }
         Sol_Skeleton_Pose(&m->skeleton, &req);
-        desc.bones = modelComp->bones;
-        Sol_Render_PushModel(desc);
+        memcpy(modelComp->bones, bonesSSBO.bones, sizeof(modelComp->bones));
+        Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &bonesSSBO);
     }
 }
 

@@ -45,4 +45,4 @@ ID_SHADER_QUAD_V        RCDATA          "shaders/sprite.vert.spv"
 ID_SHADER_QUAD_F        RCDATA          "shaders/sprite.frag.spv"
 ID_SHADER_SKYBOX_V      RCDATA          "shaders/skybox.vert.spv"
 ID_SHADER_SKYBOX_F      RCDATA          "shaders/skybox.frag.spv"
-
+ID_SHADER_FIREBALL_F    RCDATA          "shaders/fireball.frag.spv"

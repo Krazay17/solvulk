@@ -55,9 +55,9 @@ void Ability_Scripts_Init()
         (AbilityAction){.kind    = ACTIONKIND_PLAY_ANIM,
                         .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .force = true}};
     fireballVolley->actions[1] = (AbilityAction){
-        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 30.0f, .time = 0.7f};
+        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 25.0f, .time = 0.75f};
     fireballVolley->actions[2] = (AbilityAction){
-        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 40.0f, .time = 1.7f};
+        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 30.0f, .time = 1.7f};
 }
 
 void Ability_ExecuteAction(World *world, int id, AbilityAction *a);

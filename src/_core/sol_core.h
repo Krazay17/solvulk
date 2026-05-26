@@ -9,7 +9,16 @@
 #include "sol/sol.h"
 
 #include "event/event.h"
+#include "network.h"
 #include "profiler.h"
+
+typedef struct
+{
+    World *activeWorld;
+    u32   *playerId;
+    u32    worldId;
+    char   playerName[16];
+} LocalPlayer;
 
 typedef struct SolState
 {
@@ -25,7 +34,10 @@ typedef struct SolState
     World   *activeWorld;
     World   *worlds[MAX_WORLDS];
     uint16_t worldCount;
-} SolState;
 
+    LocalPlayer localPlayer;
+
+    SolNet netEngine;
+} SolState;
 
 void Sol_State_SetTimescale(float timescale);

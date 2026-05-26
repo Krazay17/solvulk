@@ -41,12 +41,12 @@ static ImpactList fireball_impacts = {
     .impactCount = 2,
 };
 
-int Sol_Prefab_Player(World *world, vec3s pos, float scale)
+int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.35f, .y = 2.0f};
 
     dims   = glms_vec2_scale(dims, scale);
-    int id = Sol_Create_Ent(world);
+    id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f, .yawOffset = GLM_PI_2f});
     Sol_Body_Add(world, id,
@@ -75,7 +75,7 @@ int Sol_Prefab_Player(World *world, vec3s pos, float scale)
 
 int Sol_Prefab_Floor(World *world, vec3s pos)
 {
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WORLD1});
@@ -87,7 +87,7 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
 int Sol_Prefab_Box(World *world, vec3s pos)
 {
 
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
@@ -115,11 +115,12 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
                                          .scalein   = 0.05f,
                                          .scaleout  = 0.05f,
                                      }});
+    return 0;
 }
 
 int Sol_Prefab_Ball(World *world, vec3s pos, vec3s vel, int ownerId, ShapeDesc shape, ContactDesc contact)
 {
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
     Sol_Shape_Add(world, id, shape);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
@@ -146,7 +147,7 @@ int Sol_Prefab_Fireball(World *world, int ownerId, vec3s pos, vec3s vel, float r
 {
     ShapeDesc shape = {.radius = radius, .color = {1, 0, 0, 1}, .kind = SHAPEKIND_FIREBALL};
 
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
     Sol_Shape_Add(world, id, shape);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
@@ -203,7 +204,7 @@ int Sol_Prefab_Fireball(World *world, int ownerId, vec3s pos, vec3s vel, float r
 int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid)
 {
     dims   = glms_vec2_scale(dims, scale);
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id,
                  (BodyDesc){
@@ -227,7 +228,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     vec2s dims = {.x = 0.5f, .y = 3.0f};
 
     dims   = glms_vec2_scale(dims, scale);
-    int id = Sol_Create_Ent(world);
+    int id = Sol_Create_Ent(world, 0);
     if (id < 0)
         return -1;
     Sol_Xform_Add(world, id, pos);
@@ -258,7 +259,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 {
     float width  = 150.0f;
     float height = 50.0f;
-    int   id     = Sol_Create_Ent(world);
+    int   id     = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Add(world, id, pos);
     Sol_Body_Add(world, id, (BodyDesc){.height = height, .radius = width, .is2d = true});

@@ -1,3 +1,4 @@
+#include "sol_core.h"
 #include "render_i.h"
 
 #include "render/vk/vkrender.h"
@@ -155,31 +156,6 @@ void Flush_Spheres(void)
         fireballQueue.count = 0;
     }
 }
-
-// void Flush_Sprites(void)
-// {
-//     QuadSSBO       *gpu = Sol_GetDescriptorMapping(DESC_QUAD_SSBO);
-//     VkCommandBuffer cmd = Command_Buffer_Get();
-
-//     // Copy solid sprites starting at slot 0
-//     u32 solidCount = spriteQueue.count;
-//     memcpy(gpu, spriteQueue.instances, sizeof(QuadSSBO) * solidCount);
-
-//     // Copy FX sprites starting at slot `solidCount`
-//     u32 fxCount = spriteFxQueue.count;
-//     memcpy(gpu + solidCount, spriteFxQueue.instances, sizeof(QuadSSBO) * fxCount);
-
-//     // Draw solid sprites
-//     Bind_Pipeline(cmd, PIPE_SPRITE);
-//     vkCmdDraw(cmd, 6, solidCount, 0, 0);
-
-//     // Draw FX sprites, using firstInstance to start at slot solidCount
-//     Bind_Pipeline(cmd, PIPE_SPRITE_FX);
-//     vkCmdDraw(cmd, 6, fxCount, 0, solidCount); // ← firstInstance = solidCount
-
-//     spriteQueue.count   = 0;
-//     spriteFxQueue.count = 0;
-// }
 
 void Flush_Quads()
 {

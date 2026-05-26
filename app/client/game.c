@@ -1,5 +1,4 @@
 #include "game.h"
-// #include <curl/curl.h>
 
 static int    player3d;
 static World *gameWorld;
@@ -9,10 +8,9 @@ static void SpawnPlayer(int flags, void *data)
     if (gameWorld->actives[gameWorld->playerID])
         Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
-    player3d = Sol_Prefab_Player(gameWorld, (vec3s){0, 5, 0}, 1.0f);
+    player3d = Sol_Prefab_Player(gameWorld, 0, (vec3s){0, 5, 0}, 1.0f);
     Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
     Sol_Owner_Add(gameWorld, player3d, (OwnerDesc){.team = 0});
-    // Sol_Buff_Add(gameWorld, player3d, (BuffDesc){.duration = 2.0f, .kind = BUFFKIND_FIRE, .freq = 0.5f}, NULL);
 }
 
 struct MakeWiz
@@ -74,16 +72,26 @@ void ColorSpheres(int flags, void *data)
     Sol_Shape_ColorAll(world, (vec4s){0, 255, 0, 255});
 }
 
+void HostGame(int flags, void *data)
+{
+    Net_Init(&Sol_GetState()->netEngine, true, "127.0.0.1", 8080);
+}
+
+void ClientConnect(int flags, void *data)
+{
+    Net_Init(&Sol_GetState()->netEngine, false, "127.0.0.1", 8080);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
-    // CURL *curl = curl_easy_init();
-    World *menu = World_Create_Default();
-    gameWorld   = World_Create_Default();
+    World *menu = World_Create_Default(WORLDKIND_MENU);
+    gameWorld   = World_Create_Default(WORLDKIND_GAME);
     Sol_World_SetActive(menu, false);
-    Sol_State_SetActiveworld(gameWorld);
+    Sol_State_SetPlayerWorld(gameWorld);
+    Sol_World_SetReplicates(gameWorld, true);
     Sol_Cam_SetActivecam(gameWorld);
     Sol_Input_SetLocked(true);
     Sol_View_Crosshair(gameWorld);
@@ -92,19 +100,25 @@ void Create_Sol_Game()
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
 
     float spacing = 4.0f;
-    for (int i = -5; i < 5; i++)
+    // for (int i = -5; i < 5; i++)
+    // {
+    //     for (int j = -5; j < 5; j++)
+    //     {
+    //         int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
+    //         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
+    //     }
+    // }
+
+    for (int k = -4; k < 4; k++)
     {
-        for (int j = -5; j < 5; j++)
-        {
-            int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
-            Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
-        }
+        int id = Sol_Prefab_Wizard(gameWorld, (vec3s){k * spacing, 10.0f, (k * spacing) + 60.0f}, 1.0f);
+        Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
     }
 
     Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
-    int floor2 = Sol_Create_Ent(gameWorld);
+    int floor2 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Add(gameWorld, floor2, (vec3s){5, 25, 0});
     Sol_Model_Add(gameWorld, floor2, (ModelDesc){.id = SOL_MODEL_BOX});
     Sol_Body_Add(gameWorld, floor2,
@@ -152,4 +166,10 @@ void Create_Sol_Game()
     int emitterButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
     Sol_Interact_Add(menu, emitterButton,
                      (InteractDesc){.onHold = (Callback){.callbackFunc = MakeAEmitter, .callbackData = gameWorld}});
+
+    int hostButton = Sol_Prefab_Button(menu, (vec3s){1130, 150, 0}, "Host");
+    Sol_Interact_Add(menu, hostButton, (InteractDesc){.onClick = (Callback){.callbackFunc = HostGame}});
+
+    int connectButton = Sol_Prefab_Button(menu, (vec3s){1130, 200, 0}, "Connect");
+    Sol_Interact_Add(menu, connectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect}});
 }

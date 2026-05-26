@@ -5,6 +5,7 @@ option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(HOT_RELOAD "Build for hot reload" OFF)
 option(SOL_DEV_MODE "Build dev mode" ON)
 
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -14,6 +15,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(cglm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
+add_subdirectory(vendored/enet)
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
 # --- Core Sources ---
@@ -35,7 +37,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c11 /W2)
+    target_compile_options(solvulk PRIVATE /std:c11 /W1)
     set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -77,6 +79,7 @@ target_link_libraries(solvulk
         Vulkan::Vulkan
         cglm::cglm
         OpenMP::OpenMP_C
+        enet::enet_static
     PRIVATE
         ${PLATFORM_LIBS}
 )

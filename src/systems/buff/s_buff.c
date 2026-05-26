@@ -15,11 +15,6 @@ void Sol_Buff_Init(World *world)
     world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_Clear(World *world, int id)
-{
-    memset(&world->buffs[id], 0, sizeof(CompBuff));
-}
-
 void Sol_Buff_Add(World *world, int id, BuffDesc desc, const SolHit *hit)
 {
     CompBuff *buff = &world->buffs[id];

@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "network.h"
+
 SolState solState = {0};
 
 static double accumulator = 0.0;
@@ -35,6 +37,16 @@ void Sol_Init(void *hwnd, void *hInstance)
     solState.isRunning = true;
 }
 
+World *Sol_GetWorldById(u32 id)
+{
+    for (int i = 0; i < solState.worldCount; i++)
+    {
+        if (solState.worlds[i]->worldId == id)
+            return solState.worlds[i];
+    }
+    return NULL;
+}
+
 SolState *Sol_GetState()
 {
     return &solState;
@@ -47,6 +59,8 @@ double Sol_GetGameTime()
 
 void Sol_Destroy()
 {
+    Net_DeInit(&solState.netEngine);
+
     for (int i = 0; i < solState.worldCount; i++)
     {
         free(solState.worlds[i]);
@@ -75,9 +89,12 @@ void Sol_State_SetTimescale(float timescale)
     solState.timescale = timescale;
 }
 
-void Sol_State_SetActiveworld(World *world)
+void Sol_State_SetPlayerWorld(World *world)
 {
-    solState.activeWorld = world;
+    solState.localPlayer.activeWorld = world;
+    solState.localPlayer.worldId     = world->worldId;
+    // solState.localPlayer.playerId = world->playerID;
+    // memcpy(solState.localPlayer.playerName, "Player", sizeof(solState.localPlayer.playerName));
 }
 
 void Sol_Tick(double dt, double time)
@@ -94,6 +111,19 @@ void Sol_Tick(double dt, double time)
 
     if (solState.needsResize)
         Sol_OnResize();
+        
+    if (solState.netEngine.isConnected)
+    {
+        Net_Poll(&solState.netEngine);
+        for (int i = 0; i < solState.worldCount; i++)
+        {
+            World *world = solState.worlds[i];
+            if (world->doesReplicate && !solState.netEngine.isHost)
+            {
+                Net_Apply_Snap(world); // pull latest snap, apply to world
+            }
+        }
+    }
 
     for (int i = 0; i < solState.worldCount; ++i)
     {
@@ -115,26 +145,33 @@ void Sol_Tick(double dt, double time)
     {
         for (int i = 0; i < solState.worldCount; ++i)
         {
-            if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+            World *world = solState.worlds[i];
+            if (!world->doesSimulate || !world->worldActive)
                 continue;
-            World_Step(solState.worlds[i], SOL_TIMESTEP, time);
+            World_Step(world, SOL_TIMESTEP, time);
+            if (Net_ShouldSend(&solState.netEngine))
+                Net_Send_Snap(&solState.netEngine, world);
         }
+        solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }
+    // Post Step
     float alpha = (float)(accumulator / SOL_TIMESTEP);
     for (int i = 0; i < solState.worldCount; ++i)
     {
-        if (!solState.worlds[i]->doesSimulate || !solState.worlds[i]->worldActive)
+        World *world = solState.worlds[i];
+        if (!world->doesSimulate || !world->worldActive)
             continue;
-        Xform_Interpolate(solState.worlds[i], alpha);
+        Xform_Interpolate(world, alpha);
     }
     // ######### END STEP AND INTERP #########
 
     if (solState.activeWorld)
-        Sol_Audio_Update(Sol_Xform_GetPos(solState.activeWorld, solState.activeWorld->playerID), Sol_Controller_GetAimdir(solState.activeWorld, solState.activeWorld->playerID));
+        Sol_Audio_Update(Sol_Xform_GetPos(solState.activeWorld, solState.activeWorld->playerID),
+                         Sol_Controller_GetAimdir(solState.activeWorld, solState.activeWorld->playerID));
 
     Sol_Begin_Draw();
-    
+
     for (int i = solState.worldCount - 1; i >= 0; --i)
     {
         if (!solState.worlds[i]->doesRender || !solState.worlds[i]->worldActive)

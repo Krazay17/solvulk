@@ -22,51 +22,51 @@
 #include "resource.h"
 #include "sol_math.h"
 
-#include "world.h"
 #include "components.h"
+#include "world.h"
 
-#include "texture/texture.h"
-#include "platform/platform.h"
-#include "model/model.h"
-#include "owner/owner.h"
-#include "combat/combat.h"
-#include "contact/contact.h"
-#include "buff/buff.h"
-#include "view/view.h"
-#include "render/render.h"
-#include "parent/parent.h"
-#include "font/font.h"
 #include "ability/ability.h"
 #include "audio/audio.h"
+#include "buff/buff.h"
 #include "camera/camera.h"
+#include "combat/combat.h"
+#include "contact/contact.h"
 #include "controller/controller.h"
 #include "emitter/emitter.h"
+#include "font/font.h"
 #include "interact/interact.h"
 #include "line/line.h"
+#include "model/model.h"
 #include "movement/movement.h"
+#include "owner/owner.h"
+#include "parent/parent.h"
 #include "physx/physx.h"
+#include "platform/platform.h"
+#include "render/render.h"
+#include "texture/texture.h"
 #include "ui/ui.h"
+#include "view/view.h"
 #include "vital/vital.h"
 #include "xform/xform.h"
 
 #include "game/prefabs.h"
 
-#define SOL_VERSION 1.0
+#define SOL_VERSION 1
 
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 4
 
-#define UISCALE(x) (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
+#define UISCALE(x)                                                                                                     \
+    (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 #define ColorConvert(x) (x / 255.0f)
 
 SOLAPI void      Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);
 SOLAPI void      Sol_Destroy();
 SOLAPI SolState *Sol_GetState();
-void Sol_State_SetActiveworld(World *world);
+void             Sol_State_SetPlayerWorld(World *world);
 SOLAPI double    Sol_GetGameTime();
 SOLAPI void      Sol_Window_Resize(float width, float height);
-
 
 void Sol_Debug_Add(const char *text, float value);
 void DebugFPS(double dt);

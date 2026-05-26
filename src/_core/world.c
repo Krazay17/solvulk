@@ -16,6 +16,8 @@ typedef struct
     SystemFunc draw3d;
 } SystemConfig;
 
+static u32 worldId;
+
 static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_EVENT]        = Sol_Event_Init,
     [WORLD_SYS_TIMER]        = Sol_Timer_Init,
@@ -41,40 +43,18 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_OWNER]        = Sol_Owner_Init,
     [WORLD_SYS_AICONTROLLER] = Sol_AiController_Init,
 };
-static SystemClear clear_system[WORLD_SYS_COUNT] = {
-    // [WORLD_SYS_PHYSX]      = Sol_Physx_Clear,
-    // [WORLD_SYS_PARENT]     = Sol_Parent_Clear,
-    // [WORLD_SYS_CONTROLLER] = Sol_Controller_Clear,
-    // [WORLD_SYS_XFORM]      = Sol_Xform_Clear,
-    // [WORLD_SYS_INTERACT]   = Sol_Interact_Clear,
-    // [WORLD_SYS_MOVEMENT]   = Sol_Movement_Clear,
-    // [WORLD_SYS_CONTACT]    = Sol_Contact_Clear,
-    // [WORLD_SYS_COMBAT]     = Sol_Combat_Clear,
-    // [WORLD_SYS_ABILITY]    = Sol_Ability_Clear,
-    [WORLD_SYS_BUFF] = Sol_Buff_Clear,
-    // [WORLD_SYS_VITAL]      = Sol_Vital_Clear,
-    // [WORLD_SYS_MODEL]      = Sol_Model_Clear,
-    // [WORLD_SYS_UI]         = Sol_Ui_Clear,
-    // [WORLD_SYS_LINE]       = Sol_Line_Clear,
-    // [WORLD_SYS_EMITTER]    = Sol_Emitter_Clear,
-    // [WORLD_SYS_SHAPE]      = Sol_Shape_Clear,
-    // [WORLD_SYS_PICKUP]     = Sol_Pickup_Clear,
-    // [WORLD_SYS_CAM]        = Sol_Cam_Clear,
-    // [WORLD_SYS_VIEW]       = Sol_View_Clear,
-    // [WORLD_SYS_OWNER]      = Sol_Owner_Clear,
-    [WORLD_SYS_AICONTROLLER] = Sol_AiController_Clear,
-};
 
-World *World_Create(void)
+World *World_Create(WorldKind kind)
 {
     World *world = calloc(1, sizeof(World));
     if (world)
     {
-        world->worldActive  = true;
-        world->doesSimulate = true;
-        world->doesRender   = true;
-        world->playerID     = -1;
-
+        world->worldActive                 = true;
+        world->doesSimulate                = true;
+        world->doesRender                  = true;
+        world->playerID                    = -1;
+        world->kind                        = kind;
+        world->worldId                     = worldId++;
         SolState *state                    = Sol_GetState();
         state->worlds[state->worldCount++] = world;
     }
@@ -82,13 +62,12 @@ World *World_Create(void)
     return world;
 }
 
-World *World_Create_Default(void)
+World *World_Create_Default(WorldKind kind)
 {
-    World *world = World_Create();
+    World *world = World_Create(kind);
     if (world)
         for (int i = 0; i < WORLD_SYS_COUNT; i++)
             World_System_Add(world, i);
-
     return world;
 }
 
@@ -113,6 +92,7 @@ void World_Step(World *world, double dt, double time)
         world->poststepSystems[i](world, dt, time);
     }
     Sol_Event_Clear(world);
+    world->currentTick++;
 }
 
 void World_Tick(World *world, double dt, double time)
@@ -145,22 +125,24 @@ void World_System_Add(World *world, WorldSystem system)
         init_system[system](world);
 }
 
-int Sol_Create_Ent(World *world)
+int Sol_Create_Ent(World *world, u32 id)
 {
     if (!world)
         return 0;
-    for (int i = 1; i < MAX_ENTS; i++)
-    {
-        if (!world->actives[i])
+    if (!id)
+        for (int i = 1; i < MAX_ENTS; i++)
         {
-            world->actives[i]                           = true;
-            world->masks[i]                             = HAS_NONE;
-            world->activeEntities[world->activeCount++] = i;
-            Sol_Debug_Add("Entities", (float)world->activeCount);
-            return i;
+            if (!world->actives[i])
+            {
+                id = i;
+                break;
+            }
         }
-    }
-    return -1;
+    world->actives[id]                          = true;
+    world->masks[id]                            = HAS_NONE;
+    world->activeEntities[world->activeCount++] = id;
+    Sol_Debug_Add("Entities", (float)world->activeCount);
+    return id;
 }
 
 void Sol_Destroy_Ent(World *world, int id)
@@ -179,11 +161,6 @@ void Sol_Destroy_Ent(World *world, int id)
     world->actives[id]     = false;
     world->masks[id]       = 0;
     world->flags[id].flags = 0;
-    for (int i = 0; i < WORLD_SYS_COUNT; i++)
-    {
-        if (clear_system[i])
-            clear_system[i](world, id);
-    }
     for (int i = 0; i < world->activeCount; i++)
     {
         if (world->activeEntities[i] == id)
@@ -221,3 +198,10 @@ void Sol_World_SetActive(World *world, bool active)
 {
     world->worldActive = active;
 }
+void Sol_World_SetReplicates(World *world, bool active)
+{
+    world->doesReplicate = active;
+    if (active)
+        Net_World_Init(world);
+}
+//void Sol_World_Clear(World *world, )

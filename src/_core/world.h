@@ -14,6 +14,12 @@
 
 typedef enum
 {
+    WORLDKIND_GAME,
+    WORLDKIND_MENU,
+} WorldKind;
+
+typedef enum
+{
     HAS_NONE         = 0,
     HAS_XFORM        = (1 << 0),
     HAS_BODY2        = (1 << 1),
@@ -105,6 +111,7 @@ typedef struct SolEmitters      SolEmitters;
 typedef struct CompOwner        CompOwner;
 typedef struct CompContact      CompContact;
 typedef struct SolCamera        SolCamera;
+typedef struct WorldNet         WorldNet;
 
 typedef struct CompFlags
 {
@@ -144,12 +151,14 @@ typedef struct World
     CompAiController *aicontrollers;
     CompCombat       *combats;
 
+    u32 skyboxId;
+
     SolEvents   *events;
     WorldPhysx  *spatial;
     WorldLines  *lines;
     SolEmitters *emitters;
-    u32          skyboxId;
     SolCamera   *activeCamera;
+    WorldNet    *worldNet;
 
     bool worldActive;
     bool doesSimulate;
@@ -164,10 +173,17 @@ typedef struct World
     int activeCount;
     int playerID;
     u32 systemBits;
+
+    WorldKind kind;
+
+    bool doesReplicate;
+    u32  worldId;
+    u32  currentTick;
 } World;
 
-World     *World_Create(void);
-World     *World_Create_Default(void);
+World     *World_Create(WorldKind kind);
+World     *World_Create_Default(WorldKind kind);
+World     *Sol_GetWorldById(u32 id);
 void       World_SetDoesrender(World *world, bool doesRender);
 SolCamera *Sol_World_GetActivecamera(World *world);
 
@@ -179,7 +195,7 @@ void World_Tick(World *world, double dt, double time);
 void World_Draw3d(World *world, double dt, double time);
 void World_Draw2d(World *world, double dt, double time);
 
-int  Sol_Create_Ent(World *world);
+int  Sol_Create_Ent(World *world, u32 id);
 void Sol_Destroy_Ent(World *world, int id);
 
 void Sol_Flags_Add(World *world, int id, EFlag flags);
@@ -187,4 +203,4 @@ void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 int  Sol_World_GetEntCount(World *world);
 void Sol_World_SetActive(World *world, bool active);
-void Sol_World_SetPlayerWorld(World *world);
+void Sol_World_SetReplicates(World *world, bool active);

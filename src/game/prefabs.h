@@ -3,7 +3,7 @@
 
 typedef struct World World;
 
-int Sol_Prefab_Player(World *world, vec3s pos, float scale);
+int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_Wizard(World *world, vec3s pos, float scale);
 int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);

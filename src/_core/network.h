@@ -1,5 +1,6 @@
 #pragma once
 #include "sol/base.h"
+#include "world.h"
 
 #include "enet.h"
 
@@ -21,11 +22,12 @@ typedef enum
 
 typedef struct
 {
-    u32     id, compMask;
-    vec3s   pos, scale;
+    u32     id, ownerId, compMask, prefabKind;
+    vec3s   pos, vel;
     versors rot;
     u32     health, energy;
     u32     inputs;
+    float   scale;
 } NetEntityState;
 
 typedef struct
@@ -40,7 +42,17 @@ typedef struct WorldNet
 {
     u32       snapHead;
     WorldSnap snapShots[MAX_SNAPS_BUFFERED];
+    int       hostToLocalMap[MAX_ENTS];
 } WorldNet;
+
+// Packets -----------------
+typedef struct
+{
+    u8  type;
+    u32 actionMask;
+    vec3s lookdir, wishdir, aimdir;
+    float yaw;
+} NetInputPacket;
 
 typedef struct
 {
@@ -68,7 +80,7 @@ typedef struct
     u32       currentTick; // server's current tick for sync
     WorldSnap snapShot;
 } NetWelcomePacket;
-
+// ########################
 typedef enum
 {
     REJECT_SERVER_FULL,
@@ -124,10 +136,13 @@ typedef struct
 void Net_Init(SolNet *net, bool host, const char *ip, u16 port);
 void Net_DeInit(SolNet *net);
 
-bool Net_ShouldSend(SolNet *net);
+bool Net_ShouldSend_Input(SolNet *net);
+bool Net_ShouldSend_Snap(SolNet *net);
 void Net_Poll(SolNet *net);
 void Net_Recv_Packet(SolNet *net, ENetEvent *event);
 
 int  Net_World_Init(World *world);
-void Net_Send_Snap(SolNet *net, World *world);
 void Net_Apply_Snap(World *world);
+
+void Net_Send_Input(SolNet *net, World *world);
+void Net_Send_Snap(SolNet *net, World *world);

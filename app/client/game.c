@@ -9,8 +9,9 @@ static void SpawnPlayer(int flags, void *data)
         Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
     player3d = Sol_Prefab_Player(gameWorld, 0, (vec3s){0, 5, 0}, 1.0f);
-    Sol_Controller_Add(gameWorld, player3d, (ControllerDesc){.kind = CONTROLLER_LOCAL});
+    Sol_Controller_Add(gameWorld, player3d,  CONTROLLER_LOCAL);
     Sol_Owner_Add(gameWorld, player3d, (OwnerDesc){.team = 0});
+    Sol_Replication_Add(gameWorld, player3d, NETROLE_AUTH, PREFABKIND_PLAYER);
 }
 
 struct MakeWiz
@@ -27,8 +28,9 @@ void MakeAWizard(int flags, void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Wizard(gameWorld, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
+        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
+        Sol_Replication_Add(gameWorld, id, NETROLE_AUTH, PREFABKIND_WIZARD);
     }
 }
 
@@ -88,13 +90,14 @@ void ClientConnect(int flags, void *data)
 void Create_Sol_Game()
 {
     World *menu = World_Create_Default(WORLDKIND_MENU);
-    gameWorld   = World_Create_Default(WORLDKIND_GAME);
-    Sol_World_SetActive(menu, false);
+    //Sol_World_SetActive(menu, true);
+
+    gameWorld = World_Create_Default(WORLDKIND_GAME);
     Sol_State_SetPlayerWorld(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
     Sol_Cam_SetActivecam(gameWorld);
-    Sol_Input_SetLocked(true);
     Sol_View_Crosshair(gameWorld);
+    // Sol_Input_SetLocked(true);
 
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
@@ -111,8 +114,10 @@ void Create_Sol_Game()
 
     for (int k = -4; k < 4; k++)
     {
-        int id = Sol_Prefab_Wizard(gameWorld, (vec3s){k * spacing, 10.0f, (k * spacing) + 60.0f}, 1.0f);
+        
+        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){k * spacing, 10.0f, (k * spacing) + 60.0f}, 1.0f);
         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
+        Sol_Replication_Add(gameWorld, id, NETROLE_AUTH, PREFABKIND_WIZARD);
     }
 
     Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);

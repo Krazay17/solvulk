@@ -6,8 +6,7 @@
 #define DURATION 0.6f
 #define COOLDOWN 0.2f
 #define MAX_RAMP 3.0f
-
-float velocity = 40.0f;
+#define BALL_VELOCITY 40.0f
 
 void Fireball_State_Update(World *world, int id, float dt)
 {
@@ -18,7 +17,7 @@ void Fireball_State_Update(World *world, int id, float dt)
     float oldElapsed = data->elapsed;
     data->elapsed += dt;
 
-    float power = data->power = fmaxf(0.4f, fminf(data->elapsed, MAX_RAMP));
+    float power = data->power = fmaxf(0.5f, fminf(data->elapsed, MAX_RAMP));
 
     switch (data->stage)
     {
@@ -31,9 +30,11 @@ void Fireball_State_Update(World *world, int id, float dt)
             .anim = ANIM_ATTACK_LEFT, .blendIn = 5.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
         Sol_Model_PlayAnim(world, id, desc);
         Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, Sol_Controller_GetAimPos(world, id), 0.0f);
-        int ball =
-            Sol_Prefab_Fireball(world, id, Sol_Controller_GetShootpos(world, id, 0.4f),
-                                vecSca(Sol_Controller_GetAimdir(world, id), velocity), power, (u32)(power * 33.4f));
+
+        int ball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.33f), power);
+        Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
+        Sol_Owner_SetOwner(world, ball, id);
+        
         data->stage++;
         break;
     case 2:

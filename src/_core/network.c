@@ -2,6 +2,7 @@
 #include "sol_core.h"
 
 #include "controller/controller_i.h"
+#include "physx/physx_i.h"
 #include "vital/vital_i.h"
 
 #define SNAPSHOT_INTERVAL (1.0 / 20.0) // 20Hz
@@ -80,12 +81,13 @@ void Net_DeInit(SolNet *net)
 int Net_World_Init(World *world)
 {
     world->worldNet = calloc(1, sizeof(WorldNet));
+    memset(world->worldNet->hostToLocalMap, -1, sizeof(world->worldNet->hostToLocalMap));
     if (!world->worldNet)
         return 1;
     return 0;
 }
 
-bool Net_ShouldSend(SolNet *net)
+bool Net_ShouldSend_Snap(SolNet *net)
 {
     if (!net->isHost)
         return false;
@@ -209,7 +211,11 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
             printf("No world found %d\n", helloPacket->worldId);
             return;
         }
-        int id = Sol_Prefab_Player(world,0, helloPacket->startPos, 1.0f);
+        int id   = Sol_Prefab_Player(world, 0, helloPacket->startPos, 1.0f);
+        int slot = (int)(intptr_t)event->peer->data;
+
+        net->players[slot].entityId       = id;
+        net->players[slot].currentWorldId = world->worldId;
 
         NetWelcomePacket welcomePacket = {
             .type        = NET_PACKET_WELCOME,
@@ -225,11 +231,7 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     case NET_PACKET_WELCOME: {
         if (net->isHost)
             return;
-        NetWelcomePacket *welcomePacket       = (NetWelcomePacket *)data;
-        LocalPlayer      *localPlayer         = &Sol_GetState()->localPlayer;
-        World *world = Sol_GetWorldById(welcomePacket->worldId);
-        //Sol_World
-        *localPlayer->playerId = welcomePacket->playerId;
+        net->state = NET_STATE_PLAYING;
     }
     break;
 
@@ -238,15 +240,21 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     break;
 
     case NET_PACKET_SNAPSHOT: {
+        if (net->isHost)
+            return;
         NetSnapshotPacket *snap = (NetSnapshotPacket *)data;
         for (int i = 0; i < Sol_GetState()->worldCount; i++)
         {
             World *world = Sol_GetState()->worlds[i];
             if (world->worldId == snap->worldId)
             {
-                // Store in world's snap buffer
-                world->worldNet->snapShots[world->worldNet->snapHead];
-                world->worldNet->snapHead = (world->worldNet->snapHead + 1) % MAX_SNAPS_BUFFERED;
+                WorldNet *net = world->worldNet;
+
+                // FIX: Explicitly assign the incoming struct payload data right into the slot!
+                net->snapShots[net->snapHead] = snap->snap;
+
+                // Advance the ring buffer head safely
+                net->snapHead = (net->snapHead + 1) % MAX_SNAPS_BUFFERED;
                 break;
             }
         }
@@ -254,10 +262,18 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     break;
 
     case NET_PACKET_INPUT: {
-        // Server receives input from a client
-        // Apply to the player entity owned by this peer
-        int slot = (int)(intptr_t)event->peer->data;
-        net->players[slot].currentWorldId;
+        if (!net->isHost)
+            return;
+        int             slot        = (int)(intptr_t)event->peer->data;
+        int             id          = net->players[slot].entityId;
+        NetInputPacket *inputPacket = (NetInputPacket *)data;
+        World          *world       = Sol_GetWorldById(net->players[slot].currentWorldId);
+        CompController *c           = &world->controllers[id];
+        c->actionState              = inputPacket->actionMask;
+        c->wishdir                  = inputPacket->wishdir;
+        c->lookdir                  = inputPacket->lookdir;
+        c->aimdir                   = inputPacket->aimdir;
+        c->yaw                      = inputPacket->yaw;
     }
     break;
     }
@@ -276,15 +292,21 @@ void Net_Send_Snap(SolNet *net, World *world)
     for (int i = 0; i < world->activeCount && count < MAX_NET_ENTS; i++)
     {
         int id = world->activeEntities[i];
-        if (!(world->masks[id] & HAS_XFORM))
+        if (world->masks[id] & HAS_REPLICATION && world->replications[id].role == NETROLE_REMOTE)
             continue;
 
         NetEntityState *e = &snapPacket.snap.entities[count++];
         e->id             = id;
         e->compMask       = world->masks[id];
+        e->prefabKind     = world->replications[id].prefabKind;
         e->pos            = world->xforms[id].drawPos;
         e->rot            = world->xforms[id].drawQuat;
+        e->scale          = world->xforms[id].scale.x;
 
+        if (world->masks[id] & HAS_BODY3)
+            e->vel = world->bodies[id].vel;
+        if (world->masks[id] & HAS_OWNER)
+            e->ownerId = world->owners[id].ownerId;
         if (world->masks[id] & HAS_VITAL)
         {
             e->health = world->vitals[id].health;
@@ -296,46 +318,96 @@ void Net_Send_Snap(SolNet *net, World *world)
         }
     }
     snapPacket.snap.eCount = count;
-
-    ENetPacket *packet = enet_packet_create(&snapPacket, sizeof(NetSnapshotPacket), ENET_PACKET_FLAG_RELIABLE);
+    ENetPacket *packet =
+        enet_packet_create(&snapPacket, sizeof(NetSnapshotPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
     enet_host_broadcast(net->host, 0, packet);
 }
 
 void Net_Apply_Snap(World *world)
 {
-    if (world->worldNet->snapHead == 0)
-        return;
+    WorldNet *net = world->worldNet;
 
-    // Latest snap is at head-1 (modular)
-    u32        idx  = (world->worldNet->snapHead + MAX_SNAPS_BUFFERED - 1) % MAX_SNAPS_BUFFERED;
-    WorldSnap *snap = &world->worldNet->snapShots[idx];
-    // printf("Tick: %d\n",snap->tickNumber);
+    // Check an explicit dynamic sequence number or an initialization flag instead of index positions
+    u32        idx  = (net->snapHead + MAX_SNAPS_BUFFERED - 1) % MAX_SNAPS_BUFFERED;
+    WorldSnap *snap = &net->snapShots[idx];
+
+    // If we haven't processed any ticks yet, there's nothing to do
+    if (snap->tickNumber == 0 && snap->eCount == 0)
+        return;
 
     for (u32 i = 0; i < snap->eCount; i++)
     {
-        NetEntityState *e  = &snap->entities[i];
-        int             id = e->id;
-        if (id >= MAX_ENTS)
+        NetEntityState *e      = &snap->entities[i];
+        int             hostId = e->id;
+        if (hostId >= MAX_ENTS)
             continue;
 
-        // If entity doesn't exist locally yet, spawn it
-        if (!world->activeEntities[id])
+        int id = net->hostToLocalMap[hostId];
+
+        if (id == -1)
         {
-            world->masks[id] = e->compMask;
+            if (e->prefabKind)
+                id = Sol_Prefab_Factory(world, 0, e->prefabKind,
+                                        (PrefabDesc){
+                                            .pos     = e->pos,
+                                            .rot     = e->rot,
+                                            .scale   = e->scale,
+                                            .netRole = NETROLE_REMOTE,
+                                        });
+            else
+                id = Sol_Create_Ent(world, 0);
+
+            net->hostToLocalMap[hostId] = id;
+            // world->masks[id] = e->compMask;
         }
 
-        // Apply position
-        if (world->masks[id] & HAS_XFORM)
-        {
-            world->xforms[id].pos     = e->pos;
-            world->xforms[id].drawPos = e->pos; // skip interp for now
-        }
+        world->xforms[id].lastPos = world->xforms[id].pos = e->pos;
+        world->xforms[id].lastQuat = world->xforms[id].quat = e->rot;
 
-        // Apply vitals
+        world->bodies[id].vel = e->vel;
+
         if (world->masks[id] & HAS_VITAL)
         {
             world->vitals[id].health = e->health;
             world->vitals[id].energy = e->energy;
         }
+        if (world->masks[id] & HAS_CONTROLLER)
+        {
+            world->controllers[id].actionState = e->inputs;
+        }
     }
+}
+
+bool Net_ShouldSend_Input(SolNet *net)
+{
+    return (net->state == NET_STATE_PLAYING) && !net->isHost;
+}
+
+void Net_Send_Input(SolNet *net, World *world)
+{
+    int id = world->playerID;
+    if (!(world->masks[id] & HAS_CONTROLLER))
+        return;
+    CompController *controller = &world->controllers[id];
+
+    NetInputPacket input = {
+        .type       = NET_PACKET_INPUT,
+        .actionMask = controller->actionState,
+    };
+    input.lookdir = controller->lookdir;
+    input.wishdir = controller->wishdir;
+    input.aimdir  = controller->aimdir;
+    input.yaw     = controller->yaw;
+    // input.lookdir[0] = controller->lookdir.x;
+    // input.lookdir[1] = controller->lookdir.y;
+    // input.lookdir[2] = controller->lookdir.z;
+    // input.wishdir[0] = controller->wishdir.x;
+    // input.wishdir[1] = controller->wishdir.y;
+    // input.wishdir[2] = controller->wishdir.z;
+    // input.aimdir[0]  = controller->aimdir.x;
+    // input.aimdir[1]  = controller->aimdir.y;
+    // input.aimdir[2]  = controller->aimdir.z;
+
+    ENetPacket *packet = enet_packet_create(&input, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+    enet_peer_send(net->peer, 0, packet);
 }

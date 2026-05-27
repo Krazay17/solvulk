@@ -29,7 +29,6 @@ typedef enum
     HAS_UIVIEW       = (1 << 5),
     HAS_MOVEMENT     = (1 << 6),
     HAS_CONTROLLER   = (1 << 7),
-    HAS_AICONTROLLER = (1 << 18),
     HAS_ABILITY      = (1 << 8),
     HAS_BUFF         = (1 << 9),
     HAS_VITAL        = (1 << 10),
@@ -40,6 +39,9 @@ typedef enum
     HAS_PARENT       = (1 << 15),
     HAS_CONTACT      = (1 << 16),
     HAS_OWNER        = (1 << 17),
+    HAS_AICONTROLLER = (1 << 18),
+    HAS_COMBAT       = (1 << 19),
+    HAS_REPLICATION  = (1 << 20),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -63,6 +65,7 @@ typedef enum
     WORLD_SYS_CONTACT,
     WORLD_SYS_COMBAT,
     WORLD_SYS_BUFF,
+    WORLD_SYS_REPLICATION,
     // reacts
     WORLD_SYS_AICONTROLLER,
     WORLD_SYS_VITAL,
@@ -88,8 +91,8 @@ typedef void (*SystemFunc)(World *, double, double);
 typedef bool     Active;
 typedef uint32_t Mask;
 
+typedef struct CompReplication  CompReplication;
 typedef struct CompAiController CompAiController;
-typedef struct CompCombat       CompCombat;
 typedef struct CompParent       CompParent;
 typedef struct CompAudio        CompAudio;
 typedef struct CompTimer        CompTimer;
@@ -104,14 +107,16 @@ typedef struct CompVital        CompVital;
 typedef struct CompController   CompController;
 typedef struct CompBuff         CompBuff;
 typedef struct CompAbility      CompAbility;
-typedef struct SolEvents        SolEvents;
-typedef struct WorldPhysx       WorldPhysx;
-typedef struct WorldLines       WorldLines;
-typedef struct SolEmitters      SolEmitters;
 typedef struct CompOwner        CompOwner;
 typedef struct CompContact      CompContact;
-typedef struct SolCamera        SolCamera;
-typedef struct WorldNet         WorldNet;
+typedef struct CompCombat       CompCombat;
+
+typedef struct SolEvents   SolEvents;
+typedef struct SolEmitters SolEmitters;
+typedef struct WorldPhysx  WorldPhysx;
+typedef struct WorldLines  WorldLines;
+typedef struct SolCamera   SolCamera;
+typedef struct WorldNet    WorldNet;
 
 typedef struct CompFlags
 {
@@ -132,6 +137,7 @@ typedef struct World
     Mask      masks[MAX_ENTS];
     CompFlags flags[MAX_ENTS];
 
+    CompReplication  *replications;
     CompParent       *parents;
     CompAudio        *audios;
     CompTimer        *timers;

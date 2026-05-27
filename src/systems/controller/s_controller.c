@@ -11,12 +11,12 @@
 #include "controller_i.h"
 
 static const SolActions action_binds[SOL_KEY_COUNT] = {
-    [SOL_KEY_0] = ACTION_ABILITY0, [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
-    [SOL_KEY_3] = ACTION_ABILITY3, [SOL_KEY_4] = ACTION_ABILITY4, [SOL_KEY_5] = ACTION_ABILITY5,
-    [SOL_KEY_6] = ACTION_ABILITY6, [SOL_KEY_7] = ACTION_ABILITY7, [SOL_KEY_8] = ACTION_ABILITY8,
-    [SOL_KEY_9] = ACTION_ABILITY9, [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,
-    [SOL_KEY_S] = ACTION_BWD,      [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
-    [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
+    [SOL_KEY_0] = ACTION_ABILITY0,  [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
+    [SOL_KEY_3] = ACTION_ABILITY3,  [SOL_KEY_4] = ACTION_ABILITY4, [SOL_KEY_5] = ACTION_ABILITY5,
+    [SOL_KEY_6] = ACTION_ABILITY6,  [SOL_KEY_7] = ACTION_ABILITY7, [SOL_KEY_8] = ACTION_ABILITY8,
+    [SOL_KEY_9] = ACTION_ABILITY9,  [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,
+    [SOL_KEY_S] = ACTION_BWD,       [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
+    [SOL_KEY_SPACE] = ACTION_JUMP,  [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
     [SOL_KEY_CTRL] = ACTION_CROUCH,
 };
 
@@ -32,12 +32,15 @@ void Sol_Controller_Init(World *world)
     world->controllers = calloc(MAX_ENTS, sizeof(CompController));
 }
 
-void Sol_Controller_Add(World *world, int id, ControllerDesc desc)
+void Sol_Controller_Add(World *world, int id, ControllerKind kind)
 {
+    CompController controller = {
+        .kind = kind,
+    };
     world->masks[id] |= HAS_CONTROLLER;
-    CompController *controller = &world->controllers[id];
-    controller->kind           = desc.kind;
-    if (desc.kind == CONTROLLER_LOCAL)
+    world->controllers[id] = controller;
+
+    if (kind == CONTROLLER_LOCAL)
         world->playerID = id;
 }
 
@@ -51,7 +54,9 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
             continue;
 
         CompController *controller = &world->controllers[id];
-
+        world->xforms[id].quat     = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+        controller->aimpos         = Sol_Physx_GetHeadPos(world, id);
+        
         if (world->controllers[id].kind == CONTROLLER_LOCAL)
             LocalTick(world, id, dt, time);
     }
@@ -70,8 +75,6 @@ static void LocalTick(World *world, int id, double dt, double time)
             controller->actionState &= ~action_binds[i];
     }
 
-    controller->aimpos = Sol_Physx_GetHeadPos(world, id);
-
     Sol_Cam_Arm_Update(world, controller->aimpos, dt);
 
     if (glms_vec3_norm(controller->wishdir) > 0.001f)
@@ -85,8 +88,6 @@ static void LocalTick(World *world, int id, double dt, double time)
 
         world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
     }
-
-    controller->yaw = look->yaw;
 
     SolMouse mouse = Sol_Input_GetMouse();
     if (mouse.locked)
@@ -106,6 +107,7 @@ static void LocalTick(World *world, int id, double dt, double time)
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_FWD;
 
+    controller->yaw     = look->yaw;
     controller->pitch   = look->pitch;
     controller->lookdir = look->lookdir;
     controller->wishdir = CalcWishdir3(controller->actionState, look->lookdir, WORLD_UP);
@@ -254,7 +256,7 @@ float Sol_GetPitch(World *world, int id)
     return world->controllers[id].pitch;
 }
 
-vec3s Sol_Controller_GetShootpos(World *world, int id, float offset)
+vec3s Sol_Controller_GetShootPos(World *world, int id, float offset)
 {
     vec3s head = world->controllers[id].aimpos;
     vec3s dir  = world->controllers[id].aimdir;
@@ -263,7 +265,7 @@ vec3s Sol_Controller_GetShootpos(World *world, int id, float offset)
 
 SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
 {
-    vec3s pos = Sol_Controller_GetShootpos(world, id, 0.3f);
+    vec3s pos = Sol_Controller_GetShootPos(world, id, 0.3f);
     vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
 
     return (SolShoot){.pos = pos, .vel = vel};

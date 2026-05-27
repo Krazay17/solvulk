@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "combat_i.h"
-
 static void Combat_Step(World *world, double dt, double time);
 
 void Sol_Combat_Init(World *world)

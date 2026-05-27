@@ -16,15 +16,11 @@ typedef enum
     CONTROLLER_LOCAL,
     CONTROLLER_REMOTE,
 } ControllerKind;
-typedef struct
-{
-    ControllerKind kind;
-} ControllerDesc;
 
 void Sol_Controller_Init(World *world);
 void Sol_AiController_Init(World *world);
 
-void Sol_Controller_Add(World *world, int id, ControllerDesc desc);
+void Sol_Controller_Add(World *world, int id, ControllerKind kind);
 void Sol_AiController_Add(World *world, int id, AiControllerDesc desc);
 void Sol_AiController_Clear(World *world, int id);
 
@@ -39,7 +35,7 @@ float      Sol_GetYaw(World *world, int id);
 float      Sol_GetPitch(World *world, int id);
 vec3s      Sol_Controller_GetWishdir(World *world, int id);
 SolActions Sol_Controller_GetActionState(World *world, int id);
-vec3s      Sol_Controller_GetShootpos(World *world, int id, float offset);
+vec3s      Sol_Controller_GetShootPos(World *world, int id, float offset);
 SolShoot   Sol_Controller_GetShoot(World *world, int id, float speed);
 bool       Sol_Controller_IsActionState(World *world, int id, SolActions mask);
 

@@ -42,6 +42,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_VIEW]         = Sol_View_Init,
     [WORLD_SYS_OWNER]        = Sol_Owner_Init,
     [WORLD_SYS_AICONTROLLER] = Sol_AiController_Init,
+    [WORLD_SYS_REPLICATION]  = Sol_Replication_Init,
 };
 
 World *World_Create(WorldKind kind)
@@ -204,4 +205,4 @@ void Sol_World_SetReplicates(World *world, bool active)
     if (active)
         Net_World_Init(world);
 }
-//void Sol_World_Clear(World *world, )
+// void Sol_World_Clear(World *world, )

@@ -7,6 +7,12 @@ typedef enum
 {
     COMBATFLAG_REFLECTING = (1 << 0),
 } CombatFlags;
+ 
+typedef struct CompCombat
+{
+    CombatFlags flags;
+    u32         damage;
+} CompCombat;
 
 void Sol_Combat_Init(World *world);
 bool Sol_Combat_IsReflecting(World *world, int id);

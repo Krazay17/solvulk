@@ -8,16 +8,14 @@ void Sol_Xform_Init(World *world)
 
 void Sol_Xform_Add(World *world, int id, vec3s pos)
 {
-    if (!world || id < 0)
-        return;
-
-    world->masks[id] |= HAS_XFORM;
     CompXform xform = {
         .pos     = pos,
         .lastPos = pos,
         .drawPos = pos,
         .scale   = (vec3s){1.0f, 1.0f, 1.0f},
     };
+    
+    world->masks[id] |= HAS_XFORM;
     world->xforms[id] = xform;
 }
 

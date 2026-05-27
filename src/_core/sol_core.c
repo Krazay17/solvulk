@@ -111,10 +111,9 @@ void Sol_Tick(double dt, double time)
 
     if (solState.needsResize)
         Sol_OnResize();
-        
-    if (solState.netEngine.isConnected)
-    {
-        Net_Poll(&solState.netEngine);
+
+    Net_Poll(&solState.netEngine);
+    if (solState.netEngine.state == NET_STATE_PLAYING)
         for (int i = 0; i < solState.worldCount; i++)
         {
             World *world = solState.worlds[i];
@@ -123,7 +122,6 @@ void Sol_Tick(double dt, double time)
                 Net_Apply_Snap(world); // pull latest snap, apply to world
             }
         }
-    }
 
     for (int i = 0; i < solState.worldCount; ++i)
     {
@@ -149,7 +147,9 @@ void Sol_Tick(double dt, double time)
             if (!world->doesSimulate || !world->worldActive)
                 continue;
             World_Step(world, SOL_TIMESTEP, time);
-            if (Net_ShouldSend(&solState.netEngine))
+            if (Net_ShouldSend_Input(&solState.netEngine) && world->doesReplicate)
+                Net_Send_Input(&solState.netEngine, world);
+            if (Net_ShouldSend_Snap(&solState.netEngine) && world->doesReplicate)
                 Net_Send_Snap(&solState.netEngine, world);
         }
         solState.stepCounter++;

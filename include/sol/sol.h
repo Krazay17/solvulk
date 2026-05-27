@@ -25,6 +25,7 @@
 #include "components.h"
 #include "world.h"
 
+#include "replication/replication.h"
 #include "ability/ability.h"
 #include "audio/audio.h"
 #include "buff/buff.h"

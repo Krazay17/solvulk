@@ -26,9 +26,6 @@ void Claw_State_Enter(World *world, int id)
 
     float velocity = 40.0f;
 
-    int ball = Sol_Prefab_Fireball(world, id, Sol_Controller_GetShootpos(world, id, 0.4f),
-                                   vecSca(Sol_Controller_GetAimdir(world, id), velocity), 0.5f, 15);
-
     AnimDesc desc = {
         .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
     Sol_Model_PlayAnim(world, id, desc);

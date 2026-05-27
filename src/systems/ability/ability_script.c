@@ -44,7 +44,6 @@ typedef struct
 
 AbilityScript ability_scripts[ABILITY_STATE_COUNT];
 
-
 void Ability_Scripts_Init()
 {
     AbilityScript *fireballVolley = &ability_scripts[ABILITY_STATE_FIREBALLVOLLEY];
@@ -54,10 +53,14 @@ void Ability_Scripts_Init()
     fireballVolley->actions[0] =
         (AbilityAction){.kind    = ACTIONKIND_PLAY_ANIM,
                         .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .force = true}};
-    fireballVolley->actions[1] = (AbilityAction){
-        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 25.0f, .time = 0.75f};
-    fireballVolley->actions[2] = (AbilityAction){
-        .kind = ACTIONKIND_SPAWN_PROJECTILE, .as.spawn.spawn = ABILITYSPAWN_FIREBALL, .as.spawn.speed = 30.0f, .time = 1.7f};
+    fireballVolley->actions[1] = (AbilityAction){.kind           = ACTIONKIND_SPAWN_PROJECTILE,
+                                                 .as.spawn.spawn = ABILITYSPAWN_FIREBALL,
+                                                 .as.spawn.speed = 25.0f,
+                                                 .time           = 0.75f};
+    fireballVolley->actions[2] = (AbilityAction){.kind           = ACTIONKIND_SPAWN_PROJECTILE,
+                                                 .as.spawn.spawn = ABILITYSPAWN_FIREBALL,
+                                                 .as.spawn.speed = 30.0f,
+                                                 .time           = 1.7f};
 }
 
 void Ability_ExecuteAction(World *world, int id, AbilityAction *a);
@@ -104,7 +107,7 @@ bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &world->abilities[id].stateData[next];
 
-    double now = Sol_GetGameTime();
+    double now     = Sol_GetGameTime();
     double readyAt = data->lastEntered + ability_scripts[next].cooldown;
 
     return now > readyAt;
@@ -115,8 +118,10 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
     switch (a->kind)
     {
     case ACTIONKIND_SPAWN_PROJECTILE:
-        Sol_Prefab_Fireball(world, id, Sol_Controller_GetAimPos(world, id),
-                            vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed), 0.4f, 15);
+        u32 fireball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.2f), 0.5f);
+        Sol_Physx_SetVel(world, fireball, vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed));
+        Sol_Owner_SetOwner(world, fireball, id);
+
         break;
     case ACTIONKIND_PLAY_ANIM:
         Sol_Model_PlayAnim(world, id, a->as.anim);

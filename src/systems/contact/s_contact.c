@@ -1,10 +1,53 @@
 #include "sol_core.h"
 
-typedef struct CompContact
-{
-    ImpactList impacts;
-    u32        bounces;
-} CompContact;
+const ImpactList contact_config[CONTACTKIND_COUNT] = {
+    [CONTACTKIND_FIREBALL] =
+        {
+            .impactCount = 2,
+            .impacts[0] =
+                {
+                    .kind   = IMPACT_DIRECT,
+                    .radius = 1.0f,
+                    .hit =
+                        {
+                            .kind   = HITKIND_FIRE,
+                            .damage = 30,
+                        },
+                },
+            .impacts[1] =
+                {
+                    .kind   = IMPACT_AOE,
+                    .radius = 3.0f,
+                    .hit =
+                        {
+                            .damage    = 20,
+                            .kind      = HITKIND_FIRE,
+                            .buffs     = {{
+                                .kind     = BUFFKIND_FIRE,
+                                .addKind  = BUFFADD_SET_DURATION,
+                                .duration = 3.0f,
+                                .freq     = 0.5f,
+                            }},
+                            .power     = 10.0f,
+                            .buffcount = 1,
+                        },
+                },
+        },
+    [CONTACTKIND_WIZARDTOUCH] =
+        {
+            .impactCount = 1,
+            .impacts[0] =
+                {
+                    .kind   = IMPACT_DIRECT,
+                    .radius = 0.5f,
+                    .hit =
+                        {
+                            .kind   = HITKIND_FIRE,
+                            .damage = 15,
+                        },
+                },
+        },
+};
 
 static void Contact_Step(World *world, double dt, double time);
 
@@ -14,12 +57,17 @@ void Sol_Contact_Init(World *world)
     world->contacts = calloc(MAX_ENTS, sizeof(CompContact));
 }
 
-void Sol_Contact_Add(World *world, int id, ContactDesc desc)
+void Sol_Contact_Add(World *world, int id, ContactKind kind, float damageScale)
 {
+    CompContact contact = {
+        .kind        = kind,
+        .damageScale = damageScale,
+        .radiusScale = 1.0f,
+        .bounces     = 0,
+    };
+
     world->masks[id] |= HAS_CONTACT;
-    CompContact *c = &world->contacts[id];
-    c->impacts     = desc.impacts;
-    c->bounces     = desc.bounces;
+    world->contacts[id] = contact;
 }
 
 static void Contact_Step(World *world, double dt, double time)
@@ -47,18 +95,26 @@ static void Contact_Step(World *world, double dt, double time)
 
             if (world->owners[proj].ownerId == other)
                 continue;
-            CompContact *c = &world->contacts[proj];
-            vec3s projPos = Sol_Xform_GetPos(world, proj);
 
-            for (int i = 0; i < c->impacts.impactCount; i++)
+            CompContact *c           = &world->contacts[proj];
+            vec3s        projPos     = Sol_Xform_GetPos(world, proj);
+            u32          impactCount = contact_config[c->kind].impactCount;
+
+            for (int i = 0; i < impactCount; i++)
             {
-                Impact *impact     = &c->impacts.impacts[i];
-                impact->hit.source = Sol_Owner_GetOwner(world, proj);
+                const Impact *impact     = &contact_config[c->kind].impacts[i];
+                SolHit        dynamicHit = impact->hit;
+                float         radius     = impact->radius;
+                radius *= c->radiusScale;
+
+                dynamicHit.damage = (u32)((float)impact->hit.damage * c->damageScale);
+
+                dynamicHit.source = Sol_Owner_GetOwner(world, proj);
 
                 if (impact->kind == IMPACT_DIRECT)
                 {
-                    impact->hit.vel    = Sol_Physx_GetVel(world, proj);
-                    impact->hit.target = other;
+                    dynamicHit.vel    = Sol_Physx_GetVel(world, proj);
+                    dynamicHit.target = other;
                     if (Sol_Combat_IsReflecting(world, other))
                     {
                         Sol_Owner_SetOwner(world, proj, other);
@@ -67,26 +123,28 @@ static void Contact_Step(World *world, double dt, double time)
                             Sol_RedirectVel(Sol_Physx_GetVel(world, proj), Sol_Controller_GetAimdir(world, other)));
                         goto breakout;
                     }
-                    impact->hit.pos = pos;
-                    impact->hit.dir = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
-                    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
-                    Sol_Event_Add(
-                        world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.pos = projPos, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.scale = impact->radius});
+                    dynamicHit.pos = pos;
+                    dynamicHit.dir = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
+                    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = dynamicHit});
+                    Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
+                                                    .as.fx.pos   = projPos,
+                                                    .as.fx.kind  = FXKIND_FIREBALL_HIT,
+                                                    .as.fx.scale = radius});
                 }
                 else if (impact->kind == IMPACT_AOE)
                 {
                     SolRayResult results[256];
 
-                    int hits = Sol_SphereCast(world, (SolRay){.pos = projPos}, impact->radius, results, 256);
+                    int hits = Sol_SphereCast(world, (SolRay){.pos = projPos}, radius, results, 256);
                     for (int i = 0; i < hits; i++)
                     {
                         SolRayResult result = results[i];
                         if ((world->masks[result.entId] & HAS_VITAL) && world->owners[proj].ownerId != result.entId)
                         {
-                            impact->hit.target = result.entId;
-                            impact->hit.pos    = result.pos;
-                            impact->hit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
-                            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = impact->hit});
+                            dynamicHit.target = result.entId;
+                            dynamicHit.pos    = result.pos;
+                            dynamicHit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
+                            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = dynamicHit});
                         }
                     }
                 }
@@ -101,4 +159,14 @@ static void Contact_Step(World *world, double dt, double time)
         breakout:;
         }
     }
+}
+
+void Sol_Contact_SetBounces(World *world, int id, int bounces)
+{
+    world->contacts[id].bounces = bounces;
+}
+
+void Sol_Contact_SetRadiusScale(World *world, int id, float radiusScale)
+{
+    world->contacts[id].radiusScale = radiusScale;
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-#define MAX_ENTS (1 << 15)
 #define MAX_SYSTEMS 64
 #define SYS_BIT(x) (1u << (x))
 
@@ -21,27 +20,28 @@ typedef enum
 typedef enum
 {
     HAS_NONE         = 0,
-    HAS_XFORM        = (1 << 0),
-    HAS_BODY2        = (1 << 1),
-    HAS_BODY3        = (1 << 2),
-    HAS_INTERACT     = (1 << 3),
-    HAS_MODEL        = (1 << 4),
-    HAS_UIVIEW       = (1 << 5),
-    HAS_MOVEMENT     = (1 << 6),
-    HAS_CONTROLLER   = (1 << 7),
-    HAS_ABILITY      = (1 << 8),
-    HAS_BUFF         = (1 << 9),
-    HAS_VITAL        = (1 << 10),
-    HAS_SHAPE        = (1 << 11),
-    HAS_TIMER        = (1 << 12),
-    HAS_EVENT        = (1 << 13),
-    HAS_AUDIO        = (1 << 14),
-    HAS_PARENT       = (1 << 15),
-    HAS_CONTACT      = (1 << 16),
-    HAS_OWNER        = (1 << 17),
-    HAS_AICONTROLLER = (1 << 18),
-    HAS_COMBAT       = (1 << 19),
-    HAS_REPLICATION  = (1 << 20),
+    HAS_ACTIVE       = (1 << 0),
+    HAS_XFORM        = (1 << 1),
+    HAS_BODY2        = (1 << 2),
+    HAS_BODY3        = (1 << 3),
+    HAS_INTERACT     = (1 << 4),
+    HAS_MODEL        = (1 << 5),
+    HAS_UIVIEW       = (1 << 6),
+    HAS_MOVEMENT     = (1 << 7),
+    HAS_CONTROLLER   = (1 << 8),
+    HAS_ABILITY      = (1 << 9),
+    HAS_BUFF         = (1 << 10),
+    HAS_VITAL        = (1 << 11),
+    HAS_SHAPE        = (1 << 12),
+    HAS_TIMER        = (1 << 13),
+    HAS_EVENT        = (1 << 14),
+    HAS_AUDIO        = (1 << 15),
+    HAS_PARENT       = (1 << 16),
+    HAS_CONTACT      = (1 << 17),
+    HAS_OWNER        = (1 << 18),
+    HAS_AICONTROLLER = (1 << 19),
+    HAS_COMBAT       = (1 << 20),
+    HAS_REPLICATION  = (1 << 21),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -88,7 +88,6 @@ typedef void (*SystemInit)(World *);
 typedef void (*SystemClear)(World *, int);
 typedef void (*SystemFunc)(World *, double, double);
 
-typedef bool     Active;
 typedef uint32_t Mask;
 
 typedef struct CompReplication  CompReplication;
@@ -133,7 +132,6 @@ typedef struct World
     SystemFunc draw2dSystems[MAX_SYSTEMS];
 
     int       activeEntities[MAX_ENTS];
-    Active    actives[MAX_ENTS];
     Mask      masks[MAX_ENTS];
     CompFlags flags[MAX_ENTS];
 

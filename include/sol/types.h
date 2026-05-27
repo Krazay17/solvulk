@@ -20,7 +20,7 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 #define MAX_BONES 128
-
+#define MAX_ENTS (1 << 15)
 // Forwards
 typedef struct World    World;
 typedef struct SolState SolState;

@@ -7,7 +7,25 @@
  */
 #include "sol_core.h"
 
-#include "buff_i.h"
+const Buff buff_config[] = {
+    [BUFFKIND_FIRE] =
+        {
+            .kind     = BUFFKIND_FIRE,
+            .addKind  = BUFFADDKIND_SET_DURATION,
+            .freq     = 0.2f,
+            .duration = 2.0f,
+        },
+    [BUFFKIND_INVULN] =
+        {
+            .kind     = BUFFKIND_INVULN,
+            .duration = 0.2f,
+        },
+    [BUFFKIND_KNOCKBACK] =
+        {
+            .kind     = BUFFKIND_KNOCKBACK,
+            .duration = 0.2f,
+        },
+};
 
 void Sol_Buff_Init(World *world)
 {
@@ -15,54 +33,53 @@ void Sol_Buff_Init(World *world)
     world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_Add(World *world, int id, BuffDesc desc, const SolHit *hit)
+void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
 {
-    CompBuff *buff = &world->buffs[id];
-    if (buff->count >= MAX_BUFFS)
-        return;
     world->masks[id] |= HAS_BUFF;
-    u32 infinite = desc.addKind == BUFFADD_INF ? 1 : 0;
-    // check if we have buff already
-    for (int i = 0; i < buff->count; i++)
+    CompBuff *buffs = &world->buffs[id];
+    if (buffs->count >= MAX_BUFFS)
+        return;
+
+    Buff new_buff = buff_config[kind];
+
+    // check if we have buffs already
+    for (int i = 0; i < buffs->count; i++)
     {
-        Buff *b = &buff->buffs[i];
-        if (desc.kind == b->kind)
+        Buff *b = &buffs->buffs[i];
+        if (kind == b->kind)
         {
-            switch (desc.addKind)
+            switch (new_buff.addKind)
             {
-            case BUFFADD_SET_DURATION:
-                b->duration = desc.duration;
+            case BUFFADDKIND_SET_DURATION:
+                b->duration = new_buff.duration;
                 break;
-            case BUFFADD_ADD_DURATION:
-                b->duration += desc.duration;
+            case BUFFADDKIND_ADD_DURATION:
+                b->duration += new_buff.duration;
                 break;
-            case BUFFADD_INF:
+            case BUFFADDKIND_INF:
                 b->inf = 1;
                 break;
-            case BUFFADD_MULTIPLY:
-                goto addAnotherBuff;
+            case BUFFADDKIND_MULTIPLY:
+                goto addNewBuff;
             }
             return;
         }
     }
-// fallthrough: add buff if dont have
-addAnotherBuff:
-    Buff new_buff = {.kind = desc.kind, .duration = desc.duration, .inf = infinite, .freq = desc.freq};
+addNewBuff:
     if (hit)
     {
-        switch (desc.kind)
+        new_buff.source = hit->source;
+        new_buff.dir    = glms_normalize(hit->dir);
+        switch (kind)
         {
         case BUFFKIND_KNOCKBACK:
             new_buff.dir   = glms_normalize(hit->dir);
             new_buff.power = hit->power;
             break;
-        case BUFFKIND_FIRE:
-            new_buff.source = hit->source;
-            break;
         }
     }
-    buff->buffs[buff->count++] = new_buff;
-    buff->activeKindsMask |= BuffBit(desc.kind);
+    buffs->buffs[buffs->count++] = new_buff;
+    buffs->activeKindsMask |= BuffBit(kind);
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)

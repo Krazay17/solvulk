@@ -77,7 +77,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     for (i = 0; i < activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if ((world->masks[id] & required) != required || world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         if (world->bodies[id].mass == 0)
             continue;

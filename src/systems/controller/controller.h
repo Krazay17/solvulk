@@ -6,23 +6,26 @@ typedef struct
     vec3s pos, vel;
 } SolShoot;
 
-typedef struct
-{
-    u32 enemyKind;
-} AiControllerDesc;
-
 typedef enum
 {
-    CONTROLLER_LOCAL,
+    CONTROLLER_LOCAL = 1,
     CONTROLLER_REMOTE,
 } ControllerKind;
 
+typedef struct CompController
+{
+    vec3s          lookdir, wishdir, aimdir, aimpos, aimHitPos;
+    SolActions     actionState;
+    float          yaw, pitch;
+    float          zoom;
+    u32            aimHitEnt;
+    ControllerKind kind;
+    bool           isStrafing;
+} CompController;
+
 void Sol_Controller_Init(World *world);
-void Sol_AiController_Init(World *world);
 
 void Sol_Controller_Add(World *world, int id, ControllerKind kind);
-void Sol_AiController_Add(World *world, int id, AiControllerDesc desc);
-void Sol_AiController_Clear(World *world, int id);
 
 vec3s      Sol_Controller_GetAimPos(World *world, int id);
 SolActions Sol_GetActions(World *world, int id);
@@ -38,6 +41,3 @@ SolActions Sol_Controller_GetActionState(World *world, int id);
 vec3s      Sol_Controller_GetShootPos(World *world, int id, float offset);
 SolShoot   Sol_Controller_GetShoot(World *world, int id, float speed);
 bool       Sol_Controller_IsActionState(World *world, int id, SolActions mask);
-
-void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage);
-void Sol_AiController_TargetDied(World *world, int id, int target);

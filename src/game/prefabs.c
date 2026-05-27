@@ -1,4 +1,5 @@
 #include "sol/sol.h"
+#include "sol_core.h"
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
 {
@@ -6,8 +7,6 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
     {
     case PREFABKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
-        if (desc.netRole == NETROLE_REMOTE)
-            Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
         break;
 
     case PREFABKIND_WIZARD:
@@ -18,9 +17,18 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
         id = Sol_Prefab_Fireball(world, id, desc.pos, desc.scale);
         break;
     }
-    if (desc.netRole)
-        Sol_Replication_Add(world, id, desc.netRole, kind);
-        
+    NetAuth auth = desc.authority;
+    if (auth == NETAUTH_NONE)
+    {
+        if (world->doesReplicate)
+        {
+            auth = Sol_GetState()->netEngine.role == NETROLE_HOST ? NETAUTH_AUTH : NETAUTH_LOCAL;
+        }
+    }
+
+    if (auth != NETAUTH_NONE)
+        Sol_Replication_Add(world, id, auth, kind);
+
     return id;
 }
 
@@ -45,7 +53,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                  });
 
     Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
-    Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
+    Sol_Vital_Add(world, id, VITALKIND_PLAYER);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.abilityMapping = {
                                       {ACTION_DASH, ABILITY_STATE_DASH},
@@ -83,7 +91,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                                   }});
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
-    Sol_Vital_Add(world, id, (VitalDesc){.maxHealth = 100, .maxMana = 100, .maxEnergy = 100});
+    Sol_Vital_Add(world, id, VITALKIND_WIZARD);
     Sol_Owner_Add(world, id, (OwnerDesc){.team = 1});
 
     return id;

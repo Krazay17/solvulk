@@ -22,12 +22,7 @@ const ImpactList contact_config[CONTACTKIND_COUNT] = {
                         {
                             .damage    = 20,
                             .kind      = HITKIND_FIRE,
-                            .buffs     = {{
-                                .kind     = BUFFKIND_FIRE,
-                                .addKind  = BUFFADD_SET_DURATION,
-                                .duration = 3.0f,
-                                .freq     = 0.5f,
-                            }},
+                            .buffKind   = BUFFKIND_FIRE,
                             .power     = 10.0f,
                             .buffcount = 1,
                         },

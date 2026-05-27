@@ -33,7 +33,7 @@ void Shield_State_Update(World *world, int id, float dt)
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            if (!Sol_Vital_GetHostile(world, id, result.entId))
+            if (!Sol_Owner_GetHostile(world, id, result.entId))
                 continue;
 
             Sol_Event_Add(world, (SolEvent){
@@ -57,7 +57,7 @@ void Shield_State_Update(World *world, int id, float dt)
                                      .as.hit.damage    = 20,
                                      .as.hit.power     = 25.0f,
                                      .as.hit.dir       = vecSub(result.pos, pos),
-                                     .as.hit.buffs     = {{.kind = BUFFKIND_KNOCKBACK, .duration = 0.2f}},
+                                     .as.hit.buffKind  = BUFFKIND_KNOCKBACK,
                                      .as.hit.buffcount = 1,
                                  });
         }

@@ -131,16 +131,15 @@ int Sol_Create_Ent(World *world, u32 id)
     if (!world)
         return 0;
     if (!id)
-        for (int i = 1; i < MAX_ENTS; i++)
+        for (int i = 2; i < MAX_ENTS; i++)
         {
-            if (!world->actives[i])
+            if (!(world->masks[i] & HAS_ACTIVE))
             {
                 id = i;
                 break;
             }
         }
-    world->actives[id]                          = true;
-    world->masks[id]                            = HAS_NONE;
+    world->masks[id]                            = HAS_ACTIVE;
     world->activeEntities[world->activeCount++] = id;
     Sol_Debug_Add("Entities", (float)world->activeCount);
     return id;
@@ -159,7 +158,6 @@ void Sol_Destroy_Ent(World *world, int id)
         activeEnts [0][1][2]
                    '6''1''3'
     */
-    world->actives[id]     = false;
     world->masks[id]       = 0;
     world->flags[id].flags = 0;
     for (int i = 0; i < world->activeCount; i++)
@@ -205,4 +203,3 @@ void Sol_World_SetReplicates(World *world, bool active)
     if (active)
         Net_World_Init(world);
 }
-// void Sol_World_Clear(World *world, )

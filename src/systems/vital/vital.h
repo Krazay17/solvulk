@@ -1,22 +1,30 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct
+typedef enum
 {
-    u32   maxHealth, maxEnergy, maxMana;
-    u32   health, energy, mana;
-    bool  doesRespawn;
-    float deathTime, respawnTime;
-    u32 team;
-} VitalDesc;
+    VITALKIND_PLAYER,
+    VITALKIND_WIZARD,
+} VitalKind;
+
+typedef struct CompVital
+{
+    u32    maxHealth, maxEnergy, maxMana;
+    u32    health, energy, mana;
+    bool   doesRespawn, isDead;
+    float  respawnTime, lastHitTime;
+    double deathTime;
+} CompVital;
+
+void Respawn(World *world, int id, CompVital *vital);
+void Die(World *world, int id);
 
 void Sol_Vital_Init(World *world);
-void Sol_Vital_Add(World *world, int id, VitalDesc desc);
-void Sol_Vital_Step(World *world, double dt, double time);
-void Sol_Vital_Damage(World *world, int id, SolHit hit);
-u32  Sol_Vital_GetHealth(World *world, int id);
-u32  Sol_Vital_GetMaxHealth(World *world, int id);
-u32  Sol_Vital_GetTeam(World *world, int id);
-u32  Sol_Vital_GetHostile(World *world, int id, int target);
-bool Sol_Vital_GetIsalive(World *world, int id);
+void Sol_Vital_Add(World *world, int id, VitalKind kind);
+
+void  Sol_Vital_Step(World *world, double dt, double time);
+void  Sol_Vital_Damage(World *world, int id, SolHit hit);
+u32   Sol_Vital_GetHealth(World *world, int id);
+u32   Sol_Vital_GetMaxHealth(World *world, int id);
+bool  Sol_Vital_GetDead(World *world, int id);
 float Sol_Vital_GetLastHitTime(World *world, int id);

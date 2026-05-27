@@ -31,7 +31,7 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
 void Sol_Model_Draw(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_XFORM | HAS_MODEL;
+    int   required = HAS_ACTIVE | HAS_XFORM | HAS_MODEL;
 
     for (int i = 0; i < world->activeCount; i++)
     {

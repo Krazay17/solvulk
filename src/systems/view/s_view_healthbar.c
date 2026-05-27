@@ -9,12 +9,12 @@ void Sol_View_Healthbar(World *world)
 
 void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 {
-    int required = HAS_VITAL;
+    int required = HAS_ACTIVE | HAS_VITAL;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
         xform.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
@@ -29,10 +29,10 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 
         // 1. Position Setup (X, Y, Z, and W = Dynamic 3D scale/size width)
         float healthbarWidthScale = 1.0f; // Adjust this to make bars physically wider on screen!
-        ssbo->pos[0]               = xform.pos.x;
-        ssbo->pos[1]               = xform.pos.y;
-        ssbo->pos[2]               = xform.pos.z;
-        ssbo->pos[3]               = healthbarWidthScale;
+        ssbo->pos[0]              = xform.pos.x;
+        ssbo->pos[1]              = xform.pos.y;
+        ssbo->pos[2]              = xform.pos.z;
+        ssbo->pos[3]              = healthbarWidthScale;
 
         // 2. Clear out Rotation (Facecam pipeline handles this automatically)
         ssbo->rot[0] = 0.0f;

@@ -25,12 +25,12 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 
 void Sol_Ability_Step(World *world, double dt, double time)
 {
-    int required = HAS_ABILITY;
+    int required = HAS_ACTIVE | HAS_ABILITY;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
         CompAbility *ability = &world->abilities[id];
 

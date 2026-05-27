@@ -27,10 +27,6 @@ typedef struct AbilityAction
         {
             SolAudioId sound;
         } sound;
-        struct
-        {
-            BuffDesc buff;
-        } buff;
     } as;
 } AbilityAction;
 
@@ -118,7 +114,7 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
     switch (a->kind)
     {
     case ACTIONKIND_SPAWN_PROJECTILE:
-        u32 fireball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.2f), 0.5f);
+        u32 fireball = Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL, (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.2f), .scale = 0.5f});
         Sol_Physx_SetVel(world, fireball, vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed));
         Sol_Owner_SetOwner(world, fireball, id);
 

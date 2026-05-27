@@ -13,7 +13,7 @@ typedef struct
     vec3s   pos, vel;
     versors rot;
     float   scale;
-    u8      netRole;
+    u8      authority;
 } PrefabDesc;
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc);

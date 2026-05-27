@@ -7,8 +7,6 @@
  */
 #include "sol_core.h"
 
-#include "controller_i.h"
-
 extern const StateFunc state_func[AISTATE_COUNT] = {
     [AISTATE_IDLE] =
         {
@@ -50,19 +48,19 @@ void Sol_AiController_Clear(World *world, int id)
     memset(&world->aicontrollers[id], 0, sizeof(CompAiController));
 }
 
-void Sol_AiController_Add(World *world, int id, AiControllerDesc desc)
+void Sol_AiController_Add(World *world, int id, AiControllerKind kind)
 {
     world->masks[id] |= HAS_AICONTROLLER;
-    // CompAiController *aicontroller = &world->aicontrollers[id];
 }
 
 static void AiController_Step(World *world, double dt, double time)
 {
-    int required = HAS_AICONTROLLER;
+    int required = HAS_ACTIVE | HAS_AICONTROLLER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required ||
+            world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompController   *controller   = &world->controllers[id];
         CompAiController *aicontroller = &world->aicontrollers[id];
@@ -91,14 +89,6 @@ static void AiController_Step(World *world, double dt, double time)
 
             aicontroller->distToTarget = distToTarget;
             aicontroller->dirToTarget  = glms_vec3_normalize(dir);
-            for (int j = 0; j < world->events->count; j++)
-            {
-                SolEvent *e = &world->events->event[j];
-                if (e->kind != EVENTKIND_DEATH)
-                    continue;
-                if (e->sourceId == target)
-                    Sol_AiController_TargetDied(world, id, target);
-            }
         }
 
         state_func[aicontroller->state].update(world, id, dt);
@@ -144,7 +134,7 @@ u32 AiController_FindTarget(World *world, int id)
             vec3s pos       = Sol_Xform_GetPos(world, id);
             vec3s targetPos = Sol_Xform_GetPos(world, otherId);
             float dist      = glms_vec3_distance(pos, targetPos);
-            if (dist < 25.0f && Sol_Vital_GetIsalive(world, otherId))
+            if (dist < 25.0f && world->masks[otherId] & HAS_VITAL && !Sol_Vital_GetDead(world, otherId))
                 return otherId;
         }
     }

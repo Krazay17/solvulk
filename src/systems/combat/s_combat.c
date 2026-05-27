@@ -23,7 +23,7 @@ static void Combat_Step(World *world, double dt, double time)
             vec3s pos = e->as.hit.pos;
             for (int i = 0; i < e->as.hit.buffcount; i++)
             {
-                Sol_Buff_Add(world, e->as.hit.target, e->as.hit.buffs[i], &e->as.hit);
+                Sol_Buff_Add(world, e->as.hit.target, e->as.hit.buffKind[i],  &e->as.hit);
             }
 
             switch (e->as.hit.kind)
@@ -36,8 +36,8 @@ static void Combat_Step(World *world, double dt, double time)
                                      });
                 break;
             }
-            if(e->as.hit.power)
-            Sol_Physx_Impulse(world, e->as.hit.target, vecSca(e->as.hit.dir, e->as.hit.power));
+            if (e->as.hit.power)
+                Sol_Physx_Impulse(world, e->as.hit.target, vecSca(e->as.hit.dir, e->as.hit.power));
 
             Sol_Vital_Damage(world, e->as.hit.target, e->as.hit);
 
@@ -45,7 +45,13 @@ static void Combat_Step(World *world, double dt, double time)
                 Sol_AiController_SetLastHit(world, e->as.hit.target, e->as.hit.source, e->as.hit.damage);
             break;
         case EVENTKIND_DEATH:
-            Sol_AiController_TargetDied(world, e->as.death.attacker, e->sourceId);
+            for (int i = 0; i < world->activeCount; i++)
+            {
+                int id = world->activeEntities[i];
+                if (!(world->masks[id] & HAS_AICONTROLLER))
+                    continue;
+                Sol_AiController_TargetDied(world, id, e->sourceId);
+            }
             break;
         }
     }

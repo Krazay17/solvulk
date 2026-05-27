@@ -31,7 +31,8 @@ void Fireball_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, Sol_Controller_GetAimPos(world, id), 0.0f);
 
-        int ball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.33f), power);
+       int ball =  Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL, (PrefabDesc){.pos=Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power, .authority = NETAUTH_LOCAL});
+        //int ball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.33f), power);
         Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
         Sol_Owner_SetOwner(world, ball, id);
         

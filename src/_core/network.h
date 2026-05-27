@@ -1,12 +1,13 @@
 #pragma once
-#include "sol/base.h"
-#include "world.h"
+#include "sol/types.h"
 
 #include "enet.h"
 
 #define MAX_NET_CLIENTS 12
 #define MAX_SNAPS_BUFFERED 128
-#define MAX_NET_ENTS 120
+#define MAX_NET_ENTS (1 << 12)
+#define MAX_NET_EVENTS 24
+#define MAX_NET_PREDICTIONS 24
 
 typedef struct World World;
 
@@ -18,48 +19,64 @@ typedef enum
 
     NET_PACKET_SNAPSHOT, // server → client: world state
     NET_PACKET_INPUT,    // client → server: player input
+    NET_PACKET_EVENT,
 } NetPacketType;
 
 typedef struct
 {
-    u32     id, ownerId, compMask, prefabKind;
+    u32     id, compMask, prefabKind;
+    u32     ownerId, team;
     vec3s   pos, vel;
     versors rot;
     u32     health, energy;
     u32     inputs;
     float   scale;
+    bool    active;
 } NetEntityState;
 
 typedef struct
 {
-    u32            tickNumber;
-    u32            worldId;
-    u32            eCount;
+    u8 type;
+    u32 tickNumber;
+    u32 worldId;
+    u32 eCount;
     NetEntityState entities[MAX_NET_ENTS];
 } WorldSnap;
 
+typedef struct
+{
+    int  localEntId;
+    bool reconciled;
+    u32  prefabKind;
+    u32  tickSpawned;
+} Prediction;
 typedef struct WorldNet
 {
-    u32       snapHead;
-    WorldSnap snapShots[MAX_SNAPS_BUFFERED];
-    int       hostToLocalMap[MAX_ENTS];
+    u32        snapHead;
+    WorldSnap  snapShots[MAX_SNAPS_BUFFERED];
+    int        hostToLocalMap[MAX_ENTS];
+    u32        maxHostId;
+    bool       seenThisSnap[MAX_ENTS];
+    Prediction predictions[MAX_NET_PREDICTIONS];
+    int        predictionCount;
 } WorldNet;
 
 // Packets -----------------
-typedef struct
-{
-    u8  type;
-    u32 actionMask;
-    vec3s lookdir, wishdir, aimdir;
-    float yaw;
-} NetInputPacket;
+// typedef struct
+// {
+//     u8       type;
+//     SolEvent event[MAX_NET_EVENTS];
+//     u32      count;
+// } NetEventPacket;
 
 typedef struct
 {
-    u8        type;
-    u32       worldId;
-    WorldSnap snap;
-} NetSnapshotPacket;
+    u8    type;
+    bool  isStrafing;
+    u32   actionMask, currentTick;
+    vec3s lookdir, wishdir, aimdir;
+    float yaw;
+} NetInputPacket;
 
 typedef struct
 {
@@ -75,10 +92,9 @@ typedef struct
 {
     u8 type; // NET_PACKET_WELCOME
 
-    u32       playerId;    // the entity ID the client is assigned
-    u32       worldId;     // confirmed world ID (may differ from requested)
-    u32       currentTick; // server's current tick for sync
-    WorldSnap snapShot;
+    u32 playerId;    // the entity ID the client is assigned
+    u32 worldId;     // confirmed world ID (may differ from requested)
+    u32 currentTick; // server's current tick for sync
 } NetWelcomePacket;
 // ########################
 typedef enum
@@ -112,22 +128,27 @@ typedef struct
 
 typedef enum
 {
-    NET_STATE_DISCONNECTED,
-    NET_STATE_CONNECTING,       // ENet handshake in progress
-    NET_STATE_AWAITING_WELCOME, // ENet connected, sent HELLO, waiting
-    NET_STATE_PLAYING,          // got WELCOME, in game
-    NET_STATE_DISCONNECTING,
-} NetState;
+    NETROLE_NONE,
+    NETROLE_HOST,
+    NETROLE_CLIENT,
+} NetRole;
+
+typedef enum
+{
+    NETSTATUS_DISCONNECTED,
+    NETSTATUS_CONNECTING,
+    NETSTATUS_CONNECTED,
+} NetStatus;
 
 typedef struct
 {
-    bool      isConnected, isHost;
+    NetRole   role;
+    NetStatus status;
     u32       connectedPlayerCount;
     NetPlayer players[MAX_NET_CLIENTS];
 
-    NetState state;
-    u32      localEntityId;  // client's view of own entity
-    u32      serverEntityId; // server's assigned ID (after WELCOME)
+    u32 localEntityId;  // client's view of own entity
+    u32 serverEntityId; // server's assigned ID (after WELCOME)
 
     struct _ENetHost *host;
     struct _ENetPeer *peer;
@@ -146,3 +167,23 @@ void Net_Apply_Snap(World *world);
 
 void Net_Send_Input(SolNet *net, World *world);
 void Net_Send_Snap(SolNet *net, World *world);
+
+static inline bool Net_IsActive(SolNet *net)
+{
+    return net->role != NETROLE_NONE && net->host != NULL;
+}
+
+static inline bool Net_IsPlaying(SolNet *net)
+{
+    return Net_IsActive(net) && net->status == NETSTATUS_CONNECTED;
+}
+
+static inline bool Net_IsHost(SolNet *net)
+{
+    return net->role == NETROLE_HOST;
+}
+
+static inline bool Net_IsClient(SolNet *net)
+{
+    return net->role == NETROLE_CLIENT;
+}

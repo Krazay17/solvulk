@@ -23,6 +23,7 @@ typedef enum
     MOVE_WALLRUN,
     MOVE_WALLJUMP,
     MOVE_FLY,
+    MOVE_DEAD,
     MOVE_STATE_COUNT
 } MoveState;
 

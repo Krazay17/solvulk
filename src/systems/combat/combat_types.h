@@ -1,5 +1,4 @@
 #pragma once
-#include "buff/buff_types.h"
 #include "emitter/emitter.h"
 #include "sol/base.h"
 
@@ -15,12 +14,12 @@ typedef enum
 typedef struct SolHit
 {
     HitKind kind;
-    BuffDesc   buffs[MAX_BUFFS_HIT];
-    u32        buffcount;
-    u32        source, target;
-    vec3s      pos, dir, vel;
-    float      power;
-    u32        damage;
+    u32     buffKind[MAX_BUFFS_HIT];
+    u32     buffcount;
+    u32     source, target;
+    vec3s   pos, dir, vel;
+    float   power;
+    u32     damage;
 } SolHit;
 
 typedef enum

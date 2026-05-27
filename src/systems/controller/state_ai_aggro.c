@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "controller_i.h"
-
 void Aggro_State_Update(World *world, int id, float dt)
 {
     CompController   *controller   = &world->controllers[id];

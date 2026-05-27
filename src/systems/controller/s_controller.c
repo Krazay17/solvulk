@@ -8,8 +8,6 @@
  */
 #include "sol_core.h"
 
-#include "controller_i.h"
-
 static const SolActions action_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_0] = ACTION_ABILITY0,  [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
     [SOL_KEY_3] = ACTION_ABILITY3,  [SOL_KEY_4] = ACTION_ABILITY4, [SOL_KEY_5] = ACTION_ABILITY5,
@@ -21,6 +19,7 @@ static const SolActions action_binds[SOL_KEY_COUNT] = {
 };
 
 static void  Sol_Controller_Tick(World *world, double dt, double time);
+static void  RemoteTick(World *world, int id, CompController *controller, double dt, double time);
 static void  LocalTick(World *world, int id, double dt, double time);
 static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir);
 static vec2s GetWishDir2(uint32_t action);
@@ -46,20 +45,40 @@ void Sol_Controller_Add(World *world, int id, ControllerKind kind)
 
 static void Sol_Controller_Tick(World *world, double dt, double time)
 {
-    int required = HAS_CONTROLLER;
+    int required = HAS_ACTIVE | HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
-
+            
         CompController *controller = &world->controllers[id];
-        world->xforms[id].quat     = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
-        controller->aimpos         = Sol_Physx_GetHeadPos(world, id);
-        
-        if (world->controllers[id].kind == CONTROLLER_LOCAL)
+        if (controller->kind == CONTROLLER_REMOTE)
+            RemoteTick(world, id, controller, dt, time);
+        if (controller->kind == CONTROLLER_LOCAL)
             LocalTick(world, id, dt, time);
+
+        controller->aimpos = Sol_Physx_GetHeadPos(world, id);
+
+        if (controller->isStrafing)
+            world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+        else if (glms_vec3_norm(controller->wishdir) > 0.001f)
+        {
+            float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
+            versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
+
+            // Smoothly turn the model toward the movement direction
+            float turn_speed = 10.0f; // Higher numbers = faster turns
+            float factor     = 1.0f - expf(-turn_speed * (float)dt);
+
+            world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
+        }
     }
+}
+
+static void RemoteTick(World *world, int id, CompController *controller, double dt, double time)
+{
+    world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
 }
 
 static void LocalTick(World *world, int id, double dt, double time)
@@ -77,21 +96,8 @@ static void LocalTick(World *world, int id, double dt, double time)
 
     Sol_Cam_Arm_Update(world, controller->aimpos, dt);
 
-    if (glms_vec3_norm(controller->wishdir) > 0.001f)
-    {
-        float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
-        versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
-
-        // Smoothly turn the model toward the movement direction
-        float turn_speed = 10.0f; // Higher numbers = faster turns
-        float factor     = 1.0f - expf(-turn_speed * (float)dt);
-
-        world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
-    }
-
-    SolMouse mouse = Sol_Input_GetMouse();
-    if (mouse.locked)
-        world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+    SolMouse mouse         = Sol_Input_GetMouse();
+    controller->isStrafing = mouse.locked;
 
     if (mouse.togglelocked)
     {

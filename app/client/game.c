@@ -1,17 +1,17 @@
 #include "game.h"
 
-static int    player3d;
+#define WIZARD_SPAWN_SPACING 4.0f
+
 static World *gameWorld;
 
 static void SpawnPlayer(int flags, void *data)
 {
-    if (gameWorld->actives[gameWorld->playerID])
-        Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
+    Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
-    player3d = Sol_Prefab_Player(gameWorld, 0, (vec3s){0, 5, 0}, 1.0f);
-    Sol_Controller_Add(gameWorld, player3d,  CONTROLLER_LOCAL);
-    Sol_Owner_Add(gameWorld, player3d, (OwnerDesc){.team = 0});
-    Sol_Replication_Add(gameWorld, player3d, NETROLE_AUTH, PREFABKIND_PLAYER);
+    Sol_Prefab_Factory(gameWorld, 1, PREFABKIND_PLAYER,
+                       (PrefabDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
+    Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
+    Sol_Owner_Add(gameWorld, 1, (OwnerDesc){.team = 0});
 }
 
 struct MakeWiz
@@ -29,8 +29,8 @@ void MakeAWizard(int flags, void *data)
     for (int i = 0; i < wizard->amount; i++)
     {
         int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
-        Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
-        Sol_Replication_Add(gameWorld, id, NETROLE_AUTH, PREFABKIND_WIZARD);
+        Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+        Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, PREFABKIND_WIZARD);
     }
 }
 
@@ -77,6 +77,15 @@ void ColorSpheres(int flags, void *data)
 void HostGame(int flags, void *data)
 {
     Net_Init(&Sol_GetState()->netEngine, true, "127.0.0.1", 8080);
+
+    for (int k = -4; k < 4; k++)
+    {
+        int id =
+            Sol_Prefab_Factory(gameWorld, 0, PREFABKIND_WIZARD,
+                               (PrefabDesc){.pos = (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f}, .scale = 1.0f});
+        // int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f}, 1.0f);
+        Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+    }
 }
 
 void ClientConnect(int flags, void *data)
@@ -90,7 +99,7 @@ void ClientConnect(int flags, void *data)
 void Create_Sol_Game()
 {
     World *menu = World_Create_Default(WORLDKIND_MENU);
-    //Sol_World_SetActive(menu, true);
+    // Sol_World_SetActive(menu, true);
 
     gameWorld = World_Create_Default(WORLDKIND_GAME);
     Sol_State_SetPlayerWorld(gameWorld);
@@ -102,7 +111,6 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
 
-    float spacing = 4.0f;
     // for (int i = -5; i < 5; i++)
     // {
     //     for (int j = -5; j < 5; j++)
@@ -111,14 +119,6 @@ void Create_Sol_Game()
     //         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
     //     }
     // }
-
-    for (int k = -4; k < 4; k++)
-    {
-        
-        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){k * spacing, 10.0f, (k * spacing) + 60.0f}, 1.0f);
-        Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
-        Sol_Replication_Add(gameWorld, id, NETROLE_AUTH, PREFABKIND_WIZARD);
-    }
 
     Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});

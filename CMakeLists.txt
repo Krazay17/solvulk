@@ -167,18 +167,18 @@ add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
 
 #---- Server App ----
-add_executable(solvulk_server app/server/main.c)
+# add_executable(solvulk_server app/server/main.c)
 
-target_include_directories(solvulk_server 
-PRIVATE
-    "app/server"
-    "vendored/enet/include"
-)
+# target_include_directories(solvulk_server 
+# PRIVATE
+#     "app/server"
+#     "vendored/enet/include"
+# )
 
-if(WIN32)
-    target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
-endif()
+# if(WIN32)
+#     target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
+# endif()
 
-set_target_properties(solvulk_server PROPERTIES 
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-)
+# set_target_properties(solvulk_server PROPERTIES 
+#     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+# )

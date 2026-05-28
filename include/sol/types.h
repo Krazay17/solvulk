@@ -76,10 +76,12 @@ typedef enum
 
 typedef enum
 {
-    MOVE_CONFIG_PLAYER,
-    MOVE_CONFIG_WIZARD,
-    MOVE_CONFIG_COUNT,
-} MoveConfigId;
+    ANIM_LAYER_BASE,  // full body, always active
+    ANIM_LAYER_LOWER, // overrides legs
+    ANIM_LAYER_UPPER, // overrides torso/arms
+    ANIM_LAYER_OVERRIDE,
+    ANIM_LAYER_COUNT
+} AnimLayerId;
 
 typedef enum
 {
@@ -151,7 +153,7 @@ typedef struct SolMaterial
 
 typedef enum
 {
-    ANIM_IDLE,
+    ANIM_IDLE = 1,
     ANIM_WALK_FWD,
     ANIM_WALK_BWD,
     ANIM_WALK_LEFT,

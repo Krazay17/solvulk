@@ -3,6 +3,21 @@
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
 {
+    NetAuth auth = desc.authority;
+    if (auth == NETAUTH_NONE)
+    {
+        if (Net_IsActive())
+        {
+            if (Net_IsHost())
+                auth = NETAUTH_AUTH;
+            else
+            {
+                return -1;
+                // auth = NETAUTH_LOCAL;
+            }
+        }
+    }
+
     switch (kind)
     {
     case PREFABKIND_PLAYER:
@@ -16,14 +31,6 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
     case PREFABKIND_FIREBALL:
         id = Sol_Prefab_Fireball(world, id, desc.pos, desc.scale);
         break;
-    }
-    NetAuth auth = desc.authority;
-    if (auth == NETAUTH_NONE)
-    {
-        if (world->doesReplicate)
-        {
-            auth = Sol_GetState()->netEngine.role == NETROLE_HOST ? NETAUTH_AUTH : NETAUTH_LOCAL;
-        }
     }
 
     if (auth != NETAUTH_NONE)
@@ -52,7 +59,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                      .group       = 1,
                  });
 
-    Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_PLAYER});
+    Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
     Sol_Vital_Add(world, id, VITALKIND_PLAYER);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.abilityMapping = {
@@ -84,7 +91,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                      .restitution = 0.1f,
                      .group       = 1,
                  });
-    Sol_Movement_Add(world, id, (MovementDesc){.configId = MOVE_CONFIG_WIZARD});
+    Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.abilityMapping = {
                                       {.actionBit = ACTION_ABILITY1, .targetState = ABILITY_STATE_FIREBALLVOLLEY},
@@ -169,28 +176,6 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
                                          .scaleout  = 0.05f,
                                      }});
     return 0;
-}
-
-int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid)
-{
-    dims   = glms_vec2_scale(dims, scale);
-    int id = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, id, pos);
-    Sol_Body_Add(world, id,
-                 (BodyDesc){
-                     .height      = dims.y,
-                     .radius      = dims.x,
-                     .mass        = 1.0f,
-                     .shape       = SHAPE3_CAP,
-                     .restitution = 0.01f,
-                     .group       = 1,
-                 });
-
-    Sol_Movement_Add(world, id, (MovementDesc){.configId = moveid});
-    Sol_Model_Add(world, id, (ModelDesc){.id = modelid, .yoffset = -dims.y * 0.5f});
-    Sol_Ability_Add(world, id, (AbilityDesc){0});
-
-    return id;
 }
 
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text)

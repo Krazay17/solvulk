@@ -15,7 +15,7 @@ void ADash_State_Update(World *world, int id, float dt)
     *elapsed += dt;
     if (*elapsed >= DASH_DURATION)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
         return;
     }
     float alpha = DASH_ALPHAMOD - (*elapsed / DASH_DURATION);
@@ -70,7 +70,7 @@ void ADash_State_Enter(World *world, int id)
 
 void ADash_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0.15f);
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.blendOut = 0.15f, .layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool ADash_State_CanExit(World *world, int id, u32 next)

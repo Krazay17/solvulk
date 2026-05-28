@@ -4,10 +4,6 @@
 #include "enet.h"
 
 #define MAX_NET_CLIENTS 12
-#define MAX_SNAPS_BUFFERED 128
-#define MAX_NET_ENTS (1 << 12)
-#define MAX_NET_EVENTS 24
-#define MAX_NET_PREDICTIONS 24
 
 typedef struct World World;
 
@@ -21,45 +17,6 @@ typedef enum
     NET_PACKET_INPUT,    // client → server: player input
     NET_PACKET_EVENT,
 } NetPacketType;
-
-typedef struct
-{
-    u32     id, compMask, prefabKind;
-    u32     ownerId, team;
-    vec3s   pos, vel;
-    versors rot;
-    u32     health, energy;
-    u32     inputs;
-    float   scale;
-    bool    active;
-} NetEntityState;
-
-typedef struct
-{
-    u8 type;
-    u32 tickNumber;
-    u32 worldId;
-    u32 eCount;
-    NetEntityState entities[MAX_NET_ENTS];
-} WorldSnap;
-
-typedef struct
-{
-    int  localEntId;
-    bool reconciled;
-    u32  prefabKind;
-    u32  tickSpawned;
-} Prediction;
-typedef struct WorldNet
-{
-    u32        snapHead;
-    WorldSnap  snapShots[MAX_SNAPS_BUFFERED];
-    int        hostToLocalMap[MAX_ENTS];
-    u32        maxHostId;
-    bool       seenThisSnap[MAX_ENTS];
-    Prediction predictions[MAX_NET_PREDICTIONS];
-    int        predictionCount;
-} WorldNet;
 
 // Packets -----------------
 // typedef struct
@@ -140,7 +97,7 @@ typedef enum
     NETSTATUS_CONNECTED,
 } NetStatus;
 
-typedef struct
+typedef struct SolNet
 {
     NetRole   role;
     NetStatus status;
@@ -154,36 +111,36 @@ typedef struct
     struct _ENetPeer *peer;
 } SolNet;
 
-void Net_Init(SolNet *net, bool host, const char *ip, u16 port);
-void Net_DeInit(SolNet *net);
+extern SolNet solNet;
 
-bool Net_ShouldSend_Input(SolNet *net);
-bool Net_ShouldSend_Snap(SolNet *net);
-void Net_Poll(SolNet *net);
-void Net_Recv_Packet(SolNet *net, ENetEvent *event);
-
-int  Net_World_Init(World *world);
-void Net_Apply_Snap(World *world);
-
-void Net_Send_Input(SolNet *net, World *world);
-void Net_Send_Snap(SolNet *net, World *world);
-
-static inline bool Net_IsActive(SolNet *net)
+static inline bool Net_IsActive()
 {
-    return net->role != NETROLE_NONE && net->host != NULL;
+    return solNet.role != NETROLE_NONE && solNet.host != NULL;
 }
 
-static inline bool Net_IsPlaying(SolNet *net)
+static inline bool Net_IsPlaying()
 {
-    return Net_IsActive(net) && net->status == NETSTATUS_CONNECTED;
+    return Net_IsActive() && solNet.status == NETSTATUS_CONNECTED;
 }
 
-static inline bool Net_IsHost(SolNet *net)
+static inline bool Net_IsHost()
 {
-    return net->role == NETROLE_HOST;
+    return solNet.role == NETROLE_HOST;
 }
 
-static inline bool Net_IsClient(SolNet *net)
+static inline bool Net_IsClient()
 {
-    return net->role == NETROLE_CLIENT;
+    return solNet.role == NETROLE_CLIENT;
 }
+
+int  Sol_Net_Init();
+void Net_Connect(bool host, const char *ip, u16 port);
+void Net_DeInit();
+void Net_Disconnect();
+
+bool Net_ShouldSend_Input();
+bool Net_ShouldSend_Snap();
+void Net_Poll();
+void Net_Recv_Packet(ENetEvent *event);
+
+void Net_Send_Input(World *world);

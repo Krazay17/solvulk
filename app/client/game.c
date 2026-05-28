@@ -76,21 +76,28 @@ void ColorSpheres(int flags, void *data)
 
 void HostGame(int flags, void *data)
 {
-    Net_Init(&Sol_GetState()->netEngine, true, "127.0.0.1", 8080);
+    Net_Connect(true, "127.0.0.1", 8080);
 
     for (int k = -4; k < 4; k++)
     {
-        int id =
-            Sol_Prefab_Factory(gameWorld, 0, PREFABKIND_WIZARD,
-                               (PrefabDesc){.pos = (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f}, .scale = 1.0f});
-        // int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f}, 1.0f);
-        Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+        int id = Sol_Prefab_Factory(gameWorld, 0, PREFABKIND_WIZARD,
+                                    (PrefabDesc){.pos       = (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f},
+                                                 .scale     = 1.0f,
+                                                 .authority = NETAUTH_AUTH});
+        if (id)
+            Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
     }
 }
 
 void ClientConnect(int flags, void *data)
 {
-    Net_Init(&Sol_GetState()->netEngine, false, "127.0.0.1", 8080);
+    Net_Connect(false, "127.0.0.1", 8080);
+}
+
+void Disconnect(int flags, void *data)
+{
+    Net_Disconnect();
+    Sol_Replication_Disconnect(gameWorld);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -177,4 +184,7 @@ void Create_Sol_Game()
 
     int connectButton = Sol_Prefab_Button(menu, (vec3s){1130, 200, 0}, "Connect");
     Sol_Interact_Add(menu, connectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect}});
+
+    int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "Disconnect");
+    Sol_Interact_Add(menu, disconnectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = Disconnect}});
 }

@@ -32,6 +32,8 @@ void Sol_Ability_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
+        if (world->replications[id].auth == NETAUTH_REMOTE)
+            continue;
         CompAbility *ability = &world->abilities[id];
 
         SolActions actions = Sol_GetActions(world, id);
@@ -46,7 +48,7 @@ void Sol_Ability_Step(World *world, double dt, double time)
 
             if (pressed)
             {
-                Sol_Ability_SetState(world, id, map->targetState);
+                Sol_Ability_SetState(world, id, map->targetState, false);
             }
         }
 
@@ -71,7 +73,7 @@ void Sol_Ability_Tick(World *world, double dt, double time)
     }
 }
 
-bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, bool force)
 {
     if (nextState > ABILITY_STATE_COUNT)
         return false;
@@ -79,11 +81,13 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState)
     const StateFunc *prevfunc = &ability_state_func[ability->state];
     const StateFunc *nextfunc = &ability_state_func[nextState];
 
-    // TODO force skip checks
-    if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
-        return false;
-    if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state, nextState))
-        return false;
+    if (!force)
+    {
+        if (!prevfunc->canExit || !prevfunc->canExit(world, id, nextState))
+            return false;
+        if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability->state, nextState))
+            return false;
+    }
 
     prevfunc->exit(world, id);
     ability->state                                 = nextState;

@@ -1,61 +1,67 @@
-#include "network.h"
 #include "sol_core.h"
 
-#include "physx/physx_i.h"
+#include "network.h"
 
 #define SNAPSHOT_INTERVAL (1.0 / 20.0) // 20Hz
-#define MAX_NET_INTERP_DISTANCE 0.2f
+
+SolNet solNet;
 
 static double last_send_time = 0;
 
-void Net_Init(SolNet *net, bool host, const char *ip, u16 port)
+int Sol_Net_Init()
 {
+    return enet_initialize();
+}
 
-    if (enet_initialize() != 0)
-        printf("enet failed");
+void Net_Connect(bool host, const char *ip, u16 port)
+{
+    if (Net_IsActive())
+    {
+        Net_Disconnect();
+    }
 
     ENetAddress address = {0};
 
     if (host)
     {
         // HOST SETUP: Listen on all local adapters on the specific game port
-        net->role    = NETROLE_HOST;
+        solNet.role    = NETROLE_HOST;
         address.host = ENET_HOST_ANY;
         address.port = port;
 
         // Create a server host capable of managing 32 inbound connections
-        net->host = enet_host_create(&address, 32, 2, 0, 0);
+        solNet.host = enet_host_create(&address, 32, 2, 0, 0);
         printf("[Net] Server listening on port %d...\n", port);
 
-        if (net->host != NULL)
+        if (solNet.host != NULL)
         {
-            net->status = NETSTATUS_CONNECTED;
+            solNet.status = NETSTATUS_CONNECTED;
         }
     }
     else
     {
         // CLIENT SETUP: Connect with an anonymous outward socket
-        net->role = NETROLE_CLIENT;
-        net->host = enet_host_create(NULL, 1, 2, 0, 0);
+        solNet.role = NETROLE_CLIENT;
+        solNet.host = enet_host_create(NULL, 1, 2, 0, 0);
 
         // Convert string IP ("127.0.0.1") to numerical format
         enet_address_set_host(&address, ip);
         address.port = port;
 
         // Initiate handshaking with the host target
-        net->peer = enet_host_connect(net->host, &address, 2, 0);
+        solNet.peer = enet_host_connect(solNet.host, &address, 2, 0);
         printf("[Net] Client dialing %s:%d...\n", ip, port);
     }
 }
 
-void Net_DeInit(SolNet *net)
+void Net_DeInit()
 {
-    if (net->peer)
+    if (solNet.peer)
     {
-        enet_peer_disconnect(net->peer, 0);
+        enet_peer_disconnect(solNet.peer, 0);
         // Wait briefly for graceful disconnect
         ENetEvent event;
-        while (enet_host_service(net->host, &event, 1000) > 0)
+        while (enet_host_service(solNet.host, &event, 1000) > 0)
         {
             if (event.type == ENET_EVENT_TYPE_DISCONNECT)
                 break;
@@ -66,31 +72,90 @@ void Net_DeInit(SolNet *net)
         }
     }
 
-    if (net->host)
+    if (solNet.host)
     {
-        enet_host_destroy(net->host);
-        net->host = NULL;
+        enet_host_destroy(solNet.host);
+        solNet.host = NULL;
     }
 
     enet_deinitialize();
 
-    memset(net, 0, sizeof(SolNet));
+    memset(&solNet, 0, sizeof(SolNet));
 }
-
-int Net_World_Init(World *world)
+void Net_Disconnect()
 {
-    world->worldNet = calloc(1, sizeof(WorldNet));
-    memset(world->worldNet->hostToLocalMap, -1, sizeof(world->worldNet->hostToLocalMap));
-    if (!world->worldNet)
-        return 1;
-    return 0;
+    // 1. IF WE ARE THE HOST: Gracefully disconnect all inbound client peers first
+    if (solNet.role == NETROLE_HOST && solNet.host != NULL)
+    {
+        printf("[Net] Host shutting down. Disconnecting all clients...\n");
+        for (int i = 0; i < MAX_NET_CLIENTS; i++)
+        {
+            if (solNet.players[i].enetPeerHandle != NULL)
+            {
+                // Send a notification packet to this specific client peer
+                enet_peer_disconnect(solNet.players[i].enetPeerHandle, 0);
+            }
+        }
+        // Flush commands to the sockets instantly
+        enet_host_flush(solNet.host);
+
+        // Give ENet a split second to pump the outgoing disconnect packets out the door
+        u32       timeout_ms = 100;
+        ENetEvent event;
+        while (enet_host_service(solNet.host, &event, timeout_ms) > 0)
+        {
+            if (event.type == ENET_EVENT_TYPE_RECEIVE)
+            {
+                enet_packet_destroy(event.packet);
+            }
+        }
+    }
+
+    // 2. Clear out outbound client peer context if we are a client
+    if (solNet.role == NETROLE_CLIENT && solNet.peer)
+    {
+        enet_peer_disconnect(solNet.peer, 0);
+        enet_host_flush(solNet.host);
+        u32       timeout_ms = 500;
+        ENetEvent event;
+        while (enet_host_service(solNet.host, &event, timeout_ms) > 0)
+        {
+            if (event.type == ENET_EVENT_TYPE_DISCONNECT)
+                break;
+            if (event.type == ENET_EVENT_TYPE_RECEIVE)
+            {
+                enet_packet_destroy(event.packet);
+            }
+        }
+        solNet.peer = NULL;
+    }
+
+    // 3. Entity cleanup tracking
+    for (int i = 0; i < solNet.connectedPlayerCount; i++)
+    {
+        int id      = solNet.players[i].entityId;
+        int worldId = solNet.players[i].currentWorldId;
+        Sol_Destroy_Ent(Sol_GetWorldById(worldId), id);
+        solNet.players[i].enetPeerHandle = NULL;
+    }
+    solNet.connectedPlayerCount = 0;
+
+    Sol_Replication_Disconnect(Sol_GetState()->localPlayer.activeWorld);
+
+    if (solNet.host)
+    {
+        enet_host_destroy(solNet.host);
+        solNet.host = NULL;
+    }
+
+    solNet.role   = NETROLE_NONE;
+    solNet.status = NETSTATUS_DISCONNECTED;
 }
-
-bool Net_ShouldSend_Snap(SolNet *net)
+bool Net_ShouldSend_Snap()
 {
-    if (net->role != NETROLE_HOST)
+    if (solNet.role != NETROLE_HOST)
         return false;
-    if (net->connectedPlayerCount == 0)
+    if (solNet.connectedPlayerCount == 0)
         return false;
 
     // Send at tick for now
@@ -105,34 +170,34 @@ bool Net_ShouldSend_Snap(SolNet *net)
     return false;
 }
 
-void Net_Poll(SolNet *net)
+void Net_Poll()
 {
     ENetEvent event;
-    while (enet_host_service(net->host, &event, 0) > 0)
+    while (enet_host_service(solNet.host, &event, 0) > 0)
     {
         switch (event.type)
         {
         case ENET_EVENT_TYPE_CONNECT: {
             // printf("[Net] Connection from %x:%u\n", event.peer->address.host, event.peer->address.port);
 
-            if (net->role == NETROLE_HOST)
+            if (solNet.role == NETROLE_HOST)
             {
                 // Host recieves connection from client
                 // Find a free player slot
                 for (int i = 0; i < MAX_NET_CLIENTS; i++)
                 {
-                    if (net->players[i].enetPeerHandle == NULL)
+                    if (solNet.players[i].enetPeerHandle == NULL)
                     {
-                        net->players[i].enetPeerHandle = event.peer;
-                        net->players[i].currentWorldId = 0; // default world
-                        net->connectedPlayerCount++;
+                        solNet.players[i].enetPeerHandle = event.peer;
+                        solNet.players[i].currentWorldId = 0; // default world
+                        solNet.connectedPlayerCount++;
                         event.peer->data = (void *)(intptr_t)i; // store slot in peer
                         printf("[Net] Assigned slot %d\n", i);
                         break;
                     }
                 }
             }
-            else if (net->role == NETROLE_CLIENT)
+            else if (solNet.role == NETROLE_CLIENT)
             {
                 // Client connects to host
                 NetHelloPacket hello = {
@@ -145,14 +210,14 @@ void Net_Poll(SolNet *net)
                 strncpy(hello.name, Sol_GetState()->localPlayer.playerName, sizeof(hello.name));
 
                 ENetPacket *packet = enet_packet_create(&hello, sizeof(hello), ENET_PACKET_FLAG_RELIABLE);
-                enet_peer_send(net->peer, 1, packet);
+                enet_peer_send(solNet.peer, 1, packet);
                 printf("[Net] Sent HELLO\n");
             }
         }
         break;
 
         case ENET_EVENT_TYPE_RECEIVE: {
-            Net_Recv_Packet(net, &event);
+            Net_Recv_Packet(&event);
             enet_packet_destroy(event.packet);
         }
         break;
@@ -160,20 +225,25 @@ void Net_Poll(SolNet *net)
         case ENET_EVENT_TYPE_DISCONNECT: {
             printf("[Net] Disconnect\n");
 
-            if (net->role == NETROLE_HOST)
+            if (solNet.role == NETROLE_HOST)
             {
                 int slot = (int)(intptr_t)event.peer->data;
                 if (slot >= 0 && slot < MAX_NET_CLIENTS)
                 {
-                    net->players[slot].enetPeerHandle = NULL;
-                    net->connectedPlayerCount--;
+                    int id      = solNet.players[slot].entityId;
+                    int worldId = solNet.players[slot].currentWorldId;
+                    Sol_Destroy_Ent(Sol_GetWorldById(worldId), id);
+                    solNet.players[slot].enetPeerHandle = NULL;
+                    solNet.connectedPlayerCount--;
                 }
             }
-            else
+            else if (solNet.role == NETROLE_CLIENT)
             {
-                net->status = NETSTATUS_DISCONNECTED;
+                Sol_Replication_Disconnect(Sol_GetState()->localPlayer.activeWorld);
+                solNet.peer   = NULL; // <- Clear this out
+                solNet.status = NETSTATUS_DISCONNECTED;
+                solNet.role   = NETROLE_NONE;
             }
-            event.peer->data = NULL;
         }
         break;
 
@@ -183,7 +253,7 @@ void Net_Poll(SolNet *net)
     }
 }
 
-void Net_Recv_Packet(SolNet *net, ENetEvent *event)
+void Net_Recv_Packet(ENetEvent *event)
 {
     if (event->packet->dataLength < 1)
     {
@@ -198,7 +268,7 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     {
     // Host recieves hello from client
     case NET_PACKET_HELLO: {
-        if (net->role != NETROLE_HOST)
+        if (solNet.role != NETROLE_HOST)
             return;
         NetHelloPacket *helloPacket = (NetHelloPacket *)data;
         World          *world       = Sol_GetWorldById(helloPacket->worldId);
@@ -210,12 +280,13 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
         int id =
             Sol_Prefab_Factory(world, 0, PREFABKIND_PLAYER,
                                (PrefabDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
-        Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
+        if (id)
+            Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
 
         int slot = (int)(intptr_t)event->peer->data;
 
-        net->players[slot].entityId       = id;
-        net->players[slot].currentWorldId = world->worldId;
+        solNet.players[slot].entityId       = id;
+        solNet.players[slot].currentWorldId = world->worldId;
 
         NetWelcomePacket welcomePacket = {
             .type        = NET_PACKET_WELCOME,
@@ -229,12 +300,12 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     break;
     // Host recieves Input from Client
     case NET_PACKET_INPUT: {
-        if (net->role != NETROLE_HOST)
+        if (solNet.role != NETROLE_HOST)
             return;
         int             slot        = (int)(intptr_t)event->peer->data;
-        int             id          = net->players[slot].entityId;
+        int             id          = solNet.players[slot].entityId;
         NetInputPacket *inputPacket = (NetInputPacket *)data;
-        World          *world       = Sol_GetWorldById(net->players[slot].currentWorldId);
+        World          *world       = Sol_GetWorldById(solNet.players[slot].currentWorldId);
         CompController *c           = &world->controllers[id];
         c->actionState              = inputPacket->actionMask;
         c->wishdir                  = inputPacket->wishdir;
@@ -250,18 +321,19 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     break;
     // Client recieves welcome from host
     case NET_PACKET_WELCOME: {
-        if (net->role != NETROLE_CLIENT)
+        if (solNet.role != NETROLE_CLIENT)
             return;
 
         NetWelcomePacket *welcomePacket = (NetWelcomePacket *)data;
         Sol_GetWorldById(welcomePacket->worldId)->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
+        Sol_GetState()->stepCounter = welcomePacket->currentTick;
 
-        net->status = NETSTATUS_CONNECTED;
+        solNet.status = NETSTATUS_CONNECTED;
     }
     break;
     // Client recieves world snapshot from host
     case NET_PACKET_SNAPSHOT: {
-        if (net->role != NETROLE_CLIENT || net->status != NETSTATUS_CONNECTED)
+        if (solNet.role != NETROLE_CLIENT || solNet.status != NETSTATUS_CONNECTED)
             return;
 
         if (event->packet->dataLength < offsetof(WorldSnap, entities))
@@ -312,185 +384,3 @@ void Net_Recv_Packet(SolNet *net, ENetEvent *event)
     break;
     }
 }
-void Net_Send_Snap(SolNet *net, World *world)
-{
-    WorldSnap snap  = {0};
-    snap.type       = NET_PACKET_SNAPSHOT;
-    snap.worldId    = world->worldId;
-    snap.tickNumber = world->currentTick;
-
-    int count = 0;
-    for (int i = 0; i < world->activeCount && count < MAX_NET_ENTS; i++)
-    {
-        int id = world->activeEntities[i];
-        if (world->replications[id].auth != NETAUTH_AUTH)
-            continue;
-
-        NetEntityState *e = &snap.entities[count++];
-        e->id             = id;
-        e->compMask       = world->masks[id];
-        e->prefabKind     = world->replications[id].prefabKind;
-        e->pos            = world->xforms[id].pos;
-        e->rot            = world->xforms[id].quat;
-        e->scale          = world->xforms[id].scale.x;
-
-        if (world->masks[id] & HAS_BODY3)
-            e->vel = world->bodies[id].vel;
-        if (world->masks[id] & HAS_OWNER)
-        {
-            e->ownerId = world->owners[id].ownerId;
-            e->team    = world->owners[id].team;
-        }
-        if (world->masks[id] & HAS_VITAL)
-        {
-            e->health = world->vitals[id].health;
-            e->energy = world->vitals[id].energy;
-        }
-    }
-    snap.eCount = count; // ← outside the loop
-
-    size_t sendSize = offsetof(WorldSnap, entities) + sizeof(NetEntityState) * count;
-
-    ENetPacket *packet = enet_packet_create(&snap, sendSize, ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
-    enet_host_broadcast(net->host, 0, packet);
-}
-
-void Net_Apply_Snap(World *world)
-{
-    WorldNet *net = world->worldNet;
-
-    // Check an explicit dynamic sequence number or an initialization flag instead of index positions
-    u32        idx  = (net->snapHead + MAX_SNAPS_BUFFERED - 1) % MAX_SNAPS_BUFFERED;
-    WorldSnap *snap = &net->snapShots[idx];
-
-    // If we haven't processed any ticks yet, there's nothing to do
-    if (snap->tickNumber == 0 && snap->eCount == 0)
-        return;
-
-    memset(net->seenThisSnap, 0, sizeof(net->seenThisSnap));
-
-    for (u32 i = 0; i < snap->eCount; i++)
-    {
-        NetEntityState *e      = &snap->entities[i];
-        int             hostId = e->id;
-        if (hostId >= MAX_ENTS)
-            continue;
-
-        net->seenThisSnap[hostId] = true;
-
-        int id = net->hostToLocalMap[hostId];
-
-        if (id == -1)
-        {
-            if (e->prefabKind)
-                id = Sol_Prefab_Factory(world, 0, e->prefabKind,
-                                        (PrefabDesc){
-                                            .pos       = e->pos,
-                                            .rot       = e->rot,
-                                            .scale     = e->scale,
-                                            .authority = NETAUTH_REMOTE,
-                                        });
-            else
-                id = Sol_Create_Ent(world, 0);
-
-            net->hostToLocalMap[hostId] = id;
-            world->masks[id]            = e->compMask;
-            if (hostId > net->maxHostId)
-                net->maxHostId = hostId;
-        }
-
-        float t    = fminf(fmaxf(SOL_TIMESTEP / 0.05f, 0.0f), 1.0f);
-        float dist = glms_vec3_distance2(world->xforms[id].pos, e->pos);
-        if (dist < MAX_NET_INTERP_DISTANCE)
-        {
-            world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
-        }
-        else
-        {
-            world->xforms[id].pos  = e->pos;
-            world->xforms[id].quat = e->rot;
-        }
-        world->xforms[id].quat  = glms_quat_slerp(world->xforms[id].quat, e->rot, t);
-        world->xforms[id].scale = glms_vec3_fill(e->scale);
-        world->bodies[id].vel   = e->vel;
-
-        if (world->masks[id] & HAS_OWNER)
-        {
-            world->owners[id].ownerId = net->hostToLocalMap[e->ownerId];
-            world->owners[id].team    = e->team;
-        }
-
-        if (world->masks[id] & HAS_VITAL)
-        {
-            world->vitals[id].health = e->health;
-            world->vitals[id].energy = e->energy;
-        }
-    }
-    // Find entities that were mapped but aren't in this snap → destroy
-    for (int hostId = 0; hostId <= net->maxHostId; hostId++)
-    {
-        int localId = net->hostToLocalMap[hostId];
-        if (localId != -1 && !net->seenThisSnap[hostId])
-        {
-            Sol_Destroy_Ent(world, localId);
-            net->hostToLocalMap[hostId] = -1;
-        }
-    }
-    // for (int i = 0; i < net->predictionCount; i++)
-    // {
-    //     Prediction *p = &net->predictions[i];
-    //     if (p->reconciled)
-    //         continue;
-    //     if (world->currentTick - p->tickSpawned > 30)
-    //     { // ~500ms at 60Hz
-    //         // Old prediction, no match arrived — destroy the local
-    //         Sol_Destroy_Ent(world, p->localEntId);
-    //         // Mark as cleaned up
-    //     }
-    // }
-}
-
-void Net_Send_Input(SolNet *net, World *world)
-{
-    if (net->role != NETROLE_CLIENT || net->status != NETSTATUS_CONNECTED)
-        return;
-    if (!(world->masks[1] & HAS_CONTROLLER))
-        return;
-    CompController *controller = &world->controllers[1];
-
-    NetInputPacket input = {
-        .type       = NET_PACKET_INPUT,
-        .actionMask = controller->actionState,
-    };
-    input.lookdir     = controller->lookdir;
-    input.wishdir     = controller->wishdir;
-    input.aimdir      = controller->aimdir;
-    input.yaw         = controller->yaw;
-    input.isStrafing  = controller->isStrafing;
-    input.currentTick = world->currentTick;
-
-    ENetPacket *packet = enet_packet_create(&input, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
-    enet_peer_send(net->peer, 0, packet);
-}
-
-// int TryMatchPrediction(World *world, NetEntityState *e)
-// {
-//     WorldNet *net = world->worldNet;
-//     for (int i = 0; i < net->predictionCount; i++)
-//     {
-//         Prediction *p = &net->predictions[i];
-//         if (p->reconciled)
-//             continue;
-//         if (p->prefabKind != e->prefabKind)
-//             continue;
-
-//         vec3s localPos = world->xforms[p->localEntId].pos;
-//         if (glms_vec3_distance(localPos, e->pos) > 5.0f)
-//             continue;
-
-//         // Match!
-//         p->reconciled = true;
-//         return p->localEntId;
-//     }
-//     return -1;
-// }

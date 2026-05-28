@@ -1,6 +1,58 @@
 #pragma once
 #include "sol/types.h"
 
+#define MAX_NET_ENTS (1 << 12)
+#define MAX_NET_INTERP_DISTANCE 1.0f
+#define MAX_SNAPS_BUFFERED 128
+#define MAX_NET_PREDICTIONS 128
+#define MAX_NET_EVENTS 24
+
+typedef struct SolNet SolNet;
+
+typedef struct
+{
+    u32     id, ownerId;
+    u32     compMask;
+    vec3s   pos, vel;
+    versors rot;
+    float   scale, animSeek, abilityElapsed, abilityCharge;
+
+    u32 health, energy;
+
+    u8 team, prefabKind;
+    u8 modelId, animLayer;
+    u8 abilityState, movementState;
+    u8 abilityStage;
+    u8 animPlaying[ANIM_LAYER_COUNT];
+} NetEntityState;
+
+typedef struct
+{
+    u8             type;
+    u32            tickNumber;
+    u32            worldId;
+    u32            eCount;
+    NetEntityState entities[MAX_NET_ENTS];
+} WorldSnap;
+
+typedef struct
+{
+    int  localEntId;
+    bool reconciled;
+    u32  prefabKind;
+    u32  tickSpawned;
+} Prediction;
+typedef struct WorldNet
+{
+    u32        snapHead;
+    WorldSnap  snapShots[MAX_SNAPS_BUFFERED];
+    int        hostToLocalMap[MAX_ENTS];
+    u32        maxHostId;
+    bool       seenThisSnap[MAX_ENTS];
+    Prediction predictions[MAX_NET_PREDICTIONS];
+    int        predictionCount;
+} WorldNet;
+
 typedef enum
 {
     NETAUTH_NONE,
@@ -17,3 +69,8 @@ typedef struct CompReplication
 
 void Sol_Replication_Init(World *world);
 void Sol_Replication_Add(World *world, int id, NetAuth role, u8 prefabKind);
+
+void Sol_Replication_Disconnect(World *world);
+
+void Net_Send_Snap(World *world);
+void Net_Apply_Snap(World *world);

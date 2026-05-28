@@ -200,6 +200,4 @@ void Sol_World_SetActive(World *world, bool active)
 void Sol_World_SetReplicates(World *world, bool active)
 {
     world->doesReplicate = active;
-    if (active)
-        Net_World_Init(world);
 }

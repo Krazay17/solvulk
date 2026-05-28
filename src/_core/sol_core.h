@@ -36,8 +36,6 @@ typedef struct SolState
     uint16_t worldCount;
 
     LocalPlayer localPlayer;
-
-    SolNet netEngine;
 } SolState;
 
 void Sol_State_SetTimescale(float timescale);

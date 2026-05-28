@@ -78,7 +78,7 @@ void Script_State_Update(World *world, int id, float dt)
     }
 
     if (data->elapsed >= script->duration)
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, true);
 }
 
 void Script_State_Enter(World *world, int id)
@@ -87,7 +87,7 @@ void Script_State_Enter(World *world, int id)
 
 void Script_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0);
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.blendOut = 0.15f, .layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool Script_State_CanExit(World *world, int id, u32 nextState)
@@ -114,9 +114,12 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
     switch (a->kind)
     {
     case ACTIONKIND_SPAWN_PROJECTILE:
-        u32 fireball = Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL, (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.2f), .scale = 0.5f});
-        Sol_Physx_SetVel(world, fireball, vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed));
-        Sol_Owner_SetOwner(world, fireball, id);
+        int fireball = Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL, (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.2f), .scale = 0.5f});
+        if(fireball)
+        {
+            Sol_Physx_SetVel(world, fireball, vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed));
+            Sol_Owner_SetOwner(world, fireball, id);
+        }
 
         break;
     case ACTIONKIND_PLAY_ANIM:

@@ -63,7 +63,7 @@ void Sol_Vital_Step(World *world, double dt, double time)
         CompVital *vital = &world->vitals[id];
         if (vital->health == 0)
             Die(world, id);
-        if (vital->doesRespawn && vital->health == 0 && time > vital->deathTime + vital->respawnTime)
+        if (vital->doesRespawn && vital->isDead && time > vital->deathTime + vital->respawnTime)
             Respawn(world, id, vital);
     }
 }
@@ -112,16 +112,14 @@ void Sol_Vital_Damage(World *world, int id, SolHit hit)
         return;
     CompVital *vital = &world->vitals[id];
 
-    if (vital->health == 0)
+    if (vital->isDead)
         return;
 
     if (hit.damage >= vital->health)
     {
         vital->health = 0;
-        if (vital->isDead)
-            return;
-        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.attacker = hit.source, .sourceId = id});
         Die(world, id);
+        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.attacker = hit.source, .sourceId = id});
     }
     else
     {

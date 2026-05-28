@@ -23,5 +23,4 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale);
 
 int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
-int Sol_Prefab_Pawn(World *world, vec3s pos, vec2s dims, float scale, SolModelId modelid, MoveConfigId moveid);
 int Sol_Prefab_Clouds(World *world, vec3s pos);

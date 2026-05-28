@@ -27,15 +27,16 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
             AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
             if (data->stage > 0)
                 break;
-            vec3s pos = Sol_Model_GetBoneXform(world, id, "hand.L");
-            pos       = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), data->power));
-            pos       = vecAdd(pos, vecSca(WORLD_UP, data->power));
+            float scale = data->charge * 2.5f;
+            vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L");
+            pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
+            pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
 
             SphereSSBO *push = Sol_Render_GetNext_Fireball();
             push->pos[0]     = pos.x;
             push->pos[1]     = pos.y;
             push->pos[2]     = pos.z;
-            push->pos[3]     = data->power;
+            push->pos[3]     = scale;
             memcpy(push->color, (vec4){1, 0, 0, 0.8f}, sizeof(vec4));
         }
         break;

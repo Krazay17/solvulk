@@ -77,7 +77,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     for (i = 0; i < activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required || world->replications[id].auth == NETAUTH_REMOTE)
+        if ((world->masks[id] & required) != required)
             continue;
         if (world->bodies[id].mass == 0)
             continue;
@@ -94,11 +94,13 @@ void Sol_Physx_Step(World *world, double dt, double time)
         int        id    = ents[j];
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
-        // if (world->replications[id].role == NETROLE_REMOTE)
+
+        // if (world->replications[id].auth == NETAUTH_REMOTE)
         // {
         //     xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
         //     continue;
         // }
+        
         if (xform->pos.y < -500.0f)
         {
             if (world->flags[id].flags & EFLAG_PROJECTILE)

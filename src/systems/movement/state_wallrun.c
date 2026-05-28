@@ -108,7 +108,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->configId][movement->moveState];
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * animReverse);
 }

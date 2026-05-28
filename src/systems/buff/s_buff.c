@@ -121,7 +121,7 @@ void Sol_Buff_Step(World *world, double dt, double time)
             switch (b->kind)
             {
             case BUFFKIND_FIRE:
-                Sol_Movement_SetSpeedMod(world, id, 0.3f);
+                Sol_Movement_SetSpeedMod(world, id, 0.8f);
                 float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
                 if (b->accum > interval)
                 {

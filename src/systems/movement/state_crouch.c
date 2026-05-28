@@ -66,7 +66,7 @@ void Crouch_State_Update(World *world, int id, float dt)
         break;
     }
 
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->configId][move->moveState];
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->moveState];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 }

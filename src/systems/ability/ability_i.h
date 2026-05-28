@@ -4,22 +4,6 @@
 #include "ability.h"
 #include "estate.h"
 
-typedef struct
-{
-    vec3s  dir, pos;
-    bool   held;
-    float  elapsed, duration, accum, recovery, power;
-    double lastEntered;
-    u32    stage;
-} AbilityData;
-typedef struct CompAbility
-{
-    vec3s          attackPos, attackDir;
-    AbilityState   state;
-    AbilityData    stateData[ABILITY_STATE_COUNT];
-    AbilityMapping ability_mappings[ABILITY_STATE_COUNT];
-} CompAbility;
-
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);

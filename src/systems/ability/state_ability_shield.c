@@ -10,7 +10,7 @@ void Shield_State_Update(World *world, int id, float dt)
     AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
 
     if (!(Sol_Controller_GetActionState(world, id) & ACTION_ABILITY2))
-        Sol_Ability_SetState(world, id, 0);
+        Sol_Ability_SetState(world, id, 0, false);
 
     Sol_Movement_SetSpeedMod(world, id, 0.5f);
     vec3s pos = Sol_Xform_GetPos(world, id);

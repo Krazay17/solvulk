@@ -81,15 +81,6 @@ typedef struct BoneMask
     bool layerOwns[MAX_BONES]; // for one layer
 } BoneMask;
 
-typedef struct AnimLayer
-{
-    i32   currentAnim, lastAnim;
-    float currentSeek, lastSeek;
-    float blendFactor, blendSpeed;
-    float fadeOut, fadeOutSpeed;
-    float playRate;
-} AnimLayer;
-
 typedef struct
 {
     i32   currentAnim, lastAnim;
@@ -118,15 +109,6 @@ typedef struct PoseRequest
     float     layerWeight[ANIM_LAYER_COUNT]; // how strongly each layer applies (0..1)
     mat4     *outBones;                      // final skinning matrices
 } PoseRequest;
-
-typedef struct CompModel
-{
-    mat4       bones[MAX_BONES];
-    AnimLayer  layers[ANIM_LAYER_COUNT];
-    SolModelId modelId;
-    bool       hasAnim;
-    float      yOffset, yawOffset;
-} CompModel;
 
 extern SolModel      loaded_models[SOL_MODEL_COUNT];
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];

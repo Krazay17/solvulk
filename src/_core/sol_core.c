@@ -32,6 +32,9 @@ void Sol_Init(void *hwnd, void *hInstance)
     res = Sol_Render_Init(hwnd, hInstance);
     if (res != 0)
         printf("Render failed to init, code:%d\n", res);
+    res = Sol_Net_Init();
+    if (res != 0)
+        printf("Network failed to init, code:%d\n", res);
 
     solState.debug     = true;
     solState.isRunning = true;
@@ -59,7 +62,7 @@ double Sol_GetGameTime()
 
 void Sol_Destroy()
 {
-    Net_DeInit(&solState.netEngine);
+    Net_DeInit();
 
     for (int i = 0; i < solState.worldCount; i++)
     {
@@ -112,10 +115,10 @@ void Sol_Tick(double dt, double time)
     if (solState.needsResize)
         Sol_OnResize();
 
-    if (Net_IsActive(&solState.netEngine))
-        Net_Poll(&solState.netEngine);
+    if (Net_IsActive())
+        Net_Poll();
 
-    if (Net_IsPlaying(&solState.netEngine) && Net_IsClient(&solState.netEngine))
+    if (Net_IsPlaying() && Net_IsClient())
     {
         for (int i = 0; i < solState.worldCount; i++)
         {
@@ -150,15 +153,15 @@ void Sol_Tick(double dt, double time)
                 continue;
             World_Step(world, SOL_TIMESTEP, time);
 
-            if (Net_IsPlaying(&solState.netEngine) && world->doesReplicate)
+            if (Net_IsPlaying() && world->doesReplicate)
             {
-                if (Net_IsClient(&solState.netEngine))
+                if (Net_IsClient())
                 {
-                    Net_Send_Input(&solState.netEngine, world);
+                    Net_Send_Input(world);
                 }
-                else if (Net_IsHost(&solState.netEngine) && Net_ShouldSend_Snap(&solState.netEngine))
+                else if (Net_IsHost() && Net_ShouldSend_Snap())
                 {
-                    Net_Send_Snap(&solState.netEngine, world);
+                    Net_Send_Snap(world);
                 }
             }
         }

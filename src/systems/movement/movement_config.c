@@ -1,7 +1,7 @@
 #include "movement_i.h"
 
-const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
-    [MOVE_CONFIG_PLAYER] =
+const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] = {
+    [MOVEMENTKIND_PLAYER] =
         {
             [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 25.0f, .gravity = 9.81f},
             [MOVE_WALK]    = {.speed = 6.0f, .accell = 25.0f, .friction = 8.0f, .gravity = 9.81f},
@@ -13,7 +13,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVE_CONFIG_COUNT][MOVE_STATE_COUNT] = {
             [MOVE_DEAD]    = {.speed = 0, .accell = 0, .friction = 1.0f, .gravity = 2.81f},
             [MOVE_FLY]     = {.speed = 4.0f, .accell = 7.0f, .friction = 1.0f, .gravity = 0},
         },
-    [MOVE_CONFIG_WIZARD] =
+    [MOVEMENTKIND_WIZARD] =
         {
             [MOVE_IDLE]    = {.speed = 0, .accell = 0, .friction = 25.0f, .gravity = 9.81f},
             [MOVE_WALK]    = {.speed = 5.0f, .accell = 20.0f, .friction = 8.0f, .gravity = 9.81f},

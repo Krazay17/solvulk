@@ -2,10 +2,12 @@
 
 #include "ability_i.h"
 
+#define MIN_POWER 0.5f
+#define MAX_POWER 3.0f
+#define MAX_DURATION 4.0f
+
 #define RECOVERYTIME 0.3f
-#define DURATION 0.6f
 #define COOLDOWN 0.2f
-#define MAX_RAMP 3.0f
 #define BALL_VELOCITY 40.0f
 
 void Fireball_State_Update(World *world, int id, float dt)
@@ -17,7 +19,9 @@ void Fireball_State_Update(World *world, int id, float dt)
     float oldElapsed = data->elapsed;
     data->elapsed += dt;
 
-    float power = data->power = fmaxf(0.5f, fminf(data->elapsed, MAX_RAMP));
+    data->charge = fminf(1.0f, data->elapsed / MAX_DURATION);
+
+    float power = Sol_Math_Lerp(MIN_POWER, MAX_POWER, data->charge);
 
     switch (data->stage)
     {
@@ -31,17 +35,21 @@ void Fireball_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, Sol_Controller_GetAimPos(world, id), 0.0f);
 
-       int ball =  Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL, (PrefabDesc){.pos=Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power, .authority = NETAUTH_LOCAL});
-        //int ball = Sol_Prefab_Fireball(world, 0, Sol_Controller_GetShootPos(world, id, 0.33f), power);
-        Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
-        Sol_Owner_SetOwner(world, ball, id);
-        
+        int ball =
+            Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL,
+                               (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power});
+        if (ball)
+        {
+            Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
+            Sol_Owner_SetOwner(world, ball, id);
+        }
+
         data->stage++;
         break;
     case 2:
         data->recovery += dt;
         if (data->recovery >= RECOVERYTIME)
-            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE);
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
     }
 }
 
@@ -60,7 +68,7 @@ void Fireball_State_Enter(World *world, int id)
 
 void Fireball_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0.1f);
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER, .blendOut = 0.2f});
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)

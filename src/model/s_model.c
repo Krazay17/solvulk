@@ -14,7 +14,8 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
     world->masks[id] |= HAS_MODEL;
 
     CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset, .yawOffset = desc.yawOffset};
-    SolModel *m     = Sol_GetModel(desc.id);
+
+    SolModel *m = Sol_GetModel(desc.id);
     if (m->skeleton.animationCount > 0)
     {
         model.hasAnim = true;
@@ -26,6 +27,8 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
         }
     }
     world->models[id] = model;
+
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 1, .layerId = ANIM_LAYER_BASE});
 }
 
 void Sol_Model_Draw(World *world, double dt, double time)

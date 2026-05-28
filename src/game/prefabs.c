@@ -12,7 +12,7 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
                 auth = NETAUTH_AUTH;
             else
             {
-                return -1;
+                return 0;
                 // auth = NETAUTH_LOCAL;
             }
         }

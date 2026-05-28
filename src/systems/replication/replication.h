@@ -15,14 +15,15 @@ typedef struct
     u32     compMask;
     vec3s   pos, vel;
     versors rot;
-    float   scale, animSeek, abilityElapsed, abilityCharge;
+    float   scale, animSeek, abilityCharge;
 
     u32 health, energy;
 
     u8 team, prefabKind;
-    u8 modelId, animLayer;
-    u8 abilityState, movementState;
-    u8 abilityStage;
+    u8 abilityState, abilityStage;
+    u8 movementState;
+
+    u8 modelId;
     u8 animPlaying[ANIM_LAYER_COUNT];
 } NetEntityState;
 

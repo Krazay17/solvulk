@@ -35,6 +35,8 @@ void Sol_Buff_Init(World *world)
 
 void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
 {
+    if (Sol_Vital_GetDead(world, id))
+        return;
     world->masks[id] |= HAS_BUFF;
     CompBuff *buffs = &world->buffs[id];
     if (buffs->count >= MAX_BUFFS)

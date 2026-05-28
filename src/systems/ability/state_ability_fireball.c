@@ -38,7 +38,7 @@ void Fireball_State_Update(World *world, int id, float dt)
         int ball =
             Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL,
                                (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power});
-        if (ball)
+        if (ball > 0)
         {
             Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
             Sol_Owner_SetOwner(world, ball, id);

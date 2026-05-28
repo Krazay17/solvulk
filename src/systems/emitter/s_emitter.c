@@ -11,6 +11,37 @@
 #define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
 
+Emitter emitter_kinds[] = {
+    [EMITTERKIND_FLASH_WHITEBALL] =
+        {
+            .burst = 100,
+            .particle =
+                {
+                    .randScale = 1,
+                    .ttl       = 0.3f,
+                    .scale     = 0.5f,
+                    .color     = {1, .1f, .2f, .7f},
+                    .kind      = PARTICLE_SHOCK,
+                    .speed     = 15.0f,
+                    .scalein   = 0.1f,
+                    .scaleout  = 0.3f,
+                },
+        },
+    [EMITTERKIND_FLASH_REDBALL] =
+        {
+            .burst = 1,
+            .particle =
+                {
+                    .scale    = 1.0f,
+                    .scalein  = 0.2f,
+                    .scaleout = 0.8f,
+                    .kind     = PARTICLE_ORB,
+                    .color    = {1, 0, 0, 0.9f},
+                    .ttl      = 0.5f,
+                },
+        },
+};
+
 typedef struct SolEmitters
 {
     Emitter *emitter;
@@ -122,7 +153,7 @@ static void Particle_Tick(World *world, double dt, double time)
         p->ttl -= fdt;
         if (p->ttl <= 0)
             continue;
-            
+
         if (p->ttl < p->span)
         {
             vec3s finalvel = p->vel;

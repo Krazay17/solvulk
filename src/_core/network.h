@@ -15,6 +15,7 @@ typedef enum
 
     NET_PACKET_SNAPSHOT, // server → client: world state
     NET_PACKET_INPUT,    // client → server: player input
+    NET_PACKET_HEARTBEAT,
     NET_PACKET_EVENT,
 } NetPacketType;
 
@@ -80,6 +81,7 @@ typedef struct
     PlayerState       state;
     u32               currentWorldId;
     u32               entityId;
+    double            lastPing;
     struct _ENetPeer *enetPeerHandle;
 } NetPlayer;
 
@@ -144,3 +146,5 @@ void Net_Poll();
 void Net_Recv_Packet(ENetEvent *event);
 
 void Net_Send_Input(World *world);
+void Net_Heartbeat(double time);
+void Net_Remove_Player(int slot);

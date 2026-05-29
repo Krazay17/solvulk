@@ -51,7 +51,7 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
-            
+
         CompController *controller = &world->controllers[id];
         if (controller->kind == CONTROLLER_REMOTE)
             RemoteTick(world, id, controller, dt, time);
@@ -61,7 +61,7 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
         controller->aimpos = Sol_Physx_GetHeadPos(world, id);
 
         if (controller->isStrafing)
-            world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0); // -controller->pitch
+            world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
         else if (glms_vec3_norm(controller->wishdir) > 0.001f)
         {
             float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
@@ -78,7 +78,7 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
 
 static void RemoteTick(World *world, int id, CompController *controller, double dt, double time)
 {
-    world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
+    // world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
 }
 
 static void LocalTick(World *world, int id, double dt, double time)

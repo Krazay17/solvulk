@@ -16,10 +16,10 @@ typedef struct SolHit
     HitKind kind;
     u32     buffKind[MAX_BUFFS_HIT];
     u32     buffcount;
-    u32     source, target;
     vec3s   pos, dir, vel;
     float   power;
     u32     damage;
+    u32     entA, entB;
 } SolHit;
 
 typedef enum

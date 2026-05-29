@@ -22,7 +22,7 @@ const ImpactList contact_config[CONTACTKIND_COUNT] = {
                         {
                             .damage    = 20,
                             .kind      = HITKIND_FIRE,
-                            .buffKind   = BUFFKIND_FIRE,
+                            .buffKind  = BUFFKIND_FIRE,
                             .power     = 10.0f,
                             .buffcount = 1,
                         },
@@ -104,12 +104,12 @@ static void Contact_Step(World *world, double dt, double time)
 
                 dynamicHit.damage = (u32)((float)impact->hit.damage * c->damageScale);
 
-                dynamicHit.source = Sol_Owner_GetOwner(world, proj);
+                dynamicHit.entA = Sol_Owner_GetOwner(world, proj);
 
                 if (impact->kind == IMPACT_DIRECT)
                 {
-                    dynamicHit.vel    = Sol_Physx_GetVel(world, proj);
-                    dynamicHit.target = other;
+                    dynamicHit.vel  = Sol_Physx_GetVel(world, proj);
+                    dynamicHit.entB = other;
                     if (Sol_Combat_IsReflecting(world, other))
                     {
                         Sol_Owner_SetOwner(world, proj, other);
@@ -136,9 +136,9 @@ static void Contact_Step(World *world, double dt, double time)
                         SolRayResult result = results[i];
                         if ((world->masks[result.entId] & HAS_VITAL) && world->owners[proj].ownerId != result.entId)
                         {
-                            dynamicHit.target = result.entId;
-                            dynamicHit.pos    = result.pos;
-                            dynamicHit.dir    = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
+                            dynamicHit.entB = result.entId;
+                            dynamicHit.pos  = result.pos;
+                            dynamicHit.dir  = vecSub(Sol_Xform_GetPos(world, other), Sol_Xform_GetPos(world, proj));
                             Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = dynamicHit});
                         }
                     }

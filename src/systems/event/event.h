@@ -12,7 +12,6 @@ typedef enum
 typedef struct SolEvent
 {
     EventKind kind;
-    u32       sourceId, targetId;
     union {
         SolHit hit;
         struct
@@ -22,11 +21,12 @@ typedef struct SolEvent
         } collision;
         struct
         {
-            int   attacker;
             float damage;
+            u32   entA, entB;
         } death;
         struct
         {
+            u32   entA, entB;
             vec3s pos, rot;
             u32   kind;
             float scale;

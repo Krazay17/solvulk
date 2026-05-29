@@ -15,15 +15,15 @@ static void Combat_Step(World *world, double dt, double time)
         SolEvent *e = &world->events->event[i];
         switch (e->kind)
         {
-        case EVENTKIND_HIT:
-            if (!Sol_Owner_GetHostile(world, e->as.hit.source, e->as.hit.target))
+        case EVENTKIND_HIT: {
+            if (!Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB))
                 break;
-            if (Sol_Buff_HasBuff(world, e->as.hit.target, BUFFKIND_INVULN))
+            if (Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN))
                 break;
             vec3s pos = e->as.hit.pos;
-            for (int i = 0; i < e->as.hit.buffcount; i++)
+            for (int b = 0; b < e->as.hit.buffcount; b++)
             {
-                Sol_Buff_Add(world, e->as.hit.target, e->as.hit.buffKind[i],  &e->as.hit);
+                Sol_Buff_Add(world, e->as.hit.entB, e->as.hit.buffKind[b], &e->as.hit);
             }
 
             switch (e->as.hit.kind)
@@ -37,22 +37,26 @@ static void Combat_Step(World *world, double dt, double time)
                 break;
             }
             if (e->as.hit.power)
-                Sol_Physx_Impulse(world, e->as.hit.target, vecSca(e->as.hit.dir, e->as.hit.power));
+                Sol_Physx_Impulse(world, e->as.hit.entB, vecSca(e->as.hit.dir, e->as.hit.power));
 
-            Sol_Vital_Damage(world, e->as.hit.target, e->as.hit);
+            Sol_Vital_Damage(world, e->as.hit.entB, &e->as.hit);
 
-            if (world->masks[e->as.hit.target] & HAS_AICONTROLLER)
-                Sol_AiController_SetLastHit(world, e->as.hit.target, e->as.hit.source, e->as.hit.damage);
-            break;
-        case EVENTKIND_DEATH:
-            for (int i = 0; i < world->activeCount; i++)
+            if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
+                Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, e->as.hit.damage);
+        }
+        break;
+
+        case EVENTKIND_DEATH: {
+            for (int d = 0; d < world->activeCount; d++)
             {
-                int id = world->activeEntities[i];
+                int id = world->activeEntities[d];
                 if (!(world->masks[id] & HAS_AICONTROLLER))
                     continue;
-                Sol_AiController_TargetDied(world, id, e->sourceId);
+
+                Sol_AiController_TargetDied(world, id, e->as.death.entB);
             }
-            break;
+        }
+        break;
         }
     }
 }

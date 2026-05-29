@@ -75,3 +75,4 @@ void Sol_Replication_Disconnect(World *world);
 
 void Net_Send_Snap(World *world);
 void Net_Apply_Snap(World *world);
+void Net_Send_Events(World *world);

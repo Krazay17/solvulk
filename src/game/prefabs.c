@@ -69,6 +69,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                                       {ACTION_ABILITY3, ABILITY_STATE_CLAW},
                                       {ACTION_ABILITY4, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
+    Sol_Owner_Add(world, id, (OwnerDesc){.team = 1});
     return id;
 }
 
@@ -99,7 +100,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     Sol_Interact_Add(world, id, (InteractDesc){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
-    Sol_Owner_Add(world, id, (OwnerDesc){.team = 1});
+    Sol_Owner_Add(world, id, (OwnerDesc){.team = 0});
 
     return id;
 }
@@ -114,6 +115,7 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
         return -1;
     Sol_Shape_Add(world, id, shape);
     Sol_Xform_Add(world, id, pos);
+    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .radius         = shape.radius * 0.5f,

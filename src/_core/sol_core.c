@@ -162,9 +162,12 @@ void Sol_Tick(double dt, double time)
                 else if (Net_IsHost() && Net_ShouldSend_Snap())
                 {
                     Net_Send_Snap(world);
+                    Net_Send_Events(world);
                 }
             }
+            Sol_Event_Clear(world);
         }
+        Net_Heartbeat(time);
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }

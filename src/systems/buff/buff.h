@@ -40,6 +40,13 @@ typedef struct CompBuff
     u32  activeKindsMask;
 } CompBuff;
 
+typedef struct
+{
+    u8    kind, addKind;
+    u32   source;
+    vec3s pos, dir;
+} BuffDesc;
+
 void Sol_Buff_Init(World *world);
 void Sol_Buff_Clear(World *world, int id);
 

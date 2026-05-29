@@ -158,26 +158,33 @@ void Net_Apply_Snap(World *world)
             if (hostId > net->maxHostId)
                 net->maxHostId = hostId;
         }
+        world->masks[id]        = e->compMask;
+        world->xforms[id].scale = glms_vec3_fill(e->scale);
 
         float dist = glms_vec3_distance2(world->xforms[id].pos, e->pos);
-        float t    = 1.0f - expf(-dist / MAX_NET_INTERP_DISTANCE);
-        float qt   = 1.0f - expf(-10.0f * SOL_TIMESTEP);
-        if (dist < MAX_NET_INTERP_DISTANCE)
+        if (world->replications[id].auth == NETAUTH_AUTH)
         {
-            world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
+            float t = 1.0f - expf(-dist / MAX_NET_INTERP_DISTANCE);
+            if (dist < MAX_NET_INTERP_DISTANCE)
+            {
+                world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
+            }
+            else
+            {
+                world->xforms[id].pos  = e->pos;
+                world->bodies[id].vel  = e->vel;
+                world->xforms[id].quat = e->rot;
+            }
         }
-        else
+        else if (world->replications[id].auth == NETAUTH_REMOTE)
         {
-            world->xforms[id].pos  = e->pos;
+            if (dist < MAX_NET_INTERP_DISTANCE)
+                world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, SOL_TIMESTEP);
+            else
+                world->xforms[id].pos = e->pos;
+            world->bodies[id].vel  = e->vel;
             world->xforms[id].quat = e->rot;
-        }
 
-        world->masks[id]        = e->compMask;
-        world->bodies[id].vel   = e->vel;
-        world->xforms[id].quat  = glms_quat_slerp(world->xforms[id].quat, e->rot, qt);
-        world->xforms[id].scale = glms_vec3_fill(e->scale);
-        if (world->replications[id].auth == NETAUTH_REMOTE)
-        {
             if (world->masks[id] & HAS_MODEL)
             {
                 world->models[id].modelId = e->modelId;
@@ -190,15 +197,16 @@ void Net_Apply_Snap(World *world)
                                        });
                 }
             }
-            if (world->masks[id] & HAS_ABILITY)
-            {
-                u8 state                   = e->abilityState;
-                world->abilities[id].state = state;
-                AbilityData *data          = &world->abilities[id].stateData[state];
-                data->charge = e->abilityCharge;
-                data->stage  = e->abilityStage;
-            }
         }
+        if (world->masks[id] & HAS_ABILITY)
+        {
+            u8 state                   = e->abilityState;
+            world->abilities[id].state = state;
+            AbilityData *data          = &world->abilities[id].stateData[state];
+            data->charge               = e->abilityCharge;
+            data->stage                = e->abilityStage;
+        }
+
         if (world->masks[id] & HAS_OWNER)
         {
             world->owners[id].ownerId = net->hostToLocalMap[e->ownerId];
@@ -223,7 +231,6 @@ void Net_Apply_Snap(World *world)
     }
 }
 
-
 void Net_Send_Input(World *world)
 {
     if (!(world->masks[1] & HAS_CONTROLLER))
@@ -243,4 +250,10 @@ void Net_Send_Input(World *world)
 
     ENetPacket *packet = enet_packet_create(&input, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
     enet_peer_send(solNet.peer, 0, packet);
+}
+
+
+void Net_Send_Events(World *world)
+{
+    
 }

@@ -51,7 +51,7 @@ void Sol_Shape_Draw(World *world, double dt, double time)
             memcpy(p->color, &shape->color, sizeof(p->color));
         }
         break;
-        
+
         default: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(false);
             memcpy(o->pos, &pos, sizeof(o->pos));

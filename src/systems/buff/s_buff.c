@@ -10,19 +10,15 @@
 const Buff buff_config[] = {
     [BUFFKIND_FIRE] =
         {
-            .kind     = BUFFKIND_FIRE,
-            .addKind  = BUFFADDKIND_SET_DURATION,
             .freq     = 0.2f,
             .duration = 2.0f,
         },
     [BUFFKIND_INVULN] =
         {
-            .kind     = BUFFKIND_INVULN,
             .duration = 0.2f,
         },
     [BUFFKIND_KNOCKBACK] =
         {
-            .kind     = BUFFKIND_KNOCKBACK,
             .duration = 0.2f,
         },
 };
@@ -37,12 +33,20 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
 {
     if (Sol_Vital_GetDead(world, id))
         return;
-    world->masks[id] |= HAS_BUFF;
     CompBuff *buffs = &world->buffs[id];
+    world->masks[id] |= HAS_BUFF;
     if (buffs->count >= MAX_BUFFS)
         return;
 
     Buff new_buff = buff_config[kind];
+    new_buff.kind = kind;
+    if (hit)
+    {
+        new_buff.source = hit->entA;
+        new_buff.dir    = hit->dir;
+        new_buff.power  = hit->power;
+        new_buff.pos    = hit->pos;
+    }
 
     // check if we have buffs already
     for (int i = 0; i < buffs->count; i++)
@@ -53,7 +57,7 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
             switch (new_buff.addKind)
             {
             case BUFFADDKIND_SET_DURATION:
-                b->duration = new_buff.duration;
+                memcpy(b, &new_buff, sizeof(Buff));
                 break;
             case BUFFADDKIND_ADD_DURATION:
                 b->duration += new_buff.duration;
@@ -63,23 +67,14 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
                 break;
             case BUFFADDKIND_MULTIPLY:
                 goto addNewBuff;
+            default:
+                b->duration = new_buff.duration;
             }
             return;
         }
     }
 addNewBuff:
-    if (hit)
-    {
-        new_buff.source = hit->source;
-        new_buff.dir    = glms_normalize(hit->dir);
-        switch (kind)
-        {
-        case BUFFKIND_KNOCKBACK:
-            new_buff.dir   = glms_normalize(hit->dir);
-            new_buff.power = hit->power;
-            break;
-        }
-    }
+
     buffs->buffs[buffs->count++] = new_buff;
     buffs->activeKindsMask |= BuffBit(kind);
 }
@@ -123,12 +118,13 @@ void Sol_Buff_Step(World *world, double dt, double time)
             switch (b->kind)
             {
             case BUFFKIND_FIRE:
-                Sol_Movement_SetSpeedMod(world, id, 0.8f);
+                Sol_Movement_SetSpeedMod(world, id, 0.7f);
                 float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
                 if (b->accum > interval)
                 {
                     b->accum -= interval;
-                    Sol_Vital_Damage(world, id, (SolHit){.damage = 2, .source = b->source});
+                    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit.damage = 2, .as.hit.entA = b->source, .as.hit.entB = id});
+                    //Sol_Vital_Damage(world, id, &(SolHit){.entA = b->source, .entB = id, .damage = 2});
                 }
                 break;
             case BUFFKIND_KNOCKBACK:

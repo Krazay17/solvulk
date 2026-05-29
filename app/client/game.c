@@ -11,7 +11,6 @@ static void SpawnPlayer(int flags, void *data)
     Sol_Prefab_Factory(gameWorld, 1, PREFABKIND_PLAYER,
                        (PrefabDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
-    Sol_Owner_Add(gameWorld, 1, (OwnerDesc){.team = 0});
 }
 
 struct MakeWiz

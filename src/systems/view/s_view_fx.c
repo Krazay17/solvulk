@@ -132,12 +132,12 @@ void Fx_Event(World *world, double dt, double time)
                                                           .color    = (vec4s){0.25f, 0.1f, 0.5f, 0.6f},
                                                           .ttl      = 0.2f,
                                                           .speed    = 0,
-                                                          .followId = e->sourceId}});
+                                                          .followId = e->as.fx.entA}});
             Sol_Emitter_Add(world, (Emitter){.burst    = 100,
                                              .rate     = 0.01f,
                                              .ttl      = 0.2f,
                                              .pos      = pos,
-                                             .followId = e->sourceId,
+                                             .followId = e->as.fx.entA,
                                              .particle = {.speed     = 8.0f,
                                                           .ttl       = 0.5f,
                                                           .scale     = 0.3f,
@@ -146,7 +146,7 @@ void Fx_Event(World *world, double dt, double time)
                                                           .color     = (vec4s){0.25f, 0.1f, 0.5f, 0.6f},
                                                           .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                                           .rotspeed  = 6.0f,
-                                                          .followId  = e->sourceId,
+                                                          .followId  = e->as.fx.entA,
                                                           .scaleout  = 0.2f,
                                                           .scalein   = 0.2f}});
             break;
@@ -158,12 +158,12 @@ void Fx_Event(World *world, double dt, double time)
                                                           .scaleout = 0.8f,
                                                           .kind     = PARTICLE_ORB,
                                                           .color    = (vec4s){0.25f, 0.1f, 0.5f, 1.0f},
-                                                          .followId = e->targetId}});
+                                                          .followId = e->as.fx.entB}});
             Sol_Emitter_Add(world, (Emitter){.burst    = 100,
                                              .rate     = 0.01f,
                                              .ttl      = 0.2f,
                                              .pos      = pos,
-                                             .followId = e->targetId,
+                                             .followId = e->as.fx.entA,
                                              .particle = {.speed     = 8.0f,
                                                           .ttl       = 0.5f,
                                                           .scale     = 0.3f,

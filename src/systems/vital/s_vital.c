@@ -106,7 +106,7 @@ void Die(World *world, int id)
         Sol_Destroy_Ent(world, id);
 }
 
-void Sol_Vital_Damage(World *world, int id, SolHit hit)
+void Sol_Vital_Damage(World *world, int id, const SolHit *hit)
 {
     if (!(world->masks[id] & HAS_VITAL))
         return;
@@ -115,16 +115,16 @@ void Sol_Vital_Damage(World *world, int id, SolHit hit)
     if (vital->isDead)
         return;
 
-    if (hit.damage >= vital->health)
+    if (hit->damage >= vital->health)
     {
         vital->health = 0;
         Die(world, id);
-        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.attacker = hit.source, .sourceId = id});
+        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.entA = hit->entA, .as.death.entB = id});
     }
     else
     {
-        vital->health -= hit.damage;
-        vital->lastHitTime = (float)Sol_GetGameTime();
+        vital->health -= hit->damage;
+        vital->lastHitTime = Sol_GetGameTime();
     }
 }
 

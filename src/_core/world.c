@@ -92,7 +92,6 @@ void World_Step(World *world, double dt, double time)
     {
         world->poststepSystems[i](world, dt, time);
     }
-    Sol_Event_Clear(world);
     world->currentTick++;
 }
 

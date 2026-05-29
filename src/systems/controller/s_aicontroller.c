@@ -134,7 +134,7 @@ u32 AiController_FindTarget(World *world, int id)
             vec3s pos       = Sol_Xform_GetPos(world, id);
             vec3s targetPos = Sol_Xform_GetPos(world, otherId);
             float dist      = glms_vec3_distance(pos, targetPos);
-            if (dist < 25.0f && world->masks[otherId] & HAS_VITAL && !Sol_Vital_GetDead(world, otherId))
+            if (dist < 25.0f && world->masks[id] & HAS_VITAL && !Sol_Vital_GetDead(world, otherId))
                 return otherId;
         }
     }
@@ -149,5 +149,6 @@ void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage)
 
 void Sol_AiController_TargetDied(World *world, int id, int target)
 {
-    world->aicontrollers[id].target = 0;
+    if (target == world->aicontrollers[id].target)
+        world->aicontrollers[id].target = 0;
 }

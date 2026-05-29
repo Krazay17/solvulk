@@ -19,15 +19,15 @@ void Shield_State_Update(World *world, int id, float dt)
     if (data->accum > PULSERATE)
     {
         Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 0.1f);
-        data->accum = 0;
-        SolRayResult results[256];
-        int          hits = Sol_SphereCast(world, (SolRay){.pos = pos}, 4.0f, results, 256);
+        data->accum               = 0;
+        SolRayResult results[256] = {0};
+        int          hits         = Sol_SphereCast(world, (SolRay){.pos = pos}, 4.0f, results, 256);
 
         Sol_Event_Add(world, (SolEvent){
                                  .kind       = EVENTKIND_FX,
                                  .as.fx.kind = FXKIND_SHIELD_BURST,
                                  .as.fx.pos  = pos,
-                                 .sourceId   = id,
+                                 .as.fx.entA = id,
                              });
 
         for (int i = 0; i < hits; i++)
@@ -40,7 +40,7 @@ void Shield_State_Update(World *world, int id, float dt)
                                      .kind       = EVENTKIND_FX,
                                      .as.fx.pos  = result.pos,
                                      .as.fx.kind = FXKIND_SHIELD_HIT,
-                                     .targetId   = result.entId,
+                                     .as.fx.entA = result.entId,
                                  });
             if (world->flags[result.entId].flags & EFLAG_PROJECTILE)
             {
@@ -52,12 +52,13 @@ void Shield_State_Update(World *world, int id, float dt)
             }
             Sol_Event_Add(world, (SolEvent){
                                      .kind             = EVENTKIND_HIT,
+                                     .as.hit.entA      = id,
+                                     .as.hit.entB      = result.entId,
                                      .as.hit.pos       = result.pos,
-                                     .as.hit.target    = result.entId,
                                      .as.hit.damage    = 20,
-                                     .as.hit.power     = 25.0f,
+                                     .as.hit.power     = 10.0f,
                                      .as.hit.dir       = vecSub(result.pos, pos),
-                                     .as.hit.buffKind  = BUFFKIND_KNOCKBACK,
+                                     .as.hit.buffKind  = {BUFFKIND_KNOCKBACK},
                                      .as.hit.buffcount = 1,
                                  });
         }

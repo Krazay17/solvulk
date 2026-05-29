@@ -35,5 +35,5 @@ u32 Sol_Owner_GetTeam(World *world, int id)
 
 bool Sol_Owner_GetHostile(World *world, int id, int target)
 {
-    return id != target && (Sol_Owner_GetTeam(world, target) == 0 || Sol_Owner_GetTeam(world, id) != Sol_Owner_GetTeam(world, target));
+    return id != target && (Sol_Owner_GetTeam(world, target) == 1 || Sol_Owner_GetTeam(world, id) != Sol_Owner_GetTeam(world, target));
 }

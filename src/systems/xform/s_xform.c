@@ -14,7 +14,7 @@ void Sol_Xform_Add(World *world, int id, vec3s pos)
         .drawPos = pos,
         .scale   = (vec3s){1.0f, 1.0f, 1.0f},
     };
-    
+
     world->masks[id] |= HAS_XFORM;
     world->xforms[id] = xform;
 }
@@ -59,20 +59,20 @@ void Xform_Interpolate(World *world, float alpha)
 SolXform Sol_Xform_GetXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
-    return (SolXform) {
-        .pos = xform->pos,
+    return (SolXform){
+        .pos   = xform->pos,
         .scale = xform->scale,
-        .quat = xform->quat,
+        .quat  = xform->quat,
     };
 }
 
 SolXform Sol_Xform_GetDrawXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
-    return (SolXform) {
-        .pos = xform->drawPos,
+    return (SolXform){
+        .pos   = xform->drawPos,
         .scale = xform->drawScale,
-        .quat = xform->drawQuat,
+        .quat  = xform->drawQuat,
     };
 }
 
@@ -94,4 +94,8 @@ void Sol_Xform_SetPos(World *world, int id, vec3s pos)
 void Sol_Xform_SetYaw(World *world, int id, float yaw)
 {
     world->xforms[id].quat = Sol_Quat_FromYawPitch(yaw, 0);
+}
+void Sol_Xform_SetScale(World *world, int id, vec3s scale)
+{
+    world->xforms[id].scale = scale;
 }

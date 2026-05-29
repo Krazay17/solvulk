@@ -3,10 +3,12 @@
 #include "network.h"
 
 #define SNAPSHOT_INTERVAL (1.0 / 20.0) // 20Hz
+#define HEARTBEAT_INTERVAL 2
 
 SolNet solNet;
 
 static double last_send_time = 0;
+static double last_heartbeat = 0;
 
 int Sol_Net_Init()
 {
@@ -24,8 +26,9 @@ void Net_Connect(bool host, const char *ip, u16 port)
 
     if (host)
     {
+        Sol_Debug_Add("Hosting", 1.0f);
         // HOST SETUP: Listen on all local adapters on the specific game port
-        solNet.role    = NETROLE_HOST;
+        solNet.role  = NETROLE_HOST;
         address.host = ENET_HOST_ANY;
         address.port = port;
 
@@ -40,6 +43,7 @@ void Net_Connect(bool host, const char *ip, u16 port)
     }
     else
     {
+        Sol_Debug_Add("Hosting", 0.0f);
         // CLIENT SETUP: Connect with an anonymous outward socket
         solNet.role = NETROLE_CLIENT;
         solNet.host = enet_host_create(NULL, 1, 2, 0, 0);
@@ -228,14 +232,7 @@ void Net_Poll()
             if (solNet.role == NETROLE_HOST)
             {
                 int slot = (int)(intptr_t)event.peer->data;
-                if (slot >= 0 && slot < MAX_NET_CLIENTS)
-                {
-                    int id      = solNet.players[slot].entityId;
-                    int worldId = solNet.players[slot].currentWorldId;
-                    Sol_Destroy_Ent(Sol_GetWorldById(worldId), id);
-                    solNet.players[slot].enetPeerHandle = NULL;
-                    solNet.connectedPlayerCount--;
-                }
+                Net_Remove_Player(slot);
             }
             else if (solNet.role == NETROLE_CLIENT)
             {
@@ -249,6 +246,22 @@ void Net_Poll()
 
         case ENET_EVENT_TYPE_NONE:
             break;
+        }
+    }
+}
+
+void Net_Remove_Player(int slot)
+{
+    if (slot >= 0 && slot < MAX_NET_CLIENTS)
+    {
+        if(solNet.players[slot].enetPeerHandle != NULL)
+        {
+            int id      = solNet.players[slot].entityId;
+            int worldId = solNet.players[slot].currentWorldId;
+            Sol_Destroy_Ent(Sol_GetWorldById(worldId), id);
+            enet_peer_disconnect(solNet.players[slot].enetPeerHandle, 0);
+            solNet.players[slot].enetPeerHandle = NULL;
+            solNet.connectedPlayerCount--;
         }
     }
 }
@@ -287,6 +300,7 @@ void Net_Recv_Packet(ENetEvent *event)
 
         solNet.players[slot].entityId       = id;
         solNet.players[slot].currentWorldId = world->worldId;
+        solNet.players[slot].lastPing       = Sol_GetGameTime();
 
         NetWelcomePacket welcomePacket = {
             .type        = NET_PACKET_WELCOME,
@@ -298,6 +312,11 @@ void Net_Recv_Packet(ENetEvent *event)
         enet_peer_send(event->peer, 1, packet);
     }
     break;
+
+    case NET_PACKET_HEARTBEAT:
+        solNet.players[(int)(intptr_t)event->peer->data].lastPing = Sol_GetGameTime();
+        break;
+
     // Host recieves Input from Client
     case NET_PACKET_INPUT: {
         if (solNet.role != NETROLE_HOST)
@@ -383,4 +402,26 @@ void Net_Recv_Packet(ENetEvent *event)
     }
     break;
     }
+}
+
+void Net_Heartbeat(double time)
+{
+    if (time < last_heartbeat + HEARTBEAT_INTERVAL)
+        return;
+    last_heartbeat = time;
+    if (Net_IsClient())
+    {
+        u8          type   = NET_PACKET_HEARTBEAT;
+        ENetPacket *packet = enet_packet_create(&type, 1, ENET_PACKET_FLAG_RELIABLE);
+        enet_peer_send(solNet.peer, 1, packet);
+    }
+    else if (Net_IsHost())
+        for (int i = 0; i < solNet.connectedPlayerCount; i++)
+        {
+            if (solNet.players[i].enetPeerHandle == NULL)
+                continue;
+
+            if (time - solNet.players[i].lastPing > HEARTBEAT_INTERVAL * 2)
+                Net_Remove_Player(i);
+        }
 }

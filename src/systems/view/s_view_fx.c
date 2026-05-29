@@ -174,7 +174,16 @@ void Fx_Event(World *world, double dt, double time)
                                                           .rotspeed  = 6.0f,
                                                           .scaleout  = 0.2f,
                                                           .scalein   = 0.2f}});
-
+            break;
+        case FXKIND_DEATH_BLOOD:
+            Sol_Emitter_Add(world, (Emitter){.burst    = 40,
+                                             .pos      = e->as.fx.pos,
+                                             .particle = (Particle){.color    = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
+                                                                    .kind     = PARTICLE_BLOOD,
+                                                                    .scale    = 0.4f,
+                                                                    .ttl      = 1.5f,
+                                                                    .speed    = 2.5f,
+                                                                    .scaleout = .5f}});
             break;
         }
     }

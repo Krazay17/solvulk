@@ -18,7 +18,7 @@ const CompVital vital_config[] = {
             .maxMana     = 100,
             .mana        = 100,
             .doesRespawn = 1,
-            .respawnTime = 1.0f,
+            .respawnTime = 2.0f,
         },
     [VITALKIND_WIZARD] =
         {
@@ -61,47 +61,34 @@ void Sol_Vital_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
         CompVital *vital = &world->vitals[id];
-        if (vital->health == 0)
-            Die(world, id);
-        if (vital->doesRespawn && vital->isDead && time > vital->deathTime + vital->respawnTime)
-            Respawn(world, id, vital);
+        if (vital->doesRespawn && Sol_Vital_GetDead(world, id) && time > vital->deathTime + vital->respawnTime)
+            Sol_Vital_Respawn(world, id);
     }
 }
 
-void Respawn(World *world, int id, CompVital *vital)
-{
-    vital->health = vital->maxHealth;
-    vital->energy = vital->maxEnergy;
-    vital->mana   = vital->maxMana;
-    vital->isDead = 0;
-
-    CompXform *xform = &world->xforms[id];
-    if (xform)
-        xform->pos.x = 0;
-    xform->pos.y = 5.0f;
-    xform->pos.z = 0;
-}
-
-void Die(World *world, int id)
+void Sol_Vital_Respawn(World *world, int id)
 {
     CompVital *vital = &world->vitals[id];
-    if (vital->isDead)
-        return;
-    vital->isDead = 1;
+    vital->health    = vital->maxHealth;
+    vital->energy    = vital->maxEnergy;
+    vital->mana      = vital->maxMana;
 
+    CompXform *xform = &world->xforms[id];
+    Sol_Xform_Teleport(world, id, (vec3s){0, 5.0f, 0});
+}
+
+void Sol_Vital_Die(World *world, int id)
+{
+    CompVital *vital = &world->vitals[id];
     vital->deathTime = Sol_GetGameTime();
 
     if (world->masks[id] & HAS_BUFF)
         memset(&world->buffs[id], 0, sizeof(CompBuff));
 
-    Sol_Emitter_Add(world, (Emitter){.burst    = 40,
-                                     .pos      = Sol_Xform_GetPos(world, id),
-                                     .particle = (Particle){.color    = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
-                                                            .kind     = PARTICLE_BLOOD,
-                                                            .scale    = 0.4f,
-                                                            .ttl      = 1.5f,
-                                                            .speed    = 2.5f,
-                                                            .scaleout = .5f}});
+    Sol_Event_Add(
+        world,
+        (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_DEATH_BLOOD, .as.fx.pos = Sol_Xform_GetPos(world, id)});
+
     if (!vital->doesRespawn)
         Sol_Destroy_Ent(world, id);
 }
@@ -112,14 +99,14 @@ void Sol_Vital_Damage(World *world, int id, const SolHit *hit)
         return;
     CompVital *vital = &world->vitals[id];
 
-    if (vital->isDead)
-        return;
-
     if (hit->damage >= vital->health)
     {
+        if (vital->health > 0)
+        {
+            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.entA = hit->entA, .as.death.entB = id});
+            vital->deathTime = Sol_GetGameTime();
+        }
         vital->health = 0;
-        Die(world, id);
-        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_DEATH, .as.death.entA = hit->entA, .as.death.entB = id});
     }
     else
     {
@@ -140,7 +127,7 @@ u32 Sol_Vital_GetMaxHealth(World *world, int id)
 }
 bool Sol_Vital_GetDead(World *world, int id)
 {
-    return world->masks[id] & HAS_VITAL && (world->vitals[id].health == 0 || world->vitals[id].isDead);
+    return world->masks[id] & HAS_VITAL && (world->vitals[id].health == 0);
 }
 float Sol_Vital_GetLastHitTime(World *world, int id)
 {

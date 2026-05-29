@@ -11,13 +11,10 @@ typedef struct CompVital
 {
     u32    maxHealth, maxEnergy, maxMana;
     u32    health, energy, mana;
-    bool   doesRespawn, isDead;
+    bool   doesRespawn;
     float  respawnTime;
     double deathTime, lastHitTime;
 } CompVital;
-
-void Respawn(World *world, int id, CompVital *vital);
-void Die(World *world, int id);
 
 void Sol_Vital_Init(World *world);
 void Sol_Vital_Add(World *world, int id, VitalKind kind);
@@ -28,3 +25,5 @@ u32   Sol_Vital_GetHealth(World *world, int id);
 u32   Sol_Vital_GetMaxHealth(World *world, int id);
 bool  Sol_Vital_GetDead(World *world, int id);
 float Sol_Vital_GetLastHitTime(World *world, int id);
+void  Sol_Vital_Die(World *world, int id);
+void  Sol_Vital_Respawn(World *world, int id);

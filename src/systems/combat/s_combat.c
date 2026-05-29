@@ -20,6 +20,8 @@ static void Combat_Step(World *world, double dt, double time)
                 break;
             if (Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN))
                 break;
+            if (Sol_Vital_GetDead(world, e->as.hit.entB))
+                break;
             vec3s pos = e->as.hit.pos;
             for (int b = 0; b < e->as.hit.buffcount; b++)
             {
@@ -47,13 +49,14 @@ static void Combat_Step(World *world, double dt, double time)
         break;
 
         case EVENTKIND_DEATH: {
+            Sol_Vital_Die(world, e->as.death.entB);
+
+            // Tell Ai their target died
             for (int d = 0; d < world->activeCount; d++)
             {
                 int id = world->activeEntities[d];
-                if (!(world->masks[id] & HAS_AICONTROLLER))
-                    continue;
-
-                Sol_AiController_TargetDied(world, id, e->as.death.entB);
+                if ((world->masks[id] & HAS_AICONTROLLER))
+                    Sol_AiController_TargetDied(world, id, e->as.death.entB);
             }
         }
         break;

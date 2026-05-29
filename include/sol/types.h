@@ -72,6 +72,7 @@ typedef enum
     FXKIND_FIRE_APPLY,
     FXKIND_SHIELD_BURST,
     FXKIND_SHIELD_HIT,
+    FXKIND_DEATH_BLOOD,
 } FxKind;
 
 typedef enum

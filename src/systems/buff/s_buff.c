@@ -145,5 +145,5 @@ void Sol_Buff_Step(World *world, double dt, double time)
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 {
-    return (world->buffs[id].activeKindsMask & BuffBit(kind)) != 0;
+    return world->masks[id] & HAS_BUFF && (world->buffs[id].activeKindsMask & BuffBit(kind)) != 0;
 }

@@ -1,14 +1,17 @@
 #include "sol_core.h"
 
 #include "network.h"
-#include "physx/physx_i.h"
 #include "replication.h"
+
+u32 event_kinds_replicate[EVENTKIND_COUNT] = {
+    [EVENTKIND_FX] = 1,
+};
 
 void Sol_Replication_Init(World *world)
 {
     world->replications = calloc(MAX_ENTS, sizeof(CompReplication));
     world->worldNet     = calloc(1, sizeof(WorldNet));
-    memset(world->worldNet->hostToLocalMap, -1, sizeof(world->worldNet->hostToLocalMap));
+    WAddStep(world) = Net_Send_Events;
 }
 
 void Sol_Replication_Add(World *world, int id, NetAuth auth, u8 prefabKind)
@@ -43,7 +46,7 @@ void Sol_Replication_Disconnect(World *world)
     for (int hostId = 0; hostId <= wNet->maxHostId; hostId++)
     {
         int localId = wNet->hostToLocalMap[hostId];
-        if (localId != -1)
+        if (localId > 1)
         {
             // Destroy the entities remaining from the previous session
             Sol_Destroy_Ent(world, localId);
@@ -51,7 +54,7 @@ void Sol_Replication_Disconnect(World *world)
     }
 
     // 2. Clear out tracking arrays completely
-    memset(wNet->hostToLocalMap, -1, sizeof(wNet->hostToLocalMap));
+    memset(wNet->hostToLocalMap, 0, sizeof(wNet->hostToLocalMap));
     memset(wNet->snapShots, 0, sizeof(wNet->snapShots));
     memset(wNet->seenThisSnap, 0, sizeof(wNet->seenThisSnap));
 
@@ -108,6 +111,10 @@ void Net_Send_Snap(World *world)
             e->health = world->vitals[id].health;
             e->energy = world->vitals[id].energy;
         }
+        if(world->masks[id] & HAS_BUFF)
+        {
+            e->buffMask = world->buffs[id].activeKindsMask;
+        }
     }
     snap.eCount = count; // ← outside the loop
 
@@ -141,7 +148,7 @@ void Net_Apply_Snap(World *world)
         net->seenThisSnap[hostId] = true;
         int id                    = net->hostToLocalMap[hostId];
 
-        if (id == -1)
+        if (id == 0)
         {
             if (e->prefabKind)
                 id = Sol_Prefab_Factory(world, 0, e->prefabKind,
@@ -197,14 +204,15 @@ void Net_Apply_Snap(World *world)
                                        });
                 }
             }
-        }
-        if (world->masks[id] & HAS_ABILITY)
-        {
-            u8 state                   = e->abilityState;
-            world->abilities[id].state = state;
-            AbilityData *data          = &world->abilities[id].stateData[state];
-            data->charge               = e->abilityCharge;
-            data->stage                = e->abilityStage;
+            if (world->masks[id] & HAS_ABILITY)
+            {
+                u8 state                   = e->abilityState;
+                world->abilities[id].state = state;
+                AbilityData *data          = &world->abilities[id].stateData[state];
+                data->charge               = e->abilityCharge;
+                data->stage                = e->abilityStage;
+            }
+            world->buffs[id].activeKindsMask = e->buffMask;
         }
 
         if (world->masks[id] & HAS_OWNER)
@@ -223,10 +231,10 @@ void Net_Apply_Snap(World *world)
     for (int hostId = 0; hostId <= net->maxHostId; hostId++)
     {
         int localId = net->hostToLocalMap[hostId];
-        if (localId != -1 && !net->seenThisSnap[hostId])
+        if (localId != 0 && !net->seenThisSnap[hostId])
         {
             Sol_Destroy_Ent(world, localId);
-            net->hostToLocalMap[hostId] = -1;
+            net->hostToLocalMap[hostId] = 0;
         }
     }
 }
@@ -252,8 +260,48 @@ void Net_Send_Input(World *world)
     enet_peer_send(solNet.peer, 0, packet);
 }
 
-
 void Net_Send_Events(World *world)
 {
-    
+    if (!Net_IsHost())
+        return;
+    EventSnap snap  = {0};
+    snap.type       = NET_PACKET_EVENT;
+    snap.worldId    = world->worldId;
+    snap.tickNumber = world->currentTick;
+
+    u32 count = 0;
+    for (int i = 0; i < world->events->count && count < MAX_NET_EVENTS; i++)
+    {
+        SolEvent *e = &world->events->event[i];
+        if (event_kinds_replicate[e->kind])
+        {
+            snap.events[count++] = *e;
+        }
+    }
+    if (count == 0)
+        return;
+    snap.eventCount = count;
+
+    size_t      sendSize = offsetof(EventSnap, events) + sizeof(SolEvent) * count;
+    ENetPacket *packet   = enet_packet_create(&snap, sendSize, ENET_PACKET_FLAG_RELIABLE);
+    enet_host_broadcast(solNet.host, 1, packet);
+}
+
+void Net_Apply_Events(World *world, EventSnap *snap)
+{
+    for (int i = 0; i < snap->eventCount; i++)
+    {
+        SolEvent e = snap->events[i];
+        switch (e.kind)
+        {
+        case EVENTKIND_FX:
+            e.as.fx.entA = world->worldNet->hostToLocalMap[e.as.fx.entA];
+            e.as.fx.entB = world->worldNet->hostToLocalMap[e.as.fx.entB];
+            break;
+        default:
+            printf("Unhandled EventKind %d\n", e.kind);
+            continue;
+        }
+        Sol_Event_Add(world, e);
+    }
 }

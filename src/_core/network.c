@@ -254,7 +254,7 @@ void Net_Remove_Player(int slot)
 {
     if (slot >= 0 && slot < MAX_NET_CLIENTS)
     {
-        if(solNet.players[slot].enetPeerHandle != NULL)
+        if (solNet.players[slot].enetPeerHandle != NULL)
         {
             int id      = solNet.players[slot].entityId;
             int worldId = solNet.players[slot].currentWorldId;
@@ -336,6 +336,31 @@ void Net_Recv_Packet(ENetEvent *event)
     break;
     // Host recieves Event from Client
     case NET_PACKET_EVENT: {
+        if (!Net_IsPlaying() || !Net_IsClient())
+            return;
+        if (event->packet->dataLength < offsetof(EventSnap, events))
+        {
+            printf("[Net] Event too small\n");
+            return;
+        }
+        EventSnap fullSnap = {0};
+        size_t    copySize = event->packet->dataLength;
+        if (copySize > sizeof(EventSnap))
+            copySize = sizeof(EventSnap);
+        memcpy(&fullSnap, event->packet->data, copySize);
+        size_t expectedSize = offsetof(EventSnap, events) + sizeof(SolEvent) * fullSnap.eventCount;
+        if (copySize < expectedSize)
+        {
+            printf("[Net] Event truncated, expected %zu, got %zu\n", expectedSize, copySize);
+            return;
+        }
+        World *world = Sol_GetWorldById(fullSnap.worldId);
+        if (!world)
+        {
+            printf("No world for Event Snap\n");
+            return;
+        }
+        Net_Apply_Events(world, &fullSnap);
     }
     break;
     // Client recieves welcome from host

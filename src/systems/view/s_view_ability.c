@@ -27,7 +27,7 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
             AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
             if (data->stage > 0)
                 break;
-            float scale = data->charge * 2.5f;
+            float scale = data->charge * 2.0f + 0.5f;
             vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L");
             pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
             pos         = vecAdd(pos, vecSca(WORLD_UP, scale));

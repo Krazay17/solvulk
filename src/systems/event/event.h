@@ -8,6 +8,7 @@ typedef enum
     EVENTKIND_HIT,
     EVENTKIND_FX,
     EVENTKIND_DEATH,
+    EVENTKIND_COUNT,
 } EventKind;
 typedef struct SolEvent
 {

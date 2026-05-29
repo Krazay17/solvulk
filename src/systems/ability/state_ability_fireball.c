@@ -8,7 +8,8 @@
 
 #define RECOVERYTIME 0.3f
 #define COOLDOWN 0.2f
-#define BALL_VELOCITY 40.0f
+#define MIN_VELOCITY 15.0f
+#define MAX_VELOCITY 45.0f
 
 void Fireball_State_Update(World *world, int id, float dt)
 {
@@ -40,7 +41,7 @@ void Fireball_State_Update(World *world, int id, float dt)
                                (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power});
         if (ball > 0)
         {
-            Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), BALL_VELOCITY));
+            Sol_Physx_SetVel(world, ball, vecSca(Sol_Controller_GetAimdir(world, id), Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge)));
             Sol_Owner_SetOwner(world, ball, id);
         }
 

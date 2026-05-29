@@ -19,6 +19,18 @@ typedef struct SolRayResult
     u32   entId;
 } SolRayResult;
 
+// dims.x = radius/width, dims.y = height
+typedef struct CompBody
+{
+    vec3s  vel, impulse, force, groundNormal, dims;
+    vec3s  gravity;
+    float  grounded, airtime;
+    float  mass, invMass, restitution;
+    Shape3 shape;
+    u8     group;
+    bool   ignoreFriendly;
+} CompBody;
+
 typedef struct
 {
     vec3s  vel, gravity;

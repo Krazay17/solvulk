@@ -34,7 +34,7 @@ void Sol_Movement_Idle_Enter(World *world, int id)
     CompMovement *move = &world->movements[id];
     move->targetHeight = move->baseHeight;
 
-    AnimDesc desc = {.anim = ANIM_IDLE, .blendIn = 3.0f, .layerId = ANIM_LAYER_BASE};
+    AnimDesc desc = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
     Sol_Model_PlayAnim(world, id, desc);
 }
 

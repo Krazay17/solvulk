@@ -7,6 +7,7 @@ typedef enum
     EVENTKIND_COLLISION,
     EVENTKIND_HIT,
     EVENTKIND_FX,
+    EVENTKIND_ANIM,
     EVENTKIND_DEATH,
     EVENTKIND_COUNT,
 } EventKind;
@@ -32,6 +33,13 @@ typedef struct SolEvent
             u32   kind;
             float scale;
         } fx;
+        struct
+        {
+            u32   entId;
+            u32   animId;
+            u8    layerId;
+            float seek;
+        } anim;
     } as;
 } SolEvent;
 

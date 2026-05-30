@@ -27,13 +27,13 @@ void Claw_State_Enter(World *world, int id)
     float velocity = 40.0f;
 
     AnimDesc desc = {
-        .anim = ANIM_ABILITY0, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+        .anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
     Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Claw_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.blendOut = 0.15f, .layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){ .layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)

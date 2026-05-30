@@ -38,39 +38,37 @@ void ADash_State_Enter(World *world, int id)
     data->dir   = glms_vec3_normalize(data->dir);
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE};
+    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .force = true, .oneShot = true};
+
     switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
     {
     case STRAFE_FWD:
     case STRAFE_FWD_LEFT:
     case STRAFE_FWD_RIGHT:
         desc.anim = ANIM_DASH_FWD;
-        Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_BWD:
     case STRAFE_BWD_LEFT:
     case STRAFE_BWD_RIGHT:
         desc.anim = ANIM_DASH_BWD;
-        Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_LEFT:
         desc.anim = ANIM_DASH_LEFT;
-        Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_RIGHT:
         desc.anim = ANIM_DASH_RIGHT;
-        Sol_Model_PlayAnim(world, id, desc);
         break;
     default:
         desc.anim = ANIM_DASH_FWD;
-        Sol_Model_PlayAnim(world, id, desc);
         break;
     }
+    Sol_Model_PlayAnim(world, id, desc);
+    //Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_ANIM, .as.anim.animId = desc.anim, .as.anim.entId = id, .as.anim.layerId = desc.layerId});
 }
 
 void ADash_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.blendOut = 0.15f, .layerId = ANIM_LAYER_OVERRIDE});
+    //Sol_Model_PlayAnim(world, id, (AnimDesc){ .layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool ADash_State_CanExit(World *world, int id, u32 next)
@@ -84,4 +82,3 @@ bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next)
     AbilityData *data = &world->abilities[id].stateData[next];
     return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
 }
-

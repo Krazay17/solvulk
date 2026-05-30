@@ -56,8 +56,9 @@ typedef enum
     WORLD_SYS_CONTROLLER,
     WORLD_SYS_INTERACT,
 
-    // Step
+    // Replication pumps events for systems
     WORLD_SYS_REPLICATION,
+    // Step
     WORLD_SYS_TIMER,
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
@@ -91,7 +92,7 @@ typedef void (*SystemInit)(World *);
 typedef void (*SystemClear)(World *, int);
 typedef void (*SystemFunc)(World *, double, double);
 
-typedef uint32_t Mask;
+typedef uint64_t Mask;
 
 typedef struct CompReplication  CompReplication;
 typedef struct CompAiController CompAiController;

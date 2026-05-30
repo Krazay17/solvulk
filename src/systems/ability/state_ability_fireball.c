@@ -32,9 +32,12 @@ void Fireball_State_Update(World *world, int id, float dt)
         break;
     case 1:
         AnimDesc desc = {
-            .anim = ANIM_ATTACK_LEFT, .blendIn = 5.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+            .anim = ANIM_ATTACK_LEFT,  .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .oneShot = true};
         Sol_Model_PlayAnim(world, id, desc);
-        Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_FIREBALL_SHOOT, .as.fx.pos = Sol_Controller_GetAimPos(world, id), .as.fx.scale = power});
+        Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
+                                        .as.fx.kind  = FXKIND_FIREBALL_SHOOT,
+                                        .as.fx.pos   = Sol_Controller_GetAimPos(world, id),
+                                        .as.fx.scale = power});
 
         int ball =
             Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL,
@@ -64,14 +67,14 @@ void Fireball_State_Enter(World *world, int id)
     data->stage         = 0;
     data->recovery      = 0.0f;
 
-    AnimDesc desc = {
-        .anim = ANIM_CHARGE_LEFT, .blendIn = 15.0f, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+    AnimDesc desc = {.anim     = ANIM_CHARGE_LEFT,
+                     .layerId  = ANIM_LAYER_UPPER};
     Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Fireball_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER, .blendOut = 0.2f});
+    //Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER});
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)

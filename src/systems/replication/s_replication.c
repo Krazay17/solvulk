@@ -8,7 +8,8 @@
 #define CORRECT_MED 4.0f
 
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
-    [EVENTKIND_FX] = 1,
+    [EVENTKIND_FX]   = 1,
+    [EVENTKIND_ANIM] = 1,
 };
 
 void Sol_Replication_Init(World *world)
@@ -90,8 +91,15 @@ void Net_Send_Snap(World *world)
         if (world->masks[id] & HAS_MODEL)
         {
             e->modelId = world->models[id].modelId;
-            memcpy(e->animPlaying, world->models[id].playing, sizeof(u8) * ANIM_LAYER_COUNT);
-            // e->animSeek = world->models[id].layers[ANIM_LAYER_BASE].currentSeek;
+            for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
+            {
+                if (world->models[id].layers[layer].fadeOut > 0)
+                    continue;
+                e->animCurrent[layer] = world->models[id].layers[layer].animId;
+                e->animOneShot[layer] = world->models[id].layers[layer].oneShot;
+                e->animSeek[layer]    = world->models[id].layers[layer].currentSeek;
+                e->animSpeed[layer]   = world->models[id].layers[layer].playRate;
+            }
         }
         if (world->masks[id] & HAS_ABILITY)
         {
@@ -180,8 +188,8 @@ void Net_Apply_Snap(World *world)
                     world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, SOL_TIMESTEP);
                 else
                 {
-                    float t               = 1.0f - expf(-dist / CORRECT_MED);
-                    world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
+                    float t                = 1.0f - expf(-dist / CORRECT_MED);
+                    world->xforms[id].pos  = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
                     world->bodies[id].vel  = e->vel;
                     world->xforms[id].quat = e->rot;
                 }
@@ -199,13 +207,16 @@ void Net_Apply_Snap(World *world)
             if (world->masks[id] & HAS_MODEL)
             {
                 world->models[id].modelId = e->modelId;
-                for (int i = 0; i < ANIM_LAYER_COUNT; i++)
+                for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
                 {
                     Sol_Model_PlayAnim(world, id,
                                        (AnimDesc){
-                                           .anim    = e->animPlaying[i],
-                                           .layerId = i,
+                                           .layerId = layer,
+                                           .anim    = e->animCurrent[layer],
+                                           .seek    = e->animSeek[layer],
+                                           .oneShot = e->animOneShot[layer],
                                        });
+                    Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
                 }
             }
             if (world->masks[id] & HAS_ABILITY)
@@ -299,6 +310,9 @@ void Net_Apply_Events(World *world, EventSnap *snap)
         case EVENTKIND_FX:
             e.as.fx.entA = world->worldNet->hostToLocalMap[e.as.fx.entA];
             e.as.fx.entB = world->worldNet->hostToLocalMap[e.as.fx.entB];
+            break;
+        case EVENTKIND_ANIM:
+            e.as.anim.entId = world->worldNet->hostToLocalMap[e.as.anim.entId];
             break;
         default:
             printf("Unhandled EventKind %d\n", e.kind);

@@ -1,6 +1,7 @@
 #pragma once
-#include "event/event.h"
 #include "sol/types.h"
+
+#include "event/event.h"
 
 #define MAX_NET_ENTS (1 << 12)
 #define MAX_NET_INTERP_DISTANCE 2.0f
@@ -17,14 +18,15 @@ typedef struct
     SolEvent events[MAX_NET_EVENTS];
 } EventSnap;
 
+
 typedef struct
 {
     u32     id, ownerId;
-    u32     compMask;
+    u64     compMask;
     u32     buffMask;
     vec3s   pos, vel;
     versors rot;
-    float   scale, animSeek, abilityCharge;
+    float   scale, abilityCharge;
 
     u32 health, energy;
 
@@ -32,8 +34,11 @@ typedef struct
     u8 abilityState, abilityStage;
     u8 movementState;
 
-    u8 modelId;
-    u8 animPlaying[ANIM_LAYER_COUNT];
+    u8    modelId;
+    i16   animCurrent[ANIM_LAYER_COUNT];
+    bool animOneShot[ANIM_LAYER_COUNT];
+    float animSpeed[ANIM_LAYER_COUNT];
+    float animSeek[ANIM_LAYER_COUNT];
 } NetEntityState;
 
 typedef struct

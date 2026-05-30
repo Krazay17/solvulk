@@ -48,7 +48,7 @@ void Ability_Scripts_Init()
     fireballVolley->duration      = 2.1f;
     fireballVolley->actions[0] =
         (AbilityAction){.kind    = ACTIONKIND_PLAY_ANIM,
-                        .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .force = true}};
+                        .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .force = true, .oneShot = true}};
     fireballVolley->actions[1] = (AbilityAction){.kind           = ACTIONKIND_SPAWN_PROJECTILE,
                                                  .as.spawn.spawn = ABILITYSPAWN_FIREBALL,
                                                  .as.spawn.speed = 25.0f,
@@ -87,7 +87,7 @@ void Script_State_Enter(World *world, int id)
 
 void Script_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.blendOut = 0.15f, .layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool Script_State_CanExit(World *world, int id, u32 nextState)

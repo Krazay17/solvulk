@@ -2,11 +2,15 @@
 
 #include "model_i.h"
 
+#define ONESHOT_FADE_DURATION 0.25f
+static void Model_Events(World *world, double dt, double time);
+
 void Sol_Model_Init(World *world)
 {
     world->draw3dSystems[world->draw3dCount++] = Sol_Model_Draw;
 
-    world->models = calloc(MAX_ENTS, sizeof(CompModel));
+    world->models   = calloc(MAX_ENTS, sizeof(CompModel));
+    WAddStep(world) = Model_Events;
 }
 
 void Sol_Model_Add(World *world, int id, ModelDesc desc)
@@ -29,6 +33,20 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
     world->models[id] = model;
 
     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 1, .layerId = ANIM_LAYER_BASE});
+}
+
+static void Model_Events(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->events->count; i++)
+    {
+        SolEvent *e = &world->events->event[i];
+        if (e->kind != EVENTKIND_ANIM)
+            continue;
+        Sol_Model_PlayAnim(
+            world, e->as.anim.entId,
+            (AnimDesc){
+                .anim = e->as.anim.animId, .oneShot = true, .seek = 0, .layerId = e->as.anim.layerId, .force = true});
+    }
 }
 
 void Sol_Model_Draw(World *world, double dt, double time)
@@ -90,10 +108,20 @@ void Sol_Model_Draw(World *world, double dt, double time)
             if (layer->currentAnim < 0)
                 continue;
 
-            float dur          = m->skeleton.animations[layer->currentAnim].duration;
-            float speed        = layer->playRate != 0 ? layer->playRate * fdt : fdt;
-            float newSeek      = layer->currentSeek + speed;
-            layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
+            float dur     = m->skeleton.animations[layer->currentAnim].duration;
+            float speed   = layer->playRate != 0 ? layer->playRate * fdt : fdt;
+            float newSeek = layer->currentSeek + speed;
+            if (layer->oneShot && newSeek >= dur - ONESHOT_FADE_DURATION)
+            {
+                layer->currentSeek = newSeek < dur ? newSeek : dur;
+                if (!layer->fadeOut)
+                {
+                    layer->fadeOut      = 1.0f;
+                    layer->fadeOutSpeed = 1.0f / ONESHOT_FADE_DURATION;
+                }
+            }
+            else
+                layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
 
             if (layer->lastAnim >= 0 && layer->blendFactor < 1.0f)
             {
@@ -103,22 +131,25 @@ void Sol_Model_Draw(World *world, double dt, double time)
                 if (layer->blendFactor >= 1.0f)
                 {
                     layer->blendFactor = 1.0f;
-                    layer->lastAnim    = -1;
+                    layer->lastAnim    = 0;
                 }
             }
-
             // Fade-out countdown
             if (layer->fadeOut > 0.0f)
             {
                 layer->fadeOut -= fdt * layer->fadeOutSpeed;
-                if (layer->fadeOut < 0.0f)
-                    layer->fadeOut = 0.0f;
-                if (layer->fadeOut == 0.0f)
+                if (layer->fadeOut <= 0.0f)
                 {
+                    layer->fadeOut     = 0.0f;
+                    layer->lastAnim    = 0;
+                    layer->lastSeek    = 0;
+                    layer->blendFactor = 0;
                     layer->currentAnim = -1;
-                    layer->lastAnim    = -1;
+                    layer->animId      = 0;
                 }
             }
+            // if (L == ANIM_LAYER_OVERRIDE)
+            //     printf("Fade: %f\n", layer->fadeOut);
         }
 
         PoseRequest req = {.outBones = bonesSSBO.bones};
@@ -141,37 +172,31 @@ void Sol_Model_Draw(World *world, double dt, double time)
     }
 }
 
+// anim 0 to stop layer,
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
     CompModel *modelComp = &world->models[id];
     AnimLayer *layer     = &modelComp->layers[desc.layerId];
-    float      blendOut  = desc.blendOut > 0 ? desc.blendOut : 0.25f;
+    float      blendIn   = desc.blendIn > 0 ? desc.blendIn : .25f;
+    float      blendOut  = desc.blendOut > 0 ? desc.blendOut : .25f;
     float      speed     = desc.speed > 0 ? desc.speed : 1.0f;
 
-    if (!desc.force && desc.anim == modelComp->playing[desc.layerId])
-        return;
-
-    modelComp->playing[desc.layerId] = desc.anim;
-
-    if (desc.anim == 0)
+    if (desc.anim < 1)
     {
-
-        if (blendOut <= 0.0f)
-        {
-            // Instant stop
-            layer->currentAnim = -1;
-            layer->lastAnim    = -1;
-            layer->fadeOut     = 0.0f;
-        }
-        else
-        {
-            layer->fadeOut      = 1.0f;
-            layer->fadeOutSpeed = 1.0f / blendOut;
-        }
+        if (layer->animId == desc.anim)
+            return; // dedup the stop
+        layer->fadeOut      = 1.0f;
+        layer->fadeOutSpeed = 1.0f / blendOut;
+        layer->animId       = desc.anim;
         return;
     }
-
     i32 mappedAnim = model_anim_map[modelComp->modelId][desc.anim];
+
+    if (!desc.force && mappedAnim == layer->currentAnim)
+        return;
+
+    layer->animId = desc.anim;
+
     if (layer->blendFactor > 0.5f)
     {
         layer->lastAnim    = layer->currentAnim;
@@ -179,12 +204,13 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
         layer->blendFactor = 0;
     }
     layer->currentAnim = mappedAnim;
-    layer->currentSeek = desc.seek;
     layer->playRate    = speed;
-    layer->blendSpeed  = desc.blendIn > 0 ? desc.blendIn : 6.0f;
+    layer->oneShot     = desc.oneShot;
+    layer->currentSeek = desc.seek;
 
+    layer->blendSpeed   = 1.0f / blendIn;
+    layer->fadeOutSpeed = 1.0f / blendOut;
     layer->fadeOut      = 0.0f;
-    layer->fadeOutSpeed = desc.force ? 0 : blendOut;
 }
 
 SolModelId Sol_Model_GetModelId(World *world, int id)
@@ -198,6 +224,14 @@ void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float spe
     if (layer->currentAnim < 0)
         return;
     layer->playRate = speedDif;
+}
+
+void Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek)
+{
+    AnimLayer *layer = &world->models[id].layers[layerId];
+    if (layer->currentAnim < 0)
+        return;
+    layer->currentSeek = seek;
 }
 
 void Sol_Model_SetTint(World *world, int id, vec4s color)

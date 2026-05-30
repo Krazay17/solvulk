@@ -42,6 +42,7 @@ typedef enum
     HAS_AICONTROLLER = (1 << 19),
     HAS_COMBAT       = (1 << 20),
     HAS_REPLICATION  = (1 << 21),
+    HAS_EMITTER      = (1 << 22),
     COMPONENT_COUNT,
 } CompBits;
 

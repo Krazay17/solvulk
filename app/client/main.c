@@ -59,7 +59,10 @@ int main(int argc, char *argv[])
     g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                             NULL, NULL, hInstance, NULL);
     if (!g_hwnd)
+    {
+        MessageBoxA(NULL, "Window Creation Failed!", "SolVulk Fatal Error", MB_ICONERROR | MB_OK);
         return 1;
+    }
 
     MARGINS margins = {-1}; // -1 extends to the entire window
     DwmExtendFrameIntoClientArea(g_hwnd, &margins);
@@ -88,10 +91,20 @@ int main(int argc, char *argv[])
     //------------------------------------------
     // Init Sol App
     //------------------------------------------
-    Sol_Init(g_hwnd, hInstance);
+    if (Sol_Init(g_hwnd, hInstance) != 0)
+    {
+        MessageBoxA(NULL, "Vulkan Initialization Failed! Check your graphics drivers.", "SolVulk Fatal Error",
+                    MB_ICONERROR | MB_OK);
+        return 1;
+    }
     // load hot reload api
     // load_api("libsolvulk.dll");
-
+    
+    if (!Sol_GetState()->isRunning)
+    {
+        MessageBoxA(g_hwnd, "Engine flagged as not running before message loop started.", "Error", MB_OK);
+        return 1;
+    }
     Create_Sol_Game();
 
     //------------------------------------------

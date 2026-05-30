@@ -199,7 +199,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             if (src->name)
             {
                 strncpy(anim->name, src->name, 63);
-                printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
+                // printf("Model: %s, Anim: %d %s\n", data->scene[0].name, a, src->name);
             }
 
             anim->channelCount = (int)src->channels_count;

@@ -1069,7 +1069,7 @@ int Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
     gpuModels[modelId] = gpuModel;
-    printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
+    //printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 
     return 0;
 }

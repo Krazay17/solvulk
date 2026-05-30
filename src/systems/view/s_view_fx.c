@@ -19,7 +19,12 @@ void Fx_Event(World *world, double dt, double time)
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
         switch (e->as.fx.kind)
         {
-        case FXKIND_FIREBALL_HIT:
+        case FXKIND_FIREBALL_SHOOT: {
+            Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, e->as.fx.pos, 0.0f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_FIRE, e->as.fx.pos, e->as.fx.scale);
+        }
+        break;
+        case FXKIND_FIREBALL_HIT: {
             float scale = e->as.fx.scale;
             Sol_Audio_PlayAt(SOL_AUDIO_FIREBALLIMPACT, e->as.fx.pos, 0.05f);
 
@@ -109,9 +114,9 @@ void Fx_Event(World *world, double dt, double time)
                                                  .speed        = 1.0f,
                                                  .color        = {1.0f, 1.0f, .0f, .88f},
                                              }});
-
-            break;
-        case FXKIND_FIRE_APPLY:
+        }
+        break;
+        case FXKIND_FIRE_APPLY: {
             Sol_Emitter_Add(world, (Emitter){.burst    = 80,
                                              .pos      = pos,
                                              .particle = {.randScale = 1,
@@ -122,8 +127,9 @@ void Fx_Event(World *world, double dt, double time)
                                                           .speed     = 2.0f,
                                                           .scalein   = 0.2f,
                                                           .scaleout  = 0.8f}});
-            break;
-        case FXKIND_SHIELD_BURST:
+        }
+        break;
+        case FXKIND_SHIELD_BURST: {
             Sol_Emitter_Add(world, (Emitter){.burst    = 1,
                                              .pos      = pos,
                                              .particle = {.scale    = 4.0f,
@@ -149,8 +155,9 @@ void Fx_Event(World *world, double dt, double time)
                                                           .followId  = e->as.fx.entA,
                                                           .scaleout  = 0.2f,
                                                           .scalein   = 0.2f}});
-            break;
-        case FXKIND_SHIELD_HIT:
+        }
+        break;
+        case FXKIND_SHIELD_HIT: {
             Sol_Emitter_Add(world, (Emitter){.pos      = pos,
                                              .burst    = 2,
                                              .particle = {.ttl      = .1f,
@@ -174,8 +181,9 @@ void Fx_Event(World *world, double dt, double time)
                                                           .rotspeed  = 6.0f,
                                                           .scaleout  = 0.2f,
                                                           .scalein   = 0.2f}});
-            break;
-        case FXKIND_DEATH_BLOOD:
+        }
+        break;
+        case FXKIND_DEATH_BLOOD: {
             Sol_Emitter_Add(world, (Emitter){.burst    = 40,
                                              .pos      = e->as.fx.pos,
                                              .particle = (Particle){.color    = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
@@ -184,7 +192,8 @@ void Fx_Event(World *world, double dt, double time)
                                                                     .ttl      = 1.5f,
                                                                     .speed    = 2.5f,
                                                                     .scaleout = .5f}});
-            break;
+        }
+        break;
         }
     }
 }

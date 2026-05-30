@@ -141,7 +141,6 @@ static void LocalTick(World *world, int id, double dt, double time)
     }
 
     float freq = (GLM_PI_2f + look->pitch) * 200.0f;
-    Sol_Debug_Add("Freq", freq);
 
     Sol_Audio_SineFreq(0, freq);
     Sol_Audio_SineFreq(1, freq);

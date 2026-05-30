@@ -25,14 +25,13 @@
 #include "components.h"
 #include "world.h"
 
-#include "controller/aicontroller.h"
-#include "replication/replication.h"
 #include "ability/ability.h"
 #include "audio/audio.h"
 #include "buff/buff.h"
 #include "camera/camera.h"
 #include "combat/combat.h"
 #include "contact/contact.h"
+#include "controller/aicontroller.h"
 #include "controller/controller.h"
 #include "emitter/emitter.h"
 #include "font/font.h"
@@ -45,6 +44,7 @@
 #include "physx/physx.h"
 #include "platform/platform.h"
 #include "render/render.h"
+#include "replication/replication.h"
 #include "texture/texture.h"
 #include "ui/ui.h"
 #include "view/view.h"
@@ -62,7 +62,7 @@
     (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 #define ColorConvert(x) (x / 255.0f)
 
-SOLAPI void      Sol_Init(void *hwnd, void *hInstance);
+SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);
 SOLAPI void      Sol_Destroy();
 SOLAPI SolState *Sol_GetState();

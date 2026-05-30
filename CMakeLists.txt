@@ -98,8 +98,8 @@ if(WIN32)
     #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
 else()
     add_executable(solapp
-    "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
-    "${CMAKE_SOURCE_DIR}/app/client/game.c"
+        "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
+        "${CMAKE_SOURCE_DIR}/app/client/game.c"
     )
 endif()
 

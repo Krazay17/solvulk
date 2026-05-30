@@ -1,6 +1,8 @@
 #pragma once
 #include "sol/types.h"
 
+#define MAX_COMPEMITTERS 8
+
 typedef enum
 {
     EMITTERKIND_FLASH_WHITEBALL,
@@ -8,6 +10,7 @@ typedef enum
     EMITTERKIND_FLASH_FIREBALL,
     EMITTERKIND_BURST_SPARKS,
     EMITTERKIND_BURST_CLOUDS,
+    EMITTERKIND_BURST_FIRE,
 } EmitterKind;
 
 typedef enum
@@ -41,8 +44,16 @@ typedef struct Emitter
     u32         burst, inf, followId;
 } Emitter;
 
+typedef struct CompEmitter
+{
+    Emitter emitters[MAX_COMPEMITTERS];
+} CompEmitter;
+
+Emitter emitter_kinds[];
+
 void Sol_Emitter_Init(World *world);
 
 void      Sol_Emitter_Add(World *world, Emitter e);
+void      Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale);
 u32       Sol_Emitter_GetParticleCount(World *world);
 Particle *Sol_Emitter_GetParticles(World *world);

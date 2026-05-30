@@ -8,7 +8,7 @@ static double accumulator = 0.0;
 static void   DebugFPS(double dt);
 static void   Sol_OnResize();
 
-void Sol_Init(void *hwnd, void *hInstance)
+int Sol_Init(void *hwnd, void *hInstance)
 {
     solState.timescale = 1.0;
     solState.g_hwnd    = hwnd;
@@ -32,12 +32,13 @@ void Sol_Init(void *hwnd, void *hInstance)
     res = Sol_Render_Init(hwnd, hInstance);
     if (res != 0)
         printf("Render failed to init, code:%d\n", res);
-    res = Sol_Net_Init();
-    if (res != 0)
-        printf("Network failed to init, code:%d\n", res);
+    // res = Sol_Net_Init();
+    // if (res != 0)
+    //     printf("Network failed to init, code:%d\n", res);
 
     solState.debug     = true;
     solState.isRunning = true;
+    return res;
 }
 
 World *Sol_GetWorldById(u32 id)

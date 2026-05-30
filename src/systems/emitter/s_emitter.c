@@ -11,37 +11,6 @@
 #define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
 
-Emitter emitter_kinds[] = {
-    [EMITTERKIND_FLASH_WHITEBALL] =
-        {
-            .burst = 100,
-            .particle =
-                {
-                    .randScale = 1,
-                    .ttl       = 0.3f,
-                    .scale     = 0.5f,
-                    .color     = {1, .1f, .2f, .7f},
-                    .kind      = PARTICLE_SHOCK,
-                    .speed     = 15.0f,
-                    .scalein   = 0.1f,
-                    .scaleout  = 0.3f,
-                },
-        },
-    [EMITTERKIND_FLASH_REDBALL] =
-        {
-            .burst = 1,
-            .particle =
-                {
-                    .scale    = 1.0f,
-                    .scalein  = 0.2f,
-                    .scaleout = 0.8f,
-                    .kind     = PARTICLE_ORB,
-                    .color    = {1, 0, 0, 0.9f},
-                    .ttl      = 0.5f,
-                },
-        },
-};
-
 typedef struct SolEmitters
 {
     Emitter *emitter;
@@ -75,6 +44,25 @@ void Sol_Emitter_Init(World *world)
     world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
 }
 
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale)
+{
+    SolEmitters *s = world->emitters;
+    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+    Emitter e         = emitter_kinds[kind];
+    e.pos             = pos;
+    e.particle.scale  = e.particle.scale * scale;
+    e.particle.offset = e.particle.offset * scale;
+    for (int i = 0; i < e.burst; i++)
+        Particle_Activate(s, &e);
+    if (e.rate > 0)
+        s->emitter[s->emitter_count++] = e;
+}
+
+void Sol_Emitter_Attach(World *world, EmitterKind kind, int followId, float scale)
+{
+
+}
+
 void Sol_Emitter_Add(World *world, Emitter e)
 {
     SolEmitters *s = world->emitters;
@@ -94,6 +82,19 @@ void Sol_Emitter_Add(World *world, Emitter e)
     }
     if (e.rate > 0)
         s->emitter_count++;
+}
+
+static void Sol_Emitter_Tick(World *world, double dt, double time)
+{
+    int required = HAS_EMITTER;
+    for (int i = 0;i < world->activeCount; i++)
+    {
+        int id  = world->activeEntities[i];
+        if((world->masks[id] & required) != required)
+        continue;
+
+        
+    }
 }
 
 static void Emitter_Tick(World *world, double dt, double time)
@@ -174,7 +175,7 @@ static Particle *Particle_Activate(SolEmitters *s, Emitter *e)
 {
     Sol_Realloc(&s->particle, s->particle_count, &s->particle_capacity, sizeof(Particle));
 
-    switch (e->particle.kind) {}
+    // switch (e->particle.kind) {}
 
     Particle *p = &s->particle[s->particle_count++];
     memcpy(p, &e->particle, sizeof(Particle));

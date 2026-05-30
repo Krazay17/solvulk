@@ -5,8 +5,8 @@
 #define SNAPSHOT_INTERVAL (1.0 / 20.0) // 20Hz
 #define HEARTBEAT_INTERVAL 2
 
-SolNet solNet;
-
+SolNet        solNet;
+static u32    isInitialized  = 0;
 static double last_send_time = 0;
 static double last_heartbeat = 0;
 
@@ -17,6 +17,16 @@ int Sol_Net_Init()
 
 void Net_Connect(bool host, const char *ip, u16 port)
 {
+    if (isInitialized == 0)
+    {
+        if (enet_initialize() == 0)
+        {
+            isInitialized = 1;
+        }
+        else
+            return;
+    }
+
     if (Net_IsActive())
     {
         Net_Disconnect();

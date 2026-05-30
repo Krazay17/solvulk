@@ -3,7 +3,7 @@
 #include "sol/types.h"
 
 #define MAX_NET_ENTS (1 << 12)
-#define MAX_NET_INTERP_DISTANCE 1.0f
+#define MAX_NET_INTERP_DISTANCE 2.0f
 #define MAX_SNAPS_BUFFERED 128
 #define MAX_NET_PREDICTIONS 128
 #define MAX_NET_EVENTS 24

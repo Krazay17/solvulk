@@ -3,6 +3,10 @@
 #include "network.h"
 #include "replication.h"
 
+#define CORRECT_NONE 0.1f
+#define CORRECT_LIGHT 1.0f
+#define CORRECT_MED 4.0f
+
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
     [EVENTKIND_FX] = 1,
 };
@@ -11,7 +15,6 @@ void Sol_Replication_Init(World *world)
 {
     world->replications = calloc(MAX_ENTS, sizeof(CompReplication));
     world->worldNet     = calloc(1, sizeof(WorldNet));
-    WAddStep(world) = Net_Send_Events;
 }
 
 void Sol_Replication_Add(World *world, int id, NetAuth auth, u8 prefabKind)
@@ -111,7 +114,7 @@ void Net_Send_Snap(World *world)
             e->health = world->vitals[id].health;
             e->energy = world->vitals[id].energy;
         }
-        if(world->masks[id] & HAS_BUFF)
+        if (world->masks[id] & HAS_BUFF)
         {
             e->buffMask = world->buffs[id].activeKindsMask;
         }
@@ -171,16 +174,17 @@ void Net_Apply_Snap(World *world)
         float dist = glms_vec3_distance2(world->xforms[id].pos, e->pos);
         if (world->replications[id].auth == NETAUTH_AUTH)
         {
-            float t = 1.0f - expf(-dist / MAX_NET_INTERP_DISTANCE);
-            if (dist < MAX_NET_INTERP_DISTANCE)
+            if (dist > CORRECT_NONE)
             {
-                world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
-            }
-            else
-            {
-                world->xforms[id].pos  = e->pos;
-                world->bodies[id].vel  = e->vel;
-                world->xforms[id].quat = e->rot;
+                if (dist < CORRECT_LIGHT)
+                    world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, SOL_TIMESTEP);
+                else
+                {
+                    float t               = 1.0f - expf(-dist / CORRECT_MED);
+                    world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, t);
+                    world->bodies[id].vel  = e->vel;
+                    world->xforms[id].quat = e->rot;
+                }
             }
         }
         else if (world->replications[id].auth == NETAUTH_REMOTE)
@@ -262,8 +266,6 @@ void Net_Send_Input(World *world)
 
 void Net_Send_Events(World *world)
 {
-    if (!Net_IsHost())
-        return;
     EventSnap snap  = {0};
     snap.type       = NET_PACKET_EVENT;
     snap.worldId    = world->worldId;

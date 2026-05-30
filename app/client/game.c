@@ -90,7 +90,10 @@ void HostGame(int flags, void *data)
 
 void ClientConnect(int flags, void *data)
 {
-    Net_Connect(false, "127.0.0.1", 8080);
+    if (data)
+        Net_Connect(false, "127.0.0.1", 8080);
+    else
+        Net_Connect(false, "answer-cuba.gl.at.ply.gg", 35101);
 }
 
 void Disconnect(int flags, void *data)
@@ -184,6 +187,10 @@ void Create_Sol_Game()
     int connectButton = Sol_Prefab_Button(menu, (vec3s){1130, 200, 0}, "Connect");
     Sol_Interact_Add(menu, connectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect}});
 
-    int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "Disconnect");
+    int connectButtonLocal = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "ConnectLocal");
+    Sol_Interact_Add(menu, connectButtonLocal,
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect, .callbackData = (void*)1}});
+
+    int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 300, 0}, "Disconnect");
     Sol_Interact_Add(menu, disconnectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = Disconnect}});
 }

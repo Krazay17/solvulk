@@ -131,6 +131,11 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
     Sol_Contact_Add(world, id, CONTACTKIND_FIREBALL, scale);
     Sol_Contact_SetRadiusScale(world, id, scale);
     Sol_Replication_Add(world, id, 0, PREFABKIND_FIREBALL);
+    Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
+                                    .as.fx.kind  = FXKIND_FIREBALL_SHOOT,
+                                    .as.fx.pos   = pos,
+                                    .as.fx.scale = scale,
+                                    .as.fx.entA  = id});
 
     return id;
 }
@@ -161,7 +166,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
 
 int Sol_Prefab_Clouds(World *world, vec3s pos)
 {
-    Sol_Emitter_Add(world, (Emitter){.pos      = pos,
+    Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
                                      .burst    = 1000,
                                      .inf      = 1,
                                      .rate     = 0.1f,

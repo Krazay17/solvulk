@@ -47,13 +47,15 @@ typedef struct Emitter
 typedef struct CompEmitter
 {
     Emitter emitters[MAX_COMPEMITTERS];
+    u32     emitterCount;
 } CompEmitter;
 
 Emitter emitter_kinds[];
 
 void Sol_Emitter_Init(World *world);
+void Sol_Emitter_Add(World *world, int id, EmitterKind kind);
 
-void      Sol_Emitter_Add(World *world, Emitter e);
+void      Sol_Emitter_SpawnEx(World *world, Emitter e);
 void      Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale);
 u32       Sol_Emitter_GetParticleCount(World *world);
 Particle *Sol_Emitter_GetParticles(World *world);

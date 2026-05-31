@@ -113,6 +113,7 @@ typedef struct CompAbility      CompAbility;
 typedef struct CompOwner        CompOwner;
 typedef struct CompContact      CompContact;
 typedef struct CompCombat       CompCombat;
+typedef struct CompEmitter      CompEmitter;
 
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -158,6 +159,7 @@ typedef struct World
     CompContact      *contacts;
     CompAiController *aicontrollers;
     CompCombat       *combats;
+    CompEmitter      *compEmitters;
 
     u32 skyboxId;
 

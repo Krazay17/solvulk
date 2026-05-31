@@ -45,7 +45,7 @@ void MakeAEmitter(int flags, void *data)
     World *world = (World *)data;
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
     Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.pos = pos});
-    Sol_Emitter_Add(world, (Emitter){.burst    = 100,
+    Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 100,
                                      .rate     = 0.1f,
                                      .pos      = pos,
                                      .inf      = 1,

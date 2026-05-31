@@ -34,8 +34,9 @@ typedef struct
     vec3s  dir, pos;
     bool   held;
     float  elapsed, duration, accum, recovery, charge;
-    double lastEntered;
+    double lastEntered, lastExited;
     u32    stage;
+    u32    hitEnts[256];
 } AbilityData;
 
 typedef struct CompAbility

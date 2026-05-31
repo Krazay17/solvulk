@@ -7,11 +7,12 @@ typedef enum
 {
     COMBATFLAG_REFLECTING = (1 << 0),
 } CombatFlags;
- 
+
 typedef struct CompCombat
 {
     CombatFlags flags;
     u32         damage;
+    bool        hitEnts[MAX_ENTS];
 } CompCombat;
 
 void Sol_Combat_Init(World *world);

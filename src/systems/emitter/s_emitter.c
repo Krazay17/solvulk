@@ -25,15 +25,14 @@ typedef struct SolEmitters
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
 static void      Emitter_Tick(World *world, double dt, double time);
+static void      Sol_Emitter_Step(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
-    world->tickSystems[world->tickCount++] = Emitter_Tick;
-
-    // TODO MOVE TO CLIENT INIT
+    WAddStep(world)                            = Sol_Emitter_Step;
+    world->tickSystems[world->tickCount++]     = Emitter_Tick;
     world->draw3dSystems[world->draw3dCount++] = Sol_View_Particle_Draw;
-
-    world->emitters = malloc(sizeof(SolEmitters));
+    world->emitters                            = malloc(sizeof(SolEmitters));
 
     world->emitters->emitter_count    = 0;
     world->emitters->emitter_capacity = MAX_EMITTERS;
@@ -42,6 +41,24 @@ void Sol_Emitter_Init(World *world)
     world->emitters->particle_count    = 0;
     world->emitters->particle_capacity = MAX_PARTICLES;
     world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
+}
+
+void Sol_Emitter_Add(World *world, int id, EmitterKind kind)
+{
+    world->masks[id] |= HAS_EMITTER;
+    CompEmitter *e                 = &world->compEmitters[id];
+    e->emitters[e->emitterCount++] = emitter_kinds[kind];
+}
+
+static void Sol_Emitter_Step(World *world, double dt, double time)
+{
+    int required = HAS_EMITTER;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+    }
 }
 
 void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale)
@@ -58,12 +75,7 @@ void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale)
         s->emitter[s->emitter_count++] = e;
 }
 
-void Sol_Emitter_Attach(World *world, EmitterKind kind, int followId, float scale)
-{
-
-}
-
-void Sol_Emitter_Add(World *world, Emitter e)
+void Sol_Emitter_SpawnEx(World *world, Emitter e)
 {
     SolEmitters *s = world->emitters;
     Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
@@ -82,19 +94,6 @@ void Sol_Emitter_Add(World *world, Emitter e)
     }
     if (e.rate > 0)
         s->emitter_count++;
-}
-
-static void Sol_Emitter_Tick(World *world, double dt, double time)
-{
-    int required = HAS_EMITTER;
-    for (int i = 0;i < world->activeCount; i++)
-    {
-        int id  = world->activeEntities[i];
-        if((world->masks[id] & required) != required)
-        continue;
-
-        
-    }
 }
 
 static void Emitter_Tick(World *world, double dt, double time)

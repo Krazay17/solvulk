@@ -29,7 +29,7 @@ static void Sol_View_Buff_Tick(World *world, double dt, double time)
             switch (b->buffs[i].kind)
             {
             case BUFFKIND_FIRE:
-                Sol_Emitter_Add(world, (Emitter){.pos      = x->pos,
+                Sol_Emitter_SpawnEx(world, (Emitter){.pos      = x->pos,
                                                  .burst    = 10,
                                                  .particle = (Particle){.kind     = PARTICLE_FIRE,
                                                                         .ttl      = 1.0f,

@@ -7,8 +7,8 @@
 #define MAX_DURATION 4.0f
 
 #define RECOVERYTIME 0.3f
-#define COOLDOWN 0.2f
-#define MIN_VELOCITY 15.0f
+#define COOLDOWN 0.33f
+#define MIN_VELOCITY 20.0f
 #define MAX_VELOCITY 45.0f
 
 void Fireball_State_Update(World *world, int id, float dt)
@@ -31,17 +31,14 @@ void Fireball_State_Update(World *world, int id, float dt)
             data->stage++;
         break;
     case 1:
-        AnimDesc desc = {
-            .anim = ANIM_ATTACK_LEFT,  .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .oneShot = true};
+        AnimDesc desc = {.anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .oneShot = true};
         Sol_Model_PlayAnim(world, id, desc);
-        Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
-                                        .as.fx.kind  = FXKIND_FIREBALL_SHOOT,
-                                        .as.fx.pos   = Sol_Controller_GetAimPos(world, id),
-                                        .as.fx.scale = power});
 
-        int ball =
-            Sol_Prefab_Factory(world, 0, PREFABKIND_FIREBALL,
-                               (PrefabDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.33f), .scale = power});
+        int ball = Sol_Prefab_Factory(
+            world, 0, PREFABKIND_FIREBALL,
+            (PrefabDesc){.pos   = vecAdd(Sol_Controller_GetShootPos(world, id, 0.33f), vecSca(WORLD_UP, power)),
+                         .scale = power});
+
         if (ball > 0)
         {
             Sol_Physx_SetVel(
@@ -67,24 +64,24 @@ void Fireball_State_Enter(World *world, int id)
     data->stage         = 0;
     data->recovery      = 0.0f;
 
-    AnimDesc desc = {.anim     = ANIM_CHARGE_LEFT,
-                     .layerId  = ANIM_LAYER_UPPER};
+    AnimDesc desc = {.anim = ANIM_CHARGE_LEFT, .layerId = ANIM_LAYER_UPPER};
     Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Fireball_State_Exit(World *world, int id)
 {
-    //Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER});
+    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_FIREBALL];
+    data->lastExited = Sol_GetGameTime();
+    // Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER});
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)
 {
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_FIREBALL];
     return next != ABILITY_STATE_FIREBALL;
 }
 
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next)
 {
     AbilityData *data = &world->abilities[id].stateData[next];
-    return !(data->lastEntered + COOLDOWN > Sol_GetGameTime());
+    return !(data->lastExited + COOLDOWN > Sol_GetGameTime());
 }

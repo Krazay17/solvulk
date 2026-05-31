@@ -17,7 +17,10 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
     CompAbility a = {0};
     memcpy(a.ability_mappings, desc.abilityMapping, sizeof(AbilityMapping) * ABILITY_STATE_COUNT);
     for (int i = 0; i < ABILITY_STATE_COUNT; i++)
+    {
         a.stateData[i].lastEntered = -FLT_MAX;
+        a.stateData[i].lastExited = -FLT_MAX;
+    }
 
     world->masks[id] |= HAS_ABILITY;
     world->abilities[id] = a;

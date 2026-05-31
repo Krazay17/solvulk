@@ -95,11 +95,11 @@ void Sol_Physx_Step(World *world, double dt, double time)
         CompBody  *body  = &world->bodies[id];
         CompXform *xform = &world->xforms[id];
 
-        // if (world->replications[id].auth == NETAUTH_REMOTE)
-        // {
-        //     xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
-        //     continue;
-        // }
+        if (world->replications[id].auth == NETAUTH_REMOTE)
+        {
+            xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
+            continue;
+        }
         
         if (xform->pos.y < -500.0f)
         {
@@ -295,29 +295,29 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
     // so NDC Y here matches Vulkan's convention. No extra flip needed.
 
     // 2. Build a clip-space point at the far plane
-    vec4 clipFar = {ndcX, ndcY, 1.0f, 1.0f};
+    vec4s clipFar = {ndcX, ndcY, 1.0f, 1.0f};
 
     // 3. Invert viewProjection to go from clip → world
-    mat4 invVP;
-    glm_mat4_inv(cam->viewProj, invVP);
+    mat4s invVP;
+    invVP = glms_mat4_inv(cam->viewProj);
 
     // 4. Transform clip → world
-    vec4 worldFar;
-    glm_mat4_mulv(invVP, clipFar, worldFar);
+    vec4s worldFar;
+     worldFar = glms_mat4_mulv(invVP, clipFar);
 
     // 5. Perspective divide (homogeneous → 3D)
-    if (fabsf(worldFar[3]) < FLOATING_EPSILON)
+    if (fabsf(worldFar.raw[3]) < FLOATING_EPSILON)
     {
         return (SolRayResult){0};
     }
     vec3s farPos = {{
-        worldFar[0] / worldFar[3],
-        worldFar[1] / worldFar[3],
-        worldFar[2] / worldFar[3],
+        worldFar.x / worldFar.w,
+        worldFar.y / worldFar.w,
+        worldFar.z / worldFar.w,
     }};
 
     // 6. Build the ray from camera position toward the far point
-    vec3s camPos = {{cam->position[0], cam->position[1], cam->position[2]}};
+    vec3s camPos = cam->position;
     vec3s dir    = glms_vec3_normalize(glms_vec3_sub(farPos, camPos));
 
     ray.pos = camPos;

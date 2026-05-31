@@ -136,6 +136,9 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                                     .as.fx.pos   = pos,
                                     .as.fx.scale = scale,
                                     .as.fx.entA  = id});
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FIRE, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FOG, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, scale);
 
     return id;
 }
@@ -166,22 +169,23 @@ int Sol_Prefab_Box(World *world, vec3s pos)
 
 int Sol_Prefab_Clouds(World *world, vec3s pos)
 {
-    Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
-                                     .burst    = 1000,
-                                     .inf      = 1,
-                                     .rate     = 0.1f,
-                                     .particle = (Particle){
-                                         .randScale = 1,
-                                         .ttl       = 120.0f,
-                                         .color     = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
-                                         .scale     = 40.0f,
-                                         .kind      = PARTICLE_CLOUD,
-                                         .rotspeed  = Sol_Math_RandRange(-.1f, .1f),
-                                         .speed     = 1.0f,
-                                         .offset    = 100.0f,
-                                         .scalein   = 0.05f,
-                                         .scaleout  = 0.05f,
-                                     }});
+    Sol_Emitter_SpawnEx(world, (Emitter){.pos       = pos,
+                                         .inf       = 1,
+                                         .burst     = 1000,
+                                         .rate      = 0.2f,
+                                         .rateBurst = 2,
+                                         .particle  = (Particle){
+                                             .randScale = 1,
+                                             .ttl       = 120.0f,
+                                             .color     = (vec4s){.r = 1, .g = 1, .b = 1, .a = 0.2f},
+                                             .scale     = 40.0f,
+                                             .kind      = PARTICLE_CLOUD,
+                                             .rotspeed  = Sol_Math_RandRange(-.1f, .1f),
+                                             .speed     = 1.0f,
+                                             .offset    = 100.0f,
+                                             .scalein   = 0.05f,
+                                             .scaleout  = 0.05f,
+                                         }});
     return 0;
 }
 

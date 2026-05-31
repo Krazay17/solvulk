@@ -11,6 +11,9 @@ typedef enum
     EMITTERKIND_BURST_SPARKS,
     EMITTERKIND_BURST_CLOUDS,
     EMITTERKIND_BURST_FIRE,
+    EMITTERKIND_FOUNTAIN_FIRE,
+    EMITTERKIND_FOUNTAIN_FOG,
+    EMITTERKIND_FOUNTAIN_SPARKS,
 } EmitterKind;
 
 typedef enum
@@ -41,7 +44,7 @@ typedef struct Emitter
     vec3s       pos, vel;
     float       ttl, rate, accumulator;
     Particle    particle;
-    u32         burst, inf, followId;
+    u32         burst, inf, followId, rateBurst;
 } Emitter;
 
 typedef struct CompEmitter
@@ -53,9 +56,10 @@ typedef struct CompEmitter
 Emitter emitter_kinds[];
 
 void Sol_Emitter_Init(World *world);
-void Sol_Emitter_Add(World *world, int id, EmitterKind kind);
 
-void      Sol_Emitter_SpawnEx(World *world, Emitter e);
-void      Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale);
+void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale);
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale);
+void Sol_Emitter_SpawnEx(World *world, Emitter e);
+
 u32       Sol_Emitter_GetParticleCount(World *world);
 Particle *Sol_Emitter_GetParticles(World *world);

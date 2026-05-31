@@ -53,11 +53,6 @@
 
 #include "game/prefabs.h"
 
-#define SOL_VERSION 1
-
-#define SOL_TIMESTEP (1.0 / 60.0)
-#define MAX_WORLDS 4
-
 #define UISCALE(x)                                                                                                     \
     (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 #define ColorConvert(x) (x / 255.0f)

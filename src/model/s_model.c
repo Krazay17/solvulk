@@ -80,19 +80,9 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
         vec3s drawPos = xform->drawPos;
         drawPos.y += modelComp->yOffset;
-
-        modelSSBO.position[0] = drawPos.x;
-        modelSSBO.position[1] = drawPos.y;
-        modelSSBO.position[2] = drawPos.z;
-        modelSSBO.position[3] = 1.0f;
-        modelSSBO.rotation[0] = xform->drawQuat.x;
-        modelSSBO.rotation[1] = xform->drawQuat.y;
-        modelSSBO.rotation[2] = xform->drawQuat.z;
-        modelSSBO.rotation[3] = xform->drawQuat.w;
-        modelSSBO.scale[0]    = xform->drawScale.x;
-        modelSSBO.scale[1]    = xform->drawScale.y;
-        modelSSBO.scale[2]    = xform->drawScale.z;
-        modelSSBO.scale[3]    = 1.0f;
+        modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
+        modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
+        modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
 
         if (!modelComp->hasAnim)
         {

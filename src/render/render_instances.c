@@ -13,6 +13,7 @@ FireballQueue fireballQueue;
 QuadQueue healthQueue;
 QuadQueue spriteQueue0;
 QuadQueue spriteQueue1;
+QuadQueue text3dQueue;
 
 void Flush_Models(void)
 {
@@ -191,5 +192,15 @@ void Flush_Quads()
         vkCmdDraw(cmd, 6, spriteCount1, 0, currentOffset);
         currentOffset += spriteCount1;
         spriteQueue1.count = 0;
+    }
+
+    u32 textCount = text3dQueue.count;
+    if (textCount > 0)
+    {
+        memcpy(gpu + currentOffset, text3dQueue.instances, sizeof(QuadSSBO) * textCount);
+        Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
+        vkCmdDraw(cmd, 6, textCount, 0, currentOffset);
+        currentOffset += textCount;
+        text3dQueue.count = 0;
     }
 }

@@ -14,12 +14,9 @@ void Sol_Render_Resize(uint32_t width, uint32_t height)
 
 void Sol_Render_Flush3D(void)
 {
-    //Flush_Skybox();
     Flush_Models();
     Flush_Spheres();
     Flush_Quads();
-    //Flush_Sprites();
-    //Flush_Billboards();
 }
 
 void Sol_Render_Flush2D(void)

@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "font_i.h"
-
 const char *font_path[SOL_FONT_COUNT] = {
     [SOL_FONT_ICE] = {"atlas.json"},
 };
@@ -29,10 +27,13 @@ SolFont *Sol_GetFont(SolFontKind kind)
 
 static void Parse_Font(SolResource metrics, int id)
 {
-    SolFont    *font   = &loaded_fonts[id];
+    SolFont *font      = &loaded_fonts[id];
+    font->textureId    = id;
     SolGlyph   *glyphs = font->glyph;
     const char *json   = metrics.data;
 
+    font->atlasUscale = 224.0f;
+    font->atlasVscale = 224.0f;
     float atlasW = 224.0f;
     float atlasH = 224.0f;
 

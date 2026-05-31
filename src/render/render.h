@@ -15,6 +15,7 @@ typedef enum
     PIPE_MODEL_SKINNED,
 
     PIPE_TEXT,
+    PIPE_TEXT_3D,
     PIPE_RECT,
     PIPE_LINE,
 
@@ -34,6 +35,25 @@ typedef enum
 
 typedef struct
 {
+    double gameTime;
+} GameUtilUBO;
+
+typedef struct
+{
+    mat4s ortho2d;
+} OrthoUBO;
+
+typedef struct
+{
+    mat4s viewProjection;
+    mat4s view;
+    mat4s proj;
+    vec4s cameraPos;
+    vec4s sun;
+} SceneUBO;
+
+typedef struct
+{
     float x, y, w, h;
     float u, v, uw, vh;
     float r, g, b, a;
@@ -45,39 +65,28 @@ typedef struct
     u32             count;
 } ShaderPushTexts;
 
+#define CHARLENGTH_3D 256
 typedef struct
 {
-    double gameTime;
-} GameUtilUBO;
+    // Instance text rendering what fields do we need?
+    char text[CHARLENGTH_3D];
+    vec2 uv[CHARLENGTH_3D];
+} TextSSBO;
 
 typedef struct
 {
-    mat4 ortho2d;
-} OrthoUBO;
-
-typedef struct
-{
-    mat4 viewProjection;
-    mat4 view;
-    mat4 proj;
-    vec4 cameraPos;
-    vec4 sun;
-} SceneUBO;
-
-typedef struct
-{
-    vec4 rec;
-    vec4 color;
-    vec4 extras;
+    vec4s rec;
+    vec4s color;
+    vec4s extras;
 } ShaderPushRect;
 
 typedef struct
 {
-    vec4  position;
-    vec4  scale;
-    vec4  rotation;
-    vec4  color;
-    vec4  material;
+    vec4s  position;
+    vec4s  scale;
+    vec4s  rotation;
+    vec4s  color;
+    vec4s  material;
     u32   flags;
     float hitTime;
     u32   _padding[2];
@@ -90,9 +99,9 @@ typedef struct
 
 typedef struct
 {
-    vec4 pos;
-    vec4 color;
-    vec4 params;
+    vec4s pos;
+    vec4s color;
+    vec4s params;
     u32  type;
     u32  _padding[3];
 } SphereSSBO;
@@ -196,23 +205,6 @@ static inline SphereSSBO *Sol_Render_GetNext_Sphere(bool isfx)
     return &q->instances[q->count++];
 }
 
-// typedef struct
-// {
-//     u32      count;
-//     QuadSSBO instances[MAX_QUAD_INSTANCES];
-// } SpriteQueue;
-// extern SpriteQueue      spriteQueue;
-// extern SpriteQueue      spriteFxQueue;
-// static inline QuadSSBO *Sol_Render_GetNext_Sprite(bool isfx)
-// {
-//     SpriteQueue *q = isfx ? &spriteFxQueue : &spriteQueue;
-
-//     if (q->count >= MAX_QUAD_INSTANCES)
-//         return NULL;
-
-//     return &q->instances[q->count++];
-// }
-
 typedef struct
 {
     u32        count;
@@ -233,6 +225,7 @@ typedef enum
     QUADKIND_SPRITE,
     QUADKIND_SPRITE_ADD,
     QUADKIND_HEALTH,
+    QUADKIND_TEXT,
 } QuadKind;
 typedef enum
 {
@@ -241,7 +234,7 @@ typedef enum
 } QuadType;
 typedef struct
 {
-    vec4 pos, rot, color, uv, extra;
+    vec4s pos, rot, color, uv, extra;
     u32  type, flags, textureId, _pad;
 } QuadSSBO;
 typedef struct
@@ -252,6 +245,7 @@ typedef struct
 extern QuadQueue        healthQueue;
 extern QuadQueue        spriteQueue0;
 extern QuadQueue        spriteQueue1;
+extern QuadQueue        text3dQueue;
 static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
 {
     QuadQueue *q;
@@ -266,11 +260,14 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
     case QUADKIND_HEALTH:
         q = &healthQueue;
         break;
+    case QUADKIND_TEXT:
+        q = &text3dQueue;
+        break;
     }
 
     if (q->count >= MAX_QUAD_INSTANCES)
         return NULL;
-    
+
     return &q->instances[q->count++];
 }
 

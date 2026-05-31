@@ -40,74 +40,37 @@ void Sol_View_Particle_Draw(World *world, double dt, double time)
         {
         case PARTICLE_ORB: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
-            o->pos[0]     = p->pos.x;
-            o->pos[1]     = p->pos.y;
-            o->pos[2]     = p->pos.z;
-            o->pos[3]     = visualScale;
-            o->color[0]   = color.r;
-            o->color[1]   = color.g;
-            o->color[2]   = color.b;
-            o->color[3]   = color.a;
+            o->pos        = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale};
+            o->color      = color;
         }
         break;
 
         case PARTICLE_FIREBALL: {
             SphereSSBO *o = Sol_Render_GetNext_Fireball();
-            o->pos[0]     = p->pos.x;
-            o->pos[1]     = p->pos.y;
-            o->pos[2]     = p->pos.z;
-            o->pos[3]     = visualScale;
-            o->color[0]   = color.r;
-            o->color[1]   = color.g;
-            o->color[2]   = color.b;
-            o->color[3]   = color.a;
+            o->pos        = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale};
+            o->color      = color;
         }
         break;
 
         case PARTICLE_BLOOD: {
-            QuadSSBO *o    = Sol_Render_GetNext_Quad(QUADKIND_SPRITE);
-            o->pos[0]      = p->pos.x;
-            o->pos[1]      = p->pos.y;
-            o->pos[2]      = p->pos.z;
-            o->pos[3]      = visualScale;
-            o->color[0]    = color.r;
-            o->color[1]    = color.g;
-            o->color[2]    = color.b;
-            o->color[3]    = color.a;
-            o->uv[0]       = 0;
-            o->uv[1]       = 0;
-            o->uv[2]       = 1.0f;
-            o->uv[3]       = 1.0f;
-            o->rot[0] = p->rot;
-            o->rot[1] = 0;
-            o->rot[2] = 0;
-            o->rot[3] = 1.0f;
-            o->textureId   = texture_map[p->kind];
+            QuadSSBO *o  = Sol_Render_GetNext_Quad(QUADKIND_SPRITE);
+            o->pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale};
+            o->color     = color;
+            o->uv        = (vec4s){0, 0, 1, 1};
+            o->rot       = (vec4s){p->rot, 0, 0, 1};
+            o->textureId = texture_map[p->kind];
         }
         break;
 
         default: {
-            QuadSSBO *o    = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_ADD);
-            o->pos[0]      = p->pos.x;
-            o->pos[1]      = p->pos.y;
-            o->pos[2]      = p->pos.z;
-            o->pos[3]      = visualScale;
-            o->color[0]    = color.r;
-            o->color[1]    = color.g;
-            o->color[2]    = color.b;
-            o->color[3]    = color.a;
-            o->uv[0]       = 0;
-            o->uv[1]       = 0;
-            o->uv[2]       = 1.0f;
-            o->uv[3]       = 1.0f;
-            o->rot[0] = p->rot;
-            o->rot[1] = 0;
-            o->rot[2] = 0;
-            o->rot[3] = 1.0f;
-            o->textureId   = texture_map[p->kind];
+            QuadSSBO *o  = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_ADD);
+            o->pos       = (vec4s){p->pos.x, p->pos.y, p->pos.z, visualScale};
+            o->color     = color;
+            o->uv        = (vec4s){0, 0, 1, 1};
+            o->rot       = (vec4s){p->rot, 0, 0, 1};
+            o->textureId = texture_map[p->kind];
         }
         break;
-        
         }
     }
 }

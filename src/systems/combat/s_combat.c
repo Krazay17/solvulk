@@ -38,6 +38,7 @@ static void Combat_Step(World *world, double dt, double time)
                                      });
                 break;
             }
+            
             if (e->as.hit.power)
                 Sol_Physx_Impulse(world, e->as.hit.entB, vecSca(e->as.hit.dir, e->as.hit.power));
 
@@ -52,12 +53,12 @@ static void Combat_Step(World *world, double dt, double time)
             Sol_Vital_Die(world, e->as.death.entB);
 
             // Tell Ai their target died
-            for (int d = 0; d < world->activeCount; d++)
-            {
-                int id = world->activeEntities[d];
-                if ((world->masks[id] & HAS_AICONTROLLER))
-                    Sol_AiController_TargetDied(world, id, e->as.death.entB);
-            }
+            // for (int d = 0; d < world->activeCount; d++)
+            // {
+            //     int id = world->activeEntities[d];
+            //     if ((world->masks[id] & HAS_AICONTROLLER))
+            //         Sol_AiController_TargetDied(world, id, e->as.death.entB);
+            // }
         }
         break;
         }

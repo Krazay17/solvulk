@@ -74,6 +74,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_ORTHO_UBO, DESC_IMAGES},
             .descCount         = 2,
         },
+    [PIPE_TEXT_3D] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_TEXT3D_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
     [PIPE_RECT] =
         {
             .vertResource      = "ID_SHADER_RECT_V",
@@ -383,15 +395,16 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     boundPipeline = id;
 }
 
+// SSBO REFACTOR
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height)
 {
-    mat4 ortho;
-    glm_ortho(0.0f, (float)width, 0.0f, (float)height, -1.0f, 1.0f, ortho);
+    mat4s ortho;
+    ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, -1.0f, 1.0f, ortho);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         OrthoUBO *ubo = descriptors[DESC_ORTHO_UBO].mapped[i];
-        memcpy(ubo->ortho2d, ortho, sizeof(mat4));
+        ubo->ortho2d = ortho;
     }
 }
 
@@ -1069,7 +1082,7 @@ int Sol_UploadModel(SolModel *model, SolModelId modelId)
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
     gpuModels[modelId] = gpuModel;
-    //printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
+    // printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 
     return 0;
 }

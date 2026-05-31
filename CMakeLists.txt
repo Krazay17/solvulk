@@ -142,6 +142,7 @@ set(SHADERS
     ${SHADER_DIR}/quad.vert
     ${SHADER_DIR}/healthbar.frag
     ${SHADER_DIR}/sprite.frag
+    ${SHADER_DIR}/text3d.frag
 )
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")

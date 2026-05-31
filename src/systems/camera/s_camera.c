@@ -71,14 +71,19 @@ void Sol_Cam_Update(World *world, double dt)
     if (Sol_Input_GetMouse().wheelV)
         camera_arm.distance -= changeDist;
 
-    memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
-    memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
-    memcpy(sol_camera.anchor, camera_arm.anchor.raw, sizeof(vec3));
-    glm_vec3_sub(sol_camera.position, sol_camera.target, sol_camera.dir);
-    glm_vec3_normalize(sol_camera.dir);
-    glm_vec3_lerp(sol_camera.up, (vec3){0.0f, 1.0f, 0.0f}, 1.0f - expf(-10.0f * (float)dt), sol_camera.up);
+    sol_camera.position = camera_arm.arm;
+    sol_camera.target   = vecAdd(camera_arm.arm, look->lookdir);
+    sol_camera.anchor   = camera_arm.anchor;
 
-    glm_lookat(sol_camera.position, sol_camera.target, sol_camera.up, sol_camera.view);
+    // memcpy(sol_camera.position, camera_arm.arm.raw, sizeof(vec3));
+    // memcpy(sol_camera.target, vecAdd(camera_arm.arm, look->lookdir).raw, sizeof(vec3));
+    // memcpy(sol_camera.anchor, camera_arm.anchor.raw, sizeof(vec3));
+    sol_camera.dir = glms_vec3_sub(sol_camera.position, sol_camera.target);
+    glms_vec3_normalize(sol_camera.dir);
+    sol_camera.up = glms_vec3_lerp(sol_camera.up, (vec3s){0.0f, 1.0f, 0.0f}, 1.0f - expf(-10.0f * (float)dt));
+
+    // glm_lookat(sol_camera.position, sol_camera.target, sol_camera.up, sol_camera.view);
+    sol_camera.view = glms_lookat(sol_camera.position, sol_camera.target, sol_camera.up);
 
     Sol_Render_Camera_Update(camera);
 }
@@ -96,4 +101,8 @@ void Sol_Cam_SetActivecam(World *world)
 SolCamera *Sol_Cam_GetCam(World *world)
 {
     return world->activeCamera;
+}
+void Sol_Cam_GetRight(vec3s *right)
+{
+    
 }

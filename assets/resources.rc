@@ -43,6 +43,7 @@ ID_SHADER_SKYBOX_V      RCDATA          "shaders/skybox.vert.spv"
 ID_SHADER_SKYBOX_F      RCDATA          "shaders/skybox.frag.spv"
 ID_SHADER_FIREBALL_F    RCDATA          "shaders/fireball.frag.spv"
 ID_SHADER_FIREBALL1_F   RCDATA          "shaders/fireball1.frag.spv"
+ID_SHADER_TEXT3D_F      RCDATA          "shaders/text3d.frag.spv"
 
 ID_SHADER_QUAD_V        RCDATA          "shaders/quad.vert.spv"
 ID_SHADER_HEALTHBAR_F   RCDATA          "shaders/healthbar.frag.spv"

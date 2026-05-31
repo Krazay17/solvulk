@@ -43,12 +43,9 @@ void *Sol_GetDescriptorMapping(DescriptorId id);
 int Sol_UploadImage(SolTexture *image, SolTextureId id);
 int Sol_UploadModel(SolModel *model, SolModelId id);
 
-void Flush_Skybox(void);
 void Flush_Models(void);
 void Flush_Quads(void);
 void Flush_Spheres(void);
-// void Flush_Sprites(void);
-// void Flush_Billboards(void);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);

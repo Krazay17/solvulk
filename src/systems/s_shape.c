@@ -47,15 +47,15 @@ void Sol_Shape_Draw(World *world, double dt, double time)
         {
         case SHAPEKIND_FIREBALL: {
             SphereSSBO *p = Sol_Render_GetNext_Fireball();
-            memcpy(p->pos, &pos, sizeof(p->pos));
-            memcpy(p->color, &shape->color, sizeof(p->color));
+            p->pos = pos;
+            p->color = shape->color;
         }
         break;
 
         default: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(false);
-            memcpy(o->pos, &pos, sizeof(o->pos));
-            memcpy(o->color, &shape->color, sizeof(o->color));
+            o->pos = pos;
+            o->color = shape->color;
         }
         break;
         }

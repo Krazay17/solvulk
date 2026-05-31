@@ -29,10 +29,11 @@ static void      Sol_Emitter_Step(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
-    WAddStep(world)                            = Sol_Emitter_Step;
-    world->tickSystems[world->tickCount++]     = Emitter_Tick;
-    world->draw3dSystems[world->draw3dCount++] = Sol_View_Particle_Draw;
-    world->emitters                            = malloc(sizeof(SolEmitters));
+    WAddStep(world)     = Sol_Emitter_Step;
+    WAddTick(world)     = Emitter_Tick;
+    WAdd3d(world)       = Sol_View_Particle_Draw;
+    world->emitters     = malloc(sizeof(SolEmitters));
+    world->compEmitters = calloc(MAX_ENTS, sizeof(CompEmitter));
 
     world->emitters->emitter_count    = 0;
     world->emitters->emitter_capacity = MAX_EMITTERS;
@@ -43,21 +44,68 @@ void Sol_Emitter_Init(World *world)
     world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
 }
 
-void Sol_Emitter_Add(World *world, int id, EmitterKind kind)
+void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale)
 {
+    CompEmitter *e = &world->compEmitters[id];
+    if (!(world->masks[id] & HAS_EMITTER))
+        e->emitterCount = 0;
+    if (e->emitterCount >= MAX_COMPEMITTERS)
+        return;
+
+    Emitter *em = &e->emitters[e->emitterCount++];
+    *em         = emitter_kinds[kind];
+
+    em->particle.offset *= scale;
+    em->particle.scale *= scale;
+
     world->masks[id] |= HAS_EMITTER;
-    CompEmitter *e                 = &world->compEmitters[id];
-    e->emitters[e->emitterCount++] = emitter_kinds[kind];
 }
 
 static void Sol_Emitter_Step(World *world, double dt, double time)
 {
+    float        fdt = (float)dt;
+    SolEmitters *sys = world->emitters;
+
     int required = HAS_EMITTER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
+        CompEmitter *emitterComp = &world->compEmitters[id];
+        int          write       = 0;
+        for (int b = 0; b < emitterComp->emitterCount; b++)
+        {
+            Emitter *e = &emitterComp->emitters[b];
+            if (!e->inf)
+            {
+                e->ttl -= fdt;
+                if (e->ttl <= 0)
+                    continue;
+            }
+            e->pos = Sol_Xform_GetPos(world, id);
+
+            e->accumulator += fdt;
+            if (e->rate > 0)
+            {
+                while (e->accumulator >= e->rate)
+                {
+                    for (int b = 0; b < e->rateBurst || b < 1; b++)
+                    {
+                        Particle *p = Particle_Activate(sys, e);
+                        // Rewind lag to place particle unclumped
+                        float lagOffset = e->accumulator / fdt;
+                        p->pos          = vecAdd(p->pos, vecSca(p->vel, -lagOffset * fdt));
+                    }
+                    e->accumulator -= e->rate;
+                }
+            }
+            emitterComp->emitters[write++] = *e;
+        }
+        emitterComp->emitterCount = write;
+
+        if (write == 0)
+            world->masks[id] &= ~HAS_EMITTER;
     }
 }
 
@@ -127,10 +175,13 @@ static void Emitter_Tick(World *world, double dt, double time)
             // substep spawn incase lag to spawn right amount
             while (e->accumulator >= e->rate)
             {
-                Particle *p = Particle_Activate(sys, e);
-                // Rewind lag to place particle unclumped
-                float lagOffset = e->accumulator / fdt;
-                p->pos          = vecAdd(p->pos, vecSca(p->vel, -lagOffset * fdt));
+                for (int b = 0; b < e->rateBurst || b < 1; b++)
+                {
+                    Particle *p = Particle_Activate(sys, e);
+                    // Rewind lag to place particle unclumped
+                    float lagOffset = e->accumulator / fdt;
+                    p->pos          = vecAdd(p->pos, vecSca(p->vel, -lagOffset * fdt));
+                }
                 e->accumulator -= e->rate;
             }
 

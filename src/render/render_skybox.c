@@ -11,15 +11,6 @@ void Sol_Render_SkyboxSet(World *world, SolTextureId textureId)
     skybox_texture = textureId;
 }
 
-void Flush_Skybox()
-{
-    if (!skybox_texture)
-        return;
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_SKYBOX);
-    vkCmdDraw(cmd, 3, 1, 0, 0);
-}
-
 void Sol_Render_DrawSkybox()
 {
     VkCommandBuffer cmd = Command_Buffer_Get();

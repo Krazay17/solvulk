@@ -33,11 +33,8 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
             pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
 
             SphereSSBO *push = Sol_Render_GetNext_Fireball();
-            push->pos[0]     = pos.x;
-            push->pos[1]     = pos.y;
-            push->pos[2]     = pos.z;
-            push->pos[3]     = scale;
-            memcpy(push->color, (vec4){1, 0, 0, 0.8f}, sizeof(vec4));
+            push->pos = (vec4s){pos.x, pos.y, pos.z, scale};
+            push->color = (vec4s){1, 0, 0, 0.8f};
         }
         break;
         case ABILITY_STATE_DASH:
@@ -46,14 +43,8 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
             break;
         case ABILITY_STATE_SHIELD: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
-            o->pos[0]     = xform->drawPos.x;
-            o->pos[1]     = xform->drawPos.y;
-            o->pos[2]     = xform->drawPos.z;
-            o->pos[3]     = 1.0f;
-            o->color[0]   = 0.25f;
-            o->color[1]   = 0.1f;
-            o->color[2]   = 0.5f;
-            o->color[3]   = 0.25f;
+            o->pos = (vec4s){xform->drawPos.x,xform->drawPos.y,xform->drawPos.z,1.0f};
+            o->color = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
         }
         break;
         }

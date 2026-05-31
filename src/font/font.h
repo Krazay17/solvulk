@@ -15,4 +15,27 @@ typedef struct
     SolFontKind kind;
 } SolFontDesc;
 
-float           Sol_MeasureText(const char *str, float size, SolFontKind id);
+typedef struct
+{
+    float u, v, uw, vh;
+    float xoffset;
+    float ytop;
+    float yoffset;
+    float yadvance;
+} SolGlyph;
+
+typedef struct
+{
+    float l, b, r, t;
+} TextBounds;
+
+typedef struct SolFont
+{
+    SolGlyph     glyph[128];
+    TextBounds   bounds;
+    SolTextureId textureId;
+    float        atlasUscale, atlasVscale;
+} SolFont;
+
+SolFont *Sol_GetFont(SolFontKind kind);
+float    Sol_MeasureText(const char *str, float size, SolFontKind id);

@@ -38,7 +38,7 @@ void ADash_State_Enter(World *world, int id)
     data->dir   = glms_vec3_normalize(data->dir);
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .force = true, .oneShot = true};
+    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .force = true, .oneShot = true, .seek = 0.1f, .blendIn = 0.1f};
 
     switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
     {

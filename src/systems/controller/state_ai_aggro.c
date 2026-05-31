@@ -9,6 +9,11 @@ void Aggro_State_Update(World *world, int id, float dt)
         Ai_SetState(world, id, AISTATE_IDLE);
         return;
     }
+    if(Sol_Vital_GetDead(world,aicontroller->target))
+    {
+        Ai_SetState(world, id, AISTATE_IDLE);
+        return;
+    }
     if (aicontroller->distToTarget > 50.0f)
     {
         aicontroller->dropAggroTimer += dt;

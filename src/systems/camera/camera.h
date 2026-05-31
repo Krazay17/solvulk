@@ -13,12 +13,12 @@ typedef struct
 
 typedef struct SolCamera
 {
-    mat4  proj;
-    mat4  view;
-    mat4  viewProj;
-    vec3  position, anchor;
-    vec3  target, dir;
-    vec3  up;
+    mat4s proj;
+    mat4s view;
+    mat4s viewProj;
+    vec3s position, anchor;
+    vec3s target, dir;
+    vec3s up;
     float fov;
     float nearClip;
     float farClip;
@@ -33,3 +33,4 @@ SolCamera    *Sol_GetCamera();
 SolCameraArm *Sol_Cam_GetArm();
 void          Sol_Cam_SetActivecam(World *world);
 SolCamera    *Sol_Cam_GetCam(World *world);
+void          Sol_Cam_GetRight(vec3s *right);

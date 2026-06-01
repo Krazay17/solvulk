@@ -1,9 +1,8 @@
 
 #include "sol_core.h"
 
-#include "model/model_i.h"
+#include "render/model/model_i.h"
 #include "render/render_i.h"
-#include "texture/texture.h"
 #include "vkrender.h"
 
 static SolVkState solvkstate = {0};
@@ -81,7 +80,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
@@ -398,13 +397,12 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
 // SSBO REFACTOR
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height)
 {
-    mat4s ortho;
-    ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, -1.0f, 1.0f, ortho);
+    mat4s ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, -1.0f, 1.0f);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         OrthoUBO *ubo = descriptors[DESC_ORTHO_UBO].mapped[i];
-        ubo->ortho2d = ortho;
+        ubo->ortho2d  = ortho;
     }
 }
 

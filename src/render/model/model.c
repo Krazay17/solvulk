@@ -659,3 +659,38 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     }
     return -1;
 }
+
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelId handle, CompXform *xform)
+{
+    SolModel *model = &loaded_models[handle];
+    mat3s     rot   = glms_quat_mat3(xform->quat);
+    for (int i = 0; i < model->tri_count; i++)
+    {
+        SolTri  src = model->tris[i];
+        SolTri *dst = &group[offset + i];
+        dst->entId  = id;
+
+        dst->a = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.a, xform->scale)), xform->pos);
+        dst->b = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.b, xform->scale)), xform->pos);
+        dst->c = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.c, xform->scale)), xform->pos);
+
+        // Recompute derived data in world space
+        vec3s e1    = glms_vec3_sub(dst->b, dst->a);
+        vec3s e2    = glms_vec3_sub(dst->c, dst->a);
+        vec3s cross = glms_vec3_cross(e1, e2);
+        float len   = glms_vec3_norm(cross);
+        dst->normal = len > 0.00001f ? glms_vec3_scale(cross, 1.0f / len) : (vec3s){0, 1, 0};
+
+        dst->center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(dst->a, dst->b), dst->c), 1.0f / 3.0f);
+
+        float da    = glms_vec3_norm(glms_vec3_sub(dst->a, dst->center));
+        float db    = glms_vec3_norm(glms_vec3_sub(dst->b, dst->center));
+        float dc    = glms_vec3_norm(glms_vec3_sub(dst->c, dst->center));
+        dst->bounds = fmaxf(da, fmaxf(db, dc));
+    }
+}
+
+u32 Sol_Model_GetTriCount(SolModelId handle)
+{
+    return loaded_models[handle].tri_count;
+}

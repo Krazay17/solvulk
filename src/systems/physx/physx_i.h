@@ -112,9 +112,8 @@ typedef struct
 void Spatial_Add(World *world, int id, CompBody *body);
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size);
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModel *model, CompXform *xform);
 void Fill_Dynamic_Table(World *world, int count, int *ents);
-void Physx_ParseModel(World *world, int id, PhysxGroup *group);
+void Physx_ParseModel(World *world, SolModelId id, PhysxGroup *group);
 
 // SolContact Collisions_Static_Hashed(PhysxGroup *group, CompBody *body, CompXform *xform, ResolveShapeTri resolver);
 // SolContact Collisions_Dynamic_Grid(World *world, int id, CompBody *body, CompXform *xform);

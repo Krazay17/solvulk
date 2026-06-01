@@ -130,9 +130,11 @@ void Create_Sol_Game()
     Sol_Model_Add(gameWorld, floorWorld1, (ModelDesc){.id = SOL_MODEL_WORLD1});
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
-    Sol_Render_SkyboxSet(SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
-
+    // for (int i = 0 ; i < 9;i++)
+    // {
+    //     World_Create_Default(WORLDKIND_GAME);
+    // }
     // World *gameWorld2 = World_Create_Default(WORLDKIND_GAME);
     // Sol_World_SetActive(gameWorld2);
     // Sol_Prefab_Factory(gameWorld2, 1, PREFABKIND_PLAYER,

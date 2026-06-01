@@ -8,7 +8,7 @@ static bool LeaveState(World *world, int id)
     if (move->wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
-    if (!Sol_Physx_GetGrounded(world, id))
+    if (!Sol_Physx_GetGroundtime(world, id))
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return true;
     if (Sol_GetActions(world, id) & ACTION_CROUCH)
@@ -57,7 +57,7 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->state];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 }

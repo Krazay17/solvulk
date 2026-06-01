@@ -38,7 +38,7 @@ static void Combat_Step(World *world, double dt, double time)
                                      });
                 break;
             }
-            
+
             if (e->as.hit.power)
                 Sol_Physx_Impulse(world, e->as.hit.entB, vecSca(e->as.hit.dir, e->as.hit.power));
 
@@ -50,6 +50,8 @@ static void Combat_Step(World *world, double dt, double time)
         break;
 
         case EVENTKIND_DEATH: {
+            if (Net_IsClient())
+                break;
             Sol_Vital_Die(world, e->as.death.entB);
 
             // Tell Ai their target died

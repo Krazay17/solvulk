@@ -5,7 +5,7 @@
 static bool CanSlide(World *world, int id)
 {
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
 
     return false;
 }
@@ -20,7 +20,7 @@ static bool LeaveState(World *world, int id)
     if (world->movements[id].wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
-    if (!Sol_Physx_GetGrounded(world, id))
+    if (Sol_Physx_GetAirtime(world, id) > 0)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return true;
     return false;
@@ -32,7 +32,7 @@ void Crouch_State_Update(World *world, int id, float dt)
         return;
 
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
 
     float    x    = Sol_Controller_GetWishdir(world, id).x;
     float    z    = Sol_Controller_GetWishdir(world, id).z;
@@ -66,7 +66,7 @@ void Crouch_State_Update(World *world, int id, float dt)
         break;
     }
 
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->moveState];
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->state];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 }
@@ -77,7 +77,7 @@ void Crouch_State_Enter(World *world, int id)
         return;
 
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
     move->targetHeight  = move->baseHeight * 0.65f;
 }
 
@@ -85,7 +85,7 @@ void Crouch_State_Exit(World *world, int id)
 {
 
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
 
     move->targetHeight = move->baseHeight;
 }

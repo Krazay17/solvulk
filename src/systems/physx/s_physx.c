@@ -179,7 +179,7 @@ void Ground_Trace(World *world, int count, float fdt)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin        = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.3f));
+        vec3s origin        = xform->pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.3f));
         body->groundNormal  = (vec3s){0, 0, 0};
         SolRayResult result = {0};
         for (int j = 0; j < 9; j++)
@@ -191,19 +191,19 @@ void Ground_Trace(World *world, int count, float fdt)
 
             result = Sol_Raycast(
                 world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.3f, .ignoreEnt = id, .mask = 0b1});
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.6f, .ignoreEnt = id, .mask = 0b1});
             if (result.hit && result.norm.y > 0.5f)
                 break;
         }
         if (result.hit && result.norm.y > 0.5f)
         {
             body->airtime = 0;
-            body->grounded += fdt;
+            body->groundtime += fdt;
             body->groundNormal = result.norm;
         }
         else
         {
-            body->grounded = 0;
+            body->groundtime = 0;
             body->airtime += fdt;
         }
     }
@@ -413,9 +413,13 @@ void Sol_Physx_SetVelZ(World *world, int id, float z)
 {
     world->bodies[id].vel.z = z;
 }
-bool Sol_Physx_GetGrounded(World *world, int id)
+float Sol_Physx_GetGroundtime(World *world, int id)
 {
-    return world->bodies[id].grounded;
+    return world->bodies[id].groundtime;
+}
+float Sol_Physx_GetAirtime(World *world, int id)
+{
+    return world->bodies[id].airtime;
 }
 vec3s Sol_Physx_GetHeadPos(World *world, int id)
 {

@@ -198,7 +198,7 @@ void Flush_Quads()
     if (textCount > 0)
     {
         memcpy(gpu + currentOffset, text3dQueue.instances, sizeof(QuadSSBO) * textCount);
-        Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
+        Bind_Pipeline(cmd, PIPE_TEXT_3D);
         vkCmdDraw(cmd, 6, textCount, 0, currentOffset);
         currentOffset += textCount;
         text3dQueue.count = 0;

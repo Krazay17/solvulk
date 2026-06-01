@@ -11,9 +11,15 @@ static bool LeaveState(World *world, int id)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (Sol_GetActions(world, id) & ACTION_JUMP)
+    {
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+        {
+//            Sol_Physx_SetVelY(world, id, Sol_Physx_GetVel(world, id).y + 4.0f);
+            
             return true;
-    if (!Sol_Physx_GetGrounded(world, id))
+        }
+    }
+    if (Sol_Physx_GetAirtime(world, id) > 0.1f)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return true;
     return false;
@@ -25,7 +31,7 @@ void Slide_State_Update(World *world, int id, float dt)
         return;
 
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
 
     float    x    = Sol_Controller_GetWishdir(world, id).x;
     float    z    = Sol_Controller_GetWishdir(world, id).z;
@@ -59,7 +65,7 @@ void Slide_State_Update(World *world, int id, float dt)
         break;
     }
 
-    // const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->configId][move->moveState];
+    // const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->configId][move->state];
     // float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     // Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 
@@ -71,12 +77,13 @@ void Slide_State_Enter(World *world, int id)
     if (LeaveState(world, id))
         return;
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->moveState];
+    MoveStateData *data = &move->stateData[move->state];
     move->targetHeight  = move->baseHeight * 0.65f;
 
     vec3s wishdir  = Sol_Controller_GetWishdir(world, id);
-    float dot      = glms_vec3_dot(wishdir, Sol_Physx_GetGround(world, id));
-    vec3s slopeDir = glms_vec3_sub(wishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
+    vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
+    //float dot      = glms_vec3_dot(wishdir, Sol_Physx_GetGround(world, id));
+    //vec3s slopeDir = glms_vec3_sub(wishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
 
     Sol_Physx_Impulse(world, id, vecSca(slopeDir, 250.0f));
 }

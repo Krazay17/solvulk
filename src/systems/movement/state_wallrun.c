@@ -2,8 +2,8 @@
 
 #include "movement_i.h"
 
-#define COOLDOWN 0.25
 #define MIN_WALL_ANGLE -0.7f
+#define MAX_WALL_ANGLE 0.7f
 #define COYOTE_TIMER 0.2f
 
 static bool CheckWall(World *world, int id, SolRayResult *result)
@@ -11,17 +11,18 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
-    float      radius = dims.x * 3.0f;
+    float      radius = dims.x * 2.0f;
     for (int i = -1; i < 1; i++)
     {
         for (int j = 1; j < 9; j++)
         {
             vec3s finalPos = pos;
-            finalPos.y += (float)i * (dims.y * 0.5f);
+            finalPos.y += (float)i * (dims.y * 0.35f);
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
-            *result = Sol_RaycastD(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos}, 0.2f);
-            printf("Norm: %f\n", glms_vec3_dot(result->norm, WORLD_UP));
-            if (result->hit && glms_vec3_dot(result->norm, WORLD_UP) > MIN_WALL_ANGLE)
+            *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
+            float dot            = glms_vec3_dot(result->norm, WORLD_UP);
+            printf("WallNorm: %f\n", dot);
+            if (result->hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
                 return true;
         }
     }
@@ -33,7 +34,7 @@ static bool LeaveState(World *world, int id)
     if (!Sol_Controller_IsActionState(world, id, ACTION_JUMP))
         if (Sol_Movement_SetState(world, id, MOVE_WALLJUMP))
             return true;
-    if (Sol_Physx_GetGrounded(world, id))
+    if (Sol_Physx_GetGroundtime(world, id) > COYOTE_TIMER)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     return false;
@@ -49,18 +50,19 @@ void Wallrun_State_Update(World *world, int id, float dt)
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
     data->elapsed += dt;
     data->accum += dt;
-    if (data->accum >= COYOTE_TIMER)
+
+    SolRayResult result   = {0};
+    bool         goodWall = CheckWall(world, id, &result);
+    if (goodWall)
     {
         data->accum = 0;
-        SolRayResult result   = {0};
-        bool         goodWall = CheckWall(world, id, &result);
-        if (!goodWall)
-        {
-            Sol_Movement_SetState(world, id, MOVE_IDLE);
-            return;
-        }
         movement->wallNormal = result.norm;
-        movement->lastTouch = result.pos;
+        movement->lastTouch  = result.pos;
+    }
+    else if (!goodWall && data->accum >= COYOTE_TIMER)
+    {
+        Sol_Movement_SetState(world, id, MOVE_IDLE);
+        return;
     }
 
     movement->wallDot = vecDot(movement->wallNormal, Sol_Cam_GetRight());
@@ -118,7 +120,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
+    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->state];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * animReverse);
 }
@@ -130,10 +132,10 @@ void Wallrun_State_Enter(World *world, int id)
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
     if (Sol_Physx_GetVel(world, id).y < 0.0f)
-        Sol_Physx_SetVelY(world, id, 1.0f);
+        Sol_Physx_SetVelY(world, id, 0.0f);
 
     data->enterVel = Sol_Physx_GetVel(world, id);
-    data->accum = 0;
+    data->accum    = 0;
 }
 
 void Wallrun_State_Exit(World *world, int id)
@@ -148,18 +150,18 @@ bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
 
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState)
 {
-    CompMovement  *move    = &world->movements[id];
-    MoveStateData *data    = &move->stateData[MOVE_WALLRUN];
-    double         now     = Sol_GetGameTime();
-    double         readyAt = data->lastExited + COOLDOWN;
-    if (now < readyAt)
-        return false;
+    CompMovement *move = &world->movements[id];
+    // MoveStateData *data    = &move->stateData[MOVE_WALLRUN];
+    // double         now     = Sol_GetGameTime();
+    // double         readyAt = data->lastExited + COOLDOWN;
+    // if (now < readyAt)
+    //     return false;
 
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result);
-    if(goodWall)
+    if (goodWall)
     {
-        move->lastTouch = result.pos;
+        move->lastTouch  = result.pos;
         move->wallNormal = result.norm;
     }
 

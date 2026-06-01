@@ -39,8 +39,8 @@ void Sol_Vital_Init(World *world)
 
 void Sol_Vital_Add(World *world, int id, VitalKind kind)
 {
-    CompVital vital = vital_config[kind];
-
+    CompVital vital   = vital_config[kind];
+    vital.lastHitTime = -FLT_MAX;
     world->masks[id] |= HAS_VITAL;
     world->vitals[id] = vital;
 }

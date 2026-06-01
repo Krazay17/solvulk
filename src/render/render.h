@@ -82,11 +82,11 @@ typedef struct
 
 typedef struct
 {
-    vec4s  position;
-    vec4s  scale;
-    vec4s  rotation;
-    vec4s  color;
-    vec4s  material;
+    vec4s position;
+    vec4s scale;
+    vec4s rotation;
+    vec4s color;
+    vec4s material;
     u32   flags;
     float hitTime;
     u32   _padding[2];
@@ -102,8 +102,8 @@ typedef struct
     vec4s pos;
     vec4s color;
     vec4s params;
-    u32  type;
-    u32  _padding[3];
+    u32   type;
+    u32   _padding[3];
 } SphereSSBO;
 
 typedef struct SolLineVertex
@@ -135,6 +135,17 @@ typedef struct
     SolTextureId textureId;
     bool         isfx;
 } SpriteDesc;
+
+typedef struct
+{
+    const char *text;
+    vec3s       pos;
+    float       size;
+    vec4s       color;
+    SolFontKind font;
+    bool        billboard; // face camera or use rotation
+    versors     rotation;  // if not billboard
+} Text3DDesc;
 
 typedef struct ModelPushDesc
 {
@@ -235,7 +246,7 @@ typedef enum
 typedef struct
 {
     vec4s pos, rot, color, uv, extra;
-    u32  type, flags, textureId, _pad;
+    u32   type, flags, textureId, _pad;
 } QuadSSBO;
 typedef struct
 {
@@ -286,5 +297,3 @@ void  Sol_Render_DrawSkybox(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
 void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness);
 void  Sol_Render_DrawText(SolFontDesc desc);
-
-void Sol_Render_SkyboxSet(SolTextureId textureId);

@@ -49,7 +49,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 
         CompMovement         *movement = &world->movements[id];
         CompBody             *body     = &world->bodies[id];
-        const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
+        const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
         bool isJumpDown = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
 
@@ -64,7 +64,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         float finalSpeed = forces->speed * movement->speedMod;
         body->gravity.y  = forces->gravity;
 
-        switch (movement->moveState)
+        switch (movement->state)
         {
         case MOVE_WALK:
             vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
@@ -80,7 +80,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             Sol_Physx_SetVellat(world, id, vel);
         }
 
-        MOVE_STATE_FUNCS[movement->moveState].update(world, id, dt);
+        MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
 
         CrouchHeight(world, id, fdt);
     }
@@ -94,30 +94,30 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
 {
     CompMovement    *movement = &world->movements[id];
-    const StateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->moveState];
+    const StateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->state];
     const StateFunc *nextfunc = &MOVE_STATE_FUNCS[nextState];
 
-    if (movement->moveState == nextState)
+    if (movement->state == nextState)
         return false;
     if (!prevfunc->canExit(world, id, nextState))
         return false;
-    if (!nextfunc->canEnter(world, id, movement->moveState, (u32)nextState))
+    if (!nextfunc->canEnter(world, id, movement->state, (u32)nextState))
         return false;
 
-    // printf("LastState: %d, CurrentState: %d\n", movement->moveState, nextState);
+    // printf("LastState: %d, CurrentState: %d\n", movement->state, nextState);
 
     prevfunc->exit(world, id);
-    movement->stateData[movement->moveState].lastExited = Sol_GetGameTime();
+    movement->stateData[movement->state].lastExited = Sol_GetGameTime();
 
-    movement->moveState                                  = nextState;
-    movement->stateData[movement->moveState].lastEntered = Sol_GetGameTime();
-    movement->stateData[movement->moveState].elapsed     = 0.0f;
+    movement->state                                  = nextState;
+    movement->stateData[movement->state].lastEntered = Sol_GetGameTime();
+    movement->stateData[movement->state].elapsed     = 0.0f;
     nextfunc->enter(world, id);
 
-    Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[movement->kind][movement->moveState].gravity, 0});
+    Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[movement->kind][movement->state].gravity, 0});
 
     if (id == world->playerID)
-        Sol_Debug_Add("Move State", movement->moveState);
+        Sol_Debug_Add("Move State", movement->state);
 
     return true;
 }
@@ -133,16 +133,16 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
         {
             return;
             CompMovement         *movement = &world->movements[id];
-            const MoveStateForce *force    = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
+            const MoveStateForce *force    = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
             vec3s vel     = Sol_Physx_GetVel(world, id);
             vec3s wishdir = Sol_GetWishdir2(world, id);
 
-            switch (movement->moveState)
+            switch (movement->state)
             {
             case MOVE_IDLE:
                 if (glms_vec3_norm(wishdir) > 0)
-                    movement->moveState = MOVE_WALK;
+                    movement->state = MOVE_WALK;
                 break;
             }
             vel = glms_vec3_add(vel, glms_vec3_scale((vec3s){wishdir.x, wishdir.y, 0}, force->accell * fdt));

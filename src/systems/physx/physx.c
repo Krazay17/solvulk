@@ -584,7 +584,7 @@ bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)
     float pen = 0.0f - (xform->pos.y - body->dims.y / 2.0f);
     if (pen > 0)
     {
-        body->grounded = 1;
+        body->groundtime = 1;
         body->airtime  = 0;
 
         xform->pos.y += pen;
@@ -596,7 +596,7 @@ bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)
     }
     else
     {
-        body->grounded = 0;
+        body->groundtime = 0;
         body->airtime  = 1;
     }
 

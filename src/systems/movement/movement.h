@@ -46,10 +46,9 @@ typedef struct CompMovement
     u8            kind;
     vec3s         updir, dashdir, wallNormal, lastTouch;
     float         baseHeight, targetHeight;
-    float         stateTimer;
     float         speedMod;
     float         wallDot;
-    MoveState     moveState;
+    MoveState     state;
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
 } CompMovement;

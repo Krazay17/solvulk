@@ -1,43 +1,40 @@
 #include "sol_core.h"
 
 #include "movement_i.h"
-#include "physx/physx_i.h"
 
-#define JUMP_VEL 12.0f
-#define JUMP_ALPHAMOD 1.66f
-#define JUMP_TIMER 0.2f
 #define JUMP_BUFFER 0.1f
-#define JUMP_GROUND_COOLDOWN 0.1f
+
+#define JUMP_VEL 9.0f
+#define JUMP_DURATION 0.2f
+#define DAMPING 5.0f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
-    CompMovement *movement = &world->movements[id];
-    movement->stateTimer += dt;
-    float          alpha = JUMP_ALPHAMOD - (movement->stateTimer / JUMP_TIMER);
-    MoveStateData *data  = &movement->stateData[movement->moveState];
+    CompMovement  *movement = &world->movements[id];
+    MoveStateData *data     = &movement->stateData[MOVE_JUMP];
     data->elapsed += dt;
+    float alpha = 1.0f - (data->elapsed / JUMP_DURATION);
 
-    if (movement->stateTimer >= JUMP_TIMER)
+    if (data->elapsed >= JUMP_DURATION)
     {
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
-            return;
+        Sol_Movement_SetState(world, id, MOVE_IDLE);
+        return;
     }
+
     vec3s vel = Sol_Physx_GetVel(world, id);
-    vel = Sol_Math_InterpDir(vel, WORLD_UP, data->elapsed / JUMP_TIMER, 9.5f, dt);
-    
-        //vel = glms_vec3_sub(vel, glms_vec3_scale(WORLD_UP, 1.2f * dt));
+    vel       = Sol_Math_InterpDir(vel, WORLD_UP, alpha, DAMPING, dt);
     Sol_Physx_SetVel(world, id, vel);
 }
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
     CompMovement *movement = &world->movements[id];
-    movement->stateTimer   = 0;
     movement->wantsJump    = false;
     AnimDesc desc          = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE};
     Sol_Model_PlayAnim(world, id, desc);
 
-    Sol_Physx_SetVelY(world, id, 0);
+    if (Sol_Physx_GetVel(world, id).y < 0)
+        Sol_Physx_SetVelY(world, id, 0);
     vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
     Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
 }

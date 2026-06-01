@@ -35,6 +35,9 @@ typedef struct CompModel
     float      yOffset, yawOffset;
 } CompModel;
 
+u32 Sol_Model_GetTriCount(SolModelId handle);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelId handle, CompXform *xform);
+
 void Sol_Model_Init(World *world);
 void Sol_Model_Add(World *world, int id, ModelDesc desc);
 void Sol_Model_Draw(World *world, double dt, double time);
@@ -47,3 +50,4 @@ void  Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float see
 vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name);
 float Sol_Model_GetOffsetY(World *world, int id);
 void  Sol_Model_SetOffsetY(World *world, int id, float offset);
+

@@ -1,5 +1,7 @@
 #include "sol_core.h"
 
+#include "render_i.h"
+
 SolCamera sol_camera = {
     .fov       = 60.0f,
     .nearClip  = 0.2f,
@@ -58,7 +60,7 @@ void Sol_Cam_Update(double dt)
     if (world->masks[1] & HAS_MOVEMENT)
     {
         CompMovement *m = &world->movements[1];
-        if (m->moveState == MOVE_WALLRUN)
+        if (m->state == MOVE_WALLRUN)
         {
             targetRoll = (float)m->wallDot * 15.0f * (3.14159f / 180.0f);
         }
@@ -68,7 +70,18 @@ void Sol_Cam_Update(double dt)
     sol_camera.up  = glms_vec3_rotate(WORLD_UP, sol_camera.roll, sol_camera.dir); // rotate up around forward
 
     sol_camera.view = glms_lookat(sol_camera.pos, sol_camera.target, sol_camera.up);
-    Sol_Render_Camera_Update(&sol_camera);
+    
+    sol_camera.proj = glms_perspective(glm_rad(sol_camera.fov), Sol_Render_GetAspect(), sol_camera.nearClip, sol_camera.farClip);
+    sol_camera.proj.raw[1][1] *= -1;
+
+    sol_camera.viewProj = glms_mat4_mul(sol_camera.proj, sol_camera.view);
+
+    SceneUBO *ubo       = Sol_GetDescriptorMapping(DESC_SCENE_UBO);
+    ubo->view           = sol_camera.view;
+    ubo->proj           = sol_camera.proj;
+    ubo->viewProjection = sol_camera.viewProj;
+    ubo->cameraPos      = (vec4s){sol_camera.pos.x, sol_camera.pos.y, sol_camera.pos.z, 1.0f};
+    ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.2f};
 }
 
 SolCamera *Sol_GetCamera()

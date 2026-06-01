@@ -2,6 +2,8 @@
 
 #include "vital/vital.h"
 
+#define HEALTHBAR_HIDE_DURATION 5.0f
+
 void Sol_View_Healthbar(World *world)
 {
     WAdd3d(world) = Sol_View_Healthbar_Draw;
@@ -16,6 +18,8 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
+        if (time - Sol_Vital_GetLastHitTime(world, id) > HEALTHBAR_HIDE_DURATION)
+            continue;
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
         xform.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
 
@@ -29,7 +33,7 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 
         // 1. Position Setup (X, Y, Z, and W = Dynamic 3D scale/size width)
         float healthbarWidthScale = 1.0f; // Adjust this to make bars physically wider on screen!
-        ssbo->pos = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, healthbarWidthScale};
+        ssbo->pos                 = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, healthbarWidthScale};
 
         // 2. Clear out Rotation (Facecam pipeline handles this automatically)
         ssbo->rot = GLMS_VEC4_ZERO;
@@ -39,10 +43,10 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 
         // 4. CRITICAL FIX: Base UV Coordinates Initialization
         // Sets offset to (0,0) and width/height multiplier to (1,1) so the full area is drawn
-        ssbo->uv = (vec4s){0,0,1,1};
+        ssbo->uv = (vec4s){0, 0, 1, 1};
 
         // 5. Shader Parameters Allocation (x = fill percentage, y = border outline scale)
-        ssbo->extra = (vec4s){fill, 0.015f, 0,0};
+        ssbo->extra = (vec4s){fill, 0.015f, 0, 0};
 
         // 6. Explicit Subsystem Binding Types
         ssbo->type      = QUADTYPE_FACECAM;

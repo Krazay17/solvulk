@@ -14,7 +14,7 @@
 
 #define SOL_VERSION 1
 #define SOL_TIMESTEP (1.0 / 60.0)
-#define MAX_WORLDS 6
+#define MAX_WORLDS 24
 
 typedef struct SolState
 {

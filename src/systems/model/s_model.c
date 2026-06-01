@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-#include "model_i.h"
+#include "render/model/model_i.h"
 
 #define ONESHOT_FADE_DURATION 0.25f
 static void Model_Events(World *world, double dt, double time);

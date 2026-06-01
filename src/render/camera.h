@@ -1,16 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct
-{
-    vec3s anchor, arm;
-    float lerpspeed;
-    float distance, currentDistance;
-    float offset, currentOffset;
-    float wallbuffer;
-    bool  active;
-} SolCameraArm;
-
 typedef struct SolCamera
 {
     mat4s proj;
@@ -31,4 +21,4 @@ typedef struct SolCamera
 void Sol_Cam_Update(double dt);
 
 SolCamera *Sol_GetCamera();
-vec3s       Sol_Cam_GetRight();
+vec3s      Sol_Cam_GetRight();

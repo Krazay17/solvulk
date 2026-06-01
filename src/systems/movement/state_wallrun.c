@@ -4,6 +4,7 @@
 
 #define COOLDOWN 0.25
 #define MIN_WALL_ANGLE -0.7f
+#define COYOTE_TIMER 0.2f
 
 static bool CheckWall(World *world, int id, SolRayResult *result)
 {
@@ -16,9 +17,10 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
         for (int j = 1; j < 9; j++)
         {
             vec3s finalPos = pos;
-            finalPos.y += (float)i * 0.5f;
+            finalPos.y += (float)i * (dims.y * 0.5f);
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
-            *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
+            *result = Sol_RaycastD(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos}, 0.2f);
+            printf("Norm: %f\n", glms_vec3_dot(result->norm, WORLD_UP));
             if (result->hit && glms_vec3_dot(result->norm, WORLD_UP) > MIN_WALL_ANGLE)
                 return true;
         }
@@ -45,23 +47,30 @@ void Wallrun_State_Update(World *world, int id, float dt)
     CompXform     *xform    = &world->xforms[id];
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
-
-    SolRayResult result   = {0};
-    bool         goodWall = CheckWall(world, id, &result);
-    if (!goodWall)
+    data->elapsed += dt;
+    data->accum += dt;
+    if (data->accum >= COYOTE_TIMER)
     {
-        Sol_Movement_SetState(world, id, MOVE_IDLE);
-        return;
+        data->accum = 0;
+        SolRayResult result   = {0};
+        bool         goodWall = CheckWall(world, id, &result);
+        if (!goodWall)
+        {
+            Sol_Movement_SetState(world, id, MOVE_IDLE);
+            return;
+        }
+        movement->wallNormal = result.norm;
+        movement->lastTouch = result.pos;
     }
-    movement->wallDot = vecDot(result.norm, Sol_Cam_GetRight());
-    data->surfaceNormal   = result.norm;
-    vec3s prevVel         = Sol_Physx_GetVel(world, id);
-    vec3s wishdir         = prevVel; // Sol_Controller_GetWishdir(world, id);
 
-    float push_into_wall = glms_vec3_dot(wishdir, result.norm);
+    movement->wallDot = vecDot(movement->wallNormal, Sol_Cam_GetRight());
+    vec3s prevVel     = Sol_Physx_GetVel(world, id);
+    vec3s wishdir     = prevVel; // Sol_Controller_GetWishdir(world, id);
+
+    float push_into_wall = glms_vec3_dot(wishdir, movement->wallNormal);
 
     // 3. Subtract that inward push from the original wishdir to get the plane tangent
-    vec3s project = glms_vec3_sub(wishdir, glms_vec3_scale(result.norm, push_into_wall));
+    vec3s project = glms_vec3_sub(wishdir, glms_vec3_scale(movement->wallNormal, push_into_wall));
 
     // 4. Normalize to get a pure directional vector along the wall
     // (Check for zero length in case wishdir was perfectly perpendicular to the wall)
@@ -69,10 +78,10 @@ void Wallrun_State_Update(World *world, int id, float dt)
     {
         project = glms_vec3_normalize(project);
         Sol_Physx_SetVel(world, id,
-                         glms_vec3_lerp(prevVel, glms_vec3_scale(project, Sol_Physx_GetSpeed(world, id)), 0.1f));
+                         glms_vec3_lerp(prevVel, glms_vec3_scale(project, Sol_Physx_GetSpeed(world, id)), 0.33f));
     }
 
-    vec3s dirToWall = glms_vec3_sub(xform->pos, result.pos);
+    vec3s dirToWall = glms_vec3_sub(xform->pos, movement->lastTouch);
     dirToWall       = glms_vec3_normalize(dirToWall);
 
     // ANIMATION
@@ -120,10 +129,11 @@ void Wallrun_State_Enter(World *world, int id)
         return;
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
-    if (Sol_Physx_GetVel(world, id).y < 1.0f)
-        Sol_Physx_SetVelY(world, id, 0.0f);
+    if (Sol_Physx_GetVel(world, id).y < 0.0f)
+        Sol_Physx_SetVelY(world, id, 1.0f);
 
     data->enterVel = Sol_Physx_GetVel(world, id);
+    data->accum = 0;
 }
 
 void Wallrun_State_Exit(World *world, int id)
@@ -147,6 +157,11 @@ bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState)
 
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result);
+    if(goodWall)
+    {
+        move->lastTouch = result.pos;
+        move->wallNormal = result.norm;
+    }
 
     return goodWall;
 }

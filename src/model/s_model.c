@@ -173,7 +173,7 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 
     if (desc.anim < 1)
     {
-        if (layer->animId == desc.anim)
+        if (layer->animId == desc.anim || layer->fadeOut > 0)
             return; // dedup the stop
         layer->fadeOut      = 1.0f;
         layer->fadeOutSpeed = 1.0f / blendOut;

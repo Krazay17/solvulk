@@ -63,12 +63,13 @@ void ADash_State_Enter(World *world, int id)
         break;
     }
     Sol_Model_PlayAnim(world, id, desc);
-    //Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_ANIM, .as.anim.animId = desc.anim, .as.anim.entId = id, .as.anim.layerId = desc.layerId});
+    // Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_ANIM, .as.anim.animId = desc.anim, .as.anim.entId = id,
+    // .as.anim.layerId = desc.layerId});
 }
 
 void ADash_State_Exit(World *world, int id)
 {
-    //Sol_Model_PlayAnim(world, id, (AnimDesc){ .layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool ADash_State_CanExit(World *world, int id, u32 next)

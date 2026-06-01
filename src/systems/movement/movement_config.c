@@ -7,7 +7,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] = {
             [MOVE_WALK]    = {.speed = 6.0f, .accell = 25.0f, .friction = 8.0f, .gravity = -9.81f},
             [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = -9.81f},
             [MOVE_FALL]    = {.speed = 4.0f, .accell = 7.0f, .friction = 0.1f, .gravity = -9.81f},
-            [MOVE_WALLRUN] = {.speed = 6.0f, .accell = 7.0f, .friction = 4.0f, .gravity = -1.0f},
+            [MOVE_WALLRUN] = {.speed = 7.0f, .accell = 6.0f, .friction = 1.0f, .gravity = -1.0f},
             [MOVE_JUMP]    = {.speed = 4.0f, .accell = 7.0f, .friction = 0.1f, .gravity = -9.81f},
             [MOVE_SLIDE]   = {.speed = 3.5f, .accell = 1.0f, .friction = .5f, .gravity = -9.81f},
             [MOVE_DEAD]    = {.speed = 0, .accell = 0, .friction = 1.0f, .gravity = -2.81f},

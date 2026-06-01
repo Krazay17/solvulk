@@ -71,8 +71,8 @@ void Fireball_State_Enter(World *world, int id)
 void Fireball_State_Exit(World *world, int id)
 {
     AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_FIREBALL];
-    data->lastExited = Sol_GetGameTime();
-    // Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 0, .layerId = ANIM_LAYER_UPPER});
+    data->lastExited  = Sol_GetGameTime();
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)

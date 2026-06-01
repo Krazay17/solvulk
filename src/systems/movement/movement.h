@@ -37,14 +37,14 @@ typedef enum
 typedef struct
 {
     double lastEntered, lastExited;
-    float  elapsed;
-    vec3s  enterVel, surfaceNormal, dir;
+    float  elapsed, accum;
+    vec3s  enterVel, dir;
 } MoveStateData;
 
 typedef struct CompMovement
 {
     u8            kind;
-    vec3s         updir, dashdir;
+    vec3s         updir, dashdir, wallNormal, lastTouch;
     float         baseHeight, targetHeight;
     float         stateTimer;
     float         speedMod;

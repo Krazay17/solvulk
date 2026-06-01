@@ -38,8 +38,8 @@ versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
 
-vec3s     ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt);
-vec3s     ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt);
+vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt);
+vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt);
 
 // INLINES-------------------
 
@@ -153,6 +153,20 @@ static inline vec3s Sol_RotFromQuat(versors quat)
 static inline float Sol_Math_RandRange2(float min, float max)
 {
     return min + (float)rand() / (float)RAND_MAX * (max - min);
+}
+
+static inline vec3s Sol_Math_InterpDir(vec3s vel, vec3s dir, float alpha, float damping, float dt)
+{
+    float speedInJumpDir = glms_vec3_dot(vel, dir);
+
+    if (speedInJumpDir > 0.0f)
+    {
+        // Bleed off velocity along the jump vector over time
+        float speedLoss = speedInJumpDir * damping * alpha * dt;
+        // Apply the reduction along the jump track
+        vel = glms_vec3_sub(vel, glms_vec3_scale(dir, speedLoss));
+    }
+    return vel;
 }
 
 /// @brief Redirects Velocity

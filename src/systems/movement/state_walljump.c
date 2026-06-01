@@ -3,8 +3,8 @@
 #include "movement_i.h"
 
 #define DASH_VEL 12.0f
-#define DASH_DURATION 0.2f
-#define DAMPING 6.0f
+#define DASH_DURATION 0.1f
+#define DAMPING 9.5f
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
@@ -23,20 +23,8 @@ void Walljump_State_Update(World *world, int id, float dt)
     // Get current physics velocity
     vec3s vel = Sol_Physx_GetVel(world, id);
 
-    // Isolate the velocity strictly along the walljump direction
-    float speedInJumpDir = glms_vec3_dot(vel, data->dir);
-
-    if (speedInJumpDir > 0.0f)
-    {
-        // Calculate a gentle decay factor. As alpha goes down, damping softens.
-        float alpha = 1.0f - (*elapsed / DASH_DURATION);
-
-        // Bleed off velocity along the jump vector over time
-        float speedLoss = speedInJumpDir * DAMPING * alpha * dt;
-
-        // Apply the reduction along the jump track
-        vel = glms_vec3_sub(vel, glms_vec3_scale(data->dir, speedLoss));
-    }
+    float alpha = 1.0f - (*elapsed / DASH_DURATION);
+    vel         = Sol_Math_InterpDir(vel, data->dir, alpha, DAMPING, dt);
 
     // Set the smoothly modified velocity back
     Sol_Physx_SetVel(world, id, vel);
@@ -46,7 +34,10 @@ void Walljump_State_Enter(World *world, int id)
 {
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
-    vec3s          dir = data->dir = glms_vec3_normalize(glms_vec3_lerp(data->surfaceNormal, WORLD_UP, 0.35f));
+    vec3s          vel  = glms_vec3_normalize(Sol_Physx_GetVel(world, id));
+    vel.y               = 0;
+    vec3s dir           = glms_vec3_normalize(glms_vec3_lerp(move->wallNormal, WORLD_UP, 0.15f));
+    dir = data->dir = glms_vec3_lerp(dir, vel, 0.1f);
 
     vec3s currentVel = Sol_Physx_GetVel(world, id);
 

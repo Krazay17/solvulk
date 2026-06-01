@@ -48,6 +48,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             continue;
 
         CompMovement         *movement = &world->movements[id];
+        CompBody             *body     = &world->bodies[id];
         const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->moveState];
 
         bool isJumpDown = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
@@ -61,6 +62,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         vec3s vel        = Sol_Physx_GetVel(world, id);
         vec3s wishdir    = Sol_GetWishdir(world, id);
         float finalSpeed = forces->speed * movement->speedMod;
+        body->gravity.y  = forces->gravity;
 
         switch (movement->moveState)
         {
@@ -71,6 +73,8 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             Sol_Physx_SetVel(world, id, vel);
             break;
         default:
+            if (vel.y < 0)
+                body->gravity.y *= 1.5f;
             vel = ApplyFriction3(wishdir, vel, forces->friction, fdt);
             vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             Sol_Physx_SetVellat(world, id, vel);

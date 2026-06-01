@@ -61,7 +61,6 @@ SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);
 SOLAPI void      Sol_Destroy();
 SOLAPI SolState *Sol_GetState();
-void             Sol_State_SetPlayerWorld(World *world);
 SOLAPI double    Sol_GetGameTime();
 SOLAPI void      Sol_Window_Resize(float width, float height);
 

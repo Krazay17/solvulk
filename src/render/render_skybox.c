@@ -6,7 +6,7 @@
 
 static SolTextureId skybox_texture;
 
-void Sol_Render_SkyboxSet(World *world, SolTextureId textureId)
+void Sol_Render_SkyboxSet(SolTextureId textureId)
 {
     skybox_texture = textureId;
 }

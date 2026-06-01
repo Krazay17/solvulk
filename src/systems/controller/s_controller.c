@@ -94,8 +94,6 @@ static void LocalTick(World *world, int id, double dt, double time)
             controller->actionState &= ~action_binds[i];
     }
 
-    Sol_Cam_Arm_Update(world, controller->aimpos, dt);
-
     SolMouse mouse         = Sol_Input_GetMouse();
     controller->isStrafing = mouse.locked;
 
@@ -120,7 +118,7 @@ static void LocalTick(World *world, int id, double dt, double time)
 
     controller->aimHitEnt = -1;
     SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
-                                                   .pos       = Sol_Cam_GetArm()->arm,
+                                                   .pos       = Sol_GetCamera()->pos,
                                                    .ignoreEnt = id,
                                                    .mask      = 0b01,
                                                    .dir       = look->lookdir,

@@ -48,6 +48,7 @@ typedef struct CompMovement
     float         baseHeight, targetHeight;
     float         stateTimer;
     float         speedMod;
+    float         wallDot;
     MoveState     moveState;
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];

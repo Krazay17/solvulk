@@ -16,14 +16,6 @@
 #define SOL_TIMESTEP (1.0 / 60.0)
 #define MAX_WORLDS 6
 
-typedef struct
-{
-    World *activeWorld;
-    u32   *playerId;
-    u32    worldId;
-    char   playerName[16];
-} LocalPlayer;
-
 typedef struct SolState
 {
     volatile bool isRunning;
@@ -35,11 +27,11 @@ typedef struct SolState
     bool          debug;
     u32           tickCounter, stepCounter;
 
-    World   *activeWorld;
-    World   *worlds[MAX_WORLDS];
-    uint16_t worldCount;
-
-    LocalPlayer localPlayer;
+    u32    activeWorldId;
+    World *activeWorld;
+    World *worlds[MAX_WORLDS];
+    u16    worldCount;
 } SolState;
 
 void Sol_State_SetTimescale(float timescale);
+World *Sol_State_GetActiveWorld(void);

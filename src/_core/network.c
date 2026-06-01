@@ -10,11 +10,6 @@ static u32    isInitialized  = 0;
 static double last_send_time = 0;
 static double last_heartbeat = 0;
 
-int Sol_Net_Init()
-{
-    return enet_initialize();
-}
-
 void Net_Connect(bool host, const char *ip, u16 port)
 {
     if (isInitialized == 0)
@@ -154,7 +149,7 @@ void Net_Disconnect()
     }
     solNet.connectedPlayerCount = 0;
 
-    Sol_Replication_Disconnect(Sol_GetState()->localPlayer.activeWorld);
+    Sol_Replication_Disconnect(Sol_GetState()->activeWorld);
 
     if (solNet.host)
     {
@@ -216,13 +211,11 @@ void Net_Poll()
                 // Client connects to host
                 NetHelloPacket hello = {
                     .type            = NET_PACKET_HELLO,
-                    .worldId         = Sol_GetState()->localPlayer.worldId,
-                    .startPos        = Sol_Xform_GetPos(Sol_GetState()->localPlayer.activeWorld,
-                                                        Sol_GetState()->localPlayer.activeWorld->playerID),
+                    .worldId         = Sol_GetState()->activeWorldId,
+                    .startPos        = Sol_Xform_GetPos(Sol_GetState()->activeWorld, 1),
                     .protocolVersion = SOL_VERSION,
                 };
-                strncpy(hello.name, Sol_GetState()->localPlayer.playerName, sizeof(hello.name));
-
+                // Player Name!
                 ENetPacket *packet = enet_packet_create(&hello, sizeof(hello), ENET_PACKET_FLAG_RELIABLE);
                 enet_peer_send(solNet.peer, 1, packet);
                 printf("[Net] Sent HELLO\n");
@@ -246,7 +239,7 @@ void Net_Poll()
             }
             else if (solNet.role == NETROLE_CLIENT)
             {
-                Sol_Replication_Disconnect(Sol_GetState()->localPlayer.activeWorld);
+                Sol_Replication_Disconnect(Sol_GetState()->activeWorld);
                 solNet.peer   = NULL; // <- Clear this out
                 solNet.status = NETSTATUS_DISCONNECTED;
                 solNet.role   = NETROLE_NONE;

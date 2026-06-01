@@ -16,21 +16,19 @@ typedef struct SolCamera
     mat4s proj;
     mat4s view;
     mat4s viewProj;
-    vec3s position, anchor;
+    vec3s pos, anchor;
     vec3s target, dir;
     vec3s up;
     float fov;
     float nearClip;
     float farClip;
+    float lerpspeed;
+    float roll;
+    float distance, currentDistance;
+    float offset, currentOffset;
 } SolCamera;
 
-void Sol_Cam_Init(World *world);
-void Sol_Cam_Update(World *world, double dt);
+void Sol_Cam_Update(double dt);
 
-void Sol_Cam_Arm_Update(World *world, vec3s head, double dt);
-
-SolCamera    *Sol_GetCamera();
-SolCameraArm *Sol_Cam_GetArm();
-void          Sol_Cam_SetActivecam(World *world);
-SolCamera    *Sol_Cam_GetCam(World *world);
-void          Sol_Cam_GetRight(vec3s *right);
+SolCamera *Sol_GetCamera();
+vec3s       Sol_Cam_GetRight();

@@ -38,11 +38,12 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
         world->masks[id] |= HAS_BODY2;
     else
         world->masks[id] |= HAS_BODY3;
+        
     CompBody body = {
         .mass           = desc.mass,
         .shape          = desc.shape,
         .group          = desc.group,
-        .gravity        = glms_vec3_norm(desc.gravity) > 0 ? desc.gravity : SOL_PHYS_GRAV,
+        .gravity        = SOL_PHYS_GRAV,
         .invMass        = desc.mass > 0 ? 1.0f / desc.mass : 0,
         .restitution    = desc.restitution ? desc.restitution : 0.5f,
         .vel            = desc.vel,
@@ -317,7 +318,7 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
     }};
 
     // 6. Build the ray from camera position toward the far point
-    vec3s camPos = cam->position;
+    vec3s camPos = cam->pos;
     vec3s dir    = glms_vec3_normalize(glms_vec3_sub(farPos, camPos));
 
     ray.pos = camPos;

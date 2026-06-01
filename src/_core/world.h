@@ -83,7 +83,6 @@ typedef enum
     WORLD_SYS_UI,
 
     WORLD_SYS_VIEW,
-    WORLD_SYS_CAM,
 
     WORLD_SYS_COUNT,
 } WorldSystem;
@@ -167,10 +166,8 @@ typedef struct World
     WorldPhysx  *spatial;
     WorldLines  *lines;
     SolEmitters *emitters;
-    SolCamera   *activeCamera;
     WorldNet    *worldNet;
 
-    bool worldActive;
     bool doesSimulate;
     bool doesRender;
 
@@ -212,5 +209,5 @@ void Sol_Flags_Add(World *world, int id, EFlag flags);
 void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 int  Sol_World_GetEntCount(World *world);
-void Sol_World_SetActive(World *world, bool active);
+void Sol_World_SetActive(World *world);
 void Sol_World_SetReplicates(World *world, bool active);

@@ -16,7 +16,7 @@ void Sol_Render_Camera_Update(SolCamera *cam)
     ubo->view           = cam->view;
     ubo->proj           = cam->proj;
     ubo->viewProjection = cam->viewProj;
-    ubo->cameraPos      = (vec4s){cam->position.x, cam->position.y, cam->position.z, 1.0f};
+    ubo->cameraPos      = (vec4s){cam->pos.x, cam->pos.y, cam->pos.z, 1.0f};
     ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.2f};
     // glm_mat4_copy(cam->view, ubo->view);
     // glm_mat4_copy(cam->proj, ubo->proj);

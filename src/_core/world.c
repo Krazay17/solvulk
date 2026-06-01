@@ -38,7 +38,6 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_EMITTER]      = Sol_Emitter_Init,
     [WORLD_SYS_SHAPE]        = Sol_Shape_Init,
     [WORLD_SYS_PICKUP]       = Sol_Pickup_Init,
-    [WORLD_SYS_CAM]          = Sol_Cam_Init,
     [WORLD_SYS_VIEW]         = Sol_View_Init,
     [WORLD_SYS_OWNER]        = Sol_Owner_Init,
     [WORLD_SYS_AICONTROLLER] = Sol_AiController_Init,
@@ -50,7 +49,6 @@ World *World_Create(WorldKind kind)
     World *world = calloc(1, sizeof(World));
     if (world)
     {
-        world->worldActive                 = true;
         world->doesSimulate                = true;
         world->doesRender                  = true;
         world->playerID                    = -1;
@@ -188,15 +186,12 @@ void World_SetDoesrender(World *world, bool doesRender)
 {
     world->doesRender = doesRender;
 }
-SolCamera *Sol_World_GetActivecamera(World *world)
-{
-    return world->activeCamera;
-}
-void Sol_World_SetActive(World *world, bool active)
-{
-    world->worldActive = active;
-}
 void Sol_World_SetReplicates(World *world, bool active)
 {
     world->doesReplicate = active;
+}
+void Sol_World_SetActive(World *world)
+{
+    Sol_GetState()->activeWorld = world;
+    Sol_GetState()->activeWorldId = world->worldId;
 }

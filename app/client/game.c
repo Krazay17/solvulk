@@ -1,8 +1,7 @@
 #include "game.h"
 
-#define WIZARD_SPAWN_SPACING 4.0f
-
 static World *gameWorld;
+static World *gameWorld2;
 
 static void SpawnPlayer(int flags, void *data)
 {
@@ -46,18 +45,18 @@ void MakeAEmitter(int flags, void *data)
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
     Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.pos = pos});
     Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 100,
-                                     .rate     = 0.1f,
-                                     .pos      = pos,
-                                     .inf      = 1,
-                                     .particle = {
-                                         .speed     = 5.0f,
-                                         .ttl       = 5.0f,
-                                         .randScale = 1,
-                                         .kind      = PARTICLE_SHOCK,
-                                         .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
-                                         .rotspeed  = 3.0f,
-                                         .scalein   = 0.2f,
-                                     }});
+                                         .rate     = 0.1f,
+                                         .pos      = pos,
+                                         .inf      = 1,
+                                         .particle = {
+                                             .speed     = 5.0f,
+                                             .ttl       = 5.0f,
+                                             .randScale = 1,
+                                             .kind      = PARTICLE_SHOCK,
+                                             .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
+                                             .rotspeed  = 3.0f,
+                                             .scalein   = 0.2f,
+                                         }});
 }
 
 void ClearEnts(int flags, void *data)
@@ -79,10 +78,9 @@ void HostGame(int flags, void *data)
 
     for (int k = -4; k < 4; k++)
     {
-        int id = Sol_Prefab_Factory(gameWorld, 0, PREFABKIND_WIZARD,
-                                    (PrefabDesc){.pos       = (vec3s){k * WIZARD_SPAWN_SPACING, 10.0f, 60.0f},
-                                                 .scale     = 1.0f,
-                                                 .authority = NETAUTH_AUTH});
+        int id = Sol_Prefab_Factory(
+            gameWorld, 0, PREFABKIND_WIZARD,
+            (PrefabDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
         if (id)
             Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
     }
@@ -102,43 +100,49 @@ void Disconnect(int flags, void *data)
     Sol_Replication_Disconnect(gameWorld);
 }
 
+void ChangeWorld(int flags, void *data)
+{
+    u32 idx = *(u32 *)data;
+    switch (idx)
+    {
+    case 0:
+        break;
+    case 1:
+        break;
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
     World *menu = World_Create_Default(WORLDKIND_MENU);
-    // Sol_World_SetActive(menu, true);
 
     gameWorld = World_Create_Default(WORLDKIND_GAME);
-    Sol_State_SetPlayerWorld(gameWorld);
+    Sol_World_SetActive(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
-    Sol_Cam_SetActivecam(gameWorld);
     Sol_View_Crosshair(gameWorld);
-    // Sol_Input_SetLocked(true);
 
     SpawnPlayer(0, 0);
-    Sol_Prefab_Floor(gameWorld, (vec3s){0, -7, 0});
+    int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
+    Sol_Xform_Add(gameWorld, floorWorld1, (vec3s){0, -7, 0});
+    Sol_Model_Add(gameWorld, floorWorld1, (ModelDesc){.id = SOL_MODEL_WORLD1});
+    Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
-    // for (int i = -5; i < 5; i++)
-    // {
-    //     for (int j = -5; j < 5; j++)
-    //     {
-    //         int id = Sol_Prefab_Wizard(gameWorld, (vec3s){i * spacing, 10.0f, (j * spacing) - 60.0f}, 1.0f);
-    //         Sol_AiController_Add(gameWorld, id, (AiControllerDesc){0});
-    //     }
-    // }
-
-    Sol_Render_SkyboxSet(gameWorld, SOL_TEXTURE_REDSKY);
+    Sol_Render_SkyboxSet(SOL_TEXTURE_REDSKY);
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
-    int floor2 = Sol_Create_Ent(gameWorld, 0);
-    Sol_Xform_Add(gameWorld, floor2, (vec3s){5, 25, 0});
-    Sol_Model_Add(gameWorld, floor2, (ModelDesc){.id = SOL_MODEL_BOX});
-    Sol_Body_Add(gameWorld, floor2,
-                 (BodyDesc){.shape = SHAPE3_SPH, .mass = 100.0f, .radius = 1.0f, .group = 0b11, .restitution = 0.1f});
-    Sol_Interact_Add(gameWorld, floor2, (InteractDesc){0});
-    Sol_Flags_Add(gameWorld, floor2, EFLAG_PICKUPABLE);
+    // World *gameWorld2 = World_Create_Default(WORLDKIND_GAME);
+    // Sol_World_SetActive(gameWorld2);
+    // Sol_Prefab_Factory(gameWorld2, 1, PREFABKIND_PLAYER,
+    //                    (PrefabDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
+    // Sol_Controller_Add(gameWorld2, 1, CONTROLLER_LOCAL);
+
+    // int floorWorld2 = Sol_Create_Ent(gameWorld2, 0);
+    // Sol_Xform_Add(gameWorld2, floorWorld2, (vec3s){0, -7, 0});
+    // Sol_Model_Add(gameWorld2, floorWorld2, (ModelDesc){.id = SOL_MODEL_WORLD0});
+    // Sol_Body_Add(gameWorld2, floorWorld2, (BodyDesc){.shape = SHAPE3_MOD});
 
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Add(menu, quitButton, (InteractDesc){.onClick = (Callback){QuitApp}});
@@ -189,8 +193,16 @@ void Create_Sol_Game()
 
     int connectButtonLocal = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "ConnectLocal");
     Sol_Interact_Add(menu, connectButtonLocal,
-                     (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect, .callbackData = (void*)1}});
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = ClientConnect, .callbackData = (void *)1}});
 
     int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 300, 0}, "Disconnect");
     Sol_Interact_Add(menu, disconnectButton, (InteractDesc){.onClick = (Callback){.callbackFunc = Disconnect}});
+
+    int world1Button = Sol_Prefab_Button(menu, (vec3s){1130, 500, 0}, "World1");
+    Sol_Interact_Add(menu, world1Button,
+                     (InteractDesc){.onClick = (Callback){.callbackFunc = ChangeWorld, .callbackData = gameWorld}});
+
+    // int world2Button = Sol_Prefab_Button(menu, (vec3s){1130, 550, 0}, "World2");
+    // Sol_Interact_Add(menu, world2Button,
+    //                  (InteractDesc){.onClick = (Callback){.callbackFunc = Disconnect, .callbackData = gameWorld2}});
 }

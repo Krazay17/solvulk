@@ -3,7 +3,7 @@
 #include "movement_i.h"
 #include "physx/physx_i.h"
 
-#define JUMP_VEL 8.0f
+#define JUMP_VEL 6.0f
 #define JUMP_ALPHAMOD 1.66f
 #define JUMP_TIMER 0.2f
 #define JUMP_BUFFER 0.1f
@@ -20,7 +20,6 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;
     }
-    // Sol_Physx_SetVelY(world, id, JUMP_VEL * alpha);
 }
 
 void Sol_Movement_Jump_Enter(World *world, int id)
@@ -33,7 +32,7 @@ void Sol_Movement_Jump_Enter(World *world, int id)
 
     Sol_Physx_SetVelY(world, id, 0);
     vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.5f));
-    Sol_Physx_AddVel(world, id, vecSca(dir, 8.0f));
+    Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)

@@ -135,7 +135,6 @@ static inline bool Net_IsClient()
     return solNet.role == NETROLE_CLIENT;
 }
 
-int  Sol_Net_Init();
 void Net_Connect(bool host, const char *ip, u16 port);
 void Net_DeInit();
 void Net_Disconnect();

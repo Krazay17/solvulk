@@ -287,4 +287,4 @@ void  Sol_Render_DrawLine(SolLine *lines, int count);
 void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness);
 void  Sol_Render_DrawText(SolFontDesc desc);
 
-void Sol_Render_SkyboxSet(World *world, SolTextureId textureId);
+void Sol_Render_SkyboxSet(SolTextureId textureId);

@@ -3,8 +3,9 @@
 #include "movement_i.h"
 
 #define COOLDOWN 0.25
+#define MIN_WALL_ANGLE -0.7f
 
-static void CheckWall(World *world, int id, SolRayResult *result)
+static bool CheckWall(World *world, int id, SolRayResult *result)
 {
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
@@ -18,11 +19,11 @@ static void CheckWall(World *world, int id, SolRayResult *result)
             finalPos.y += (float)i * 0.5f;
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
             *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
-
-            if (result->hit)
-                return;
+            if (result->hit && glms_vec3_dot(result->norm, WORLD_UP) > MIN_WALL_ANGLE)
+                return true;
         }
     }
+    return false;
 }
 
 static bool LeaveState(World *world, int id)
@@ -45,17 +46,17 @@ void Wallrun_State_Update(World *world, int id, float dt)
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
 
-    SolRayResult result = {0};
-    CheckWall(world, id, &result);
-    if (!result.hit)
+    SolRayResult result   = {0};
+    bool         goodWall = CheckWall(world, id, &result);
+    if (!goodWall)
     {
         Sol_Movement_SetState(world, id, MOVE_IDLE);
         return;
     }
-
-    data->surfaceNormal = result.norm;
-    vec3s prevVel       = Sol_Physx_GetVel(world, id);
-    vec3s wishdir       = prevVel; // Sol_Controller_GetWishdir(world, id);
+    movement->wallDot = vecDot(result.norm, Sol_Cam_GetRight());
+    data->surfaceNormal   = result.norm;
+    vec3s prevVel         = Sol_Physx_GetVel(world, id);
+    vec3s wishdir         = prevVel; // Sol_Controller_GetWishdir(world, id);
 
     float push_into_wall = glms_vec3_dot(wishdir, result.norm);
 
@@ -127,6 +128,7 @@ void Wallrun_State_Enter(World *world, int id)
 
 void Wallrun_State_Exit(World *world, int id)
 {
+    world->movements[id].wallDot = 0;
 }
 
 bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
@@ -143,8 +145,8 @@ bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState)
     if (now < readyAt)
         return false;
 
-    SolRayResult result = {0};
-    CheckWall(world, id, &result);
+    SolRayResult result   = {0};
+    bool         goodWall = CheckWall(world, id, &result);
 
-    return result.hit;
+    return goodWall;
 }

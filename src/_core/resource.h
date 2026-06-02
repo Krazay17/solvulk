@@ -9,5 +9,3 @@ typedef struct SolResource
 
 SolResource Sol_LoadResource(const char *resourceName);
 int         Sol_ReadFile(const char *filename, SolResource *outRes);
-
-int Sol_Fonts_Init();

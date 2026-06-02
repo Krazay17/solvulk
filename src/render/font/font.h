@@ -37,5 +37,6 @@ typedef struct SolFont
     float        atlasUscale, atlasVscale;
 } SolFont;
 
+int      Sol_Fonts_Init();
 SolFont *Sol_GetFont(SolFontKind kind);
 float    Sol_MeasureText(const char *str, float size, SolFontKind id);

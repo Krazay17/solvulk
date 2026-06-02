@@ -7,14 +7,6 @@
  */
 #include "sol_core.h"
 
-typedef struct CompInteract
-{
-    InteractState state;
-    float         value;
-    Callback      onClick;
-    Callback      onHold;
-} CompInteract;
-
 void Sol_Interact_Init(World *world)
 {
     u32 idx                 = world->tickCount++;
@@ -23,16 +15,10 @@ void Sol_Interact_Init(World *world)
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
 }
 
-void Sol_Interact_Add(World *world, int id, InteractDesc desc)
+void Sol_Interact_Add(World *world, int id, CompInteract desc)
 {
+    world->interacts[id] = desc;
     world->masks[id] |= HAS_INTERACT;
-
-    CompInteract *interact = &world->interacts[id];
-    interact->onClick      = desc.onClick;
-    interact->onHold       = desc.onHold;
-    interact->value        = desc.value;
-    if (desc.toggleable)
-        interact->state |= INTERACT_TOGGLEABLE;
 }
 
 void System_Interact_Tick(World *world, double dt, double time)
@@ -47,7 +33,7 @@ void System_Interact_Tick(World *world, double dt, double time)
 
     Sol_Debug_Add("SelectedEnt", rayId);
 
-    int required = HAS_INTERACT | HAS_XFORM;
+    int required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -72,8 +58,8 @@ void System_Interact_Tick(World *world, double dt, double time)
             collision      = Sol_Check_2d_Collision(mousePos, (vec4s){
                                                                   UISCALE(Sol_Xform_GetPos(world, id).x),
                                                                   UISCALE(Sol_Xform_GetPos(world, id).y),
-                                                                  UISCALE(Sol_Physx_GetDims(world, id).x),
-                                                                  UISCALE(Sol_Physx_GetDims(world, id).y),
+                                                                  UISCALE(Sol_Body2d_GetDims(world, id).x),
+                                                                  UISCALE(Sol_Body2d_GetDims(world, id).y),
                                                               });
         }
         if (collision)
@@ -106,7 +92,20 @@ void System_Interact_Tick(World *world, double dt, double time)
 
 InteractState Sol_Interact_GetState(World *world, int id)
 {
-    return world->interacts[id].state;
+    // Self first
+    if (world->masks[id] & HAS_INTERACT)
+        return world->interacts[id].state;
+
+    // Fall back to parent
+    if (world->masks[id] & HAS_PARENT)
+    {
+        int parentId = world->parents[id].parentId;
+        if (world->masks[parentId] & HAS_INTERACT)
+            return world->interacts[parentId].state;
+    }
+
+    // Neither — no state
+    return 0;
 }
 
 bool Sol_Interact_GetToggle(World *world, int id)

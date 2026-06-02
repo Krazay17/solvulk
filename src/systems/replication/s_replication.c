@@ -318,6 +318,7 @@ void Net_Apply_Events(World *world, EventSnap *snap)
         case EVENTKIND_HIT:
             e.as.hit.entA = world->worldNet->hostToLocalMap[e.as.hit.entA];
             e.as.hit.entB = world->worldNet->hostToLocalMap[e.as.hit.entB];
+            break;
         default:
             printf("Unhandled EventKind %d\n", e.kind);
             continue;

@@ -42,6 +42,8 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_OWNER]        = Sol_Owner_Init,
     [WORLD_SYS_AICONTROLLER] = Sol_AiController_Init,
     [WORLD_SYS_REPLICATION]  = Sol_Replication_Init,
+    [WORLD_SYS_BODY2]        = Sol_Body2d_Init,
+    [WORLD_SYS_VIEW2D]       = Sol_View2d_Init,
 };
 
 World *World_Create(WorldKind kind)
@@ -65,8 +67,23 @@ World *World_Create_Default(WorldKind kind)
 {
     World *world = World_Create(kind);
     if (world)
-        for (int i = 0; i < WORLD_SYS_COUNT; i++)
-            World_System_Add(world, i);
+    {
+        switch (kind)
+        {
+            // case WORLDKIND_MENU:
+            //     World_System_Add(world, WORLD_SYS_XFORM);
+            //     World_System_Add(world, WORLD_SYS_EVENT);
+            //     World_System_Add(world, WORLD_SYS_INTERACT);
+            //     World_System_Add(world, WORLD_SYS_SHAPE);
+            //     World_System_Add(world, WORLD_SYS_UI);
+            //     World_System_Add(world, WORLD_SYS_VIEW);
+            //     break;
+
+        default:
+            for (int i = 0; i < WORLD_SYS_COUNT; i++)
+                World_System_Add(world, i);
+        }
+    }
     return world;
 }
 
@@ -138,6 +155,17 @@ int Sol_Create_Ent(World *world, u32 id)
         }
     world->masks[id]                            = HAS_ACTIVE;
     world->activeEntities[world->activeCount++] = id;
+    world->xforms[id]                           = (CompXform){
+        .pos       = {0, 0, 0},
+        .lastPos   = {0, 0, 0},
+        .drawPos   = {0, 0, 0},
+        .quat      = (versors){{0, 0, 0, 1}},
+        .lastQuat  = (versors){{0, 0, 0, 1}},
+        .drawQuat  = (versors){{0, 0, 0, 1}},
+        .scale     = {1, 1, 1},
+        .lastScale = {1, 1, 1},
+        .drawScale = {1, 1, 1},
+    };
     Sol_Debug_Add("Entities", (float)world->activeCount);
     return id;
 }
@@ -192,6 +220,6 @@ void Sol_World_SetReplicates(World *world, bool active)
 }
 void Sol_World_SetActive(World *world)
 {
-    Sol_GetState()->activeWorld = world;
+    Sol_GetState()->activeWorld   = world;
     Sol_GetState()->activeWorldId = world->worldId;
 }

@@ -37,7 +37,7 @@ void Sol_Movement_Prestep(World *world, double dt, double time)
 void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY3;
+    int   required = HAS_MOVEMENT | HAS_BODY3;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
@@ -74,7 +74,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             break;
         default:
             if (vel.y < 0)
-                body->gravity.y *= 1.5f;
+                body->gravity.y *= 1.33f;
             vel = ApplyFriction3(wishdir, vel, forces->friction, fdt);
             vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             Sol_Physx_SetVellat(world, id, vel);
@@ -125,7 +125,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
 void Sol_System_Movement_2d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_MOVEMENT | HAS_XFORM | HAS_BODY2 | HAS_CONTROLLER;
+    int   required = HAS_MOVEMENT | HAS_BODY2 | HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];

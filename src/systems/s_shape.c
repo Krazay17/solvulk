@@ -34,7 +34,7 @@ void Sol_Shape_Add(World *world, int id, ShapeDesc desc)
 
 void Sol_Shape_Draw(World *world, double dt, double time)
 {
-    int required = HAS_XFORM | HAS_SHAPE;
+    int required = HAS_SHAPE;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];

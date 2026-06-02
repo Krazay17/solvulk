@@ -21,7 +21,6 @@ typedef enum
 {
     HAS_NONE         = 0,
     HAS_ACTIVE       = (1 << 0),
-    HAS_XFORM        = (1 << 1),
     HAS_BODY2        = (1 << 2),
     HAS_BODY3        = (1 << 3),
     HAS_INTERACT     = (1 << 4),
@@ -43,6 +42,7 @@ typedef enum
     HAS_COMBAT       = (1 << 20),
     HAS_REPLICATION  = (1 << 21),
     HAS_EMITTER      = (1 << 22),
+    HAS_VIEW2D       = (1 << 23),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -62,6 +62,7 @@ typedef enum
     WORLD_SYS_TIMER,
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
+    WORLD_SYS_BODY2,
     WORLD_SYS_OWNER,
     WORLD_SYS_PARENT,
 
@@ -80,6 +81,7 @@ typedef enum
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
     WORLD_SYS_SHAPE,
+    WORLD_SYS_VIEW2D,
     WORLD_SYS_UI,
 
     WORLD_SYS_VIEW,
@@ -113,6 +115,8 @@ typedef struct CompOwner        CompOwner;
 typedef struct CompContact      CompContact;
 typedef struct CompCombat       CompCombat;
 typedef struct CompEmitter      CompEmitter;
+typedef struct CompBody2d       CompBody2d;
+typedef struct CompView2d       CompView2d;
 
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -159,6 +163,8 @@ typedef struct World
     CompAiController *aicontrollers;
     CompCombat       *combats;
     CompEmitter      *compEmitters;
+    CompBody2d       *body2d;
+    CompView2d       *view2d;
 
     u32 skyboxId;
 

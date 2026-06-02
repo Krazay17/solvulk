@@ -155,7 +155,7 @@ static inline float Sol_Math_RandRange2(float min, float max)
     return min + (float)rand() / (float)RAND_MAX * (max - min);
 }
 
-static inline vec3s Sol_Math_InterpDir(vec3s vel, vec3s dir, float alpha, float damping, float dt)
+static inline vec3s Sol_Math_DampDir(vec3s vel, vec3s dir, float alpha, float damping, float dt)
 {
     float speedInJumpDir = glms_vec3_dot(vel, dir);
 

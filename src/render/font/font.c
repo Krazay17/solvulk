@@ -161,10 +161,10 @@ ShaderPushTexts Prepare_Text(SolFontDesc desc)
         push[index].w = g->uw * 224.0f * baseSize + pad * 2.0f;
         push[index].h = g->vh * 224.0f * baseSize + pad * 2.0f;
 
-        push[index].r = ColorConvert(color.r);
-        push[index].g = ColorConvert(color.g);
-        push[index].b = ColorConvert(color.b);
-        push[index].a = ColorConvert(color.a);
+        push[index].r = color.r;
+        push[index].g = color.g;
+        push[index].b = color.b;
+        push[index].a = color.a;
 
         push[index].u  = g->u;
         push[index].v  = 1.0f - g->v - g->vh;

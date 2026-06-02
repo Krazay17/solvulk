@@ -11,7 +11,7 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
-    float      radius = dims.x * 2.0f;
+    float      radius = dims.x * 2.2f;
     for (int i = -1; i < 1; i++)
     {
         for (int j = 1; j < 9; j++)
@@ -21,7 +21,6 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
             *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
             float dot            = glms_vec3_dot(result->norm, WORLD_UP);
-            printf("WallNorm: %f\n", dot);
             if (result->hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
                 return true;
         }
@@ -67,7 +66,8 @@ void Wallrun_State_Update(World *world, int id, float dt)
 
     movement->wallDot = vecDot(movement->wallNormal, Sol_Cam_GetRight());
     vec3s prevVel     = Sol_Physx_GetVel(world, id);
-    vec3s wishdir     = prevVel; // Sol_Controller_GetWishdir(world, id);
+    // vec3s wishdir     = Sol_GetLookdir(world, id);
+    vec3s wishdir     = Sol_Controller_GetWishdir(world, id);
 
     float push_into_wall = glms_vec3_dot(wishdir, movement->wallNormal);
 
@@ -80,7 +80,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
     {
         project = glms_vec3_normalize(project);
         Sol_Physx_SetVel(world, id,
-                         glms_vec3_lerp(prevVel, glms_vec3_scale(project, Sol_Physx_GetSpeed(world, id)), 0.33f));
+                         glms_vec3_lerp(prevVel, glms_vec3_scale(project, Sol_Physx_GetSpeed(world, id)), 0.01f));
     }
 
     vec3s dirToWall = glms_vec3_sub(xform->pos, movement->lastTouch);

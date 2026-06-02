@@ -2,9 +2,9 @@
 
 #include "movement_i.h"
 
-#define DASH_VEL 9.0f
+#define DASH_VEL 8.0f
 #define DASH_DURATION 0.2f
-#define DAMPING 6.0f
+#define DAMPING 7.0f
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
@@ -20,7 +20,8 @@ void Walljump_State_Update(World *world, int id, float dt)
     }
 
     vec3s vel = Sol_Physx_GetVel(world, id);
-    vel       = Sol_Math_InterpDir(vel, WORLD_UP, alpha, DAMPING, dt);
+    vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
+    vel       = Sol_Math_DampDir(vel, data->dir, alpha, DAMPING, dt);
     Sol_Physx_SetVel(world, id, vel);
 }
 

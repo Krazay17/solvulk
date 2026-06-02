@@ -6,7 +6,7 @@
 
 #define JUMP_VEL 9.0f
 #define JUMP_DURATION 0.2f
-#define DAMPING 5.0f
+#define DAMPING 3.0f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
@@ -22,7 +22,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
     }
 
     vec3s vel = Sol_Physx_GetVel(world, id);
-    vel       = Sol_Math_InterpDir(vel, WORLD_UP, alpha, DAMPING, dt);
+    vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
     Sol_Physx_SetVel(world, id, vel);
 }
 

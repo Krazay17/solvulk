@@ -61,7 +61,7 @@ void Sol_Ui_Add(World *world, int id, UiDesc desc)
 
 void Button_Draw(World *world, double dt, double time)
 {
-    int   required = HAS_XFORM | HAS_UIVIEW;
+    int   required = HAS_UIVIEW;
     float fdt      = (float)dt;
 
     for (int i = 0; i < world->activeCount; i++)
@@ -90,8 +90,8 @@ void Button_Draw(World *world, double dt, double time)
                          UISCALE(Sol_Physx_GetDims(world, id).y)};
         vec4s drawCol = view->baseColor;
         if (Sol_Interact_GetState(world, id) & INTERACT_TOGGLED)
-            drawCol = (vec4s){80.0f, 200.0f, 80.0f, 255.0f};
-        drawCol = Sol_Color_Lerp(drawCol, (vec4s){255.0f, 255.0f, 255.0f, 255.0f},
+            drawCol = (vec4s){0.4f, 0.6f, .4f, 1.0f};
+        drawCol = Sol_Color_Lerp(drawCol, (vec4s){1.0f, 1.0f, 1.0f, 1.0f},
                                  view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
         Sol_Render_DrawRectangle(rect, drawCol, 0);

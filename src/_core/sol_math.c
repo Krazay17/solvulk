@@ -22,10 +22,10 @@ vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha)
     float b = base.b + alpha * (target.b - base.b);
     float a = base.a + alpha * (target.a - base.a);
     return (vec4s){
-        .r = (uint8_t)fminf(r, 255),
-        .g = (uint8_t)fminf(g, 255),
-        .b = (uint8_t)fminf(b, 255),
-        .a = (uint8_t)fminf(a, 255),
+        .r = fminf(r, 1.0f),
+        .g = fminf(g, 1.0f),
+        .b = fminf(b, 1.0f),
+        .a = fminf(a, 1.0f),
     };
 }
 

@@ -97,7 +97,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                     (AbilityDesc){.abilityMapping = {
                                       {.actionBit = ACTION_ABILITY1, .targetState = ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
-    Sol_Interact_Add(world, id, (InteractDesc){0});
+    Sol_Interact_Add(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
     Sol_Owner_Add(world, id, (OwnerDesc){.team = 0});
@@ -125,7 +125,7 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                      .group          = 0b10,
                      .ignoreFriendly = 1,
                  });
-    Sol_Interact_Add(world, id, (InteractDesc){0});
+    Sol_Interact_Add(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
     Sol_Contact_Add(world, id, CONTACTKIND_FIREBALL, scale);
@@ -161,7 +161,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
-    Sol_Interact_Add(world, id, (InteractDesc){0});
+    Sol_Interact_Add(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
     return id;
@@ -191,25 +191,47 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
 
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 {
-    float width  = 150.0f;
-    float height = 50.0f;
-    int   id     = Sol_Create_Ent(world, 0);
+    vec2s dims = {150.0f, 50.0f};
+    int   id   = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Add(world, id, pos);
-    Sol_Body_Add(world, id, (BodyDesc){.height = height, .radius = width, .is2d = true});
-    Sol_Interact_Add(world, id, (InteractDesc){0});
+    Sol_Body2d_Add(world, id, (CompBody2d){.dims = dims, .kind = BODY2DKIND_RECT});
+    Sol_Interact_Add(world, id, (CompInteract){0});
 
-    Sol_Ui_Add(world, id,
-               (UiDesc){
-                   .kind            = UI_BUTTON,
-                   .baseColor       = (vec4s){{255.0f, 0.0f, 0.0f, 255.0f}},
-                   .borderColor     = (vec4s){{0.0f, 0.0f, 0.0f, 255.0f}},
-                   .textColor       = (vec4s){{0.0f, 255.0f, 0.0f, 255.0f}},
-                   .borderThickness = 2.0f,
-                   .fontSize        = 16.0f,
-                   .textWidth       = Sol_MeasureText(text, 16.0f, SOL_FONT_ICE),
-                   .text            = text,
-               });
+    int bg = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, bg, pos);
+    Sol_View2d_Add(world, bg,
+                   (CompView2d){
+                       .kind       = VIEW2DKIND_RECT,
+                       .color      = (vec4s){{1.0f, 0.0f, 0.0f, 1.0f}},
+                       .hoverColor = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}},
+                       .dims       = dims,
+                   });
+    Sol_Parent_Add(world, bg, (CompParent){.parentId = id});
+
+    int border = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, border, pos);
+    Sol_View2d_Add(world, border,
+                   (CompView2d){
+                       .kind  = VIEW2DKIND_RECT,
+                       .color = (vec4s){{0.0f, 0.0f, 0.0f, 1.0f}},
+                       .dims  = dims,
+                       .fill  = 3.0f,
+                   });
+    Sol_Parent_Add(world, border, (CompParent){.parentId = id});
+
+    CompView2d textComp = {
+        .kind  = VIEW2DKIND_TEXT,
+        .color = (vec4s){{0.0f, 1.0f, 0.0f, 1.0f}},
+        .dims  = {16.0f, 1.0f},
+        .scale = 16.0f,
+    };
+    strncpy_s(textComp.text, sizeof(textComp.text), text, 64);
+    int textId = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, textId, pos);
+    Sol_View2d_Add(world, textId, textComp);
+    Sol_Parent_Add(world, textId,
+                   (CompParent){.parentId = id, .localOffset = (vec3s){dims.x * 0.5f, dims.y * 0.5f, 0}});
 
     return id;
 }

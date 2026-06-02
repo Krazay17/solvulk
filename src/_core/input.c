@@ -145,6 +145,7 @@ SolMouse Sol_Input_GetMouse()
     SolMouse m = {0};
     m.x        = mouseX;
     m.y        = mouseY;
+
     m.dx       = mouseDeltaX;
     m.dy       = mouseDeltaY;
     m.wheelV   = mouseWheelDelta;

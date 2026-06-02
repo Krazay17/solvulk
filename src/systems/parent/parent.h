@@ -11,3 +11,4 @@ typedef struct CompParent
 void Sol_Parent_Init(World *world);
 void Sol_Parent_Add(World *world, int id, CompParent desc);
 void Sol_Parent_Step(World *world, double dt, double time);
+u32 Sol_Parent_GetParent(World *world, int id);

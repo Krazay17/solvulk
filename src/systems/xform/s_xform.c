@@ -15,7 +15,6 @@ void Sol_Xform_Add(World *world, int id, vec3s pos)
         .scale   = (vec3s){1.0f, 1.0f, 1.0f},
     };
 
-    world->masks[id] |= HAS_XFORM;
     world->xforms[id] = xform;
 }
 
@@ -23,13 +22,10 @@ void Xform_Snapshot(World *world)
 {
     for (int i = 0; i < world->activeCount; ++i)
     {
-        int id = world->activeEntities[i];
-        if (world->masks[id] & HAS_XFORM)
-        {
-            world->xforms[id].lastPos   = world->xforms[id].pos;
-            world->xforms[id].lastQuat  = world->xforms[id].quat;
-            world->xforms[id].lastScale = world->xforms[id].scale;
-        }
+        int id                      = world->activeEntities[i];
+        world->xforms[id].lastPos   = world->xforms[id].pos;
+        world->xforms[id].lastQuat  = world->xforms[id].quat;
+        world->xforms[id].lastScale = world->xforms[id].scale;
     }
     if (world->playerID < 0)
         return;
@@ -45,15 +41,12 @@ void Xform_Interpolate(World *world, float alpha)
     int count = world->activeCount;
     for (i = 0; i < count; ++i)
     {
-        int id = world->activeEntities[i];
-        if (world->masks[id] & HAS_XFORM)
-        {
-            CompXform *xf = &world->xforms[id];
+        int        id = world->activeEntities[i];
+        CompXform *xf = &world->xforms[id];
 
-            xf->drawPos   = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
-            xf->drawQuat  = glms_quat_nlerp(xf->lastQuat, xf->quat, alpha);
-            xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
-        }
+        xf->drawPos   = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
+        xf->drawQuat  = glms_quat_nlerp(xf->lastQuat, xf->quat, alpha);
+        xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
     }
 }
 SolXform Sol_Xform_GetXform(World *world, int id)

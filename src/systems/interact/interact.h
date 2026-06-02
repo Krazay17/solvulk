@@ -1,16 +1,16 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct
+typedef struct CompInteract
 {
-    bool     toggleable;
-    float    value;
-    Callback onClick;
-    Callback onHold;
-} InteractDesc;
+    InteractState state;
+    float         value;
+    Callback      onClick;
+    Callback      onHold;
+} CompInteract;
 
 void Sol_Interact_Init(World *world);
-void Sol_Interact_Add(World *world, int id, InteractDesc desc);
+void Sol_Interact_Add(World *world, int id, CompInteract desc);
 void System_Interact_Tick(World *world, double dt, double time);
 
 InteractState Sol_Interact_GetState(World *world, int id);

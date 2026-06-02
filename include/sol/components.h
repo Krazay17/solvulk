@@ -49,3 +49,39 @@ void Sol_Shape_Init(World *world);
 void Sol_Shape_Add(World *world, int id, ShapeDesc desc);
 void Sol_Shape_Draw(World *world, double dt, double time);
 void Sol_Shape_ColorAll(World *world, vec4s color);
+
+typedef enum
+{
+    BODY2DKIND_RECT,
+    BODY2DKIND_COUNT,
+} Body2dKind;
+typedef struct CompBody2d
+{
+    Body2dKind kind;
+    vec2s      vel, dims, grav;
+} CompBody2d;
+void  Sol_Body2d_Init(World *world);
+void  Sol_Body2d_Add(World *world, int id, CompBody2d desc);
+vec2s Sol_Body2d_GetDims(World *world, int id);
+
+typedef enum
+{
+    VIEW2DKIND_RECT,
+    VIEW2DKIND_TEXT,
+    VIEW2DKIND_CIRCLE,
+    VIEW2DKIND_TEXTURE,
+    VIEW2DKIND_COUNT,
+} View2dKind;
+typedef struct CompView2d
+{
+    View2dKind kind;
+    vec2s      dims;
+    vec4s      color;
+    vec4s      hoverColor, clickColor, toggleColor;
+    float      fill, scale, textWidth;
+    float      hoverAnim, clickAnim;
+    u32        parent;
+    char       text[64];
+} CompView2d;
+void Sol_View2d_Init(World *world);
+void Sol_View2d_Add(World *world, int id, CompView2d desc);

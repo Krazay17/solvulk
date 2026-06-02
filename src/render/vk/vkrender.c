@@ -432,7 +432,7 @@ void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness)
 
     ShaderPushRect push = {
         .rec    = {rect.x, rect.y, rect.z, rect.w},
-        .color  = {ColorConvert(color.r), ColorConvert(color.g), ColorConvert(color.b), ColorConvert(color.a)},
+        .color  = {color.r, color.g, color.b, color.a},
         .extras = {thickness, 0, 0, 0},
     };
 

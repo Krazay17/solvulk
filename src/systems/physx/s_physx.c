@@ -34,9 +34,6 @@ void Sol_Physx_Init(World *world)
 
 void Sol_Body_Add(World *world, int id, BodyDesc desc)
 {
-    if (desc.is2d)
-        world->masks[id] |= HAS_BODY2;
-    else
         world->masks[id] |= HAS_BODY3;
         
     CompBody body = {
@@ -166,7 +163,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
 
 void Ground_Trace(World *world, int count, float fdt)
 {
-    u32 required = HAS_BODY3 | HAS_XFORM | HAS_MOVEMENT;
+    u32 required = HAS_BODY3 | HAS_MOVEMENT;
     int i;
 #pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
@@ -326,30 +323,6 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
 
     // 7. Cast through your existing raycast
     return Sol_Raycast(world, ray);
-}
-
-CompBody *Sol_Body2_Add(World *world, int id)
-{
-    world->masks[id] |= HAS_BODY2;
-    return &world->bodies[id];
-}
-
-void Sol_Physx2d_Step(World *world, double dt, double time)
-{
-    float fdt      = (float)dt;
-    int   required = HAS_BODY2 | HAS_XFORM;
-    for (int i = 0; i < world->activeCount; ++i)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
-        {
-            // vec3s accel   = SOL_PHYS_GRAV;
-            // accel         = glms_vec3_add(accel, body->force);
-            // accel         = glms_vec3_add(accel, body->impulse);
-            // body->impulse = (vec3s){0};
-            // body->vel     = glms_vec3_add(body->vel, glms_vec3_scale(accel, fdt));
-        }
-    }
 }
 
 vec3s Sol_Physx_GetVel(World *world, int id)

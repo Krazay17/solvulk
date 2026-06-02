@@ -56,7 +56,6 @@
 
 #define UISCALE(x)                                                                                                     \
     (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
-#define ColorConvert(x) (x / 255.0f)
 
 SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);

@@ -2,6 +2,7 @@
 
 typedef void (*DrawFunc)(World *, int, double, double, CompView2d *, vec3s);
 
+static void Step(World *world, double dt, double time);
 static void Draw(World *world, double dt, double time);
 static void DrawRect(World *world, int id, double dt, double time, CompView2d *view, vec3s pos);
 static void DrawCircle(World *world, int id, double dt, double time, CompView2d *view, vec3s pos);
@@ -17,19 +18,45 @@ DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
 
 void Sol_View2d_Init(World *world)
 {
-    world->view2d = calloc(MAX_ENTS, sizeof(CompView2d));
-    WAdd2d(world) = Draw;
+    world->view2d   = calloc(MAX_ENTS, sizeof(CompView2d));
+    WAdd2d(world)   = Draw;
+    WAddStep(world) = Step;
 }
 
 void Sol_View2d_Add(World *world, int id, CompView2d desc)
 {
+    desc.fill         = 1.0f;
+    desc.targetFill   = 1.0f;
     world->view2d[id] = desc;
     world->masks[id] |= HAS_VIEW2D;
+}
+
+static void Step(World *world, double dt, double time)
+{
+    int required = HAS_VIEW2D | HAS_OTHERWORLD;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+        CompOtherworld *ow = &world->otherworlds[id];
+        if (!ow->world || !ow->entId)
+            continue;
+        if (!(ow->world->masks[ow->entId] & HAS_VITAL))
+            continue;
+
+        CompVital  *v    = &ow->world->vitals[ow->entId];
+        CompView2d *view = &world->view2d[id];
+
+        float target     = v->maxHealth > 0 ? (float)v->health / (float)v->maxHealth : 0.0f;
+        view->targetFill = target;
+    }
 }
 
 static void Draw(World *world, double dt, double time)
 {
     int required = HAS_VIEW2D;
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -37,10 +64,7 @@ static void Draw(World *world, double dt, double time)
             continue;
         CompView2d *view = &world->view2d[id];
         vec3s       pos;
-        if (view->parent)
-            pos = Sol_Xform_GetDrawXform(world, view->parent).pos;
-        else
-            pos = Sol_Xform_GetDrawXform(world, id).pos;
+        pos = Sol_Xform_GetDrawXform(world, id).pos;
         draw_funcs[view->kind](world, id, dt, time, view, pos);
     }
 }
@@ -64,7 +88,11 @@ static void DrawRect(World *world, int id, double dt, double time, CompView2d *v
     drawCol = Sol_Color_Lerp(drawCol, view->hoverColor, view->hoverAnim);
     drawCol = Sol_Color_Lerp(drawCol, view->clickColor, view->clickAnim);
 
-    Sol_Render_DrawRectangle(rect, drawCol, view->fill);
+    float factor = 1.0f - expf(-8.0f * (float)dt);
+    view->fill   = Sol_Math_Lerp(view->fill, view->targetFill, factor);
+
+    float drawBorder = view->border * (1.0f + view->clickAnim);
+    Sol_Render_DrawRectangle(rect, drawCol, UISCALE(drawBorder), view->fill);
 }
 
 // TODO

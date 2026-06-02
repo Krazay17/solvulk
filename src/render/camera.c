@@ -53,7 +53,7 @@ void Sol_Cam_Update(double dt)
 
     sol_camera.target = vecAdd(sol_camera.pos, look->lookdir);
 
-    sol_camera.dir = glms_vec3_normalize(glms_vec3_sub(sol_camera.pos, sol_camera.target));
+    sol_camera.dir = glms_vec3_normalize(glms_vec3_sub(sol_camera.target, sol_camera.pos));
 
     // === Wallrun tilt ===
     float targetRoll = 0.0f;

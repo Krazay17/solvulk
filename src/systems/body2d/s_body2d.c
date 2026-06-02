@@ -40,10 +40,18 @@ static void Step(World *world, double dt, double time)
             SolMouse mouse = Sol_Input_GetMouse();
 
             vec2s mPos = {mouse.x, mouse.y};
-            if (Sol_Check_2d_Collision(mPos, (vec4s){pos.x, pos.y, dims.x, dims.y}) && mouse.buttons[SOL_MOUSE_MIDDLE])
+            if (Sol_Check_2d_Collision(mPos,
+                                       (vec4s){
+                                           UISCALE(pos.x),
+                                           UISCALE(pos.y),
+                                           UISCALE(dims.x),
+                                           UISCALE(dims.y),
+                                       }) &&
+                mouse.buttons[SOL_MOUSE_MIDDLE])
             {
-                float dist = glms_vec2_distance(mPos, center);
-                vel = glms_vec2_scale(glms_vec2_normalize(glms_vec2_sub(mPos, center)), dist);
+                vec2s scaledCenter = {UISCALE(center.x), UISCALE(center.y)};
+                float dist = glms_vec2_distance(mPos, scaledCenter);
+                vel        = glms_vec2_scale(glms_vec2_normalize(glms_vec2_sub(mPos, scaledCenter)), dist);
             }
         }
 

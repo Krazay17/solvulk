@@ -16,6 +16,8 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
+        if (id == 1)
+            continue;
         if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
             continue;
         if (time - Sol_Vital_GetLastHitTime(world, id) > HEALTHBAR_HIDE_DURATION)
@@ -29,26 +31,16 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 
         QuadSSBO *ssbo = Sol_Render_GetNext_Quad(QUADKIND_HEALTH);
         if (!ssbo)
-            continue; // Boundary safety guard
+            continue;
 
-        // 1. Position Setup (X, Y, Z, and W = Dynamic 3D scale/size width)
-        float healthbarWidthScale = 1.0f; // Adjust this to make bars physically wider on screen!
+        float healthbarWidthScale = 1.0f;
         ssbo->pos                 = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, healthbarWidthScale};
-
-        // 2. Clear out Rotation (Facecam pipeline handles this automatically)
         ssbo->rot = GLMS_VEC4_ZERO;
-
-        // 3. Core Color Vector Tinting (Green)
         ssbo->color = (vec4s){0.1f, 0.85f, 0.2f, 1.0f};
-
-        // 4. CRITICAL FIX: Base UV Coordinates Initialization
-        // Sets offset to (0,0) and width/height multiplier to (1,1) so the full area is drawn
         ssbo->uv = (vec4s){0, 0, 1, 1};
-
-        // 5. Shader Parameters Allocation (x = fill percentage, y = border outline scale)
+        // Shader Parameters Allocation (x = fill percentage, y = border outline scale)
         ssbo->extra = (vec4s){fill, 0.015f, 0, 0};
-
-        // 6. Explicit Subsystem Binding Types
+        // Explicit Subsystem Binding Types
         ssbo->type      = QUADTYPE_FACECAM;
         ssbo->flags     = 0;
         ssbo->textureId = 0;

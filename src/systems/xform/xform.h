@@ -9,7 +9,6 @@ typedef struct CompXform
 } CompXform;
 
 void     Sol_Xform_Init(World *world);
-void     Sol_Xform_Add(World *world, int id, vec3s pos);
 void     Xform_Snapshot(World *world);
 void     Xform_Interpolate(World *world, float alpha);
 void     Sol_Xform_Teleport(World *world, int id, vec3s pos);

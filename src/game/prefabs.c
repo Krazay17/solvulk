@@ -47,7 +47,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     id   = Sol_Create_Ent(world, id);
     if (id < 0)
         return -1;
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f, .yawOffset = GLM_PI_2f});
     Sol_Body_Add(world, id,
                  (BodyDesc){
@@ -81,7 +81,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     id   = Sol_Create_Ent(world, id);
     if (id < 0)
         return -1;
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
     Sol_Body_Add(world, id,
                  (BodyDesc){
@@ -114,7 +114,7 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
     if (id < 0)
         return -1;
     Sol_Shape_Add(world, id, shape);
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
     Sol_Body_Add(world, id,
                  (BodyDesc){
@@ -147,7 +147,7 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
 {
     int id = Sol_Create_Ent(world, 0);
 
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WORLD1});
     Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
 
@@ -158,7 +158,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
 {
 
     int id = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
     Sol_Interact_Add(world, id, (CompInteract){0});
@@ -189,34 +189,94 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
     return 0;
 }
 
+int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
+{
+    vec2s dims = {250.0f, 45.0f};
+
+    int bg = Sol_Create_Ent(world, 0);
+    Sol_Xform_Teleport(world, bg, pos);
+    Sol_View2d_Add(world, bg,
+                   (CompView2d){
+                       .kind       = VIEW2DKIND_RECT,
+                       .dims       = dims,
+                       .color      = {1, 0, 0, 1},
+                       .hoverColor = {1, 1, 1, 0.5f},
+                   });
+    Sol_Interact_Add(world, bg, (CompInteract){0});
+    Sol_Body2d_Add(world, bg, (CompBody2d){.kind = BODY2DKIND_RECT, .dims = dims});
+
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Teleport(world, id, pos);
+    Sol_View2d_Add(world, id,
+                   (CompView2d){
+                       .kind       = VIEW2DKIND_RECT,
+                       .dims       = dims,
+                       .color      = {0, 1, 0, 1},
+                       .hoverColor = {1, 1, 0, 0.5f},
+                   });
+    Sol_Parent_Add(world, id, (CompParent){.parentId = bg});
+    Sol_World_SetOtherworld(world, id, entWorld, entId);
+
+    int border = Sol_Create_Ent(world, 0);
+    Sol_Xform_Teleport(world, border, pos);
+    Sol_View2d_Add(world, border,
+                   (CompView2d){
+                       .kind       = VIEW2DKIND_RECT,
+                       .dims       = dims,
+                       .color      = {0, 0, 0, 1},
+                       .hoverColor = {0, 0, 0, 0.5f},
+                       .border     = 3.5f,
+                   });
+    Sol_Parent_Add(world, border, (CompParent){.parentId = bg});
+
+    float offsetX = 2.0f;
+    float offsetY = 1.0f;
+    int   border2 = Sol_Create_Ent(world, 0);
+    Sol_Xform_Teleport(world, border2, pos);
+    Sol_View2d_Add(world, border2,
+                   (CompView2d){
+                       .kind       = VIEW2DKIND_RECT,
+                       .dims       = {dims.x - offsetX * 2.0f, dims.y - offsetY * 2.0f},
+                       .color      = {0.0f, 0.0f, 0.0, 1.0f},
+                       .hoverColor = {0, 0, 0, 0.5f},
+                       .border     = 3.0f,
+                   });
+    Sol_Parent_Add(world, border2, (CompParent){.parentId = bg, .localOffset = (vec3s){offsetX, offsetY, 0}});
+    Sol_World_SetOtherworld(world, border2, entWorld, entId);
+
+    return id;
+}
+
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 {
     vec2s dims = {150.0f, 50.0f};
     int   id   = Sol_Create_Ent(world, 0);
 
-    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_Teleport(world, id, pos);
     Sol_Body2d_Add(world, id, (CompBody2d){.dims = dims, .kind = BODY2DKIND_RECT});
     Sol_Interact_Add(world, id, (CompInteract){0});
 
     int bg = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, bg, pos);
     Sol_View2d_Add(world, bg,
                    (CompView2d){
-                       .kind       = VIEW2DKIND_RECT,
-                       .color      = (vec4s){{1.0f, 0.0f, 0.0f, 1.0f}},
-                       .hoverColor = (vec4s){{1.0f, 1.0f, 1.0f, 1.0f}},
-                       .dims       = dims,
+                       .kind        = VIEW2DKIND_RECT,
+                       .color       = (vec4s){1.0f, 0.0f, 0.0f, 1.0f},
+                       .hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f},
+                       .toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f},
+                       .dims        = dims,
                    });
     Sol_Parent_Add(world, bg, (CompParent){.parentId = id});
 
     int border = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, border, pos);
     Sol_View2d_Add(world, border,
                    (CompView2d){
-                       .kind  = VIEW2DKIND_RECT,
-                       .color = (vec4s){{0.0f, 0.0f, 0.0f, 1.0f}},
-                       .dims  = dims,
-                       .fill  = 3.0f,
+                       .kind        = VIEW2DKIND_RECT,
+                       .color       = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
+                       .hoverColor  = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
+                       .clickColor  = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
+                       .toggleColor = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
+                       .dims        = dims,
+                       .border      = 3.0f,
                    });
     Sol_Parent_Add(world, border, (CompParent){.parentId = id});
 
@@ -228,7 +288,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     };
     strncpy_s(textComp.text, sizeof(textComp.text), text, 64);
     int textId = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, textId, pos);
+    Sol_Xform_Teleport(world, textId, pos);
     Sol_View2d_Add(world, textId, textComp);
     Sol_Parent_Add(world, textId,
                    (CompParent){.parentId = id, .localOffset = (vec3s){dims.x * 0.5f, dims.y * 0.5f, 0}});

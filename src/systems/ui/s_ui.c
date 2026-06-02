@@ -94,13 +94,13 @@ void Button_Draw(World *world, double dt, double time)
         drawCol = Sol_Color_Lerp(drawCol, (vec4s){1.0f, 1.0f, 1.0f, 1.0f},
                                  view->hoverAnim * 0.2f + view->clickAnim * 0.5f);
 
-        Sol_Render_DrawRectangle(rect, drawCol, 0);
+        Sol_Render_DrawRectangle(rect, drawCol, 0, 1.0f);
 
         // Border
         if (view->borderThickness > 0 || isHovered)
         {
             float thickness = view->borderThickness + (view->clickAnim * 4.0f) + (view->hoverAnim * 2.0f);
-            Sol_Render_DrawRectangle(rect, view->borderColor, thickness);
+            Sol_Render_DrawRectangle(rect, view->borderColor, thickness, 1.0f);
         }
 
         // Text

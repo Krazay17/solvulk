@@ -6,18 +6,6 @@ void Sol_Xform_Init(World *world)
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
 }
 
-void Sol_Xform_Add(World *world, int id, vec3s pos)
-{
-    CompXform xform = {
-        .pos     = pos,
-        .lastPos = pos,
-        .drawPos = pos,
-        .scale   = (vec3s){1.0f, 1.0f, 1.0f},
-    };
-
-    world->xforms[id] = xform;
-}
-
 void Xform_Snapshot(World *world)
 {
     for (int i = 0; i < world->activeCount; ++i)

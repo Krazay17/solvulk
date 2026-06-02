@@ -19,7 +19,7 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
     for (int i = 0; i < ABILITY_STATE_COUNT; i++)
     {
         a.stateData[i].lastEntered = -FLT_MAX;
-        a.stateData[i].lastExited = -FLT_MAX;
+        a.stateData[i].lastExited  = -FLT_MAX;
     }
 
     world->masks[id] |= HAS_ABILITY;
@@ -33,8 +33,13 @@ void Sol_Ability_Step(World *world, double dt, double time)
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
+        if ((world->masks[id] & required) != required)
             continue;
+        if (Sol_Vital_GetDead(world, id))
+        {
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, true);
+            continue;
+        }
         if (world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompAbility *ability = &world->abilities[id];

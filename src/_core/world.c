@@ -53,6 +53,7 @@ World *World_Create(WorldKind kind)
     {
         world->doesSimulate                = true;
         world->doesRender                  = true;
+        world->systemBits                  = 0;
         world->playerID                    = -1;
         world->kind                        = kind;
         world->worldId                     = worldId++;
@@ -70,14 +71,15 @@ World *World_Create_Default(WorldKind kind)
     {
         switch (kind)
         {
-            // case WORLDKIND_MENU:
-            //     World_System_Add(world, WORLD_SYS_XFORM);
-            //     World_System_Add(world, WORLD_SYS_EVENT);
-            //     World_System_Add(world, WORLD_SYS_INTERACT);
-            //     World_System_Add(world, WORLD_SYS_SHAPE);
-            //     World_System_Add(world, WORLD_SYS_UI);
-            //     World_System_Add(world, WORLD_SYS_VIEW);
-            //     break;
+        case WORLDKIND_MENU:
+            World_System_Add(world, WORLD_SYS_EVENT);
+            World_System_Add(world, WORLD_SYS_XFORM);
+            World_System_Add(world, WORLD_SYS_INTERACT);
+            World_System_Add(world, WORLD_SYS_BODY2);
+            World_System_Add(world, WORLD_SYS_PARENT);
+            World_System_Add(world, WORLD_SYS_VIEW2D);
+            World_System_Add(world, WORLD_SYS_VIEW);
+            break;
 
         default:
             for (int i = 0; i < WORLD_SYS_COUNT; i++)
@@ -138,6 +140,7 @@ void World_System_Add(World *world, WorldSystem system)
 {
     if (world && init_system[system])
         init_system[system](world);
+    world->systemBits |= SYS_BIT(system);
 }
 
 int Sol_Create_Ent(World *world, u32 id)
@@ -222,4 +225,10 @@ void Sol_World_SetActive(World *world)
 {
     Sol_GetState()->activeWorld   = world;
     Sol_GetState()->activeWorldId = world->worldId;
+}
+void Sol_World_SetOtherworld(World *world, int id, World *otherWorld, int otherId)
+{
+    world->otherworlds[id].world = otherWorld;
+    world->otherworlds[id].entId = otherId;
+    world->masks[id] |= HAS_OTHERWORLD;
 }

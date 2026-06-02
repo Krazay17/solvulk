@@ -24,7 +24,7 @@ void Sol_Parent_Step(World *world, double dt, double time)
         CompXform  *xform  = &world->xforms[id];
 
         xform->pos  = vecAdd(world->xforms[parent->parentId].pos, parent->localOffset);
-        xform->quat = glms_quat_add(parent->localQuat, world->xforms[parent->parentId].quat);
+        xform->quat = glms_quat_mul(parent->localQuat, world->xforms[parent->parentId].quat);
     }
 }
 

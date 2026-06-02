@@ -43,6 +43,7 @@ typedef enum
     HAS_REPLICATION  = (1 << 21),
     HAS_EMITTER      = (1 << 22),
     HAS_VIEW2D       = (1 << 23),
+    HAS_OTHERWORLD   = (1 << 24),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -129,6 +130,11 @@ typedef struct CompFlags
 {
     EFlag flags;
 } CompFlags;
+typedef struct CompOtherworld
+{
+    World *world;
+    u32    entId;
+} CompOtherworld;
 
 typedef struct World
 {
@@ -139,9 +145,10 @@ typedef struct World
     SystemFunc draw3dSystems[MAX_SYSTEMS];
     SystemFunc draw2dSystems[MAX_SYSTEMS];
 
-    int       activeEntities[MAX_ENTS];
-    Mask      masks[MAX_ENTS];
-    CompFlags flags[MAX_ENTS];
+    int            activeEntities[MAX_ENTS];
+    Mask           masks[MAX_ENTS];
+    CompFlags      flags[MAX_ENTS];
+    CompOtherworld otherworlds[MAX_ENTS];
 
     CompReplication  *replications;
     CompParent       *parents;
@@ -217,3 +224,4 @@ void Sol_Flags_Remove(World *world, int id, EFlag flags);
 int  Sol_World_GetEntCount(World *world);
 void Sol_World_SetActive(World *world);
 void Sol_World_SetReplicates(World *world, bool active);
+void Sol_World_SetOtherworld(World *world, int id, World *otherWorld, int otherId);

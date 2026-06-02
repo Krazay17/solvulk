@@ -23,15 +23,19 @@ void Sol_Interact_Add(World *world, int id, CompInteract desc)
 
 void System_Interact_Tick(World *world, double dt, double time)
 {
-    SolMouse     mouse     = Sol_Input_GetMouse();
-    int          rayId     = -1;
-    SolRayResult screenRay = {0};
-    if (!mouse.locked)
-        screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 0b11, .dist = 100.0f});
-    if (screenRay.hit && screenRay.entId)
-        rayId = screenRay.entId;
+    SolMouse mouse = Sol_Input_GetMouse();
 
-    Sol_Debug_Add("SelectedEnt", rayId);
+    int rayId = -1;
+    if (world->systemBits & SYS_BIT(WORLD_SYS_PHYSX))
+    {
+        SolRayResult screenRay = {0};
+        if (!mouse.locked)
+            screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 0b11, .dist = 100.0f});
+        if (screenRay.hit && screenRay.entId)
+            rayId = screenRay.entId;
+
+        Sol_Debug_Add("SelectedEnt", rayId);
+    }
 
     int required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)

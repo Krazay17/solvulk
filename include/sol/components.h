@@ -78,9 +78,10 @@ typedef struct CompView2d
     vec2s      dims;
     vec4s      color;
     vec4s      hoverColor, clickColor, toggleColor;
-    float      fill, scale, textWidth;
+    float      fill, scale, textWidth, border;
     float      hoverAnim, clickAnim;
-    u32        parent;
+    float      targetFill;
+    u32        zindex;
     char       text[64];
 } CompView2d;
 void Sol_View2d_Init(World *world);

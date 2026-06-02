@@ -16,7 +16,7 @@ void Sol_View_Crosshair_Draw(World *world, double dt, double time)
             .z = 3,
             .w = 12,
         },
-        (vec4s){255, 0, 0, 255}, 0);
+        (vec4s){255, 0, 0, 255}, 0, 1.0f);
     Sol_Render_DrawRectangle(
         (vec4s){
             .x = width,
@@ -24,5 +24,5 @@ void Sol_View_Crosshair_Draw(World *world, double dt, double time)
             .z = 12,
             .w = 3,
         },
-        (vec4s){255, 0, 0, 255}, 0);
+        (vec4s){255, 0, 0, 255}, 0, 1.0f);
 }

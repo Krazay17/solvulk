@@ -34,8 +34,8 @@ void Sol_Physx_Init(World *world)
 
 void Sol_Body_Add(World *world, int id, BodyDesc desc)
 {
-        world->masks[id] |= HAS_BODY3;
-        
+    world->masks[id] |= HAS_BODY3;
+
     CompBody body = {
         .mass           = desc.mass,
         .shape          = desc.shape,
@@ -98,7 +98,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt));
             continue;
         }
-        
+
         if (xform->pos.y < -500.0f)
         {
             if (world->flags[id].flags & EFLAG_PROJECTILE)
@@ -301,7 +301,7 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
 
     // 4. Transform clip → world
     vec4s worldFar;
-     worldFar = glms_mat4_mulv(invVP, clipFar);
+    worldFar = glms_mat4_mulv(invVP, clipFar);
 
     // 5. Perspective divide (homogeneous → 3D)
     if (fabsf(worldFar.raw[3]) < FLOATING_EPSILON)

@@ -127,25 +127,16 @@ void Create_Sol_Game()
     Sol_View_Crosshair(gameWorld);
 
     SpawnPlayer(0, 0);
+
+    World *hud = World_Create_Default(WORLDKIND_MENU);
+    Sol_Prefab_Healthbar(hud, (vec3s){300, 200, 0}, gameWorld, 1);
+
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
-    Sol_Xform_Add(gameWorld, floorWorld1, (vec3s){0, -7, 0});
+    Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
     Sol_Model_Add(gameWorld, floorWorld1, (ModelDesc){.id = SOL_MODEL_WORLD1});
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
-
-    vec2s dims       = {100, 100};
-    int   testSquare = Sol_Create_Ent(menu, 0);
-    Sol_Xform_Add(menu, testSquare, (vec3s){200, 200, 0});
-    Sol_Body2d_Add(menu, testSquare, (CompBody2d){.dims = dims, .kind = BODY2DKIND_RECT, .grav = (vec2s){.y = 1.0f}});
-    Sol_View2d_Add(menu, testSquare,
-                   (CompView2d){
-                       .kind       = VIEW2DKIND_RECT,
-                       .color      = {1, 0, 0, 1},
-                       .dims       = dims,
-                       .hoverColor = {1.0f, 0.5f, 0.4f, 1.0f},
-                   });
-    Sol_Interact_Add(menu, testSquare, (CompInteract){0});
 
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Add(menu, quitButton, (CompInteract){.onClick = (Callback){QuitApp}});

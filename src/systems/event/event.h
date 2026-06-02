@@ -9,8 +9,13 @@ typedef enum
     EVENTKIND_FX,
     EVENTKIND_ANIM,
     EVENTKIND_DEATH,
+    EVENTKIND_UI,
     EVENTKIND_COUNT,
 } EventKind;
+typedef enum
+{
+    TRIGGERKIND_SPAWN_WIZARD,
+} TriggerKind;
 typedef struct SolEvent
 {
     EventKind kind;
@@ -40,6 +45,11 @@ typedef struct SolEvent
             u8    layerId;
             float seek;
         } anim;
+        struct
+        {
+            TriggerKind kind;
+            vec3s       pos;
+        } trigger;
     } as;
 } SolEvent;
 

@@ -54,6 +54,7 @@
 
 #include "game/prefabs.h"
 
+#define BITC(x)(1u << (x))
 #define UISCALE(x)                                                                                                     \
     (x * min((float)Sol_GetState()->windowWidth / WINDOW_WIDTH, (float)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
 

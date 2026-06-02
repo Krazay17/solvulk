@@ -295,5 +295,5 @@ void Sol_Render_Flush2D(void);
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
-void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness);
+void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
 void  Sol_Render_DrawText(SolFontDesc desc);

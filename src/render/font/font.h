@@ -19,6 +19,7 @@ typedef struct
 {
     float u, v, uw, vh;
     float xoffset;
+    float xright;
     float ytop;
     float yoffset;
     float yadvance;
@@ -34,7 +35,6 @@ typedef struct SolFont
     SolGlyph     glyph[128];
     TextBounds   bounds;
     SolTextureId textureId;
-    float        atlasUscale, atlasVscale;
 } SolFont;
 
 int      Sol_Fonts_Init();

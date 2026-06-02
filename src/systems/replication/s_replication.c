@@ -11,6 +11,7 @@ u32 event_kinds_replicate[EVENTKIND_COUNT] = {
     [EVENTKIND_FX]   = 1,
     [EVENTKIND_ANIM] = 1,
     [EVENTKIND_HIT]  = 1,
+    [EVENTKIND_UI]   = 1,
 };
 
 void Sol_Replication_Init(World *world)

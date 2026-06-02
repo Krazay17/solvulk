@@ -32,8 +32,6 @@ static void Parse_Font(SolResource metrics, int id)
     SolGlyph   *glyphs = font->glyph;
     const char *json   = metrics.data;
 
-    font->atlasUscale = 224.0f;
-    font->atlasVscale = 224.0f;
     float atlasW = 224.0f;
     float atlasH = 224.0f;
 
@@ -86,6 +84,7 @@ static void Parse_Font(SolResource metrics, int id)
         glyphs[charId].uw       = (ab.r - ab.l) / atlasW;
         glyphs[charId].vh       = (ab.t - ab.b) / atlasH;
         glyphs[charId].xoffset  = pl.l;
+        glyphs[charId].xright   = pl.r;
         glyphs[charId].ytop     = pl.t;
         glyphs[charId].yoffset  = pl.b;
         glyphs[charId].yadvance = adv ? strtof(adv + 10, NULL) : 0.0f;
@@ -191,68 +190,108 @@ float Sol_MeasureText(const char *str, float size, SolFontKind kind)
     }
     return width;
 }
-
 void Sol_Render_DrawText3D(Text3DDesc desc)
 {
+    if (!desc.text || desc.text[0] == '\0')
+        return;
+    if (desc.size <= 0.0f)
+        return;
+
     SolFont     *font  = Sol_GetFont(desc.font);
     SolTextureId atlas = font->textureId;
 
-    // Compute total width for centering (optional)
-    float totalWidth = 0;
+    // Total width in world units (advance * size) for horizontal centering
+    float totalWidth = 0.0f;
     for (const char *c = desc.text; *c; c++)
     {
-        if (*c < 0 || *c >= 128)
+        unsigned char ch = (unsigned char)*c;
+        if (ch >= 128)
             continue;
-        totalWidth += font->glyph[(int)*c].yadvance;
+        totalWidth += font->glyph[ch].yadvance * desc.size;
     }
 
-    float cursorX = -totalWidth * 0.5f; // center horizontally; remove for left-align
-
-    // For billboard mode, get camera right/up vectors so all chars billboard together.
-    vec3s right = {{1, 0, 0}};
-    vec3s up    = {{0, 1, 0}};
+    // Layout basis vectors.
+    // Billboard mode: use camera right + world up so all chars share the same axes
+    //                 and stay on a line facing the camera.
+    // Quat mode:      use local x/y axes; the rotation quaternion is applied per glyph in the shader.
+    vec3s right = (vec3s){{1.0f, 0.0f, 0.0f}};
+    vec3s up    = (vec3s){{0.0f, 1.0f, 0.0f}};
     if (desc.billboard)
     {
         right = Sol_Cam_GetRight();
+        // up stays world-up so text stays vertically aligned with screen
     }
+
+    float cursorX = -totalWidth * 0.5f; // centered horizontally
 
     for (const char *c = desc.text; *c; c++)
     {
-        if (*c < 0 || *c >= 128)
+        unsigned char ch = (unsigned char)*c;
+        if (ch >= 128)
             continue;
-        SolGlyph *g = &font->glyph[(int)*c];
 
-        // Glyph world position
-        float gx = cursorX + g->xoffset;
-        float gy = g->yoffset;
-        float gw = g->uw / font->atlasUscale; // glyph width in world units, however you scale
-        float gh = g->vh / font->atlasVscale;
+        // Whitespace: advance cursor, no draw
+        if (ch == ' ')
+        {
+            cursorX += font->glyph[' '].yadvance * desc.size;
+            continue;
+        }
 
-        // Compute glyph center in 3D
+        SolGlyph *g = &font->glyph[ch];
+        if (g->uw == 0.0f)
+        { // unknown / unloaded glyph
+            cursorX += g->yadvance * desc.size;
+            continue;
+        }
+
+        // --- Compute glyph quad in world units ---
+        // Plane bounds give where to draw the glyph relative to its origin (in EM units).
+        // Multiply by desc.size to convert EM to world units.
+        float gw = (g->xright - g->xoffset) * desc.size; // glyph width
+        float gh = (g->ytop - g->yoffset) * desc.size;   // glyph height
+
+        // Glyph center (in 2D layout space, relative to text origin)
+        float cx = cursorX + (g->xoffset + g->xright) * 0.5f * desc.size;
+        float cy = (g->yoffset + g->ytop) * 0.5f * desc.size;
+
+        // Project the 2D layout position into world space using the basis vectors.
         vec3s glyphPos;
         if (desc.billboard)
         {
-            glyphPos = vecAdd(desc.pos, vecAdd(vecSca(right, (gx + gw * 0.5f) * desc.size),
-                                               vecSca(up, (gy + gh * 0.5f) * desc.size)));
+            glyphPos = vecAdd(desc.pos, vecAdd(vecSca(right, cx), vecSca(up, cy)));
         }
         else
         {
-            vec3s local = {{(gx + gw * 0.5f) * desc.size, (gy + gh * 0.5f) * desc.size, 0}};
-            glm_quat_rotatev(desc.rotation.raw, local.raw, glyphPos.raw);
-            glyphPos = vecAdd(desc.pos, glyphPos);
+            // Quat mode: rotate the local (cx, cy, 0) by the orientation, then offset from origin.
+            vec3s local = {{cx, cy, 0.0f}};
+            vec3s rotated;
+            glm_quat_rotatev(desc.rotation.raw, local.raw, rotated.raw);
+            glyphPos = vecAdd(desc.pos, rotated);
         }
+
+        // --- Push quad ---
+        // NOTE: your vertex shader uses a single `size = q.pos.w` for both axes,
+        //       so quads are uniform-scaled squares. We use max(gw, gh)/2 as the
+        //       half-size, which means narrow glyphs (I, l) get a square quad with
+        //       the glyph stretched horizontally to fill it. For most text this is
+        //       acceptable; for crisp typography, modify the vert shader to take a
+        //       vec2 size from q.extra and pass non-uniform dimensions.
+        // float halfSize = fmaxf(gw, gh) * 0.5f;
 
         QuadSSBO *q = Sol_Render_GetNext_Quad(QUADKIND_TEXT);
         if (!q)
             break;
-        q->pos       = (vec4s){glyphPos.x, glyphPos.y, glyphPos.z, 0.5f};// fmaxf(gw, gh) * 0.5f * desc.size};
-        q->rot       = desc.billboard ? (vec4s){0, 0, 0, 0} // facecam mode: rot.x is spin angle (0)
-                                      : (vec4s){desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w};
-        q->color     = (vec4s){desc.color.r, desc.color.g, desc.color.b, desc.color.a};
-        q->uv        = (vec4s){g->u, g->v, g->uw, g->vh};
+
+        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 0}};
+        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
+                                      : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
+        q->color     = desc.color;
+        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
+        q->extra     = (vec4s){{0, 0, gw * 0.5f, gh * 0.5f}};
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
+        q->flags     = 0;
 
-        cursorX += g->yadvance;
+        cursorX += g->yadvance * desc.size;
     }
 }

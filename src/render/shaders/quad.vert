@@ -50,22 +50,25 @@ void main() {
     const uint QUADTYPE_FACECAM = 0u;
     const uint QUADTYPE_QUAT    = 1u;
     
-    if (q.type == QUADTYPE_FACECAM) {
-        float angle = q.rot.x;
-        float c = cos(angle);
-        float s = sin(angle);
-        vec2 spun = vec2(corner.x * c - corner.y * s,
-                         corner.x * s + corner.y * c);
-        
-        vec3 right = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
-        vec3 up    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
-        
-        worldPos = q.pos.xyz + right * spun.x * size + up * spun.y * size;
-    } else {
-        // QUADTYPE_QUAT
-        vec3 localPos = vec3(corner.x, corner.y, 0.0) * size;
-        worldPos = q.pos.xyz + rotateByQuat(q.rot, localPos);
-    }
+if (q.type == QUADTYPE_FACECAM) {
+    float angle = q.rot.x;
+    float c = cos(angle);
+    float s = sin(angle);
+    vec2 spun = vec2(corner.x * c - corner.y * s,
+                     corner.x * s + corner.y * c);
+    
+    vec3 right = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
+    vec3 up    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
+    
+    // Non-uniform half-dimensions from extra.zw, else uniform from pos.w
+    vec2 halfDim = (q.extra.z > 0.0) ? q.extra.zw : vec2(size, size);
+    worldPos = q.pos.xyz + right * spun.x * halfDim.x + up * spun.y * halfDim.y;
+} else {
+    // QUADTYPE_QUAT
+    vec2 halfDim = (q.extra.z > 0.0) ? q.extra.zw : vec2(size, size);
+    vec3 localPos = vec3(corner.x * halfDim.x, corner.y * halfDim.y, 0.0);
+    worldPos = q.pos.xyz + rotateByQuat(q.rot, localPos);
+}
     
     vec2 uvLocal = vec2(corner.x, -corner.y) * 0.5 + 0.5;   
     fragUV = q.uv.xy + uvLocal * q.uv.zw;

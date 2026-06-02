@@ -339,7 +339,7 @@ void Net_Recv_Packet(ENetEvent *event)
     break;
     // Host recieves Event from Client
     case NET_PACKET_EVENT: {
-        if (!Net_IsPlaying() || !Net_IsClient())
+        if (!Net_IsPlaying())
             return;
         if (event->packet->dataLength < offsetof(EventSnap, events))
         {

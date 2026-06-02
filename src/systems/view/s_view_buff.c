@@ -30,14 +30,15 @@ static void Sol_View_Buff_Tick(World *world, double dt, double time)
             {
             case BUFFKIND_FIRE:
                 Sol_Emitter_SpawnEx(world, (Emitter){.pos      = x->pos,
-                                                 .burst    = 10,
-                                                 .particle = (Particle){.kind     = PARTICLE_FIRE,
-                                                                        .ttl      = 1.0f,
-                                                                        .color    = {.85f, 0.07f, 0.05f, 0.7f},
-                                                                        .scale    = 0.25f,
-                                                                        .speed    = 1.0f,
-                                                                        .scalein  = .2f,
-                                                                        .scaleout = .2f}});
+                                                     .burst    = 10,
+                                                     .particle = (Particle){.kind     = PARTICLE_FIRE,
+                                                                            .ttl      = 1.0f,
+                                                                            .color    = {.85f, 0.07f, 0.05f, 0.7f},
+                                                                            .scale    = 0.25f,
+                                                                            .speed    = 1.0f,
+                                                                            .scalein  = .2f,
+                                                                            .followId = id,
+                                                                            .scaleout = .2f}});
                 break;
             }
         }

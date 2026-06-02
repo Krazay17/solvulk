@@ -85,8 +85,8 @@ static void DrawRect(World *world, int id, double dt, double time, CompView2d *v
     vec4s drawCol = view->color;
     if (Sol_Interact_GetState(world, id) & INTERACT_TOGGLED)
         drawCol = view->toggleColor;
-    drawCol = Sol_Color_Lerp(drawCol, view->hoverColor, view->hoverAnim);
-    drawCol = Sol_Color_Lerp(drawCol, view->clickColor, view->clickAnim);
+    drawCol = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
+    drawCol = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
 
     float factor = 1.0f - expf(-8.0f * (float)dt);
     view->fill   = Sol_Math_Lerp(view->fill, view->targetFill, factor);

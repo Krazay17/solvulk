@@ -59,8 +59,6 @@ void Sol_Model_Draw(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-        if (Sol_Vital_GetDead(world, id))
-            continue;
 
         CompXform *xform     = &world->xforms[id];
         CompModel *modelComp = &world->models[id];

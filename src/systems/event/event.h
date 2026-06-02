@@ -9,6 +9,7 @@ typedef enum
     EVENTKIND_FX,
     EVENTKIND_ANIM,
     EVENTKIND_DEATH,
+    EVENTKIND_RESPAWN,
     EVENTKIND_UI,
     EVENTKIND_COUNT,
 } EventKind;
@@ -50,6 +51,11 @@ typedef struct SolEvent
             TriggerKind kind;
             vec3s       pos;
         } trigger;
+        struct
+        {
+            u32 ent;
+            vec3s pos;
+        } respawn;
     } as;
 } SolEvent;
 

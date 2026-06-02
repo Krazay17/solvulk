@@ -47,7 +47,6 @@
 #include "physx/physx.h"
 #include "platform/platform.h"
 #include "replication/replication.h"
-#include "ui/ui.h"
 #include "view/view.h"
 #include "vital/vital.h"
 #include "xform/xform.h"

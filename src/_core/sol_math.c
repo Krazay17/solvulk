@@ -15,20 +15,6 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
 
-vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha)
-{
-    float r = base.r + alpha * (target.r - base.r);
-    float g = base.g + alpha * (target.g - base.g);
-    float b = base.b + alpha * (target.b - base.b);
-    float a = base.a + alpha * (target.a - base.a);
-    return (vec4s){
-        .r = fminf(r, 1.0f),
-        .g = fminf(g, 1.0f),
-        .b = fminf(b, 1.0f),
-        .a = fminf(a, 1.0f),
-    };
-}
-
 vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch)
 {
     float x = cosf(pitch) * sinf(yaw);

@@ -42,6 +42,18 @@ const ImpactList contact_config[CONTACTKIND_COUNT] = {
                         },
                 },
         },
+    [CONTACTKIND_BULLET] = {
+        .impactCount = 1,
+        .impacts[0] =
+                                {
+                                    .kind = IMPACT_DIRECT,
+                                    .hit =
+                                        {
+                                            .kind   = HITKIND_FIRE,
+                                            .damage = 30,
+                                        },
+
+                                }},
 };
 
 static void Contact_Step(World *world, double dt, double time);

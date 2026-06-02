@@ -10,6 +10,22 @@ void Sol_Combat_Init(World *world)
 
 static void Combat_Step(World *world, double dt, double time)
 {
+    if (!Net_IsClient())
+    {
+        int required = HAS_VITAL;
+        for (int i = 0; i < world->activeCount; i++)
+        {
+            int id = world->activeEntities[i];
+            if ((world->masks[id] & required) != required)
+                continue;
+            CompVital *vital = &world->vitals[id];
+            if (Sol_Vital_GetDead(world, id) && vital->doesRespawn && time > vital->deathTime + vital->respawnTime)
+            {
+                Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_RESPAWN, .as.respawn.ent = id});
+            }
+        }
+    }
+
     for (int i = 0; i < world->events->count; i++)
     {
         SolEvent *e = &world->events->event[i];
@@ -50,17 +66,29 @@ static void Combat_Step(World *world, double dt, double time)
         break;
 
         case EVENTKIND_DEATH: {
-            if (Net_IsClient())
-                break;
-            Sol_Vital_Die(world, e->as.death.entB);
+            Sol_Movement_SetState(world, e->as.death.entB, MOVE_DEAD);
 
-            // Tell Ai their target died
-            // for (int d = 0; d < world->activeCount; d++)
-            // {
-            //     int id = world->activeEntities[d];
-            //     if ((world->masks[id] & HAS_AICONTROLLER))
-            //         Sol_AiController_TargetDied(world, id, e->as.death.entB);
-            // }
+            CompVital *vital = &world->vitals[e->as.death.entB];
+            vital->deathTime = Sol_GetGameTime();
+
+            if (world->masks[e->as.death.entB] & HAS_BUFF)
+                memset(&world->buffs[e->as.death.entB], 0, sizeof(CompBuff));
+
+            Sol_Event_Add(world, (SolEvent){.kind       = EVENTKIND_FX,
+                                            .as.fx.kind = FXKIND_DEATH_BLOOD,
+                                            .as.fx.pos  = Sol_Xform_GetPos(world, e->as.death.entB)});
+
+            if (!vital->doesRespawn)
+                Sol_Destroy_Ent(world, e->as.death.entB);
+        }
+        break;
+        case EVENTKIND_RESPAWN: {
+            CompVital *vital = &world->vitals[e->as.respawn.ent];
+            vital->health    = vital->maxHealth;
+            vital->energy    = vital->maxEnergy;
+            vital->mana      = vital->maxMana;
+            Sol_Xform_Teleport(world, e->as.respawn.ent, e->as.respawn.pos);
+            Sol_Movement_SetState(world, e->as.respawn.ent, MOVE_IDLE);
         }
         break;
         }

@@ -4,6 +4,7 @@ void Aggro_State_Update(World *world, int id, float dt)
 {
     CompController   *controller   = &world->controllers[id];
     CompAiController *aicontroller = &world->aicontrollers[id];
+    aicontroller->target = AiController_FindTarget(world, id);
     if (aicontroller->target == 0)
     {
         Ai_SetState(world, id, AISTATE_IDLE);
@@ -31,7 +32,7 @@ void Aggro_State_Update(World *world, int id, float dt)
     controller->lookdir = dir;
 
     // Aim up a bit for lob projectile
-    controller->aimdir  = glms_vec3_lerp(controller->aimdir, WORLD_UP, aicontroller->distToTarget / 300.f);
+    controller->aimdir  = glms_vec3_lerp(controller->aimdir, WORLD_UP, aicontroller->distToTarget / 200.f);
 
     data->accum += dt;
     if (data->accum > data->attacktimer)

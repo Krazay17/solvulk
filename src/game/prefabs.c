@@ -31,6 +31,9 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc)
     case PREFABKIND_FIREBALL:
         id = Sol_Prefab_Fireball(world, id, desc.pos, desc.scale);
         break;
+    case PREFABKIND_BULLET:
+        id = Sol_Prefab_Bullet(world, id, desc.pos, desc.scale);
+        break;
     }
 
     if (auth != NETAUTH_NONE)
@@ -62,12 +65,11 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
     Sol_Vital_Add(world, id, VITALKIND_PLAYER);
     Sol_Ability_Add(world, id,
-                    (AbilityDesc){.abilityMapping = {
+                    (AbilityDesc){.bindings = {
                                       {ACTION_DASH, ABILITY_STATE_DASH},
                                       {ACTION_ABILITY1, ABILITY_STATE_FIREBALL},
-                                      {ACTION_ABILITY2, ABILITY_STATE_SHIELD},
-                                      {ACTION_ABILITY3, ABILITY_STATE_CLAW},
-                                      {ACTION_ABILITY4, ABILITY_STATE_FIREBALLVOLLEY},
+                                      {ACTION_ABILITY2, ABILITY_STATE_PISTOL},
+                                      {ACTION_ABILITY3, ABILITY_STATE_SHIELD},
                                   }});
     Sol_Owner_Add(world, id, (OwnerDesc){.team = 1});
     return id;
@@ -94,8 +96,8 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                  });
     Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
-                    (AbilityDesc){.abilityMapping = {
-                                      {.actionBit = ACTION_ABILITY1, .targetState = ABILITY_STATE_FIREBALLVOLLEY},
+                    (AbilityDesc){.bindings = {
+                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
     Sol_Interact_Add(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
@@ -138,6 +140,35 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                                     .as.fx.entA  = id});
     Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FIRE, scale);
     Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FOG, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, scale);
+
+    return id;
+}
+
+int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
+{
+    float     radius = scale;
+    ShapeDesc shape  = {.radius = radius, .color = {1, 1, 1, 1}, .kind = SHAPEKIND_SPHERE};
+    u32       kind   = PREFABKIND_BULLET;
+
+    id = Sol_Create_Ent(world, id);
+    if (id < 0)
+        return -1;
+    Sol_Shape_Add(world, id, shape);
+    Sol_Xform_Teleport(world, id, pos);
+    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .radius         = shape.radius,
+                     .shape          = SHAPE3_SPH,
+                     .mass           = 1.0f * shape.radius,
+                     .restitution    = 0.5f,
+                     .group          = 0b10,
+                     .ignoreFriendly = 1,
+                 });
+    Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
+    Sol_Contact_Add(world, id, CONTACTKIND_BULLET, 1);
+    Sol_Replication_Add(world, id, 0, kind);
     Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, scale);
 
     return id;
@@ -191,7 +222,7 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
 
 int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 {
-    vec2s dims = {250.0f, 45.0f};
+    vec2s dims = {250.0f, 30.0f};
 
     int bg = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, bg, pos);
@@ -229,20 +260,20 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
                    });
     Sol_Parent_Add(world, border, (CompParent){.parentId = bg});
 
-    float offsetX = 2.0f;
-    float offsetY = 1.0f;
-    int   border2 = Sol_Create_Ent(world, 0);
-    Sol_Xform_Teleport(world, border2, pos);
-    Sol_View2d_Add(world, border2,
-                   (CompView2d){
-                       .kind       = VIEW2DKIND_RECT,
-                       .dims       = {dims.x - offsetX * 2.0f, dims.y - offsetY * 2.0f},
-                       .color      = {0.0f, 0.0f, 0.0, 1.0f},
-                       .hoverColor = {0, 0, 0, 0.5f},
-                       .border     = 3.0f,
-                   });
-    Sol_Parent_Add(world, border2, (CompParent){.parentId = bg, .localOffset = (vec3s){offsetX, offsetY, 0}});
-    Sol_World_SetOtherworld(world, border2, entWorld, entId);
+    // float offsetX = 2.0f;
+    // float offsetY = 1.0f;
+    // int   border2 = Sol_Create_Ent(world, 0);
+    // Sol_Xform_Teleport(world, border2, pos);
+    // Sol_View2d_Add(world, border2,
+    //                (CompView2d){
+    //                    .kind       = VIEW2DKIND_RECT,
+    //                    .dims       = {dims.x - offsetX * 2.0f, dims.y - offsetY * 2.0f},
+    //                    .color      = {0.0f, 0.0f, 0.0, 1.0f},
+    //                    .hoverColor = {0, 0, 0, 0.5f},
+    //                    .border     = 3.0f,
+    //                });
+    // Sol_Parent_Add(world, border2, (CompParent){.parentId = bg, .localOffset = (vec3s){offsetX, offsetY, 0}});
+    // Sol_World_SetOtherworld(world, border2, entWorld, entId);
 
     return id;
 }
@@ -265,7 +296,6 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
                        .toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f},
                        .dims        = dims,
                    });
-    Sol_Parent_Add(world, bg, (CompParent){.parentId = id});
 
     int border = Sol_Create_Ent(world, 0);
     Sol_View2d_Add(world, border,
@@ -278,6 +308,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
                        .dims        = dims,
                        .border      = 3.0f,
                    });
+    Sol_Parent_Add(world, bg, (CompParent){.parentId = id});
     Sol_Parent_Add(world, border, (CompParent){.parentId = id});
 
     CompView2d textComp = {

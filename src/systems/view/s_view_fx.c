@@ -173,14 +173,14 @@ void Fx_Event(World *world, double dt, double time)
         }
         break;
         case FXKIND_FIRE_APPLY: {
-            Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 80,
+            Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 40,
                                                  .pos      = pos,
                                                  .particle = {.randScale = 1,
                                                               .ttl       = 1.0f,
                                                               .scale     = 0.4f,
                                                               .color     = {1, 0, 0, 1},
                                                               .kind      = PARTICLE_FIRE,
-                                                              .speed     = 2.0f,
+                                                              .speed     = 5.0f,
                                                               .scalein   = 0.2f,
                                                               .scaleout  = 0.8f}});
         }

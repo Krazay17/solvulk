@@ -2,9 +2,9 @@
 
 #include "ability_i.h"
 
-#define DASH_VEL 22.0f
+#define DASH_VEL 20.0f
 #define DASH_ALPHAMOD 1.5f
-#define DASH_DURATION 0.3f
+#define DASH_DURATION 0.25f
 #define DASH_COOLDOWN 1.0f
 
 void ADash_State_Update(World *world, int id, float dt)

@@ -7,6 +7,7 @@ typedef enum
 {
     CONTACTKIND_FIREBALL,
     CONTACTKIND_WIZARDTOUCH,
+    CONTACTKIND_BULLET,
     CONTACTKIND_COUNT,
 } ContactKind;
 typedef struct CompContact

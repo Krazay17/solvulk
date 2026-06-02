@@ -43,3 +43,9 @@ void Fireball_State_Enter(World *world, int id);
 void Fireball_State_Exit(World *world, int id);
 bool Fireball_State_CanExit(World *world, int id, u32 next);
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next);
+
+void Pistol_State_Update(World *world, int id, float dt);
+void Pistol_State_Enter(World *world, int id);
+void Pistol_State_Exit(World *world, int id);
+bool Pistol_State_CanExit(World *world, int id, u32 next);
+bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next);

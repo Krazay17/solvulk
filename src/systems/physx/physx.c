@@ -79,8 +79,8 @@ SubstepData Substep_Get(CompBody *body, float fdt)
     u8    substeps = (int)ceilf(speed * fdt / stepDist);
     if (substeps < 1)
         substeps = 1;
-    if (substeps > 8)
-        substeps = 8;
+    if (substeps > 24)
+        substeps = 24;
 
     substep_data.substeps = substeps;
     substep_data.sub_dt   = fdt / substeps;
@@ -127,9 +127,8 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
             u32 otherID = table->value[entry];
             if (id < otherID)
             {
-                
-                CompBody  *other_body  = &world->bodies[otherID];
-                if((body->ignoreFriendly || other_body->ignoreFriendly) && !Sol_Owner_GetHostile(world, id, otherID))
+                CompBody *other_body = &world->bodies[otherID];
+                if ((body->ignoreFriendly || other_body->ignoreFriendly) && !Sol_Owner_GetHostile(world, id, otherID))
                     goto skip;
                 CompXform *other_xform = &world->xforms[otherID];
                 SolContact contact     = {0};
@@ -141,7 +140,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
                     Add_Contact(contacts, contact.entId, contact.normal, contact.pos);
                 }
             }
-            skip:;
+        skip:
             entry = table->next[entry];
         }
     }
@@ -442,6 +441,25 @@ void Fill_Dynamic_Table(World *world, int count, int *ents)
     }
 }
 
+void Spatial_Table_Dynamic_Single(SpatialTable *table, int id, vec3s pos, float width, float height)
+{
+    float r = fmaxf(width, height);
+
+    int x0 = (int)floorf((pos.x - r) / table->cellSize);
+    int x1 = (int)floorf((pos.x + r) / table->cellSize);
+    int y0 = (int)floorf((pos.y - r) / table->cellSize);
+    int y1 = (int)floorf((pos.y + r) / table->cellSize);
+    int z0 = (int)floorf((pos.z - r) / table->cellSize);
+    int z1 = (int)floorf((pos.z + r) / table->cellSize);
+    for (int x = x0; x <= x1; x++)
+        for (int y = y0; y <= y1; y++)
+            for (int z = z0; z <= z1; z++)
+            {
+                u32 hash = hash_coords(x, y, z) & (table->size - 1);
+                SpatialTable_Insert(table, hash, id);
+            }
+}
+
 void collisions_grid_dynamic(CompBody *body, CompXform *xform, SubstepData substep_data, WorldPhysx *ws)
 {
 }
@@ -585,7 +603,7 @@ bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)
     if (pen > 0)
     {
         body->groundtime = 1;
-        body->airtime  = 0;
+        body->airtime    = 0;
 
         xform->pos.y += pen;
         body->vel.y     = 0;
@@ -597,7 +615,7 @@ bool Collide_Y(CompXform *xform, CompBody *body, SolContact *hit)
     else
     {
         body->groundtime = 0;
-        body->airtime  = 1;
+        body->airtime    = 1;
     }
 
     return true;

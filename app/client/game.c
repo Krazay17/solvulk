@@ -129,7 +129,7 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
 
     World *hud = World_Create_Default(WORLDKIND_MENU);
-    Sol_Prefab_Healthbar(hud, (vec3s){300, 200, 0}, gameWorld, 1);
+    Sol_Prefab_Healthbar(hud, (vec3s){515, 650, 0}, gameWorld, 1);
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});

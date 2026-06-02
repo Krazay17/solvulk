@@ -15,7 +15,7 @@ void Sol_Ability_Init(World *world)
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 {
     CompAbility a = {0};
-    memcpy(a.ability_mappings, desc.abilityMapping, sizeof(AbilityMapping) * ABILITY_STATE_COUNT);
+    memcpy(a.bindings, desc.bindings, sizeof(a.bindings));
     for (int i = 0; i < ABILITY_STATE_COUNT; i++)
     {
         a.stateData[i].lastEntered = -FLT_MAX;
@@ -45,18 +45,19 @@ void Sol_Ability_Step(World *world, double dt, double time)
         CompAbility *ability = &world->abilities[id];
 
         SolActions actions = Sol_GetActions(world, id);
-        for (int m = 0; m < ABILITY_STATE_COUNT; m++)
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
         {
-            AbilityMapping *map = &ability->ability_mappings[m];
-            if (map->actionBit == 0)
+            SolActions actionBit = ability->bindings[m].actionBit;
+            AbilityState targetState = ability->bindings[m].targetState;
+            if (targetState == ABILITY_STATE_IDLE || actionBit == ACTION_NONE)
                 continue;
+            bool pressed   = (actions & actionBit) != 0;
 
-            bool pressed                              = (actions & map->actionBit) != 0;
-            ability->stateData[map->targetState].held = pressed;
+            ability->stateData[targetState].held = pressed;
 
             if (pressed)
             {
-                Sol_Ability_SetState(world, id, map->targetState, false);
+                Sol_Ability_SetState(world, id, targetState, false);
             }
         }
 
@@ -66,18 +67,6 @@ void Sol_Ability_Step(World *world, double dt, double time)
             if (funcs && funcs->update)
                 funcs->update(world, id, dt);
         }
-    }
-}
-
-void Sol_Ability_Tick(World *world, double dt, double time)
-{
-    int required = HAS_ABILITY;
-    int count    = world->activeCount;
-    for (int i = 0; i < count; i++)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
-            continue;
     }
 }
 
@@ -109,4 +98,13 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, bool for
 AbilityState Sol_Ability_GetState(World *world, int id)
 {
     return world->abilities[id].state;
+}
+
+void Sol_Ability_SetAbility(World *world, int id, u32 slotIndex, SolActions actionBit, AbilityState ability)
+{
+if (slotIndex < MAX_MAPPED_SKILLS)
+    {
+        world->abilities[id].bindings[slotIndex].actionBit   = actionBit;
+        world->abilities[id].bindings[slotIndex].targetState = ability;
+    }
 }

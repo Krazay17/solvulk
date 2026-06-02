@@ -8,10 +8,7 @@
 #define CORRECT_MED 4.0f
 
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
-    [EVENTKIND_FX]   = 1,
-    [EVENTKIND_ANIM] = 1,
-    [EVENTKIND_HIT]  = 1,
-    [EVENTKIND_UI]   = 1,
+    [EVENTKIND_FX] = 1, [EVENTKIND_ANIM] = 1, [EVENTKIND_HIT] = 1, [EVENTKIND_RESPAWN] = 1, [EVENTKIND_DEATH] = 1,
 };
 
 void Sol_Replication_Init(World *world)
@@ -319,6 +316,13 @@ void Net_Apply_Events(World *world, EventSnap *snap)
         case EVENTKIND_HIT:
             e.as.hit.entA = world->worldNet->hostToLocalMap[e.as.hit.entA];
             e.as.hit.entB = world->worldNet->hostToLocalMap[e.as.hit.entB];
+            break;
+        case EVENTKIND_DEATH:
+            e.as.death.entA = world->worldNet->hostToLocalMap[e.as.death.entA];
+            e.as.death.entB = world->worldNet->hostToLocalMap[e.as.death.entB];
+            break;
+        case EVENTKIND_RESPAWN:
+            e.as.respawn.ent = world->worldNet->hostToLocalMap[e.as.respawn.ent];
             break;
         default:
             printf("Unhandled EventKind %d\n", e.kind);

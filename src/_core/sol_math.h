@@ -30,9 +30,6 @@
 extern const vec3s VECTOR_RADIAL_DIRECTIONS[9];
 
 // FUNCS------------------------------------
-
-vec4s Sol_Color_Lerp(vec4s base, vec4s target, float alpha);
-
 vec3s   Sol_Vec3_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);

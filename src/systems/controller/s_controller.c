@@ -268,7 +268,7 @@ vec3s Sol_Controller_GetShootPos(World *world, int id, float offset)
 
 SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
 {
-    vec3s pos = Sol_Controller_GetShootPos(world, id, 0.3f);
+    vec3s pos = Sol_Controller_GetShootPos(world, id, 0.5f);
     vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
 
     return (SolShoot){.pos = pos, .vel = vel};

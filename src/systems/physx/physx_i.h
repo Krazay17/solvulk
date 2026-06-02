@@ -109,6 +109,24 @@ typedef struct
     float sub_dt;
 } SubstepData;
 
+static inline u32 hash_coords(int x, int y, int z)
+{
+    return ((unsigned int)x * 73856093) ^ ((unsigned int)y * 19349663) ^ ((unsigned int)z * 83492791);
+}
+
+static inline u32 cell_index(SpatialGrid *grid, vec3s pos)
+{
+    int x = (int)floorf((pos.x - grid->min.x) / grid->cellSize);
+    int y = (int)floorf((pos.y - grid->min.y) / grid->cellSize);
+    int z = (int)floorf((pos.z - grid->min.z) / grid->cellSize);
+
+    x = x < 0 ? 0 : (x >= grid->dims.x ? grid->dims.x - 1 : x);
+    y = y < 0 ? 0 : (y >= grid->dims.y ? grid->dims.y - 1 : y);
+    z = z < 0 ? 0 : (z >= grid->dims.z ? grid->dims.z - 1 : z);
+
+    return x + y * grid->dims.x + z * grid->dims.x * grid->dims.y;
+}
+
 void Spatial_Add(World *world, int id, CompBody *body);
 void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell_size);
 void Physx_Grid_Static_Rebuild(PhysxGroup *group);
@@ -172,21 +190,4 @@ void Add_Contact(EntityContacts *c, u32 otherId, vec3s normal, vec3s pos);
 void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
                                     vec3s p2, vec3s q2, // segment B: p2 → q2
                                     vec3s *outA, vec3s *outB);
-
-static inline u32 hash_coords(int x, int y, int z)
-{
-    return ((unsigned int)x * 73856093) ^ ((unsigned int)y * 19349663) ^ ((unsigned int)z * 83492791);
-}
-
-static inline u32 cell_index(SpatialGrid *grid, vec3s pos)
-{
-    int x = (int)floorf((pos.x - grid->min.x) / grid->cellSize);
-    int y = (int)floorf((pos.y - grid->min.y) / grid->cellSize);
-    int z = (int)floorf((pos.z - grid->min.z) / grid->cellSize);
-
-    x = x < 0 ? 0 : (x >= grid->dims.x ? grid->dims.x - 1 : x);
-    y = y < 0 ? 0 : (y >= grid->dims.y ? grid->dims.y - 1 : y);
-    z = z < 0 ? 0 : (z >= grid->dims.z ? grid->dims.z - 1 : z);
-
-    return x + y * grid->dims.x + z * grid->dims.x * grid->dims.y;
-}
+void Spatial_Table_Dynamic_Single(SpatialTable *table, int id, vec3s pos, float width, float height);

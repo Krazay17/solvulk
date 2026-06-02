@@ -102,4 +102,12 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Walljump_State_CanExit,
             Walljump_State_CanEnter,
         },
+    [MOVE_DEAD] =
+        {
+            Dead_State_Update,
+            Dead_State_Enter,
+            Dead_State_Exit,
+            Dead_State_CanExit,
+            Dead_State_CanEnter,
+        },
 };

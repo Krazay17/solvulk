@@ -44,5 +44,13 @@ const StateFunc ability_state_func[] = {
             Claw_State_CanExit,
             Claw_State_CanEnter,
         },
+    [ABILITY_STATE_PISTOL] =
+        {
+            Pistol_State_Update,
+            Pistol_State_Enter,
+            Pistol_State_Exit,
+            Pistol_State_CanExit,
+            Pistol_State_CanEnter,
+        },
     [ABILITY_STATE_FIREBALLVOLLEY] = SCRIPT_STATE_FUNCS,
 };

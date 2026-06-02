@@ -92,5 +92,6 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_SLIDE_BWD]        = 27,
             [ANIM_SLIDE_LEFT]       = 27,
             [ANIM_SLIDE_RIGHT]      = 27,
+            [ANIM_DEATH]            = 23,
         },
 };

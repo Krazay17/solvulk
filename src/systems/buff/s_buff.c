@@ -123,8 +123,12 @@ void Sol_Buff_Step(World *world, double dt, double time)
                 if (b->accum > interval)
                 {
                     b->accum -= interval;
-                    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit.damage = 2, .as.hit.entA = b->source, .as.hit.entB = id});
-                    //Sol_Vital_Damage(world, id, &(SolHit){.entA = b->source, .entB = id, .damage = 2});
+                    Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_HIT,
+                                                    .as.hit.damage = 2,
+                                                    .as.hit.entA   = b->source,
+                                                    .as.hit.kind   = HITKIND_FIRE,
+                                                    .as.hit.pos    = Sol_Xform_GetPos(world, id),
+                                                    .as.hit.entB   = id});
                 }
                 break;
             case BUFFKIND_KNOCKBACK:

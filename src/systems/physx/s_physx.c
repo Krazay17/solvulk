@@ -3,7 +3,7 @@
 #include "physx_i.h"
 #include <omp.h>
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 3.0f
+#define SPATIAL_DYNAMIC_CELL_SIZE 4.0f
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
@@ -68,8 +68,8 @@ void Sol_Physx_Step(World *world, double dt, double time)
     WorldPhysx *ws           = world->spatial;
     PhysxGroup *staticGroup  = &ws->staticGroup;
     PhysxGroup *dynamicGroup = &ws->dynamicGroup;
+
     memset(contacts, 0, sizeof(contacts));
-    Physx_Grid_Static_Rebuild(staticGroup);
 
     // Filter Entities
     for (i = 0; i < activeCount; i++)
@@ -82,10 +82,12 @@ void Sol_Physx_Step(World *world, double dt, double time)
         ents[count++] = id;
     }
 
+    Physx_Grid_Static_Rebuild(staticGroup);
+    Fill_Dynamic_Table(world, count, ents);
     Ground_Trace(world, count, fdt);
 
-    Prof_Begin(&prof_static);
-    // velocity and static collisions
+    // Prof_Begin(&prof_static);
+    //  velocity and static collisions
 #pragma omp parallel for if (count > 500) shared(contacts) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
@@ -122,24 +124,13 @@ void Sol_Physx_Step(World *world, double dt, double time)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
             Collisions_Static_Grid(world, staticGroup, body, xform, &contacts[j]);
+            // Re-hash this entity at its current intermediate coordinate
+            Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
+            // Run dynamic tests against neighboring cells immediately at this slice of time
+            Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
         }
     }
-    Prof_EndEz(&prof_static, true);
-
-    Fill_Dynamic_Table(world, count, ents);
-
-    Prof_Begin(&prof_dynamic);
-    // Dynamic collisions
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
-    for (k = 0; k < count; k++)
-    {
-        int        id    = ents[k];
-        CompBody  *body  = &world->bodies[id];
-        CompXform *xform = &world->xforms[id];
-
-        Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[k]);
-    }
-    Prof_EndEz(&prof_dynamic, true);
+    // Prof_EndEz(&prof_static, true);
 
     for (int i = 0; i < count; i++)
     {

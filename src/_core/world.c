@@ -33,7 +33,6 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_BUFF]         = Sol_Buff_Init,
     [WORLD_SYS_VITAL]        = Sol_Vital_Init,
     [WORLD_SYS_MODEL]        = Sol_Model_Init,
-    [WORLD_SYS_UI]           = Sol_Ui_Init,
     [WORLD_SYS_LINE]         = Sol_Line_Init,
     [WORLD_SYS_EMITTER]      = Sol_Emitter_Init,
     [WORLD_SYS_SHAPE]        = Sol_Shape_Init,

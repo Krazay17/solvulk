@@ -80,9 +80,8 @@ static void AiController_Step(World *world, double dt, double time)
         Sol_Xform_SetYaw(world, id, yaw);
         controller->aimdir = lookdir;
 
-        // TODO loop through hostiles
         u32 target = aicontroller->target;
-        if (target)
+        if (target > 0)
         {
             vec3s myPos        = Sol_Xform_GetPos(world, id);
             vec3s targetPos    = Sol_Xform_GetPos(world, target);
@@ -112,9 +111,12 @@ static void Sol_AiController_Debug(World *world, double dt, double time)
         CompController   *controller   = &world->controllers[id];
         CompAiController *aicontroller = &world->aicontrollers[id];
         vec3s             pos          = Sol_Xform_GetDrawXform(world, id).pos;
-        pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
-        Sol_Render_DrawText3D(
-            (Text3DDesc){.billboard = true, .color = {0, 1, 0, 1}, .pos = pos, .size = 0.4f, .text = "TESTING", .font = SOL_FONT_ICE});
+        pos.y += Sol_Physx_GetDims(world, id).y;
+
+        char buffer[12];
+        snprintf(buffer, sizeof(buffer), "Target: %d", aicontroller->target);
+        Sol_Render_DrawText3D((Text3DDesc){
+            .billboard = true, .color = {0, 1, 0, 1}, .pos = pos, .size = 0.4f, .text = buffer, .font = SOL_FONT_ICE});
     }
 }
 
@@ -149,14 +151,13 @@ u32 AiController_FindTarget(World *world, int id)
     for (int i = 0; i < world->activeCount; i++)
     {
         int otherId = world->activeEntities[i];
-        if (Sol_Owner_GetHostile(world, id, otherId))
-        {
-            vec3s pos       = Sol_Xform_GetPos(world, id);
-            vec3s targetPos = Sol_Xform_GetPos(world, otherId);
-            float dist      = glms_vec3_distance(pos, targetPos);
-            if (dist < 25.0f && world->masks[id] & HAS_VITAL && !Sol_Vital_GetDead(world, otherId))
-                return otherId;
-        }
+        if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Vital_GetDead(world, otherId))
+            continue;
+        vec3s pos       = Sol_Xform_GetPos(world, id);
+        vec3s targetPos = Sol_Xform_GetPos(world, otherId);
+        float dist      = glms_vec3_distance(pos, targetPos);
+        if (dist < 25.0f)
+            return otherId;
     }
     return 0;
 }

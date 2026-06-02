@@ -25,7 +25,6 @@ typedef enum
     HAS_BODY3        = (1 << 3),
     HAS_INTERACT     = (1 << 4),
     HAS_MODEL        = (1 << 5),
-    HAS_UIVIEW       = (1 << 6),
     HAS_MOVEMENT     = (1 << 7),
     HAS_CONTROLLER   = (1 << 8),
     HAS_ABILITY      = (1 << 9),
@@ -105,7 +104,6 @@ typedef struct CompXform        CompXform;
 typedef struct CompBody         CompBody;
 typedef struct CompMovement     CompMovement;
 typedef struct CompModel        CompModel;
-typedef struct CompUi           CompUi;
 typedef struct CompInteract     CompInteract;
 typedef struct CompShape        CompShape;
 typedef struct CompVital        CompVital;
@@ -158,7 +156,6 @@ typedef struct World
     CompBody         *bodies;
     CompMovement     *movements;
     CompModel        *models;
-    CompUi           *uiElements;
     CompInteract     *interacts;
     CompShape        *spheres;
     CompVital        *vitals;
@@ -205,7 +202,6 @@ World     *World_Create(WorldKind kind);
 World     *World_Create_Default(WorldKind kind);
 World     *Sol_GetWorldById(u32 id);
 void       World_SetDoesrender(World *world, bool doesRender);
-SolCamera *Sol_World_GetActivecamera(World *world);
 
 void World_Destroy(World *world);
 void World_System_Add(World *world, WorldSystem system);

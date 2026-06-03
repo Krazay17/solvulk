@@ -17,6 +17,8 @@ void Sol_Movement_Add(World *world, int id, MovementKind kind)
     };
     movement.baseHeight   = Sol_Physx_GetHeight(world, id);
     movement.targetHeight = movement.baseHeight;
+    movement.frictionMod  = 1.0f;
+    movement.speedMod     = 1.0f;
 
     world->masks[id] |= HAS_MOVEMENT;
     world->movements[id] = movement;
@@ -59,23 +61,24 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             movement->wantsJump = false;
         movement->jumpPressedLastFrame = isJumpDown;
 
-        vec3s vel        = Sol_Physx_GetVel(world, id);
-        vec3s wishdir    = Sol_GetWishdir(world, id);
-        float finalSpeed = forces->speed * movement->speedMod;
-        body->gravity.y  = forces->gravity;
+        vec3s vel           = Sol_Physx_GetVel(world, id);
+        vec3s wishdir       = Sol_GetWishdir(world, id);
+        float finalSpeed    = forces->speed * movement->speedMod;
+        float finalFriction = forces->friction * movement->frictionMod;
+        body->gravity.y     = forces->gravity;
 
         switch (movement->state)
         {
         case MOVE_WALK:
             vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
-            vel            = ApplyFriction3(slopeDir, vel, forces->friction, fdt);
+            vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
             vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
             Sol_Physx_SetVel(world, id, vel);
             break;
         default:
             if (vel.y < 0)
                 body->gravity.y *= 1.33f;
-            vel = ApplyFriction3(wishdir, vel, forces->friction, fdt);
+            vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
             vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             Sol_Physx_SetVellat(world, id, vel);
         }
@@ -83,6 +86,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
 
         CrouchHeight(world, id, fdt);
+        Knockback(world, id, fdt);
     }
     if (world->playerID > 0)
     {
@@ -154,4 +158,9 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time)
 void Sol_Movement_SetSpeedMod(World *world, int id, float amnt)
 {
     world->movements[id].speedMod *= amnt;
+}
+void Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float duration)
+{
+    world->movements[id].knockDur = duration;
+    world->movements[id].knockVel = vel;
 }

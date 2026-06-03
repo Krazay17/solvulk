@@ -4,20 +4,20 @@
 typedef struct World World;
 typedef enum
 {
-    PREFABKIND_PLAYER = 1,
-    PREFABKIND_WIZARD,
-    PREFABKIND_FIREBALL,
-    PREFABKIND_BULLET,
-} PrefabKind;
+    ENTKIND_PLAYER = 1,
+    ENTKIND_WIZARD,
+    ENTKIND_FIREBALL,
+    ENTKIND_BULLET,
+} EntKind;
 typedef struct
 {
     vec3s   pos, vel;
     versors rot;
     float   scale;
     u8      authority;
-} PrefabDesc;
+} EntDesc;
 
-int Sol_Prefab_Factory(World *world, u32 id, u32 kind, PrefabDesc desc);
+int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc);
 int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale);

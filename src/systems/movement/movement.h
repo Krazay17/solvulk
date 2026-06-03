@@ -44,9 +44,9 @@ typedef struct
 typedef struct CompMovement
 {
     u8            kind;
-    vec3s         updir, dashdir, wallNormal, lastTouch;
+    vec3s         updir, dashdir, wallNormal, lastTouch, knockVel;
     float         baseHeight, targetHeight;
-    float         speedMod;
+    float         speedMod, frictionMod, knockDur;
     float         wallDot;
     MoveState     state;
     bool          wantsJump, jumpPressedLastFrame;
@@ -83,3 +83,4 @@ void Sol_System_Movement_2d_Step(World *world, double dt, double time);
 void Sol_System_Movement_3d_Step(World *world, double dt, double time);
 void Sol_Movement_SetSpeedMod(World *world, int id, float amnt);
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
+void Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float duration);

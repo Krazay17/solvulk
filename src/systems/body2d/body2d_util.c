@@ -84,16 +84,16 @@ void ResolveRect(World *world, vec2s *posA, CompBody2d *bodyA, vec2s *posB, Comp
 
 void Grab(vec2s *vel, vec2s pos, vec2s dims)
 {
-    SolMouse mouse = Sol_Input_GetMouse();
-    vec2s    mPos  = {mouse.x, mouse.y};
-    if (Sol_Check_2d_Collision(mPos, (vec4s){UISCALE(pos.x), UISCALE(pos.y), UISCALE(dims.x), UISCALE(dims.y)}) &&
-        mouse.buttons[SOL_MOUSE_MIDDLE])
-    {
-        vec2s center       = (vec2s){pos.x + (dims.x * 0.5f), pos.y + (dims.y * 0.5f)};
-        vec2s scaledCenter = {UISCALE(center.x), UISCALE(center.y)};
-        float dist         = glms_vec2_distance(mPos, scaledCenter);
-        *vel               = glms_vec2_scale(glms_vec2_normalize(glms_vec2_sub(mPos, scaledCenter)), dist);
-    }
+    SolMouse mouse        = Sol_Input_GetMouse();
+    vec2s    mPos         = {mouse.x, mouse.y};
+    float    min          = fminf(dims.x, dims.y);
+    vec2s    center       = (vec2s){pos.x + (dims.x * 0.5f), pos.y + (dims.y * 0.5f)};
+    vec2s    scaledCenter = {UISCALE(center.x), UISCALE(center.y)};
+    float    dist         = glms_vec2_distance(mPos, scaledCenter);
+    if (dist < 0.01f)
+        *vel = GLMS_VEC2_ZERO;
+    else
+        *vel = glms_vec2_scale(glms_vec2_normalize(glms_vec2_sub(mPos, scaledCenter)), dist);
 }
 
 void CollideScreenEdge(vec2s *vel, vec2s *pos, vec2s dims)

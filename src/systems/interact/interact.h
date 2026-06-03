@@ -4,6 +4,7 @@
 typedef struct CompInteract
 {
     InteractState state;
+    u32           movingId;
     float         value;
     Callback      onClick;
     Callback      onHold;

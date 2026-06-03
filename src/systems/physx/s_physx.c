@@ -21,8 +21,6 @@ static int prof_frame = 0;
 
 void Sol_Physx_Init(World *world)
 {
-    world->stepSystems[world->stepCount++] = Sol_Physx_Step;
-
     world->bodies  = calloc(MAX_ENTS, sizeof(CompBody));
     world->spatial = calloc(1, sizeof(WorldPhysx));
 
@@ -30,6 +28,8 @@ void Sol_Physx_Init(World *world)
                       SPATIAL_STATIC_CELL_SIZE);
     SpatialTable_Init(&world->spatial->dynamicGroup.table, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES,
                       SPATIAL_DYNAMIC_CELL_SIZE);
+
+    WAddStep(world) = Sol_Physx_Step;
 }
 
 void Sol_Body_Add(World *world, int id, BodyDesc desc)
@@ -124,11 +124,10 @@ void Sol_Physx_Step(World *world, double dt, double time)
         {
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
             Collisions_Static_Grid(world, staticGroup, body, xform, &contacts[j]);
-            // Re-hash this entity at its current intermediate coordinate
-            Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
-            // Run dynamic tests against neighboring cells immediately at this slice of time
-            Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
         }
+        
+        Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
+        Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
     }
     // Prof_EndEz(&prof_static, true);
 
@@ -241,6 +240,8 @@ int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results
         int otherID = candidates[i];
 
         if (!(world->masks[otherID] & HAS_BODY3))
+            continue;
+        if (otherID == ray.ignoreEnt)
             continue;
 
         CompBody  *body  = &world->bodies[otherID];
@@ -402,4 +403,14 @@ float Sol_Physx_GetHeight(World *world, int id)
 void Sol_Physx_SetHeight(World *world, int id, float height)
 {
     world->bodies[id].dims.y = height;
+}
+void Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir)
+{
+    vec3s prevVel = world->bodies[id].vel;
+    float mag = glms_vec3_norm(prevVel);
+    world->bodies[id].vel = vecSca(glms_vec3_normalize(dir), mag);
+}
+void Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt)
+{
+    world->bodies[id].vel = glms_vec3_lerp(world->bodies[id].vel, vel, amnt);
 }

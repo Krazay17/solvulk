@@ -34,17 +34,14 @@ void Fireball_State_Update(World *world, int id, float dt)
         AnimDesc desc = {.anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .oneShot = true};
         Sol_Model_PlayAnim(world, id, desc);
 
-        int ball = Sol_Prefab_Factory(
-            world, 0, PREFABKIND_FIREBALL,
-            (PrefabDesc){.pos   = vecAdd(Sol_Controller_GetShootPos(world, id, 0.33f), vecSca(WORLD_UP, power)),
-                         .scale = power});
+        SolShoot shoot = Sol_Controller_GetShoot(world, id, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge));
+        int ball = Sol_Prefab_Factory(world, 0, ENTKIND_FIREBALL,
+                                      (EntDesc){.pos = vecAdd(shoot.pos, vecSca(WORLD_UP, power)), .scale = power});
 
         if (ball > 0)
         {
-            Sol_Physx_SetVel(
-                world, ball,
-                vecSca(Sol_Controller_GetAimdir(world, id), Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge)));
-            Sol_Owner_SetOwner(world, ball, id);
+            Sol_Physx_SetVel(world, ball, shoot.vel);
+            Sol_Owner_Add(world, ball, id);
         }
 
         data->stage++;

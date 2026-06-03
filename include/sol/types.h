@@ -49,6 +49,14 @@ typedef enum
     ACTION_CROUCH = (1 << 16),
 } SolActions;
 
+typedef enum
+{
+    COLLISIONGROUP_NONE,
+    COLLISIONGROUP_WORLD      = (1 << 0),
+    COLLISIONGROUP_PAWN       = (1 << 1),
+    COLLISIONGROUP_PROJECTILE = (1 << 2),
+} CollisionGroup;
+
 typedef enum Shape3
 {
     SHAPE3_SPH,
@@ -217,6 +225,7 @@ typedef enum
     INTERACT_CLICKED    = (1 << 2),
     INTERACT_TOGGLED    = (1 << 3),
     INTERACT_TOGGLEABLE = (1 << 4),
+    INTERACT_MOVING     = (1 << 5),
 } InteractState;
 
 typedef enum
@@ -229,3 +238,15 @@ typedef enum
     SOL_TEXTURE_REDSKY,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
+
+typedef enum
+{
+    HITKIND_NORMAL,
+    HITKIND_BULLET,
+    HITKIND_FIRE,
+    HITKIND_FIREBALL,
+    HITKIND_FIREBALL_EXPLODE,
+    HITKIND_ICE,
+    HITKIND_SHIELD_PULSE,
+    HITKIND_COUNT,
+} HitKind;

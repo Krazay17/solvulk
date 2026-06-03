@@ -7,6 +7,8 @@
  */
 #include "sol_core.h"
 
+static u32 movingId;
+
 void Sol_Interact_Init(World *world)
 {
     u32 idx                 = world->tickCount++;
@@ -24,6 +26,9 @@ void Sol_Interact_Add(World *world, int id, CompInteract desc)
 void System_Interact_Tick(World *world, double dt, double time)
 {
     SolMouse mouse = Sol_Input_GetMouse();
+
+    if (!mouse.buttons[SOL_MOUSE_MIDDLE])
+        movingId = 0;
 
     int rayId = -1;
     if (world->systemBits & SYS_BIT(WORLD_SYS_PHYSX))
@@ -49,6 +54,8 @@ void System_Interact_Tick(World *world, double dt, double time)
         interact->state &= ~INTERACT_PRESSED;
         interact->state &= ~INTERACT_CLICKED;
         interact->state &= ~INTERACT_HOVERED;
+        if (id != movingId)
+            interact->state &= ~INTERACT_MOVING;
         bool collision = false;
 
         if (world->masks[id] & HAS_BODY3)
@@ -66,9 +73,17 @@ void System_Interact_Tick(World *world, double dt, double time)
                                                                   UISCALE(Sol_Body2d_GetDims(world, id).y),
                                                               });
         }
+
         if (collision)
         {
             interact->state |= INTERACT_HOVERED;
+
+            if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingId)
+            {
+                interact->state |= INTERACT_MOVING;
+                movingId = id;
+            }
+
             if (mouse.buttons[SOL_MOUSE_LEFT])
             {
                 interact->state |= INTERACT_PRESSED;

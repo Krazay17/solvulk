@@ -29,7 +29,7 @@ typedef struct
 {
     u8    kind, addKind;
     u32   inf, source;
-    vec3s dir, pos;
+    vec3s vel;
     float duration, accum, initialDuration;
     float freq, power;
 } Buff;
@@ -40,17 +40,9 @@ typedef struct CompBuff
     u32  activeKindsMask;
 } CompBuff;
 
-typedef struct
-{
-    u8    kind, addKind;
-    u32   source;
-    vec3s pos, dir;
-} BuffDesc;
-
 void Sol_Buff_Init(World *world);
-void Sol_Buff_Clear(World *world, int id);
 
-void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit);
+void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float duration, float power);
 void Sol_Buff_Remove(World *world, int id, BuffKind kind);
 void Sol_Buff_Step(World *world, double dt, double time);
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);

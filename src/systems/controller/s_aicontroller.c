@@ -146,7 +146,7 @@ bool Ai_SetState(World *world, int id, AiState nextState)
 u32 AiController_FindTarget(World *world, int id)
 {
     CompAiController *aicontroller = &world->aicontrollers[id];
-    if (aicontroller->justHitUs)
+    if (aicontroller->justHitUs > 0)
         return aicontroller->justHitUs;
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -164,6 +164,7 @@ u32 AiController_FindTarget(World *world, int id)
 
 void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage)
 {
+    printf("Hit Ai: %d\n", source);
     world->aicontrollers[id].justHitUs = source;
     world->aicontrollers[id].lastHit   = damage;
 }

@@ -18,20 +18,20 @@ void Pistol_State_Update(World *world, int id, float dt)
     data->elapsed += dt;
     data->accum += dt;
 
-    if (data->accum > 0.06f)
+    if (data->accum > 0.05f)
     {
         data->accum = 0;
 
         SolShoot shoot  = Sol_Controller_GetShoot(world, id, 150.0f);
-        int      bullet = Sol_Prefab_Factory(world, 0, PREFABKIND_BULLET,
-                                             (PrefabDesc){
+        int      bullet = Sol_Prefab_Factory(world, 0, ENTKIND_BULLET,
+                                             (EntDesc){
                                                  .pos   = shoot.pos,
-                                                 .scale = 0.1f,
+                                                 .scale = 0.15f,
                                              });
         if (bullet > 0)
         {
             Sol_Physx_SetVel(world, bullet, shoot.vel);
-            Sol_Owner_SetOwner(world, bullet, id);
+            Sol_Owner_Add(world, bullet, id);
         }
         Sol_Model_PlayAnim(world, id,
                            (AnimDesc){

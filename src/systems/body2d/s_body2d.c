@@ -32,12 +32,11 @@ static void Step(World *world, double dt, double time)
 
         // Accumulate velocity
         body->vel = ApplyFriction2((vec2s){0, 0}, body->vel, 1.0f, fdt);
-        if (world->masks[id] & HAS_INTERACT)
+        if (world->masks[id] & HAS_INTERACT && world->interacts[id].state & INTERACT_MOVING)
             Grab(&body->vel, (vec2s){xform->pos.x, xform->pos.y}, body->dims);
         body->vel = glms_vec2_add(body->vel, glms_vec2_scale(body->grav, fdt));
 
         // Apply velocity
-
         xform->pos.x += body->vel.x;
         xform->pos.y += body->vel.y;
     }
@@ -59,13 +58,11 @@ static void Step(World *world, double dt, double time)
             CompBody2d *bodyB  = &world->body2d[idB];
             CompXform  *xformB = &world->xforms[idB];
 
-            // Pointers to the real data variables passed safely down the line
             vec2s posA = {xformA->pos.x, xformA->pos.y};
             vec2s posB = {xformB->pos.x, xformB->pos.y};
 
             resolver_kinds[bodyA->kind](world, &posA, bodyA, &posB, bodyB);
 
-            // Write updated positions back immediately
             xformA->pos = (vec3s){posA.x, posA.y, 0};
             xformB->pos = (vec3s){posB.x, posB.y, 0};
         }

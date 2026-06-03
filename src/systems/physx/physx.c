@@ -79,8 +79,8 @@ SubstepData Substep_Get(CompBody *body, float fdt)
     u8    substeps = (int)ceilf(speed * fdt / stepDist);
     if (substeps < 1)
         substeps = 1;
-    if (substeps > 24)
-        substeps = 24;
+    if (substeps > 16)
+        substeps = 16;
 
     substep_data.substeps = substeps;
     substep_data.sub_dt   = fdt / substeps;

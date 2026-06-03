@@ -49,7 +49,7 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
+        if ((world->masks[id] & required) != required)
             continue;
 
         CompController *controller = &world->controllers[id];
@@ -126,10 +126,12 @@ static void LocalTick(World *world, int id, double dt, double time)
                                                });
 
     vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
-    controller->aimdir    = vecDot(dir, look->lookdir) > 0.6f ? dir : look->lookdir;
+    controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
     controller->aimHitEnt = aimTrace.entId;
 
-    // Debug Teleport
+    // #######################
+    // #### DEBUG ACTIONS ####
+    // #######################
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
         vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id),
@@ -270,6 +272,5 @@ SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
 {
     vec3s pos = Sol_Controller_GetShootPos(world, id, 0.5f);
     vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
-
     return (SolShoot){.pos = pos, .vel = vel};
 }

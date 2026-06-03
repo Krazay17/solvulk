@@ -162,7 +162,7 @@ void Net_Apply_Snap(World *world)
         {
             if (e->prefabKind)
                 id = Sol_Prefab_Factory(world, 0, e->prefabKind,
-                                        (PrefabDesc){
+                                        (EntDesc){
                                             .pos       = e->pos,
                                             .rot       = e->rot,
                                             .scale     = e->scale,

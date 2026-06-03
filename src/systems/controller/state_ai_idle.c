@@ -3,13 +3,13 @@
 void Idle_State_Update(World *world, int id, float dt)
 {
     CompAiController *aicontroller = &world->aicontrollers[id];
+    aicontroller->target           = AiController_FindTarget(world, id);
+
     if (aicontroller->target)
     {
         Ai_SetState(world, id, AISTATE_AGGRO);
         return;
     }
-
-    aicontroller->target = AiController_FindTarget(world, id);
 }
 
 void Idle_State_Enter(World *world, int id)

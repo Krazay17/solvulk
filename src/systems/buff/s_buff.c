@@ -7,17 +7,13 @@
  */
 #include "sol_core.h"
 
-const Buff buff_config[] = {
+const Buff buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_FIRE] =
         {
             .freq     = 0.2f,
             .duration = 2.0f,
         },
     [BUFFKIND_INVULN] =
-        {
-            .duration = 0.2f,
-        },
-    [BUFFKIND_KNOCKBACK] =
         {
             .duration = 0.2f,
         },
@@ -29,24 +25,20 @@ void Sol_Buff_Init(World *world)
     world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_Add(World *world, int id, BuffKind kind, const SolHit *hit)
+void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float duration, float power)
 {
-    if (Sol_Vital_GetDead(world, id))
-        return;
     CompBuff *buffs = &world->buffs[id];
+    if (!(world->masks[id] & HAS_BUFF))
+        memset(buffs, 0, sizeof(CompBuff));
     world->masks[id] |= HAS_BUFF;
     if (buffs->count >= MAX_BUFFS)
         return;
 
-    Buff new_buff = buff_config[kind];
-    new_buff.kind = kind;
-    if (hit)
-    {
-        new_buff.source = hit->entA;
-        new_buff.dir    = hit->dir;
-        new_buff.power  = hit->power;
-        new_buff.pos    = hit->pos;
-    }
+    Buff new_buff     = buff_config[kind];
+    new_buff.source   = sourceId;
+    new_buff.kind     = kind;
+    new_buff.power    = power;
+    new_buff.duration = duration > 0 ? duration : buff_config[kind].duration;
 
     // check if we have buffs already
     for (int i = 0; i < buffs->count; i++)
@@ -123,16 +115,12 @@ void Sol_Buff_Step(World *world, double dt, double time)
                 if (b->accum > interval)
                 {
                     b->accum -= interval;
-                    Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_HIT,
-                                                    .as.hit.damage = 2,
-                                                    .as.hit.entA   = b->source,
-                                                    .as.hit.kind   = HITKIND_FIRE,
-                                                    .as.hit.pos    = Sol_Xform_GetPos(world, id),
-                                                    .as.hit.entB   = id});
+                    Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_HIT,
+                                                    .as.hit.kind = HITKIND_FIRE,
+                                                    .as.hit.entA = b->source,
+                                                    .as.hit.pos  = Sol_Xform_GetPos(world, id),
+                                                    .as.hit.entB = id});
                 }
-                break;
-            case BUFFKIND_KNOCKBACK:
-                Sol_Physx_SetVel(world, id, vecSca(b->dir, b->power));
                 break;
             }
 

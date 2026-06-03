@@ -7,8 +7,8 @@ static void SpawnPlayer(int flags, void *data)
 {
     Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
-    Sol_Prefab_Factory(gameWorld, 1, PREFABKIND_PLAYER,
-                       (PrefabDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
+    Sol_Prefab_Factory(gameWorld, 1, ENTKIND_PLAYER,
+                       (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
 }
 
@@ -30,7 +30,7 @@ void MakeAWizard(int flags, void *data)
     {
         int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
         Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
-        Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, PREFABKIND_WIZARD);
+        Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, ENTKIND_WIZARD);
     }
 }
 
@@ -81,8 +81,8 @@ void HostGame(int flags, void *data)
     for (int k = -4; k < 4; k++)
     {
         int id = Sol_Prefab_Factory(
-            gameWorld, 0, PREFABKIND_WIZARD,
-            (PrefabDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
+            gameWorld, 0, ENTKIND_WIZARD,
+            (EntDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
         if (id)
             Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
     }

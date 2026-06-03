@@ -86,3 +86,21 @@ typedef struct CompView2d
 } CompView2d;
 void Sol_View2d_Init(World *world);
 void Sol_View2d_Add(World *world, int id, CompView2d desc);
+
+typedef enum
+{
+    PROJECTILEKIND_BULLET,
+    PROJECTILEKIND_FIREBALL,
+    PROJECTILEKIND_COUNT,
+} ProjectileKind;
+typedef struct CompProjectile
+{
+    ProjectileKind kind;
+    u32            bounces;
+    float          power;
+    float          explodeRadius;
+    HitKind        directHitKind;
+    HitKind        explosionHitKind;
+} CompProjectile;
+void Sol_Projectile_Init(World *world);
+void Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);

@@ -294,8 +294,8 @@ void Net_Recv_Packet(ENetEvent *event)
             return;
         }
         int id =
-            Sol_Prefab_Factory(world, 0, PREFABKIND_PLAYER,
-                               (PrefabDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
+            Sol_Prefab_Factory(world, 0, ENTKIND_PLAYER,
+                               (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
         if (id > 0)
             Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
 

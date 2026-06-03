@@ -35,7 +35,6 @@
 #include "audio/audio.h"
 #include "buff/buff.h"
 #include "combat/combat.h"
-#include "contact/contact.h"
 #include "controller/aicontroller.h"
 #include "controller/controller.h"
 #include "emitter/emitter.h"

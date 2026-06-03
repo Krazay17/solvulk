@@ -27,7 +27,6 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_XFORM]        = Sol_Xform_Init,
     [WORLD_SYS_INTERACT]     = Sol_Interact_Init,
     [WORLD_SYS_MOVEMENT]     = Sol_Movement_Init,
-    [WORLD_SYS_CONTACT]      = Sol_Contact_Init,
     [WORLD_SYS_COMBAT]       = Sol_Combat_Init,
     [WORLD_SYS_ABILITY]      = Sol_Ability_Init,
     [WORLD_SYS_BUFF]         = Sol_Buff_Init,
@@ -43,6 +42,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_REPLICATION]  = Sol_Replication_Init,
     [WORLD_SYS_BODY2]        = Sol_Body2d_Init,
     [WORLD_SYS_VIEW2D]       = Sol_View2d_Init,
+    [WORLD_SYS_PROJECTILE]   = Sol_Projectile_Init,
 };
 
 World *World_Create(WorldKind kind)

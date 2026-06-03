@@ -67,3 +67,5 @@ void         Sol_Physx_AddVel(World *world, int id, vec3s addvel);
 void         Sol_Physx_Impulse(World *world, int id, vec3s impulse);
 void         Sol_Physx_SetHeight(World *world, int id, float height);
 float        Sol_Physx_GetHeight(World *world, int id);
+void         Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir);
+void         Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt);

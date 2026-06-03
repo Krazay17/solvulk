@@ -21,6 +21,21 @@ void CrouchHeight(World *world, int id, float fdt)
     Sol_Model_SetOffsetY(world, id, newHeight * -0.5f);
 }
 
+void Knockback(World *world, int id, float fdt)
+{
+    CompMovement *move = &world->movements[id];
+    if(move->knockDur > 0)
+    {
+        move->knockDur -= fdt;
+        Sol_Physx_LerpVel(world, id, move->knockVel, 0.5f);
+    }
+    if (move->frictionMod != 1.0f)
+    {
+        float newFriction = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f *fdt);
+    }
+
+}
+
 vec3s GroundSlope(World *world, int id)
 {
     vec3s normal     = Sol_Physx_GetGround(world, id);

@@ -43,6 +43,7 @@ typedef enum
     HAS_EMITTER      = (1 << 22),
     HAS_VIEW2D       = (1 << 23),
     HAS_OTHERWORLD   = (1 << 24),
+    HAS_PROJECTILE   = (1 << 25),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -65,14 +66,15 @@ typedef enum
     WORLD_SYS_BODY2,
     WORLD_SYS_OWNER,
     WORLD_SYS_PARENT,
-
+    
     // Event flow
-    WORLD_SYS_ABILITY,
-    WORLD_SYS_CONTACT,
     WORLD_SYS_BUFF,
+    WORLD_SYS_ABILITY,
+    WORLD_SYS_PROJECTILE,
+    WORLD_SYS_AICONTROLLER,
 
     WORLD_SYS_COMBAT,
-    WORLD_SYS_AICONTROLLER,
+
     WORLD_SYS_VITAL,
     WORLD_SYS_MOVEMENT,
 
@@ -116,6 +118,7 @@ typedef struct CompCombat       CompCombat;
 typedef struct CompEmitter      CompEmitter;
 typedef struct CompBody2d       CompBody2d;
 typedef struct CompView2d       CompView2d;
+typedef struct CompProjectile   CompProjectile;
 
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -169,6 +172,7 @@ typedef struct World
     CompEmitter      *compEmitters;
     CompBody2d       *body2d;
     CompView2d       *view2d;
+    CompProjectile   *projectiles;
 
     u32 skyboxId;
 
@@ -198,10 +202,10 @@ typedef struct World
     u32  currentTick;
 } World;
 
-World     *World_Create(WorldKind kind);
-World     *World_Create_Default(WorldKind kind);
-World     *Sol_GetWorldById(u32 id);
-void       World_SetDoesrender(World *world, bool doesRender);
+World *World_Create(WorldKind kind);
+World *World_Create_Default(WorldKind kind);
+World *Sol_GetWorldById(u32 id);
+void   World_SetDoesrender(World *world, bool doesRender);
 
 void World_Destroy(World *world);
 void World_System_Add(World *world, WorldSystem system);

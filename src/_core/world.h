@@ -44,6 +44,7 @@ typedef enum
     HAS_VIEW2D       = (1 << 23),
     HAS_OTHERWORLD   = (1 << 24),
     HAS_PROJECTILE   = (1 << 25),
+    HAS_ITEM         = (1 << 26),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -64,9 +65,10 @@ typedef enum
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
     WORLD_SYS_BODY2,
+    WORLD_SYS_ITEM,
     WORLD_SYS_OWNER,
     WORLD_SYS_PARENT,
-    
+
     // Event flow
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
@@ -119,6 +121,7 @@ typedef struct CompEmitter      CompEmitter;
 typedef struct CompBody2d       CompBody2d;
 typedef struct CompView2d       CompView2d;
 typedef struct CompProjectile   CompProjectile;
+typedef struct CompItem         CompItem;
 
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -173,6 +176,7 @@ typedef struct World
     CompBody2d       *body2d;
     CompView2d       *view2d;
     CompProjectile   *projectiles;
+    CompItem         *items;
 
     u32 skyboxId;
 

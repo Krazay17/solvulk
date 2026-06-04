@@ -24,7 +24,7 @@ void Sol_View_Ability_Draw(World *world, double dt, double time)
         {
         case ABILITY_STATE_FIREBALL: {
 
-            AbilityData *data = &world->abilities[id].stateData[world->abilities[id].state];
+            AbilityData *data = &world->abilities[id].stateData[world->abilities[id].activeSlot];
             if (data->stage > 0)
                 break;
             float scale = data->charge * 2.0f + 0.5f;

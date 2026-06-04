@@ -64,7 +64,7 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a);
 void Script_State_Update(World *world, int id, float dt)
 {
     CompAbility   *ability = &world->abilities[id];
-    AbilityData   *data    = &ability->stateData[ability->state];
+    AbilityData   *data    = &ability->stateData[ability->activeSlot];
     AbilityScript *script  = &ability_scripts[ability->state];
 
     float oldElapsed = data->elapsed;
@@ -78,7 +78,7 @@ void Script_State_Update(World *world, int id, float dt)
     }
 
     if (data->elapsed >= script->duration)
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, true);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,true);
 }
 
 void Script_State_Enter(World *world, int id)
@@ -93,15 +93,15 @@ void Script_State_Exit(World *world, int id)
 bool Script_State_CanExit(World *world, int id, u32 nextState)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &world->abilities[id].stateData[ability->state];
+    AbilityData *data    = &world->abilities[id].stateData[ability->activeSlot];
 
     return data->elapsed >= ability_scripts[ability->state].duration * 0.6f;
 }
 
-bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next)
+bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next, u32 slot)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &world->abilities[id].stateData[next];
+    AbilityData *data    = &world->abilities[id].stateData[slot];
 
     double now     = Sol_GetGameTime();
     double readyAt = data->lastEntered + ability_scripts[next].cooldown;

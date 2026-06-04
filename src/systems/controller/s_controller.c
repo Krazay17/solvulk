@@ -9,13 +9,15 @@
 #include "sol_core.h"
 
 static const SolActions action_binds[SOL_KEY_COUNT] = {
-    [SOL_KEY_0] = ACTION_ABILITY0,  [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
-    [SOL_KEY_3] = ACTION_ABILITY3,  [SOL_KEY_4] = ACTION_ABILITY4, [SOL_KEY_5] = ACTION_ABILITY5,
-    [SOL_KEY_6] = ACTION_ABILITY6,  [SOL_KEY_7] = ACTION_ABILITY7, [SOL_KEY_8] = ACTION_ABILITY8,
-    [SOL_KEY_9] = ACTION_ABILITY9,  [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,
-    [SOL_KEY_S] = ACTION_BWD,       [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
-    [SOL_KEY_SPACE] = ACTION_JUMP,  [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH,
-    [SOL_KEY_CTRL] = ACTION_CROUCH,
+    [SOL_KEY_1] = ACTION_ABILITY1, [SOL_KEY_2] = ACTION_ABILITY2,
+    [SOL_KEY_3] = ACTION_ABILITY3, [SOL_KEY_4] = ACTION_ABILITY4,
+    [SOL_KEY_5] = ACTION_ABILITY5, [SOL_KEY_6] = ACTION_ABILITY6,
+    [SOL_KEY_7] = ACTION_ABILITY7, [SOL_KEY_8] = ACTION_ABILITY8,
+    [SOL_KEY_9] = ACTION_ABILITY9, [SOL_KEY_W] = ACTION_FWD,
+    [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
+    [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
+    [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,
+    [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
 };
 
 static void  Sol_Controller_Tick(World *world, double dt, double time);
@@ -103,6 +105,7 @@ static void LocalTick(World *world, int id, double dt, double time)
             controller->actionState |= ACTION_ABILITY1;
         else
             controller->actionState &= ~ACTION_ABILITY1;
+
         if (mouse.buttons[SOL_MOUSE_RIGHT])
             controller->actionState |= ACTION_ABILITY2;
         else

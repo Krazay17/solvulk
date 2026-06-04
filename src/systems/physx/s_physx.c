@@ -7,7 +7,8 @@
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
-#define SPATIAL_STATIC_CELL_SIZE 1.5f
+// 1.5 loads slow but plays fast
+#define SPATIAL_STATIC_CELL_SIZE 3.5f
 #define SPATIAL_STATIC_SIZE (1 << 21)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
@@ -88,7 +89,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
 
     // Prof_Begin(&prof_static);
     //  velocity and static collisions
-#pragma omp parallel for if (count > 500) shared(contacts) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 200) shared(contacts) schedule(dynamic, 16)
     for (j = 0; j < count; j++)
     {
         int        id    = ents[j];
@@ -126,7 +127,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
             Collisions_Static_Grid(world, staticGroup, body, xform, &contacts[j]);
         }
         
-        Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
+        // Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
         Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
     }
     // Prof_EndEz(&prof_static, true);

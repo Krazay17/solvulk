@@ -13,7 +13,7 @@ void Claw_State_Update(World *world, int id, float dt)
     *elapsed += dt;
     if (*elapsed >= CLAW_DURATION)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
     }
 }
 

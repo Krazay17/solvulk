@@ -82,6 +82,24 @@ void ResolveRect(World *world, vec2s *posA, CompBody2d *bodyA, vec2s *posB, Comp
     }
 }
 
+bool IsOverlappingRect(World *world, int idA, int idB)
+{
+    CompBody2d *bodyA = &world->body2d[idA];
+    CompBody2d *bodyB = &world->body2d[idB];
+    vec2s       posA  = (vec2s){world->xforms[idA].pos.x, world->xforms[idA].pos.y};
+    vec2s       posB  = (vec2s){world->xforms[idB].pos.x, world->xforms[idB].pos.y};
+    vec2s      *velA  = &bodyA->vel;
+    vec2s      *velB  = &bodyB->vel;
+
+    // 1. Check for overlap on X and Y axes
+    bool overlapX = (posA.x < posB.x + bodyB->dims.x) && (posA.x + bodyA->dims.x > posB.x);
+    bool overlapY = (posA.y < posB.y + bodyB->dims.y) && (posA.y + bodyA->dims.y > posB.y);
+
+    if (!overlapX || !overlapY)
+        return 0;
+    return true;
+}
+
 void Grab(vec2s *vel, vec2s pos, vec2s dims)
 {
     SolMouse mouse        = Sol_Input_GetMouse();

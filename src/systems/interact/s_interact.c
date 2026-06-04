@@ -17,7 +17,14 @@ void Sol_Interact_Init(World *world)
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
 }
 
-void Sol_Interact_Add(World *world, int id, CompInteract desc)
+void Sol_Interact_Add(World *world, int id)
+{
+    CompInteract interact = {0};
+    world->interacts[id] = interact;
+    world->masks[id] |= HAS_INTERACT;
+}
+
+void Sol_Interact_Set(World *world, int id, CompInteract desc)
 {
     world->interacts[id] = desc;
     world->masks[id] |= HAS_INTERACT;

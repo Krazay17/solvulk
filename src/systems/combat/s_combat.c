@@ -28,8 +28,8 @@ static HitData hit_kinds[HITKIND_COUNT] = {
     [HITKIND_SHIELD_PULSE] =
         {
             .damage            = 20,
-            .knockback         = 15.0f,
-            .knockbackDuration = 0.2f,
+            .knockback         = 20.0f,
+            .knockbackDuration = 0.3f,
             .buffCount         = 1,
             .buffKinds         = {BUFFKIND_KNOCKBACK},
         },
@@ -83,7 +83,6 @@ static void Combat_Step(World *world, double dt, double time)
             bool canDamage  = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                               !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
                               !Sol_Vital_GetDead(world, e->as.hit.entB);
-            printf("damage: %d, hostile: %d\n", damage, canDamage);
 
             if (hitData.damage && canDamage)
             {

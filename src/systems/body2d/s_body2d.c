@@ -10,10 +10,15 @@ void Sol_Body2d_Init(World *world)
     WAddStep(world) = Step;
 }
 
-void Sol_Body2d_Add(World *world, int id, CompBody2d desc)
+void Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height)
 {
+    CompBody2d body = {
+        .kind   = kind,
+        .dims.x = width,
+        .dims.y = height,
+    };
+    world->body2d[id] = body;
     world->masks[id] |= HAS_BODY2;
-    world->body2d[id] = desc;
 }
 
 static void Step(World *world, double dt, double time)
@@ -53,10 +58,14 @@ static void Step(World *world, double dt, double time)
             if ((world->masks[idB] & required) != required)
                 continue;
 
-            CompBody2d *bodyA  = &world->body2d[idA];
-            CompXform  *xformA = &world->xforms[idA];
-            CompBody2d *bodyB  = &world->body2d[idB];
-            CompXform  *xformB = &world->xforms[idB];
+            CompBody2d *bodyA = &world->body2d[idA];
+            CompBody2d *bodyB = &world->body2d[idB];
+            if (bodyA->kind == BODY2DKIND_RECT_NOCOLLIDE)
+                continue;
+            if (bodyB->kind == BODY2DKIND_RECT_NOCOLLIDE)
+                continue;
+            CompXform *xformA = &world->xforms[idA];
+            CompXform *xformB = &world->xforms[idB];
 
             vec2s posA = {xformA->pos.x, xformA->pos.y};
             vec2s posB = {xformB->pos.x, xformB->pos.y};
@@ -79,6 +88,25 @@ static void Step(World *world, double dt, double time)
 
         CollideScreenEdge(&body->vel, &pos, body->dims);
         xform->pos = (vec3s){pos.x, pos.y, 0};
+    }
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+        CompBody2d *bodyA = &world->body2d[id];
+        int         count = 0;
+        for (int j = 0; j < world->activeCount; j++)
+        {
+            int idB = world->activeEntities[j];
+            if (idB == id)
+                continue;
+            if ((world->masks[idB] & required) != required)
+                continue;
+            if (IsOverlappingRect(world, id, idB))
+                bodyA->overlapping[count++] = idB;
+        }
+        bodyA->overlapCount = count;
     }
 }
 

@@ -7,7 +7,7 @@ typedef void (*StateUpdate)(World *world, int id, float dt);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);
 typedef bool (*StateCanExit)(World *world, int id, u32 next);
-typedef bool (*StateCanEnter)(World *world, int id, u32 last, u32 next);
+typedef bool (*StateCanEnter)(World *world, int id, u32 last, u32 next, u32 slot);
 
 typedef struct
 {

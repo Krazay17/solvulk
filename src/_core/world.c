@@ -43,6 +43,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_BODY2]        = Sol_Body2d_Init,
     [WORLD_SYS_VIEW2D]       = Sol_View2d_Init,
     [WORLD_SYS_PROJECTILE]   = Sol_Projectile_Init,
+    [WORLD_SYS_ITEM]         = Sol_Item_Init,
 };
 
 World *World_Create(WorldKind kind)
@@ -75,6 +76,7 @@ World *World_Create_Default(WorldKind kind)
             World_System_Add(world, WORLD_SYS_XFORM);
             World_System_Add(world, WORLD_SYS_INTERACT);
             World_System_Add(world, WORLD_SYS_BODY2);
+            World_System_Add(world, WORLD_SYS_ITEM);
             World_System_Add(world, WORLD_SYS_PARENT);
             World_System_Add(world, WORLD_SYS_VIEW2D);
             World_System_Add(world, WORLD_SYS_VIEW);

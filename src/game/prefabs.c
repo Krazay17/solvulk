@@ -66,10 +66,16 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     Sol_Vital_Add(world, id, VITALKIND_PLAYER);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.bindings = {
+                                      {ACTION_ABILITY1, 0},
+                                      {ACTION_ABILITY2, 0},
+                                      {ACTION_ABILITY3, 0},
+                                      {ACTION_ABILITY4, 0},
+                                      {ACTION_ABILITY5, 0},
+                                      {ACTION_ABILITY6, 0},
+                                      {ACTION_ABILITY7, 0},
+                                      {ACTION_ABILITY8, 0},
+                                      {ACTION_ABILITY9, 0},
                                       {ACTION_DASH, ABILITY_STATE_DASH},
-                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALL},
-                                      {ACTION_ABILITY2, ABILITY_STATE_PISTOL},
-                                      {ACTION_ABILITY3, ABILITY_STATE_SHIELD},
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
     return id;
@@ -99,7 +105,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                     (AbilityDesc){.bindings = {
                                       {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
-    Sol_Interact_Add(world, id, (CompInteract){0});
+    Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
 
@@ -183,7 +189,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
-    Sol_Interact_Add(world, id, (CompInteract){0});
+    Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
     return id;
@@ -217,19 +223,19 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 
     int bg = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, bg, pos);
-    Sol_View2d_Add(world, bg,
+    Sol_View2d_Set(world, bg,
                    (CompView2d){
                        .kind       = VIEW2DKIND_RECT,
                        .dims       = dims,
                        .color      = {1, 0, 0, 1},
                        .hoverColor = {1, 1, 1, 0.5f},
                    });
-    Sol_Interact_Add(world, bg, (CompInteract){0});
-    Sol_Body2d_Add(world, bg, (CompBody2d){.kind = BODY2DKIND_RECT, .dims = dims});
+    Sol_Interact_Set(world, bg, (CompInteract){0});
+    Sol_Body2d_Add(world, bg, BODY2DKIND_RECT, dims.x, dims.y);
 
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
-    Sol_View2d_Add(world, id,
+    Sol_View2d_Set(world, id,
                    (CompView2d){
                        .kind       = VIEW2DKIND_RECT,
                        .dims       = dims,
@@ -241,7 +247,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 
     int border = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, border, pos);
-    Sol_View2d_Add(world, border,
+    Sol_View2d_Set(world, border,
                    (CompView2d){
                        .kind       = VIEW2DKIND_RECT,
                        .dims       = dims,
@@ -275,11 +281,11 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     int   id   = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Body2d_Add(world, id, (CompBody2d){.dims = dims, .kind = BODY2DKIND_RECT});
-    Sol_Interact_Add(world, id, (CompInteract){0});
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y);
+    Sol_Interact_Set(world, id, (CompInteract){0});
 
     int bg = Sol_Create_Ent(world, 0);
-    Sol_View2d_Add(world, bg,
+    Sol_View2d_Set(world, bg,
                    (CompView2d){
                        .kind        = VIEW2DKIND_RECT,
                        .color       = (vec4s){1.0f, 0.0f, 0.0f, 1.0f},
@@ -289,7 +295,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
                    });
 
     int border = Sol_Create_Ent(world, 0);
-    Sol_View2d_Add(world, border,
+    Sol_View2d_Set(world, border,
                    (CompView2d){
                        .kind        = VIEW2DKIND_RECT,
                        .color       = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
@@ -305,15 +311,73 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     CompView2d textComp = {
         .kind  = VIEW2DKIND_TEXT,
         .color = (vec4s){{0.0f, 1.0f, 0.0f, 1.0f}},
-        .dims  = {16.0f, 1.0f},
-        .scale = 16.0f,
+        .dims  = {16.0f},
     };
     strncpy_s(textComp.text, sizeof(textComp.text), text, 64);
     int textId = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, textId, pos);
-    Sol_View2d_Add(world, textId, textComp);
+    Sol_View2d_Set(world, textId, textComp);
     Sol_Parent_Add(world, textId,
                    (CompParent){.parentId = id, .localOffset = (vec3s){dims.x * 0.5f, dims.y * 0.5f, 0}});
+
+    return id;
+}
+
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
+{
+    vec2s dims = {60.0f, 60.0f};
+    int   id   = Sol_Create_Ent(world, 0);
+    Sol_Xform_Teleport(world, id, pos);
+    Sol_Interact_Set(world, id, (CompInteract){0});
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y);
+    Sol_View2d_Set(
+        world, id,
+        (CompView2d){
+            .kind = VIEW2DKIND_RECT, .dims = dims, .color = {0, 0, 1, 1}, .hoverColor = {1, 1, 1, 1}, .text = "Test"});
+
+    CompView2d textComp = {
+        .color = {1, 0, 0, 1},
+        .kind  = VIEW2DKIND_TEXT,
+        .dims  = {12.0f},
+    };
+    Sol_Item_AddAbility(world, id, ability);
+    switch (ability)
+    {
+    case ABILITY_STATE_FIREBALL:
+        strncpy_s(textComp.text, sizeof(textComp.text), "Fireball", 64);
+        break;
+    case ABILITY_STATE_PISTOL:
+        strncpy_s(textComp.text, sizeof(textComp.text), "Blaster", 64);
+        break;
+    case ABILITY_STATE_SHIELD:
+        strncpy_s(textComp.text, sizeof(textComp.text), "Shield", 64);
+        break;
+    }
+    int textId = Sol_Create_Ent(world, 0);
+    Sol_View2d_Set(world, textId, textComp);
+    Sol_Parent_Add(world, textId, (CompParent){.parentId = id, .localOffset = {dims.x * 0.5f, dims.y * 0.5f}});
+
+    return id;
+}
+
+int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot)
+{
+    vec2s dims = {60.0, 60.0};
+    int   id   = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Item_AddAbilitySlot(world, id, slot);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT_NOCOLLIDE, dims.x, dims.y);
+    Sol_Interact_Add(world, id);
+    Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 1}, 60.0f, 60.0f);
+    Sol_View2d_Get(world, id)->hoverColor = (vec4s){0.2f, 0.2f, 0.2f, 1.0f};
+
+    int text = Sol_Create_Ent(world, 0);
+    Sol_View2d_Add(world, text, VIEW2DKIND_TEXT, (vec4s){0,1,0,1}, 16.0f, 0);
+    char buffer[8];
+    int slotNumber = slot + 1;
+    snprintf(buffer, sizeof(buffer), "%d", slotNumber);
+    Sol_View2d_SetText(world, text, buffer);
+    Sol_Parent_Add(world, text, (CompParent){.localOffset = {dims.x*0.5f, dims.y*0.5f}, .parentId = id});
 
     return id;
 }

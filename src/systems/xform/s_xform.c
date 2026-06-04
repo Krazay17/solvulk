@@ -6,6 +6,11 @@ void Sol_Xform_Init(World *world)
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
 }
 
+void Sol_Xform_Add(World *world, int id, vec3s pos)
+{
+    world->xforms[id].pos = world->xforms[id].lastPos = world->xforms[id].drawPos = pos;
+}
+
 void Xform_Snapshot(World *world)
 {
     for (int i = 0; i < world->activeCount; ++i)
@@ -79,4 +84,10 @@ void Sol_Xform_SetYaw(World *world, int id, float yaw)
 void Sol_Xform_SetScale(World *world, int id, vec3s scale)
 {
     world->xforms[id].scale = scale;
+}
+void Sol_Xform_Set(World *world, int id, float x, float y, float z)
+{
+    world->xforms[id].pos.x = x;
+    world->xforms[id].pos.y = y;
+    world->xforms[id].pos.z = z;
 }

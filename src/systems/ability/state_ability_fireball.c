@@ -14,7 +14,7 @@
 void Fireball_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->state];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
     float       *elapsed = &data->elapsed;
 
     float oldElapsed = data->elapsed;
@@ -49,7 +49,7 @@ void Fireball_State_Update(World *world, int id, float dt)
     case 2:
         data->recovery += dt;
         if (data->recovery >= RECOVERYTIME)
-            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
     }
 }
 
@@ -57,7 +57,7 @@ void Fireball_State_Enter(World *world, int id)
 {
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
-    AbilityData *data   = &world->abilities[id].stateData[ABILITY_STATE_FIREBALL];
+    AbilityData *data   = &world->abilities[id].stateData[combat->activeSlot];
     data->stage         = 0;
     data->recovery      = 0.0f;
 
@@ -67,7 +67,8 @@ void Fireball_State_Enter(World *world, int id)
 
 void Fireball_State_Exit(World *world, int id)
 {
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_FIREBALL];
+    CompAbility *a    = &world->abilities[id];
+    AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
     data->lastExited  = Sol_GetGameTime();
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
 }
@@ -77,8 +78,8 @@ bool Fireball_State_CanExit(World *world, int id, u32 next)
     return next != ABILITY_STATE_FIREBALL;
 }
 
-bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next)
+bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
-    AbilityData *data = &world->abilities[id].stateData[next];
+    AbilityData *data = &world->abilities[id].stateData[slot];
     return !(data->lastExited + COOLDOWN > Sol_GetGameTime());
 }

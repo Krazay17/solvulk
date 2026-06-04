@@ -10,12 +10,12 @@
 void ADash_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->state];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
     float       *elapsed = &data->elapsed;
     *elapsed += dt;
     if (*elapsed >= DASH_DURATION)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
         return;
     }
     float alpha = DASH_ALPHAMOD - (*elapsed / DASH_DURATION);
@@ -29,7 +29,7 @@ void ADash_State_Enter(World *world, int id)
     Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.2f, 0);
 
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ABILITY_STATE_DASH];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
 
     data->dir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
     if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0 && vecDot(Sol_GetWishdir(world, id), WORLD_UP) < 0.99f)
@@ -74,12 +74,13 @@ void ADash_State_Exit(World *world, int id)
 
 bool ADash_State_CanExit(World *world, int id, u32 next)
 {
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_DASH];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data = &ability->stateData[ability->activeSlot];
     return data->elapsed >= DASH_DURATION * 0.9f;
 }
 
-bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next)
+bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
-    AbilityData *data = &world->abilities[id].stateData[next];
+    AbilityData *data = &world->abilities[id].stateData[slot];
     return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
 }

@@ -7,7 +7,7 @@ void Idle_State_Update(World *world, int id, float dt)
 
     if (aicontroller->target)
     {
-        Ai_SetState(world, id, AISTATE_AGGRO);
+        Ai_SetState(world, id, AISTATE_AGGRO, 1);
         return;
     }
 }

@@ -11,12 +11,12 @@ void Aggro_State_Update(World *world, int id, float dt)
     }
     if (aicontroller->target == 0)
     {
-        Ai_SetState(world, id, AISTATE_IDLE);
+        Ai_SetState(world, id, AISTATE_IDLE, 0);
         return;
     }
     if(Sol_Vital_GetDead(world,aicontroller->target))
     {
-        Ai_SetState(world, id, AISTATE_IDLE);
+        Ai_SetState(world, id, AISTATE_IDLE, 0);
         return;
     }
     if (aicontroller->distToTarget > 50.0f)

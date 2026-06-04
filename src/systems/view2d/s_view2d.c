@@ -23,12 +23,32 @@ void Sol_View2d_Init(World *world)
     WAddStep(world) = Step;
 }
 
-void Sol_View2d_Add(World *world, int id, CompView2d desc)
+void Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
 {
-    desc.fill         = 1.0f;
-    desc.targetFill   = 1.0f;
-    world->view2d[id] = desc;
+    CompView2d view = {
+        .kind       = kind,
+        .color      = color,
+        .dims       = {width, height},
+        .fill       = 1.0f,
+        .targetFill = 1.0f,
+        .hoverColor = {0.5f, 0.5f, 0.5f, 1.0f},
+        .clickColor = {1, 1, 1, 1},
+    };
+    world->view2d[id] = view;
     world->masks[id] |= HAS_VIEW2D;
+}
+
+void Sol_View2d_Set(World *world, int id, CompView2d view)
+{
+    world->view2d[id] = view;
+    world->view2d[id].fill = 1.0f;
+    world->view2d[id].targetFill =1.0f;
+    world->masks[id] |= HAS_VIEW2D;
+}
+
+CompView2d *Sol_View2d_Get(World *world, int id)
+{
+    return &world->view2d[id];
 }
 
 static void Step(World *world, double dt, double time)
@@ -109,17 +129,22 @@ static void View_DrawText(World *world, int id, double dt, double time, CompView
 {
     if (view->text[0] != '\0')
     {
-        float       textWidth = Sol_MeasureText(view->text, view->scale, SOL_FONT_ICE);
+        float       textWidth = Sol_MeasureText(view->text, view->dims.x, SOL_FONT_ICE);
         float       cx        = pos.x - textWidth * 0.5f;
-        float       cy        = pos.y + view->scale * 0.35f;
+        float       cy        = pos.y + view->dims.x * 0.35f;
         SolFontDesc fontDesc  = {
             .str   = view->text,
             .x     = UISCALE(cx),
             .y     = UISCALE(cy),
-            .size  = UISCALE(view->scale),
+            .size  = UISCALE(view->dims.x),
             .color = view->color,
             .kind  = SOL_FONT_ICE,
         };
         Sol_Render_DrawText(fontDesc);
     }
+}
+
+void Sol_View2d_SetText(World *world, int id, const char *text)
+{
+    strncpy(world->view2d[id].text, text, 64);
 }

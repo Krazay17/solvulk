@@ -120,7 +120,7 @@ static void Sol_AiController_Debug(World *world, double dt, double time)
     }
 }
 
-bool Ai_SetState(World *world, int id, AiState nextState)
+bool Ai_SetState(World *world, int id, AiState nextState, u32 slot)
 {
     CompAiController *aicontroller = &world->aicontrollers[id];
     if (aicontroller->state == nextState)
@@ -129,7 +129,7 @@ bool Ai_SetState(World *world, int id, AiState nextState)
     if (!prevfunc->canExit(world, id, nextState))
         return false;
     const StateFunc *nextfunc = &state_func[nextState];
-    if (!nextfunc->canEnter(world, id, aicontroller->state, (u32)nextState))
+    if (!nextfunc->canEnter(world, id, aicontroller->state, (u32)nextState, slot))
         return false;
 
     prevfunc->exit(world, id);
@@ -164,7 +164,6 @@ u32 AiController_FindTarget(World *world, int id)
 
 void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage)
 {
-    printf("Hit Ai: %d\n", source);
     world->aicontrollers[id].justHitUs = source;
     world->aicontrollers[id].lastHit   = damage;
 }

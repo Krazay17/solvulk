@@ -53,15 +53,18 @@ void Sol_Shape_ColorAll(World *world, vec4s color);
 typedef enum
 {
     BODY2DKIND_RECT,
+    BODY2DKIND_RECT_NOCOLLIDE,
     BODY2DKIND_COUNT,
 } Body2dKind;
 typedef struct CompBody2d
 {
     Body2dKind kind;
     vec2s      vel, dims, grav;
+    u32        overlapping[4];
+    u32        overlapCount;
 } CompBody2d;
 void  Sol_Body2d_Init(World *world);
-void  Sol_Body2d_Add(World *world, int id, CompBody2d desc);
+void  Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height);
 vec2s Sol_Body2d_GetDims(World *world, int id);
 
 typedef enum
@@ -85,7 +88,10 @@ typedef struct CompView2d
     char       text[64];
 } CompView2d;
 void Sol_View2d_Init(World *world);
-void Sol_View2d_Add(World *world, int id, CompView2d desc);
+void Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
+void Sol_View2d_Set(World *world, int id, CompView2d view);
+void Sol_View2d_SetText(World *world, int id, const char *text);
+CompView2d *Sol_View2d_Get(World *world, int id);
 
 typedef enum
 {
@@ -104,3 +110,24 @@ typedef struct CompProjectile
 } CompProjectile;
 void Sol_Projectile_Init(World *world);
 void Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
+
+typedef enum
+{
+    ITEMKIND_FIREBALL_CARD,
+    ITEMKIND_BLASTER_CARD,
+    ITEMKIND_SHIELD_CARD,
+    ITEMKIND_ABILITY_CARD,
+    ITEMKIND_ABILITY_SLOT,
+    ITEMKIND_COUNT,
+} ItemKind;
+typedef struct CompItem
+{
+    ItemKind     kind;
+    AbilityState ability;
+    u32          slot;
+} CompItem;
+
+void Sol_Item_Init(World *world);
+void Sol_Item_Add(World *world, int id, ItemKind kind);
+void Sol_Item_AddAbility(World *world, int id, AbilityState ability);
+void Sol_Item_AddAbilitySlot(World *world, int id, int slot);

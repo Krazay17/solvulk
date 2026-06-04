@@ -38,7 +38,7 @@ void Sol_AiController_Init(World *world);
 void Sol_AiController_Add(World *world, int id, AiControllerKind kind);
 void Sol_AiController_Clear(World *world, int id);
 
-bool         Ai_SetState(World *world, int id, AiState nextState);
+bool         Ai_SetState(World *world, int id, AiState nextState, u32 slot);
 AiStateData *Ai_GetStatedata(World *world, int id);
 u32          AiController_FindTarget(World *world, int id);
 

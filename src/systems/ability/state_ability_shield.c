@@ -11,7 +11,8 @@
 
 void Shield_State_Update(World *world, int id, float dt)
 {
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data = &ability->stateData[ability->activeSlot];
 
     data->elapsed += (float)dt;
     data->accum += (float)dt;
@@ -20,7 +21,6 @@ void Shield_State_Update(World *world, int id, float dt)
     // aoe scan over time, hit ents once
     if (data->elapsed < HITDURATION)
     {
-
         if (data->accum > HITINTERVAL)
         {
             data->accum               = 0;
@@ -61,19 +61,20 @@ void Shield_State_Update(World *world, int id, float dt)
     }
     else
     {
-        Sol_Ability_SetState(world, id, 0, false);
+        Sol_Ability_SetState(world, id, 0, 0, false);
         return;
     }
 }
 
 void Shield_State_Enter(World *world, int id)
 {
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data = &ability->stateData[ability->activeSlot];
     data->accum       = HITINTERVAL;
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
     CompCombat *combat = &world->combats[id];
     memset(combat->hitEnts, 0, sizeof(combat->hitEnts));
-    Sol_Buff_Add(world, id, BUFFKIND_INVULN,id, 0.5f, 0);
+    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.5f, 0);
 
     vec3s pos = Sol_Xform_GetPos(world, id);
     Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 0.1f);
@@ -88,18 +89,22 @@ void Shield_State_Enter(World *world, int id)
 void Shield_State_Exit(World *world, int id)
 {
     Sol_Combat_RemoveFlags(world, id, COMBATFLAG_REFLECTING);
-    AbilityData *data = &world->abilities[id].stateData[ABILITY_STATE_SHIELD];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data = &ability->stateData[ability->activeSlot];
     data->lastExited  = Sol_GetGameTime();
 }
 
 bool Shield_State_CanExit(World *world, int id, u32 next)
 {
-    return next != ABILITY_STATE_SHIELD;
+        CompAbility *ability = &world->abilities[id];
+    AbilityData *data = &ability->stateData[ability->activeSlot];
+
+    return next != ABILITY_STATE_SHIELD && data->elapsed >= HITDURATION;
 }
 
-bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next)
+bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[next];
+    AbilityData *data    = &ability->stateData[slot];
     return !(data->lastExited + SHIELD_COOLDOWN > Sol_GetGameTime());
 }

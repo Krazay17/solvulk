@@ -9,10 +9,10 @@ static bool LeaveState(World *world, int id)
 void Pistol_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->state];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
     if (!data->held)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
         return;
     }
     data->elapsed += dt;
@@ -48,7 +48,7 @@ void Pistol_State_Update(World *world, int id, float dt)
 void Pistol_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->state];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->accum          = 0.2f;
 }
 void Pistol_State_Exit(World *world, int id)

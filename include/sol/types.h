@@ -29,16 +29,15 @@ typedef struct SolState SolState;
 typedef enum
 {
     ACTION_NONE     = 0,
-    ACTION_ABILITY0 = (1 << 0),
-    ACTION_ABILITY1 = (1 << 1),
-    ACTION_ABILITY2 = (1 << 2),
-    ACTION_ABILITY3 = (1 << 3),
-    ACTION_ABILITY4 = (1 << 4),
-    ACTION_ABILITY5 = (1 << 5),
-    ACTION_ABILITY6 = (1 << 6),
-    ACTION_ABILITY7 = (1 << 7),
-    ACTION_ABILITY8 = (1 << 8),
-    ACTION_ABILITY9 = (1 << 9),
+    ACTION_ABILITY1 = (1 << 0),
+    ACTION_ABILITY2 = (1 << 1),
+    ACTION_ABILITY3 = (1 << 2),
+    ACTION_ABILITY4 = (1 << 3),
+    ACTION_ABILITY5 = (1 << 4),
+    ACTION_ABILITY6 = (1 << 5),
+    ACTION_ABILITY7 = (1 << 6),
+    ACTION_ABILITY8 = (1 << 7),
+    ACTION_ABILITY9 = (1 << 8),
     ACTION_DASH     = (1 << 10),
 
     ACTION_FWD    = (1 << 11),
@@ -250,3 +249,15 @@ typedef enum
     HITKIND_SHIELD_PULSE,
     HITKIND_COUNT,
 } HitKind;
+
+typedef enum
+{
+    ABILITY_STATE_IDLE,
+    ABILITY_STATE_DASH,
+    ABILITY_STATE_FIREBALL,
+    ABILITY_STATE_PISTOL,
+    ABILITY_STATE_CLAW,
+    ABILITY_STATE_SHIELD,
+    ABILITY_STATE_FIREBALLVOLLEY,
+    ABILITY_STATE_COUNT,
+} AbilityState;

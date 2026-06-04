@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     }
     // load hot reload api
     // load_api("libsolvulk.dll");
-    
+
     if (!Sol_GetState()->isRunning)
     {
         MessageBoxA(g_hwnd, "Engine flagged as not running before message loop started.", "Error", MB_OK);
@@ -200,24 +200,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     }
-    // case WM_NCHITTEST: {
-    //     POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
-    //     ScreenToClient(hwnd, &pt);
-    //     if (pt.y < 30)
-    //         return HTCAPTION; // drag bar
-    //     // if (IsOverButton(pt))
-    //     //     return HTCLIENT;  // interactive
-    //     //return HTTRANSPARENT; // everything else: click-through
-    //     return 0;
-    // }
-    case WM_SIZE:
-        int width  = LOWORD(lParam);
-        int height = HIWORD(lParam);
-
-        Sol_GetState()->windowWidth  = width;
-        Sol_GetState()->windowHeight = height;
-        Sol_GetState()->needsResize  = true;
-        return 0;
     case WM_PAINT:
         ValidateRect(hwnd, NULL);
         return 0;
@@ -262,10 +244,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         RECT rect;
         if (GetWindowRect(hwnd, &rect))
         {
-            Sol_GetState()->windowX      = rect.left;
-            Sol_GetState()->windowY      = rect.top;
-            Sol_GetState()->windowWidth  = rect.right - rect.left;
-            Sol_GetState()->windowHeight = rect.bottom - rect.top;
+            Sol_Window_OnGeometryChanged(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
         }
         return 0;
     case WM_LBUTTONDOWN:
@@ -363,9 +342,5 @@ void W_Set_Fullscreen(int flags, void *data)
     u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
     u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
 
-    // ChangeDisplaySettings(0, CDS_FULLSCREEN);
     SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
-    Sol_GetState()->windowWidth  = width;
-    Sol_GetState()->windowHeight = height;
-    Sol_GetState()->needsResize  = true;
 }

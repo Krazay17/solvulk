@@ -55,7 +55,7 @@ bool Pistol_State_CanExit(World *world, int id, u32 next)
 {
     return next != ABILITY_STATE_PISTOL;
 }
-bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next)
+bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
     return true;
 }

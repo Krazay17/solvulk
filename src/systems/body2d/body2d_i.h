@@ -21,6 +21,6 @@ static inline vec2s ApplyFriction2(vec2s wishdir, vec2s prevvel, float friction,
     return vel;
 }
 
-void Grab(vec2s *vel, vec2s pos, vec2s dims);
+void Grab(vec2s *vel, vec2s pos, CompBody2d *body, CompInteract *interact, float fdt);
 void CollideScreenEdge(vec2s *vel, vec2s *pos, vec2s dims);
 bool IsOverlappingRect(World *world, int idA, int idB);

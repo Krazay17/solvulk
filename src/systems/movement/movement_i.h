@@ -55,6 +55,7 @@ void  CrouchHeight(World *world, int id, float fdt);
 vec3s GroundSlope(World *world, int id);
 vec3s ProjectOntoGround(World *world, int id, vec3s wishdir);
 void  Knockback(World *world, int id, float fdt);
+void RestoreFriction(World *world, int id, CompMovement *move, float fdt);
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt);
 void Sol_Movement_Idle_Enter(World *world, int id);

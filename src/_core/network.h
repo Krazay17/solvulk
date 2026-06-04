@@ -34,6 +34,7 @@ typedef struct
     u32   actionMask, currentTick;
     vec3s lookdir, wishdir, aimdir;
     float yaw;
+    u32   abilities[10];
 } NetInputPacket;
 
 typedef struct

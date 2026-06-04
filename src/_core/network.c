@@ -187,7 +187,7 @@ void Net_Poll()
         switch (event.type)
         {
         case ENET_EVENT_TYPE_CONNECT: {
-            // printf("[Net] Connection from %x:%u\n", event.peer->address.host, event.peer->address.port);
+            printf("[Net] Connection from %x:%u\n", event.peer->address.host, event.peer->address.port);
 
             if (solNet.role == NETROLE_HOST)
             {
@@ -316,6 +316,19 @@ void Net_Recv_Packet(ENetEvent *event)
     }
     break;
 
+    // Client recieves welcome from host
+    case NET_PACKET_WELCOME: {
+        if (solNet.role != NETROLE_CLIENT)
+            return;
+
+        NetWelcomePacket *welcomePacket = (NetWelcomePacket *)data;
+        Sol_GetWorldById(welcomePacket->worldId)->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
+        Sol_GetState()->stepCounter = welcomePacket->currentTick;
+
+        solNet.status = NETSTATUS_CONNECTED;
+    }
+    break;
+
     case NET_PACKET_HEARTBEAT:
         solNet.players[(int)(intptr_t)event->peer->data].lastPing = Sol_GetGameTime();
         break;
@@ -335,6 +348,8 @@ void Net_Recv_Packet(ENetEvent *event)
         c->aimdir                   = inputPacket->aimdir;
         c->yaw                      = inputPacket->yaw;
         c->isStrafing               = inputPacket->isStrafing;
+        
+        memcpy(&world->abilities[id].bindings->targetState, inputPacket->abilities, sizeof(u32) * 10);
     }
     break;
     // Host recieves Event from Client
@@ -366,21 +381,9 @@ void Net_Recv_Packet(ENetEvent *event)
         Net_Apply_Events(world, &fullSnap);
     }
     break;
-    // Client recieves welcome from host
-    case NET_PACKET_WELCOME: {
-        if (solNet.role != NETROLE_CLIENT)
-            return;
-
-        NetWelcomePacket *welcomePacket = (NetWelcomePacket *)data;
-        Sol_GetWorldById(welcomePacket->worldId)->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
-        Sol_GetState()->stepCounter = welcomePacket->currentTick;
-
-        solNet.status = NETSTATUS_CONNECTED;
-    }
-    break;
     // Client recieves world snapshot from host
     case NET_PACKET_SNAPSHOT: {
-        if (solNet.role != NETROLE_CLIENT || solNet.status != NETSTATUS_CONNECTED)
+        if (!Net_IsClient())
             return;
 
         if (event->packet->dataLength < offsetof(WorldSnap, entities))

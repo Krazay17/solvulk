@@ -29,11 +29,14 @@ void Knockback(World *world, int id, float fdt)
         move->knockDur -= fdt;
         Sol_Physx_LerpVel(world, id, move->knockVel, 0.5f);
     }
+}
+
+void RestoreFriction(World *world, int id, CompMovement *move, float fdt)
+{
     if (move->frictionMod != 1.0f)
     {
-        float newFriction = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f *fdt);
+        move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f *fdt);
     }
-
 }
 
 vec3s GroundSlope(World *world, int id)

@@ -269,6 +269,7 @@ void Net_Send_Input(World *world)
     input.yaw         = controller->yaw;
     input.isStrafing  = controller->isStrafing;
     input.currentTick = world->currentTick;
+    memcpy(input.abilities, &world->abilities[1].bindings->targetState, sizeof(u32) * 10);
 
     ENetPacket *packet = enet_packet_create(&input, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
     enet_peer_send(solNet.peer, 0, packet);

@@ -26,12 +26,18 @@ typedef struct SolState
     double        gameTime, timescale, fps;
     bool          debug;
     u32           tickCounter, stepCounter;
+    double        uiScale, aspectRatio;
 
     u32    activeWorldId;
     World *activeWorld;
+    World *hudWorld;
     World *worlds[MAX_WORLDS];
     u16    worldCount;
 } SolState;
 
-void Sol_State_SetTimescale(float timescale);
+extern SolState solState;
+#define UIUNSCALE(v) ((v) / solState.uiScale)
+
+void   Sol_State_SetTimescale(float timescale);
 World *Sol_State_GetActiveWorld(void);
+void   Sol_Window_OnGeometryChanged(int x, int y, int width, int height);

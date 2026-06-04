@@ -164,3 +164,7 @@ void Sol_Combat_ClearFlags(World *world, int id, CombatFlags flags)
 {
     world->combats[id].flags = 0;
 }
+void Sol_Combat_ClearHits(World *world, int id)
+{
+    memset(world->combats[id].hitEnts, 0, sizeof(world->combats[id].hitEnts));
+}

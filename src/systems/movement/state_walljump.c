@@ -37,20 +37,6 @@ void Walljump_State_Enter(World *world, int id)
     // if (Sol_Physx_GetVel(world, id).y < 0)
     //     Sol_Physx_SetVelY(world, id, 0);
     Sol_Physx_AddVel(world, id, vecSca(dir, DASH_VEL));
-
-    // vec3s currentVel = Sol_Physx_GetVel(world, id);
-    // // 2. Project current velocity onto the jump direction to see how fast they are already tracking
-    // float currentSpeedInJumpDir = glms_vec3_dot(currentVel, dir);
-
-    // // 3. If they are slower than the burst speed, boost them to it.
-    // //    If they are already flying faster, preserve their speed!
-    // if (currentSpeedInJumpDir < DASH_VEL)
-    // {
-    //     float speedToAdd = DASH_VEL - currentSpeedInJumpDir;
-    //     currentVel       = glms_vec3_add(currentVel, glms_vec3_scale(dir, speedToAdd));
-    // }
-
-    // Sol_Physx_SetVel(world, id, currentVel);
 }
 
 void Walljump_State_Exit(World *world, int id)

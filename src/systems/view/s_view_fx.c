@@ -19,6 +19,11 @@ void Fx_Event(World *world, double dt, double time)
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
         switch (e->as.fx.kind)
         {
+            case FXKIND_SPINHIT:{
+                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 1.0f);
+                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, 1.0f);
+            }
+            break;
         case FXKIND_FIREBALL_SHOOT: {
             Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, e->as.fx.pos, 0.0f);
             // Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,

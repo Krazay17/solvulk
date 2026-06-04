@@ -8,6 +8,7 @@ typedef struct CompInteract
     float         value;
     Callback      onClick;
     Callback      onHold;
+    vec2s         grabOffset;
 } CompInteract;
 
 void Sol_Interact_Init(World *world);

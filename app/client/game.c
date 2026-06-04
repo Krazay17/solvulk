@@ -132,6 +132,7 @@ void Create_Sol_Game()
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
     int abilityBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 630, 70, 0, 0);
+    Sol_Xform_Set(hud, abilityBar, 325, 650, 0);
     Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){1, 0, 1, 1}, 630, 70);
     Sol_Interact_Add(hud, abilityBar);
     for (int i = 0; i < 9; i++)
@@ -145,6 +146,8 @@ void Create_Sol_Game()
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 300}, ABILITY_STATE_PISTOL);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
+    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
+    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});

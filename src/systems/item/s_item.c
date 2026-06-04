@@ -18,7 +18,7 @@ CompItem *Sol_Item_Add(World *world, int id, ItemKind kind)
     return &world->items[id];
 }
 
-void Sol_Item_AddAbility(World *world, int id, AbilityState ability)
+void Sol_Item_AddAbility(World *world, int id, u32 ability)
 {
     CompItem item = {.ability = ability};
     // item.kind        = ITEMKIND_ABILITY_CARD;
@@ -45,19 +45,58 @@ static void AbilitySlots(World *world, double dt, double time)
         if (item->kind != ITEMKIND_ABILITY_SLOT)
             continue;
         CompBody2d *body = &world->body2d[id];
+        vec3s       slotPos  = Sol_Xform_GetPos(world, id);
+        
+        // Find the center of the slot rectangle
+        vec2s slotCenter = {
+            slotPos.x + (body->dims.x * 0.5f),
+            slotPos.y + (body->dims.y * 0.5f)
+        };
 
         int count = 0;
+        int          bestCardId    = -1;
+        AbilityState bestAbility   = 0;
+        float        minDistanceSq = 9999999.0f;
         for (int j = 0; j < body->overlapCount; j++)
         {
             int overlappingId = body->overlapping[j];
             if (world->masks[overlappingId] & HAS_ITEM)
             {
                 count++;
-                CompItem *loot = &world->items[overlappingId];
-                Sol_Ability_SetAbility(Sol_GetState()->activeWorld, 1, item->slot, loot->ability);
+CompItem *cardItem = &world->items[overlappingId];
+            // If you add other item types later, ensure we only track cards here
+            
+            CompBody2d *cardBody = &world->body2d[overlappingId];
+            vec3s       cardPos  = Sol_Xform_GetPos(world, overlappingId);
+            
+            // Find the center of the card rectangle
+            vec2s cardCenter = {
+                cardPos.x + (cardBody->dims.x * 0.5f),
+                cardPos.y + (cardBody->dims.y * 0.5f)
+            };
+
+            // Calculate squared distance (skipping sqrt for performance)
+            float dx = cardCenter.x - slotCenter.x;
+            float dy = cardCenter.y - slotCenter.y;
+            float distSq = (dx * dx) + (dy * dy);
+
+            // The closest card to the absolute center of this slot wins ownership
+            if (distSq < minDistanceSq)
+            {
+                minDistanceSq = distSq;
+                bestCardId    = overlappingId;
+                bestAbility   = cardItem->ability;
+            }
             }
         }
-        if (count == 0)
-            Sol_Ability_SetAbility(Sol_GetState()->activeWorld, 1, item->slot, 0);
+        World *activeWorld = Sol_GetState()->activeWorld;
+        if (bestCardId != -1)
+        {
+            Sol_Ability_SetAbility(activeWorld, 1, item->slot, bestAbility);
+        }
+        else
+        {
+            Sol_Ability_SetAbility(activeWorld, 1, item->slot, 0);
+        }
     }
 }

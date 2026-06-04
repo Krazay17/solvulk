@@ -103,18 +103,21 @@ bool IsOverlappingRect(World *world, int idA, int idB)
     return true;
 }
 
-void Grab(vec2s *vel, vec2s pos, vec2s dims)
+void Grab(vec2s *vel, vec2s pos, CompBody2d *body, CompInteract *interact, float fdt)
 {
-    SolMouse mouse        = Sol_Input_GetMouse();
-    vec2s    mPos         = {mouse.x, mouse.y};
-    float    min          = fminf(dims.x, dims.y);
-    vec2s    center       = (vec2s){pos.x + (dims.x * 0.5f), pos.y + (dims.y * 0.5f)};
-    vec2s    scaledCenter = {UISCALE(center.x), UISCALE(center.y)};
-    float    dist         = glms_vec2_distance(mPos, scaledCenter);
-    if (dist < 0.01f)
-        *vel = GLMS_VEC2_ZERO;
-    else
-        *vel = glms_vec2_scale(glms_vec2_normalize(glms_vec2_sub(mPos, scaledCenter)), dist);
+    SolMouse mouse   = Sol_Input_GetMouse();
+    vec2s    mPos    = {mouse.x, mouse.y};
+    vec2s    grabPos = glms_vec2_add(pos, interact->grabOffset);
+    vec2s scaledPos = {UISCALE(grabPos.x), UISCALE(grabPos.y)};
+    vec2s    toMouse = glms_vec2_sub(Sol_Input_GetMouseUI(), grabPos);
+
+    // Higher = snappier. 25 feels responsive without floatiness; 40+ feels glued.
+    const float stiffness = 80.0f;
+    float       alpha     = 1.0f - expf(-stiffness * fdt);
+
+    // vel is "displacement this frame" (pos += vel later in the step).
+    // toMouse * alpha → cover `alpha` fraction of remaining distance.
+    *vel = glms_vec2_scale(toMouse, alpha);
 }
 
 void CollideScreenEdge(vec2s *vel, vec2s *pos, vec2s dims)

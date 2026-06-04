@@ -42,3 +42,43 @@ typedef struct
 
 //     return true;
 // }
+
+// #include "sol_core.h"
+
+// #include "ability_i.h"
+
+// #define COOLDOWN 2.0f
+// #define DURATION 1.0f
+
+// void Spinslash_State_Update(World *world, int id, float dt)
+// {
+//     CompAbility *ability = &world->abilities[id];
+//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+//     data->elapsed += dt;
+    
+// }
+
+// void Spinslash_State_Enter(World *world, int id)
+// {
+//     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true});
+// }
+
+// void Spinslash_State_Exit(World *world, int id)
+// {
+//     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
+// }
+
+// bool Spinslash_State_CanExit(World *world, int id, u32 next)
+// {
+//     CompAbility *ability = &world->abilities[id];
+//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+
+//     return data->elapsed > DURATION;
+// }
+
+// bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+// {
+//     CompAbility *ability = &world->abilities[id];
+//     AbilityData *data    = &ability->stateData[slot];
+//     return !(data->lastExited + COOLDOWN > Sol_GetGameTime());
+// }

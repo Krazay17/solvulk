@@ -42,7 +42,7 @@ static void Step(World *world, double dt, double time)
         // Accumulate velocity
         body->vel = ApplyFriction2((vec2s){0, 0}, body->vel, 1.0f, fdt);
         if (world->masks[id] & HAS_INTERACT && world->interacts[id].state & INTERACT_MOVING)
-            Grab(&body->vel, (vec2s){xform->pos.x, xform->pos.y}, body->dims);
+            Grab(&body->vel, (vec2s){xform->pos.x, xform->pos.y}, body, &world->interacts[id], fdt);
         body->vel = glms_vec2_add(body->vel, glms_vec2_scale(body->grav, fdt));
 
         // Apply velocity

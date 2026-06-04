@@ -52,5 +52,13 @@ const StateFunc ability_state_func[] = {
             Pistol_State_CanExit,
             Pistol_State_CanEnter,
         },
+    [ABILITY_STATE_SPINSLASH] =
+        {
+            Spinslash_State_Update,
+            Spinslash_State_Enter,
+            Spinslash_State_Exit,
+            Spinslash_State_CanExit,
+            Spinslash_State_CanEnter,
+        },
     [ABILITY_STATE_FIREBALLVOLLEY] = SCRIPT_STATE_FUNCS,
 };

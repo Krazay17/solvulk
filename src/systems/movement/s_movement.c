@@ -87,6 +87,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
 
         CrouchHeight(world, id, fdt);
         Knockback(world, id, fdt);
+        RestoreFriction(world, id, movement, fdt);
     }
     if (world->playerID > 0)
     {

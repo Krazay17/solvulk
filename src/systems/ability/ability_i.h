@@ -7,6 +7,7 @@
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);
+void Ability_BoostToDir(World *world, int id, vec3s dir, float speed);
 
 void Script_State_Update(World *world, int id, float dt);
 void Script_State_Enter(World *world, int id);
@@ -49,3 +50,9 @@ void Pistol_State_Enter(World *world, int id);
 void Pistol_State_Exit(World *world, int id);
 bool Pistol_State_CanExit(World *world, int id, u32 next);
 bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot);
+
+void Spinslash_State_Update(World *world, int id, float dt);
+void Spinslash_State_Enter(World *world, int id);
+void Spinslash_State_Exit(World *world, int id);
+bool Spinslash_State_CanExit(World *world, int id, u32 next);
+bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot);

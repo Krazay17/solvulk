@@ -146,9 +146,9 @@ SolMouse Sol_Input_GetMouse()
     m.x        = mouseX;
     m.y        = mouseY;
 
-    m.dx       = mouseDeltaX;
-    m.dy       = mouseDeltaY;
-    m.wheelV   = mouseWheelDelta;
+    m.dx     = mouseDeltaX;
+    m.dy     = mouseDeltaY;
+    m.wheelV = mouseWheelDelta;
     for (int i = 0; i < SOL_MOUSE_COUNT; i++)
     {
         m.buttons[i]        = mouseButtons[i];
@@ -191,4 +191,10 @@ void Sol_Input_Clear()
     memset(&rawMouseButtons, 0, sizeof(rawMouseButtons));
     memset(&keys, 0, sizeof(keys));
     memset(&mouseButtons, 0, sizeof(mouseButtons));
+}
+
+vec2s Sol_Input_GetMouseUI(void)
+{
+    SolMouse m = Sol_Input_GetMouse();
+    return (vec2s){UIUNSCALE(m.x), UIUNSCALE(m.y)};
 }

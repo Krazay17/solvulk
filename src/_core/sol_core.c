@@ -85,6 +85,31 @@ static void Sol_OnResize()
     }
 }
 
+// In sol_core.c — single source of truth for window geometry.
+void Sol_Window_OnGeometryChanged(int x, int y, int width, int height)
+{
+    if (width <= 0 || height <= 0) return;  // ignore degenerate (minimize)
+    
+    // Position (cheap, always update)
+    solState.windowX = x;
+    solState.windowY = y;
+    
+    // Size + derived values (skip if unchanged)
+    if (width == solState.windowWidth && height == solState.windowHeight) return;
+    
+    solState.windowWidth  = width;
+    solState.windowHeight = height;
+    solState.aspectRatio  = (float)width / (float)height;
+    
+    // UI scale: fit logical (WINDOW_WIDTH × WINDOW_HEIGHT) inside actual window,
+    // preserving aspect. min() = letterbox; max() = crop. Use min() for UI.
+    float sx = (float)width  / WINDOW_WIDTH;
+    float sy = (float)height / WINDOW_HEIGHT;
+    solState.uiScale = fminf(sx, sy);
+    
+    solState.needsResize = true;   // game thread picks this up in Sol_OnResize
+}
+
 void Sol_State_SetTimescale(float timescale)
 {
     solState.timescale = timescale;

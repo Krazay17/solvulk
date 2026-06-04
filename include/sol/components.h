@@ -58,7 +58,7 @@ typedef enum
 typedef struct CompBody2d
 {
     Body2dKind kind;
-    vec2s      vel, dims, grav;
+    vec2s      vel, dims, grav, grabPos;
     u32        overlapping[4];
     u32        overlapCount;
     u32        group, mask;
@@ -125,11 +125,11 @@ typedef enum
 typedef struct CompItem
 {
     ItemKind     kind;
-    AbilityState ability;
+    u32 ability;
     u32          slot;
 } CompItem;
 
 void Sol_Item_Init(World *world);
 CompItem *Sol_Item_Add(World *world, int id, ItemKind kind);
-void Sol_Item_AddAbility(World *world, int id, AbilityState ability);
+void Sol_Item_AddAbility(World *world, int id, u32 ability);
 void Sol_Item_AddAbilitySlot(World *world, int id, int slot);

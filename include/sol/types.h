@@ -261,3 +261,12 @@ typedef enum
     ABILITY_STATE_FIREBALLVOLLEY,
     ABILITY_STATE_COUNT,
 } AbilityState;
+
+typedef enum
+{
+    UILAYER_0,
+    UILAYER_1,
+    UILAYER_2,
+    UILAYER_3,
+    UILAYER_COUNT,
+} UiLayer;

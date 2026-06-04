@@ -23,13 +23,14 @@ void Sol_Projectile_Init(World *world)
     WAddStep(world)    = Projectile_Step;
 }
 
-void Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power)
+CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power)
 {
     CompProjectile projectile = projectile_kinds[kind];
     projectile.power          = power;
 
     world->projectiles[id] = projectile;
     world->masks[id] |= HAS_PROJECTILE;
+    return &world->projectiles[id];
 }
 
 static void Projectile_Step(World *world, double dt, double time)

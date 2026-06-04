@@ -20,7 +20,7 @@ void Sol_Interact_Init(World *world)
 void Sol_Interact_Add(World *world, int id)
 {
     CompInteract interact = {0};
-    world->interacts[id] = interact;
+    world->interacts[id]  = interact;
     world->masks[id] |= HAS_INTERACT;
 }
 
@@ -48,6 +48,8 @@ void System_Interact_Tick(World *world, double dt, double time)
 
         Sol_Debug_Add("SelectedEnt", rayId);
     }
+    int topId = 0;
+    int topZ  = INT_MIN;
 
     int required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)
@@ -55,14 +57,6 @@ void System_Interact_Tick(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-
-        CompInteract *interact   = &world->interacts[id];
-        bool          wasPressed = interact->state & INTERACT_PRESSED;
-        interact->state &= ~INTERACT_PRESSED;
-        interact->state &= ~INTERACT_CLICKED;
-        interact->state &= ~INTERACT_HOVERED;
-        if (id != movingId)
-            interact->state &= ~INTERACT_MOVING;
         bool collision = false;
 
         if (world->masks[id] & HAS_BODY3)
@@ -80,38 +74,72 @@ void System_Interact_Tick(World *world, double dt, double time)
                                                                   UISCALE(Sol_Body2d_GetDims(world, id).y),
                                                               });
         }
-
         if (collision)
         {
-            interact->state |= INTERACT_HOVERED;
-
-            if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingId)
+            int z = 0;
+            if (world->masks[id] & HAS_VIEW2D)
+                z = world->view2d[id].zindex;
+            if (z > topZ)
             {
-                interact->state |= INTERACT_MOVING;
-                movingId = id;
-            }
-
-            if (mouse.buttons[SOL_MOUSE_LEFT])
-            {
-                interact->state |= INTERACT_PRESSED;
-
-                if (interact->onHold.callbackFunc)
-                    interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
-            }
-            else if (wasPressed)
-            {
-                interact->state |= INTERACT_CLICKED;
-                interact->state &= ~INTERACT_PRESSED;
-                if (interact->state & INTERACT_TOGGLEABLE)
-                    interact->state ^= INTERACT_TOGGLED;
-
-                if (interact->onClick.callbackFunc)
-                    interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
+                topZ  = z;
+                topId = id;
             }
         }
-        else
+    }
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompInteract *interact   = &world->interacts[id];
+        bool          wasPressed = interact->state & INTERACT_PRESSED;
+        interact->state &= ~INTERACT_PRESSED;
+        interact->state &= ~INTERACT_CLICKED;
+        interact->state &= ~INTERACT_HOVERED;
+        if (id != movingId)
         {
+            interact->state &= ~INTERACT_MOVING;
+            if (world->masks[id] & HAS_PARENT)
+            {
+                CompBody2d *body = &world->body2d[id];
+                if (body->overlapCount)
+                {
+                    Sol_Parent_SetActive(world, id, true);
+                    Sol_Parent_SetWithOffset(world, id, body->overlapping[0]);
+                }
+            }
+        }
+
+        if (id != topId)
+            continue;
+
+        interact->state |= INTERACT_HOVERED;
+        if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingId)
+        {
+            interact->state |= INTERACT_MOVING;
+            movingId = id;
+            if (world->masks[id] & HAS_PARENT)
+                Sol_Parent_SetActive(world, id, false);
+        }
+
+        if (mouse.buttons[SOL_MOUSE_LEFT])
+        {
+            interact->state |= INTERACT_PRESSED;
+
+            if (interact->onHold.callbackFunc)
+                interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
+        }
+        else if (wasPressed)
+        {
+            interact->state |= INTERACT_CLICKED;
             interact->state &= ~INTERACT_PRESSED;
+            if (interact->state & INTERACT_TOGGLEABLE)
+                interact->state ^= INTERACT_TOGGLED;
+
+            if (interact->onClick.callbackFunc)
+                interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
         }
     }
 }

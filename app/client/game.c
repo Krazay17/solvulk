@@ -130,14 +130,21 @@ void Create_Sol_Game()
 
     World *hud = World_Create_Default(WORLDKIND_MENU);
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
-    Sol_Prefab_AbilitySlot(hud, (vec3s){200, 700}, 0);
-    Sol_Prefab_AbilitySlot(hud, (vec3s){300, 700}, 1);
-    Sol_Prefab_AbilitySlot(hud, (vec3s){400, 700}, 2);
-    Sol_Prefab_AbilitySlot(hud, (vec3s){500, 700}, 3);
+    int abilityBar = Sol_Create_Ent(hud, 0);
+    Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 630, 70, 0, 0);
+    Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){1, 0, 1, 1}, 630, 70);
+    Sol_Interact_Add(hud, abilityBar);
+    for (int i = 0; i < 9; i++)
+    {
+        int   abilitySlot = Sol_Prefab_AbilitySlot(hud, (vec3s){1.0f, 1.0f, 1.0f}, i);
+        vec2s dims        = Sol_View2d_Get(hud, abilitySlot)->dims;
+        Sol_Parent_Set(hud, abilitySlot,
+                       (CompParent){.active = true, .parentId = abilityBar, .localOffset = {dims.x * i}});
+    }
+
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 300}, ABILITY_STATE_PISTOL);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
-
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});

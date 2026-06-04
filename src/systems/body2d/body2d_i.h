@@ -6,7 +6,7 @@ typedef struct CompBody2d CompBody2d;
 typedef void (*Resolver)(World *world, vec2s *posA, CompBody2d *bodyA, vec2s *posB, CompBody2d *bodyB);
 void ResolveRect(World *world, vec2s *posA, CompBody2d *bodyA, vec2s *posB, CompBody2d *bodyB);
 
-Resolver resolver_kinds[BODY2DKIND_COUNT];
+extern Resolver resolver_kinds[BODY2DKIND_COUNT];
 
 static inline vec2s ApplyFriction2(vec2s wishdir, vec2s prevvel, float friction, float dt)
 {

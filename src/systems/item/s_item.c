@@ -10,11 +10,12 @@ void Sol_Item_Init(World *world)
     WAddStep(world) = AbilitySlots;
 }
 
-void Sol_Item_Add(World *world, int id, ItemKind kind)
+CompItem *Sol_Item_Add(World *world, int id, ItemKind kind)
 {
     CompItem item    = {.kind = kind};
     world->items[id] = item;
     world->masks[id] |= HAS_ITEM;
+    return &world->items[id];
 }
 
 void Sol_Item_AddAbility(World *world, int id, AbilityState ability)

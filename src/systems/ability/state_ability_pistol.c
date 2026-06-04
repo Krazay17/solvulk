@@ -2,10 +2,6 @@
 
 #include "ability_i.h"
 
-static bool LeaveState(World *world, int id)
-{
-}
-
 void Pistol_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];

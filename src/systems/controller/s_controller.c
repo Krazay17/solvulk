@@ -103,13 +103,13 @@ static void LocalTick(World *world, int id, double dt, double time)
     {
         if (mouse.buttons[SOL_MOUSE_LEFT])
             controller->actionState |= ACTION_ABILITY1;
-        else
-            controller->actionState &= ~ACTION_ABILITY1;
+        // else
+        //     controller->actionState &= ~ACTION_ABILITY1;
 
         if (mouse.buttons[SOL_MOUSE_RIGHT])
             controller->actionState |= ACTION_ABILITY2;
-        else
-            controller->actionState &= ~ACTION_ABILITY2;
+        // else
+        //     controller->actionState &= ~ACTION_ABILITY2;
     }
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_FWD;

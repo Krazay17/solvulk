@@ -10,15 +10,19 @@ void Sol_Body2d_Init(World *world)
     WAddStep(world) = Step;
 }
 
-void Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height)
+CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask)
 {
     CompBody2d body = {
         .kind   = kind,
         .dims.x = width,
         .dims.y = height,
+        .group  = group,
+        .mask   = mask,
     };
     world->body2d[id] = body;
     world->masks[id] |= HAS_BODY2;
+
+    return &world->body2d[id];
 }
 
 static void Step(World *world, double dt, double time)
@@ -51,6 +55,8 @@ static void Step(World *world, double dt, double time)
         int idA = world->activeEntities[i];
         if ((world->masks[idA] & required) != required)
             continue;
+        CompBody2d *bodyA  = &world->body2d[idA];
+        CompXform  *xformA = &world->xforms[idA];
 
         for (int j = i + 1; j < world->activeCount; j++)
         {
@@ -58,19 +64,17 @@ static void Step(World *world, double dt, double time)
             if ((world->masks[idB] & required) != required)
                 continue;
 
-            CompBody2d *bodyA = &world->body2d[idA];
-            CompBody2d *bodyB = &world->body2d[idB];
-            if (bodyA->kind == BODY2DKIND_RECT_NOCOLLIDE)
+            CompBody2d *bodyB       = &world->body2d[idB];
+            bool        layersMatch = (bodyA->mask & bodyB->group) && (bodyB->mask & bodyA->group);
+            if (!layersMatch)
                 continue;
-            if (bodyB->kind == BODY2DKIND_RECT_NOCOLLIDE)
-                continue;
-            CompXform *xformA = &world->xforms[idA];
             CompXform *xformB = &world->xforms[idB];
 
             vec2s posA = {xformA->pos.x, xformA->pos.y};
             vec2s posB = {xformB->pos.x, xformB->pos.y};
 
-            resolver_kinds[bodyA->kind](world, &posA, bodyA, &posB, bodyB);
+            if (resolver_kinds[bodyA->kind])
+                resolver_kinds[bodyA->kind](world, &posA, bodyA, &posB, bodyB);
 
             xformA->pos = (vec3s){posA.x, posA.y, 0};
             xformB->pos = (vec3s){posB.x, posB.y, 0};
@@ -81,7 +85,6 @@ static void Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-
         CompBody2d *body  = &world->body2d[id];
         CompXform  *xform = &world->xforms[id];
         vec2s       pos   = {xform->pos.x, xform->pos.y};
@@ -103,7 +106,7 @@ static void Step(World *world, double dt, double time)
                 continue;
             if ((world->masks[idB] & required) != required)
                 continue;
-            if (IsOverlappingRect(world, id, idB))
+            if (IsOverlappingRect(world, id, idB) && count < 4)
                 bodyA->overlapping[count++] = idB;
         }
         bodyA->overlapCount = count;
@@ -113,4 +116,10 @@ static void Step(World *world, double dt, double time)
 vec2s Sol_Body2d_GetDims(World *world, int id)
 {
     return world->body2d[id].dims;
+}
+
+void Sol_Body2d_SetOverlap(World *world, int id, u32 group, u32 mask)
+{
+    world->body2d[id].overlapGroup = group;
+    world->body2d[id].overlapMask  = mask;
 }

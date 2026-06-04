@@ -23,7 +23,7 @@ void Sol_View2d_Init(World *world)
     WAddStep(world) = Step;
 }
 
-void Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
+CompView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
 {
     CompView2d view = {
         .kind       = kind,
@@ -36,13 +36,15 @@ void Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float wi
     };
     world->view2d[id] = view;
     world->masks[id] |= HAS_VIEW2D;
+
+    return &world->view2d[id];
 }
 
 void Sol_View2d_Set(World *world, int id, CompView2d view)
 {
-    world->view2d[id] = view;
-    world->view2d[id].fill = 1.0f;
-    world->view2d[id].targetFill =1.0f;
+    world->view2d[id]            = view;
+    world->view2d[id].fill       = 1.0f;
+    world->view2d[id].targetFill = 1.0f;
     world->masks[id] |= HAS_VIEW2D;
 }
 
@@ -76,17 +78,19 @@ static void Step(World *world, double dt, double time)
 static void Draw(World *world, double dt, double time)
 {
     int required = HAS_VIEW2D;
-
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
-            continue;
-        CompView2d *view = &world->view2d[id];
-        vec3s       pos;
-        pos = Sol_Xform_GetDrawXform(world, id).pos;
-        draw_funcs[view->kind](world, id, dt, time, view, pos);
-    }
+    for (int layer = 0; layer < UILAYER_COUNT; layer++)
+        for (int i = 0; i < world->activeCount; i++)
+        {
+            int id = world->activeEntities[i];
+            if ((world->masks[id] & required) != required)
+                continue;
+            CompView2d *view = &world->view2d[id];
+            if (view->zindex != layer)
+                continue;
+            vec3s pos;
+            pos = Sol_Xform_GetDrawXform(world, id).pos;
+            draw_funcs[view->kind](world, id, dt, time, view, pos);
+        }
 }
 
 static void DrawRect(World *world, int id, double dt, double time, CompView2d *view, vec3s pos)

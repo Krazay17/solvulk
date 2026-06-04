@@ -53,7 +53,6 @@ void Sol_Shape_ColorAll(World *world, vec4s color);
 typedef enum
 {
     BODY2DKIND_RECT,
-    BODY2DKIND_RECT_NOCOLLIDE,
     BODY2DKIND_COUNT,
 } Body2dKind;
 typedef struct CompBody2d
@@ -62,10 +61,13 @@ typedef struct CompBody2d
     vec2s      vel, dims, grav;
     u32        overlapping[4];
     u32        overlapCount;
+    u32        group, mask;
+    u32        overlapGroup, overlapMask;
 } CompBody2d;
-void  Sol_Body2d_Init(World *world);
-void  Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height);
-vec2s Sol_Body2d_GetDims(World *world, int id);
+void        Sol_Body2d_Init(World *world);
+CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask);
+vec2s       Sol_Body2d_GetDims(World *world, int id);
+void        Sol_Body2d_SetOverlap(World *world, int id, u32 group, u32 mask);
 
 typedef enum
 {
@@ -87,11 +89,11 @@ typedef struct CompView2d
     u32        zindex;
     char       text[64];
 } CompView2d;
-void Sol_View2d_Init(World *world);
-void Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
-void Sol_View2d_Set(World *world, int id, CompView2d view);
-void Sol_View2d_SetText(World *world, int id, const char *text);
+void        Sol_View2d_Init(World *world);
+CompView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
 CompView2d *Sol_View2d_Get(World *world, int id);
+void        Sol_View2d_Set(World *world, int id, CompView2d view);
+void        Sol_View2d_SetText(World *world, int id, const char *text);
 
 typedef enum
 {
@@ -108,8 +110,8 @@ typedef struct CompProjectile
     HitKind        directHitKind;
     HitKind        explosionHitKind;
 } CompProjectile;
-void Sol_Projectile_Init(World *world);
-void Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
+void            Sol_Projectile_Init(World *world);
+CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
 
 typedef enum
 {
@@ -128,6 +130,6 @@ typedef struct CompItem
 } CompItem;
 
 void Sol_Item_Init(World *world);
-void Sol_Item_Add(World *world, int id, ItemKind kind);
+CompItem *Sol_Item_Add(World *world, int id, ItemKind kind);
 void Sol_Item_AddAbility(World *world, int id, AbilityState ability);
 void Sol_Item_AddAbilitySlot(World *world, int id, int slot);

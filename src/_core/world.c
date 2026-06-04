@@ -74,10 +74,10 @@ World *World_Create_Default(WorldKind kind)
         case WORLDKIND_MENU:
             World_System_Add(world, WORLD_SYS_EVENT);
             World_System_Add(world, WORLD_SYS_XFORM);
-            World_System_Add(world, WORLD_SYS_INTERACT);
             World_System_Add(world, WORLD_SYS_BODY2);
-            World_System_Add(world, WORLD_SYS_ITEM);
             World_System_Add(world, WORLD_SYS_PARENT);
+            World_System_Add(world, WORLD_SYS_INTERACT);
+            World_System_Add(world, WORLD_SYS_ITEM);
             World_System_Add(world, WORLD_SYS_VIEW2D);
             World_System_Add(world, WORLD_SYS_VIEW);
             break;
@@ -160,15 +160,15 @@ int Sol_Create_Ent(World *world, u32 id)
     world->masks[id]                            = HAS_ACTIVE;
     world->activeEntities[world->activeCount++] = id;
     world->xforms[id]                           = (CompXform){
-        .pos       = {0, 0, 0},
-        .lastPos   = {0, 0, 0},
-        .drawPos   = {0, 0, 0},
-        .quat      = (versors){{0, 0, 0, 1}},
-        .lastQuat  = (versors){{0, 0, 0, 1}},
-        .drawQuat  = (versors){{0, 0, 0, 1}},
-        .scale     = {1, 1, 1},
-        .lastScale = {1, 1, 1},
-        .drawScale = {1, 1, 1},
+        .pos       = {0.0f, 0.0f, 0.0f},
+        .lastPos   = {0.0f, 0.0f, 0.0f},
+        .drawPos   = {0.0f, 0.0f, 0.0f},
+        .quat      = (versors){{0.0f, 0.0f, 0.0f, 1.0f}},
+        .lastQuat  = (versors){{0.0f, 0.0f, 0.0f, 1.0f}},
+        .drawQuat  = (versors){{0.0f, 0.0f, 0.0f, 1.0f}},
+        .scale     = {1.0f, 1.0f, 1.0f},
+        .lastScale = {1.0f, 1.0f, 1.0f},
+        .drawScale = {1.0f, 1.0f, 1.0f},
     };
     Sol_Debug_Add("Entities", (float)world->activeCount);
     return id;

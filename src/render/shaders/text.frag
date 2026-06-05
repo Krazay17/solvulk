@@ -4,7 +4,7 @@ layout(location = 1) in vec4 fragColor;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 1, binding = 0) uniform sampler2D textures[64];
+layout(set = 1, binding = 0) uniform sampler2D textures[1];
 
 float median(float r, float g, float b) {
     return max(min(r,g), min(max(r,g),b));

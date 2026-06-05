@@ -50,4 +50,3 @@ void  Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float see
 vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name);
 float Sol_Model_GetOffsetY(World *world, int id);
 void  Sol_Model_SetOffsetY(World *world, int id, float offset);
-

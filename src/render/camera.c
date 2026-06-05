@@ -43,16 +43,15 @@ void Sol_Cam_Update(double dt)
         if (targetDist < 0)
             targetDist = 0;
         sol_camera.currentDistance = Sol_Math_Lerp(sol_camera.currentDistance, targetDist, factor);
-
-        sol_camera.pos    = glms_vec3_add(sol_camera.anchor, glms_vec3_scale(invDir, sol_camera.currentDistance));
     }
+
+    sol_camera.pos    = glms_vec3_add(sol_camera.anchor, glms_vec3_scale(invDir, sol_camera.currentDistance));
 
     float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
     if (Sol_Input_GetMouse().wheelV)
         sol_camera.distance -= changeDist;
 
     sol_camera.target = vecAdd(sol_camera.pos, look->lookdir);
-
     sol_camera.dir = glms_vec3_normalize(glms_vec3_sub(sol_camera.target, sol_camera.pos));
 
     // === Wallrun tilt ===

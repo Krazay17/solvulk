@@ -20,6 +20,8 @@ typedef enum
     DESC_MODEL_SSBO,
     DESC_SKINNING_SSBO,
     DESC_QUAD_SSBO,
+    DESC_FONT_SSBO,
+    DESC_RECT_SSBO,
     DESC_SPHERE_SSBO,
     DESC_IMAGES,
     DESC_COUNT,
@@ -46,6 +48,8 @@ int Sol_UploadModel(SolModel *model, SolModelId id);
 void Flush_Models(void);
 void Flush_Quads(void);
 void Flush_Spheres(void);
+void Flush_Rects(void);
+void Flush_Fonts2d(void);
 
 void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);

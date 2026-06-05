@@ -95,7 +95,7 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, u32 slot
     ability->activeSlot                  = slot;
     ability->stateData[slot].elapsed     = 0;
     ability->stateData[slot].accum       = 0;
-    ability->stateData[slot].lastEntered = (float)Sol_GetGameTime();
+    ability->stateData[slot].lastEntered = Sol_GetGameTime();
     nextfunc->enter(world, id);
     return true;
 }

@@ -73,6 +73,16 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_ORTHO_UBO, DESC_IMAGES},
             .descCount         = 2,
         },
+    [PIPE_RECTI] =
+        {
+            .vertResource      = "ID_SHADER_RECTI_V",
+            .fragResource      = "ID_SHADER_RECTI_F",
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_ORTHO_UBO, DESC_RECT_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
     [PIPE_TEXT_3D] =
         {
             .vertResource      = "ID_SHADER_QUAD_V",
@@ -83,6 +93,16 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
+    [PIPE_TEXT_2D] =
+        {
+            .vertResource      = "ID_SHADER_FONT2D_V",
+            .fragResource      = "ID_SHADER_FONT_F",
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_ORTHO_UBO, DESC_FONT_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
     [PIPE_RECT] =
@@ -125,18 +145,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         {
             .vertResource      = "ID_SHADER_SPHERE_V",
             .fragResource      = "ID_SHADER_FIREBALL_F",
-            .depthTest         = 1,
-            .depthWrite        = 1,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 3,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        },
-    [PIPE_FIREBALL1] =
-        {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_FIREBALL1_F",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -257,10 +265,24 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_QUAD_SSBO]     = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES * 2,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_FONT_SSBO]     = {.kind       = DESC_KIND_BUFFER,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                            .as.buffer =
+                                {
+                                    .size = sizeof(FontSSBO) * MAX_FONT_INSTANCES,
+                                    .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                }},
+    [DESC_RECT_SSBO]     = {.kind       = DESC_KIND_BUFFER,
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
+                                    .size = sizeof(RectSSBO) * MAX_RECT_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_IMAGES]        = {.kind       = DESC_KIND_IMAGES,
@@ -397,7 +419,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
 // SSBO REFACTOR
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height)
 {
-    mat4s ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, -1.0f, 1.0f);
+    mat4s ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, 1.0f, -1.0f);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -1090,7 +1112,7 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id)
     const void *pixels = image->pixels;
     u32         width  = image->width;
     u32         height = image->height;
-    int         format = 37;
+    int         format = id == 0 ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
 
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;

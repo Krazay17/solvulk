@@ -118,7 +118,7 @@ vec2s Sol_Body2d_GetDims(World *world, int id)
     return world->body2d[id].dims;
 }
 
-void Sol_Body2d_SetOverlap(World *world, int id, u32 group, u32 mask)
+void Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask)
 {
     world->body2d[id].overlapGroup = group;
     world->body2d[id].overlapMask  = mask;

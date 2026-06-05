@@ -96,6 +96,20 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
     }
 }
 
+void Sol_Movement_ForceState(World *world, int id, MoveState nextState)
+{
+    CompMovement    *movement = &world->movements[id];
+    const StateFunc *prevfunc = &MOVE_STATE_FUNCS[movement->state];
+    const StateFunc *nextfunc = &MOVE_STATE_FUNCS[nextState];
+    prevfunc->exit(world, id);
+    movement->stateData[movement->state].lastExited  = Sol_GetGameTime();
+    movement->state                                  = nextState;
+    movement->stateData[movement->state].lastEntered = Sol_GetGameTime();
+    movement->stateData[movement->state].elapsed     = 0.0f;
+    nextfunc->enter(world, id);
+    Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[movement->kind][movement->state].gravity, 0});
+}
+
 bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
 {
     CompMovement    *movement = &world->movements[id];

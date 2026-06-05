@@ -295,3 +295,46 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         cursorX += g->yadvance * desc.size;
     }
 }
+
+void Sol_Render_DrawText2D(SolFontDesc desc)
+{
+    if (!desc.str || desc.str[0] == '\0') return;
+    if (desc.size <= 0.0f) return;
+    
+    SolFont *font = Sol_GetFont(desc.kind);
+    
+    float cursorX  = desc.x;
+    float baseSize = desc.size / 32.0f;
+    float pad      = 0.2f * baseSize * (224.0f / 32.0f);
+    
+    for (const char *c = desc.str; *c; c++)
+    {
+        if (*c == ' ') {
+            cursorX += font->glyph[' '].yadvance * desc.size;
+            continue;
+        }
+        if ((unsigned char)*c >= 128) continue;
+        
+        SolGlyph *g = &font->glyph[(unsigned char)*c];
+        if (g->uw == 0.0f) continue;
+        
+        FontSSBO *ssbo = Sol_Render_GetNext_Font();
+        if (!ssbo) break;
+        
+        ssbo->pos = (vec4s){{
+            cursorX + g->xoffset * desc.size - pad,
+            desc.y - g->ytop * desc.size - pad,
+            g->uw * 224.0f * baseSize + pad * 2.0f,
+            g->vh * 224.0f * baseSize + pad * 2.0f,
+        }};
+        ssbo->color = desc.color;
+        ssbo->uv = (vec4s){{
+            g->u,
+            1.0f - g->v - g->vh,
+            g->uw,
+            g->vh,
+        }};
+        
+        cursorX += g->yadvance * desc.size;
+    }
+}

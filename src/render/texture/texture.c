@@ -21,7 +21,12 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_CLOUDPARTICLE] = "CloudParticle.png",
     [SOL_TEXTURE_BLOODPARTICLE] = "BloodParticle.png",
     [SOL_TEXTURE_REDSKY]        = "RedSky.webp",
+    [SOL_TEXTURE_FIREBALL_CARD] = "Fireball.png",
+    [SOL_TEXTURE_PISTOL_CARD]   = "Pistol.png",
+    [SOL_TEXTURE_BLADE_CARD]    = "Blade.png",
+
 };
+
 SolTexture loaded_images[SOL_TEXTURE_COUNT];
 
 static SolTexture *Parse_Texture(SolResource res, u32 id);

@@ -128,6 +128,8 @@ set(SHADERS
     ${SHADER_DIR}/model.frag
     ${SHADER_DIR}/rect.vert
     ${SHADER_DIR}/rect.frag
+    ${SHADER_DIR}/recti.vert
+    ${SHADER_DIR}/recti.frag
     ${SHADER_DIR}/text.vert
     ${SHADER_DIR}/text.frag
     ${SHADER_DIR}/line.vert
@@ -137,7 +139,9 @@ set(SHADERS
     ${SHADER_DIR}/skybox.vert
     ${SHADER_DIR}/skybox.frag
     ${SHADER_DIR}/fireball.frag
-    ${SHADER_DIR}/fireball1.frag
+    
+    ${SHADER_DIR}/font2d.vert
+    ${SHADER_DIR}/font.frag
 
     ${SHADER_DIR}/quad.vert
     ${SHADER_DIR}/healthbar.frag

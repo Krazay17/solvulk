@@ -40,3 +40,4 @@ typedef struct SolFont
 int      Sol_Fonts_Init();
 SolFont *Sol_GetFont(SolFontKind kind);
 float    Sol_MeasureText(const char *str, float size, SolFontKind id);
+void     Sol_Render_DrawText2D(SolFontDesc desc);

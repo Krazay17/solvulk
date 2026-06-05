@@ -4,6 +4,8 @@
 #include "font/font.h"
 
 #define MAX_MODEL_INSTANCES (1 << 14)
+#define MAX_RECT_INSTANCES (1 << 14)
+#define MAX_FONT_INSTANCES (1 << 16)
 #define MAX_QUAD_INSTANCES (1 << 20)
 #define MAX_LINE_VERTICES 0xffffff
 
@@ -16,13 +18,14 @@ typedef enum
 
     PIPE_TEXT,
     PIPE_TEXT_3D,
+    PIPE_TEXT_2D,
     PIPE_RECT,
+    PIPE_RECTI,
     PIPE_LINE,
 
     PIPE_SPHERE,
     PIPE_SPHERE_FX,
     PIPE_FIREBALL,
-    PIPE_FIREBALL1,
 
     PIPE_SPRITE,
     PIPE_SPRITE_ADD,
@@ -65,14 +68,6 @@ typedef struct
     u32             count;
 } ShaderPushTexts;
 
-#define CHARLENGTH_3D 256
-typedef struct
-{
-    // Instance text rendering what fields do we need?
-    char text[CHARLENGTH_3D];
-    vec2 uv[CHARLENGTH_3D];
-} TextSSBO;
-
 typedef struct
 {
     vec4s rec;
@@ -105,6 +100,41 @@ typedef struct
     u32   type;
     u32   _padding[3];
 } SphereSSBO;
+
+// pos: x, y, zindex, scale
+// dims: x, y, spin, twist
+typedef struct
+{
+    vec4s pos, color, dims, uv;
+    u32   type, flags, textureID, _pad1;
+} RectSSBO;
+typedef struct
+{
+    u32      count;
+    RectSSBO instances[MAX_RECT_INSTANCES];
+} RectInstance;
+extern RectInstance     rectQueue;
+static inline RectSSBO *Sol_Render_GetNext_Rect()
+{
+    assert(rectQueue.count < MAX_RECT_INSTANCES && "rectQueue Full");
+    return &rectQueue.instances[rectQueue.count++];
+}
+
+typedef struct
+{
+    vec4s pos, color, uv;
+} FontSSBO;
+typedef struct
+{
+    u32      count;
+    FontSSBO instances[MAX_FONT_INSTANCES];
+} FontInstance;
+extern FontInstance     font2dQueue;
+static inline FontSSBO *Sol_Render_GetNext_Font()
+{
+    assert(font2dQueue.count < MAX_FONT_INSTANCES && "font2dQueue Full");
+    return &font2dQueue.instances[font2dQueue.count++];
+}
 
 typedef struct SolLineVertex
 {
@@ -237,6 +267,9 @@ typedef enum
     QUADKIND_SPRITE_ADD,
     QUADKIND_HEALTH,
     QUADKIND_TEXT,
+    QUADKIND_RECT,
+    QUADKIND_TEXT2D,
+    QUADKIND_COUNT,
 } QuadKind;
 typedef enum
 {
@@ -277,7 +310,9 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
     }
 
     if (q->count >= MAX_QUAD_INSTANCES)
-        return NULL;
+    {
+        return &q->instances[q->count - 1];
+    }
 
     return &q->instances[q->count++];
 }
@@ -285,12 +320,9 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
 void Sol_Begin_Draw();
 void Sol_End_Draw();
 
-void Sol_Render_Camera_Update(SolCamera *cam);
 void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
-
-// void Sol_Render_PushBillboard(BillboardDesc desc);
 
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);

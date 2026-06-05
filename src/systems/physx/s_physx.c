@@ -7,9 +7,9 @@
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
-// 1.5 loads slow but plays fast
-#define SPATIAL_STATIC_CELL_SIZE 3.5f
-#define SPATIAL_STATIC_SIZE (1 << 21)
+// Cell 1.5, Size (1<<21) loads slow but plays fast
+#define SPATIAL_STATIC_CELL_SIZE 5.0f
+#define SPATIAL_STATIC_SIZE (1 << 19)
 #define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
 
 static u32            ents[MAX_ENTS];

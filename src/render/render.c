@@ -21,7 +21,8 @@ void Sol_Render_Flush3D(void)
 
 void Sol_Render_Flush2D(void)
 {
-    
+    Flush_Rects();
+    Flush_Fonts2d();
 }
 
 void Sol_Render_DrawSkybox()
@@ -33,8 +34,8 @@ void Sol_Render_DrawSkybox()
 
 void Sol_Render_DrawLine(SolLine *lines, int count)
 {
-    SolFrameBufferRef ref = Sol_GetFrameBuffer(FRAMEBUFFER_LINE);
-    SolLineVertex *verts = (SolLineVertex *)ref.mapped;
+    SolFrameBufferRef ref   = Sol_GetFrameBuffer(FRAMEBUFFER_LINE);
+    SolLineVertex    *verts = (SolLineVertex *)ref.mapped;
     for (int i = 0; i < count; i++)
     {
         verts[i * 2 + 0] = (SolLineVertex){.pos = lines[i].a, .color = lines[i].aColor};

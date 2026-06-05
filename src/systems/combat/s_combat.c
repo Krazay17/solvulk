@@ -40,7 +40,7 @@ static HitData hit_kinds[HITKIND_COUNT] = {
         },
     [HITKIND_BULLET] =
         {
-            .damage = 10,
+            .damage = 5,
         },
 };
 
@@ -118,7 +118,7 @@ static void Combat_Step(World *world, double dt, double time)
         break;
 
         case EVENTKIND_DEATH: {
-            Sol_Movement_SetState(world, e->as.death.entB, MOVE_DEAD);
+            Sol_Movement_ForceState(world, e->as.death.entB, MOVE_DEAD);
 
             CompVital *vital = &world->vitals[e->as.death.entB];
             vital->deathTime = Sol_GetGameTime();

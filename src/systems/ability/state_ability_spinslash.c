@@ -3,8 +3,8 @@
 #include "ability_i.h"
 
 #define COOLDOWN 2.0f
-#define DURATION 0.6f
-#define VELOCITY 50.0f
+#define DURATION 0.5f
+#define VELOCITY 40.0f
 #define ALPHAMOD 1.3f
 #define DAMAGE_DELAY 0.0f
 #define HITINTERVAL 0.01f
@@ -83,7 +83,7 @@ void Spinslash_State_Enter(World *world, int id)
     Sol_Model_PlayAnim(
         world, id,
         (AnimDesc){
-            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .speed = 1.6f, .seek = 0.4f});
+            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .speed = 1.6f, .seek = 0.4f, .force = true});
 }
 
 void Spinslash_State_Exit(World *world, int id)

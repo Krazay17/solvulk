@@ -67,11 +67,12 @@ typedef struct CompBody2d
 void        Sol_Body2d_Init(World *world);
 CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask);
 vec2s       Sol_Body2d_GetDims(World *world, int id);
-void        Sol_Body2d_SetOverlap(World *world, int id, u32 group, u32 mask);
+void        Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask);
 
 typedef enum
 {
     VIEW2DKIND_RECT,
+    VIEW2DKIND_RECTI,
     VIEW2DKIND_TEXT,
     VIEW2DKIND_CIRCLE,
     VIEW2DKIND_TEXTURE,
@@ -87,6 +88,8 @@ typedef struct CompView2d
     float      hoverAnim, clickAnim;
     float      targetFill;
     u32        zindex;
+    u8         textureID;
+    vec2s      textureUV;
     char       text[64];
 } CompView2d;
 void        Sol_View2d_Init(World *world);
@@ -124,12 +127,12 @@ typedef enum
 } ItemKind;
 typedef struct CompItem
 {
-    ItemKind     kind;
-    u32 ability;
-    u32          slot;
+    ItemKind kind;
+    u32      ability;
+    u32      slot;
 } CompItem;
 
-void Sol_Item_Init(World *world);
+void      Sol_Item_Init(World *world);
 CompItem *Sol_Item_Add(World *world, int id, ItemKind kind);
-void Sol_Item_AddAbility(World *world, int id, u32 ability);
-void Sol_Item_AddAbilitySlot(World *world, int id, int slot);
+void      Sol_Item_AddAbility(World *world, int id, u32 ability);
+void      Sol_Item_AddAbilitySlot(World *world, int id, int slot);

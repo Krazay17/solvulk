@@ -6,7 +6,7 @@ void Sol_Xform_Init(World *world)
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
 }
 
-void Sol_Xform_Add(World *world, int id, vec3s pos)
+CompXform* Sol_Xform_Add(World *world, int id, vec3s pos)
 {
     world->xforms[id].pos = world->xforms[id].lastPos = world->xforms[id].drawPos = pos;
 }

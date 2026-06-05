@@ -1,5 +1,5 @@
-#include "sol_core.h"
 #include "render_i.h"
+#include "sol_core.h"
 
 #include "render/vk/vkrender.h"
 
@@ -14,6 +14,9 @@ QuadQueue healthQueue;
 QuadQueue spriteQueue0;
 QuadQueue spriteQueue1;
 QuadQueue text3dQueue;
+
+RectInstance rectQueue;
+FontInstance font2dQueue;
 
 void Flush_Models(void)
 {
@@ -171,9 +174,11 @@ void Flush_Quads()
         Bind_Pipeline(cmd, PIPE_HEALTHBAR);
         vkCmdDraw(cmd, 6, healthCount, 0, currentOffset);
         currentOffset += healthCount;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
         healthQueue.count = 0;
     }
-    
+
     u32 spriteCount0 = spriteQueue0.count;
     if (spriteCount0 > 0)
     {
@@ -181,6 +186,8 @@ void Flush_Quads()
         Bind_Pipeline(cmd, PIPE_SPRITE);
         vkCmdDraw(cmd, 6, spriteCount0, 0, currentOffset);
         currentOffset += spriteCount0;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
         spriteQueue0.count = 0;
     }
 
@@ -191,6 +198,8 @@ void Flush_Quads()
         Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
         vkCmdDraw(cmd, 6, spriteCount1, 0, currentOffset);
         currentOffset += spriteCount1;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
         spriteQueue1.count = 0;
     }
 
@@ -201,6 +210,34 @@ void Flush_Quads()
         Bind_Pipeline(cmd, PIPE_TEXT_3D);
         vkCmdDraw(cmd, 6, textCount, 0, currentOffset);
         currentOffset += textCount;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
         text3dQueue.count = 0;
     }
+}
+
+void Flush_Rects()
+{
+    if (rectQueue.count == 0)
+        return;
+    RectSSBO       *gpu = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+
+    memcpy(gpu, rectQueue.instances, sizeof(RectSSBO) * rectQueue.count);
+    Bind_Pipeline(cmd, PIPE_RECTI);
+    vkCmdDraw(cmd, 6, rectQueue.count, 0, 0);
+    rectQueue.count = 0;
+}
+
+void Flush_Fonts2d()
+{
+    if (font2dQueue.count == 0)
+        return;
+    FontSSBO       *gpu = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+
+    memcpy(gpu, font2dQueue.instances, sizeof(FontSSBO) * font2dQueue.count);
+    Bind_Pipeline(cmd, PIPE_TEXT_2D);
+    vkCmdDraw(cmd, 6, font2dQueue.count, 0, 0);
+    font2dQueue.count = 0;
 }

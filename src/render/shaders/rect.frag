@@ -30,6 +30,7 @@ void main()
     if (push.extra[0] > 0.0 && inside) {
         discard;
     }
+
+        outColor = fragColor;
     
-    outColor = fragColor;
 }

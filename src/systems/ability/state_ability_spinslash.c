@@ -2,7 +2,6 @@
 
 #include "ability_i.h"
 
-#define COOLDOWN 2.0f
 #define DURATION 0.5f
 #define VELOCITY 40.0f
 #define ALPHAMOD 1.3f
@@ -108,5 +107,5 @@ bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
-    return !(data->lastExited + COOLDOWN > Sol_GetGameTime());
+    return !(data->lastExited + ability_config[ABILITY_STATE_SPINSLASH].cooldown > Sol_GetGameTime());
 }

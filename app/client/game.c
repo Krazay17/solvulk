@@ -138,13 +138,14 @@ void Create_Sol_Game()
     for (int i = 0; i < 9; i++)
     {
         int   abilitySlot = Sol_Prefab_AbilitySlot(hud, (vec3s){1.0f, 1.0f, 1.0f}, i);
-        vec2s dims        = Sol_View2d_Get(hud, abilitySlot)->dims;
         Sol_Parent_Set(hud, abilitySlot,
-                       (CompParent){.active = true, .parentId = abilityBar, .localOffset = {dims.x * i}});
+                       (CompParent){.active = true, .parentId = abilityBar, .localOffset = {70.0f * i}});
     }
 
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
+    Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 300}, ABILITY_STATE_PISTOL);
+    Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);

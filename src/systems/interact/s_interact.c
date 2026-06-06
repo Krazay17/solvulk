@@ -7,6 +7,8 @@
  */
 #include "sol_core.h"
 
+static void SetMoving(World *world, CompInteract *interact, int id);
+
 static u32 movingId;
 
 void Sol_Interact_Init(World *world)
@@ -33,9 +35,10 @@ void Sol_Interact_Set(World *world, int id, CompInteract desc)
 void System_Interact_Tick(World *world, double dt, double time)
 {
     SolMouse mouse = Sol_Input_GetMouse();
-
-    if (!mouse.buttons[SOL_MOUSE_MIDDLE])
-        movingId = 0;
+    // if (mouse.buttonsReleased[SOL_MOUSE_MIDDLE] || mouse.buttonsReleased[SOL_MOUSE_LEFT])
+    //     movingId = 0;
+    // if (!mouse.buttons[SOL_MOUSE_MIDDLE])
+    //     movingId = 0;
 
     int rayId = -1;
     if (world->systemBits & SYS_BIT(WORLD_SYS_PHYSX))
@@ -66,12 +69,12 @@ void System_Interact_Tick(World *world, double dt, double time)
         }
         else if (world->masks[id] & HAS_BODY2)
         {
-            collision      = Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), (vec4s){
-                                                                  Sol_Xform_GetPos(world, id).x,
-                                                                  Sol_Xform_GetPos(world, id).y,
-                                                                  Sol_Body2d_GetDims(world, id).x,
-                                                                  Sol_Body2d_GetDims(world, id).y,
-                                                              });
+            collision = Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), (vec4s){
+                                                                           Sol_Xform_GetPos(world, id).x,
+                                                                           Sol_Xform_GetPos(world, id).y,
+                                                                           Sol_Body2d_GetDims(world, id).x,
+                                                                           Sol_Body2d_GetDims(world, id).y,
+                                                                       });
         }
         if (collision)
         {
@@ -117,21 +120,26 @@ void System_Interact_Tick(World *world, double dt, double time)
         interact->state |= INTERACT_HOVERED;
         if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingId)
         {
-            interact->state |= INTERACT_MOVING;
-            movingId = id;
-            interact->grabOffset = glms_vec2_sub(Sol_Input_GetMouseUI(), (vec2s){world->xforms[id].pos.x, world->xforms[id].pos.y});
-            if (world->masks[id] & HAS_PARENT)
-                Sol_Parent_SetActive(world, id, false);
+            SetMoving(world, interact, id);
         }
 
         if (mouse.buttons[SOL_MOUSE_LEFT])
         {
             interact->state |= INTERACT_PRESSED;
+            if (wasPressed && !movingId)
+            {
+                if (glms_vec2_distance(interact->pressPos, Sol_Input_GetMouseUI()) > 2.0f)
+                    SetMoving(world, interact, id);
+            }
+            else
+            {
+                interact->pressPos = Sol_Input_GetMouseUI();
+            }
 
             if (interact->onHold.callbackFunc)
                 interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
         }
-        else if (wasPressed)
+        else if (wasPressed && !(interact->state & INTERACT_MOVING))
         {
             interact->state |= INTERACT_CLICKED;
             interact->state &= ~INTERACT_PRESSED;
@@ -140,6 +148,10 @@ void System_Interact_Tick(World *world, double dt, double time)
 
             if (interact->onClick.callbackFunc)
                 interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
+        }
+        else 
+        {
+            movingId = 0;
         }
     }
 }
@@ -166,4 +178,15 @@ bool Sol_Interact_GetToggle(World *world, int id)
 {
     CompInteract *interact = &world->interacts[id];
     return interact->state & INTERACT_TOGGLED;
+}
+
+static void SetMoving(World *world, CompInteract *interact, int id)
+{
+
+    interact->state |= INTERACT_MOVING;
+    movingId = id;
+    interact->grabOffset =
+        glms_vec2_sub(Sol_Input_GetMouseUI(), (vec2s){world->xforms[id].pos.x, world->xforms[id].pos.y});
+    if (world->masks[id] & HAS_PARENT)
+        Sol_Parent_SetActive(world, id, false);
 }

@@ -7,7 +7,11 @@ RedSky.webp             RCDATA          "images/RedSky.webp"
 Fireball.png            RCDATA          "images/Fireball.png"
 Pistol.png              RCDATA          "images/Pistol.png"
 Blade.png               RCDATA          "images/Blade.png"
-
+CardCrystal.png         RCDATA          "images/CardCrystal.png"
+Cloud1.webp             RCDATA          "images/Cloud1.webp"
+HealthTexture.webp      RCDATA          "images/HealthTexture.webp"
+SpikeFrameFilled.webp   RCDATA          "images/SpikeFrameFilled.webp"
+SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
@@ -54,4 +58,3 @@ ID_SHADER_FONT_F        RCDATA          "shaders/font.frag.spv"
 ID_SHADER_QUAD_V        RCDATA          "shaders/quad.vert.spv"
 ID_SHADER_HEALTHBAR_F   RCDATA          "shaders/healthbar.frag.spv"
 ID_SHADER_SPRITE_F      RCDATA          "shaders/sprite.frag.spv"
-

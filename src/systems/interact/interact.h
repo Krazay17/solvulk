@@ -6,9 +6,11 @@ typedef struct CompInteract
     InteractState state;
     u32           movingId;
     float         value;
+    double        pressedAccum;
+    
     Callback      onClick;
     Callback      onHold;
-    vec2s         grabOffset;
+    vec2s         grabOffset, pressPos;
 } CompInteract;
 
 void Sol_Interact_Init(World *world);

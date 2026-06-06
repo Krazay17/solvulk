@@ -14,6 +14,7 @@
 
 #define SOL_VERSION 1
 #define SOL_TIMESTEP (1.0 / 60.0)
+#define BITC(x) (1u << (x))
 #define MAX_WORLDS 16
 
 typedef struct SolState
@@ -37,6 +38,7 @@ typedef struct SolState
 
 extern SolState solState;
 #define UIUNSCALE(v) ((v) / solState.uiScale)
+#define UISCALE(v) ((v) * solState.uiScale)
 
 void   Sol_State_SetTimescale(float timescale);
 World *Sol_State_GetActiveWorld(void);

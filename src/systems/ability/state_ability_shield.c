@@ -2,8 +2,6 @@
 
 #include "ability_i.h"
 
-#define SHIELD_COOLDOWN 1.0
-
 #define HITDURATION 0.5f
 #define HITINTERVAL 0.1f
 
@@ -106,5 +104,5 @@ bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
-    return !(data->lastExited + SHIELD_COOLDOWN > Sol_GetGameTime());
+    return !(data->lastExited + ability_config[ABILITY_STATE_SHIELD].cooldown > Sol_GetGameTime());
 }

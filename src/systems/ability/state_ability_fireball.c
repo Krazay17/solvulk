@@ -7,7 +7,6 @@
 #define MAX_DURATION 4.0f
 
 #define RECOVERYTIME 0.3f
-#define COOLDOWN 0.33f
 #define MIN_VELOCITY 20.0f
 #define MAX_VELOCITY 45.0f
 
@@ -81,5 +80,5 @@ bool Fireball_State_CanExit(World *world, int id, u32 next)
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
     AbilityData *data = &world->abilities[id].stateData[slot];
-    return !(data->lastExited + COOLDOWN > Sol_GetGameTime());
+    return !(data->lastExited + ability_config[ABILITY_STATE_FIREBALL].cooldown > Sol_GetGameTime());
 }

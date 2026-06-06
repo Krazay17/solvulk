@@ -15,16 +15,20 @@
 #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT]       = "atlas.raw",
-    [SOL_TEXTURE_FIREPARTICLE]  = "FireParticle.png",
-    [SOL_TEXTURE_SHOCKPARTICLE] = "ShockParticle.png",
-    [SOL_TEXTURE_CLOUDPARTICLE] = "CloudParticle.png",
-    [SOL_TEXTURE_BLOODPARTICLE] = "BloodParticle.png",
-    [SOL_TEXTURE_REDSKY]        = "RedSky.webp",
-    [SOL_TEXTURE_FIREBALL_CARD] = "Fireball.png",
-    [SOL_TEXTURE_PISTOL_CARD]   = "Pistol.png",
-    [SOL_TEXTURE_BLADE_CARD]    = "Blade.png",
-
+    [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
+    [SOL_TEXTURE_FIREPARTICLE]     = "FireParticle.png",
+    [SOL_TEXTURE_SHOCKPARTICLE]    = "ShockParticle.png",
+    [SOL_TEXTURE_CLOUDPARTICLE]    = "CloudParticle.png",
+    [SOL_TEXTURE_BLOODPARTICLE]    = "BloodParticle.png",
+    [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
+    [SOL_TEXTURE_FIREBALL_CARD]    = "Fireball.png",
+    [SOL_TEXTURE_PISTOL_CARD]      = "Pistol.png",
+    [SOL_TEXTURE_BLADE_CARD]       = "Blade.png",
+    [SOL_TEXTURE_CRYSTAL_CARD]     = "CardCrystal.png",
+    [SOL_TEXTURE_CLOUD1]           = "Cloud1.webp",
+    [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
+    [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
+    [SOL_TEXTURE_SWIRLFRAME]       = "SwirlFrame.webp",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

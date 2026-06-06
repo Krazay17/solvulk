@@ -45,6 +45,7 @@ typedef struct SolMouse
     bool locked, togglelocked;
     bool buttons[SOL_MOUSE_COUNT];
     bool buttonsPressed[SOL_MOUSE_COUNT];
+    bool buttonsReleased[SOL_MOUSE_COUNT];
 } SolMouse;
 
 typedef struct SolLook

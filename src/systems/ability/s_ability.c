@@ -112,7 +112,7 @@ void Sol_Ability_SetAbility(World *world, int id, u32 slotIndex, AbilityState ab
         if (world->abilities[id].bindings[slotIndex].targetState != ability)
         {
             world->abilities[id].bindings[slotIndex].targetState = ability;
-            memset(&world->abilities[id].stateData[slotIndex], 0, sizeof(AbilityData));
+            world->abilities[id].stateData[slotIndex].charge = 0;
         }
     }
 }

@@ -151,8 +151,9 @@ SolMouse Sol_Input_GetMouse()
     m.wheelV = mouseWheelDelta;
     for (int i = 0; i < SOL_MOUSE_COUNT; i++)
     {
-        m.buttons[i]        = mouseButtons[i];
-        m.buttonsPressed[i] = mouseButtons[i] && !mouseButtonsPrev[i];
+        m.buttons[i]         = mouseButtons[i];
+        m.buttonsPressed[i]  = mouseButtons[i] && !mouseButtonsPrev[i];
+        m.buttonsReleased[i] = mouseButtonsPrev[i] && !mouseButtons[i];
     }
     m.locked       = mouseLocked;
     m.togglelocked = toggleLocked;

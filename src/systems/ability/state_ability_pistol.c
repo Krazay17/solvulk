@@ -8,13 +8,13 @@ void Pistol_State_Update(World *world, int id, float dt)
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     if (!data->held)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
         return;
     }
     data->elapsed += dt;
     data->accum += dt;
 
-    if (data->accum > 0.05f)
+    if (data->accum > 0.2f)
     {
         data->accum = 0;
 
@@ -57,5 +57,6 @@ bool Pistol_State_CanExit(World *world, int id, u32 next)
 }
 bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
-    return true;
+    AbilityData *data = &world->abilities[id].stateData[slot];
+    return !(data->lastExited + ability_config[ABILITY_STATE_PISTOL].cooldown > Sol_GetGameTime());
 }

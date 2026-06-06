@@ -52,10 +52,6 @@
 
 #include "game/prefabs.h"
 
-#define BITC(x)(1u << (x))
-#define UISCALE(x)                                                                                                     \
-    (x * min((double)Sol_GetState()->windowWidth / WINDOW_WIDTH, (double)Sol_GetState()->windowHeight / WINDOW_HEIGHT))
-
 SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);
 SOLAPI void      Sol_Destroy();

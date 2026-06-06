@@ -23,12 +23,13 @@ typedef enum
 
 typedef struct
 {
-    vec3s  dir, pos;
-    bool   held;
-    float  elapsed, duration, accum, recovery, charge;
-    double lastEntered, lastExited;
-    u32    stage;
-    u32    hitEnts[256];
+    AbilityState kind;
+    vec3s        dir, pos;
+    bool         held;
+    float        elapsed, duration, accum, recovery, charge;
+    double       lastEntered, lastExited;
+    u32          stage;
+    u32          hitEnts[256];
 } AbilityData;
 typedef struct
 {
@@ -47,6 +48,13 @@ typedef struct
 {
     SkillBinding bindings[MAX_MAPPED_SKILLS];
 } AbilityDesc;
+
+typedef struct
+{
+    float cooldown;
+} AbilityConfig;
+
+extern AbilityConfig ability_config[ABILITY_STATE_COUNT];
 
 void Sol_Ability_Init(World *world);
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc);

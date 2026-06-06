@@ -119,35 +119,60 @@ void ChangeWorld(int flags, void *data)
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
+    gameWorld   = World_Create_Default(WORLDKIND_GAME);
+    World *hud  = World_Create_Default(WORLDKIND_MENU);
     World *menu = World_Create_Default(WORLDKIND_MENU);
 
-    gameWorld = World_Create_Default(WORLDKIND_GAME);
     Sol_World_SetActive(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
     Sol_View_Crosshair(gameWorld);
 
     SpawnPlayer(0, 0);
 
-    World *hud = World_Create_Default(WORLDKIND_MENU);
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
+
+    int leftAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){390, 600, 0}, 0, "Left");
+    Sol_Interact_Add(hud, leftAbility);
+    int rightAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){820, 600, 0}, 1, "Right");
+    Sol_Interact_Add(hud, rightAbility);
+
     int abilityBar = Sol_Create_Ent(hud, 0);
-    Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 630, 70, 0, 0);
-    Sol_Xform_Set(hud, abilityBar, 325, 650, 0);
-    Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){1, 0, 1, 1}, 630, 70);
+    Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 280, 70, 0, 0);
+    Sol_Xform_Set(hud, abilityBar, 500, 650, 0);
+    Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(hud, abilityBar);
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 4; i++)
     {
-        int   abilitySlot = Sol_Prefab_AbilitySlot(hud, (vec3s){1.0f, 1.0f, 1.0f}, i);
+        char label[8];
+        switch (i)
+        {
+        case 0:
+            snprintf(label, sizeof(label), "1");
+            break;
+        case 1:
+            snprintf(label, sizeof(label), "2");
+            break;
+        case 2:
+            snprintf(label, sizeof(label), "3");
+            break;
+        case 3:
+            snprintf(label, sizeof(label), "4");
+            break;
+        }
+        int abilitySlot = Sol_Prefab_AbilitySlot(hud, (vec3s){1.0f, 1.0f, 1.0f}, i + 2, label);
         Sol_Parent_Set(hud, abilitySlot,
                        (CompParent){.active = true, .parentId = abilityBar, .localOffset = {70.0f * i}});
     }
 
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 200}, ABILITY_STATE_FIREBALL);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 300}, ABILITY_STATE_PISTOL);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 400}, ABILITY_STATE_SHIELD);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
+    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL);
+    int abilityCard1 = Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL);
+    Sol_Item_SetRarity(hud, abilityCard1, 2);
+    int abilityCard5 = Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SHIELD);
+    Sol_Item_SetRarity(hud, abilityCard5, 1);
+    Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH);
+    int abilityCard2 = Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL);
+    Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD);
+
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);

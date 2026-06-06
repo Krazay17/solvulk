@@ -75,7 +75,7 @@ void Sol_Ability_Step(World *world, double dt, double time)
     }
 }
 
-bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, u32 slot, bool force)
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force)
 {
     if (nextState > ABILITY_STATE_COUNT)
         return false;

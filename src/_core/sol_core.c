@@ -122,10 +122,10 @@ void Sol_Tick(double dt, double time)
     Sol_Input_Update();
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {
-        bool menuActive = solState.worlds[0]->doesSimulate;
+        bool menuActive = solState.worlds[2]->doesSimulate;
         menuActive ^= 1;
-        solState.worlds[0]->doesSimulate = menuActive;
-        solState.worlds[0]->doesRender   = menuActive;
+        solState.worlds[2]->doesSimulate = menuActive;
+        solState.worlds[2]->doesRender   = menuActive;
         Sol_Input_SetLocked(!menuActive);
     }
 
@@ -159,7 +159,10 @@ void Sol_Tick(double dt, double time)
         if (!solState.worlds[i]->doesSimulate)
             continue;
         if (accumulator >= SOL_TIMESTEP)
+        {
+            Sol_Interact_Update(solState.worlds, solState.worldCount);
             Xform_Snapshot(solState.worlds[i]);
+        }
     }
     while (accumulator >= SOL_TIMESTEP)
     {
@@ -207,7 +210,7 @@ void Sol_Tick(double dt, double time)
     Sol_Cam_Update(dt);
     Sol_Render_DrawSkybox();
     
-    for (int i = solState.worldCount - 1; i >= 0; --i)
+    for (int i = 0; i < solState.worldCount; i++)
     {
         if (!solState.worlds[i]->doesRender)
             continue;
@@ -215,7 +218,7 @@ void Sol_Tick(double dt, double time)
     }
     Sol_Render_Flush3D();
 
-    for (int i = solState.worldCount - 1; i >= 0; --i)
+    for (int i = 0; i < solState.worldCount; i++)
     {
         if (!solState.worlds[i]->doesRender)
             continue;

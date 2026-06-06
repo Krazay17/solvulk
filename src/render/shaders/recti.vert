@@ -69,6 +69,6 @@ void main() {
     fragType = r.type;
     fragTextureId = r.textureID;
     fragFlags = r.flags;
-    
-    gl_Position = ortho2d * vec4(worldPos + r.pos.xy, r.pos.z, 1.0);
+    float correctedDepth = 1.0 - r.pos.z;
+    gl_Position = ortho2d * vec4(worldPos + r.pos.xy, correctedDepth, 1.0);
 }

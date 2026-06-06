@@ -28,8 +28,8 @@ SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, fl
         .dims       = {width, height},
         .fill       = 1.0f,
         .targetFill = 1.0f,
-        .hoverColor = {0.0f, 0.0f, 0.0f, 1.0f},
-        .clickColor = {0.0f, 0.0f, 0.0f, 1.0f},
+        .hoverColor = {0.0f, 0.0f, 0.0f, 0.0f},
+        .clickColor = {0.0f, 0.0f, 0.0f, 0.0f},
     };
     CompView2d *compView = &world->view2d[id];
 
@@ -117,7 +117,7 @@ static void DrawRect(World *world, int id, double dt, double time, SolView2d *vi
     drawCol = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
     drawCol = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
 
-    float factor = 1.0f - expf(-8.0f * fdt);
+    float factor = 1.0f - expf(-14.0f * fdt);
     view->fill   = Sol_Math_Lerp(view->fill, view->targetFill, factor);
 
     RectSSBO *ssbo = Sol_Render_GetNext_Rect();

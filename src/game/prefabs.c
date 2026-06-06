@@ -379,7 +379,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
 {
-    vec2s dims = {60.0f, 70.0f};
+    vec2s dims = {62.0f, 62.0f};
     int   id   = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
     Sol_Interact_Set(world, id, (CompInteract){0});
@@ -389,6 +389,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
     image->textureUV         = (vec2s){1, 0.816};
     image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
+    image->zindex            = 2;
     world->view2d[id].zindex = 1;
 
     Sol_Item_AddAbility(world, id, ability);
@@ -407,11 +408,14 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
         image->textureID = SOL_TEXTURE_BLADE_CARD;
         break;
     }
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0,0,0,1}, dims.x, dims.y);
+    border->zindex = 2;
+    border->textureID = SOL_TEXTURE_BORDER;
 
     return id;
 }
 
-int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot)
+int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
 {
     vec2s dims = {70.0f, 70.0f};
     int   id   = Sol_Create_Ent(world, 0);
@@ -421,23 +425,52 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot)
     body->overlapGroup = 0b01;
     body->overlapMask  = 0b10;
 
+    // 0
     SolView2d *view = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 1.0f}, dims.x, dims.y);
-    view->zindex     = 0;
+    view->zindex    = 0;
 
-    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    // 1
+    SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
     border->hoverColor = (vec4s){0.2f, 0.2f, 0.2f, 1.0f};
     border->textureID  = SOL_TEXTURE_SWIRLFRAME;
+    border->zindex     = 1;
 
-    SolView2d *border2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1.0f}, dims.x, dims.y);
-    border2->border = 4.0f;
-    SolView2d *cooldown = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0, 0, 0.7f}, dims.x, dims.y);
-    cooldown->zindex    = 2;
-    cooldown->flags     = (1 << 1 | 1 << 2);
-    cooldown->textureID = SOL_TEXTURE_SPIKEFRAMEFILLED;
+    // 2
+    SolView2d *border2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1.0f}, dims.x, dims.y);
+    border2->border     = 4.0f;
+    border2->zindex     = 4;
+    border2->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+
+    // 3
+    SolView2d *press = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 0.0f}, dims.x, dims.y);
+    press->textureID = SOL_TEXTURE_CLOUD1;
+    press->zindex    = 3;
+
+    // 4
     SolView2d *text = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 20.0f, 0);
-    snprintf(text->text, sizeof(text->text), "%d", slot + 1);
+    strcpy(text->text, label);
     text->offset.x = dims.x * 0.5f;
     text->offset.y = dims.y * 0.5f;
+    text->zindex   = 3;
+
+    // 5
+    SolView2d *active = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 0.0f}, dims.x, dims.y);
+    active->textureID = SOL_TEXTURE_SPIKEFRAMEFILLED;
+    active->flags     = (1 << 1);
+    active->zindex    = 3;
+
+    // 6
+
+    SolView2d *cooldown = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0, 0, 0.95f}, dims.x, dims.y - 2.0f);
+    cooldown->flags     = (1 << 1 | 1 << 2);
+    cooldown->textureID = SOL_TEXTURE_CLOUD2;
+    cooldown->zindex    = 3;
+    cooldown->offset.y = -1.0f;
+    // 7
+    SolView2d *cdFlash  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 0.0f}, dims.x, dims.y);
+    cdFlash->clickColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+    cdFlash->textureID  = SOL_TEXTURE_SHOCKPARTICLE;
+    cdFlash->zindex     = 3;
 
     return id;
 }

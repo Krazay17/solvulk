@@ -12,6 +12,8 @@ Cloud1.webp             RCDATA          "images/Cloud1.webp"
 HealthTexture.webp      RCDATA          "images/HealthTexture.webp"
 SpikeFrameFilled.webp   RCDATA          "images/SpikeFrameFilled.webp"
 SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
+Cloud2.webp             RCDATA          "images/Cloud2.webp"
+Border.webp             RCDATA          "images/Border.webp"
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"

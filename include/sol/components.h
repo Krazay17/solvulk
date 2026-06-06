@@ -98,9 +98,8 @@ typedef struct CompView2d
     u8        count;
     u8        zindex;
 } CompView2d;
-
 void        Sol_View2d_Init(World *world);
-SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
+SolView2d  *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
 CompView2d *Sol_View2d_Get(World *world, int id);
 void        Sol_View2d_Set(World *world, int id, CompView2d view);
 void        Sol_View2d_SetText(World *world, int id, SolView2d *view, const char *text);
@@ -125,9 +124,6 @@ CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, fl
 
 typedef enum
 {
-    ITEMKIND_FIREBALL_CARD,
-    ITEMKIND_BLASTER_CARD,
-    ITEMKIND_SHIELD_CARD,
     ITEMKIND_ABILITY_CARD,
     ITEMKIND_ABILITY_SLOT,
     ITEMKIND_COUNT,
@@ -137,9 +133,41 @@ typedef struct CompItem
     ItemKind kind;
     u32      ability;
     u32      slot;
+    u8       rarity;
+    bool     onCooldown;
+
+    float damageMul;
+    u32   damageAdd;
+    // union
+    // {
+    //     struct {
+
+    //     }slot;
+    //     struct {
+
+    //     } card;
+    // }as;
 } CompItem;
 
 void      Sol_Item_Init(World *world);
 CompItem *Sol_Item_Add(World *world, int id, ItemKind kind);
 void      Sol_Item_AddAbility(World *world, int id, u32 ability);
 void      Sol_Item_AddAbilitySlot(World *world, int id, int slot);
+void      Sol_Item_SetRarity(World *world, int id, u32 rarity);
+
+typedef enum
+{
+    TOOLTIPKIND_INFO,
+    TOOLTIPKIND_CARD_STATS,
+    TOOLTIPKIND_COUNT,
+} TooltipKind;
+typedef struct CompTooltip
+{
+    TooltipKind kind;
+    char        header[64];
+    char        body[128];
+} CompTooltip;
+extern const CompTooltip tooltip_configs[TOOLTIPKIND_COUNT];
+
+void         Sol_Tooltip_Init(World *world);
+CompTooltip *Sol_Tooltip_Add(World *world, int id, TooltipKind kind);

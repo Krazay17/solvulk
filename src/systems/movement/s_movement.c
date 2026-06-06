@@ -135,8 +135,8 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
 
     Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[movement->kind][movement->state].gravity, 0});
 
-    if (id == world->playerID)
-        Sol_Debug_Add("Move State", movement->state);
+    // if (id == world->playerID)
+    //     Sol_Debug_Add("Move State", movement->state);
 
     return true;
 }

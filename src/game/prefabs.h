@@ -27,4 +27,4 @@ int Sol_Prefab_Floor(World *world, vec3s pos);
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text);
 int Sol_Prefab_Clouds(World *world, vec3s pos);
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability);
-int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot);
+int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label);

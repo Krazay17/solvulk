@@ -31,7 +31,6 @@ void Net_Connect(bool host, const char *ip, u16 port)
 
     if (host)
     {
-        Sol_Debug_Add("Hosting", 1.0f);
         // HOST SETUP: Listen on all local adapters on the specific game port
         solNet.role  = NETROLE_HOST;
         address.host = ENET_HOST_ANY;
@@ -48,7 +47,6 @@ void Net_Connect(bool host, const char *ip, u16 port)
     }
     else
     {
-        Sol_Debug_Add("Hosting", 0.0f);
         // CLIENT SETUP: Connect with an anonymous outward socket
         solNet.role = NETROLE_CLIENT;
         solNet.host = enet_host_create(NULL, 1, 2, 0, 0);

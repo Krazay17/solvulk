@@ -69,20 +69,22 @@ void Fireball_State_Exit(World *world, int id)
     CompAbility *a    = &world->abilities[id];
     AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
     data->lastExited  = Sol_GetGameTime();
+    data->charge      = 0;
+    data->stage       = 0;
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)
 {
-    return true; //next != ABILITY_STATE_FIREBALL;
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &world->abilities[id].stateData[ability->activeSlot];
+    return data->stage > 1;
 }
 
-bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &world->abilities[id].stateData[slot];
-    if (slot == ability->activeSlot)
-        return false;
 
-    return !(data->lastExited + ability_config[ABILITY_STATE_FIREBALL].cooldown > Sol_GetGameTime());
+    return slot != ability->activeSlot && !(data->lastExited + ability_config[ABILITY_STATE_FIREBALL].cooldown > Sol_GetGameTime());
 }

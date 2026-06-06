@@ -20,8 +20,7 @@ CompItem *Sol_Item_Add(World *world, int id, ItemKind kind)
 
 void Sol_Item_AddAbility(World *world, int id, u32 ability)
 {
-    CompItem item = {.ability = ability};
-    // item.kind        = ITEMKIND_ABILITY_CARD;
+    CompItem item    = {.ability = ability, .kind = ITEMKIND_ABILITY_CARD};
     world->items[id] = item;
     world->masks[id] |= HAS_ITEM;
 }
@@ -92,29 +91,96 @@ static void AbilitySlots(World *world, double dt, double time)
         {
             Sol_Ability_SetAbility(activeWorld, 1, item->slot, 0);
         }
-        CompAbility *ability = &activeWorld->abilities[1];
-        SolView2d   *cdView  = &world->view2d[id].views[3];
+        CompAbility *ability    = &activeWorld->abilities[1];
+        SolView2d   *cdView     = &world->view2d[id].views[6];
+        SolView2d   *activeView = &world->view2d[id].views[5];
+        SolView2d   *pressView  = &world->view2d[id].views[3];
+        SolView2d   *cdFlash    = &world->view2d[id].views[7];
+        SolView2d   *slotText   = &world->view2d[id].views[4];
 
         if (bestAbility != 0)
         {
-            CompAbility *ability  = &activeWorld->abilities[1];
-            AbilityData *data     = &ability->stateData[item->slot];
-            float        elapsed  = Sol_GetGameTime() - data->lastExited;
-            float        duration = ability_config[bestAbility].cooldown;
+            CompAbility *ability          = &activeWorld->abilities[1];
+            AbilityData *data             = &ability->stateData[item->slot];
+            float        elapsed          = Sol_GetGameTime() - data->lastExited;
+            float        cooldownDuration = ability_config[bestAbility].cooldown;
+            float        duration         = ability_config[bestAbility].duration;
 
-            if (duration > 0.0f && elapsed < duration)
+            if (Sol_Parent_IsActive(world, bestCardId))
             {
-                // 1.0 right after use, drains to 0 as ability becomes ready
-                cdView->targetFill = 1.0f - (elapsed / duration);
+                CompBody2d *cardBody  = &world->body2d[bestCardId];
+                vec2s       offsetPos = glms_vec2_sub(body->dims, cardBody->dims);
+                offsetPos             = glms_vec2_scale(offsetPos, 0.5f);
+                offsetPos             = glms_vec2_add(offsetPos, (vec2s){slotPos.x, slotPos.y});
+
+                Sol_Xform_SetPos(world, bestCardId, (vec3s){offsetPos.x, offsetPos.y});
+            }
+
+            if (ability->activeSlot == item->slot)
+            {
+                activeView->color = (vec4s){0.5f, 1.0f, 0.5f, 0.5f};
             }
             else
             {
-                cdView->targetFill = 0.0f;
+                activeView->color = (vec4s){1.0f, 1.0f, 1.0f, 0.0f};
+            }
+
+            bool currentlyOnCooldown = (cooldownDuration > 0.0f && elapsed < cooldownDuration);
+
+            if (currentlyOnCooldown)
+            {
+                cdView->fill = cdView->targetFill = 1.0f - (elapsed / cooldownDuration);
+                item->onCooldown                  = true;
+                slotText->color                   = (vec4s){1.0f, 0, 0, 1.0f};
+            }
+            else
+            {
+                cdView->fill = cdView->targetFill = 0.0f;
+                slotText->color                   = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+
+                if (item->onCooldown)
+                {
+                    cdFlash->clickAnim = 1.0f;
+                    item->onCooldown   = false;
+                }
             }
         }
         else
         {
-            cdView->targetFill = 0.0f; // no card → no cooldown
+            cdView->fill = cdView->targetFill = 0.0f;
+            item->onCooldown                  = false;
+        }
+
+        if ((Sol_Controller_GetActionState(activeWorld, 1) & ability->bindings[item->slot].actionBit) != 0)
+        {
+            pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+        }
+        else
+        {
+            pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 0.0f};
         }
     }
+}
+
+void Sol_Item_SetRarity(World *world, int id, u32 rarity)
+{
+    world->items[id].rarity = rarity;
+    vec4s color;
+    switch (rarity)
+    {
+    case 0:
+        color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+        break;
+    case 1:
+        color = (vec4s){0.0f, 1.0f, 0.0f, 1.0f};
+        break;
+    case 2:
+        color = (vec4s){1.0f, 0.0f, 1.0f, 1.0f};
+        break;
+    case 3:
+        color = (vec4s){0.0f, 1.0f, 1.0f, 1.0f};
+        break;
+    }
+    world->view2d[id].views[1].color = color;
+    world->view2d[id].views[1].hoverColor = color;
 }

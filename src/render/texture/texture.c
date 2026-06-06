@@ -29,6 +29,8 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
     [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
     [SOL_TEXTURE_SWIRLFRAME]       = "SwirlFrame.webp",
+    [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
+    [SOL_TEXTURE_BORDER]           = "Border.webp",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

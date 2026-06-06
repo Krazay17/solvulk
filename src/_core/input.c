@@ -25,6 +25,7 @@ static int keyMap[256] = {
     [53] = SOL_KEY_5,     [54] = SOL_KEY_6,      [55] = SOL_KEY_7,     [56] = SOL_KEY_8,    [57] = SOL_KEY_9,
     ['W'] = SOL_KEY_W,    ['A'] = SOL_KEY_A,     ['S'] = SOL_KEY_S,    ['D'] = SOL_KEY_D,   ['F'] = SOL_KEY_F,
     [32] = SOL_KEY_SPACE, [27] = SOL_KEY_ESCAPE, [16] = SOL_KEY_SHIFT, [17] = SOL_KEY_CTRL, [18] = SOL_KEY_ALT,
+    [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,
 };
 
 static volatile bool rawKeys[SOL_KEY_COUNT];
@@ -81,6 +82,8 @@ void Sol_Input_OnRawMouse(int x, int y)
 
 void Sol_Input_Update()
 {
+    Sol_Debug_Add("MouseX", Sol_Input_GetMouseUI().x);
+    Sol_Debug_Add("MouseY", Sol_Input_GetMouseUI().y);
     // snapshot prev
     memcpy(keysPrev, keys, sizeof(keys));
     memcpy(mouseButtonsPrev, mouseButtons, sizeof(mouseButtons));

@@ -45,6 +45,7 @@ typedef enum
     HAS_OTHERWORLD   = (1 << 24),
     HAS_PROJECTILE   = (1 << 25),
     HAS_ITEM         = (1 << 26),
+    HAS_TOOLTIP      = (1 << 27),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -122,6 +123,7 @@ typedef struct CompBody2d       CompBody2d;
 typedef struct CompView2d       CompView2d;
 typedef struct CompProjectile   CompProjectile;
 typedef struct CompItem         CompItem;
+typedef struct CompTooltip      CompTooltip;
 
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -177,6 +179,7 @@ typedef struct World
     CompView2d       *view2d;
     CompProjectile   *projectiles;
     CompItem         *items;
+    CompTooltip      *tooltips;
 
     u32 skyboxId;
 

@@ -15,7 +15,7 @@ void ADash_State_Update(World *world, int id, float dt)
     *elapsed += dt;
     if (*elapsed >= DASH_DURATION)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
         return;
     }
     float alpha = DASH_ALPHAMOD - (*elapsed / DASH_DURATION);
@@ -75,12 +75,13 @@ void ADash_State_Exit(World *world, int id)
 bool ADash_State_CanExit(World *world, int id, u32 next)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data = &ability->stateData[ability->activeSlot];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
     return data->elapsed >= DASH_DURATION * 0.9f;
 }
 
-bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    AbilityData *data = &world->abilities[id].stateData[slot];
-    return !(data->lastEntered + DASH_COOLDOWN > (float)Sol_GetState()->gameTime);
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastEntered + ability_config[ABILITY_STATE_DASH].cooldown > Sol_GetGameTime());
 }

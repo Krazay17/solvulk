@@ -46,6 +46,10 @@ void Sol_Parent_SetActive(World *world, int id, bool active)
 {
     world->parents[id].active = active;
 }
+bool Sol_Parent_IsActive(World *world, int id)
+{
+    return world->parents[id].active;
+}
 void Sol_Parent_SetOffset(World *world, int id)
 {
     vec3s parentPos                = Sol_Xform_GetPos(world, world->parents[id].parentId);

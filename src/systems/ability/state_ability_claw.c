@@ -13,27 +13,22 @@ void Claw_State_Update(World *world, int id, float dt)
     *elapsed += dt;
     if (*elapsed >= CLAW_DURATION)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
     }
 }
 
 void Claw_State_Enter(World *world, int id)
 {
-    Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, Sol_Controller_GetAimPos(world, id), 0.0f);
-
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
 
-    float velocity = 40.0f;
-
-    AnimDesc desc = {
-        .anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+    AnimDesc desc = {.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
     Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Claw_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){ .layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)

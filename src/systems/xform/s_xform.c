@@ -23,9 +23,9 @@ void Xform_Snapshot(World *world)
     if (world->playerID < 0)
         return;
     CompXform *playerXform = &world->xforms[world->playerID];
-    Sol_Debug_Add("X", playerXform->pos.x);
-    Sol_Debug_Add("Y", playerXform->pos.y);
-    Sol_Debug_Add("Z", playerXform->pos.z);
+    // Sol_Debug_Add("X", playerXform->pos.x);
+    // Sol_Debug_Add("Y", playerXform->pos.y);
+    // Sol_Debug_Add("Z", playerXform->pos.z);
 }
 
 void Xform_Interpolate(World *world, float alpha)

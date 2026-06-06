@@ -51,7 +51,7 @@ typedef struct
 
 typedef struct
 {
-    float cooldown;
+    float cooldown, duration;
 } AbilityConfig;
 
 extern AbilityConfig ability_config[ABILITY_STATE_COUNT];
@@ -60,6 +60,6 @@ void Sol_Ability_Init(World *world);
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc);
 void Sol_Ability_Step(World *world, double dt, double time);
 
-bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, u32 slot, bool force);
+bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
 AbilityState Sol_Ability_GetState(World *world, int id);
 void         Sol_Ability_SetAbility(World *world, int id, u32 slotIndex, AbilityState ability);

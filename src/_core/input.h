@@ -29,6 +29,8 @@ typedef enum
     SOL_KEY_S,
     SOL_KEY_D,
     SOL_KEY_F,
+    SOL_KEY_Q,
+    SOL_KEY_E,
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
     SOL_KEY_SHIFT,

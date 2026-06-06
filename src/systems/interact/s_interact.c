@@ -9,14 +9,13 @@
 
 static void SetMoving(World *world, CompInteract *interact, int id);
 
-static u32 movingId;
+static u32     movingId;
+InteractingEnt interactingEnt;
 
 void Sol_Interact_Init(World *world)
 {
-    u32 idx                 = world->tickCount++;
-    world->tickSystems[idx] = System_Interact_Tick;
-
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
+    WAddTick(world)  = System_Interact_Tick;
 }
 
 void Sol_Interact_Add(World *world, int id)
@@ -32,13 +31,59 @@ void Sol_Interact_Set(World *world, int id, CompInteract desc)
     world->masks[id] |= HAS_INTERACT;
 }
 
+void Sol_Interact_Update(World **worlds, int worldCount)
+{
+    SolMouse mouse = Sol_Input_GetMouse();
+    interactingEnt = (InteractingEnt){.id = -1, .worldId = -1};
+    int rayId      = -1;
+    int topZ       = INT_MIN;
+
+    for (int w = worldCount - 1; w >= 0; w--)
+    {
+        World *world = worlds[w];
+
+        int required = HAS_INTERACT;
+        for (int i = 0; i < world->activeCount; i++)
+        {
+            int id = world->activeEntities[i];
+            if ((world->masks[id] & required) != required)
+                continue;
+
+            bool collision = false;
+
+            if (world->masks[id] & HAS_BODY3)
+            {
+                if (rayId == id)
+                    collision = true;
+            }
+            else if (world->masks[id] & HAS_BODY2)
+            {
+                collision = Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), (vec4s){
+                                                                               Sol_Xform_GetPos(world, id).x,
+                                                                               Sol_Xform_GetPos(world, id).y,
+                                                                               Sol_Body2d_GetDims(world, id).x,
+                                                                               Sol_Body2d_GetDims(world, id).y,
+                                                                           });
+            }
+            if (collision)
+            {
+                int z = 0;
+                if (world->masks[id] & HAS_VIEW2D)
+                    z = world->view2d[id].zindex;
+                if (z > topZ)
+                {
+                    topZ                   = z;
+                    interactingEnt.id      = id;
+                    interactingEnt.worldId = world->worldId;
+                }
+            }
+        }
+    }
+}
+
 void System_Interact_Tick(World *world, double dt, double time)
 {
     SolMouse mouse = Sol_Input_GetMouse();
-    // if (mouse.buttonsReleased[SOL_MOUSE_MIDDLE] || mouse.buttonsReleased[SOL_MOUSE_LEFT])
-    //     movingId = 0;
-    // if (!mouse.buttons[SOL_MOUSE_MIDDLE])
-    //     movingId = 0;
 
     int rayId = -1;
     if (world->systemBits & SYS_BIT(WORLD_SYS_PHYSX))
@@ -83,8 +128,10 @@ void System_Interact_Tick(World *world, double dt, double time)
                 z = world->view2d[id].zindex;
             if (z > topZ)
             {
-                topZ  = z;
-                topId = id;
+                topZ                   = z;
+                topId                  = id;
+                interactingEnt.id      = id;
+                interactingEnt.worldId = world->worldId;
             }
         }
     }
@@ -149,7 +196,7 @@ void System_Interact_Tick(World *world, double dt, double time)
             if (interact->onClick.callbackFunc)
                 interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
         }
-        else 
+        else
         {
             movingId = 0;
         }

@@ -118,6 +118,7 @@ static void Combat_Step(World *world, double dt, double time)
         break;
 
         case EVENTKIND_DEATH: {
+            Sol_Ability_SetState(world, e->as.death.entB, ABILITY_STATE_IDLE, -1, true);
             Sol_Movement_ForceState(world, e->as.death.entB, MOVE_DEAD);
 
             CompVital *vital = &world->vitals[e->as.death.entB];

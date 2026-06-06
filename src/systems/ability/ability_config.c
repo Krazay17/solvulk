@@ -5,23 +5,22 @@
 AbilityConfig ability_config[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_SPINSLASH] =
         {
-            .cooldown = 5.0f,
+            .duration = 0.5f,
+            .cooldown = 9.0f,
         },
     [ABILITY_STATE_SHIELD] =
         {
+            .duration = 0.5f,
             .cooldown = 8.0f,
-        },
-    [ABILITY_STATE_IDLE] =
-        {
-            .cooldown = 0,
         },
     [ABILITY_STATE_DASH] =
         {
+            .duration = 0.5f,
             .cooldown = 1.0f,
         },
     [ABILITY_STATE_FIREBALL] =
         {
-            .cooldown = 1.0f,
+            .cooldown = 4.0f,
         },
     [ABILITY_STATE_PISTOL] =
         {

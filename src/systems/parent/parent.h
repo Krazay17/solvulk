@@ -16,3 +16,4 @@ u32         Sol_Parent_GetParent(World *world, int id);
 void        Sol_Parent_SetActive(World *world, int id, bool active);
 void        Sol_Parent_SetOffset(World *world, int id);
 void        Sol_Parent_SetWithOffset(World *world, int id, int parent);
+bool        Sol_Parent_IsActive(World *world, int id);

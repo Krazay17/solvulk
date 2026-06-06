@@ -98,7 +98,7 @@ bool Script_State_CanExit(World *world, int id, u32 nextState)
     return data->elapsed >= ability_scripts[ability->state].duration * 0.6f;
 }
 
-bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next, u32 slot)
+bool Script_State_CanEnter(World *world, int id, u32 lastState, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &world->abilities[id].stateData[slot];

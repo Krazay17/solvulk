@@ -25,6 +25,7 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
         a.stateData[i].stage       = 0;
         a.stateData[i].elapsed     = 0.0f;
     }
+    a.activeSlot = -1;
 
     world->masks[id] |= HAS_ABILITY;
     world->abilities[id] = a;

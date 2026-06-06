@@ -20,7 +20,7 @@ void Sol_View2d_Init(World *world)
     WAddStep(world) = Step;
 }
 
-CompView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
+SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
 {
     SolView2d view = {
         .kind       = kind,
@@ -32,13 +32,15 @@ CompView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, f
         .clickColor = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     CompView2d *compView = &world->view2d[id];
-    // assert(compView->count < MAX_VIEWS && "compView Full");
+
     if (compView->count >= MAX_VIEWS)
         return NULL;
-    compView->views[compView->count++] = view;
+    int idx = compView->count;
+    compView->count++;
+    compView->views[idx] = view;
     world->masks[id] |= HAS_VIEW2D;
 
-    return &world->view2d[id];
+    return &world->view2d[id].views[idx];
 }
 
 void Sol_View2d_Set(World *world, int id, CompView2d view)

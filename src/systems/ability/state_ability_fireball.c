@@ -48,7 +48,7 @@ void Fireball_State_Update(World *world, int id, float dt)
     case 2:
         data->recovery += dt;
         if (data->recovery >= RECOVERYTIME)
-            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0,false);
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
     }
 }
 
@@ -74,11 +74,15 @@ void Fireball_State_Exit(World *world, int id)
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)
 {
-    return next != ABILITY_STATE_FIREBALL;
+    return true; //next != ABILITY_STATE_FIREBALL;
 }
 
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 {
-    AbilityData *data = &world->abilities[id].stateData[slot];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &world->abilities[id].stateData[slot];
+    if (slot == ability->activeSlot)
+        return false;
+
     return !(data->lastExited + ability_config[ABILITY_STATE_FIREBALL].cooldown > Sol_GetGameTime());
 }

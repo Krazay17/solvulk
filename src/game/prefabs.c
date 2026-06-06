@@ -386,25 +386,25 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 1, 1);
     Sol_Parent_Set(world, id, (CompParent){.active = false});
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
-    CompView2d *image          = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
-    image->views[0].textureUV  = (vec2s){1, 0.816};
-    image->views[0].hoverColor = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
-    image->zindex              = 1;
+    SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
+    image->textureUV         = (vec2s){1, 0.816};
+    image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
+    world->view2d[id].zindex = 1;
 
     Sol_Item_AddAbility(world, id, ability);
     switch (ability)
     {
     case ABILITY_STATE_FIREBALL:
-        image->views[0].textureID = SOL_TEXTURE_FIREBALL_CARD;
+        image->textureID = SOL_TEXTURE_FIREBALL_CARD;
         break;
     case ABILITY_STATE_PISTOL:
-        image->views[0].textureID = SOL_TEXTURE_PISTOL_CARD;
+        image->textureID = SOL_TEXTURE_PISTOL_CARD;
         break;
     case ABILITY_STATE_SHIELD:
-        image->views[0].textureID = SOL_TEXTURE_CRYSTAL_CARD;
+        image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
         break;
     case ABILITY_STATE_SPINSLASH:
-        image->views[0].textureID = SOL_TEXTURE_BLADE_CARD;
+        image->textureID = SOL_TEXTURE_BLADE_CARD;
         break;
     }
 
@@ -421,23 +421,23 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot)
     body->overlapGroup = 0b01;
     body->overlapMask  = 0b10;
 
-    CompView2d *view = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 1.0f}, dims.x, dims.y);
+    SolView2d *view = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 1.0f}, dims.x, dims.y);
     view->zindex     = 0;
 
-    Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
-    view->views[1].hoverColor = (vec4s){0.2f, 0.2f, 0.2f, 1.0f};
-    view->views[1].textureID  = SOL_TEXTURE_SWIRLFRAME;
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    border->hoverColor = (vec4s){0.2f, 0.2f, 0.2f, 1.0f};
+    border->textureID  = SOL_TEXTURE_SWIRLFRAME;
 
-    Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1.0f}, dims.x, dims.y);
-    view->views[2].border = 4.0f;
-    Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0, 0, 0.7f}, dims.x, dims.y);
-    view->views[3].zindex    = 2;
-    view->views[3].flags     = (1 << 1 | 1 << 2);
-    view->views[3].textureID = SOL_TEXTURE_SPIKEFRAMEFILLED;
-    Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 20.0f, 0);
-    snprintf(view->views[4].text, sizeof(view->views[4].text), "%d", slot + 1);
-    view->views[4].offset.x = dims.x * 0.5f;
-    view->views[4].offset.y = dims.y * 0.5f;
+    SolView2d *border2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1.0f}, dims.x, dims.y);
+    border2->border = 4.0f;
+    SolView2d *cooldown = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0, 0, 0.7f}, dims.x, dims.y);
+    cooldown->zindex    = 2;
+    cooldown->flags     = (1 << 1 | 1 << 2);
+    cooldown->textureID = SOL_TEXTURE_SPIKEFRAMEFILLED;
+    SolView2d *text = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 20.0f, 0);
+    snprintf(text->text, sizeof(text->text), "%d", slot + 1);
+    text->offset.x = dims.x * 0.5f;
+    text->offset.y = dims.y * 0.5f;
 
     return id;
 }

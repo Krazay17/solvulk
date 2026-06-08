@@ -105,6 +105,15 @@ void Sol_Input_Update()
     mouseWheelDelta    = rawMouseWheelDelta;
     rawMouseWheelDelta = 0;
 
+    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
+    {
+        bool menuActive = solState.worlds[2]->doesSimulate;
+        menuActive ^= 1;
+        solState.worlds[2]->doesSimulate = menuActive;
+        solState.worlds[2]->doesRender   = menuActive;
+        Sol_Input_SetLocked(!menuActive);
+    }
+
     if (Sol_Input_KeyPressed(SOL_KEY_ALT))
         Sol_Input_SetLocked(!toggleLocked);
 

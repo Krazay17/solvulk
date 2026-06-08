@@ -75,7 +75,7 @@ void Shield_State_Enter(World *world, int id)
     Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.5f, 0);
 
     vec3s pos = Sol_Xform_GetPos(world, id);
-    Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 0.1f);
+    Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id),1.0f, 0.1f, 0);
     Sol_Event_Add(world, (SolEvent){
                              .kind       = EVENTKIND_FX,
                              .as.fx.kind = FXKIND_SHIELD_BURST,

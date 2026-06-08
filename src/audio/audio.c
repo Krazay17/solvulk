@@ -26,7 +26,7 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_MENUMUSIC] = "MenuMusic.mp3", [SOL_AUDIO_SPACEGUN] = "SpaceGun.mp3",
     [SOL_AUDIO_WOONG] = "Woong1.wav",        [SOL_AUDIO_FIREBALL] = "fireballUse.mp3",
     [SOL_AUDIO_DASH] = "dash.mp3",           [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
-
+    [SOL_AUDIO_GOTHIT] = "PlayerHit.mp3",
 };
 
 typedef struct
@@ -43,7 +43,8 @@ typedef struct
 {
     ma_audio_buffer_ref bufferRef;
     ma_sound            sound;
-    bool                inUse;
+    SolAudioId          id;
+    bool inUse;
 } PlayingSound;
 
 typedef struct
@@ -71,7 +72,7 @@ static void      data_callback(ma_device *pDevice, void *pOutput, const void *pI
 int Sol_Audio_Init(void)
 {
     ma_engine_config eConfig = {
-        .periodSizeInMilliseconds = 15,
+        .periodSizeInMilliseconds = 20,
     };
     if (ma_engine_init(&eConfig, &audio_engine) != MA_SUCCESS)
         return -1;
@@ -112,7 +113,6 @@ int Sol_Audio_LoadAll(void)
         if (res.isHeap)
             free(res.data);
     }
-
     return 0;
 }
 
@@ -148,55 +148,131 @@ static SolAudio *Parse_Audio(SolResource res, u32 id)
     return audio;
 }
 
-// Internal helper: Finds a slot, initializes the buffer, and handles 3D setup
-static PlayingSound *Sol_Audio_Alloc(SolAudioId id, bool is3D)
+static PlayingSound *Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u32 maxConcurrent)
 {
     if (id >= SOL_AUDIO_COUNT || !loaded_audio[id].loaded)
         return NULL;
 
     SolAudio *audio = &loaded_audio[id];
 
+    if (maxConcurrent == 0)
+        maxConcurrent = MAX_PLAYING_SOUNDS;
+
+    // =========================================================================
+    // STEP 1: CONCURRENCY GUARD & VOLUME DIMINISHING MATH
+    // =========================================================================
+    u32           activeCount    = 0;
+    PlayingSound *oldestInstance = NULL;
+    ma_uint64     oldestCursor   = 0;
+
     for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
     {
         PlayingSound *ps = &playing_pool[i];
+        if (!ps->inUse)
+            continue;
 
-        if (ps->inUse)
+        if (ma_sound_at_end(&ps->sound))
         {
-            if (ma_sound_at_end(&ps->sound))
+            ma_sound_uninit(&ps->sound);
+            ma_audio_buffer_ref_uninit(&ps->bufferRef);
+            ps->inUse = false;
+            continue;
+        }
+
+        if (ps->id == id)
+        {
+            activeCount++;
+
+            ma_uint64 currentCursor;
+            ma_sound_get_cursor_in_pcm_frames(&ps->sound, &currentCursor);
+            if (currentCursor >= oldestCursor)
             {
-                ma_sound_uninit(&ps->sound);
-                ma_audio_buffer_ref_uninit(&ps->bufferRef);
-                ps->inUse = false;
-            }
-            else
-            {
-                continue;
+                oldestCursor   = currentCursor;
+                oldestInstance = ps;
             }
         }
+    }
+
+    if (activeCount >= maxConcurrent && oldestInstance != NULL)
+    {
+        ma_sound_uninit(&oldestInstance->sound);
+        ma_audio_buffer_ref_uninit(&oldestInstance->bufferRef);
+        oldestInstance->inUse = false;
+        // Balance counter after recycling an instance
+        activeCount--;
+    }
+
+    // =========================================================================
+    // STEP 2: STANDARD RESOURCE ACQUISITION
+    // =========================================================================
+    for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
+    {
+        PlayingSound *ps = &playing_pool[i];
+        if (ps->inUse)
+            continue;
 
         if (ma_audio_buffer_ref_init(DEVICE_FORMAT, DEVICE_CHANNELS, audio->pcmData, audio->frameCount,
                                      &ps->bufferRef) != MA_SUCCESS)
             return NULL;
 
-        if (ma_sound_init_from_data_source(&audio_engine, &ps->bufferRef, 0, NULL, &ps->sound) != MA_SUCCESS)
+        ma_uint32 flags = MA_SOUND_FLAG_DECODE;
+        if (!is3d)
+        {
+            flags |= MA_SOUND_FLAG_NO_SPATIALIZATION;
+        }
+
+        if (ma_sound_init_from_data_source(&audio_engine, &ps->bufferRef, flags, NULL, &ps->sound) != MA_SUCCESS)
         {
             ma_audio_buffer_ref_uninit(&ps->bufferRef);
             return NULL;
         }
 
+        float volumeMultiplier = 1.0f / (1.0f + (float)(activeCount * activeCount));
+        ma_sound_set_volume(&ps->sound, volume * volumeMultiplier);
+
+        ps->id    = id;
         ps->inUse = true;
-        return ps; // Return the entire tracking wrapper
+       // --- THE FIX: Equalized Redistribution Pass ---
+        // Increment count to include the new instance we just built
+        u32 totalInstances = activeCount + 1; 
+        
+        // Calculate the even share of the requested volume budget
+        float evenedVolume = volume / (float)totalInstances;
+
+        // Apply this evened volume to EVERY active instance of this sound right now
+        for (int j = 0; j < MAX_PLAYING_SOUNDS; j++)
+        {
+            if (playing_pool[j].inUse && playing_pool[j].id == id)
+            {
+                ma_sound_set_volume(&playing_pool[j].sound, evenedVolume);
+            }
+        }
+
+        return ps;
     }
 
-    return NULL; // Pool full
+    return NULL;
 }
 
-// seekFrame: The exact PCM frame to start from (Pass 0 to play from the beginning)
-void Sol_Audio_PlayAt(SolAudioId id, vec3s pos, float seek)
+void Sol_Audio_Play(SolAudioId id, float volume, float seek, u32 concurrent)
 {
     ma_uint64     seekFrame = SOL_SECONDS_TO_FRAMES(seek);
-    bool          is3d      = pos.x > 0;
-    PlayingSound *ps        = Sol_Audio_Alloc(id, is3d);
+    PlayingSound *ps        = Sol_Audio_Alloc(id, false, volume, concurrent);
+    if (!ps)
+        return;
+
+    if (seekFrame > 0)
+    {
+        ma_sound_seek_to_pcm_frame(&ps->sound, seekFrame);
+    }
+
+    ma_sound_start(&ps->sound);
+}
+
+void Sol_Audio_PlayAt(SolAudioId id, vec3s pos, float volume, float seek, u32 concurrent)
+{
+    ma_uint64     seekFrame = SOL_SECONDS_TO_FRAMES(seek);
+    PlayingSound *ps        = Sol_Audio_Alloc(id, true, volume, concurrent);
     if (!ps)
         return;
 

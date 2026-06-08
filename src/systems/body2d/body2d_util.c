@@ -105,19 +105,12 @@ bool IsOverlappingRect(World *world, int idA, int idB)
 
 void Grab(vec2s *vel, vec2s pos, CompBody2d *body, CompInteract *interact, float fdt)
 {
-    SolMouse mouse   = Sol_Input_GetMouse();
-    vec2s    mPos    = {mouse.x, mouse.y};
-    vec2s    grabPos = glms_vec2_add(pos, interact->grabOffset);
-    vec2s scaledPos = {UISCALE(grabPos.x), UISCALE(grabPos.y)};
-    vec2s    toMouse = glms_vec2_sub(Sol_Input_GetMouseUI(), grabPos);
+    vec2s    grabPos   = glms_vec2_add(pos, interact->grabOffset);
+    vec2s    toMouse   = glms_vec2_sub(Sol_Input_GetMouseUI(), grabPos);
 
-    // Higher = snappier. 25 feels responsive without floatiness; 40+ feels glued.
     const float stiffness = 80.0f;
     float       alpha     = 1.0f - expf(-stiffness * fdt);
-
-    // vel is "displacement this frame" (pos += vel later in the step).
-    // toMouse * alpha → cover `alpha` fraction of remaining distance.
-    *vel = glms_vec2_scale(toMouse, alpha);
+    *vel                  = glms_vec2_scale(toMouse, alpha);
 }
 
 void CollideScreenEdge(vec2s *vel, vec2s *pos, vec2s dims)

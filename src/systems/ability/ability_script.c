@@ -127,7 +127,7 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
 
         break;
     case ACTIONKIND_PLAY_SOUND:
-        Sol_Audio_PlayAt(a->as.sound.sound, Sol_Controller_GetAimPos(world, id), 0);
+        Sol_Audio_PlayAt(a->as.sound.sound, Sol_Controller_GetAimPos(world, id),1.0f, 0, 0);
         break;
     case ACTIONKIND_APPLY_BUFF:
 

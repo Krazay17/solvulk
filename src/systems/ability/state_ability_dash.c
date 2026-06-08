@@ -25,7 +25,7 @@ void ADash_State_Update(World *world, int id, float dt)
 
 void ADash_State_Enter(World *world, int id)
 {
-    Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 0.0f);
+    Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
     Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.2f, 0);
 
     CompAbility *ability = &world->abilities[id];
@@ -83,5 +83,6 @@ bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastEntered + ability_config[ABILITY_STATE_DASH].cooldown > Sol_GetGameTime());
+    return slot != ability->activeSlot &&
+           !(data->lastEntered + ability_config[ABILITY_STATE_DASH].cooldown > Sol_GetGameTime());
 }

@@ -2,7 +2,7 @@
 
 typedef void (*DrawFunc)(World *, int, double, double, SolView2d *, vec3s);
 
-static void Step(World *world, double dt, double time);
+static void PlayerHealthbar(World *world, double dt, double time);
 static void Draw(World *world, double dt, double time);
 static void DrawRect(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void DrawCircle(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
@@ -17,7 +17,7 @@ void Sol_View2d_Init(World *world)
 {
     world->view2d   = calloc(MAX_ENTS, sizeof(CompView2d));
     WAdd2d(world)   = Draw;
-    WAddStep(world) = Step;
+    WAddStep(world) = PlayerHealthbar;
 }
 
 SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
@@ -54,15 +54,17 @@ CompView2d *Sol_View2d_Get(World *world, int id)
     return &world->view2d[id];
 }
 
-static void Step(World *world, double dt, double time)
+static void PlayerHealthbar(World *world, double dt, double time)
 {
-    int required = HAS_VIEW2D | HAS_OTHERWORLD;
+    int required = HAS_VIEW2D | HAS_TRACKER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
             continue;
-        CompOtherworld *ow = &world->otherworlds[id];
+        if (!(world->flags[id].flags & EFLAG_HEALTHBAR))
+            continue;
+        CompTracker *ow = &world->trackers[id];
         if (!ow->world || !ow->entId)
             continue;
         if (!(ow->world->masks[ow->entId] & HAS_VITAL))
@@ -72,7 +74,8 @@ static void Step(World *world, double dt, double time)
         CompView2d *view = &world->view2d[id];
 
         float target              = v->maxHealth > 0 ? (float)v->health / (float)v->maxHealth : 0.0f;
-        view->views[0].targetFill = target;
+        view->views[2].targetFill = target;
+        view->views[3].fill = view->views[3].targetFill = target;
     }
 }
 
@@ -114,10 +117,10 @@ static void DrawRect(World *world, int id, double dt, double time, SolView2d *vi
     vec4s drawCol = view->color;
     if (istate & INTERACT_TOGGLED)
         drawCol = view->toggleColor;
-    drawCol = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
-    drawCol = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
-
-    float factor = 1.0f - expf(-14.0f * fdt);
+    drawCol      = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
+    drawCol      = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
+    float speed  = view->fillSpeed > 0 ? -view->fillSpeed : -14.0f;
+    float factor = 1.0f - expf(speed * fdt);
     view->fill   = Sol_Math_Lerp(view->fill, view->targetFill, factor);
 
     RectSSBO *ssbo = Sol_Render_GetNext_Rect();

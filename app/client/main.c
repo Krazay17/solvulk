@@ -244,7 +244,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         RECT rect;
         if (GetWindowRect(hwnd, &rect))
         {
-            Sol_Window_OnGeometryChanged(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+            Sol_Window_OnResize(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
         }
         return 0;
     case WM_LBUTTONDOWN:

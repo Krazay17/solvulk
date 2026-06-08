@@ -60,8 +60,8 @@ static void AbilitySlots(World *world, double dt, double time)
             {
                 count++;
                 CompItem *cardItem = &world->items[overlappingId];
-                // If you add other item types later, ensure we only track cards here
-
+                if (cardItem->kind != ITEMKIND_ABILITY_CARD)
+                    continue;
                 CompBody2d *cardBody = &world->body2d[overlappingId];
                 vec3s       cardPos  = Sol_Xform_GetPos(world, overlappingId);
 
@@ -86,6 +86,8 @@ static void AbilitySlots(World *world, double dt, double time)
         if (bestCardId != -1)
         {
             Sol_Ability_SetAbility(activeWorld, 1, item->slot, bestAbility);
+            if (!(Sol_Interact_GetState(world, bestCardId) & INTERACT_MOVING))
+                Sol_Parent_SetActive(world, bestCardId, true);
         }
         else
         {
@@ -181,6 +183,6 @@ void Sol_Item_SetRarity(World *world, int id, u32 rarity)
         color = (vec4s){0.0f, 1.0f, 1.0f, 1.0f};
         break;
     }
-    world->view2d[id].views[1].color = color;
+    world->view2d[id].views[1].color      = color;
     world->view2d[id].views[1].hoverColor = color;
 }

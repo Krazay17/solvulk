@@ -352,6 +352,94 @@ SolCollision Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri)
     return result;
 }
 
+
+void System_Interact_Tick(World *world, double dt, double time)
+{
+    SolMouse mouse = Sol_Input_GetMouse();
+
+    int rayId = -1;
+    if (world->systemBits & SYS_BIT(WORLD_SYS_PHYSX))
+    {
+        SolRayResult screenRay = {0};
+        if (!mouse.locked)
+            screenRay = Sol_ScreenRaycast(world, mouse.x, mouse.y, (SolRay){.mask = 0b11, .dist = 100.0f});
+        if (screenRay.hit && screenRay.entId)
+            rayId = screenRay.entId;
+
+        Sol_Debug_Add("SelectedEnt", rayId);
+    }
+
+    int required = HAS_INTERACT | HAS_BODY2;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompInteract *interact   = &world->interacts[id];
+        bool          wasPressed = interact->state & INTERACT_PRESSED;
+        interact->state &= ~INTERACT_PRESSED;
+        interact->state &= ~INTERACT_CLICKED;
+        if (world != interactingEnt.world || id != interactingEnt.id)
+        {
+            interact->state &= ~INTERACT_HOVERED;
+        }
+        CompBody2d *body = &world->body2d[id];
+        if (id != movingId)
+        {
+            interact->state &= ~INTERACT_MOVING;
+            if (world->masks[id] & HAS_PARENT)
+            {
+                if (body->overlapCount)
+                {
+                    Sol_Parent_SetActive(world, id, true);
+                    Sol_Parent_SetWithOffset(world, id, body->overlapping[0]);
+                }
+            }
+        }
+
+        if (id != interactingEnt.id)
+            continue;
+
+        interact->state |= INTERACT_HOVERED;
+        if (mouse.buttons[SOL_MOUSE_MIDDLE] && !movingId)
+        {
+            SetMoving(world, interact, id);
+        }
+
+        if (mouse.buttons[SOL_MOUSE_LEFT])
+        {
+            interact->state |= INTERACT_PRESSED;
+            if (wasPressed && !movingId)
+            {
+                if (glms_vec2_distance(interact->pressPos, Sol_Input_GetMouseUI()) > 2.0f)
+                    SetMoving(world, interact, id);
+            }
+            else
+            {
+                interact->pressPos = Sol_Input_GetMouseUI();
+            }
+
+            if (interact->onHold.callbackFunc)
+                interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
+        }
+        else if (wasPressed && !(interact->state & INTERACT_MOVING))
+        {
+            interact->state |= INTERACT_CLICKED;
+            interact->state &= ~INTERACT_PRESSED;
+            if (interact->state & INTERACT_TOGGLEABLE)
+                interact->state ^= INTERACT_TOGGLED;
+
+            if (interact->onClick.callbackFunc)
+                interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
+        }
+        else
+        {
+            movingId = 0;
+        }
+    }
+}
+
 ```CMAKE
 #--------------------------------------
 # compile textures

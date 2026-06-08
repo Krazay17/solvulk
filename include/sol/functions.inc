@@ -3,4 +3,3 @@
 
 SOL_FUNC(void, Sol_Init, void *hwnd, void *hInstance)
 SOL_FUNC(void, Sol_Tick, double dt, double time)
-SOL_FUNC(void, Sol_Window_Resize, float width, float height)

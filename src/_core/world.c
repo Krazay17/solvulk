@@ -53,6 +53,7 @@ World *World_Create(WorldKind kind)
     {
         world->doesSimulate                = true;
         world->doesRender                  = true;
+        world->doesReplicate               = false;
         world->systemBits                  = 0;
         world->playerID                    = -1;
         world->kind                        = kind;
@@ -93,7 +94,10 @@ World *World_Create_Default(WorldKind kind)
 void World_Destroy(World *world)
 {
     if (world)
+    {
         free(world);
+        worldId--;
+    }
 }
 
 void World_Step(World *world, double dt, double time)
@@ -113,11 +117,46 @@ void World_Step(World *world, double dt, double time)
     world->currentTick++;
 }
 
+void Worlds_Step(World **worlds, int count, double dt, double time)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (!world->doesSimulate)
+            continue;
+        for (int i = 0; i < world->prestepCount; i++)
+        {
+            world->prestepSystems[i](world, dt, time);
+        }
+        for (int i = 0; i < world->stepCount; i++)
+        {
+            world->stepSystems[i](world, dt, time);
+        }
+        for (int i = 0; i < world->poststepCount; i++)
+        {
+            world->poststepSystems[i](world, dt, time);
+        }
+        Sol_Event_Clear(world);
+        world->currentTick++;
+    }
+}
+
 void World_Tick(World *world, double dt, double time)
 {
     for (int i = 0; i < world->tickCount; i++)
     {
         world->tickSystems[i](world, dt, time);
+    }
+}
+
+void Worlds_Tick(World **worlds, int worldCount, double dt, double time)
+{
+    for (int i = 0; i < worldCount; i++)
+    {
+        World *world = worlds[i];
+        if (world->doesSimulate)
+            for (int w = 0; w < world->tickCount; w++)
+                world->tickSystems[w](world, dt, time);
     }
 }
 
@@ -129,11 +168,33 @@ void World_Draw3d(World *world, double dt, double time)
     }
 }
 
+void Worlds_Draw3d(World **worlds, int count, double dt, double time)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (world->doesRender)
+            for (int i = 0; i < world->draw3dCount; i++)
+                world->draw3dSystems[i](world, dt, time);
+    }
+}
+
 void World_Draw2d(World *world, double dt, double time)
 {
     for (int i = 0; i < world->draw2dCount; i++)
     {
         world->draw2dSystems[i](world, dt, time);
+    }
+}
+
+void Worlds_Draw2d(World **worlds, int count, double dt, double time)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (world->doesRender)
+            for (int i = 0; i < world->draw2dCount; i++)
+                world->draw2dSystems[i](world, dt, time);
     }
 }
 
@@ -227,9 +288,9 @@ void Sol_World_SetActive(World *world)
     Sol_GetState()->activeWorld   = world;
     Sol_GetState()->activeWorldId = world->worldId;
 }
-void Sol_World_SetOtherworld(World *world, int id, World *otherWorld, int otherId)
+void Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId)
 {
-    world->otherworlds[id].world = otherWorld;
-    world->otherworlds[id].entId = otherId;
-    world->masks[id] |= HAS_OTHERWORLD;
+    world->trackers[id].world = otherWorld;
+    world->trackers[id].entId = otherId;
+    world->masks[id] |= HAS_TRACKER;
 }

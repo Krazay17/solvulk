@@ -121,6 +121,7 @@ typedef enum
     EFLAG_PICKUPABLE = (1 << 0),
     EFLAG_PICKEDUP   = (1 << 1),
     EFLAG_PROJECTILE = (1 << 2),
+    EFLAG_HEALTHBAR  = (1 << 3),
 } EFlag;
 
 typedef struct SolXform

@@ -6,9 +6,44 @@ void Sol_Xform_Init(World *world)
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
 }
 
-CompXform* Sol_Xform_Add(World *world, int id, vec3s pos)
+CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
 {
     world->xforms[id].pos = world->xforms[id].lastPos = world->xforms[id].drawPos = pos;
+}
+
+void Sol_Xform_Snapshot(World **worlds, int count)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (!world->doesSimulate)
+            continue;
+        for (int i = 0; i < world->activeCount; ++i)
+        {
+            int id                      = world->activeEntities[i];
+            world->xforms[id].lastPos   = world->xforms[id].pos;
+            world->xforms[id].lastQuat  = world->xforms[id].quat;
+            world->xforms[id].lastScale = world->xforms[id].scale;
+        }
+    }
+}
+
+void Sol_Xform_Interpolate(World **worlds, int count, float alpha)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (world->doesSimulate)
+            for (int i = 0; i < world->activeCount; ++i)
+            {
+                int        id = world->activeEntities[i];
+                CompXform *xf = &world->xforms[id];
+
+                xf->drawPos   = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
+                xf->drawQuat  = glms_quat_nlerp(xf->lastQuat, xf->quat, alpha);
+                xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
+            }
+    }
 }
 
 void Xform_Snapshot(World *world)

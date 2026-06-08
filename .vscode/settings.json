@@ -1,5 +1,5 @@
 {
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Microsoft, AlignConsecutiveAssignments: true, AlignConsecutiveDeclarations: true }",
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Microsoft, AlignConsecutiveAssignments: true, AlignConsecutiveDeclarations: true, SortIncludes: Never }",
     "cmake.debugConfig": {
         "console": "integratedTerminal"
     },

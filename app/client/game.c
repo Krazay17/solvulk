@@ -141,6 +141,7 @@ void Create_Sol_Game()
     Sol_Xform_Set(hud, abilityBar, 500, 650, 0);
     Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(hud, abilityBar);
+
     for (int i = 0; i < 4; i++)
     {
         char label[8];
@@ -165,12 +166,17 @@ void Create_Sol_Game()
     }
 
     Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL);
+
     int abilityCard1 = Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL);
     Sol_Item_SetRarity(hud, abilityCard1, 2);
+
     int abilityCard5 = Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SHIELD);
     Sol_Item_SetRarity(hud, abilityCard5, 1);
+
     Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH);
+    
     int abilityCard2 = Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL);
+
     Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD);
 
     Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);

@@ -8,9 +8,12 @@ typedef struct CompXform
     vec3s   scale, lastScale, drawScale;
 } CompXform;
 
-void       Sol_Xform_Init(World *world);
-void       Xform_Snapshot(World *world);
-void       Xform_Interpolate(World *world, float alpha);
+void Sol_Xform_Snapshot(World **worlds, int count);
+void Sol_Xform_Interpolate(World **worlds, int count, float alpha);
+
+void Sol_Xform_Init(World *world);
+void Xform_Snapshot(World *world);
+void Xform_Interpolate(World *world, float alpha);
 
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos);
 void       Sol_Xform_Teleport(World *world, int id, vec3s pos);

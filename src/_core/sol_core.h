@@ -42,4 +42,4 @@ extern SolState solState;
 
 void   Sol_State_SetTimescale(float timescale);
 World *Sol_State_GetActiveWorld(void);
-void   Sol_Window_OnGeometryChanged(int x, int y, int width, int height);
+void   Sol_Window_OnResize(int x, int y, int width, int height);

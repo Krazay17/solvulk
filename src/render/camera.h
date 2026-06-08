@@ -22,3 +22,4 @@ void Sol_Cam_Update(double dt);
 
 SolCamera *Sol_GetCamera();
 vec3s      Sol_Cam_GetRight();
+vec3s      Sol_Cam_GetFwd();

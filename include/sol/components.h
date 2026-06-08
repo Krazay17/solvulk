@@ -63,7 +63,7 @@ typedef struct CompBody2d
     vec2s      vel, dims, grav, grabPos;
     u32        overlapping[4];
     u32        overlapCount;
-    u32        group, mask;
+    u32        group, mask, zindex;
     u32        overlapGroup, overlapMask;
 } CompBody2d;
 void        Sol_Body2d_Init(World *world);
@@ -86,7 +86,7 @@ typedef struct
     vec4s      hoverColor, clickColor, toggleColor;
     float      fill, scale, textWidth, border;
     float      hoverAnim, clickAnim;
-    float      targetFill;
+    float      targetFill, fillSpeed;
     u32        zindex;
     u8         textureID, flags;
     vec2s      textureUV;
@@ -157,8 +157,8 @@ void      Sol_Item_SetRarity(World *world, int id, u32 rarity);
 
 typedef enum
 {
-    TOOLTIPKIND_INFO,
     TOOLTIPKIND_CARD_STATS,
+    TOOLTIPKIND_PLAYER_INTERACT,
     TOOLTIPKIND_COUNT,
 } TooltipKind;
 typedef struct CompTooltip
@@ -167,7 +167,4 @@ typedef struct CompTooltip
     char        header[64];
     char        body[128];
 } CompTooltip;
-extern const CompTooltip tooltip_configs[TOOLTIPKIND_COUNT];
-
-void         Sol_Tooltip_Init(World *world);
-CompTooltip *Sol_Tooltip_Add(World *world, int id, TooltipKind kind);
+// extern const CompTooltip tooltip_configs[TOOLTIPKIND_COUNT];

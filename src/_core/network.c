@@ -10,6 +10,41 @@ static u32    isInitialized  = 0;
 static double last_send_time = 0;
 static double last_heartbeat = 0;
 
+void Sol_Net_Tick(World **worlds, int worldCount)
+{
+    if (Net_IsActive())
+        Net_Poll();
+
+    if (Net_IsPlaying() && Net_IsClient())
+        for (int i = 0; i < worldCount; i++)
+        {
+            World *world = worlds[i];
+            if (world->doesReplicate)
+                Net_Apply_Snap(world);
+        }
+}
+
+void Sol_Net_Step(World **worlds, int count, double time)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (Net_IsPlaying() && world->doesReplicate && world->doesSimulate)
+        {
+            if (Net_IsClient())
+            {
+                Net_Send_Input(world);
+            }
+            else if (Net_IsHost() && Net_ShouldSend_Snap())
+            {
+                Net_Send_Snap(world);
+                Net_Send_Events(world);
+            }
+        }
+    }
+    Net_Heartbeat(time);
+}
+
 void Net_Connect(bool host, const char *ip, u16 port)
 {
     if (isInitialized == 0)
@@ -291,9 +326,8 @@ void Net_Recv_Packet(ENetEvent *event)
             printf("No world found %d\n", helloPacket->worldId);
             return;
         }
-        int id =
-            Sol_Prefab_Factory(world, 0, ENTKIND_PLAYER,
-                               (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
+        int id = Sol_Prefab_Factory(world, 0, ENTKIND_PLAYER,
+                                    (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
         if (id > 0)
             Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
 
@@ -346,7 +380,7 @@ void Net_Recv_Packet(ENetEvent *event)
         c->aimdir                   = inputPacket->aimdir;
         c->yaw                      = inputPacket->yaw;
         c->isStrafing               = inputPacket->isStrafing;
-        
+
         memcpy(&world->abilities[id].bindings->targetState, inputPacket->abilities, sizeof(u32) * 10);
     }
     break;

@@ -136,6 +136,9 @@ static inline bool Net_IsClient()
     return solNet.role == NETROLE_CLIENT;
 }
 
+void Sol_Net_Tick(World **worlds, int worldCount);
+void Sol_Net_Step(World **worlds, int worldCount, double time);
+
 void Net_Connect(bool host, const char *ip, u16 port);
 void Net_DeInit();
 void Net_Disconnect();

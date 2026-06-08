@@ -45,6 +45,7 @@ u32 Sol_Parent_GetParent(World *world, int id)
 void Sol_Parent_SetActive(World *world, int id, bool active)
 {
     world->parents[id].active = active;
+    world->masks[id] |= HAS_PARENT;
 }
 bool Sol_Parent_IsActive(World *world, int id)
 {

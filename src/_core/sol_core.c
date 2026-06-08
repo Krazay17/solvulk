@@ -2,9 +2,9 @@
 
 #include "network.h"
 
-SolState solState = {0};
+SolState solState;
 
-static double accumulator = 0.0;
+static double accumulator = SOL_TIMESTEP;
 static void   DebugFPS(double dt);
 static void   Sol_OnResize();
 
@@ -38,14 +38,58 @@ int Sol_Init(void *hwnd, void *hInstance)
     return res;
 }
 
+void Sol_Tick(double dt, double time)
+{
+    solState.gameTime += dt;
+    solState.tickCounter++;
+    Sol_Input_Update();
+
+    if (solState.needsResize)
+        Sol_OnResize();
+
+    Sol_Net_Tick(solState.worlds, solState.worldCount);
+    Worlds_Tick(solState.worlds, solState.worldCount, dt, time);
+
+    // ######### STEP AND INTERP #########
+    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
+    if (accumulator >= SOL_TIMESTEP)
+    {
+        Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
+        Sol_Interact_Update(solState.worlds, solState.worldCount);
+    }
+    while (accumulator >= SOL_TIMESTEP)
+    {
+        Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP, time);
+        Sol_Net_Step(solState.worlds, solState.worldCount, time);
+        solState.stepCounter++;
+        accumulator -= SOL_TIMESTEP;
+    }
+    float alpha = (float)(accumulator / SOL_TIMESTEP);
+    Sol_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
+    // ######### END STEP AND INTERP #########
+
+    if (solState.activeWorld)
+        Sol_Audio_Update(Sol_Xform_GetPos(solState.activeWorld, 1), Sol_Cam_GetFwd());
+
+    Sol_Begin_Draw();
+
+    Sol_Cam_Update(dt);
+    Sol_Render_DrawSkybox();
+    
+    Worlds_Draw3d(solState.worlds, solState.worldCount, dt, time);
+    Sol_Render_Flush3D();
+    
+    Worlds_Draw2d(solState.worlds, solState.worldCount, dt, time);
+    Sol_Tooltip_Draw();
+    Sol_Render_Flush2D();
+
+    Sol_Debug_Draw(dt);
+    Sol_End_Draw();
+}
+
 World *Sol_GetWorldById(u32 id)
 {
-    for (int i = 0; i < solState.worldCount; i++)
-    {
-        if (solState.worlds[i]->worldId == id)
-            return solState.worlds[i];
-    }
-    return NULL;
+    return solState.worlds[id];
 }
 
 SolState *Sol_GetState()
@@ -69,13 +113,6 @@ void Sol_Destroy()
     solState.isRunning = false;
 }
 
-void Sol_Window_Resize(float width, float height)
-{
-    solState.windowWidth  = width;
-    solState.windowHeight = height;
-    solState.needsResize  = true;
-}
-
 static void Sol_OnResize()
 {
     solState.needsResize = false;
@@ -85,149 +122,35 @@ static void Sol_OnResize()
     }
 }
 
-// In sol_core.c — single source of truth for window geometry.
-void Sol_Window_OnGeometryChanged(int x, int y, int width, int height)
+void Sol_Window_OnResize(int x, int y, int width, int height)
 {
-    if (width <= 0 || height <= 0) return;  // ignore degenerate (minimize)
-    
+    if (width <= 0 || height <= 0)
+        return; // ignore degenerate (minimize)
+
     // Position (cheap, always update)
     solState.windowX = x;
     solState.windowY = y;
-    
+
     // Size + derived values (skip if unchanged)
-    if (width == solState.windowWidth && height == solState.windowHeight) return;
-    
+    if (width == solState.windowWidth && height == solState.windowHeight)
+        return;
+
     solState.windowWidth  = width;
     solState.windowHeight = height;
     solState.aspectRatio  = (float)width / (float)height;
-    
+
     // UI scale: fit logical (WINDOW_WIDTH × WINDOW_HEIGHT) inside actual window,
     // preserving aspect. min() = letterbox; max() = crop. Use min() for UI.
-    float sx = (float)width  / WINDOW_WIDTH;
-    float sy = (float)height / WINDOW_HEIGHT;
+    float sx         = (float)width / WINDOW_WIDTH;
+    float sy         = (float)height / WINDOW_HEIGHT;
     solState.uiScale = fminf(sx, sy);
-    
-    solState.needsResize = true;   // game thread picks this up in Sol_OnResize
+
+    solState.needsResize = true; // game thread picks this up in Sol_OnResize
 }
 
 void Sol_State_SetTimescale(float timescale)
 {
     solState.timescale = timescale;
-}
-
-void Sol_Tick(double dt, double time)
-{
-    solState.gameTime += dt;
-    solState.tickCounter++;
-    Sol_Input_Update();
-    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
-    {
-        bool menuActive = solState.worlds[2]->doesSimulate;
-        menuActive ^= 1;
-        solState.worlds[2]->doesSimulate = menuActive;
-        solState.worlds[2]->doesRender   = menuActive;
-        Sol_Input_SetLocked(!menuActive);
-    }
-
-    if (solState.needsResize)
-        Sol_OnResize();
-
-    if (Net_IsActive())
-        Net_Poll();
-
-    if (Net_IsPlaying() && Net_IsClient())
-    {
-        for (int i = 0; i < solState.worldCount; i++)
-        {
-            World *world = solState.worlds[i];
-            if (world->doesReplicate)
-                Net_Apply_Snap(solState.worlds[i]);
-        }
-    }
-
-    for (int i = 0; i < solState.worldCount; ++i)
-    {
-        if (!solState.worlds[i]->doesSimulate)
-            continue;
-        World_Tick(solState.worlds[i], dt, time);
-    }
-
-    // ######### STEP AND INTERP #########
-    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
-    for (int i = 0; i < solState.worldCount; ++i)
-    {
-        if (!solState.worlds[i]->doesSimulate)
-            continue;
-        if (accumulator >= SOL_TIMESTEP)
-        {
-            Sol_Interact_Update(solState.worlds, solState.worldCount);
-            Xform_Snapshot(solState.worlds[i]);
-        }
-    }
-    while (accumulator >= SOL_TIMESTEP)
-    {
-        for (int i = 0; i < solState.worldCount; ++i)
-        {
-            World *world = solState.worlds[i];
-            if (!world->doesSimulate)
-                continue;
-            World_Step(world, SOL_TIMESTEP, time);
-
-            if (Net_IsPlaying() && world->doesReplicate)
-            {
-                if (Net_IsClient())
-                {
-                    Net_Send_Input(world);
-                }
-                else if (Net_IsHost() && Net_ShouldSend_Snap())
-                {
-                    Net_Send_Snap(world);
-                    Net_Send_Events(world);
-                }
-            }
-            Sol_Event_Clear(world);
-        }
-        Net_Heartbeat(time);
-        solState.stepCounter++;
-        accumulator -= SOL_TIMESTEP;
-    }
-    // Post Step
-    float alpha = (float)(accumulator / SOL_TIMESTEP);
-    for (int i = 0; i < solState.worldCount; ++i)
-    {
-        World *world = solState.worlds[i];
-        if (!world->doesSimulate)
-            continue;
-        Xform_Interpolate(world, alpha);
-    }
-    // ######### END STEP AND INTERP #########
-
-    if (solState.activeWorld)
-        Sol_Audio_Update(Sol_Xform_GetPos(solState.activeWorld, 1), Sol_Controller_GetAimdir(solState.activeWorld, 1));
-
-    Sol_Begin_Draw();
-
-    Sol_Cam_Update(dt);
-    Sol_Render_DrawSkybox();
-    
-    for (int i = 0; i < solState.worldCount; i++)
-    {
-        if (!solState.worlds[i]->doesRender)
-            continue;
-        World_Draw3d(solState.worlds[i], dt, time);
-    }
-    Sol_Render_Flush3D();
-
-    for (int i = 0; i < solState.worldCount; i++)
-    {
-        if (!solState.worlds[i]->doesRender)
-            continue;
-        World_Draw2d(solState.worlds[i], dt, time);
-    }
-    Sol_Render_Flush2D();
-
-    Sol_Debug_Draw(dt);
-    Sol_End_Draw();
 }
 
 World *Sol_State_GetActiveWorld()

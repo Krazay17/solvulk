@@ -90,6 +90,12 @@ static void Combat_Step(World *world, double dt, double time)
                     Sol_Buff_Add(world, e->as.hit.entB, hitData.buffKinds[b], e->as.hit.entA, 0, e->as.hit.power);
 
                 Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
+
+                if (e->as.hit.entA == 1)
+                {
+                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.15f, 0.05f, 16);
+                }
+                Sol_Audio_PlayAt(SOL_AUDIO_GOTHIT, Sol_Xform_GetPos(world, e->as.hit.entB), 0.1f, 0, 1);
             }
 
             if (canDamage && world->masks[e->as.hit.entB] & HAS_AICONTROLLER)

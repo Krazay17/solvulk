@@ -19,13 +19,13 @@ void Fx_Event(World *world, double dt, double time)
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
         switch (e->as.fx.kind)
         {
-            case FXKIND_SPINHIT:{
-                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 1.0f);
-                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, 1.0f);
-            }
-            break;
+        case FXKIND_SPINHIT: {
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 1.0f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, 1.0f);
+        }
+        break;
         case FXKIND_FIREBALL_SHOOT: {
-            Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, e->as.fx.pos, 0.0f);
+            Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, e->as.fx.pos, 1.0f, 0.0f, 0);
             // Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
             //                                  .ttl      = 1.0f,
             //                                  .burst    = 1,
@@ -71,7 +71,7 @@ void Fx_Event(World *world, double dt, double time)
         break;
         case FXKIND_FIREBALL_HIT: {
             float scale = e->as.fx.scale;
-            Sol_Audio_PlayAt(SOL_AUDIO_FIREBALLIMPACT, e->as.fx.pos, 0.05f);
+            Sol_Audio_PlayAt(SOL_AUDIO_FIREBALLIMPACT, e->as.fx.pos, 1.0f, 0.05f, 0);
 
             // QUICK MAGIC BLAST
             Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 100,
@@ -141,12 +141,12 @@ void Fx_Event(World *world, double dt, double time)
                                                      .color        = {1.0f, 0.0f, .0f, .88f},
                                                      .randLife     = 1,
                                                  }});
-            Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
-                                                 .ttl      = 2.5f,
-                                                 .burst    = 5,
-                                                 .rate     = 0.2f,
+            Sol_Emitter_SpawnEx(world, (Emitter){.pos       = pos,
+                                                 .ttl       = 2.5f,
+                                                 .burst     = 5,
+                                                 .rate      = 0.2f,
                                                  .rateBurst = 2,
-                                                 .particle = {
+                                                 .particle  = {
                                                      .kind         = PARTICLE_FIRE,
                                                      .ttl          = 1.5f * scale,
                                                      .randScaleout = 1,

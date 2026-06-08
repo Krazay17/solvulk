@@ -1,4 +1,3 @@
-#include "sol/sol.h"
 #include "sol_core.h"
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
@@ -221,80 +220,35 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 {
     vec2s dims = {250.0f, 30.0f};
 
-    int bg = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, bg, pos);
-    Sol_View2d_Set(world, bg,
-                   (CompView2d){
-                       .count = 1,
-                       .views[0] =
-                           {
-                               .kind       = VIEW2DKIND_RECT,
-                               .dims       = {dims.x, dims.y},
-                               .color      = {0, 0, 0, 1},
-                               .hoverColor = {1, 1, 1, 0.5f},
-                               .zindex     = 2,
-                               .targetFill = 1.0f,
-                               .fill       = 1.0f,
-                           },
-                   });
-    Sol_Interact_Set(world, bg, (CompInteract){0});
-    Sol_Body2d_Add(world, bg, BODY2DKIND_RECT, dims.x, dims.y, 0, 0);
-
-    int bg2 = Sol_Create_Ent(world, 0);
-    Sol_Xform_Add(world, bg2, pos);
-    Sol_View2d_Set(world, bg2,
-                   (CompView2d){
-                       .count = 1,
-                       .views[0] =
-                           {
-                               .kind       = VIEW2DKIND_RECT,
-                               .dims       = {dims.x, dims.y},
-                               .color      = {0.2, 0.2, 0.2, 1},
-                               .hoverColor = {1, 1, 1, 0.5f},
-                               .zindex     = 2,
-                               .targetFill = 1.0f,
-                               .fill       = 1.0f,
-                               .textureID  = SOL_TEXTURE_HEALTH,
-                           },
-                   });
-    Sol_Parent_Add(world, bg2, bg);
-
     int id = Sol_Create_Ent(world, 0);
-    Sol_Xform_Teleport(world, id, pos);
-    Sol_View2d_Set(world, id,
-                   (CompView2d){.count    = 1,
-                                .views[0] = {
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0, 0);
+    Sol_Interact_Add(world, id);
+    Sol_World_SetTracker(world, id, entWorld, entId);
+    Sol_Flags_Add(world, id, EFLAG_HEALTHBAR);
 
-                                    .kind       = VIEW2DKIND_RECT,
-                                    .dims       = {dims.x, dims.y},
-                                    .color      = {0, 1, 0, 1},
-                                    .hoverColor = {1, 1, 0, 0.5f},
-                                    .textureID  = SOL_TEXTURE_HEALTH,
-                                    .targetFill = 1.0f,
-                                    .fill       = 1.0f,
-                                    .zindex     = 3,
-                                }});
-    Sol_Parent_Set(world, id, (CompParent){.active = true, .parentId = bg});
-    Sol_World_SetOtherworld(world, id, entWorld, entId);
+    SolView2d *bg  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    bg->zindex     = 2;
+    bg->hoverColor = (vec4s){1, 1, 1, 0.5f};
 
-    int border = Sol_Create_Ent(world, 0);
-    Sol_Xform_Teleport(world, border, pos);
-    Sol_View2d_Set(world, border,
-                   (CompView2d){
-                       .count = 1,
-                       .views[0] =
-                           {
-                               .kind       = VIEW2DKIND_RECT,
-                               .dims       = {dims.x, dims.y},
-                               .color      = {0, 0, 0, 1},
-                               .hoverColor = {0, 0, 0, 0.5f},
-                               .border     = 2.0f,
-                               .fill       = 1.0f,
-                               .targetFill = 1.0f,
-                               .zindex     = 3,
-                           },
-                   });
-    Sol_Parent_Set(world, border, (CompParent){.active = true, .parentId = bg});
+    SolView2d *bg2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.2, 0.2, 0.2, 1}, dims.x, dims.y);
+    bg2->zindex    = 2;
+    bg2->textureID = SOL_TEXTURE_HEALTH;
+
+    SolView2d *bar  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 0, 0, 1}, dims.x, dims.y);
+    bar->zindex     = 2;
+    bar->fillSpeed  = 4.0f;
+    bar->hoverColor = (vec4s){1, 1, 0, 0.5f};
+    bar->textureID  = SOL_TEXTURE_HEALTH;
+
+    SolView2d *bar2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 1, 0, 1}, dims.x, dims.y);
+    bar2->zindex     = 2;
+    bar2->hoverColor = (vec4s){1, 1, 0, 0.5f};
+    bar2->textureID  = SOL_TEXTURE_HEALTH;
+
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    border->zindex    = 2;
+    border->border    = 2.0f;
 
     return id;
 }
@@ -303,76 +257,24 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 {
     vec2s dims = {150.0f, 50.0f};
     int   id   = Sol_Create_Ent(world, 0);
-
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0b1, 0b1);
-    Sol_Interact_Set(world, id, (CompInteract){0});
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0b1, 0b1);
 
-    int bg = Sol_Create_Ent(world, 0);
-    Sol_View2d_Set(world, bg,
-                   (CompView2d){.count    = 1,
-                                .views[0] = {
-                                    .kind        = VIEW2DKIND_RECT,
-                                    .color       = (vec4s){0.1f, 0.1f, 0.1f, 1.0f},
-                                    .hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f},
-                                    .toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f},
-                                    .fill        = 1.0f,
-                                    .targetFill  = 1.0f,
-                                    .dims        = {dims.x, dims.y},
-                                }});
-    int bg2 = Sol_Create_Ent(world, 0);
-    Sol_View2d_Set(world, bg2,
-                   (CompView2d){
-                       .count = 1,
-                       .views[0] =
-                           {
-                               .kind        = VIEW2DKIND_RECT,
-                               .color       = (vec4s){0.5f, 0.1f, 0.1f, 1.0f},
-                               .hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f},
-                               .toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f},
-                               .dims        = {dims.x, dims.y},
-                               .targetFill  = 1.0f,
-                               .fill        = 1.0f,
-                               .textureID   = SOL_TEXTURE_SWIRLFRAME,
-                           },
-                   });
+    SolView2d *bg   = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.1f, 0.1f, 0.1f, 1.0f}, dims.x, dims.y);
+    bg->hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+    bg->toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f};
 
-    int border = Sol_Create_Ent(world, 0);
-    Sol_View2d_Set(world, border,
-                   (CompView2d){.count    = 1,
-                                .views[0] = {
-                                    .kind        = VIEW2DKIND_RECT,
-                                    .color       = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
-                                    .hoverColor  = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
-                                    .clickColor  = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
-                                    .toggleColor = (vec4s){0.0f, 0.0f, 0.0f, 1.0f},
-                                    .dims        = {dims.x, dims.y},
-                                    .border      = 3.0f,
-                                    .fill        = 1.0f,
-                                    .targetFill  = 1.0f,
-                                }});
-    Sol_Parent_Set(world, bg, (CompParent){.active = true, .parentId = id});
-    Sol_Parent_Add(world, bg2, id);
-    Sol_Parent_Set(world, border, (CompParent){.active = true, .parentId = id});
+    SolView2d *bg2   = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.1f, 0.1f, 1.0f}, dims.x, dims.y);
+    bg2->hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+    bg2->toggleColor = (vec4s){0.0f, 0.5f, 0.5f, 1.0f};
+    bg2->textureID   = SOL_TEXTURE_SWIRLFRAME;
 
-    CompView2d textComp = {
-        .count = 1,
-        .views[0] =
-            {
-                .kind       = VIEW2DKIND_TEXT,
-                .color      = (vec4s){{0.0f, 1.0f, 0.0f, 1.0f}},
-                .dims       = {16.0f},
-                .fill       = 1.0f,
-                .targetFill = 1.0f,
-            },
-    };
-    strncpy_s(textComp.views[0].text, sizeof(textComp.views[0].text), text, 64);
-    int textId = Sol_Create_Ent(world, 0);
-    Sol_Xform_Teleport(world, textId, pos);
-    Sol_View2d_Set(world, textId, textComp);
-    Sol_Parent_Set(
-        world, textId,
-        (CompParent){.active = true, .parentId = id, .localOffset = (vec3s){dims.x * 0.5f, dims.y * 0.5f, 0}});
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    border->border    = 3.0f;
+
+    SolView2d *textView = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){0.0f, 1.0f, 0.0f, 1.0f}, 16.0f, 0);
+    strncpy_s(textView->text, sizeof(textView->text), text, 64);
+    textView->offset = (vec4s){dims.x * 0.5f, dims.y * 0.5f};
 
     return id;
 }
@@ -380,26 +282,32 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
 {
     vec2s dims = {62.0f, 62.0f};
-    int   id   = Sol_Create_Ent(world, 0);
+
+    int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Interact_Set(world, id, (CompInteract){0});
+    Sol_Interact_Add(world, id);
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 1, 1);
-    Sol_Parent_Set(world, id, (CompParent){.active = false});
+    body->zindex     = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
+    Sol_Parent_SetActive(world, id, false);
+    Sol_Item_AddAbility(world, id, ability);
+    CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD_STATS);
+
     SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
     image->textureUV         = (vec2s){1, 0.816};
     image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
     image->zindex            = 2;
     world->view2d[id].zindex = 1;
 
-    Sol_Item_AddAbility(world, id, ability);
     switch (ability)
     {
     case ABILITY_STATE_FIREBALL:
         image->textureID = SOL_TEXTURE_FIREBALL_CARD;
+        snprintf(tooltip->header, sizeof(tooltip->header), "Fireball");
         break;
     case ABILITY_STATE_PISTOL:
         image->textureID = SOL_TEXTURE_PISTOL_CARD;
+        snprintf(tooltip->header, sizeof(tooltip->header), "Pistol");
         break;
     case ABILITY_STATE_SHIELD:
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
@@ -408,9 +316,10 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
         image->textureID = SOL_TEXTURE_BLADE_CARD;
         break;
     }
-    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0,0,0,1}, dims.x, dims.y);
-    border->zindex = 2;
-    border->textureID = SOL_TEXTURE_BORDER;
+    SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    border->zindex     = 2;
+    border->textureID  = SOL_TEXTURE_BORDER;
+    border->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
 
     return id;
 }
@@ -460,13 +369,13 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     active->zindex    = 3;
 
     // 6
-
     SolView2d *cooldown = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0, 0, 0.95f}, dims.x, dims.y - 2.0f);
     cooldown->flags     = (1 << 1 | 1 << 2);
     cooldown->textureID = SOL_TEXTURE_CLOUD2;
     cooldown->zindex    = 3;
-    cooldown->offset.y = -1.0f;
+    cooldown->offset.y  = -0.5f;
     // 7
+
     SolView2d *cdFlash  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 0.0f}, dims.x, dims.y);
     cdFlash->clickColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     cdFlash->textureID  = SOL_TEXTURE_SHOCKPARTICLE;

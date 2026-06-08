@@ -24,7 +24,7 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
-SolModel *Sol_GetModel(SolModelId id)
+SolModel *Sol_GetModel(SolModelKind id)
 {
     return &loaded_models[id];
 }
@@ -607,7 +607,7 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
     }
 }
 
-void Init_Anim_Masks(SolModelId modelId, SolSkeleton *skel)
+void Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skel)
 {
     SolModelMasks *masks = &model_masks[modelId];
     // SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
@@ -660,7 +660,7 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     return -1;
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelId handle, CompXform *xform)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform)
 {
     SolModel *model = &loaded_models[handle];
     mat3s     rot   = glms_quat_mat3(xform->quat);
@@ -690,7 +690,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelId h
     }
 }
 
-u32 Sol_Model_GetTriCount(SolModelId handle)
+u32 Sol_Model_GetTriCount(SolModelKind handle)
 {
     return loaded_models[handle].tri_count;
 }

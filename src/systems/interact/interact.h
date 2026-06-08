@@ -30,5 +30,5 @@ InteractState Sol_Interact_GetState(World *world, int id);
 bool          Sol_Interact_GetToggle(World *world, int id);
 
 CompTooltip *Sol_Tooltip_Add(World *world, int id, TooltipKind kind);
-void         Sol_Tooltip_Update();
+void         Sol_Tooltip_Update(double dt);
 void         Sol_Tooltip_Draw();

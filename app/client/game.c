@@ -28,7 +28,7 @@ void MakeAWizard(int flags, void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
+        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 0.6f);
         Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, ENTKIND_WIZARD);
     }
@@ -114,6 +114,14 @@ void ChangeWorld(int flags, void *data)
     }
 }
 
+void RotateGuy(World *world, double dt, double time)
+{
+    static float yaw = 0;
+    yaw+= dt;
+    
+    world->xforms[111].quat = Sol_Quat_FromYawPitch(yaw, 0);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,11 +137,24 @@ void Create_Sol_Game()
 
     SpawnPlayer(0, 0);
 
+    int        player2d      = Sol_Create_Ent(hud, 111);
+    CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
+    Sol_Xform_Add(hud, player2d, (vec3s){400.0f, 400.0f, 0.0f});
+    Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f,75.0f,75.0f});
+    player2dModel->is2d = true;
+    player2dModel->xOffset = 50.0f;
+
+    WAddStep(hud) = RotateGuy;
+    CompBody2d *player2dBody = Sol_Body2d_Add(hud, player2d, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01,0b01);
+    player2dBody->grav = (vec2s){0,9.0f};
+    Sol_Interact_Add(hud, player2d);
+
+
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
-    int leftAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){390, 600, 0}, 0, "Left");
+    int leftAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){390, 600, 0}, 0, "Q");
     Sol_Interact_Add(hud, leftAbility);
-    int rightAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){820, 600, 0}, 1, "Right");
+    int rightAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){820, 600, 0}, 1, "E");
     Sol_Interact_Add(hud, rightAbility);
 
     int abilityBar = Sol_Create_Ent(hud, 0);
@@ -174,7 +195,7 @@ void Create_Sol_Game()
     Sol_Item_SetRarity(hud, abilityCard5, 1);
 
     Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH);
-    
+
     int abilityCard2 = Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL);
 
     Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD);
@@ -183,7 +204,7 @@ void Create_Sol_Game()
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    Sol_Model_Add(gameWorld, floorWorld1, (ModelDesc){.id = SOL_MODEL_WORLD1});
+    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 1.0f);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});

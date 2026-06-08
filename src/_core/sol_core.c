@@ -56,6 +56,7 @@ void Sol_Tick(double dt, double time)
     {
         Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
         Sol_Interact_Update(solState.worlds, solState.worldCount);
+        Sol_Tooltip_Update(dt);
     }
     while (accumulator >= SOL_TIMESTEP)
     {
@@ -75,10 +76,10 @@ void Sol_Tick(double dt, double time)
 
     Sol_Cam_Update(dt);
     Sol_Render_DrawSkybox();
-    
+
     Worlds_Draw3d(solState.worlds, solState.worldCount, dt, time);
     Sol_Render_Flush3D();
-    
+
     Worlds_Draw2d(solState.worlds, solState.worldCount, dt, time);
     Sol_Tooltip_Draw();
     Sol_Render_Flush2D();

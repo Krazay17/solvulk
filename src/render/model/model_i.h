@@ -73,7 +73,7 @@ typedef struct SolModel
 
     mat4s *jointMatrices;
 
-    SolModelId modelId;
+    SolModelKind modelId;
 } SolModel;
 
 typedef struct BoneMask
@@ -110,15 +110,16 @@ typedef struct PoseRequest
     mat4     *outBones;                      // final skinning matrices
 } PoseRequest;
 
-extern SolModel      loaded_models[SOL_MODEL_COUNT];
-extern SolModelMasks model_masks[SOL_MODEL_COUNT];
-const char          *model_path[SOL_MODEL_COUNT];
-const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+extern SolModel        loaded_models[SOL_MODEL_COUNT];
+extern SolModelMasks   model_masks[SOL_MODEL_COUNT];
+const char            *model_path[SOL_MODEL_COUNT];
+const i32              model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+const extern CompModel model_kinds[SOL_MODEL_COUNT];
 
-SolModel *Sol_GetModel(SolModelId id);
+SolModel *Sol_GetModel(SolModelKind id);
 
 int  Sol_Models_Init();
-void Init_Anim_Masks(SolModelId modelId, SolSkeleton *skele);
+void Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skele);
 void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);

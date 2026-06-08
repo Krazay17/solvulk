@@ -43,7 +43,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id);
-int Sol_UploadModel(SolModel *model, SolModelId id);
+int Sol_UploadModel(SolModel *model, SolModelKind id);
 
 void Flush_Models(void);
 void Flush_Quads(void);
@@ -51,7 +51,7 @@ void Flush_Spheres(void);
 void Flush_Rects(void);
 void Flush_Fonts2d(void);
 
-void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
-void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance);
+void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
+void Render_Model_Skinned(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
 
 ShaderPushTexts Prepare_Text(SolFontDesc desc);

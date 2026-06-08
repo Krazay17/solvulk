@@ -22,11 +22,9 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     case ENTKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
         break;
-
     case ENTKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
         break;
-
     case ENTKIND_FIREBALL:
         id = Sol_Prefab_Fireball(world, id, desc.pos, desc.scale);
         break;
@@ -50,7 +48,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     if (id < 0)
         return -1;
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_DUDE, .yoffset = -dims.y * 0.5f, .yawOffset = GLM_PI_2f});
+    Sol_Model_Add(world, id, MODELKIND_DUDE, dims.y);
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -83,13 +81,15 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
 int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.5f, .y = 3.0f};
+    glms_vec2_scale(dims, scale);
 
     dims = glms_vec2_scale(dims, scale);
     id   = Sol_Create_Ent(world, id);
     if (id < 0)
         return -1;
-    Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WIZARD, .yoffset = -dims.y * 0.5f});
+    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
+    Sol_Model_Add(world, id, MODELKIND_WIZARD, dims.y);
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -175,7 +175,7 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
     int id = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_WORLD1});
+    Sol_Model_Add(world, id,  SOL_MODEL_WORLD1, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
 
     return id;
@@ -186,7 +186,7 @@ int Sol_Prefab_Box(World *world, vec3s pos)
 
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, (ModelDesc){.id = SOL_MODEL_BOX});
+    Sol_Model_Add(world, id, SOL_MODEL_BOX, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
@@ -311,9 +311,11 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
         break;
     case ABILITY_STATE_SHIELD:
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
+        snprintf(tooltip->header, sizeof(tooltip->header), "Shield");
         break;
     case ABILITY_STATE_SPINSLASH:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
+        snprintf(tooltip->header, sizeof(tooltip->header), "SpinSlash");
         break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);

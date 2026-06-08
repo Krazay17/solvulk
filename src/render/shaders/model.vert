@@ -31,9 +31,13 @@ struct ModelData {
     uint _padding[2];
 };
 
+const uint FLAG_2D = 1u << 2;
+
 layout(set = 2, binding = 0) readonly buffer ModelBuffer {
     ModelData instances[];
 };
+
+layout(set = 3, binding = 0) uniform Ortho {mat4 ortho2d;};
 
 mat3 quatToMat3(vec4 q) {
     float x = q.x, y = q.y, z = q.z, w = q.w;
@@ -49,18 +53,53 @@ mat3 quatToMat3(vec4 q) {
     );
 }
 
+// void main() {
+//     ModelData inst = instances[gl_InstanceIndex];
+
+//     mat3 mat = quatToMat3(inst.rotation);
+
+//     vec3 worldPos = mat * (inPos * inst.scale.xyz) + inst.position.xyz;
+//     gl_Position = scene.viewProj * vec4(worldPos, 1.0);
+
+//     fragColor = inst.color;
+//     fragNormal = mat * inNormal;
+//     fragWorldPos = worldPos;
+//     flags = inst.flags;
+//     fragHitTime = inst.hitTime;
+//     instanceIndex = gl_InstanceIndex;
+// }
 void main() {
     ModelData inst = instances[gl_InstanceIndex];
-
-    mat3 mat = quatToMat3(inst.rotation);
-
-    vec3 worldPos = mat * (inPos * inst.scale.xyz) + inst.position.xyz;
-    gl_Position = scene.viewProj * vec4(worldPos, 1.0);
-
-    fragColor = inst.color;
-    fragNormal = mat * inNormal;
-    fragWorldPos = worldPos;
+    instanceIndex = gl_InstanceIndex;
     flags = inst.flags;
     fragHitTime = inst.hitTime;
-    instanceIndex = gl_InstanceIndex;
+    fragColor = inst.color;
+
+    // Check if the 2D flag bit is set
+    if ((inst.flags & FLAG_2D) != 0u) 
+    {
+        // 1. Compute 2D position using local inPos vertices, scale, and translation offset
+        // Typically, UI meshes are flat unit quads on the XY plane (Z=0)
+        vec2 localScaled = inPos.xy * inst.scale.xy;
+        vec2 uiWorldPos  = localScaled + inst.position.xy;
+
+        // 2. Project directly using your 2D Orthographic Screen Matrix
+        // We set Z slightly via inst.position.z or use a constant to handle UI layers (0.0 to 1.0)
+        gl_Position = ortho2d * vec4(uiWorldPos, inst.position.z, 1.0);
+
+        // 3. Passthroughs for UI/Text (Normals aren't used for 2D, but don't leave them uninitialized)
+        fragWorldPos = vec3(uiWorldPos, inst.position.z);
+        fragNormal   = vec3(0.0, 0.0, 1.0); 
+    } 
+    else 
+    {
+        // --- Standard 3D Render Path ---
+        mat3 mat = quatToMat3(inst.rotation);
+
+        vec3 worldPos = mat * (inPos * inst.scale.xyz) + inst.position.xyz;
+        gl_Position   = scene.viewProj * vec4(worldPos, 1.0);
+
+        fragWorldPos = worldPos;
+        fragNormal   = mat * inNormal;
+    }
 }

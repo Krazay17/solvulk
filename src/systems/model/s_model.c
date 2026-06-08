@@ -13,13 +13,13 @@ void Sol_Model_Init(World *world)
     WAddStep(world) = Model_Events;
 }
 
-void Sol_Model_Add(World *world, int id, ModelDesc desc)
+CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
 {
-    world->masks[id] |= HAS_MODEL;
+    CompModel model = model_kinds[kind];
+    model.modelId   = kind;
+    model.yOffset   = -height * 0.5f;
 
-    CompModel model = {.modelId = desc.id, .yOffset = desc.yoffset, .yawOffset = desc.yawOffset};
-
-    SolModel *m = Sol_GetModel(desc.id);
+    SolModel *m = Sol_GetModel(kind);
     if (m->skeleton.animationCount > 0)
     {
         model.hasAnim = true;
@@ -31,8 +31,11 @@ void Sol_Model_Add(World *world, int id, ModelDesc desc)
         }
     }
     world->models[id] = model;
+    world->masks[id] |= HAS_MODEL;
 
     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 1, .layerId = ANIM_LAYER_BASE});
+
+    return &world->models[id];
 }
 
 static void Model_Events(World *world, double dt, double time)
@@ -77,10 +80,22 @@ void Sol_Model_Draw(World *world, double dt, double time)
             modelSSBO.hitTime = -100.0f;
 
         vec3s drawPos = xform->drawPos;
-        drawPos.y += modelComp->yOffset;
-        modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
-        modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
-        modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
+        if (modelComp->is2d)
+        {
+            modelSSBO.flags |= (1 << 2);
+            drawPos.y += modelComp->yOffset;
+            modelSSBO.position = (vec4s){UISCALE(drawPos.x + modelComp->xOffset), UISCALE(drawPos.y), drawPos.z, 1.0f};
+            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
+            modelSSBO.scale =
+                (vec4s){UISCALE(xform->drawScale.x), UISCALE(xform->drawScale.y), UISCALE(xform->drawScale.z), 1.0f};
+        }
+        else
+        {
+            drawPos.y += modelComp->yOffset;
+            modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
+            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
+            modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
+        }
 
         if (!modelComp->hasAnim)
         {
@@ -201,7 +216,7 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     layer->fadeOut      = 0.0f;
 }
 
-SolModelId Sol_Model_GetModelId(World *world, int id)
+SolModelKind Sol_Model_GetModelId(World *world, int id)
 {
     return world->models[id].modelId;
 }

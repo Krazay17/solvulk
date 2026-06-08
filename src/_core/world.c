@@ -80,6 +80,7 @@ World *World_Create_Default(WorldKind kind)
             World_System_Add(world, WORLD_SYS_INTERACT);
             World_System_Add(world, WORLD_SYS_ITEM);
             World_System_Add(world, WORLD_SYS_VIEW2D);
+            World_System_Add(world, WORLD_SYS_MODEL);
             World_System_Add(world, WORLD_SYS_VIEW);
             break;
 

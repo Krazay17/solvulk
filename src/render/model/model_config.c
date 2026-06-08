@@ -2,16 +2,18 @@
 
 #include "model_i.h"
 
+const CompModel model_kinds[SOL_MODEL_COUNT] = {
+    [MODELKIND_DUDE] =
+        {
+            .yawOffset = GLM_PI_2f,
+        },
+};
+
 SolModelMasks model_masks[SOL_MODEL_COUNT];
 
-const char *model_path[SOL_MODEL_COUNT] = {[SOL_MODEL_WIZARD] = "Wizard.glb",
-                                           [SOL_MODEL_DUDE]   = "Dude.glb",
-                                           [SOL_MODEL_BOX]    = "Box.glb",
-                                           [SOL_MODEL_WORLD0] = "World0.glb",
-                                           [SOL_MODEL_WORLD1] = "World1.glb",
-                                           [SOL_MODEL_WORLD2] = "World2.glb"
-
-};
+const char *model_path[SOL_MODEL_COUNT] = {[MODELKIND_WIZARD] = "Wizard.glb", [MODELKIND_DUDE] = "Dude.glb",
+                                           [SOL_MODEL_BOX] = "Box.glb",       [SOL_MODEL_WORLD0] = "World0.glb",
+                                           [SOL_MODEL_WORLD1] = "World1.glb", [SOL_MODEL_WORLD2] = "World2.glb"};
 
 /*
 Wizard anims:
@@ -49,7 +51,7 @@ Anim: 25 LeftCharge
 Anim: 26 CrouchWalkFwd
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
-    [SOL_MODEL_WIZARD] =
+    [MODELKIND_WIZARD] =
         {
             [ANIM_IDLE] = 0,       [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 1,   [ANIM_WALK_LEFT] = 1,
             [ANIM_WALK_RIGHT] = 1, [ANIM_JUMP] = 1,      [ANIM_FALL] = 1,       [ANIM_DASH_FWD] = 1,
@@ -58,7 +60,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_ABILITY5] = 2,   [ANIM_ABILITY6] = 2,  [ANIM_ABILITY7] = 2,   [ANIM_ABILITY8] = 2,
             [ANIM_ABILITY9] = 2,
         },
-    [SOL_MODEL_DUDE] =
+    [MODELKIND_DUDE] =
         {
             [ANIM_IDLE]             = 0,
             [ANIM_WALK_FWD]         = 1,

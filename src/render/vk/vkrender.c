@@ -44,8 +44,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .type              = VERTEX_TRI,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO},
-            .descCount         = 3,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO},
+            .descCount         = 4,
         },
     [PIPE_MODEL_SKINNED] =
         {
@@ -59,8 +59,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_SKINNING_SSBO},
-            .descCount         = 4,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_SKINNING_SSBO, DESC_ORTHO_UBO},
+            .descCount         = 5,
         },
     [PIPE_TEXT] =
         {
@@ -400,7 +400,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
 
     if (cfg->descCount > 0)
     {
-        VkDescriptorSet sets[4];
+        VkDescriptorSet sets[6];
         for (u32 i = 0; i < cfg->descCount; i++)
         {
             DescriptorId did = cfg->descId[i];
@@ -462,7 +462,7 @@ void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fi
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
-void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL);
@@ -479,7 +479,7 @@ void Render_Model(SolModelId handle, uint32_t instanceCount, uint32_t firstInsta
     }
 }
 
-void Render_Model_Skinned(SolModelId handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model_Skinned(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
@@ -1012,7 +1012,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-int Sol_UploadModel(SolModel *model, SolModelId modelId)
+int Sol_UploadModel(SolModel *model, SolModelKind modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)

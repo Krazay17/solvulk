@@ -7,9 +7,11 @@
  */
 #include "sol_core.h"
 
+#define MAX_TOOLTIP_ALPHA 0.9f
+
 static void SetMoving(World *world, CompInteract *interact, int id);
 
-static bool           showTooltip;
+static float          tooltipAlpha;
 static InteractingEnt interactingEnt;
 
 void Sol_Interact_Init(World *world)
@@ -201,22 +203,28 @@ void Sol_Interact_Update(World **worlds, int count)
                 interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
         }
     }
-    Sol_Tooltip_Update();
+    else
+    {
+        interactingEnt.id    = 0;
+        interactingEnt.world = NULL;
+    }
 }
 
-void Sol_Tooltip_Update()
+void Sol_Tooltip_Update(double dt)
 {
+    const float stiffness = 20.0f;
+    float       alpha     = 1.0f - expf(-stiffness * dt);
     if (interactingEnt.id && interactingEnt.world)
     {
         int    id    = interactingEnt.id;
         World *world = interactingEnt.world;
         if ((world->masks[id] & HAS_TOOLTIP))
         {
-            showTooltip = true;
+            tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
             return;
         }
     }
-    showTooltip = false;
+    tooltipAlpha = 0;
 }
 
 InteractState Sol_Interact_GetState(World *world, int id)
@@ -255,21 +263,31 @@ static void SetMoving(World *world, CompInteract *interact, int id)
 
 void Sol_Tooltip_Draw()
 {
-    if (!showTooltip)
+    World *world = interactingEnt.world;
+    int    id    = interactingEnt.id;
+    if (tooltipAlpha <= 0.0f || !world || id < 1)
         return;
-    World       *world   = interactingEnt.world;
-    int          id      = interactingEnt.id;
     CompTooltip *tooltip = &world->tooltips[id];
 
-    vec4s pos  = {Sol_Input_GetMouseUI().x, Sol_Input_GetMouseUI().y - 200.0f, 0, 1.0f};
-    vec2s dims = {200.0f, 200.0f};
+    float fontSize = 16.0f;
+
+    float textWidth  = Sol_MeasureText(tooltip->header, UISCALE(fontSize), SOL_FONT_ICE);
+    vec2s dims       = {UISCALE(200.0f), UISCALE(200.0f)};
+    vec2s pos        = {Sol_Input_GetMouse().x, Sol_Input_GetMouse().y - dims.y};
+    vec2s fontOffset = glms_vec2_add(pos, glms_vec2_scale(dims, 0.5f));
+    fontOffset.x -= textWidth;
 
     RectSSBO *rectSSBO = Sol_Render_GetNext_Rect();
-    rectSSBO->color    = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
-    rectSSBO->dims     = (vec4s){200.0f, 200.0f, 0, 1.0f};
-    rectSSBO->pos      = (vec4s){Sol_Input_GetMouseUI().x, Sol_Input_GetMouseUI().y - 200.0f, 0, 1.0f};
-    FontSSBO *fontSSBO = Sol_Render_GetNext_Font();
-    fontSSBO->color    = (vec4s){1.0f, 1.0f, 0.0f, 1.0f};
+    rectSSBO->color    = (vec4s){0.2f, 0.2f, 0.2f, tooltipAlpha};
+    rectSSBO->dims     = (vec4s){dims.x, dims.y, 0, 1.0f};
+    rectSSBO->pos      = (vec4s){pos.x, pos.y, 0, 1.0f};
 
-    fontSSBO->pos = pos;
+    SolFontDesc fontDesc = {
+        .color = {1.0f, 0, 0, tooltipAlpha / MAX_TOOLTIP_ALPHA},
+        .size  = UISCALE(fontSize),
+        .str   = tooltip->header,
+        .x     = fontOffset.x,
+        .y     = fontOffset.y,
+    };
+    Sol_Render_DrawText2D(fontDesc);
 }

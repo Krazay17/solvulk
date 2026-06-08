@@ -3,14 +3,11 @@
 #include "render/model/model_i.h"
 
 #define ONESHOT_FADE_DURATION 0.25f
-static void Model_Events(World *world, double dt, double time);
 
 void Sol_Model_Init(World *world)
 {
-    world->draw3dSystems[world->draw3dCount++] = Sol_Model_Draw;
-
-    world->models   = calloc(MAX_ENTS, sizeof(CompModel));
-    WAddStep(world) = Model_Events;
+    world->models = calloc(MAX_ENTS, sizeof(CompModel));
+    WAdd3d(world) = Sol_Model_Draw;
 }
 
 CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
@@ -33,23 +30,9 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
     world->models[id] = model;
     world->masks[id] |= HAS_MODEL;
 
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = 1, .layerId = ANIM_LAYER_BASE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
 
     return &world->models[id];
-}
-
-static void Model_Events(World *world, double dt, double time)
-{
-    for (int i = 0; i < world->events->count; i++)
-    {
-        SolEvent *e = &world->events->event[i];
-        if (e->kind != EVENTKIND_ANIM)
-            continue;
-        Sol_Model_PlayAnim(
-            world, e->as.anim.entId,
-            (AnimDesc){
-                .anim = e->as.anim.animId, .oneShot = true, .seek = 0, .layerId = e->as.anim.layerId, .force = true});
-    }
 }
 
 void Sol_Model_Draw(World *world, double dt, double time)
@@ -176,29 +159,71 @@ void Sol_Model_Draw(World *world, double dt, double time)
 }
 
 // anim 0 to stop layer,
+void Sol_Model_PlayAnim1(World *world, int id, AnimDesc desc)
+{
+    // CompModel *modelComp = &world->models[id];
+    // AnimLayer *layer     = &modelComp->layers[desc.layerId];
+    // float      blendIn   = desc.blendIn > 0 ? desc.blendIn : .25f;
+    // float      blendOut  = desc.blendOut > 0 ? desc.blendOut : .25f;
+    // float      speed     = desc.speed > 0 ? desc.speed : 1.0f;
+
+    // if (desc.anim < 1)
+    // {
+    //     if (layer->animId == desc.anim || layer->fadeOut > 0)
+    //         return; // dedup the stop
+    //     layer->fadeOut      = 1.0f;
+    //     layer->fadeOutSpeed = 1.0f / blendOut;
+    //     layer->animId       = desc.anim;
+    //     return;
+    // }
+    // i32 mappedAnim = model_anim_map[modelComp->modelId][desc.anim];
+
+    // if (!desc.force && mappedAnim == layer->currentAnim)
+    //     return;
+
+    // layer->animId = desc.anim;
+
+    // if (layer->blendFactor > 0.5f)
+    // {
+    //     layer->lastAnim    = layer->currentAnim;
+    //     layer->lastSeek    = layer->currentSeek;
+    //     layer->blendFactor = 0;
+    // }
+    // layer->currentAnim = mappedAnim;
+    // layer->playRate    = speed;
+    // layer->oneShot     = desc.oneShot;
+    // layer->currentSeek = desc.seek;
+    // layer->force       = desc.force;
+
+    // layer->blendSpeed   = 1.0f / blendIn;
+    // layer->fadeOutSpeed = 1.0f / blendOut;
+    // layer->fadeOut      = 0.0f;
+}
+
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
-    CompModel *modelComp = &world->models[id];
-    AnimLayer *layer     = &modelComp->layers[desc.layerId];
-    float      blendIn   = desc.blendIn > 0 ? desc.blendIn : .25f;
-    float      blendOut  = desc.blendOut > 0 ? desc.blendOut : .25f;
-    float      speed     = desc.speed > 0 ? desc.speed : 1.0f;
-
-    if (desc.anim < 1)
+    AnimLayerId layerId   = desc.layerId;
+    AnimId      animId    = desc.anim;
+    bool        oneShot   = desc.oneShot;
+    float       seek      = desc.seek;
+    CompModel  *modelComp = &world->models[id];
+    AnimLayer  *layer     = &modelComp->layers[layerId];
+    AnimConfig  config    = anim_configs[desc.anim];
+    float       blendIn   = config.blendIn ? config.blendIn : 0.25f;
+    float       blendOut  = config.blendOut ? config.blendOut : 0.25f;
+    float       speed     = config.speed ? config.speed : 1.0f;
+    if (layer->animId == animId && !oneShot)
+        return;
+    if (animId < 1)
     {
-        if (layer->animId == desc.anim || layer->fadeOut > 0)
-            return; // dedup the stop
+        if (layer->animId == animId || layer->fadeOut > 0)
+            return;
         layer->fadeOut      = 1.0f;
         layer->fadeOutSpeed = 1.0f / blendOut;
-        layer->animId       = desc.anim;
         return;
     }
-    i32 mappedAnim = model_anim_map[modelComp->modelId][desc.anim];
-
-    if (!desc.force && mappedAnim == layer->currentAnim)
-        return;
-
-    layer->animId = desc.anim;
+    i32 mappedAnim = model_anim_map[modelComp->modelId][animId];
+    layer->animId  = animId;
 
     if (layer->blendFactor > 0.5f)
     {
@@ -208,8 +233,8 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     }
     layer->currentAnim = mappedAnim;
     layer->playRate    = speed;
-    layer->oneShot     = desc.oneShot;
-    layer->currentSeek = desc.seek;
+    layer->oneShot     = oneShot;
+    layer->currentSeek = seek;
 
     layer->blendSpeed   = 1.0f / blendIn;
     layer->fadeOutSpeed = 1.0f / blendOut;
@@ -301,4 +326,10 @@ void Sol_Model_SetOffsetY(World *world, int id, float offset)
 {
     CompModel *model = &world->models[id];
     model->yOffset   = offset;
+}
+void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId)
+{
+    world->models[id].layers[layerId].fadeOut      = 1.0f;
+    world->models[id].layers[layerId].fadeOutSpeed = 4.0f;
+    world->models[id].layers[layerId].animId       = 0;
 }

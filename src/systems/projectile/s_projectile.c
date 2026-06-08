@@ -7,7 +7,7 @@ static CompProjectile projectile_kinds[PROJECTILEKIND_COUNT] = {
     [PROJECTILEKIND_BULLET] =
         {
             .directHitKind = HITKIND_BULLET,
-            .bounces       = 1,
+            .bounces       = 0,
         },
     [PROJECTILEKIND_FIREBALL] =
         {
@@ -105,6 +105,7 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
     hit.entA                   = Sol_Owner_GetOwner(world, id);
     hit.kind                   = projectile->directHitKind;
     hit.power                  = projectile->power;
+    hit.damage                 = projectile->damage;
 
     Sol_Event_Add(world, (SolEvent){
                              .kind   = EVENTKIND_HIT,

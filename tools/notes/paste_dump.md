@@ -471,3 +471,28 @@ add_custom_target(images DEPENDS ${CIMAGE_OUTPUTS})
 add_dependencies(solvulk images)
 add_dependencies(solapp images)
 ```
+
+
+    // float freq = (GLM_PI_2f + look->pitch) * 200.0f;
+
+    // Sol_Audio_SineFreq(0, freq);
+    // Sol_Audio_SineFreq(1, freq);
+    // Sol_Audio_SineFreq(2, freq);
+    // Sol_Audio_SineFreq(3, freq);
+
+    // if (Sol_Input_KeyDown(SOL_KEY_2))
+    //     Sol_Audio_SetVolumeSine(0, 0.5f);
+    // else
+    //     Sol_Audio_SetVolumeSine(0, 0);
+    // if (Sol_Input_KeyDown(SOL_KEY_3))
+    //     Sol_Audio_SetVolumeSine(1, 0.5f);
+    // else
+    //     Sol_Audio_SetVolumeSine(1, 0);
+    // if (Sol_Input_KeyDown(SOL_KEY_4))
+    //     Sol_Audio_SetVolumeSine(2, 0.5f);
+    // else
+    //     Sol_Audio_SetVolumeSine(2, 0);
+    // if (Sol_Input_KeyDown(SOL_KEY_5))
+    //     Sol_Audio_SetVolumeSine(3, 0.5f);
+    // else
+    //     Sol_Audio_SetVolumeSine(3, 0);

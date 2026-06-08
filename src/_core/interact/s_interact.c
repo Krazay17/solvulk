@@ -208,11 +208,12 @@ void Sol_Interact_Update(World **worlds, int count)
         interactingEnt.id    = 0;
         interactingEnt.world = NULL;
     }
+    Sol_Tooltip_Update(SOL_TIMESTEP);
 }
 
 void Sol_Tooltip_Update(double dt)
 {
-    const float stiffness = 20.0f;
+    const float stiffness = 1.0f;
     float       alpha     = 1.0f - expf(-stiffness * dt);
     if (interactingEnt.id && interactingEnt.world)
     {
@@ -269,13 +270,15 @@ void Sol_Tooltip_Draw()
         return;
     CompTooltip *tooltip = &world->tooltips[id];
 
-    float fontSize = 16.0f;
+    float headerSize = 16.0f;
 
-    float textWidth  = Sol_MeasureText(tooltip->header, UISCALE(fontSize), SOL_FONT_ICE);
-    vec2s dims       = {UISCALE(200.0f), UISCALE(200.0f)};
-    vec2s pos        = {Sol_Input_GetMouse().x, Sol_Input_GetMouse().y - dims.y};
-    vec2s fontOffset = glms_vec2_add(pos, glms_vec2_scale(dims, 0.5f));
-    fontOffset.x -= textWidth;
+    float textWidth    = Sol_MeasureText(tooltip->header, UISCALE(headerSize), SOL_FONT_ICE);
+    vec2s dims         = {UISCALE(100.0f), UISCALE(100.0f)};
+    vec2s pos          = {Sol_Input_GetMouse().x, Sol_Input_GetMouse().y - dims.y};
+    vec2s headerOffset = pos;
+    headerOffset.y += dims.y * 0.2f;
+    headerOffset.x += dims.x * 0.5f;
+    headerOffset.x -= textWidth * 0.5f;
 
     RectSSBO *rectSSBO = Sol_Render_GetNext_Rect();
     rectSSBO->color    = (vec4s){0.2f, 0.2f, 0.2f, tooltipAlpha};
@@ -284,10 +287,10 @@ void Sol_Tooltip_Draw()
 
     SolFontDesc fontDesc = {
         .color = {1.0f, 0, 0, tooltipAlpha / MAX_TOOLTIP_ALPHA},
-        .size  = UISCALE(fontSize),
+        .size  = UISCALE(headerSize),
         .str   = tooltip->header,
-        .x     = fontOffset.x,
-        .y     = fontOffset.y,
+        .x     = headerOffset.x,
+        .y     = headerOffset.y,
     };
     Sol_Render_DrawText2D(fontDesc);
 }

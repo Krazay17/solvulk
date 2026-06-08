@@ -72,7 +72,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                                       {ACTION_ABILITY7, 0},
                                       {ACTION_ABILITY8, 0},
                                       {ACTION_ABILITY9, 0},
-                                      {ACTION_DASH, ABILITY_STATE_DASH},
+                                      {ACTION_DASH, 0},
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
     return id;
@@ -175,7 +175,7 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
     int id = Sol_Create_Ent(world, 0);
 
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id,  SOL_MODEL_WORLD1, 1.0f);
+    Sol_Model_Add(world, id, SOL_MODEL_WORLD1, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
 
     return id;
@@ -291,7 +291,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
     Sol_Parent_SetActive(world, id, false);
     Sol_Item_AddAbility(world, id, ability);
-    CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD_STATS);
+    CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
     SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
     image->textureUV         = (vec2s){1, 0.816};
@@ -316,6 +316,10 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     case ABILITY_STATE_SPINSLASH:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
         snprintf(tooltip->header, sizeof(tooltip->header), "SpinSlash");
+        break;
+    case ABILITY_STATE_DASH:
+        image->textureID = SOL_TEXTURE_DASH_CARD;
+        snprintf(tooltip->header, sizeof(tooltip->header), "Dash");
         break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);

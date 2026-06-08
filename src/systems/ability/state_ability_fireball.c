@@ -41,6 +41,8 @@ void Fireball_State_Update(World *world, int id, float dt)
         {
             Sol_Physx_SetVel(world, ball, shoot.vel);
             Sol_Owner_Add(world, ball, id);
+            world->projectiles[ball].damage = data->damage;
+            //ShotId shotId = MAKE_SHOT_ID(id, world->currentTick, )            
         }
 
         data->stage++;
@@ -85,6 +87,5 @@ bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &world->abilities[id].stateData[slot];
-
-    return slot != ability->activeSlot && !(data->lastExited + ability_config[ABILITY_STATE_FIREBALL].cooldown > Sol_GetGameTime());
+    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > Sol_GetGameTime());
 }

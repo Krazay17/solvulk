@@ -14,6 +14,7 @@ typedef enum
     EMITTERKIND_FOUNTAIN_FIRE,
     EMITTERKIND_FOUNTAIN_FOG,
     EMITTERKIND_FOUNTAIN_SPARKS,
+    EMITTERKIND_COUNT,
 } EmitterKind;
 
 typedef enum
@@ -53,7 +54,7 @@ typedef struct CompEmitter
     u32     emitterCount;
 } CompEmitter;
 
-Emitter emitter_kinds[];
+const extern Emitter emitter_kinds[EMITTERKIND_COUNT];
 
 void Sol_Emitter_Init(World *world);
 

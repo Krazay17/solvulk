@@ -8,6 +8,20 @@ const CompModel model_kinds[SOL_MODEL_COUNT] = {
             .yawOffset = GLM_PI_2f,
         },
 };
+const AnimConfig anim_configs[ANIM_COUNT] = {
+    [ANIM_ATTACK_RIGHT] =
+        {
+            .blendIn  = 0.01f,
+            .blendOut = 0.1f,
+            .speed    = 3.0f,
+        },
+    [ANIM_DEATH] =
+        {
+            .blendIn  = 0.25f,
+            .blendOut = 0.1f,
+            .speed    = 0.5f,
+        },
+};
 
 SolModelMasks model_masks[SOL_MODEL_COUNT];
 

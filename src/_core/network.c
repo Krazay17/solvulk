@@ -353,9 +353,15 @@ void Net_Recv_Packet(ENetEvent *event)
         if (solNet.role != NETROLE_CLIENT)
             return;
 
-        NetWelcomePacket *welcomePacket = (NetWelcomePacket *)data;
-        Sol_GetWorldById(welcomePacket->worldId)->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
-        Sol_GetState()->stepCounter = welcomePacket->currentTick;
+        NetWelcomePacket *welcomePacket                          = (NetWelcomePacket *)data;
+        World            *world                                  = Sol_GetWorldById(welcomePacket->worldId);
+        world->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
+        Sol_GetState()->stepCounter                              = welcomePacket->currentTick;
+        if (world->masks[1] & HAS_ABILITY)
+        {
+            for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
+                world->abilities[1].bindings[i].dirtySend = true;
+        }
 
         solNet.status = NETSTATUS_CONNECTED;
     }
@@ -380,8 +386,14 @@ void Net_Recv_Packet(ENetEvent *event)
         c->aimdir                   = inputPacket->aimdir;
         c->yaw                      = inputPacket->yaw;
         c->isStrafing               = inputPacket->isStrafing;
-
-        memcpy(&world->abilities[id].bindings->targetState, inputPacket->abilities, sizeof(u32) * 10);
+        if (inputPacket->hasEquipRequest)
+        {
+            for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+            {
+                // TODO Validate here
+                Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot]);
+            }
+        }
     }
     break;
     // Host recieves Event from Client

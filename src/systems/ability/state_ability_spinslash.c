@@ -82,7 +82,7 @@ void Spinslash_State_Enter(World *world, int id)
     Sol_Model_PlayAnim(
         world, id,
         (AnimDesc){
-            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .speed = 1.6f, .seek = 0.4f, .force = true});
+            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .speed = 1.6f, .seek = 0.4f});
 }
 
 void Spinslash_State_Exit(World *world, int id)
@@ -103,9 +103,9 @@ bool Spinslash_State_CanExit(World *world, int id, u32 next)
     return data->elapsed > DURATION;
 }
 
-bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
-    return !(data->lastExited + ability_config[ABILITY_STATE_SPINSLASH].cooldown > Sol_GetGameTime());
+    return !(data->lastExited + data->cooldown > Sol_GetGameTime());
 }

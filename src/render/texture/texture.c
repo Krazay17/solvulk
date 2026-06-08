@@ -31,6 +31,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_SWIRLFRAME]       = "SwirlFrame.webp",
     [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
     [SOL_TEXTURE_BORDER]           = "Border.webp",
+    [SOL_TEXTURE_DASH_CARD] = "DashCard.png",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

@@ -12,6 +12,11 @@ typedef enum
     CONTROLLER_REMOTE,
 } ControllerKind;
 
+typedef struct
+{
+    u32 ability, rarity, newAbility, newRarity;
+} AbilityBind;
+
 typedef struct CompController
 {
     vec3s          lookdir, wishdir, aimdir, aimpos, aimHitPos;
@@ -21,6 +26,8 @@ typedef struct CompController
     u32            aimHitEnt;
     ControllerKind kind;
     bool           isStrafing;
+    bool           pendingShot;
+    u64            pendingShotId;
 } CompController;
 
 void Sol_Controller_Init(World *world);

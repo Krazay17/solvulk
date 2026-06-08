@@ -1,19 +1,17 @@
 #include "emitter.h"
 
-Emitter emitter_kinds[] = {
+const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
     [EMITTERKIND_FLASH_WHITEBALL] =
         {
-            .burst = 100,
+            .burst = 1,
             .particle =
                 {
-                    .randScale = 1,
-                    .ttl       = 0.3f,
-                    .scale     = 0.5f,
-                    .color     = {1, .1f, .2f, .7f},
-                    .kind      = PARTICLE_SHOCK,
-                    .speed     = 15.0f,
-                    .scalein   = 0.1f,
-                    .scaleout  = 0.3f,
+                    .scale    = 1.0f,
+                    .scalein  = 0.2f,
+                    .scaleout = 0.8f,
+                    .kind     = PARTICLE_ORB,
+                    .color    = {1, 1, 1, 0.9f},
+                    .ttl      = 0.5f,
                 },
         },
     [EMITTERKIND_FLASH_REDBALL] =
@@ -46,6 +44,24 @@ Emitter emitter_kinds[] = {
                     .randLife     = 1,
                 },
         },
+    [EMITTERKIND_BURST_SPARKS] =
+        {
+            .ttl   = 1.0f,
+            .burst = 100,
+            .particle =
+                {
+                    .kind         = PARTICLE_SHOCK,
+                    .ttl          = 0.33f,
+                    .randScaleout = 1,
+                    .scaleout     = 0.9f,
+                    .scalein      = 0.1f,
+                    .scale        = 0.33f,
+                    .speed        = 13.33f,
+                    .color        = {1.0f, 1.0f, 1.0f, .88f},
+                    .randLife     = 1,
+                },
+        },
+
     [EMITTERKIND_FOUNTAIN_FIRE] =
         {
             .inf       = 1,

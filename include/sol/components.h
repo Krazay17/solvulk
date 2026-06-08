@@ -118,6 +118,7 @@ typedef struct CompProjectile
     float          explodeRadius;
     HitKind        directHitKind;
     HitKind        explosionHitKind;
+    u32            damage;
 } CompProjectile;
 void            Sol_Projectile_Init(World *world);
 CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
@@ -135,18 +136,6 @@ typedef struct CompItem
     u32      slot;
     u8       rarity;
     bool     onCooldown;
-
-    float damageMul;
-    u32   damageAdd;
-    // union
-    // {
-    //     struct {
-
-    //     }slot;
-    //     struct {
-
-    //     } card;
-    // }as;
 } CompItem;
 
 void      Sol_Item_Init(World *world);
@@ -157,14 +146,20 @@ void      Sol_Item_SetRarity(World *world, int id, u32 rarity);
 
 typedef enum
 {
-    TOOLTIPKIND_CARD_STATS,
+    TOOLTIPKIND_CARD,
     TOOLTIPKIND_PLAYER_INTERACT,
     TOOLTIPKIND_COUNT,
 } TooltipKind;
 typedef struct CompTooltip
 {
     TooltipKind kind;
-    char        header[64];
-    char        body[128];
+    char        header[32];
+    union {
+        struct
+        {
+            char damage[32];
+            char cooldown[32];
+        } card;
+    } as;
 } CompTooltip;
 // extern const CompTooltip tooltip_configs[TOOLTIPKIND_COUNT];

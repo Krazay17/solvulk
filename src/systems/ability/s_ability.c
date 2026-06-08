@@ -4,8 +4,6 @@
 
 #define MAPPING_COUNT(maps) (sizeof(maps) / sizeof(AbilityMapping))
 
-static void AbilityCards(World *world, double dt, double time);
-
 void Sol_Ability_Init(World *world)
 {
     world->stepSystems[world->stepCount++] = Sol_Ability_Step;
@@ -47,30 +45,37 @@ void Sol_Ability_Step(World *world, double dt, double time)
         }
         if (world->replications[id].auth == NETAUTH_REMOTE)
             continue;
-        CompAbility *ability = &world->abilities[id];
 
-        SolActions actions = Sol_GetActions(world, id);
+        CompAbility *ability = &world->abilities[id];
+        SolActions   actions = world->controllers[id].actionState;
+
         for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
         {
-            SolActions   actionBit   = ability->bindings[m].actionBit;
-            AbilityState targetState = ability->bindings[m].targetState;
-            if (targetState == ABILITY_STATE_IDLE || actionBit == ACTION_NONE)
-                continue;
-            bool pressed = (actions & actionBit) != 0;
+            if (ability->bindings[m].dirtyApply)
+            {
+                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity);
+                ability->bindings[m].dirtyApply = false;
+            }
+        }
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            SkillBinding *b = &ability->bindings[m];
 
+            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
+                continue;
+
+            bool pressed               = (actions & b->actionBit) != 0;
             ability->stateData[m].held = pressed;
 
             if (pressed)
             {
-                Sol_Ability_SetState(world, id, targetState, m, false);
+                Sol_Ability_SetState(world, id, b->boundState, m, false);
             }
         }
 
         if (ability->state != ABILITY_STATE_IDLE)
         {
-            const StateFunc *funcs = &ability_state_func[ability->state];
-            if (funcs && funcs->update)
-                funcs->update(world, id, dt);
+            ability_state_func[ability->state].update(world, id, dt);
         }
     }
 }
@@ -106,14 +111,38 @@ AbilityState Sol_Ability_GetState(World *world, int id)
     return world->abilities[id].state;
 }
 
-void Sol_Ability_SetAbility(World *world, int id, u32 slotIndex, AbilityState ability)
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity)
 {
-    if (slotIndex < MAX_MAPPED_SKILLS)
-    {
-        if (world->abilities[id].bindings[slotIndex].targetState != ability)
-        {
-            world->abilities[id].bindings[slotIndex].targetState = ability;
-            world->abilities[id].stateData[slotIndex].charge = 0;
-        }
-    }
+    CompAbility *a = &world->abilities[id];
+    if (slot >= MAX_MAPPED_SKILLS)
+        return;
+    SkillBinding *b = &a->bindings[slot];
+    if (b->pendingState == ability && b->pendingRarity == rarity)
+        return;
+    b->pendingState  = ability;
+    b->pendingRarity = rarity;
+    b->dirtyApply    = true;
+    b->dirtySend     = true;
+
+    // b->boundState  = ability;
+    // b->boundRarity = rarity;
+}
+
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity)
+{
+    CompAbility *a = &world->abilities[id];
+    if (slot >= MAX_MAPPED_SKILLS)
+        return;
+
+    SkillBinding *b  = &a->bindings[slot];
+    b->boundState    = ability;
+    b->boundRarity   = rarity;
+    b->pendingState  = ability;
+    b->pendingRarity = rarity;
+
+    // Reset cooldown/duration cache from config
+    AbilityData *data = &a->stateData[slot];
+    data->cooldown    = ability_config[ability][rarity].cooldown;
+    data->duration    = ability_config[ability][rarity].duration;
+    data->damage      = ability_config[ability][rarity].damage;
 }

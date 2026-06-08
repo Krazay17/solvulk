@@ -42,7 +42,7 @@ typedef enum
     HAS_REPLICATION  = (1 << 21),
     HAS_EMITTER      = (1 << 22),
     HAS_VIEW2D       = (1 << 23),
-    HAS_TRACKER   = (1 << 24),
+    HAS_TRACKER      = (1 << 24),
     HAS_PROJECTILE   = (1 << 25),
     HAS_ITEM         = (1 << 26),
     HAS_TOOLTIP      = (1 << 27),
@@ -51,6 +51,9 @@ typedef enum
 
 typedef enum
 {
+    // Replication pumps events for systems
+    WORLD_SYS_REPLICATION,
+    
     // Misc
     WORLD_SYS_XFORM,
     WORLD_SYS_EVENT,
@@ -59,20 +62,18 @@ typedef enum
     WORLD_SYS_CONTROLLER,
     WORLD_SYS_INTERACT,
 
-    // Replication pumps events for systems
-    WORLD_SYS_REPLICATION,
     // Step
     WORLD_SYS_TIMER,
     WORLD_SYS_PICKUP,
     WORLD_SYS_PHYSX,
     WORLD_SYS_BODY2,
-    WORLD_SYS_ITEM,
     WORLD_SYS_OWNER,
     WORLD_SYS_PARENT,
 
     // Event flow
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
+    WORLD_SYS_ITEM,
     WORLD_SYS_PROJECTILE,
     WORLD_SYS_AICONTROLLER,
 

@@ -26,7 +26,6 @@ typedef enum
 //     SolEvent event[MAX_NET_EVENTS];
 //     u32      count;
 // } NetEventPacket;
-
 typedef struct
 {
     u8    type;
@@ -35,6 +34,8 @@ typedef struct
     vec3s lookdir, wishdir, aimdir;
     float yaw;
     u32   abilities[10];
+    u32   rarity[10];
+    bool  hasEquipRequest;
 } NetInputPacket;
 
 typedef struct

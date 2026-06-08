@@ -8,7 +8,10 @@
 #define CORRECT_MED 4.0f
 
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
-    [EVENTKIND_FX] = 1, [EVENTKIND_ANIM] = 1, [EVENTKIND_HIT] = 1, [EVENTKIND_RESPAWN] = 1, [EVENTKIND_DEATH] = 1,
+    [EVENTKIND_FX]      = 1,
+    [EVENTKIND_HIT]     = 1,
+    [EVENTKIND_RESPAWN] = 1,
+    [EVENTKIND_DEATH]   = 1,
 };
 
 void Sol_Replication_Init(World *world)
@@ -102,11 +105,18 @@ void Net_Send_Snap(World *world)
         }
         if (world->masks[id] & HAS_ABILITY)
         {
-            u8           state = world->abilities[id].state;
-            AbilityData *data  = &world->abilities[id].stateData[state];
-            e->abilityState    = state;
-            e->abilityCharge   = data->charge;
-            e->abilityStage    = data->stage;
+            CompAbility *a    = &world->abilities[id];
+            AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
+
+            e->abilityState  = a->state;
+            e->activeSlot    = a->activeSlot;
+            e->abilityCharge = data->charge;
+            e->abilityStage  = data->stage;
+            for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+            {
+                e->bindingState[slot]  = world->abilities[id].bindings[slot].boundState;
+                e->bindingRarity[slot] = world->abilities[id].bindings[slot].boundRarity;
+            }
         }
 
         if (world->masks[id] & HAS_BODY3)
@@ -214,20 +224,31 @@ void Net_Apply_Snap(World *world)
                                            .anim    = e->animCurrent[layer],
                                            .seek    = e->animSeek[layer],
                                            .oneShot = e->animOneShot[layer],
+                                           .speed   = e->animSpeed[layer],
                                        });
                     Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
                 }
             }
             if (world->masks[id] & HAS_ABILITY)
             {
-                u8 state                   = e->abilityState;
-                world->abilities[id].state = state;
-                AbilityData *data          = &world->abilities[id].stateData[state];
-                data->charge               = e->abilityCharge;
-                data->stage                = e->abilityStage;
+                CompAbility *ability = &world->abilities[id];
+                for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+                {
+                    SkillBinding *b = &ability->bindings[slot];
+                    b->boundState   = e->bindingState[slot];
+                    b->boundRarity  = e->bindingRarity[slot];
+                    // pendingState/dirty stays as-is — if the client is still trying
+                    // to bind something different, the next Send_Input will send it again
+                }
+                ability->state      = e->abilityState;
+                ability->activeSlot = e->activeSlot;
+                AbilityData *data   = &ability->stateData[ability->activeSlot];
+                data->charge        = e->abilityCharge;
+                data->stage         = e->abilityStage;
             }
-            world->buffs[id].activeKindsMask = e->buffMask;
         }
+
+        world->buffs[id].activeKindsMask = e->buffMask;
 
         if (world->masks[id] & HAS_OWNER)
         {
@@ -259,19 +280,36 @@ void Net_Send_Input(World *world)
         return;
     CompController *controller = &world->controllers[1];
 
-    NetInputPacket input = {
-        .type       = NET_PACKET_INPUT,
-        .actionMask = controller->actionState,
+    NetInputPacket inputPacket = {
+        .type        = NET_PACKET_INPUT,
+        .actionMask  = controller->actionState,
+        .lookdir     = controller->lookdir,
+        .wishdir     = controller->wishdir,
+        .aimdir      = controller->aimdir,
+        .yaw         = controller->yaw,
+        .isStrafing  = controller->isStrafing,
+        .currentTick = world->currentTick,
     };
-    input.lookdir     = controller->lookdir;
-    input.wishdir     = controller->wishdir;
-    input.aimdir      = controller->aimdir;
-    input.yaw         = controller->yaw;
-    input.isStrafing  = controller->isStrafing;
-    input.currentTick = world->currentTick;
-    memcpy(input.abilities, &world->abilities[1].bindings->targetState, sizeof(u32) * 10);
+    CompAbility *a = &world->abilities[1];
+    for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
+    {
+        if (a->bindings[i].dirtySend)
+        {
+            inputPacket.hasEquipRequest = true;
+            break;
+        }
+    }
 
-    ENetPacket *packet = enet_packet_create(&input, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+    if (inputPacket.hasEquipRequest)
+    {
+        for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
+        {
+            inputPacket.abilities[i] = a->bindings[i].pendingState;
+            inputPacket.rarity[i]    = a->bindings[i].pendingRarity;
+            a->bindings[i].dirtySend = false; // ack: we've sent this request
+        }
+    }
+    ENetPacket *packet = enet_packet_create(&inputPacket, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
     enet_peer_send(solNet.peer, 0, packet);
 }
 
@@ -310,9 +348,6 @@ void Net_Apply_Events(World *world, EventSnap *snap)
         case EVENTKIND_FX:
             e.as.fx.entA = world->worldNet->hostToLocalMap[e.as.fx.entA];
             e.as.fx.entB = world->worldNet->hostToLocalMap[e.as.fx.entB];
-            break;
-        case EVENTKIND_ANIM:
-            e.as.anim.entId = world->worldNet->hostToLocalMap[e.as.anim.entId];
             break;
         case EVENTKIND_HIT:
             e.as.hit.entA = world->worldNet->hostToLocalMap[e.as.hit.entA];

@@ -31,6 +31,15 @@ void Sol_Event_Add(World *w, SolEvent d)
     s->count++;
 }
 
+void Sol_Events_Clear(World **worlds, int count)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world         = worlds[w];
+        world->events->count = 0;
+    }
+}
+
 void Sol_Event_Clear(World *w)
 {
     if (w->events)

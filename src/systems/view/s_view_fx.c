@@ -19,6 +19,11 @@ void Fx_Event(World *world, double dt, double time)
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
         switch (e->as.fx.kind)
         {
+        case FXKIND_BULLET_HIT: {
+            Sol_Emitter_Spawn(world, EMITTERKIND_FLASH_WHITEBALL, e->as.fx.pos, 0.25f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 0.25f);
+        }
+        break;
         case FXKIND_SPINHIT: {
             Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 1.0f);
             Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, 1.0f);

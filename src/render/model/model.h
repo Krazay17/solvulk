@@ -1,12 +1,17 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct
+typedef struct AnimConfig
+{
+    float blendIn, blendOut, speed;
+} AnimConfig;
+
+typedef struct AnimDesc
 {
     float       blendIn, blendOut, seek, speed;
-    SolAnimId   anim;
     AnimLayerId layerId;
-    bool        force, oneShot;
+    u32         anim;
+    bool        oneShot;
 } AnimDesc;
 
 typedef struct
@@ -18,7 +23,7 @@ typedef struct
 typedef struct AnimLayer
 {
     i16   currentAnim, lastAnim, animId;
-    bool  oneShot;
+    bool  oneShot, force;
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
     float fadeOut, fadeOutSpeed;
@@ -35,7 +40,10 @@ typedef struct CompModel
     float        xOffset, yOffset, yawOffset;
 } CompModel;
 
-u32  Sol_Model_GetTriCount(SolModelKind handle);
+extern const AnimConfig anim_configs[ANIM_COUNT];
+
+    u32
+     Sol_Model_GetTriCount(SolModelKind handle);
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);
 
 void       Sol_Model_Init(World *world);

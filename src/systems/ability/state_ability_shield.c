@@ -2,22 +2,19 @@
 
 #include "ability_i.h"
 
-#define HITDURATION 0.5f
 #define HITINTERVAL 0.1f
-
-#define PULSEDAMAGE 20
 
 void Shield_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data = &ability->stateData[ability->activeSlot];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
 
     data->elapsed += (float)dt;
     data->accum += (float)dt;
     Sol_Movement_SetSpeedMod(world, id, 0.5f);
 
     // aoe scan over time, hit ents once
-    if (data->elapsed < HITDURATION)
+    if (data->elapsed < data->duration)
     {
         if (data->accum > HITINTERVAL)
         {
@@ -47,12 +44,13 @@ void Shield_State_Update(World *world, int id, float dt)
                     continue;
                 }
                 Sol_Event_Add(world, (SolEvent){
-                                         .kind        = EVENTKIND_HIT,
-                                         .as.hit.entA = id,
-                                         .as.hit.entB = results[i].entId,
-                                         .as.hit.pos  = results[i].pos,
-                                         .as.hit.kind = HITKIND_SHIELD_PULSE,
-                                         .as.hit.vel  = vecSub(results[i].pos, pos),
+                                         .kind          = EVENTKIND_HIT,
+                                         .as.hit.entA   = id,
+                                         .as.hit.entB   = results[i].entId,
+                                         .as.hit.pos    = results[i].pos,
+                                         .as.hit.kind   = HITKIND_SHIELD_PULSE,
+                                         .as.hit.vel    = vecSub(results[i].pos, pos),
+                                         .as.hit.damage = data->damage,
                                      });
             }
         }
@@ -67,15 +65,15 @@ void Shield_State_Update(World *world, int id, float dt)
 void Shield_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data = &ability->stateData[ability->activeSlot];
-    data->accum       = HITINTERVAL;
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    data->accum          = HITINTERVAL;
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
     CompCombat *combat = &world->combats[id];
     memset(combat->hitEnts, 0, sizeof(combat->hitEnts));
     Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.5f, 0);
 
     vec3s pos = Sol_Xform_GetPos(world, id);
-    Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id),1.0f, 0.1f, 0);
+    Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 1.0f, 0.1f, 0);
     Sol_Event_Add(world, (SolEvent){
                              .kind       = EVENTKIND_FX,
                              .as.fx.kind = FXKIND_SHIELD_BURST,
@@ -88,21 +86,21 @@ void Shield_State_Exit(World *world, int id)
 {
     Sol_Combat_RemoveFlags(world, id, COMBATFLAG_REFLECTING);
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data = &ability->stateData[ability->activeSlot];
-    data->lastExited  = Sol_GetGameTime();
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    data->lastExited     = Sol_GetGameTime();
 }
 
 bool Shield_State_CanExit(World *world, int id, u32 next)
 {
-        CompAbility *ability = &world->abilities[id];
-    AbilityData *data = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
 
-    return next != ABILITY_STATE_SHIELD && data->elapsed >= HITDURATION;
+    return data->elapsed >= data->duration;
 }
 
-bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
-    return !(data->lastExited + ability_config[ABILITY_STATE_SHIELD].cooldown > Sol_GetGameTime());
+    return !(data->lastExited + data->cooldown > Sol_GetGameTime());
 }

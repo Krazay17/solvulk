@@ -8,7 +8,7 @@ void Dead_State_Update(World *world, int id, float dt)
 }
 void Dead_State_Enter(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_DEATH, .force = true, .layerId = ANIM_LAYER_OVERRIDE, .speed = 0.5f});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 0.5f});
 }
 void Dead_State_Exit(World *world, int id)
 {

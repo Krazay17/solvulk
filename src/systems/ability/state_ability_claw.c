@@ -22,7 +22,7 @@ void Claw_State_Enter(World *world, int id)
     CompXform   *xform  = &world->xforms[id];
     CompAbility *combat = &world->abilities[id];
 
-    AnimDesc desc = {.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .force = true};
+    AnimDesc desc = {.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f};
     Sol_Model_PlayAnim(world, id, desc);
 }
 

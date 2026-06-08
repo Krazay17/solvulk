@@ -81,6 +81,7 @@ typedef enum
     FXKIND_SHIELD_BURST,
     FXKIND_SHIELD_HIT,
     FXKIND_SPINHIT,
+    FXKIND_BULLET_HIT,
     FXKIND_DEATH_BLOOD,
 } FxKind;
 
@@ -164,7 +165,8 @@ typedef struct SolMaterial
 
 typedef enum
 {
-    ANIM_IDLE = 1,
+    ANIM_NONE,
+    ANIM_IDLE,
     ANIM_WALK_FWD,
     ANIM_WALK_BWD,
     ANIM_WALK_LEFT,
@@ -200,7 +202,7 @@ typedef enum
     ANIM_ABILITY9,
     ANIM_SPINSLASH,
     ANIM_COUNT,
-} SolAnimId;
+} AnimId;
 
 typedef struct SolVertex
 {
@@ -242,6 +244,7 @@ typedef enum
     SOL_TEXTURE_PISTOL_CARD,
     SOL_TEXTURE_BLADE_CARD,
     SOL_TEXTURE_CRYSTAL_CARD,
+    SOL_TEXTURE_DASH_CARD,
     SOL_TEXTURE_CLOUD1,
     SOL_TEXTURE_HEALTH,
     SOL_TEXTURE_SPIKEFRAMEFILLED,

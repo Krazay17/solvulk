@@ -28,7 +28,7 @@ void MakeAWizard(int flags, void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 0.6f);
+        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 0.85f);
         Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, ENTKIND_WIZARD);
     }
@@ -157,6 +157,9 @@ void Create_Sol_Game()
     int rightAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){820, 600, 0}, 1, "E");
     Sol_Interact_Add(hud, rightAbility);
 
+    int dashAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){920, 600, 0}, 9, "Shift");
+    Sol_Interact_Add(hud, dashAbility);
+
     int abilityBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 280, 70, 0, 0);
     Sol_Xform_Set(hud, abilityBar, 500, 650, 0);
@@ -187,6 +190,12 @@ void Create_Sol_Game()
     }
 
     Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL);
+    int pistolCard = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL);
+    Sol_Item_SetRarity(hud, pistolCard, 2);
+
+    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH);
+    int dashCard = Sol_Prefab_AbilityCard(hud, (vec3s){1020, 600, 0}, ABILITY_STATE_DASH);
+    Sol_Item_SetRarity(hud, dashCard, 2);
 
     int abilityCard1 = Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL);
     Sol_Item_SetRarity(hud, abilityCard1, 2);
@@ -204,7 +213,7 @@ void Create_Sol_Game()
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 1.0f);
+    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});

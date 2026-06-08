@@ -85,13 +85,14 @@ static void AbilitySlots(World *world, double dt, double time)
         World *activeWorld = Sol_GetState()->activeWorld;
         if (bestCardId != -1)
         {
-            Sol_Ability_SetAbility(activeWorld, 1, item->slot, bestAbility);
+            Sol_Ability_RequestBind(activeWorld, 1, item->slot, world->items[bestCardId].ability,
+                                    world->items[bestCardId].rarity);
             if (!(Sol_Interact_GetState(world, bestCardId) & INTERACT_MOVING))
                 Sol_Parent_SetActive(world, bestCardId, true);
         }
         else
         {
-            Sol_Ability_SetAbility(activeWorld, 1, item->slot, 0);
+            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0);
         }
         CompAbility *ability    = &activeWorld->abilities[1];
         SolView2d   *cdView     = &world->view2d[id].views[6];
@@ -105,8 +106,8 @@ static void AbilitySlots(World *world, double dt, double time)
             CompAbility *ability          = &activeWorld->abilities[1];
             AbilityData *data             = &ability->stateData[item->slot];
             float        elapsed          = Sol_GetGameTime() - data->lastExited;
-            float        cooldownDuration = ability_config[bestAbility].cooldown;
-            float        duration         = ability_config[bestAbility].duration;
+            float        cooldownDuration = data->cooldown;
+            float        duration         = data->duration;
 
             if (Sol_Parent_IsActive(world, bestCardId))
             {
@@ -166,7 +167,8 @@ static void AbilitySlots(World *world, double dt, double time)
 
 void Sol_Item_SetRarity(World *world, int id, u32 rarity)
 {
-    world->items[id].rarity = rarity;
+    CompItem *item = &world->items[id];
+    item->rarity   = rarity;
     vec4s color;
     switch (rarity)
     {

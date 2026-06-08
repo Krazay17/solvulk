@@ -14,7 +14,7 @@ void Pistol_State_Update(World *world, int id, float dt)
     data->elapsed += dt;
     data->accum += dt;
 
-    if (data->accum > 0.2f)
+    if (data->accum > data->cooldown)
     {
         data->accum = 0;
 
@@ -28,14 +28,14 @@ void Pistol_State_Update(World *world, int id, float dt)
         {
             Sol_Physx_SetVel(world, bullet, shoot.vel);
             Sol_Owner_Add(world, bullet, id);
+            world->projectiles[bullet].damage = data->damage;
         }
         Sol_Model_PlayAnim(world, id,
                            (AnimDesc){
                                .anim    = ANIM_ATTACK_RIGHT,
                                .speed   = 3.5f,
                                .oneShot = true,
-                               .force   = true,
-                               .seek    = 0.1,
+                               .seek    = 0.15,
                                .layerId = ANIM_LAYER_UPPER,
                                .blendIn = 0.01,
                            });
@@ -45,18 +45,25 @@ void Pistol_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->accum          = 0.2f;
+    data->accum          = data->cooldown;
 }
 void Pistol_State_Exit(World *world, int id)
 {
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    data->lastExited     = Sol_GetGameTime();
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
 }
 bool Pistol_State_CanExit(World *world, int id, u32 next)
 {
-    return next != ABILITY_STATE_PISTOL;
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+
+    return data->elapsed >= data->duration;
 }
-bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
+bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    AbilityData *data = &world->abilities[id].stateData[slot];
-    return !(data->lastExited + ability_config[ABILITY_STATE_PISTOL].cooldown > Sol_GetGameTime());
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > Sol_GetGameTime());
 }

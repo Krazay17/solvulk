@@ -127,9 +127,7 @@ static void LocalTick(World *world, int id, double dt, double time)
     controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
     controller->aimHitEnt = aimTrace.entId;
 
-    // #######################
     // #### DEBUG ACTIONS ####
-    // #######################
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
         vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id),
@@ -137,30 +135,6 @@ static void LocalTick(World *world, int id, double dt, double time)
         Sol_Xform_Teleport(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
-
-    // float freq = (GLM_PI_2f + look->pitch) * 200.0f;
-
-    // Sol_Audio_SineFreq(0, freq);
-    // Sol_Audio_SineFreq(1, freq);
-    // Sol_Audio_SineFreq(2, freq);
-    // Sol_Audio_SineFreq(3, freq);
-
-    // if (Sol_Input_KeyDown(SOL_KEY_2))
-    //     Sol_Audio_SetVolumeSine(0, 0.5f);
-    // else
-    //     Sol_Audio_SetVolumeSine(0, 0);
-    // if (Sol_Input_KeyDown(SOL_KEY_3))
-    //     Sol_Audio_SetVolumeSine(1, 0.5f);
-    // else
-    //     Sol_Audio_SetVolumeSine(1, 0);
-    // if (Sol_Input_KeyDown(SOL_KEY_4))
-    //     Sol_Audio_SetVolumeSine(2, 0.5f);
-    // else
-    //     Sol_Audio_SetVolumeSine(2, 0);
-    // if (Sol_Input_KeyDown(SOL_KEY_5))
-    //     Sol_Audio_SetVolumeSine(3, 0.5f);
-    // else
-    //     Sol_Audio_SetVolumeSine(3, 0);
 }
 
 static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)

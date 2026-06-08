@@ -40,7 +40,9 @@ static HitData hit_kinds[HITKIND_COUNT] = {
         },
     [HITKIND_BULLET] =
         {
-            .damage = 5,
+            .damage  = 5,
+            .fxCount = 1,
+            .fxKinds = {FXKIND_BULLET_HIT},
         },
 };
 
@@ -78,7 +80,8 @@ static void Combat_Step(World *world, double dt, double time)
         case EVENTKIND_HIT: {
             HitData hitData = hit_kinds[e->as.hit.kind];
             hitData.power   = e->as.hit.power > 0 ? e->as.hit.power : 1.0f;
-            u32 damage      = (u32)((float)hitData.damage * hitData.power);
+            u32 damage      = e->as.hit.damage > 0 ? e->as.hit.damage : hitData.damage;
+            damage          = (u32)((float)damage * hitData.power);
             e->as.hit.entA  = Sol_Owner_GetOwner(world, e->as.hit.entA);
             bool canDamage  = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                               !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&

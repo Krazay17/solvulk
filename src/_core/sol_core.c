@@ -52,16 +52,13 @@ void Sol_Tick(double dt, double time)
 
     // ######### STEP AND INTERP #########
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
-    if (accumulator >= SOL_TIMESTEP)
-    {
-        Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
-        Sol_Interact_Update(solState.worlds, solState.worldCount);
-        Sol_Tooltip_Update(dt);
-    }
     while (accumulator >= SOL_TIMESTEP)
     {
+        Sol_Interact_Update(solState.worlds, solState.worldCount);
+        Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
         Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP, time);
         Sol_Net_Step(solState.worlds, solState.worldCount, time);
+        Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }

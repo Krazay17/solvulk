@@ -7,10 +7,9 @@ typedef enum
     EVENTKIND_COLLISION,
     EVENTKIND_HIT,
     EVENTKIND_FX,
-    EVENTKIND_ANIM,
     EVENTKIND_DEATH,
     EVENTKIND_RESPAWN,
-    EVENTKIND_UI,
+    EVENTKIND_EQUIP,
     EVENTKIND_COUNT,
 } EventKind;
 typedef enum
@@ -41,21 +40,21 @@ typedef struct SolEvent
         } fx;
         struct
         {
-            u32   entId;
-            u32   animId;
-            u8    layerId;
-            float seek;
-        } anim;
-        struct
-        {
             TriggerKind kind;
             vec3s       pos;
         } trigger;
         struct
         {
-            u32 ent;
+            u32   ent;
             vec3s pos;
         } respawn;
+        struct
+        {
+            u32 entId;
+            u32 slot;
+            u32 ability;
+            u32 rarity;
+        } equip;
     } as;
 } SolEvent;
 
@@ -68,5 +67,6 @@ typedef struct SolEvents
 } SolEvents;
 
 void Sol_Event_Add(World *world, SolEvent event);
+void Sol_Events_Clear(World **worlds, int count);
 void Sol_Event_Init(World *world);
 void Sol_Event_Clear(World *world);

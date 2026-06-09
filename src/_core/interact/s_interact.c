@@ -365,7 +365,7 @@ static void Tooltip_Card_Draw(World *world, int id)
         snprintf(tempBuffer, sizeof(tempBuffer), "Cooldown: %.1fs", cfg.cooldown);
         Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
     }
-    if(cfg.duration > 0.0f)
+    if (cfg.duration > 0.0f)
     {
         snprintf(tempBuffer, sizeof(tempBuffer), "Duration: %.1fs", cfg.duration);
         Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
@@ -387,14 +387,12 @@ static void Tooltip_Card_Draw(World *world, int id)
     }
     u8 totalBuffs = cfg.buffMask | item->bonusBuffs;
     if (totalBuffs & BUFFMASK_FIRE)
-    {
         Render_Tooltip_Line("Ignite", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-    }
 
     u32 totalEffects = cfg.effectMask | item->bonusEffects;
-    if(totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG))
-    {
+    if (totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG))
         Render_Tooltip_Line("Knockback", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-    }
 
+    if (totalEffects & EFFECTMASK_KNOCKUP)
+        Render_Tooltip_Line("Knockup", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
 }

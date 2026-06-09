@@ -117,8 +117,8 @@ void ChangeWorld(int flags, void *data)
 void RotateGuy(World *world, double dt, double time)
 {
     static float yaw = 0;
-    yaw+= dt;
-    
+    yaw += dt;
+
     world->xforms[111].quat = Sol_Quat_FromYawPitch(yaw, 0);
 }
 
@@ -137,18 +137,17 @@ void Create_Sol_Game()
 
     SpawnPlayer(0, 0);
 
-    int        player2d      = Sol_Create_Ent(hud, 111);
+    int        player2d      = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
-    Sol_Xform_Add(hud, player2d, (vec3s){400.0f, 400.0f, 0.0f});
-    Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f,75.0f,75.0f});
-    player2dModel->is2d = true;
+    Sol_Xform_Add(hud, player2d, (vec3s){1100.0f, 400.0f, 0.0f});
+    Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f, 75.0f, 75.0f});
+    player2dModel->is2d    = true;
     player2dModel->xOffset = 50.0f;
 
-    WAddStep(hud) = RotateGuy;
-    CompBody2d *player2dBody = Sol_Body2d_Add(hud, player2d, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01,0b01);
-    player2dBody->grav = (vec2s){0,9.0f};
+    WAddStep(hud)            = RotateGuy;
+    CompBody2d *player2dBody = Sol_Body2d_Add(hud, player2d, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01, 0b01);
+    player2dBody->grav       = (vec2s){0, 9.0f};
     Sol_Interact_Add(hud, player2d);
-
 
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
@@ -188,20 +187,34 @@ void Create_Sol_Game()
         Sol_Parent_Set(hud, abilitySlot,
                        (CompParent){.active = true, .parentId = abilityBar, .localOffset = {70.0f * i}});
     }
-
-    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL, 2);
-    int pistolCard = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 1);
-    hud->items[pistolCard].bonusBuffs = BUFFMASK_FIRE;
-    Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 0);
-    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 0);
-    Sol_Prefab_AbilityCard(hud, (vec3s){1020, 600, 0}, ABILITY_STATE_DASH, 2);
+    // Left and right
+    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_CLAW, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL, 2);
-    Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SHIELD, 1);
-    Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH, 1);
+    // 1,2,3,4
+    Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SPINSLASH, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH, 2);
-    Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL, 0);
-    Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD, 0);
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH, 0);
+    Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_SHIELD, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD, 2);
+    // Shift
+    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 2);
+
+    for (int i = 1; i < 6; i++)
+    {
+        float yoffset = 70.0f * (float)i;
+        for (int j = 0; j < 3; j++)
+        {
+            float xoffset = 70.0f * (float)j;
+            Sol_Prefab_AbilityCard(hud, (vec3s){xoffset, yoffset, 0}, i, j);
+        }
+    }
+    // Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 0);
+    // Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 2);
+    // Sol_Prefab_AbilityCard(hud, (vec3s){570, 500}, ABILITY_STATE_SPINSLASH, 1);
+    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH, 0);
+    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_CLAW, 0);
+    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_CLAW, 1);
+    // int pistolCard                    = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 1);
+    // hud->items[pistolCard].bonusBuffs = BUFFMASK_FIRE;
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});

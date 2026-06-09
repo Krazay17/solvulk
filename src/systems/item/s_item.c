@@ -191,7 +191,7 @@ void Sol_Item_SetRarity(World *world, int id, u32 rarity)
     switch (rarity)
     {
     case 0:
-        color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+        color = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
         break;
     case 1:
         color = (vec4s){0.0f, 1.0f, 0.0f, 1.0f};

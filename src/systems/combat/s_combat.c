@@ -96,7 +96,7 @@ static void Combat_Step(World *world, double dt, double time)
 
                 if (e->as.hit.entA == 1)
                 {
-                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0.05f, 16);
+                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 16);
                 }
 
                 u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];

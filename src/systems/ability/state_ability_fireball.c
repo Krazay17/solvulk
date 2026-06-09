@@ -41,9 +41,11 @@ void Fireball_State_Update(World *world, int id, float dt)
         {
             Sol_Physx_SetVel(world, ball, shoot.vel);
             Sol_Owner_Add(world, ball, id);
-            world->projectiles[ball].directHit.damage      = data->damage;
-            world->projectiles[ball].explosionHit.damage   = data->damage;
-            world->projectiles[ball].explosionHit.buffMask = data->buffs;
+            world->projectiles[ball].directHit.damage        = data->damage;
+            world->projectiles[ball].explosionHit.damage     = data->damage;
+            world->projectiles[ball].explosionHit.buffMask   = data->buffs;
+            world->projectiles[ball].explosionHit.effectMask = data->effects;
+            world->projectiles[ball].explodeRadius           = 4.0f;
         }
 
         data->stage++;

@@ -152,14 +152,12 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u
     b->pendingBonusBuffs   = bonusBuffs;
     b->pendingBonusEffects = bonusEffects;
 
-    // Reset cooldown/duration cache from config
     AbilityData *data = &a->stateData[slot];
     data->cooldown    = ability_config[ability][rarity].cooldown;
     data->duration    = ability_config[ability][rarity].duration;
     data->damage      = ability_config[ability][rarity].damage + bonusDamage;
     data->buffs       = ability_config[ability][rarity].buffMask | bonusBuffs;
     data->effects     = ability_config[ability][rarity].effectMask | bonusEffects;
-    //data->bonusDamage = bonusDamage;
 }
 
 const char *Sol_Ability_GetNameString(u32 ability)

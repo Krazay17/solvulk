@@ -9,13 +9,13 @@ Pistol.png              RCDATA          "images/Pistol.png"
 Blade.png               RCDATA          "images/Blade.png"
 CardCrystal.png         RCDATA          "images/CardCrystal.png"
 DashCard.png            RCDATA          "images/DashCard.png"
+TornadoCard.png         RCDATA          "images/TornadoCard.png"
 Cloud1.webp             RCDATA          "images/Cloud1.webp"
 HealthTexture.webp      RCDATA          "images/HealthTexture.webp"
 SpikeFrameFilled.webp   RCDATA          "images/SpikeFrameFilled.webp"
 SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
 Cloud2.webp             RCDATA          "images/Cloud2.webp"
 Border.webp             RCDATA          "images/Border.webp"
-
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
@@ -35,7 +35,7 @@ dash.mp3                RCDATA          "sounds/Dash2.mp3"
 fireballUse.mp3         RCDATA          "sounds/fireballUse.mp3"
 FireballImpact.mp3      RCDATA          "sounds/FireballImpact.mp3"
 PlayerHit.mp3           RCDATA          "sounds/PlayerHit.mp3"
-
+SwordHit.mp3            RCDATA          "sounds/SwordHit.mp3"
 
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"

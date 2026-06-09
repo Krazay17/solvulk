@@ -134,8 +134,6 @@ void Sol_Model_Draw(World *world, double dt, double time)
                     layer->animId      = 0;
                 }
             }
-            // if (L == ANIM_LAYER_OVERRIDE)
-            //     printf("Fade: %f\n", layer->fadeOut);
         }
 
         PoseRequest req = {.outBones = bonesSSBO.bones};
@@ -158,48 +156,6 @@ void Sol_Model_Draw(World *world, double dt, double time)
     }
 }
 
-// anim 0 to stop layer,
-void Sol_Model_PlayAnim1(World *world, int id, AnimDesc desc)
-{
-    // CompModel *modelComp = &world->models[id];
-    // AnimLayer *layer     = &modelComp->layers[desc.layerId];
-    // float      blendIn   = desc.blendIn > 0 ? desc.blendIn : .25f;
-    // float      blendOut  = desc.blendOut > 0 ? desc.blendOut : .25f;
-    // float      speed     = desc.speed > 0 ? desc.speed : 1.0f;
-
-    // if (desc.anim < 1)
-    // {
-    //     if (layer->animId == desc.anim || layer->fadeOut > 0)
-    //         return; // dedup the stop
-    //     layer->fadeOut      = 1.0f;
-    //     layer->fadeOutSpeed = 1.0f / blendOut;
-    //     layer->animId       = desc.anim;
-    //     return;
-    // }
-    // i32 mappedAnim = model_anim_map[modelComp->modelId][desc.anim];
-
-    // if (!desc.force && mappedAnim == layer->currentAnim)
-    //     return;
-
-    // layer->animId = desc.anim;
-
-    // if (layer->blendFactor > 0.5f)
-    // {
-    //     layer->lastAnim    = layer->currentAnim;
-    //     layer->lastSeek    = layer->currentSeek;
-    //     layer->blendFactor = 0;
-    // }
-    // layer->currentAnim = mappedAnim;
-    // layer->playRate    = speed;
-    // layer->oneShot     = desc.oneShot;
-    // layer->currentSeek = desc.seek;
-    // layer->force       = desc.force;
-
-    // layer->blendSpeed   = 1.0f / blendIn;
-    // layer->fadeOutSpeed = 1.0f / blendOut;
-    // layer->fadeOut      = 0.0f;
-}
-
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
     AnimLayerId layerId   = desc.layerId;
@@ -216,7 +172,7 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
         return;
     if (animId < 1)
     {
-        if (layer->animId == animId || layer->fadeOut > 0)
+        if (layer->animId == animId || layer->fadeOut > 0.0f)
             return;
         layer->fadeOut      = 1.0f;
         layer->fadeOutSpeed = 1.0f / blendOut;

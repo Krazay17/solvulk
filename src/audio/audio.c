@@ -26,7 +26,7 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_MENUMUSIC] = "MenuMusic.mp3", [SOL_AUDIO_SPACEGUN] = "SpaceGun.mp3",
     [SOL_AUDIO_WOONG] = "Woong1.wav",        [SOL_AUDIO_FIREBALL] = "fireballUse.mp3",
     [SOL_AUDIO_DASH] = "dash.mp3",           [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
-    [SOL_AUDIO_GOTHIT] = "PlayerHit.mp3",
+    [SOL_AUDIO_GOTHIT] = "PlayerHit.mp3",    [SOL_AUDIO_SWORDHIT] = "SwordHit.mp3",
 };
 
 typedef struct
@@ -44,7 +44,7 @@ typedef struct
     ma_audio_buffer_ref bufferRef;
     ma_sound            sound;
     SolAudioId          id;
-    bool inUse;
+    bool                inUse;
 } PlayingSound;
 
 typedef struct
@@ -232,10 +232,10 @@ static PlayingSound *Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u32
 
         ps->id    = id;
         ps->inUse = true;
-       // --- THE FIX: Equalized Redistribution Pass ---
+        // --- THE FIX: Equalized Redistribution Pass ---
         // Increment count to include the new instance we just built
-        u32 totalInstances = activeCount + 1; 
-        
+        u32 totalInstances = activeCount + 1;
+
         // Calculate the even share of the requested volume budget
         float evenedVolume = volume / (float)totalInstances;
 

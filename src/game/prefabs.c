@@ -134,10 +134,9 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                  });
     Sol_Projectile_Add(world, id, PROJECTILEKIND_FIREBALL, scale);
     world->projectiles[id].directHit.fxKind        = FXKIND_FIREBALL_HIT;
-    world->projectiles[id].directHit.damage        = 20;
-    world->projectiles[id].explosionHit.damage     = 20;
-    world->projectiles[id].explosionHit.effectMask = EFFECTMASK_KNOCKBACK;
-    world->projectiles[id].explodeRadius = 4.0f;
+    world->projectiles[id].directHit.damage        = 10;
+    world->projectiles[id].explosionHit.damage     = 10;
+    world->projectiles[id].explodeRadius           = 3.0f;
 
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
@@ -322,14 +321,18 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 ra
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
         break;
     case ABILITY_STATE_SPINSLASH:
-        image->textureID = SOL_TEXTURE_BLADE_CARD;
+        image->textureID = SOL_TEXTURE_SPIN_CARD;
         break;
     case ABILITY_STATE_DASH:
         image->textureID = SOL_TEXTURE_DASH_CARD;
         break;
+    case ABILITY_STATE_CLAW:
+        image->textureID = SOL_TEXTURE_BLADE_CARD;
+        break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
     border->zindex     = 2;
+    border->border     = 3.0f;
     border->textureID  = SOL_TEXTURE_BORDER;
     border->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     Sol_Item_AddAbility(world, id, ability);

@@ -32,7 +32,8 @@ void Sol_Parent_Step(World *world, double dt, double time)
         CompXform  *xform  = &world->xforms[id];
         if (!parent->active)
             continue;
-
+        if (world->masks[id] & HAS_BODY2)
+            world->body2d[id].vel = GLMS_VEC2_ZERO;
         xform->pos  = vecAdd(world->xforms[parent->parentId].pos, parent->localOffset);
         xform->quat = glms_quat_mul(parent->localQuat, world->xforms[parent->parentId].quat);
     }

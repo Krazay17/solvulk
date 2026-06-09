@@ -25,7 +25,6 @@ typedef enum
     PARTICLE_CLOUD,
     PARTICLE_BLOOD,
     PARTICLE_FIREBALL,
-    PARTICLE_FIREBALL1,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -54,7 +53,10 @@ typedef struct CompEmitter
     u32     emitterCount;
 } CompEmitter;
 
+typedef void (*ParticleFunc)(Particle, double, double);
+
 const extern Emitter emitter_kinds[EMITTERKIND_COUNT];
+//const extern ParticleFunc particle_funcs[4];
 
 void Sol_Emitter_Init(World *world);
 

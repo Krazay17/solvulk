@@ -189,28 +189,19 @@ void Create_Sol_Game()
                        (CompParent){.active = true, .parentId = abilityBar, .localOffset = {70.0f * i}});
     }
 
-    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL);
-    int pistolCard = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL);
-    Sol_Item_SetRarity(hud, pistolCard, 2);
-    hud->items[pistolCard].bonusBuffs = (1<<0);
-
-    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH);
-    int dashCard = Sol_Prefab_AbilityCard(hud, (vec3s){1020, 600, 0}, ABILITY_STATE_DASH);
-    Sol_Item_SetRarity(hud, dashCard, 2);
-
-    int abilityCard1 = Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL);
-    Sol_Item_SetRarity(hud, abilityCard1, 2);
-
-    int abilityCard5 = Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SHIELD);
-    Sol_Item_SetRarity(hud, abilityCard5, 1);
-
-    Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH);
-
-    int abilityCard2 = Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL);
-
-    Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD);
-
-    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH);
+    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_PISTOL, 2);
+    int pistolCard = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 1);
+    hud->items[pistolCard].bonusBuffs = BUFFMASK_FIRE;
+    Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 0);
+    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 0);
+    Sol_Prefab_AbilityCard(hud, (vec3s){1020, 600, 0}, ABILITY_STATE_DASH, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SHIELD, 1);
+    Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH, 1);
+    Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_FIREBALL, 0);
+    Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD, 0);
+    Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH, 0);
 
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});

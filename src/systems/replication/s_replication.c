@@ -70,10 +70,11 @@ void Sol_Replication_Disconnect(World *world)
 
 void Net_Send_Snap(World *world)
 {
-    WorldSnap snap  = {0};
-    snap.type       = NET_PACKET_SNAPSHOT;
-    snap.worldId    = world->worldId;
-    snap.tickNumber = world->currentTick;
+    static WorldSnap snap;
+    memset(&snap, 0, sizeof(WorldSnap));
+    snap.type             = NET_PACKET_SNAPSHOT;
+    snap.worldId          = world->worldId;
+    snap.tickNumber       = world->currentTick;
 
     int count = 0;
     for (int i = 0; i < world->activeCount && count < MAX_NET_ENTS; i++)
@@ -114,8 +115,11 @@ void Net_Send_Snap(World *world)
             e->abilityStage  = data->stage;
             for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
             {
-                e->bindingState[slot]  = world->abilities[id].bindings[slot].boundState;
-                e->bindingRarity[slot] = world->abilities[id].bindings[slot].boundRarity;
+                e->bindingState[slot]        = world->abilities[id].bindings[slot].boundState;
+                e->bindingRarity[slot]       = world->abilities[id].bindings[slot].boundRarity;
+                e->bindingBonusdamage[slot]  = world->abilities[id].bindings[slot].boundBonusDamage;
+                e->bindingBonusBuffs[slot]   = world->abilities[id].bindings[slot].boundBonusBuffs;
+                e->bindingBonusEffects[slot] = world->abilities[id].bindings[slot].boundBonusEffects;
             }
         }
 
@@ -234,9 +238,12 @@ void Net_Apply_Snap(World *world)
                 CompAbility *ability = &world->abilities[id];
                 for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
                 {
-                    SkillBinding *b = &ability->bindings[slot];
-                    b->boundState   = e->bindingState[slot];
-                    b->boundRarity  = e->bindingRarity[slot];
+                    SkillBinding *b      = &ability->bindings[slot];
+                    b->boundState        = e->bindingState[slot];
+                    b->boundRarity       = e->bindingRarity[slot];
+                    b->boundBonusDamage  = e->bindingBonusdamage[slot];
+                    b->boundBonusBuffs   = e->bindingBonusBuffs[slot];
+                    b->boundBonusEffects = e->bindingBonusEffects[slot];
                     // pendingState/dirty stays as-is — if the client is still trying
                     // to bind something different, the next Send_Input will send it again
                 }
@@ -306,6 +313,8 @@ void Net_Send_Input(World *world)
         {
             inputPacket.abilities[i] = a->bindings[i].pendingState;
             inputPacket.rarity[i]    = a->bindings[i].pendingRarity;
+            inputPacket.addBuff[i]   = a->bindings[i].pendingBonusBuffs;
+            inputPacket.addEffect[i] = a->bindings[i].pendingBonusEffects;
             a->bindings[i].dirtySend = false; // ack: we've sent this request
         }
     }

@@ -438,7 +438,8 @@ void Net_Recv_Packet(ENetEvent *event)
         }
 
         // Copy into a properly-sized buffer
-        WorldSnap fullSnap = {0};
+        static WorldSnap fullSnap;
+        memset(&fullSnap, 0, sizeof(WorldSnap));
         size_t    copySize = event->packet->dataLength;
         if (copySize > sizeof(WorldSnap))
         {

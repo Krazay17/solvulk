@@ -86,7 +86,8 @@ static void AbilitySlots(World *world, double dt, double time)
         if (bestCardId != -1)
         {
             Sol_Ability_RequestBind(activeWorld, 1, item->slot, world->items[bestCardId].ability,
-                                    world->items[bestCardId].rarity, world->items[bestCardId].bonusDamage, world->items[bestCardId].bonusBuffs);
+                                    world->items[bestCardId].rarity, world->items[bestCardId].bonusDamage,
+                                    world->items[bestCardId].bonusBuffs);
 
             vec3s       cardPos    = Sol_Xform_GetPos(world, bestCardId);
             CompBody2d *cardBody   = &world->body2d[bestCardId];
@@ -182,6 +183,7 @@ static void AbilitySlots(World *world, double dt, double time)
 
 void Sol_Item_SetRarity(World *world, int id, u32 rarity)
 {
+    rarity               = min(3, rarity);
     CompItem    *item    = &world->items[id];
     CompTooltip *tooltip = &world->tooltips[id];
     item->rarity         = rarity;

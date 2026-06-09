@@ -291,7 +291,7 @@ typedef enum
 
 typedef struct SolHit
 {
-    u32   kind; // For visual/cosmetic identification (FX, sound lookups)
+    u32   kind;
     int   entA; // Attacker
     int   entB; // Victim
     vec3s pos;
@@ -299,10 +299,8 @@ typedef struct SolHit
     vec3s vel;
     float power;
 
-    // --- Complete Transactional Payload ---
-    u32   damage;
-    float knockback;
-    float knockbackDuration;
-    u64   buffMask; // Bitmask containing all buffs to apply
-    u32   fxKind;   // Primary hit effect
+    u32 damage;
+    u32 buffMask;
+    u32 effectMask;
+    u32 fxKind;
 } SolHit;

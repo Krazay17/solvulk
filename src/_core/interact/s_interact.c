@@ -270,7 +270,7 @@ void Sol_Tooltip_Draw()
 {
     World *world = interactingEnt.world;
     int    id    = interactingEnt.id;
-    if (tooltipAlpha <= 0.0f || !world || id < 1)
+    if (tooltipAlpha <= 0.0f || !world || id < 1 || interactingEnt.id == interactingEnt.movingId)
         return;
     CompTooltip *tooltip = &world->tooltips[id];
     tooltip_funcs[tooltip->kind](world, id);
@@ -365,6 +365,11 @@ static void Tooltip_Card_Draw(World *world, int id)
         snprintf(tempBuffer, sizeof(tempBuffer), "Cooldown: %.1fs", cfg.cooldown);
         Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
     }
+    if(cfg.duration > 0.0f)
+    {
+        snprintf(tempBuffer, sizeof(tempBuffer), "Duration: %.1fs", cfg.duration);
+        Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
+    }
 
     // Render Damage Line (incorporating dynamic procedural modifications)
     u32 totalDamage = cfg.damage + item->bonusDamage;
@@ -380,12 +385,16 @@ static void Tooltip_Card_Draw(World *world, int id)
         }
         Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
     }
+    u8 totalBuffs = cfg.buffMask | item->bonusBuffs;
+    if (totalBuffs & BUFFMASK_FIRE)
+    {
+        Render_Tooltip_Line("Ignite", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
+    }
 
-    // for (int i = 0; i < item->bonusBuffCount; i++)
-    // {
-    //     if (item->bonusBuffKind[i] == BUFFKIND_FIRE)
-    //     {
-    //         Render_Tooltip_Line("Inflicts Ignite", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-    //     }
-    // }
+    u32 totalEffects = cfg.effectMask | item->bonusEffects;
+    if(totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG))
+    {
+        Render_Tooltip_Line("Knockback", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
+    }
+
 }

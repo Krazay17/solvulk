@@ -80,16 +80,17 @@ static void Combat_Step(World *world, double dt, double time)
         switch (e->kind)
         {
         case EVENTKIND_HIT: {
-            u32   damage    = e->as.hit.damage;
+            u32 damage      = e->as.hit.damage;
+            u32 effectMask  = e->as.hit.effectMask;
+            e->as.hit.power = e->as.hit.power ? e->as.hit.power : 1.0f;
+            e->as.hit.entA  = Sol_Owner_GetOwner(world, e->as.hit.entA);
 
-            e->as.hit.entA = Sol_Owner_GetOwner(world, e->as.hit.entA);
             bool canDamage = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                              !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
                              !Sol_Vital_GetDead(world, e->as.hit.entB);
 
             if (damage && canDamage)
             {
-                printf("buffmAsk: %d\n", e->as.hit.buffMask);
                 Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.buffMask, e->as.hit.entA, e->as.hit.power);
                 Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
 
@@ -106,11 +107,38 @@ static void Combat_Step(World *world, double dt, double time)
             if (canDamage && world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                 Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
 
-            if (canDamage && e->as.hit.knockback)
+            float knockback         = 0;
+            float knockbackDuration = 0;
+            if (effectMask & EFFECTMASK_KNOCKBACK)
             {
-                vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), e->as.hit.knockback * e->as.hit.power);
+                knockback         = 15.0f;
+                knockbackDuration = 0.2f;
+            }
+            else if (effectMask & EFFECTMASK_KNOCKBACK_STRONG)
+            {
+                knockback         = 25.0f;
+                knockbackDuration = 0.2f;
+            }
+            if (canDamage && knockback)
+            {
+                vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), knockback * e->as.hit.power);
                 if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
-                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, e->as.hit.knockbackDuration);
+                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockbackDuration);
+                else
+                    Sol_Physx_Impulse(world, e->as.hit.entB, vel);
+            }
+            float knockup         = 0;
+            float knockupDuration = 0;
+            if(effectMask & EFFECTMASK_KNOCKUP)
+            {
+                knockup = 10.0f;
+                knockupDuration = 0.1f;
+            }
+            if (canDamage && knockup)
+            {
+                vec3s vel = vecSca(glms_vec3_normalize(WORLD_UP), knockup * e->as.hit.power);
+                if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
+                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockupDuration);
                 else
                     Sol_Physx_Impulse(world, e->as.hit.entB, vel);
             }

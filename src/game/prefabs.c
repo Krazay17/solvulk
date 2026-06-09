@@ -133,11 +133,11 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                      .ignoreFriendly = 1,
                  });
     Sol_Projectile_Add(world, id, PROJECTILEKIND_FIREBALL, scale);
-    world->projectiles[id].directHit.fxKind = FXKIND_FIREBALL_HIT;
-    world->projectiles[id].directHit.damage = 20;
-    world->projectiles[id].explosionHit.damage =20;
-    world->projectiles[id].explosionHit.knockback =20.0f;
-    world->projectiles[id].explosionHit.knockbackDuration =0.25f;
+    world->projectiles[id].directHit.fxKind        = FXKIND_FIREBALL_HIT;
+    world->projectiles[id].directHit.damage        = 20;
+    world->projectiles[id].explosionHit.damage     = 20;
+    world->projectiles[id].explosionHit.effectMask = EFFECTMASK_KNOCKBACK;
+    world->projectiles[id].explodeRadius = 4.0f;
 
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
@@ -291,7 +291,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     return id;
 }
 
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 rarity)
 {
     vec2s dims = {62.0f, 62.0f};
 
@@ -302,7 +302,6 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     body->zindex     = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
     // Sol_Parent_SetActive(world, id, false);
-    Sol_Item_AddAbility(world, id, ability);
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
     SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
@@ -333,6 +332,8 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     border->zindex     = 2;
     border->textureID  = SOL_TEXTURE_BORDER;
     border->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+    Sol_Item_AddAbility(world, id, ability);
+    Sol_Item_SetRarity(world, id, rarity);
 
     return id;
 }

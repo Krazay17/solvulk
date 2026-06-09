@@ -31,12 +31,6 @@ void Shield_State_Update(World *world, int id, float dt)
                     continue;
                 combat->hitEnts[results[i].entId] = true;
 
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind       = EVENTKIND_FX,
-                                         .as.fx.pos  = results[i].pos,
-                                         .as.fx.kind = FXKIND_SHIELD_HIT,
-                                         .as.fx.entA = results[i].entId,
-                                     });
                 if (world->masks[results[i].entId] & HAS_PROJECTILE)
                 {
                     Sol_Physx_SetRedirectVel(world, results[i].entId, Sol_Controller_GetAimdir(world, id));
@@ -44,13 +38,15 @@ void Shield_State_Update(World *world, int id, float dt)
                     continue;
                 }
                 Sol_Event_Add(world, (SolEvent){
-                                         .kind          = EVENTKIND_HIT,
-                                         .as.hit.entA   = id,
-                                         .as.hit.entB   = results[i].entId,
-                                         .as.hit.pos    = results[i].pos,
-                                         .as.hit.kind   = HITKIND_SHIELD_PULSE,
-                                         .as.hit.vel    = vecSub(results[i].pos, pos),
-                                         .as.hit.damage = data->damage,
+                                         .kind              = EVENTKIND_HIT,
+                                         .as.hit.entA       = id,
+                                         .as.hit.entB       = results[i].entId,
+                                         .as.hit.pos        = results[i].pos,
+                                         .as.hit.kind       = HITKIND_SHIELD_PULSE,
+                                         .as.hit.vel        = vecSub(results[i].pos, pos),
+                                         .as.hit.effectMask = EFFECTMASK_KNOCKBACK,
+                                         .as.hit.damage     = data->damage,
+                                         .as.hit.fxKind     = FXKIND_SHIELD_HIT,
                                      });
             }
         }

@@ -6,7 +6,7 @@
 #define VELOCITY 40.0f
 #define ALPHAMOD 1.3f
 #define DAMAGE_DELAY 0.0f
-#define HITINTERVAL 0.01f
+#define HITINTERVAL 0.05f
 
 void Spinslash_State_Update(World *world, int id, float dt)
 {
@@ -49,21 +49,18 @@ void Spinslash_State_Update(World *world, int id, float dt)
                     Sol_Owner_Add(world, results[i].entId, id);
                     continue;
                 }
-                
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind        = EVENTKIND_HIT,
-                                         .as.hit.entA = id,
-                                         .as.hit.entB = results[i].entId,
-                                         .as.hit.pos  = results[i].pos,
-                                         .as.hit.kind = HITKIND_SHIELD_PULSE,
-                                         .as.hit.vel  = vecSub(results[i].pos, pos),
-                                     });
 
                 Sol_Event_Add(world, (SolEvent){
-                                         .kind       = EVENTKIND_FX,
-                                         .as.fx.pos  = results[i].pos,
-                                         .as.fx.kind = FXKIND_SPINHIT,
-                                         .as.fx.entA = results[i].entId,
+                                         .kind              = EVENTKIND_HIT,
+                                         .as.hit.entA       = id,
+                                         .as.hit.entB       = results[i].entId,
+                                         .as.hit.damage     = data->damage,
+                                         .as.hit.effectMask = data->effects,
+                                         .as.hit.buffMask   = data->buffs,
+                                         .as.hit.pos        = results[i].pos,
+                                         .as.hit.kind       = HITKIND_SHIELD_PULSE,
+                                         .as.hit.vel        = vecSub(results[i].pos, pos),
+                                         .as.hit.fxKind     = FXKIND_SPINHIT,
                                      });
             }
         }

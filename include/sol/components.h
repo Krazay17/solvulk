@@ -8,7 +8,6 @@
 #pragma once
 #include "sol/types.h"
 
-
 #define MAX_VIEWS 8
 
 // AUDIO----------------
@@ -117,13 +116,9 @@ typedef struct CompProjectile
     u32            bounces;
     float          power;
     float          explodeRadius;
-    HitKind        directHitKind;
-    HitKind        explosionHitKind;
 
     SolHit directHit;
     SolHit explosionHit;
-    // u32 damage;
-    // u8  buffs;
 } CompProjectile;
 void            Sol_Projectile_Init(World *world);
 CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
@@ -143,7 +138,8 @@ typedef struct CompItem
     bool     onCooldown;
 
     u32 bonusDamage;
-    u8  bonusBuffs;
+    u32 bonusBuffs;
+    u32 bonusEffects;
 } CompItem;
 
 void      Sol_Item_Init(World *world);

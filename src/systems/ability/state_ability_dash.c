@@ -4,12 +4,14 @@
 
 #define DASH_VEL 20.0f
 #define DASH_ALPHAMOD 1.5f
+#define HITINTERVAL 0.05f
 
 void ADash_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     float       *elapsed = &data->elapsed;
+    data->accum += dt;
     *elapsed += dt;
     if (*elapsed >= data->duration)
     {
@@ -18,7 +20,45 @@ void ADash_State_Update(World *world, int id, float dt)
     }
     float alpha = DASH_ALPHAMOD - (*elapsed / data->duration);
 
-    Sol_Physx_SetVel(world, id, glms_vec3_scale(data->dir, alpha * DASH_VEL));
+    Sol_Physx_SetVel(world, id, glms_vec3_scale(data->enterDir, alpha * DASH_VEL));
+
+    if (!(data->effects & EFFECTMASK_KNOCKBACK))
+        return;
+    if (data->accum > HITINTERVAL)
+    {
+        data->accum               = 0;
+        vec3s pos                 = Sol_Xform_GetPos(world, id);
+        pos                       = glms_vec3_add(pos, glms_vec3_normalize(Sol_Physx_GetVel(world, id)));
+        SolRayResult results[256] = {0};
+        int          hits         = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 2.0f, results, 256);
+        for (int i = 0; i < hits; i++)
+        {
+            CompCombat *combat = &world->combats[id];
+            if (!Sol_Owner_GetHostile(world, id, results[i].entId))
+                continue;
+            if (combat->hitEnts[results[i].entId])
+                continue;
+            combat->hitEnts[results[i].entId] = true;
+            if (world->masks[results[i].entId] & HAS_PROJECTILE)
+            {
+                Sol_Physx_SetRedirectVel(world, results[i].entId, Sol_Controller_GetAimdir(world, id));
+                Sol_Owner_Add(world, results[i].entId, id);
+                continue;
+            }
+
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind              = EVENTKIND_HIT,
+                                     .as.hit.entA       = id,
+                                     .as.hit.entB       = results[i].entId,
+                                     .as.hit.damage     = data->damage,
+                                     .as.hit.pos        = results[i].pos,
+                                     .as.hit.effectMask = data->effects,
+                                     .as.hit.kind       = HITKIND_SHIELD_PULSE,
+                                     .as.hit.vel        = vecSub(results[i].pos, pos),
+                                     .as.hit.fxKind     = FXKIND_SPINHIT,
+                                 });
+        }
+    }
 }
 
 void ADash_State_Enter(World *world, int id)
@@ -27,19 +67,22 @@ void ADash_State_Enter(World *world, int id)
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
     Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, data->duration * 0.5f);
+    Sol_Combat_ClearHits(world, id);
 
-
-    data->dir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
+    data->enterDir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
     if (glms_vec3_norm(Sol_GetWishdir(world, id)) > 0 && vecDot(Sol_GetWishdir(world, id), WORLD_UP) < 0.99f)
-        data->dir = Sol_GetWishdir(world, id);
-    data->dir.y = 0;
-    data->dir   = glms_vec3_normalize(data->dir);
+        data->enterDir = Sol_GetWishdir(world, id);
+    data->enterDir.y = 0;
+    data->enterDir   = glms_vec3_normalize(data->enterDir);
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .oneShot = true,.seek = 0.05f,.speed = 1.6f - data->duration, .blendIn = 0.05f};
-    
+    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE,
+                     .oneShot = true,
+                     .seek    = 0.05f,
+                     .speed   = 1.6f - data->duration,
+                     .blendIn = 0.05f};
 
-    switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
+    switch (Sol_GetStrafedir(data->enterDir.x, data->enterDir.z, rot.x, rot.z))
     {
     case STRAFE_FWD:
     case STRAFE_FWD_LEFT:

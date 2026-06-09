@@ -13,10 +13,9 @@ typedef u64 ShotId;
 
 // Construct from player + client tick + per-tick counter:
 // - upper 16 bits: player id  (max ~65k players)
-// - middle 32 bits: client tick  
+// - middle 32 bits: client tick
 // - lower 16 bits: counter within tick (handles multiple shots per tick)
-#define MAKE_SHOT_ID(pid, tick, ctr) \
-    (((u64)(pid) << 48) | ((u64)(tick) << 16) | ((u64)(ctr)))
+#define MAKE_SHOT_ID(pid, tick, ctr) (((u64)(pid) << 48) | ((u64)(tick) << 16) | ((u64)(ctr)))
 
 typedef struct
 {
@@ -45,6 +44,9 @@ typedef struct
     u8  activeSlot;
     u32 bindingState[MAX_MAPPED_SKILLS];
     u32 bindingRarity[MAX_MAPPED_SKILLS];
+    u32 bindingBonusdamage[MAX_MAPPED_SKILLS];
+    u32 bindingBonusBuffs[MAX_MAPPED_SKILLS];
+    u32 bindingBonusEffects[MAX_MAPPED_SKILLS];
 
     u8    modelId;
     i16   animCurrent[ANIM_LAYER_COUNT];

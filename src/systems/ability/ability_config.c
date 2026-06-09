@@ -6,58 +6,70 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
     [ABILITY_STATE_FIREBALL][0] =
         {
             .name = "Fireball",
-            .cooldown = 4.0f,
+            .cooldown = 5.0f,
             .damage = 10,
         },
     [ABILITY_STATE_FIREBALL][1] =
         {
             .name = "Fireball",
-            .cooldown = 2.0f,
+            .cooldown = 4.0f,
             .damage = 15,
             .buffMask = BUFFMASK_FIRE,
         },
     [ABILITY_STATE_FIREBALL][2] =
         {
             .name = "Fireball",
-            .cooldown = 1.0f,
+            .cooldown = 2.0f,
             .damage = 20,
             .buffMask = BUFFMASK_FIRE,
         },
     [ABILITY_STATE_SHIELD][0] =
         {
             .name = "Shield",
+            .damage = 10,
             .duration = 0.5f,
             .cooldown = 8.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
         },
     [ABILITY_STATE_SHIELD][1] =
         {
             .name = "Shield",
+            .damage = 15,
             .duration = 0.5f,
             .cooldown = 6.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
         },
     [ABILITY_STATE_SHIELD][2] =
         {
             .name = "Shield",
+            .damage = 20,
             .duration = 1.0f,
             .cooldown = 5.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
         },
     [ABILITY_STATE_SPINSLASH][0] =
         {
             .name = "SpinSlash",
             .duration = 0.5f,
             .cooldown = 9.0f,
+            .damage = 20,
         },
     [ABILITY_STATE_SPINSLASH][1] =
         {
             .name = "SpinSlash",
-            .duration = 0.5f,
             .cooldown = 8.0f,
+            .duration = 0.5f,
+            .damage = 25,
+            .effectMask = EFFECTMASK_KNOCKUP,
         },
     [ABILITY_STATE_SPINSLASH][2] =
         {
             .name = "SpinSlash",
-            .duration = 0.5f,
             .cooldown = 7.0f,
+            .duration = 0.5f,
+            .damage = 25,
+            .buffMask = BUFFMASK_FIRE,
+            .effectMask = EFFECTMASK_KNOCKUP,
         },
     [ABILITY_STATE_DASH][0] =
         {
@@ -76,6 +88,8 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .name = "Dash",
             .duration = 0.5f,
             .cooldown = 1.0f,
+            .damage = 10,
+            .effectMask = EFFECTMASK_KNOCKBACK,
         },
     [ABILITY_STATE_PISTOL][0] =
         {
@@ -87,13 +101,14 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
         {
             .name = "Blaster",
             .cooldown = 0.2f,
-            .damage   = 7,
+            .damage   = 8,
         },
     [ABILITY_STATE_PISTOL][2] =
         {
             .name = "Blaster",
-            .cooldown = 0.15f,
-            .damage   = 10,
+            .cooldown = 0.1f,
+            .damage   = 8,
+            .buffMask = BUFFMASK_FIRE,
         },
     [ABILITY_STATE_CLAW][0] =
         {

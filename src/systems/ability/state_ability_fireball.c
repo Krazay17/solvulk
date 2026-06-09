@@ -34,15 +34,16 @@ void Fireball_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
 
         SolShoot shoot = Sol_Controller_GetShoot(world, id, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge));
-        int ball = Sol_Prefab_Factory(world, 0, ENTKIND_FIREBALL,
+        int ball = Sol_Prefab_Factory(world, 0, EKIND_FIREBALL,
                                       (EntDesc){.pos = vecAdd(shoot.pos, vecSca(WORLD_UP, power)), .scale = power});
 
         if (ball > 0)
         {
             Sol_Physx_SetVel(world, ball, shoot.vel);
             Sol_Owner_Add(world, ball, id);
-            world->projectiles[ball].damage = data->damage;
-            //ShotId shotId = MAKE_SHOT_ID(id, world->currentTick, )            
+            world->projectiles[ball].directHit.damage      = data->damage + data->bonusDamage;
+            world->projectiles[ball].explosionHit.damage   = data->damage + data->bonusDamage;
+            world->projectiles[ball].explosionHit.buffMask = data->buffs;
         }
 
         data->stage++;

@@ -1,7 +1,7 @@
 #include "sol_core.h"
 
 static void Projectile_Step(World *world, double dt, double time);
-static void Projectile_Hit(World *world, int id, SolHit hit);
+static void Projectile_Hit(World *world, int id);
 
 static CompProjectile projectile_kinds[PROJECTILEKIND_COUNT] = {
     [PROJECTILEKIND_BULLET] =
@@ -11,9 +11,8 @@ static CompProjectile projectile_kinds[PROJECTILEKIND_COUNT] = {
         },
     [PROJECTILEKIND_FIREBALL] =
         {
-            .directHitKind    = HITKIND_FIREBALL,
-            .explodeRadius    = 2.5f,
-            .explosionHitKind = HITKIND_FIREBALL_EXPLODE,
+            .directHitKind = HITKIND_FIREBALL,
+            .explodeRadius = 2.5f,
         },
 };
 
@@ -56,14 +55,13 @@ static void Projectile_Step(World *world, double dt, double time)
             continue;
         if (Sol_Owner_GetOwner(world, proj) == other)
             continue;
+        CompProjectile *projectile   = &world->projectiles[proj];
+        projectile->directHit.entB   = other;
+        projectile->directHit.pos    = e->as.collision.pos;
+        projectile->directHit.vel    = e->as.collision.vel;
+        projectile->directHit.normal = e->as.collision.normal;
 
-        SolHit hit = {
-            .entB   = other,
-            .pos    = e->as.collision.pos,
-            .vel    = e->as.collision.vel,
-            .normal = e->as.collision.normal,
-        };
-        Projectile_Hit(world, proj, hit);
+        Projectile_Hit(world, proj);
     }
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -87,29 +85,26 @@ static void Projectile_Step(World *world, double dt, double time)
             SolRayResult result = results[i];
             if (!Sol_Owner_GetHostile(world, id, result.entId))
                 continue;
+            CompProjectile *projectile   = &world->projectiles[id];
+            projectile->directHit.entB   = result.entId;
+            projectile->directHit.pos    = result.pos;
+            projectile->directHit.normal = result.norm;
+            projectile->directHit.vel    = body->vel;
 
-            SolHit hit = {
-                .entB   = result.entId,
-                .pos    = result.pos,
-                .normal = result.norm,
-                .vel    = body->vel,
-            };
-            Projectile_Hit(world, id, hit);
+            Projectile_Hit(world, id);
         }
     }
 }
 
-static void Projectile_Hit(World *world, int id, SolHit hit)
+static void Projectile_Hit(World *world, int id)
 {
     CompProjectile *projectile = &world->projectiles[id];
-    hit.entA                   = Sol_Owner_GetOwner(world, id);
-    hit.kind                   = projectile->directHitKind;
-    hit.power                  = projectile->power;
-    hit.damage                 = projectile->damage;
+    projectile->directHit.entA = projectile->explosionHit.entA = Sol_Owner_GetOwner(world, id);
+    projectile->directHit.power = projectile->explosionHit.power = projectile->power;
 
     Sol_Event_Add(world, (SolEvent){
                              .kind   = EVENTKIND_HIT,
-                             .as.hit = hit,
+                             .as.hit = projectile->directHit,
                          });
 
     if (projectile->explodeRadius > 0)
@@ -118,18 +113,17 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
         float      radius =
             projectile->power > 0 ? projectile->explodeRadius * projectile->power : projectile->explodeRadius;
         vec3s pos = xform->pos;
-        hit.kind  = projectile->explosionHitKind;
 
         SolRay       ray = {.pos = pos};
         SolRayResult results[256];
         int          hits = Sol_SphereCast(world, ray, radius, results, 256);
         for (int i = 0; i < hits; i++)
         {
-            SolRayResult result = results[i];
-            hit.entB            = result.entId;
-            hit.pos             = result.pos;
-            hit.vel             = vecSub(result.pos, pos);
-            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = hit});
+            SolRayResult result           = results[i];
+            projectile->explosionHit.entB = result.entId;
+            projectile->explosionHit.pos  = result.pos;
+            projectile->explosionHit.vel  = vecSub(result.pos, pos);
+            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = projectile->explosionHit});
         }
     }
 

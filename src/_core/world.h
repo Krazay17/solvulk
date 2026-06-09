@@ -53,7 +53,7 @@ typedef enum
 {
     // Replication pumps events for systems
     WORLD_SYS_REPLICATION,
-    
+
     // Misc
     WORLD_SYS_XFORM,
     WORLD_SYS_EVENT,
@@ -154,6 +154,7 @@ typedef struct World
 
     int         activeEntities[MAX_ENTS];
     Mask        masks[MAX_ENTS];
+    EKind       ekinds[MAX_ENTS];
     CompFlags   flags[MAX_ENTS];
     CompTracker trackers[MAX_ENTS];
 

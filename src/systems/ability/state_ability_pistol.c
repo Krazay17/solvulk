@@ -19,7 +19,7 @@ void Pistol_State_Update(World *world, int id, float dt)
         data->accum = 0;
 
         SolShoot shoot  = Sol_Controller_GetShoot(world, id, 150.0f);
-        int      bullet = Sol_Prefab_Factory(world, 0, ENTKIND_BULLET,
+        int      bullet = Sol_Prefab_Factory(world, 0, EKIND_BULLET,
                                              (EntDesc){
                                                  .pos   = shoot.pos,
                                                  .scale = 0.15f,
@@ -28,7 +28,7 @@ void Pistol_State_Update(World *world, int id, float dt)
         {
             Sol_Physx_SetVel(world, bullet, shoot.vel);
             Sol_Owner_Add(world, bullet, id);
-            world->projectiles[bullet].damage = data->damage;
+            world->projectiles[bullet].directHit.damage = data->damage + data->bonusDamage;
         }
         Sol_Model_PlayAnim(world, id,
                            (AnimDesc){

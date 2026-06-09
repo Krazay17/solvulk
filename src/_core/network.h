@@ -35,6 +35,8 @@ typedef struct
     float yaw;
     u32   abilities[10];
     u32   rarity[10];
+    u32   addDamage[10];
+    u8    addBuff[10];
     bool  hasEquipRequest;
 } NetInputPacket;
 

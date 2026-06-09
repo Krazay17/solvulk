@@ -26,7 +26,7 @@ void ADash_State_Enter(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
-    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, data->duration * 0.5f, 0);
+    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, data->duration * 0.5f);
 
 
     data->dir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
@@ -36,7 +36,8 @@ void ADash_State_Enter(World *world, int id)
     data->dir   = glms_vec3_normalize(data->dir);
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .seek = 0.1f, .blendIn = 0.1f};
+    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE, .oneShot = true,.seek = 0.05f,.speed = 1.6f - data->duration, .blendIn = 0.05f};
+    
 
     switch (Sol_GetStrafedir(data->dir.x, data->dir.z, rot.x, rot.z))
     {

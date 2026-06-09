@@ -24,7 +24,17 @@
 // Forwards
 typedef struct World    World;
 typedef struct SolState SolState;
-
+typedef enum
+{
+    EKIND_PLAYER = 1,
+    EKIND_WIZARD,
+    EKIND_FIREBALL,
+    EKIND_BULLET,
+    EKIND_FLOOR,
+    EKIND_BOX,
+    EKIND_BUTTON,
+    EKIND_COUNT,
+} EKind;
 // Enums
 typedef enum
 {
@@ -278,3 +288,21 @@ typedef enum
     UILAYER_7,
     UILAYER_COUNT,
 } UiLayer;
+
+typedef struct SolHit
+{
+    u32   kind; // For visual/cosmetic identification (FX, sound lookups)
+    int   entA; // Attacker
+    int   entB; // Victim
+    vec3s pos;
+    vec3s normal;
+    vec3s vel;
+    float power;
+
+    // --- Complete Transactional Payload ---
+    u32   damage;
+    float knockback;
+    float knockbackDuration;
+    u64   buffMask; // Bitmask containing all buffs to apply
+    u32   fxKind;   // Primary hit effect
+} SolHit;

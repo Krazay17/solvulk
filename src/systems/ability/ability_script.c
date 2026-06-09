@@ -114,7 +114,7 @@ void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
     switch (a->kind)
     {
     case ACTIONKIND_SPAWN_PROJECTILE:
-        int fireball = Sol_Prefab_Factory(world, 0, ENTKIND_FIREBALL, (EntDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.2f), .scale = 0.5f});
+        int fireball = Sol_Prefab_Factory(world, 0, EKIND_FIREBALL, (EntDesc){.pos = Sol_Controller_GetShootPos(world, id, 0.2f), .scale = 0.5f});
         if(fireball > 0)
         {
             Sol_Physx_SetVel(world, fireball, vecSca(Sol_Controller_GetAimdir(world, id), a->as.spawn.speed));

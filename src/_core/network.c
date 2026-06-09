@@ -326,7 +326,7 @@ void Net_Recv_Packet(ENetEvent *event)
             printf("No world found %d\n", helloPacket->worldId);
             return;
         }
-        int id = Sol_Prefab_Factory(world, 0, ENTKIND_PLAYER,
+        int id = Sol_Prefab_Factory(world, 0, EKIND_PLAYER,
                                     (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
         if (id > 0)
             Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
@@ -391,7 +391,8 @@ void Net_Recv_Packet(ENetEvent *event)
             for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
             {
                 // TODO Validate here
-                Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot]);
+                Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot],
+                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot]);
             }
         }
     }

@@ -250,6 +250,7 @@ void Sol_Destroy_Ent(World *world, int id)
     */
     world->masks[id]       = 0;
     world->flags[id].flags = 0;
+    world->ekinds[id]      = 0;
     for (int i = 0; i < world->activeCount; i++)
     {
         if (world->activeEntities[i] == id)

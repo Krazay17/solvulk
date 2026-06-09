@@ -1,49 +1,51 @@
 #include "sol_core.h"
 
-typedef struct
-{
-    float    knockback, knockbackDuration, power;
-    u32      damage, healing, buffCount, fxCount;
-    BuffKind buffKinds[8];
-    FxKind   fxKinds[8];
-} HitData;
+// typedef struct
+// {
+//     float    knockback, knockbackDuration, power;
+//     u32      damage, healing, buffCount, fxCount;
+//     BuffKind buffKinds[8];
+//     FxKind   fxKinds[8];
+// } HitData;
 
-static HitData hit_kinds[HITKIND_COUNT] = {
-    [HITKIND_FIREBALL] =
-        {
-            .damage  = 20,
-            .fxCount = 1,
-            .fxKinds = {FXKIND_FIREBALL_HIT},
-        },
-    [HITKIND_FIREBALL_EXPLODE] =
-        {
-            .damage            = 20,
-            .knockback         = 20.0f,
-            .knockbackDuration = 0.25f,
-            .buffCount         = 2,
-            .buffKinds         = {BUFFKIND_FIRE, BUFFKIND_KNOCKBACK},
-            .fxCount           = 1,
-            .fxKinds           = {FXKIND_FIRE_APPLY},
-        },
-    [HITKIND_SHIELD_PULSE] =
-        {
-            .damage            = 20,
-            .knockback         = 20.0f,
-            .knockbackDuration = 0.3f,
-            .buffCount         = 1,
-            .buffKinds         = {BUFFKIND_KNOCKBACK},
-        },
-    [HITKIND_FIRE] =
-        {
-            .damage = 2,
+// static HitData hit_kinds[HITKIND_COUNT] = {
+//     [HITKIND_FIREBALL] =
+//         {
+//             .damage  = 20,
+//             .fxCount = 1,
+//             .fxKinds = {FXKIND_FIREBALL_HIT},
+//         },
+//     [HITKIND_FIREBALL_EXPLODE] =
+//         {
+//             .damage            = 20,
+//             .knockback         = 20.0f,
+//             .knockbackDuration = 0.25f,
+//             .buffCount         = 1,
+//             .buffKinds         = {BUFFKIND_FIRE},
+//             .fxCount           = 1,
+//             .fxKinds           = {FXKIND_FIRE_APPLY},
+//         },
+//     [HITKIND_SHIELD_PULSE] =
+//         {
+//             .damage            = 20,
+//             .knockback         = 20.0f,
+//             .knockbackDuration = 0.3f,
+//         },
+//     [HITKIND_FIRE] =
+//         {
+//             .damage = 2,
 
-        },
-    [HITKIND_BULLET] =
-        {
-            .damage  = 5,
-            .fxCount = 1,
-            .fxKinds = {FXKIND_BULLET_HIT},
-        },
+//         },
+//     [HITKIND_BULLET] =
+//         {
+//             .damage  = 5,
+//             .fxCount = 1,
+//             .fxKinds = {FXKIND_BULLET_HIT},
+//         },
+// };
+
+static const u32 hit_sounds[EKIND_COUNT] = {
+    [EKIND_PLAYER] = SOL_AUDIO_GOTHIT,
 };
 
 static void Combat_Step(World *world, double dt, double time);
@@ -78,51 +80,48 @@ static void Combat_Step(World *world, double dt, double time)
         switch (e->kind)
         {
         case EVENTKIND_HIT: {
-            HitData hitData = hit_kinds[e->as.hit.kind];
-            hitData.power   = e->as.hit.power > 0 ? e->as.hit.power : 1.0f;
-            u32 damage      = e->as.hit.damage > 0 ? e->as.hit.damage : hitData.damage;
-            damage          = (u32)((float)damage * hitData.power);
-            e->as.hit.entA  = Sol_Owner_GetOwner(world, e->as.hit.entA);
-            bool canDamage  = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
-                              !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
-                              !Sol_Vital_GetDead(world, e->as.hit.entB);
+            u32   damage    = e->as.hit.damage;
 
-            if (hitData.damage && canDamage)
+            e->as.hit.entA = Sol_Owner_GetOwner(world, e->as.hit.entA);
+            bool canDamage = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
+                             !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
+                             !Sol_Vital_GetDead(world, e->as.hit.entB);
+
+            if (damage && canDamage)
             {
-                for (int b = 0; b < hitData.buffCount; b++)
-                    Sol_Buff_Add(world, e->as.hit.entB, hitData.buffKinds[b], e->as.hit.entA, 0, e->as.hit.power);
-
+                printf("buffmAsk: %d\n", e->as.hit.buffMask);
+                Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.buffMask, e->as.hit.entA, e->as.hit.power);
                 Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
 
                 if (e->as.hit.entA == 1)
                 {
-                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.15f, 0.05f, 16);
+                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0.05f, 16);
                 }
-                Sol_Audio_PlayAt(SOL_AUDIO_GOTHIT, Sol_Xform_GetPos(world, e->as.hit.entB), 0.1f, 0, 1);
+
+                u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];
+                if (hitSoundId)
+                    Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.hit.entB), 0.2f, 0, 1);
             }
 
             if (canDamage && world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                 Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
 
-            if (canDamage && hitData.knockback)
+            if (canDamage && e->as.hit.knockback)
             {
-                vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), hitData.knockback * hitData.power);
+                vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), e->as.hit.knockback * e->as.hit.power);
                 if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
-                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, hitData.knockbackDuration);
+                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, e->as.hit.knockbackDuration);
                 else
                     Sol_Physx_Impulse(world, e->as.hit.entB, vel);
             }
 
-            for (int fx = 0; fx < hitData.fxCount; fx++)
-            {
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind        = EVENTKIND_FX,
-                                         .as.fx.kind  = hitData.fxKinds[fx],
-                                         .as.fx.entB  = e->as.hit.entB,
-                                         .as.fx.pos   = e->as.hit.pos,
-                                         .as.fx.scale = e->as.hit.power,
-                                     });
-            }
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind        = EVENTKIND_FX,
+                                     .as.fx.kind  = e->as.hit.fxKind,
+                                     .as.fx.entB  = e->as.hit.entB,
+                                     .as.fx.pos   = e->as.hit.pos,
+                                     .as.fx.scale = e->as.hit.power,
+                                 });
         }
         break;
 

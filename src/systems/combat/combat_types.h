@@ -5,18 +5,6 @@
 #define MAX_IMPACTS 4
 #define MAX_BUFFS_HIT 8
 
-typedef struct SolHit
-{
-    HitKind kind;
-    u32     buffKind[MAX_BUFFS_HIT];
-    u32     buffcount;
-    vec3s   pos, vel, normal;
-    float   power;
-    u32     damage;
-    u32     entA, entB;
-
-} SolHit;
-
 typedef enum
 {
     IMPACT_DIRECT,

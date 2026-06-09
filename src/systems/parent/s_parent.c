@@ -41,7 +41,10 @@ void Sol_Parent_Step(World *world, double dt, double time)
 
 u32 Sol_Parent_GetParent(World *world, int id)
 {
-    return world->parents[id].parentId;
+    if (world->masks[id] & HAS_PARENT && world->parents[id].parentId)
+        return world->parents[id].parentId;
+    else
+        return id;
 }
 void Sol_Parent_SetActive(World *world, int id, bool active)
 {

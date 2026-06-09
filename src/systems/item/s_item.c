@@ -62,8 +62,8 @@ static void AbilitySlots(World *world, double dt, double time)
                 CompItem *cardItem = &world->items[overlappingId];
                 if (cardItem->kind != ITEMKIND_ABILITY_CARD)
                     continue;
-                CompBody2d *cardBody = &world->body2d[overlappingId];
                 vec3s       cardPos  = Sol_Xform_GetPos(world, overlappingId);
+                CompBody2d *cardBody = &world->body2d[overlappingId];
 
                 // Find the center of the card rectangle
                 vec2s cardCenter = {cardPos.x + (cardBody->dims.x * 0.5f), cardPos.y + (cardBody->dims.y * 0.5f)};
@@ -86,13 +86,28 @@ static void AbilitySlots(World *world, double dt, double time)
         if (bestCardId != -1)
         {
             Sol_Ability_RequestBind(activeWorld, 1, item->slot, world->items[bestCardId].ability,
-                                    world->items[bestCardId].rarity);
-            if (!(Sol_Interact_GetState(world, bestCardId) & INTERACT_MOVING))
-                Sol_Parent_SetActive(world, bestCardId, true);
+                                    world->items[bestCardId].rarity, world->items[bestCardId].bonusDamage, world->items[bestCardId].bonusBuffs);
+
+            vec3s       cardPos    = Sol_Xform_GetPos(world, bestCardId);
+            CompBody2d *cardBody   = &world->body2d[bestCardId];
+            float       halfWidth  = cardBody->dims.x * 0.5f;
+            float       halfHeight = cardBody->dims.y * 0.5f;
+            vec2s       cardCenter = {cardPos.x + (halfWidth), cardPos.y + (halfHeight)};
+
+            float dx = slotCenter.x - cardCenter.x;
+            float dy = slotCenter.y - cardCenter.y;
+
+            cardBody->vel.x = fmaxf(-5.0f, fminf(5.0f, dx));
+            cardBody->vel.y = fmaxf(-5.0f, fminf(5.0f, dy));
+
+            if (world->interacts[Sol_Parent_GetParent(world, id)].state & INTERACT_MOVING)
+            {
+                Sol_Xform_SetPos(world, bestCardId, (vec3s){slotCenter.x - halfWidth, slotCenter.y - halfHeight, 0});
+            }
         }
         else
         {
-            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0);
+            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0, 0, 0);
         }
         CompAbility *ability    = &activeWorld->abilities[1];
         SolView2d   *cdView     = &world->view2d[id].views[6];
@@ -167,8 +182,9 @@ static void AbilitySlots(World *world, double dt, double time)
 
 void Sol_Item_SetRarity(World *world, int id, u32 rarity)
 {
-    CompItem *item = &world->items[id];
-    item->rarity   = rarity;
+    CompItem    *item    = &world->items[id];
+    CompTooltip *tooltip = &world->tooltips[id];
+    item->rarity         = rarity;
     vec4s color;
     switch (rarity)
     {

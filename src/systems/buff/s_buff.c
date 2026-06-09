@@ -16,6 +16,7 @@ const Buff buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_INVULN] =
         {
             .duration = 0.2f,
+            .addKind  = BUFFADDKIND_POWER_DURATION,
         },
 };
 
@@ -25,7 +26,25 @@ void Sol_Buff_Init(World *world)
     world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float duration, float power)
+void Sol_Buff_AddFromMask(World *world, int id, BuffMask mask, int sourceId, float power)
+{
+    if (mask == 0)
+        return;
+
+    // Iterate through all possible buff indices
+    for (int i = 0; i < BUFFKIND_COUNT; i++)
+    {
+        // Check if the bit for this specific buff index is set
+        if (mask & (1ULL << i))
+        {
+            // Cast the index back to your regular sequential BuffKind enum
+            BuffKind kind = (BuffKind)i;
+            Sol_Buff_Add(world, id, kind, sourceId, power);
+        }
+    }
+}
+
+void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float power)
 {
     CompBuff *buffs = &world->buffs[id];
     if (!(world->masks[id] & HAS_BUFF))
@@ -34,11 +53,10 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float durat
     if (buffs->count >= MAX_BUFFS)
         return;
 
-    Buff new_buff     = buff_config[kind];
-    new_buff.source   = sourceId;
-    new_buff.kind     = kind;
-    new_buff.power    = power;
-    new_buff.duration = duration > 0 ? duration : buff_config[kind].duration;
+    Buff new_buff   = buff_config[kind];
+    new_buff.source = sourceId;
+    new_buff.kind   = kind;
+    new_buff.power  = power;
 
     // check if we have buffs already
     for (int i = 0; i < buffs->count; i++)
@@ -56,6 +74,9 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float durat
                 break;
             case BUFFADDKIND_INF:
                 b->inf = 1;
+                break;
+            case BUFFADDKIND_POWER_DURATION:
+                b->duration = power;
                 break;
             case BUFFADDKIND_MULTIPLY:
                 goto addNewBuff;
@@ -118,6 +139,7 @@ void Sol_Buff_Step(World *world, double dt, double time)
                     Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_HIT,
                                                     .as.hit.kind = HITKIND_FIRE,
                                                     .as.hit.entA = b->source,
+                                                    .as.hit.damage = 2,
                                                     .as.hit.pos  = Sol_Xform_GetPos(world, id),
                                                     .as.hit.entB = id});
                 }

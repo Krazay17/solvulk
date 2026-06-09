@@ -70,7 +70,7 @@ void Shield_State_Enter(World *world, int id)
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
     CompCombat *combat = &world->combats[id];
     memset(combat->hitEnts, 0, sizeof(combat->hitEnts));
-    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, 0.5f, 0);
+    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, data->duration);
 
     vec3s pos = Sol_Xform_GetPos(world, id);
     Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 1.0f, 0.1f, 0);

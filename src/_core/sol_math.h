@@ -174,3 +174,17 @@ static inline vec3s Sol_RedirectVel(vec3s vel, vec3s dir)
     float mag = glms_vec3_norm(vel);
     return vecSca(dir, mag);
 }
+
+static inline int get_index_from_mask(unsigned int mask)
+{
+    if (mask == 0)
+        return -1; // Error or no bit set
+
+    int index = 0;
+    while ((mask & 1) == 0)
+    {
+        mask >>= 1;
+        index++;
+    }
+    return index;
+}

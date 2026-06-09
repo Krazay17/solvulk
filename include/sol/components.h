@@ -8,6 +8,7 @@
 #pragma once
 #include "sol/types.h"
 
+
 #define MAX_VIEWS 8
 
 // AUDIO----------------
@@ -118,7 +119,11 @@ typedef struct CompProjectile
     float          explodeRadius;
     HitKind        directHitKind;
     HitKind        explosionHitKind;
-    u32            damage;
+
+    SolHit directHit;
+    SolHit explosionHit;
+    // u32 damage;
+    // u8  buffs;
 } CompProjectile;
 void            Sol_Projectile_Init(World *world);
 CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power);
@@ -136,6 +141,9 @@ typedef struct CompItem
     u32      slot;
     u8       rarity;
     bool     onCooldown;
+
+    u32 bonusDamage;
+    u8  bonusBuffs;
 } CompItem;
 
 void      Sol_Item_Init(World *world);
@@ -153,13 +161,4 @@ typedef enum
 typedef struct CompTooltip
 {
     TooltipKind kind;
-    char        header[32];
-    union {
-        struct
-        {
-            char damage[32];
-            char cooldown[32];
-        } card;
-    } as;
 } CompTooltip;
-// extern const CompTooltip tooltip_configs[TOOLTIPKIND_COUNT];

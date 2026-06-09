@@ -19,16 +19,16 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
 
     switch (kind)
     {
-    case ENTKIND_PLAYER:
+    case EKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
         break;
-    case ENTKIND_WIZARD:
+    case EKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
         break;
-    case ENTKIND_FIREBALL:
+    case EKIND_FIREBALL:
         id = Sol_Prefab_Fireball(world, id, desc.pos, desc.scale);
         break;
-    case ENTKIND_BULLET:
+    case EKIND_BULLET:
         id = Sol_Prefab_Bullet(world, id, desc.pos, desc.scale);
         break;
     }
@@ -47,6 +47,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     id   = Sol_Create_Ent(world, id);
     if (id < 0)
         return -1;
+    world->ekinds[id] = EKIND_PLAYER;
     Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, MODELKIND_DUDE, dims.y);
     Sol_Body_Add(world, id,
@@ -87,6 +88,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     id   = Sol_Create_Ent(world, id);
     if (id < 0)
         return -1;
+    world->ekinds[id] = EKIND_WIZARD;
     Sol_Xform_Add(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
     Sol_Model_Add(world, id, MODELKIND_WIZARD, dims.y);
@@ -116,7 +118,8 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
     float     radius = scale;
     ShapeDesc shape  = {.radius = radius, .color = {1, 0, 0, 1}, .kind = SHAPEKIND_FIREBALL};
 
-    id = Sol_Create_Ent(world, id);
+    id                = Sol_Create_Ent(world, id);
+    world->ekinds[id] = EKIND_FIREBALL;
     Sol_Shape_Add(world, id, shape);
     Sol_Xform_Teleport(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
@@ -130,6 +133,12 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                      .ignoreFriendly = 1,
                  });
     Sol_Projectile_Add(world, id, PROJECTILEKIND_FIREBALL, scale);
+    world->projectiles[id].directHit.fxKind = FXKIND_FIREBALL_HIT;
+    world->projectiles[id].directHit.damage = 20;
+    world->projectiles[id].explosionHit.damage =20;
+    world->projectiles[id].explosionHit.knockback =20.0f;
+    world->projectiles[id].explosionHit.knockbackDuration =0.25f;
+
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
     Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
@@ -148,9 +157,10 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
 {
     float     radius = scale;
     ShapeDesc shape  = {.radius = radius, .color = {0, 1, 0, 1}, .kind = SHAPEKIND_SPHERE};
-    u32       kind   = ENTKIND_BULLET;
+    u32       kind   = EKIND_BULLET;
 
-    id = Sol_Create_Ent(world, id);
+    id                = Sol_Create_Ent(world, id);
+    world->ekinds[id] = EKIND_BULLET;
     Sol_Shape_Add(world, id, shape);
     Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
     Sol_Xform_Teleport(world, id, pos);
@@ -172,8 +182,8 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
 
 int Sol_Prefab_Floor(World *world, vec3s pos)
 {
-    int id = Sol_Create_Ent(world, 0);
-
+    int id            = Sol_Create_Ent(world, 0);
+    world->ekinds[id] = EKIND_FLOOR;
     Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, SOL_MODEL_WORLD1, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
@@ -184,7 +194,8 @@ int Sol_Prefab_Floor(World *world, vec3s pos)
 int Sol_Prefab_Box(World *world, vec3s pos)
 {
 
-    int id = Sol_Create_Ent(world, 0);
+    int id            = Sol_Create_Ent(world, 0);
+    world->ekinds[id] = EKIND_BOX;
     Sol_Xform_Teleport(world, id, pos);
     Sol_Model_Add(world, id, SOL_MODEL_BOX, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
@@ -255,8 +266,9 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
 {
-    vec2s dims = {150.0f, 50.0f};
-    int   id   = Sol_Create_Ent(world, 0);
+    vec2s dims        = {150.0f, 50.0f};
+    int   id          = Sol_Create_Ent(world, 0);
+    world->ekinds[id] = EKIND_BUTTON;
     Sol_Xform_Teleport(world, id, pos);
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0b1, 0b1);
 
@@ -289,7 +301,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 1, 1);
     body->zindex     = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
-    Sol_Parent_SetActive(world, id, false);
+    // Sol_Parent_SetActive(world, id, false);
     Sol_Item_AddAbility(world, id, ability);
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
@@ -303,23 +315,18 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
     {
     case ABILITY_STATE_FIREBALL:
         image->textureID = SOL_TEXTURE_FIREBALL_CARD;
-        snprintf(tooltip->header, sizeof(tooltip->header), "Fireball");
         break;
     case ABILITY_STATE_PISTOL:
         image->textureID = SOL_TEXTURE_PISTOL_CARD;
-        snprintf(tooltip->header, sizeof(tooltip->header), "Pistol");
         break;
     case ABILITY_STATE_SHIELD:
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
-        snprintf(tooltip->header, sizeof(tooltip->header), "Shield");
         break;
     case ABILITY_STATE_SPINSLASH:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
-        snprintf(tooltip->header, sizeof(tooltip->header), "SpinSlash");
         break;
     case ABILITY_STATE_DASH:
         image->textureID = SOL_TEXTURE_DASH_CARD;
-        snprintf(tooltip->header, sizeof(tooltip->header), "Dash");
         break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
@@ -352,7 +359,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
 
     // 2
     SolView2d *border2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1.0f}, dims.x, dims.y);
-    border2->border     = 4.0f;
+    border2->border     = 3.0f;
     border2->zindex     = 4;
     border2->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
 

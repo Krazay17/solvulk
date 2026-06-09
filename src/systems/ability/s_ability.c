@@ -53,7 +53,8 @@ void Sol_Ability_Step(World *world, double dt, double time)
         {
             if (ability->bindings[m].dirtyApply)
             {
-                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity);
+                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
+                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs);
                 ability->bindings[m].dirtyApply = false;
             }
         }
@@ -111,7 +112,7 @@ AbilityState Sol_Ability_GetState(World *world, int id)
     return world->abilities[id].state;
 }
 
-void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity)
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u8 bonusBuffs)
 {
     CompAbility *a = &world->abilities[id];
     if (slot >= MAX_MAPPED_SKILLS)
@@ -119,30 +120,42 @@ void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 ra
     SkillBinding *b = &a->bindings[slot];
     if (b->pendingState == ability && b->pendingRarity == rarity)
         return;
-    b->pendingState  = ability;
-    b->pendingRarity = rarity;
-    b->dirtyApply    = true;
-    b->dirtySend     = true;
+    b->pendingState       = ability;
+    b->pendingRarity      = rarity;
+    b->pendingBonusDamage = bonusDamage;
+    b->pendingBonusBuffs  = bonusBuffs;
 
-    // b->boundState  = ability;
-    // b->boundRarity = rarity;
+    b->dirtyApply = true;
+    b->dirtySend  = true;
 }
 
-void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity)
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u8 bonusBuffs)
 {
     CompAbility *a = &world->abilities[id];
     if (slot >= MAX_MAPPED_SKILLS)
         return;
 
-    SkillBinding *b  = &a->bindings[slot];
-    b->boundState    = ability;
-    b->boundRarity   = rarity;
-    b->pendingState  = ability;
-    b->pendingRarity = rarity;
+    SkillBinding *b     = &a->bindings[slot];
+    b->boundState       = ability;
+    b->boundRarity      = rarity;
+    b->boundBonusDamage = bonusDamage;
+    b->boundBonusBuffs  = bonusBuffs;
+
+    b->pendingState       = ability;
+    b->pendingRarity      = rarity;
+    b->pendingBonusDamage = bonusDamage;
+    b->pendingBonusBuffs  = bonusBuffs;
 
     // Reset cooldown/duration cache from config
     AbilityData *data = &a->stateData[slot];
     data->cooldown    = ability_config[ability][rarity].cooldown;
     data->duration    = ability_config[ability][rarity].duration;
     data->damage      = ability_config[ability][rarity].damage;
+    data->buffs       = ability_config[ability][rarity].buffMask | bonusBuffs;
+    data->bonusDamage = bonusDamage;
+}
+
+const char *Sol_Ability_GetNameString(u32 ability)
+{
+    return ability_config[ability]->name;
 }

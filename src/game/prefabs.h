@@ -1,14 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct World World;
-typedef enum
-{
-    ENTKIND_PLAYER = 1,
-    ENTKIND_WIZARD,
-    ENTKIND_FIREBALL,
-    ENTKIND_BULLET,
-} EntKind;
 typedef struct
 {
     vec3s   pos, vel;

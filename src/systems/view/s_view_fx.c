@@ -17,8 +17,13 @@ void Fx_Event(World *world, double dt, double time)
         vec3s pos   = e->as.fx.pos;
         vec3s rot   = e->as.fx.rot;
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
+
         switch (e->as.fx.kind)
         {
+        case FXKIND_SWORD_SWING: {
+            Sol_Audio_PlayAt(SOL_AUDIO_SWORD_SWING, e->as.fx.pos, 0.5f, 0, 16);
+        }
+        break;
         case FXKIND_SWORD_HIT: {
             Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 0.5f);
             Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, e->as.fx.pos, 1.0f, 0, 16);

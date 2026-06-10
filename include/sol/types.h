@@ -85,6 +85,7 @@ typedef enum Shape2
 
 typedef enum
 {
+    FXKIND_NONE,
     FXKIND_FIREBALL_SHOOT,
     FXKIND_FIREBALL_HIT,
     FXKIND_FIRE_APPLY,
@@ -93,6 +94,7 @@ typedef enum
     FXKIND_SPINHIT,
     FXKIND_BULLET_HIT,
     FXKIND_SWORD_HIT,
+    FXKIND_SWORD_SWING,
     FXKIND_DEATH_BLOOD,
 } FxKind;
 

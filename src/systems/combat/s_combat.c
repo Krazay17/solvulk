@@ -101,7 +101,9 @@ static void Combat_Step(World *world, double dt, double time)
 
                 u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];
                 if (hitSoundId)
+                {
                     Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.hit.entB), 0.2f, 0, 1);
+                }
             }
 
             if (canDamage && world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
@@ -129,9 +131,9 @@ static void Combat_Step(World *world, double dt, double time)
             }
             float knockup         = 0;
             float knockupDuration = 0;
-            if(effectMask & EFFECTMASK_KNOCKUP)
+            if (effectMask & EFFECTMASK_KNOCKUP)
             {
-                knockup = 10.0f;
+                knockup         = 10.0f;
                 knockupDuration = 0.1f;
             }
             if (canDamage && knockup)
@@ -143,13 +145,14 @@ static void Combat_Step(World *world, double dt, double time)
                     Sol_Physx_Impulse(world, e->as.hit.entB, vel);
             }
 
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind        = EVENTKIND_FX,
-                                     .as.fx.kind  = e->as.hit.fxKind,
-                                     .as.fx.entB  = e->as.hit.entB,
-                                     .as.fx.pos   = e->as.hit.pos,
-                                     .as.fx.scale = e->as.hit.power,
-                                 });
+            if (e->as.hit.fxKind)
+                Sol_Event_Add(world, (SolEvent){
+                                         .kind        = EVENTKIND_FX,
+                                         .as.fx.kind  = e->as.hit.fxKind,
+                                         .as.fx.entB  = e->as.hit.entB,
+                                         .as.fx.pos   = e->as.hit.pos,
+                                         .as.fx.scale = e->as.hit.power,
+                                     });
         }
         break;
 

@@ -137,7 +137,6 @@ void Sol_Buff_Step(World *world, double dt, double time)
                 {
                     b->accum -= interval;
                     Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_HIT,
-                                                    .as.hit.kind = HITKIND_FIRE,
                                                     .as.hit.entA = b->source,
                                                     .as.hit.damage = 2,
                                                     .as.hit.pos  = Sol_Xform_GetPos(world, id),

@@ -36,6 +36,7 @@ fireballUse.mp3         RCDATA          "sounds/fireballUse.mp3"
 FireballImpact.mp3      RCDATA          "sounds/FireballImpact.mp3"
 PlayerHit.mp3           RCDATA          "sounds/PlayerHit.mp3"
 SwordHit.mp3            RCDATA          "sounds/SwordHit.mp3"
+HeavySword.mp3          RCDATA          "sounds/HeavySword.mp3"
 
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"

@@ -63,9 +63,9 @@ void Claw_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->accum = HITINTERVAL;
+    data->accum          = HITINTERVAL;
     Sol_Combat_ClearHits(world, id);
-    
+
     AnimDesc desc = {.anim    = ANIM_ATTACK_LEFT,
                      .layerId = ANIM_LAYER_UPPER,
                      .seek    = 0.05f,
@@ -73,6 +73,11 @@ void Claw_State_Enter(World *world, int id)
                      .oneShot = true,
                      .blendIn = 0.05f};
     Sol_Model_PlayAnim(world, id, desc);
+    Sol_Event_Add(world, (SolEvent){
+                             .kind       = EVENTKIND_FX,
+                             .as.fx.kind = FXKIND_SWORD_SWING,
+                             .as.fx.pos  = Sol_Controller_GetAimPos(world, id),
+                         });
 }
 
 void Claw_State_Exit(World *world, int id)

@@ -2,6 +2,7 @@
 
 static World *gameWorld;
 static World *gameWorld2;
+static int player2d;
 
 static void SpawnPlayer(int flags, void *data)
 {
@@ -38,7 +39,7 @@ void MakeABox(int flags, void *data)
 {
     World *world = (World *)data;
     vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
-    Sol_Prefab_Box(world, pos);
+    // Sol_Prefab_Box(world, pos);
 }
 
 void MakeAEmitter(int flags, void *data)
@@ -119,7 +120,7 @@ void RotateGuy(World *world, double dt, double time)
     static float yaw = 0;
     yaw += dt;
 
-    world->xforms[111].quat = Sol_Quat_FromYawPitch(yaw, 0);
+    world->xforms[player2d].quat = Sol_Quat_FromYawPitch(yaw, 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +138,7 @@ void Create_Sol_Game()
 
     SpawnPlayer(0, 0);
 
-    int        player2d      = Sol_Create_Ent(hud, 0);
+    player2d      = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
     Sol_Xform_Add(hud, player2d, (vec3s){1100.0f, 400.0f, 0.0f});
     Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f, 75.0f, 75.0f});

@@ -2,8 +2,6 @@
 
 #include "ability_i.h"
 
-#define CLAW_DURATION 0.6f
-#define CLAW_COOLDOWN 0.6f
 #define HITINTERVAL 0.05f
 #define HITDELAY 0.15f
 void Claw_State_Update(World *world, int id, float dt)
@@ -32,7 +30,7 @@ void Claw_State_Update(World *world, int id, float dt)
             .mask      = 0b1,
         };
         SolRayResult results[32] = {0};
-        int          hits        = Sol_SphereCast(world, ray, 0.5f, results, 32);
+        int          hits        = Sol_SphereCast(world, ray, .66f, results, 32);
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -55,6 +53,7 @@ void Claw_State_Update(World *world, int id, float dt)
                                      .as.hit.vel        = controller->aimdir,
                                      .as.hit.fxKind     = FXKIND_SWORD_HIT,
                                  });
+            Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 1.0f));
         }
     }
 }
@@ -66,10 +65,12 @@ void Claw_State_Enter(World *world, int id)
     data->accum          = HITINTERVAL;
     Sol_Combat_ClearHits(world, id);
 
-    AnimDesc desc = {.anim    = ANIM_ATTACK_LEFT,
+    // data->stage = !data->stage;
+    // sollog(data->stage);
+    AnimDesc desc = {.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
                      .layerId = ANIM_LAYER_UPPER,
                      .seek    = 0.05f,
-                     .speed   = 5.0f,
+                     .speed   = 1.0f,
                      .oneShot = true,
                      .blendIn = 0.05f};
     Sol_Model_PlayAnim(world, id, desc);

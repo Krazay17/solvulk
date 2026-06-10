@@ -34,22 +34,13 @@ void Spinslash_State_Update(World *world, int id, float dt)
             vec3s pos                 = Sol_Xform_GetPos(world, id);
             pos                       = glms_vec3_add(pos, cont->lookdir);
             SolRayResult results[256] = {0};
-            int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 2.5f, results, 256);
+            int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 1.5f, results, 256);
             for (int i = 0; i < hits; i++)
             {
                 CompCombat *combat = &world->combats[id];
-                if (!Sol_Owner_GetHostile(world, id, results[i].entId))
-                    continue;
                 if (combat->hitEnts[results[i].entId])
                     continue;
                 combat->hitEnts[results[i].entId] = true;
-                if (world->masks[results[i].entId] & HAS_PROJECTILE)
-                {
-                    Sol_Physx_SetRedirectVel(world, results[i].entId, Sol_Controller_GetAimdir(world, id));
-                    Sol_Owner_Add(world, results[i].entId, id);
-                    continue;
-                }
-
                 Sol_Event_Add(world, (SolEvent){
                                          .kind              = EVENTKIND_HIT,
                                          .as.hit.entA       = id,
@@ -58,7 +49,6 @@ void Spinslash_State_Update(World *world, int id, float dt)
                                          .as.hit.effectMask = data->effects,
                                          .as.hit.buffMask   = data->buffs,
                                          .as.hit.pos        = results[i].pos,
-                                         .as.hit.kind       = HITKIND_SHIELD_PULSE,
                                          .as.hit.vel        = vecSub(results[i].pos, pos),
                                          .as.hit.fxKind     = FXKIND_SPINHIT,
                                      });

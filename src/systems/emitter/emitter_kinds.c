@@ -1,7 +1,7 @@
 #include "emitter.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
-    [EMITTERKIND_FLASH_WHITEBALL] =
+    [EMITTERKIND_FLASH_BALL] =
         {
             .burst = 1,
             .particle =
@@ -11,19 +11,6 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
                     .scaleout = 0.8f,
                     .kind     = PARTICLE_ORB,
                     .color    = {1, 1, 1, 0.9f},
-                    .ttl      = 0.5f,
-                },
-        },
-    [EMITTERKIND_FLASH_REDBALL] =
-        {
-            .burst = 1,
-            .particle =
-                {
-                    .scale    = 1.0f,
-                    .scalein  = 0.2f,
-                    .scaleout = 0.8f,
-                    .kind     = PARTICLE_ORB,
-                    .color    = {1, 0, 0, 0.9f},
                     .ttl      = 0.5f,
                 },
         },

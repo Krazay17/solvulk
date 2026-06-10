@@ -9,6 +9,7 @@ ModelSkinnedSubmission skinningQueue;
 SphereQueue   sphereQueue;
 SphereQueue   sphereFxQueue;
 FireballQueue fireballQueue;
+RibbonQueue   ribbonQueue;
 
 QuadQueue healthQueue;
 QuadQueue spriteQueue0;
@@ -240,4 +241,18 @@ void Flush_Fonts2d()
     Bind_Pipeline(cmd, PIPE_TEXT_2D);
     vkCmdDraw(cmd, 6, font2dQueue.count, 0, 0);
     font2dQueue.count = 0;
+}
+
+void Flush_Ribbons()
+{
+    if (ribbonQueue.count == 0)
+        return;
+
+    RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+
+    memcpy(gpu, ribbonQueue.instances, sizeof(RibbonSegSSBO) * ribbonQueue.count);
+    Bind_Pipeline(cmd, PIPE_RIBBON);
+    vkCmdDraw(cmd, 6, ribbonQueue.count, 0, 0);
+    ribbonQueue.count = 0;
 }

@@ -39,13 +39,7 @@ void ADash_State_Update(World *world, int id, float dt)
             if (combat->hitEnts[results[i].entId])
                 continue;
             combat->hitEnts[results[i].entId] = true;
-            if (world->masks[results[i].entId] & HAS_PROJECTILE)
-            {
-                Sol_Physx_SetRedirectVel(world, results[i].entId, Sol_Controller_GetAimdir(world, id));
-                Sol_Owner_Add(world, results[i].entId, id);
-                continue;
-            }
-
+            
             Sol_Event_Add(world, (SolEvent){
                                      .kind              = EVENTKIND_HIT,
                                      .as.hit.entA       = id,
@@ -67,7 +61,9 @@ void ADash_State_Enter(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
-    Sol_Buff_Add(world, id, BUFFKIND_INVULN, id, data->duration * 0.5f);
+    Buff *buff = Sol_Buff_Add(world, id, BUFFKIND_INVULN);
+    if (buff)
+        buff->duration = data->duration * 0.5f;
     Sol_Combat_ClearHits(world, id);
 
     data->enterDir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);

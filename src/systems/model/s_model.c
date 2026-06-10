@@ -162,12 +162,12 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     AnimId      animId    = desc.anim;
     bool        oneShot   = desc.oneShot;
     float       seek      = desc.seek;
+    float       speed     = desc.speed ? desc.speed : 1.0f;
     CompModel  *modelComp = &world->models[id];
     AnimLayer  *layer     = &modelComp->layers[layerId];
     AnimConfig  config    = anim_configs[desc.anim];
     float       blendIn   = config.blendIn ? config.blendIn : 0.25f;
     float       blendOut  = config.blendOut ? config.blendOut : 0.25f;
-    float       speed     = config.speed ? config.speed : 1.0f;
     if (layer->animId == animId && !oneShot)
         return;
     if (animId < 1)

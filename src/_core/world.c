@@ -44,6 +44,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_VIEW2D]       = Sol_View2d_Init,
     [WORLD_SYS_PROJECTILE]   = Sol_Projectile_Init,
     [WORLD_SYS_ITEM]         = Sol_Item_Init,
+    [WORLD_SYS_RIBBON]       = Sol_Ribbon_Init,
 };
 
 World *World_Create(WorldKind kind)

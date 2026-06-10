@@ -1,3 +1,10 @@
+/*
+ * File: render.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-06-10
+ *
+ */
 #pragma once
 #include "sol/types.h"
 
@@ -30,6 +37,7 @@ typedef enum
     PIPE_SPRITE,
     PIPE_SPRITE_ADD,
     PIPE_HEALTHBAR,
+    PIPE_RIBBON,
 
     PIPE_SKYBOX,
 
@@ -53,6 +61,7 @@ typedef struct
     mat4s proj;
     vec4s cameraPos;
     vec4s sun;
+    float aspect;
 } SceneUBO;
 
 typedef struct
@@ -180,28 +189,28 @@ typedef struct
 typedef struct ModelPushDesc
 {
     SolModelKind handle;
-    vec4s      position;
-    vec4s      scale;
-    vec4s      rotation;
-    vec4s      color;
-    vec4s      material;
-    u32        flags;
-    bool       hasAnim;
-    mat4      *bones;
+    vec4s        position;
+    vec4s        scale;
+    vec4s        rotation;
+    vec4s        color;
+    vec4s        material;
+    u32          flags;
+    bool         hasAnim;
+    mat4        *bones;
 } ModelPushDesc;
 
 typedef struct
 {
-    u32        count;
-    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
+    u32          count;
+    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
     SolModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
 typedef struct
 {
-    u32        count;
-    ModelSSBO  modelSSBO[MAX_MODEL_INSTANCES];
-    BonesSSBO  bones[MAX_MODEL_INSTANCES];
+    u32          count;
+    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
+    BonesSSBO    bones[MAX_MODEL_INSTANCES];
     SolModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
@@ -259,6 +268,31 @@ static inline SphereSSBO *Sol_Render_GetNext_Fireball()
         return NULL;
 
     return &q->instances[q->count++];
+}
+
+typedef struct
+{
+    vec4s posA; // .xyz = world pos, .w = half-width
+    vec4s posB; // .xyz = world pos, .w = half-width
+    vec4s colorA;
+    vec4s colorB;
+} RibbonSegSSBO;
+
+#define MAX_RIBBON_SEGS_TOTAL (1 << 16)
+
+typedef struct
+{
+    u32           count;
+    RibbonSegSSBO instances[MAX_RIBBON_SEGS_TOTAL];
+} RibbonQueue;
+
+extern RibbonQueue ribbonQueue;
+
+static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg()
+{
+    if (ribbonQueue.count >= MAX_RIBBON_SEGS_TOTAL)
+        return NULL;
+    return &ribbonQueue.instances[ribbonQueue.count++];
 }
 
 typedef enum

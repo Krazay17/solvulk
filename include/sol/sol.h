@@ -40,6 +40,7 @@
 #include "emitter/emitter.h"
 #include "interact/interact.h"
 #include "line/line.h"
+#include "ribbon/ribbon.h"
 #include "movement/movement.h"
 #include "owner/owner.h"
 #include "parent/parent.h"
@@ -51,6 +52,17 @@
 #include "xform/xform.h"
 
 #include "game/prefabs.h"
+
+#define logd(x) printf("%d\n", x)
+#define logfloat(x) printf("%f\n", x)
+#define logs(x) printf("%s\n", x)
+#define sollog(X)                                                                                                      \
+    _Generic((X),                                                                                                      \
+        int: printf("%d\n", (int)X),                                                                                        \
+        u32: printf("%u\n", (unsigned int)(X)),                                                                        \
+        float: printf("%f\n", X),                                                                                      \
+        double: printf("%f\n", X),                                                                                     \
+        char *: printf("%s\n", X))
 
 SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
 SOLAPI void      Sol_Tick(double dt, double time);

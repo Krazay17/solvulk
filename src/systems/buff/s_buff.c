@@ -12,26 +12,32 @@ const Buff buff_config[BUFFKIND_COUNT] = {
         {
             .freq     = 0.2f,
             .duration = 2.0f,
+            .add = BUFFADD_ADD,
         },
     [BUFFKIND_INVULN] =
         {
             .duration = 0.2f,
-            .addKind  = BUFFADDKIND_POWER_DURATION,
+            .add      = BUFFADD_SET,
+        },
+    [BUFFKIND_INVULN_ADD] =
+        {
+            .duration = 0.2f,
+            .add      = BUFFADD_ADD,
         },
 };
 
 void Sol_Buff_Init(World *world)
 {
-    world->stepSystems[world->stepCount++] = Sol_Buff_Step;
-    world->buffs                           = calloc(MAX_ENTS, sizeof(CompBuff));
+    WAddStep(world) = Sol_Buff_Step;
+    world->buffs    = calloc(MAX_ENTS, sizeof(CompBuff));
 }
 
-void Sol_Buff_AddFromMask(World *world, int id, BuffMask mask, int sourceId, float power)
+void Sol_Buff_AddFromMask(World *world, int id, u32 mask, int source)
 {
     if (mask == 0)
         return;
-
-    // Iterate through all possible buff indices
+    // sollog(mask);
+    //  Iterate through all possible buff indices
     for (int i = 0; i < BUFFKIND_COUNT; i++)
     {
         // Check if the bit for this specific buff index is set
@@ -39,57 +45,50 @@ void Sol_Buff_AddFromMask(World *world, int id, BuffMask mask, int sourceId, flo
         {
             // Cast the index back to your regular sequential BuffKind enum
             BuffKind kind = (BuffKind)i;
-            Sol_Buff_Add(world, id, kind, sourceId, power);
+            Buff    *buff = Sol_Buff_Add(world, id, kind);
+            if (buff)
+                buff->source = source;
         }
     }
 }
 
-void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float power)
+Buff *Sol_Buff_Add(World *world, int id, BuffKind kind)
 {
     CompBuff *buffs = &world->buffs[id];
     if (!(world->masks[id] & HAS_BUFF))
         memset(buffs, 0, sizeof(CompBuff));
     world->masks[id] |= HAS_BUFF;
-    if (buffs->count >= MAX_BUFFS)
-        return;
 
-    Buff new_buff   = buff_config[kind];
-    new_buff.source = sourceId;
-    new_buff.kind   = kind;
-    new_buff.power  = power;
-
+    Buff new_buff = buff_config[kind];
+    new_buff.kind = kind;
     // check if we have buffs already
     for (int i = 0; i < buffs->count; i++)
     {
         Buff *b = &buffs->buffs[i];
         if (kind == b->kind)
         {
-            switch (new_buff.addKind)
+            switch (new_buff.add)
             {
-            case BUFFADDKIND_SET_DURATION:
-                memcpy(b, &new_buff, sizeof(Buff));
-                break;
-            case BUFFADDKIND_ADD_DURATION:
+            case BUFFADD_ADD:
                 b->duration += new_buff.duration;
                 break;
-            case BUFFADDKIND_INF:
-                b->inf = 1;
-                break;
-            case BUFFADDKIND_POWER_DURATION:
-                b->duration = power;
-                break;
-            case BUFFADDKIND_MULTIPLY:
+            case BUFFADD_MULTIPLY:
                 goto addNewBuff;
             default:
                 b->duration = new_buff.duration;
+                break;
             }
-            return;
+            return b;
         }
     }
 addNewBuff:
 
-    buffs->buffs[buffs->count++] = new_buff;
-    buffs->activeKindsMask |= BuffBit(kind);
+    if (buffs->count >= MAX_BUFFS)
+        return NULL;
+    Buff *b = &buffs->buffs[buffs->count++];
+    *b      = new_buff;
+    buffs->activeKindsMask |= BITC(kind);
+    return b;
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
@@ -136,17 +135,17 @@ void Sol_Buff_Step(World *world, double dt, double time)
                 if (b->accum > interval)
                 {
                     b->accum -= interval;
-                    Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_HIT,
-                                                    .as.hit.entA = b->source,
+                    Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_HIT,
+                                                    .as.hit.entA   = b->source,
                                                     .as.hit.damage = 2,
-                                                    .as.hit.pos  = Sol_Xform_GetPos(world, id),
-                                                    .as.hit.entB = id});
+                                                    .as.hit.pos    = Sol_Xform_GetPos(world, id),
+                                                    .as.hit.entB   = id});
                 }
                 break;
             }
 
             buff->buffs[write++] = *b;
-            newmask |= BuffBit(b->kind);
+            newmask |= BITC(b->kind);
         }
         buff->count           = write;
         buff->activeKindsMask = newmask;
@@ -158,5 +157,5 @@ void Sol_Buff_Step(World *world, double dt, double time)
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 {
-    return world->masks[id] & HAS_BUFF && (world->buffs[id].activeKindsMask & BuffBit(kind)) != 0;
+    return world->masks[id] & HAS_BUFF && (world->buffs[id].activeKindsMask & BITC(kind)) != 0;
 }

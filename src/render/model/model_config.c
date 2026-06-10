@@ -25,9 +25,14 @@ const AnimConfig anim_configs[ANIM_COUNT] = {
 
 SolModelMasks model_masks[SOL_MODEL_COUNT];
 
-const char *model_path[SOL_MODEL_COUNT] = {[MODELKIND_WIZARD] = "Wizard.glb", [MODELKIND_DUDE] = "Dude.glb",
-                                           [SOL_MODEL_BOX] = "Box.glb",       [SOL_MODEL_WORLD0] = "World0.glb",
-                                           [SOL_MODEL_WORLD1] = "World1.glb", [SOL_MODEL_WORLD2] = "World2.glb"};
+const char *model_path[SOL_MODEL_COUNT] = {
+    [MODELKIND_WIZARD] = "Wizard.glb",
+    [MODELKIND_DUDE]   = "Dude.glb",
+    //[SOL_MODEL_BOX] = "Box.glb",
+    //[SOL_MODEL_WORLD0] = "World0.glb",
+    [SOL_MODEL_WORLD1] = "World1.glb",
+    //[SOL_MODEL_WORLD2] = "World2.glb",
+};
 
 /*
 Wizard anims:

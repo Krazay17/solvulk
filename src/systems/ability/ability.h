@@ -69,17 +69,18 @@ typedef struct
 
 typedef enum
 {
-    EFFECTMASK_KNOCKBACK        = (1 << 0),
-    EFFECTMASK_KNOCKBACK_STRONG = (1 << 1),
-    EFFECTMASK_KNOCKUP          = (1 << 2),
+    EFFECTMASK_KNOCKBACK         = (1 << 0),
+    EFFECTMASK_KNOCKBACK_STRONG  = (1 << 1),
+    EFFECTMASK_KNOCKUP           = (1 << 2),
+    EFFECTMASK_REFLECTPROJECTILE = (1 << 3),
 } EffectMask;
 typedef struct
 {
     char  name[32];
     float cooldown, duration;
     u32   damage;
-    u8    buffMask;
-    u8    effectMask;
+    u32   buffMask;
+    u32   effectMask;
 } AbilityConfig;
 
 extern AbilityConfig ability_config[ABILITY_STATE_COUNT][3];
@@ -92,5 +93,7 @@ bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, 
 AbilityState Sol_Ability_GetState(World *world, int id);
 const char  *Sol_Ability_GetNameString(u32 ability);
 
-void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs);
-void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs);
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+                             u32 bonusEffects);
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+                      u32 bonusEffects);

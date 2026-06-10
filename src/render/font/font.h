@@ -13,6 +13,7 @@ typedef struct
     float       x, y, size;
     vec4s       color;
     SolFontKind kind;
+    u32         zindex;
 } SolFontDesc;
 
 typedef struct

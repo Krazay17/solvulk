@@ -1,3 +1,10 @@
+/*
+ * File: render.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-06-10
+ * 
+*/
 #include "sol_core.h"
 
 #include "render_i.h"
@@ -17,6 +24,7 @@ void Sol_Render_Flush3D(void)
     Flush_Models();
     Flush_Spheres();
     Flush_Quads();
+    Flush_Ribbons();
 }
 
 void Sol_Render_Flush2D(void)

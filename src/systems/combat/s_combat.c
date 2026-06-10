@@ -89,70 +89,79 @@ static void Combat_Step(World *world, double dt, double time)
                              !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
                              !Sol_Vital_GetDead(world, e->as.hit.entB);
 
-            if (damage && canDamage)
+            if (canDamage)
             {
-                Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.buffMask, e->as.hit.entA, e->as.hit.power);
-                Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
-
-                if (e->as.hit.entA == 1)
+                if (damage)
                 {
-                    Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 16);
+                    Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.buffMask, e->as.hit.entA);
+
+                    Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
+
+                    if (e->as.hit.entA == 1)
+                    {
+                        Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 16);
+                    }
+
+                    u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];
+                    if (hitSoundId)
+                    {
+                        Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.hit.entB), 0.2f, 0, 1);
+                    }
+                }
+                if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
+                    Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
+                float knockback         = 0;
+                float knockbackDuration = 0;
+                if (effectMask & EFFECTMASK_KNOCKBACK)
+                {
+                    knockback         = 15.0f;
+                    knockbackDuration = 0.2f;
+                }
+                else if (effectMask & EFFECTMASK_KNOCKBACK_STRONG)
+                {
+                    knockback         = 25.0f;
+                    knockbackDuration = 0.2f;
+                }
+                if (knockback)
+                {
+                    vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), knockback * e->as.hit.power);
+                    if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
+                        Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockbackDuration);
+                    else
+                        Sol_Physx_Impulse(world, e->as.hit.entB, vel);
+                }
+                float knockup         = 0;
+                float knockupDuration = 0;
+                if (effectMask & EFFECTMASK_KNOCKUP)
+                {
+                    knockup         = 10.0f;
+                    knockupDuration = 0.1f;
+                }
+                if (knockup)
+                {
+                    vec3s vel = vecSca(glms_vec3_normalize(WORLD_UP), knockup * e->as.hit.power);
+                    if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
+                        Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockupDuration);
+                    else
+                        Sol_Physx_Impulse(world, e->as.hit.entB, vel);
                 }
 
-                u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];
-                if (hitSoundId)
-                {
-                    Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.hit.entB), 0.2f, 0, 1);
-                }
+                if (e->as.hit.fxKind)
+                    Sol_Event_Add(world, (SolEvent){
+                                             .kind        = EVENTKIND_FX,
+                                             .as.fx.kind  = e->as.hit.fxKind,
+                                             .as.fx.entB  = e->as.hit.entB,
+                                             .as.fx.pos   = e->as.hit.pos,
+                                             .as.fx.scale = e->as.hit.power,
+                                         });
             }
 
-            if (canDamage && world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
-                Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
-
-            float knockback         = 0;
-            float knockbackDuration = 0;
-            if (effectMask & EFFECTMASK_KNOCKBACK)
+            if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[e->as.hit.entB] & HAS_PROJECTILE)
             {
-                knockback         = 15.0f;
-                knockbackDuration = 0.2f;
+                Sol_Physx_SetRedirectVel(world, e->as.hit.entB, Sol_Controller_GetAimdir(world, e->as.hit.entA));
+                Sol_Owner_Add(world, e->as.hit.entB, e->as.hit.entA);
+                Sol_Audio_PlayAt(SOL_AUDIO_PARRY, e->as.hit.pos, 0.5f, 0, 12);
             }
-            else if (effectMask & EFFECTMASK_KNOCKBACK_STRONG)
-            {
-                knockback         = 25.0f;
-                knockbackDuration = 0.2f;
-            }
-            if (canDamage && knockback)
-            {
-                vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), knockback * e->as.hit.power);
-                if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
-                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockbackDuration);
-                else
-                    Sol_Physx_Impulse(world, e->as.hit.entB, vel);
-            }
-            float knockup         = 0;
-            float knockupDuration = 0;
-            if (effectMask & EFFECTMASK_KNOCKUP)
-            {
-                knockup         = 10.0f;
-                knockupDuration = 0.1f;
-            }
-            if (canDamage && knockup)
-            {
-                vec3s vel = vecSca(glms_vec3_normalize(WORLD_UP), knockup * e->as.hit.power);
-                if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
-                    Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockupDuration);
-                else
-                    Sol_Physx_Impulse(world, e->as.hit.entB, vel);
-            }
-
-            if (e->as.hit.fxKind)
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind        = EVENTKIND_FX,
-                                         .as.fx.kind  = e->as.hit.fxKind,
-                                         .as.fx.entB  = e->as.hit.entB,
-                                         .as.fx.pos   = e->as.hit.pos,
-                                         .as.fx.scale = e->as.hit.power,
-                                     });
         }
         break;
 

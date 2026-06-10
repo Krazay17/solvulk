@@ -21,22 +21,22 @@ void Fx_Event(World *world, double dt, double time)
         switch (e->as.fx.kind)
         {
         case FXKIND_SWORD_SWING: {
-            Sol_Audio_PlayAt(SOL_AUDIO_SWORD_SWING, e->as.fx.pos, 0.5f, 0, 16);
+            Sol_Audio_PlayAt(SOL_AUDIO_SWORD_SWING, e->as.fx.pos, 0.5f, 0.0f, 16);
         }
         break;
         case FXKIND_SWORD_HIT: {
-            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 0.5f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){1,1,1,1}, 0.5f);
             Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, e->as.fx.pos, 1.0f, 0, 16);
         }
         break;
         case FXKIND_BULLET_HIT: {
-            Sol_Emitter_Spawn(world, EMITTERKIND_FLASH_WHITEBALL, e->as.fx.pos, 0.25f);
-            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 0.25f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_FLASH_BALL, e->as.fx.pos, (vec4s){1,0,0,1},0.25f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){1,1,1,1},0.25f);
         }
         break;
         case FXKIND_SPINHIT: {
-            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, 1.0f);
-            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, 1.0f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos,(vec4s){1,1,1,1}, 1.0f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_CLOUDS, e->as.fx.pos, (vec4s){1,1,1,1},1.0f);
         }
         break;
         case FXKIND_FIREBALL_SHOOT: {

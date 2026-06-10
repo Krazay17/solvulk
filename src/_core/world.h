@@ -46,6 +46,7 @@ typedef enum
     HAS_PROJECTILE   = (1 << 25),
     HAS_ITEM         = (1 << 26),
     HAS_TOOLTIP      = (1 << 27),
+    HAS_RIBBON       = (1 << 28),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -86,6 +87,7 @@ typedef enum
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
     WORLD_SYS_EMITTER,
+    WORLD_SYS_RIBBON,
     WORLD_SYS_SHAPE,
     WORLD_SYS_VIEW2D,
     WORLD_SYS_UI,
@@ -125,7 +127,9 @@ typedef struct CompView2d       CompView2d;
 typedef struct CompProjectile   CompProjectile;
 typedef struct CompItem         CompItem;
 typedef struct CompTooltip      CompTooltip;
+typedef struct CompRibbon       CompRibbon;
 
+typedef struct SolRibbons  SolRibbons;
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
 typedef struct WorldPhysx  WorldPhysx;
@@ -182,9 +186,9 @@ typedef struct World
     CompProjectile   *projectiles;
     CompItem         *items;
     CompTooltip      *tooltips;
+    CompRibbon       *compRibbons;
 
-    u32 skyboxId;
-
+    SolRibbons  *ribbons;
     SolEvents   *events;
     WorldPhysx  *spatial;
     WorldLines  *lines;
@@ -194,6 +198,7 @@ typedef struct World
     bool doesSimulate;
     bool doesRender;
 
+    u32 skyboxId;
     int prestepCount;
     int stepCount;
     int poststepCount;

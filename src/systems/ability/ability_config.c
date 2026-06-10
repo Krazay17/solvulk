@@ -14,14 +14,14 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .name     = "Fireball",
             .cooldown = 4.0f,
             .damage   = 15,
-            .buffMask = BUFFMASK_FIRE,
+            .buffMask = BITC(BUFFKIND_FIRE),
         },
     [ABILITY_STATE_FIREBALL][2] =
         {
             .name     = "Fireball",
             .cooldown = 2.0f,
             .damage   = 20,
-            .buffMask = BUFFMASK_FIRE,
+            .buffMask = BITC(BUFFKIND_FIRE),
         },
     [ABILITY_STATE_SHIELD][0] =
         {
@@ -37,7 +37,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .cooldown   = 10.0f,
             .damage     = 15,
             .duration   = 0.5f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
         },
     [ABILITY_STATE_SHIELD][2] =
         {
@@ -45,7 +45,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .cooldown   = 8.0f,
             .damage     = 20,
             .duration   = 1.0f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
         },
     [ABILITY_STATE_SPINSLASH][0] =
         {
@@ -68,8 +68,8 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .cooldown   = 8.0f,
             .duration   = 0.5f,
             .damage     = 25,
-            .buffMask   = BUFFMASK_FIRE,
-            .effectMask = EFFECTMASK_KNOCKUP,
+            .buffMask   = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_STUN),
+            .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE,
         },
     [ABILITY_STATE_DASH][0] =
         {
@@ -89,7 +89,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .cooldown   = 1.0f,
             .duration   = 0.5f,
             .damage     = 10,
-            .effectMask = EFFECTMASK_KNOCKBACK,
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
         },
     [ABILITY_STATE_PISTOL][0] =
         {
@@ -108,30 +108,30 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] = {
             .name     = "Blaster",
             .cooldown = 0.1f,
             .damage   = 8,
-            .buffMask = BUFFMASK_FIRE,
+            .buffMask = BITC(BUFFKIND_FIRE),
         },
     [ABILITY_STATE_CLAW][0] =
         {
             .name     = "Claw",
-            .cooldown = 0.5f,
-            .duration = 0.35f,
+            .cooldown = 0.8f,
+            .duration = 0.5f,
             .damage   = 20,
         },
     [ABILITY_STATE_CLAW][1] =
         {
             .name     = "Claw",
-            .cooldown = 0.4f,
-            .duration = 0.35f,
+            .cooldown = 0.6f,
+            .duration = 0.5f,
 
             .damage = 25,
         },
     [ABILITY_STATE_CLAW][2] =
         {
-            .name     = "Claw",
-            .cooldown = 0.35f,
-            .duration = 0.35f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
-            .damage = 30,
+            .name       = "Claw",
+            .cooldown   = 0.5f,
+            .duration   = 0.5f,
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+            .damage     = 30,
         },
     [ABILITY_STATE_FIREBALLVOLLEY][0] =
         {

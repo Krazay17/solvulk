@@ -5,8 +5,7 @@
 
 typedef enum
 {
-    EMITTERKIND_FLASH_WHITEBALL,
-    EMITTERKIND_FLASH_REDBALL,
+    EMITTERKIND_FLASH_BALL,
     EMITTERKIND_FLASH_FIREBALL,
     EMITTERKIND_BURST_SPARKS,
     EMITTERKIND_BURST_CLOUDS,
@@ -61,7 +60,7 @@ const extern Emitter emitter_kinds[EMITTERKIND_COUNT];
 void Sol_Emitter_Init(World *world);
 
 void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale);
-void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale);
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale);
 void Sol_Emitter_SpawnEx(World *world, Emitter e);
 
 u32       Sol_Emitter_GetParticleCount(World *world);

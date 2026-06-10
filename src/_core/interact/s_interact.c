@@ -275,7 +275,6 @@ void Sol_Tooltip_Draw()
     CompTooltip *tooltip = &world->tooltips[id];
     tooltip_funcs[tooltip->kind](world, id);
 }
-
 static void Render_Tooltip_Line(const char *str, float centerX, float y, float size)
 {
     float       width = Sol_MeasureText(str, UISCALE(size), SOL_FONT_ICE);
@@ -288,34 +287,135 @@ static void Render_Tooltip_Line(const char *str, float centerX, float y, float s
     };
     Sol_Render_DrawText2D(desc);
 }
+
 static void Tooltip_Card_Draw(World *world, int id)
 {
     if (!(world->masks[id] & HAS_TOOLTIP))
         return;
+
     CompTooltip  *tooltip = &world->tooltips[id];
     CompItem     *item    = &world->items[id];
     AbilityConfig cfg     = ability_config[item->ability][item->rarity];
 
-    vec2s dims   = {UISCALE(100.0f), UISCALE(100.0f)};
-    vec2s pos    = {Sol_Input_GetMouse().x, Sol_Input_GetMouse().y - dims.y};
-    vec2s center = {pos.x + dims.y * 0.5f, pos.y + dims.x * 0.5f};
+    // --- STAGE 1: COMPUTE STRINGS & MEASURE WIDTHS ---
+    // Keep a local stack array of the lines we need to draw
+    char lines[MAX_TOOLTIP_LINES][64];
+    int  lineCount = 0;
 
-    RectSSBO *bg       = Sol_Render_GetNext_Rect();
-    bg->color          = (vec4s){0.05f, 0.0f, 0.1f, tooltipAlpha};
-    bg->dims           = (vec4s){dims.x, dims.y, 0, 1.0f};
-    bg->pos            = (vec4s){pos.x, pos.y, 0, 1.0f};
-    RectSSBO *border   = Sol_Render_GetNext_Rect();
-    border->color      = (vec4s){0.0f, 0.4f, 0.2f, tooltipAlpha};
-    border->dims       = (vec4s){dims.x, dims.y, 0, 1.0f};
-    border->pos        = (vec4s){pos.x, pos.y, 0, 1.0f};
-    border->uv         = (vec4s){0, 0, 1, 1};
-    border->textureID  = SOL_TEXTURE_CLOUD1;
+    // Track the raw width maximums
+    float maxWidth = 0.0f;
+
+    // 1. Measure and buffer Header
+    const char *headerText  = Sol_Ability_GetNameString(item->ability);
+    float       headerSize  = 15.0f;
+    float       headerWidth = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
+    if (headerWidth > maxWidth)
+        maxWidth = headerWidth;
+
+    // 2. Buffer & Measure body lines
+    float bodyTextSize = 10.0f;
+
+    if (cfg.cooldown > 0.0f && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Cooldown: %.1fs", cfg.cooldown);
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+    if (cfg.duration > 0.0f && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Duration: %.1fs", cfg.duration);
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
+    u32 totalDamage = cfg.damage + item->bonusDamage;
+    if (totalDamage > 0 && lineCount < MAX_TOOLTIP_LINES)
+    {
+        if (item->bonusDamage > 0)
+        {
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %d (+%d)", totalDamage, item->bonusDamage);
+        }
+        else
+        {
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %d", totalDamage);
+        }
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
+    u8 totalBuffs = cfg.buffMask | item->bonusBuffs;
+    if ((totalBuffs & BITC(BUFFKIND_FIRE)) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Ignite");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
+    u32 totalEffects = cfg.effectMask | item->bonusEffects;
+    if ((totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG)) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Knockback");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+    if ((totalEffects & EFFECTMASK_KNOCKUP) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Knockup");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+    if ((totalEffects & EFFECTMASK_REFLECTPROJECTILE) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Reflects");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
+    // --- STAGE 2: CALCULATE FINAL DYNAMIC DIMS ---
+    float ySpacing = UISCALE(12.0f);
+    float paddingX = UISCALE(16.0f); // Horizontal internal safe space padding
+    float paddingY = UISCALE(16.0f); // Vertical internal safe space padding
+
+    vec2s dims = {.x = maxWidth + paddingX * 2.0f, .y = UISCALE(headerSize) + (lineCount * ySpacing) + paddingY * 2.0f};
+
+    // Keep the box centered or offset cleanly near mouse coordinate profiles
+    vec2s pos    = {Sol_Input_GetMouse().x, Sol_Input_GetMouse().y - dims.y};
+    vec2s center = {pos.x + dims.x * 0.5f, pos.y + dims.y * 0.5f};
+
+    // --- STAGE 3: DRAW BACKDROP GEOMETRY FIRST ---
+    RectSSBO *bg = Sol_Render_GetNext_Rect();
+    bg->color    = (vec4s){0.05f, 0.0f, 0.1f, tooltipAlpha};
+    bg->dims     = (vec4s){dims.x, dims.y, 0, 1.0f};
+    bg->pos      = (vec4s){pos.x, pos.y, 0, 1.0f};
+
+    RectSSBO *border  = Sol_Render_GetNext_Rect();
+    border->color     = (vec4s){0.0f, 0.0f, 0.02f, tooltipAlpha};
+    border->dims      = (vec4s){dims.x, dims.y, 0, 1.0f};
+    border->pos       = (vec4s){pos.x, pos.y, 0, 1.0f};
+    border->uv        = (vec4s){0, 0, 1, 1};
+    border->textureID = SOL_TEXTURE_CLOUD1;
+
     RectSSBO *border2  = Sol_Render_GetNext_Rect();
     border2->color     = (vec4s){0.0f, 0.0f, 0.2f, tooltipAlpha};
     border2->dims      = (vec4s){dims.x, dims.y, 0, 1.0f};
     border2->pos       = (vec4s){pos.x, pos.y, 0, 1.0f};
     border2->uv        = (vec4s){0, 0, 1, 1};
     border2->textureID = SOL_TEXTURE_SWIRLFRAME;
+
     RectSSBO *border3  = Sol_Render_GetNext_Rect();
     border3->color     = (vec4s){1.0f, 1.0f, 1.0f, 0.15f};
     border3->dims      = (vec4s){dims.x, dims.y, 0.0f, 1.0f};
@@ -323,76 +423,26 @@ static void Tooltip_Card_Draw(World *world, int id)
     border3->uv        = (vec4s){0, 0, 1, 1};
     border3->textureID = SOL_TEXTURE_BORDER;
 
-    float       headerSize  = 15.0f;
-    const char *headerText  = Sol_Ability_GetNameString(item->ability);
-    float       headerWidth = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
-    SolFontDesc headerDesc  = {
+    // --- STAGE 4: RENDER THE TEXT ON TOP ---
+    // Start layout downward from top padding limits
+    float currentY = pos.y + paddingY + (UISCALE(headerSize) * 0.5f);
+
+    SolFontDesc headerDesc = {
         .color = {1.0f, 0, 0, tooltipAlpha / MAX_TOOLTIP_ALPHA},
         .size  = UISCALE(headerSize),
         .str   = headerText,
         .x     = center.x - headerWidth * 0.5f,
-        .y     = center.y - dims.y * 0.3f,
+        .y     = currentY,
     };
     Sol_Render_DrawText2D(headerDesc);
 
-    // float bodyTextSize = 12.0f;
-    // float yStart       = center.y - dims.y * 0.15f;
-    // float ySpacing     = dims.y * 0.15f;
-    // for (int i = 0; i < tooltip->as.card.effectCount; i++)
-    // {
-    //     char  *effectText = tooltip->as.card.effect[i];
-    //     size_t length     = strlen(effectText);
+    // Step below header bounds
+    currentY += UISCALE(headerSize);
 
-    //     float       bodyTextWidth = Sol_MeasureText(effectText, UISCALE(bodyTextSize), SOL_FONT_ICE);
-    //     SolFontDesc cooldownDesc  = {
-    //         .color = {0.0f, 1.0f, 0.0f, tooltipAlpha / MAX_TOOLTIP_ALPHA},
-    //         .size  = UISCALE(bodyTextSize),
-    //         .str   = effectText,
-    //         .x     = center.x - bodyTextWidth * 0.5f,
-    //         .y     = yStart + ySpacing * i,
-    //     };
-    //     Sol_Render_DrawText2D(cooldownDesc);
-    // }
-    float bodyTextSize = 10.0f;
-    float yStart       = center.y - dims.y * 0.15f;
-    float ySpacing     = dims.y * 0.12f;
-    int   lineCount    = 0;
-    char  tempBuffer[32];
-
-    // Render Cooldown Line
-    if (cfg.cooldown > 0.0f)
+    // Flush out the remaining tracked strings
+    for (int i = 0; i < lineCount; i++)
     {
-        snprintf(tempBuffer, sizeof(tempBuffer), "Cooldown: %.1fs", cfg.cooldown);
-        Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
+        Render_Tooltip_Line(lines[i], center.x, currentY, bodyTextSize);
+        currentY += ySpacing;
     }
-    if (cfg.duration > 0.0f)
-    {
-        snprintf(tempBuffer, sizeof(tempBuffer), "Duration: %.1fs", cfg.duration);
-        Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-    }
-
-    // Render Damage Line (incorporating dynamic procedural modifications)
-    u32 totalDamage = cfg.damage + item->bonusDamage;
-    if (totalDamage > 0)
-    {
-        if (item->bonusDamage > 0)
-        {
-            snprintf(tempBuffer, sizeof(tempBuffer), "Damage: %d (+%d)", totalDamage, item->bonusDamage);
-        }
-        else
-        {
-            snprintf(tempBuffer, sizeof(tempBuffer), "Damage: %d", totalDamage);
-        }
-        Render_Tooltip_Line(tempBuffer, center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-    }
-    u8 totalBuffs = cfg.buffMask | item->bonusBuffs;
-    if (totalBuffs & BUFFMASK_FIRE)
-        Render_Tooltip_Line("Ignite", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-
-    u32 totalEffects = cfg.effectMask | item->bonusEffects;
-    if (totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG))
-        Render_Tooltip_Line("Knockback", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
-
-    if (totalEffects & EFFECTMASK_KNOCKUP)
-        Render_Tooltip_Line("Knockup", center.x, yStart + (ySpacing * lineCount++), bodyTextSize);
 }

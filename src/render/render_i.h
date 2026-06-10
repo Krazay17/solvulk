@@ -1,3 +1,10 @@
+/*
+ * File: render_i.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-06-10
+ * 
+*/
 #pragma once
 #include "render.h"
 
@@ -23,6 +30,7 @@ typedef enum
     DESC_FONT_SSBO,
     DESC_RECT_SSBO,
     DESC_SPHERE_SSBO,
+    DESC_RIBBON_SSBO,
     DESC_IMAGES,
     DESC_COUNT,
 } DescriptorId;
@@ -50,6 +58,7 @@ void Flush_Quads(void);
 void Flush_Spheres(void);
 void Flush_Rects(void);
 void Flush_Fonts2d(void);
+void Flush_Ribbons(void);
 
 void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance);

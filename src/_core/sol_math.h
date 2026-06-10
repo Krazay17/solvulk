@@ -16,6 +16,7 @@
 #define vecDot(a, b) glms_vec3_dot(a, b)
 #define vecCrs(a, b) glms_vec3_cross(a, b)
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
+#define vecDist(a, b) glms_vec3_distance(a, b)
 
 #define SOL_COLOR(hex) (vec4s){.r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255}
 

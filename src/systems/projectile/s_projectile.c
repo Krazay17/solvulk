@@ -3,19 +3,6 @@
 static void Projectile_Step(World *world, double dt, double time);
 static void Projectile_Hit(World *world, int id);
 
-// static CompProjectile projectile_kinds[PROJECTILEKIND_COUNT] = {
-//     [PROJECTILEKIND_BULLET] =
-//         {
-//             .directHitKind = HITKIND_BULLET,
-//             .bounces       = 0,
-//         },
-//     [PROJECTILEKIND_FIREBALL] =
-//         {
-//             .directHitKind = HITKIND_FIREBALL,
-//             .explodeRadius = 2.5f,
-//         },
-// };
-
 void Sol_Projectile_Init(World *world)
 {
     world->projectiles = calloc(MAX_ENTS, sizeof(CompProjectile));
@@ -24,7 +11,7 @@ void Sol_Projectile_Init(World *world)
 
 CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, float power)
 {
-    CompProjectile projectile ={0};// projectile_kinds[kind];
+    CompProjectile projectile = {0};
     projectile.power          = power;
 
     world->projectiles[id] = projectile;

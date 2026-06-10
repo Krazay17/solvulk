@@ -93,7 +93,7 @@ if(WIN32)
     add_executable(solapp 
         "${CMAKE_SOURCE_DIR}/app/client/main.c"
         "${CMAKE_SOURCE_DIR}/app/client/game.c"
-        "${CMAKE_SOURCE_DIR}/assets/resources.rc"
+        "${CMAKE_SOURCE_DIR}/assets/res.rc"
     )
     #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
 else()
@@ -139,6 +139,8 @@ set(SHADERS
     ${SHADER_DIR}/skybox.vert
     ${SHADER_DIR}/skybox.frag
     ${SHADER_DIR}/fireball.frag
+    
+    ${SHADER_DIR}/ribbon.vert
     
     ${SHADER_DIR}/font2d.vert
     ${SHADER_DIR}/font.frag

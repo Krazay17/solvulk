@@ -87,7 +87,7 @@ static void AbilitySlots(World *world, double dt, double time)
         {
             Sol_Ability_RequestBind(activeWorld, 1, item->slot, world->items[bestCardId].ability,
                                     world->items[bestCardId].rarity, world->items[bestCardId].bonusDamage,
-                                    world->items[bestCardId].bonusBuffs);
+                                    world->items[bestCardId].bonusBuffs, world->items[bestCardId].bonusEffects);
 
             vec3s       cardPos    = Sol_Xform_GetPos(world, bestCardId);
             CompBody2d *cardBody   = &world->body2d[bestCardId];
@@ -108,7 +108,7 @@ static void AbilitySlots(World *world, double dt, double time)
         }
         else
         {
-            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0, 0, 0);
+            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0, 0, 0, 0);
         }
         CompAbility *ability    = &activeWorld->abilities[1];
         SolView2d   *cdView     = &world->view2d[id].views[6];

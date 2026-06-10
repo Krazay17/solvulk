@@ -109,7 +109,7 @@ static void Sol_Emitter_Step(World *world, double dt, double time)
     }
 }
 
-void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale)
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale)
 {
     SolEmitters *s = world->emitters;
     Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
@@ -117,6 +117,7 @@ void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, float scale)
     e.pos             = pos;
     e.particle.scale  = e.particle.scale * scale;
     e.particle.offset = e.particle.offset * scale;
+    e.particle.color  = color;
     for (int i = 0; i < e.burst; i++)
         Particle_Activate(s, &e);
     if (e.rate > 0)

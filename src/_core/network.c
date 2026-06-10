@@ -392,7 +392,7 @@ void Net_Recv_Packet(ENetEvent *event)
             {
                 // TODO Validate here
                 Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot],
-                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot]);
+                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot], inputPacket->addEffect[slot]);
             }
         }
     }

@@ -34,6 +34,7 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
     [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
     [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
+    [SOL_AUDIO_PARRY]          = "Parry.mp3",
 };
 
 typedef struct

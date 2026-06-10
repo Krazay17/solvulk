@@ -6,38 +6,26 @@
 #define MAX_BUFFS 64
 #define BASE_TICK_INTERVAL 1.0f
 
-#define BuffBit(a) (1 << a)
+typedef enum
+{
+    BUFFADD_SET,
+    BUFFADD_ADD,
+    BUFFADD_MULTIPLY,
+} BuffAdd;
 
 typedef enum
 {
-    BUFFADDKIND_SET_DURATION,
-    BUFFADDKIND_ADD_DURATION,
-    BUFFADDKIND_MULTIPLY,
-    BUFFADDKIND_POWER_DURATION,
-    BUFFADDKIND_INF,
-} BuffAddKind;
-
-typedef enum
-{
-    BUFFKIND_KNOCKBACK,
     BUFFKIND_FIRE,
+    BUFFKIND_STUN,
     BUFFKIND_SPEED,
     BUFFKIND_INVULN,
+    BUFFKIND_INVULN_ADD,
     BUFFKIND_COUNT,
 } BuffKind;
 
-typedef enum
-{
-    BUFFMASK_NONE      = 0,
-    BUFFMASK_KNOCKBACK = (1 << 0),
-    BUFFMASK_FIRE      = (1 << 1),
-    BUFFMASK_SPEED     = (1 << 2),
-    BUFFMASK_INVULN    = (1 << 3),
-} BuffMask;
-
 typedef struct
 {
-    u8    kind, addKind;
+    u8    kind, add;
     u32   inf, source;
     vec3s vel;
     float duration, accum, initialDuration;
@@ -52,8 +40,9 @@ typedef struct CompBuff
 
 void Sol_Buff_Init(World *world);
 
-void Sol_Buff_Add(World *world, int id, BuffKind kind, int sourceId, float power);
+Buff *Sol_Buff_Add(World *world, int id, BuffKind kind);
+void  Sol_Buff_AddFromMask(World *world, int id, u32 mask, int sourceId);
+
 void Sol_Buff_Remove(World *world, int id, BuffKind kind);
 void Sol_Buff_Step(World *world, double dt, double time);
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
-void Sol_Buff_AddFromMask(World *world, int id, BuffMask mask, int sourceId, float power);

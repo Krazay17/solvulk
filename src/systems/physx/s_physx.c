@@ -179,7 +179,7 @@ void Ground_Trace(World *world, int count, float fdt)
 
             result = Sol_Raycast(
                 world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.6f, .ignoreEnt = id, .mask = 0b1});
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.6f, .ignoreEnt = id, .mask = 0});
             if (result.hit && result.norm.y > 0.5f)
                 break;
         }

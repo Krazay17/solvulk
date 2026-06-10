@@ -45,14 +45,14 @@ void Sol_Cam_Update(double dt)
         sol_camera.currentDistance = Sol_Math_Lerp(sol_camera.currentDistance, targetDist, factor);
     }
 
-    sol_camera.pos    = glms_vec3_add(sol_camera.anchor, glms_vec3_scale(invDir, sol_camera.currentDistance));
+    sol_camera.pos = glms_vec3_add(sol_camera.anchor, glms_vec3_scale(invDir, sol_camera.currentDistance));
 
     float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
     if (Sol_Input_GetMouse().wheelV)
         sol_camera.distance -= changeDist;
 
     sol_camera.target = vecAdd(sol_camera.pos, look->lookdir);
-    sol_camera.dir = glms_vec3_normalize(glms_vec3_sub(sol_camera.target, sol_camera.pos));
+    sol_camera.dir    = glms_vec3_normalize(glms_vec3_sub(sol_camera.target, sol_camera.pos));
 
     // === Wallrun tilt ===
     float targetRoll = 0.0f;
@@ -66,11 +66,12 @@ void Sol_Cam_Update(double dt)
     }
     float rollFactor = 1.0f - expf(-8.0f * fdt); // slower lerp for cinematic feel
     sol_camera.roll  = Sol_Math_Lerp(sol_camera.roll, targetRoll, rollFactor);
-    sol_camera.up  = glms_vec3_rotate(WORLD_UP, sol_camera.roll, sol_camera.dir); // rotate up around forward
+    sol_camera.up    = glms_vec3_rotate(WORLD_UP, sol_camera.roll, sol_camera.dir); // rotate up around forward
 
     sol_camera.view = glms_lookat(sol_camera.pos, sol_camera.target, sol_camera.up);
-    
-    sol_camera.proj = glms_perspective(glm_rad(sol_camera.fov), Sol_Render_GetAspect(), sol_camera.nearClip, sol_camera.farClip);
+
+    sol_camera.proj =
+        glms_perspective(glm_rad(sol_camera.fov), Sol_Render_GetAspect(), sol_camera.nearClip, sol_camera.farClip);
     sol_camera.proj.raw[1][1] *= -1;
 
     sol_camera.viewProj = glms_mat4_mul(sol_camera.proj, sol_camera.view);
@@ -81,6 +82,7 @@ void Sol_Cam_Update(double dt)
     ubo->viewProjection = sol_camera.viewProj;
     ubo->cameraPos      = (vec4s){sol_camera.pos.x, sol_camera.pos.y, sol_camera.pos.z, 1.0f};
     ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.2f};
+    ubo->aspect         = solState.aspectRatio;
 }
 
 SolCamera *Sol_GetCamera()

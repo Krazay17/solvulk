@@ -2,7 +2,7 @@
 
 #include "movement_i.h"
 
-#define REMOVE_PHYSX_TIMER 10.0f
+#define REMOVE_PHYSX_TIMER 15.0f
 #define DESTROY_TIMER 25.0f
 
 void Dead_State_Update(World *world, int id, float dt)
@@ -23,11 +23,13 @@ void Dead_State_Enter(World *world, int id)
 {
     Sol_Model_PlayAnim(
         world, id,
-        (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 0.6f, .oneShot = true, .noFade = true});
+        (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .oneShot = true, .noFade = true});
+    world->movements[id].targetHeight = 0.33f;
 }
 void Dead_State_Exit(World *world, int id)
 {
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
+    world->movements[id].targetHeight = world->movements[id].baseHeight;
 }
 bool Dead_State_CanExit(World *world, int id, u32 next)
 {

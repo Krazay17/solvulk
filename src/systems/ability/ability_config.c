@@ -111,7 +111,8 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
                 .name     = "Blaster",
                 .cooldown = 0.1f,
                 .damage   = 8,
-                .buffMask = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_FIRE_MULT) | BITC(BUFFKIND_CHAIN_LIGHTNING),
+                .buffMask = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_FIRE_MULT),
+                .effectMask = EFFECTMASK_CHAINLIGHTNING,
             },
         [ABILITY_STATE_CLAW][0] =
             {

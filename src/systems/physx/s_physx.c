@@ -322,6 +322,11 @@ vec3s Sol_Physx_GetVel(World *world, int id)
     return world->bodies[id].vel;
 }
 
+vec3s Sol_Physx_GetVelDir(World *world, int id)
+{
+    return glms_vec3_normalize(world->bodies[id].vel);
+}
+
 float Sol_Physx_GetSpeed(World *world, int id)
 {
     return glms_vec3_norm(Sol_Physx_GetVel(world, id));

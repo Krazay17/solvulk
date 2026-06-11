@@ -28,11 +28,11 @@ static const Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
         {
             .segLifetime = 0.3f,
             .rate        = .5f,
-            .width       = 1.5f,
+            .width       = 1.0f,
             .fadeout     = 0.9f,
             .color       = {1, 1, 1, 1},
             .inf         = false,
-            .ttl         = 0.3f,
+            .ttl         = 0.5f,
         },
     [RIBBONKIND_LIGHTNING] =
         {

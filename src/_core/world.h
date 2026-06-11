@@ -47,6 +47,7 @@ typedef enum
     HAS_ITEM         = (1 << 26),
     HAS_TOOLTIP      = (1 << 27),
     HAS_RIBBON       = (1 << 28),
+    HAS_CHAINHIT     = (1 << 29),
     COMPONENT_COUNT,
 } CompBits;
 
@@ -74,6 +75,7 @@ typedef enum
     // Event flow
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
+    WORLD_SYS_CHAINHIT,
     WORLD_SYS_ITEM,
     WORLD_SYS_PROJECTILE,
     WORLD_SYS_AICONTROLLER,
@@ -128,6 +130,7 @@ typedef struct CompProjectile   CompProjectile;
 typedef struct CompItem         CompItem;
 typedef struct CompTooltip      CompTooltip;
 typedef struct CompRibbon       CompRibbon;
+typedef struct CompChainhit     CompChainhit;
 
 typedef struct SolRibbons  SolRibbons;
 typedef struct SolEvents   SolEvents;
@@ -187,6 +190,7 @@ typedef struct World
     CompItem         *items;
     CompTooltip      *tooltips;
     CompRibbon       *compRibbons;
+    CompChainhit     *chainhit;
 
     SolRibbons  *ribbons;
     SolEvents   *events;

@@ -33,8 +33,9 @@ void Spinslash_State_Update(World *world, int id, float dt)
             data->accum               = 0;
             vec3s pos                 = Sol_Xform_GetPos(world, id);
             pos                       = glms_vec3_add(pos, cont->lookdir);
+            SolRay       ray          = {.pos = glms_vec3_add(pos, vecSca(Sol_Physx_GetVelDir(world, id), 1.0f)), .ignoreEnt = id};
             SolRayResult results[256] = {0};
-            int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 1.5f, results, 256);
+            int          hits         = Sol_SphereCast(world, ray, 1.7f, results, 256);
             for (int i = 0; i < hits; i++)
             {
                 CompCombat *combat = &world->combats[id];

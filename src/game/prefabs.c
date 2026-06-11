@@ -162,8 +162,6 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
     world->ekinds[id] = EKIND_BULLET;
     Sol_Shape_Add(world, id, shape);
     CompProjectile *projectile    = Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
-    projectile->directHit.entA    = id;
-    projectile->explosionHit.entA = id;
     projectile->directHit.fxKind  = FXKIND_BULLET_HIT;
     Sol_Xform_Teleport(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});

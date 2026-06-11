@@ -47,6 +47,7 @@ void         Sol_Physx_Init(World *world);
 void         Sol_Physx_Step(World *world, double dt, double time);
 void         Sol_Physx2d_Step(World *world, double dt, double time);
 vec3s        Sol_Physx_GetVel(World *world, int id);
+vec3s        Sol_Physx_GetVelDir(World *world, int id);
 vec3s        Sol_Physx_GetGround(World *world, int id);
 float        Sol_Physx_GetGroundtime(World *world, int id);
 float        Sol_Physx_GetAirtime(World *world, int id);

@@ -1,49 +1,5 @@
 #include "sol_core.h"
 
-// typedef struct
-// {
-//     float    knockback, knockbackDuration, power;
-//     u32      damage, healing, buffCount, fxCount;
-//     BuffKind buffKinds[8];
-//     FxKind   fxKinds[8];
-// } HitData;
-
-// static HitData hit_kinds[HITKIND_COUNT] = {
-//     [HITKIND_FIREBALL] =
-//         {
-//             .damage  = 20,
-//             .fxCount = 1,
-//             .fxKinds = {FXKIND_FIREBALL_HIT},
-//         },
-//     [HITKIND_FIREBALL_EXPLODE] =
-//         {
-//             .damage            = 20,
-//             .knockback         = 20.0f,
-//             .knockbackDuration = 0.25f,
-//             .buffCount         = 1,
-//             .buffKinds         = {BUFFKIND_FIRE},
-//             .fxCount           = 1,
-//             .fxKinds           = {FXKIND_FIRE_APPLY},
-//         },
-//     [HITKIND_SHIELD_PULSE] =
-//         {
-//             .damage            = 20,
-//             .knockback         = 20.0f,
-//             .knockbackDuration = 0.3f,
-//         },
-//     [HITKIND_FIRE] =
-//         {
-//             .damage = 2,
-
-//         },
-//     [HITKIND_BULLET] =
-//         {
-//             .damage  = 5,
-//             .fxCount = 1,
-//             .fxKinds = {FXKIND_BULLET_HIT},
-//         },
-// };
-
 static const u32 hit_sounds[EKIND_COUNT] = {
     [EKIND_PLAYER] = SOL_AUDIO_GOTHIT,
 };
@@ -114,11 +70,7 @@ static void Combat_Step(World *world, double dt, double time)
 
                 if (effectMask & EFFECTMASK_CHAINLIGHTNING)
                 {
-                    // Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, 10);
-                    // Chain_Lightning_Single(world, e->as.hit.entA, e->as.hit.entB, 10);
-
-                    // Chain_Lightning(world, e->as.hit.entA, e->as.hit.entB, 0, 50, 50);
-                    //  Chain_Lightning_NoReassess(world, e->as.hit.entA, e->as.hit.entB, 50, 50);
+                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, 50);
                 }
                 float knockback         = 0;
                 float knockbackDuration = 0;
@@ -202,19 +154,6 @@ static void Combat_Step(World *world, double dt, double time)
         }
         break;
         }
-    }
-
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        CompCombat *combat = &world->combats[id];
-        combat->chainLightning.accum += dt;
-        if (combat->chainLightning.count > 0)
-            if (combat->chainLightning.accum > combat->chainLightning.delay)
-            {
-                combat->chainLightning.accum = 0;
-                Chain_Lightning_Single(world, id, combat->chainLightning.last, combat->chainLightning.count);
-            }
     }
 }
 

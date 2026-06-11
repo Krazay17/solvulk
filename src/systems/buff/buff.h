@@ -16,7 +16,6 @@ typedef enum
 typedef enum
 {
     BUFFKIND_FIRE,
-    BUFFKIND_CHAIN_LIGHTNING,
     BUFFKIND_FIRE_MULT,
     BUFFKIND_STUN,
     BUFFKIND_SPEED,

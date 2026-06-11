@@ -30,6 +30,7 @@ void Pistol_State_Update(World *world, int id, float dt)
             Sol_Owner_Add(world, bullet, id);
             world->projectiles[bullet].directHit.damage = data->damage;
             world->projectiles[bullet].directHit.buffMask = data->buffs;
+            world->projectiles[bullet].directHit.effectMask = data->effects;
         }
         Sol_Model_PlayAnim(world, id,
                            (AnimDesc){

@@ -53,8 +53,9 @@ void       Sol_Model_Draw(World *world, double dt, double time);
 SolModelKind Sol_Model_GetModelId(World *world, int id);
 
 void  Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
-void  Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float speedDif);
+void  Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate);
 void  Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek);
 vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name);
 float Sol_Model_GetOffsetY(World *world, int id);
 void  Sol_Model_SetOffsetY(World *world, int id, float offset);
+float Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId);

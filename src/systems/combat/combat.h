@@ -3,8 +3,6 @@
 
 #include "combat_types.h"
 
-#define CHAIN_SIZE 0xff
-
 typedef enum
 {
     COMBATFLAG_REFLECTING = (1 << 0),
@@ -13,8 +11,9 @@ typedef enum
 typedef struct CompCombat
 {
     CombatFlags flags;
-    u32         damage;
+    u32         damage, hitPauseDiminish;
     bool        hitEnts[MAX_ENTS];
+    float hitPause, baseAnimRate;
 } CompCombat;
 
 typedef struct
@@ -22,14 +21,13 @@ typedef struct
     int   count, dealer, last;
     int   hitEnts[MAX_ENTS];
     float accum, delay;
-
 } Chain;
-typedef struct CompChainhit
+typedef struct ChainAttacks
 {
     Chain *chains;
     u32    count;
     u32    capacity;
-} CompChainhit;
+} ChainAttacks;
 
 void Sol_Combat_Init(World *world);
 bool Sol_Combat_IsReflecting(World *world, int id);

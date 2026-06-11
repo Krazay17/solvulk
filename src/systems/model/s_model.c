@@ -203,12 +203,18 @@ SolModelKind Sol_Model_GetModelId(World *world, int id)
     return world->models[id].modelId;
 }
 
-void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float speedDif)
+float Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId)
+{
+    AnimLayer *layer = &world->models[id].layers[layerId];
+    return layer->playRate;
+}
+
+void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate)
 {
     AnimLayer *layer = &world->models[id].layers[layerId];
     if (layer->currentAnim < 0)
         return;
-    layer->playRate = speedDif;
+    layer->playRate = rate;
 }
 
 void Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek)

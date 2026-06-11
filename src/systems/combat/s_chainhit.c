@@ -1,14 +1,16 @@
 #include "sol_core.h"
 
+#define CHAIN_CAP 0xff
+
 void Chain_Step(World *world, double dt, double time);
 int  Find_NextTarget(World *world, Chain *chain);
 
 void Sol_Chainhit_Init(World *world)
 {
-    world->chainhit           = malloc(sizeof(CompChainhit));
-    world->chainhit->capacity = CHAIN_SIZE;
+    world->chainhit           = malloc(sizeof(ChainAttacks));
+    world->chainhit->capacity = CHAIN_CAP;
     world->chainhit->count    = 0;
-    world->chainhit->chains   = calloc(CHAIN_SIZE, sizeof(Chain));
+    world->chainhit->chains   = calloc(CHAIN_CAP, sizeof(Chain));
     WAddStep(world)           = Chain_Step;
 }
 
@@ -16,7 +18,6 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 count)
 {
     Sol_Event_Add(world,
                   (SolEvent){.kind = EVENTKIND_HIT, .as.hit.entA = dealer, .as.hit.entB = target, .as.hit.damage = 10});
-    // Sol_Vital_Damage(world, target, dealer, 10);
     Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), (vec4s){0.7f, 1.0f, 0.0f, 1.0f},
                       0.2f);
 

@@ -77,7 +77,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_DASH_BWD] = 1,   [ANIM_DASH_LEFT] = 1, [ANIM_DASH_RIGHT] = 1, [ANIM_ABILITY0] = 2,
             [ANIM_ABILITY1] = 2,   [ANIM_ABILITY2] = 2,  [ANIM_ABILITY3] = 2,   [ANIM_ABILITY4] = 2,
             [ANIM_ABILITY5] = 2,   [ANIM_ABILITY6] = 2,  [ANIM_ABILITY7] = 2,   [ANIM_ABILITY8] = 2,
-            [ANIM_ABILITY9] = 2,   [ANIM_DEATH] = 3,
+            [ANIM_ABILITY9] = 2,   [ANIM_DEATH] = 3,     [ANIM_STUN] = 4,
         },
     [MODELKIND_DUDE] =
         {

@@ -45,7 +45,6 @@ static void Combat_Step(World *world, double dt, double time)
                              Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                              !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
                              !Sol_Vital_GetDead(world, e->as.hit.entB);
-
             if (canDamage)
             {
                 if (damage)
@@ -68,9 +67,14 @@ static void Combat_Step(World *world, double dt, double time)
                 if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                     Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
 
+                if (effectMask & EFFECTMASK_HEALONHIT)
+                {
+                    Sol_Vital_Heal(world, e->as.hit.entA, e->as.hit.entA, 2);
+                }
+
                 if (effectMask & EFFECTMASK_CHAINLIGHTNING)
                 {
-                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, 50);
+                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, 10);
                 }
                 float knockback         = 0;
                 float knockbackDuration = 0;

@@ -43,6 +43,8 @@ void Sol_Ability_Step(World *world, double dt, double time)
             Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
             continue;
         }
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
+            continue;
         if (world->replications[id].auth == NETAUTH_REMOTE)
             continue;
 

@@ -130,7 +130,7 @@ typedef struct CompProjectile   CompProjectile;
 typedef struct CompItem         CompItem;
 typedef struct CompTooltip      CompTooltip;
 typedef struct CompRibbon       CompRibbon;
-typedef struct CompChainhit     CompChainhit;
+typedef struct ChainAttacks     ChainAttacks;
 
 typedef struct SolRibbons  SolRibbons;
 typedef struct SolEvents   SolEvents;
@@ -190,14 +190,14 @@ typedef struct World
     CompItem         *items;
     CompTooltip      *tooltips;
     CompRibbon       *compRibbons;
-    CompChainhit     *chainhit;
 
-    SolRibbons  *ribbons;
-    SolEvents   *events;
-    WorldPhysx  *spatial;
-    WorldLines  *lines;
-    SolEmitters *emitters;
-    WorldNet    *worldNet;
+    ChainAttacks *chainhit;
+    SolRibbons   *ribbons;
+    SolEvents    *events;
+    WorldPhysx   *spatial;
+    WorldLines   *lines;
+    SolEmitters  *emitters;
+    WorldNet     *worldNet;
 
     bool doesSimulate;
     bool doesRender;

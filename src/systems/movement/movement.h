@@ -23,6 +23,7 @@ typedef enum
 {
     MOVE_IDLE,
     MOVE_WALK,
+    MOVE_STUN,
     MOVE_FALL,
     MOVE_JUMP,
     MOVE_CROUCH,

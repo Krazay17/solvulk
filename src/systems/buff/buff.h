@@ -24,12 +24,19 @@ typedef enum
     BUFFKIND_COUNT,
 } BuffKind;
 
+typedef void (*BuffEvent)(World *, int, int);
 typedef struct
 {
-    u8    kind, add;
-    u32   inf, source, bounces;
-    vec3s vel;
-    float duration, accum, initialDuration;
+    u8        add, inf;
+    float     duration, freq;
+    BuffEvent onApply, onRemove;
+} BuffConfig;
+
+typedef struct
+{
+    u8    kind, inf;
+    u32   source;
+    float duration, accum;
     float freq, power;
 } Buff;
 typedef struct CompBuff
@@ -41,9 +48,9 @@ typedef struct CompBuff
 
 void Sol_Buff_Init(World *world);
 
-Buff *Sol_Buff_Add(World *world, int id, BuffKind kind);
+Buff *Sol_Buff_Add(World *world, int id, BuffKind kind, int source);
 void  Sol_Buff_AddFromMask(World *world, int id, u32 mask, int sourceId);
+void  Sol_Buff_Remove(World *world, int id, BuffKind kind);
 
-void Sol_Buff_Remove(World *world, int id, BuffKind kind);
 void Sol_Buff_Step(World *world, double dt, double time);
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);

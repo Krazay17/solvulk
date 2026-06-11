@@ -64,8 +64,6 @@ void Shield_State_Enter(World *world, int id)
         buff->duration = 1.0f;
         buff->source   = id;
     }
-    sollog(buff->duration);
-
     vec3s pos = Sol_Xform_GetPos(world, id);
     Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 1.0f, 0.1f, 0);
     Sol_Event_Add(world, (SolEvent){

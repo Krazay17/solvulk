@@ -27,3 +27,4 @@ float Sol_Vital_GetLastHitTime(World *world, int id);
 void  Sol_Vital_Die(World *world, int id);
 void  Sol_Vital_Respawn(World *world, int id);
 void  Sol_Vital_Damage(World *world, int id, int attacker, u32 damage);
+void  Sol_Vital_Heal(World *world, int id, int healer, u32 heal);

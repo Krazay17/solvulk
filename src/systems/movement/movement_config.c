@@ -14,6 +14,8 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
                 [MOVE_SLIDE]    = {.speed = 3.5f, .accell = 1.0f, .friction = 0.5f, .gravity = -11.81f},
                 [MOVE_DEAD]     = {.speed = 0, .accell = 0, .friction = 1.0f, .gravity = -8.0f},
                 [MOVE_FLY]      = {.speed = 4.0f, .accell = 7.0f, .friction = 1.0f, .gravity = 0},
+                [MOVE_STUN]     = {.speed = 4.5f, .accell = 1.0f, .friction = 5.1f, .gravity = -11.81f},
+
             },
         [MOVEMENTKIND_WIZARD] =
             {
@@ -26,6 +28,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
                 [MOVE_SLIDE]   = {.speed = 3.0f, .accell = 0.1f, .friction = 2.0f, .gravity = -11.81f},
                 [MOVE_DEAD]    = {.speed = 0, .accell = 0, .friction = 1.0f, .gravity = -9.81f},
                 [MOVE_FLY]     = {.speed = 5.0f, .accell = 3.5f, .friction = 1.0f, .gravity = 0},
+                [MOVE_STUN]    = {.speed = 4.5f, .accell = 1.0f, .friction = 5.1f, .gravity = -11.81f},
             },
 };
 
@@ -109,5 +112,13 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Dead_State_Exit,
             Dead_State_CanExit,
             Dead_State_CanEnter,
+        },
+    [MOVE_STUN] =
+        {
+            Stun_State_Update,
+            Stun_State_Enter,
+            Stun_State_Exit,
+            Stun_State_CanExit,
+            Stun_State_CanEnter,
         },
 };

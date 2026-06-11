@@ -68,6 +68,22 @@ void Sol_Vital_Damage(World *world, int id, int attacker, u32 damage)
     }
 }
 
+void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)
+{
+    if (!(world->masks[id] & HAS_VITAL))
+        return;
+    CompVital *vital = &world->vitals[id];
+
+    if (vital->health + heal >= vital->maxHealth)
+    {
+        vital->health = vital->maxHealth;
+    }
+    else
+    {
+        vital->health += heal;
+    }
+}
+
 u32 Sol_Vital_GetHealth(World *world, int id)
 {
     if (!(world->masks[id] & HAS_VITAL))

@@ -116,3 +116,9 @@ void Dead_State_Enter(World *world, int id);
 void Dead_State_Exit(World *world, int id);
 bool Dead_State_CanExit(World *world, int id, u32 next);
 bool Dead_State_CanEnter(World *world, int id, u32 last, u32 next);
+
+void Stun_State_Update(World *world, int id, float dt);
+void Stun_State_Enter(World *world, int id);
+void Stun_State_Exit(World *world, int id);
+bool Stun_State_CanExit(World *world, int id, u32 next);
+bool Stun_State_CanEnter(World *world, int id, u32 last, u32 next);

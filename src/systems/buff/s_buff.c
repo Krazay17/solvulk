@@ -7,7 +7,23 @@
  */
 #include "sol_core.h"
 
-const Buff buff_config[BUFFKIND_COUNT] = {
+static void Apply_Stun(World *world, int id, int source)
+{
+    Sol_Ability_SetState(world, id, 0, 0, true);
+    Sol_Movement_ForceState(world, id, MOVE_STUN);
+}
+static void Remove_Stun(World *world, int id, int source)
+{
+    Sol_Movement_ForceState(world, id, MOVE_IDLE);
+}
+
+const BuffConfig buff_config[BUFFKIND_COUNT] = {
+    [BUFFKIND_STUN] =
+        {
+            .duration = 2.0f,
+            .onApply  = Apply_Stun,
+            .onRemove = Remove_Stun,
+        },
     [BUFFKIND_FIRE] =
         {
             .freq     = 0.2f,
@@ -42,7 +58,6 @@ void Sol_Buff_AddFromMask(World *world, int id, u32 mask, int source)
 {
     if (mask == 0)
         return;
-    // sollog(mask);
     //  Iterate through all possible buff indices
     for (int i = 0; i < BUFFKIND_COUNT; i++)
     {
@@ -51,29 +66,31 @@ void Sol_Buff_AddFromMask(World *world, int id, u32 mask, int source)
         {
             // Cast the index back to your regular sequential BuffKind enum
             BuffKind kind = (BuffKind)i;
-            Buff    *buff = Sol_Buff_Add(world, id, kind);
-            if (buff)
-                buff->source = source;
+            Buff    *buff = Sol_Buff_Add(world, id, kind, source);
         }
     }
 }
 
-Buff *Sol_Buff_Add(World *world, int id, BuffKind kind)
+Buff *Sol_Buff_Add(World *world, int id, BuffKind kind, int source)
 {
     CompBuff *buffs = &world->buffs[id];
     if (!(world->masks[id] & HAS_BUFF))
         memset(buffs, 0, sizeof(CompBuff));
     world->masks[id] |= HAS_BUFF;
 
-    Buff new_buff = buff_config[kind];
-    new_buff.kind = kind;
+    Buff new_buff = {
+        .duration = buff_config[kind].duration,
+        .freq     = buff_config[kind].freq,
+        .inf      = buff_config[kind].inf,
+        .kind     = kind,
+    };
     // check if we have buffs already
     for (int i = 0; i < buffs->count; i++)
     {
         Buff *b = &buffs->buffs[i];
         if (kind == b->kind)
         {
-            switch (new_buff.add)
+            switch (buff_config[kind].add)
             {
             case BUFFADD_ADD:
                 b->duration += new_buff.duration;
@@ -91,29 +108,28 @@ addNewBuff:
 
     if (buffs->count >= MAX_BUFFS)
         return NULL;
+
     Buff *b = &buffs->buffs[buffs->count++];
     *b      = new_buff;
+    if (buff_config[kind].onApply)
+        buff_config[kind].onApply(world, id, source);
     buffs->activeKindsMask |= BITC(kind);
     return b;
 }
 
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
 {
-    CompBuff *buff = &world->buffs[id];
-    for (int i = 0; i < buff->count; i++)
+    CompBuff *buffs = &world->buffs[id];
+    for (int i = 0; i < buffs->count; i++)
     {
-        Buff *b = &buff->buffs[i];
-        if (b->kind == kind)
+        Buff *b = &buffs->buffs[i];
+        if (kind == b->kind)
         {
             b->duration = 0;
-            return;
         }
     }
 }
 
-static void Buff_Expired(World *world, int id, Buff *b)
-{
-}
 
 void Sol_Buff_Step(World *world, double dt, double time)
 {
@@ -136,7 +152,8 @@ void Sol_Buff_Step(World *world, double dt, double time)
             b->duration -= fdt;
             if (b->duration <= 0 && !b->inf)
             {
-                Buff_Expired(world, id, b);
+                if (buff_config[b->kind].onRemove)
+                    buff_config[b->kind].onRemove(world, id, b->source);
                 continue;
             }
 

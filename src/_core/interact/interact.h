@@ -1,8 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-#define MAX_TOOLTIP_LINES 8
-
 typedef struct CompInteract
 {
     InteractState state;

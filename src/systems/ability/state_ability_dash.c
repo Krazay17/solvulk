@@ -62,7 +62,7 @@ void ADash_State_Enter(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
-    Buff *buff = Sol_Buff_Add(world, id, BUFFKIND_INVULN);
+    Buff *buff = Sol_Buff_Add(world, id, BUFFKIND_INVULN, id);
     if (buff)
         buff->duration = data->duration * 0.5f;
     Sol_Combat_ClearHits(world, id);

@@ -8,6 +8,8 @@
 #include "sol_core.h"
 
 #define MAX_TOOLTIP_ALPHA 0.9f
+#define MAX_TOOLTIP_LINES 10
+
 typedef void (*TooltipDrawFunc)(World *, int);
 static void                  SetMoving(World *world, CompInteract *interact, int id);
 static void                  Tooltip_Card_Draw(World *, int);
@@ -358,6 +360,14 @@ static void Tooltip_Card_Draw(World *world, int id)
             maxWidth = w;
         lineCount++;
     }
+    if ((totalBuffs & BITC(BUFFKIND_STUN)) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Stun");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
 
     u32 totalEffects = cfg.effectMask | item->bonusEffects;
     if ((totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG)) && lineCount < MAX_TOOLTIP_LINES)
@@ -378,7 +388,7 @@ static void Tooltip_Card_Draw(World *world, int id)
     }
     if ((totalEffects & EFFECTMASK_REFLECTPROJECTILE) && lineCount < MAX_TOOLTIP_LINES)
     {
-        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Reflects");
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Reflect");
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;
@@ -387,6 +397,14 @@ static void Tooltip_Card_Draw(World *world, int id)
     if ((totalEffects & EFFECTMASK_CHAINLIGHTNING) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Chain Lightning");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+    if ((totalEffects & EFFECTMASK_HEALONHIT) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Heal on Hit");
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;

@@ -3,12 +3,23 @@
 #include "ability_i.h"
 
 #define HITINTERVAL 0.05f
-#define HITDELAY 0.15f
+#define HITDELAY 0.275f
 void Claw_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->elapsed += dt;
+    CompCombat *combat = &world->combats[id];
+
+    combat->hitPause = fmaxf(0, combat->hitPause - dt * 5.0f);
+    if (combat->hitPause > 0)
+        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_UPPER, -0.001f);
+    else
+    {
+        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_UPPER, combat->baseAnimRate);
+        data->elapsed += dt;
+    }
+
+
     if (data->elapsed >= data->duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
@@ -17,6 +28,7 @@ void Claw_State_Update(World *world, int id, float dt)
     if (data->elapsed < HITDELAY)
         return;
     data->accum += dt;
+
     if (data->accum > HITINTERVAL)
     {
         CompController *controller = &world->controllers[id];
@@ -31,6 +43,7 @@ void Claw_State_Update(World *world, int id, float dt)
         };
         SolRayResult results[32] = {0};
         int          hits        = Sol_SphereCast(world, ray, .66f, results, 32);
+
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -39,9 +52,9 @@ void Claw_State_Update(World *world, int id, float dt)
                 glms_vec3_dot(controller->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, controller->aimpos)));
             if (dot < 0)
                 continue;
-            if (world->combats[id].hitEnts[result.entId])
+            if (combat->hitEnts[result.entId])
                 return;
-            world->combats[id].hitEnts[result.entId] = true;
+            combat->hitEnts[result.entId] = true;
             Sol_Event_Add(world, (SolEvent){
                                      .kind              = EVENTKIND_HIT,
                                      .as.hit.damage     = data->damage,
@@ -54,6 +67,11 @@ void Claw_State_Update(World *world, int id, float dt)
                                      .as.hit.fxKind     = FXKIND_SWORD_HIT,
                                  });
             Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 1.0f));
+            if (combat->hitPauseDiminish < 4)
+            {
+                combat->hitPause = 1.0f;
+                combat->hitPauseDiminish++;
+            }
         }
     }
 }
@@ -62,17 +80,19 @@ void Claw_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompCombat  *combat  = &world->combats[id];
     data->accum          = HITINTERVAL;
     Sol_Combat_ClearHits(world, id);
+    float animRate           = 1.0f;
+    combat->baseAnimRate     = animRate;
+    combat->hitPause         = 0;
+    combat->hitPauseDiminish = 0;
+    AnimDesc desc            = {.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
+                                .layerId = ANIM_LAYER_UPPER,
+                                .speed   = animRate,
+                                .oneShot = true,
+                                .blendIn = 0.05f};
 
-    // data->stage = !data->stage;
-    // sollog(data->stage);
-    AnimDesc desc = {.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
-                     .layerId = ANIM_LAYER_UPPER,
-                     .seek    = 0.05f,
-                     .speed   = 1.0f,
-                     .oneShot = true,
-                     .blendIn = 0.05f};
     Sol_Model_PlayAnim(world, id, desc);
     Sol_Event_Add(world, (SolEvent){
                              .kind       = EVENTKIND_FX,
@@ -86,6 +106,8 @@ void Claw_State_Exit(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = Sol_GetGameTime();
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId=ANIM_LAYER_UPPER});
+
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)

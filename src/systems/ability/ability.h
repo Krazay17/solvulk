@@ -74,6 +74,7 @@ typedef enum
     EFFECTMASK_KNOCKUP           = (1 << 2),
     EFFECTMASK_REFLECTPROJECTILE = (1 << 3),
     EFFECTMASK_CHAINLIGHTNING    = (1 << 4),
+    EFFECTMASK_HEALONHIT         = (1 << 5),
 } EffectMask;
 typedef struct
 {

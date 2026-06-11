@@ -92,6 +92,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
                 .cooldown   = 1.0f,
                 .duration   = 0.5f,
                 .damage     = 10,
+                .buffMask   = BITC(BUFFKIND_STUN),
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
             },
         [ABILITY_STATE_PISTOL][0] =
@@ -108,24 +109,24 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
             },
         [ABILITY_STATE_PISTOL][2] =
             {
-                .name     = "Blaster",
-                .cooldown = 0.1f,
-                .damage   = 8,
-                .buffMask = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_FIRE_MULT),
+                .name       = "Blaster",
+                .cooldown   = 0.1f,
+                .damage     = 8,
+                .buffMask   = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_FIRE_MULT),
                 .effectMask = EFFECTMASK_CHAINLIGHTNING,
             },
         [ABILITY_STATE_CLAW][0] =
             {
                 .name     = "Claw",
                 .cooldown = 1.5f,
-                .duration = 0.3f,
+                .duration = 0.5f,
                 .damage   = 20,
             },
         [ABILITY_STATE_CLAW][1] =
             {
                 .name     = "Claw",
                 .cooldown = 1.2f,
-                .duration = 0.3f,
+                .duration = 0.5f,
 
                 .damage = 25,
             },
@@ -133,8 +134,9 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
             {
                 .name       = "Claw",
                 .cooldown   = 0.8f,
-                .duration   = 0.3f,
-                .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING,
+                .duration   = 0.5f,
+                .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING |
+                              EFFECTMASK_HEALONHIT,
                 .damage     = 30,
             },
         [ABILITY_STATE_FIREBALLVOLLEY][0] =

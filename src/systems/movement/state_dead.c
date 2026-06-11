@@ -2,29 +2,32 @@
 
 #include "movement_i.h"
 
-#define REMOVE_PHYSX_TIMER 15.0f
-#define DESTROY_TIMER 25.0f
+#define REMOVE_PHYSX_TIMER 20.0f
+#define DESTROY_TIMER 125.0f
 
 void Dead_State_Update(World *world, int id, float dt)
 {
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[movement->state];
     data->elapsed += dt;
+    
+    if (data->elapsed > DESTROY_TIMER)
+    {
+        Sol_Destroy_Ent(world, id);
+        return;
+    }
     if (data->elapsed > REMOVE_PHYSX_TIMER)
     {
         world->masks[id] &= ~HAS_BODY3;
         world->masks[id] &= ~HAS_BODY2;
     }
-    if (data->elapsed > DESTROY_TIMER)
-        if (!world->vitals[id].doesRespawn)
-            Sol_Destroy_Ent(world, id);
 }
 void Dead_State_Enter(World *world, int id)
 {
     Sol_Model_PlayAnim(
         world, id,
         (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .oneShot = true, .noFade = true});
-    world->movements[id].targetHeight = 0.33f;
+    world->movements[id].targetHeight = 0.6f;
 }
 void Dead_State_Exit(World *world, int id)
 {

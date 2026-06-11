@@ -8,11 +8,23 @@
 #include "sol_core.h"
 
 const Buff buff_config[BUFFKIND_COUNT] = {
+    [BUFFKIND_CHAIN_LIGHTNING] =
+        {
+            .duration = 0.1f,
+            .add      = BUFFADD_MULTIPLY,
+            .bounces = 5,
+        },
     [BUFFKIND_FIRE] =
         {
             .freq     = 0.2f,
             .duration = 2.0f,
-            .add = BUFFADD_ADD,
+            .add      = BUFFADD_ADD,
+        },
+    [BUFFKIND_FIRE_MULT] =
+        {
+            .freq     = 0.2f,
+            .duration = 2.0f,
+            .add      = BUFFADD_MULTIPLY,
         },
     [BUFFKIND_INVULN] =
         {
@@ -105,6 +117,46 @@ void Sol_Buff_Remove(World *world, int id, BuffKind kind)
     }
 }
 
+static void Buff_Expired(World *world, int id, Buff *b)
+{
+    switch (b->kind)
+    {
+    case BUFFKIND_CHAIN_LIGHTNING:
+        if (b->bounces > 0)
+        {
+
+            SolRayResult results[32] = {0};
+            SolRay       ray         = {.pos = Sol_Xform_GetPos(world, id), .mask = 1, .ignoreEnt = id};
+            int          hits        = Sol_SphereCast(world, ray, 5.0f, results, 32);
+            float        farthest    = 0;
+            int          closestId   = 0;
+            for (int i = 0; i < hits; i++)
+            {
+                SolRayResult result = results[i];
+                if (!Sol_Owner_GetHostile(world, b->source, result.entId))
+                    continue;
+                float distance = Sol_Xform_DistanceTo2(world, id, result.entId);
+                if (distance > farthest)
+                {
+                    farthest  = distance;
+                    closestId = result.entId;
+                }
+            }
+            if (closestId > 0)
+            {
+                Sol_Vital_Damage(world, closestId, id, 10);
+                Buff *newBuff    = Sol_Buff_Add(world, closestId, BUFFKIND_CHAIN_LIGHTNING);
+                newBuff->bounces = --b->bounces;
+                Sol_Ribbon_AddBetweenEntities(world, id, closestId, RIBBONKIND_TRAIL, 1.0f,
+                                              (vec4s){0.7f, 1.0f, 0.0f, 1.0f});
+                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, closestId),
+                                  (vec4s){0.7f, 1.0f, 0.0f, 1.0f}, 0.2f);
+            }
+        }
+        break;
+    }
+}
+
 void Sol_Buff_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
@@ -125,7 +177,10 @@ void Sol_Buff_Step(World *world, double dt, double time)
             b->accum += fdt;
             b->duration -= fdt;
             if (b->duration <= 0 && !b->inf)
+            {
+                Buff_Expired(world, id, b);
                 continue;
+            }
 
             switch (b->kind)
             {
@@ -141,6 +196,13 @@ void Sol_Buff_Step(World *world, double dt, double time)
                                                     .as.hit.pos    = Sol_Xform_GetPos(world, id),
                                                     .as.hit.entB   = id});
                 }
+                break;
+            case BUFFKIND_CHAIN_LIGHTNING:
+                // float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
+                // if (b->accum > interval)
+                // {
+                //     b->accum -= interval;
+                // }
                 break;
             }
 

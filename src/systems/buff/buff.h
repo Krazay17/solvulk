@@ -16,6 +16,8 @@ typedef enum
 typedef enum
 {
     BUFFKIND_FIRE,
+    BUFFKIND_CHAIN_LIGHTNING,
+    BUFFKIND_FIRE_MULT,
     BUFFKIND_STUN,
     BUFFKIND_SPEED,
     BUFFKIND_INVULN,
@@ -26,7 +28,7 @@ typedef enum
 typedef struct
 {
     u8    kind, add;
-    u32   inf, source;
+    u32   inf, source, bounces;
     vec3s vel;
     float duration, accum, initialDuration;
     float freq, power;

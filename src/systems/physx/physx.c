@@ -105,7 +105,7 @@ void Physx_Grid_Static_Rebuild(PhysxGroup *group)
             max.y       = fmaxf(max.y, fmaxf(tri->a.y, fmaxf(tri->b.y, tri->c.y)));
             max.z       = fmaxf(max.z, fmaxf(tri->a.z, fmaxf(tri->b.z, tri->c.z)));
         }
-        Physx_Grid_Static_Build(group, min, max, 1.0f);
+        Physx_Grid_Static_Build(group, min, max, SPATIAL_STATIC_CELL_SIZE);
         grid->built_count = group->triCount;
     }
     else if (grid->built_count != group->triCount)

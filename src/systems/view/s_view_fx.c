@@ -260,11 +260,11 @@ void Fx_Event(World *world, double dt, double time)
         }
         break;
         case FXKIND_DEATH_BLOOD: {
-            Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 40,
+            Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 20,
                                                  .pos      = e->as.fx.pos,
                                                  .particle = (Particle){.color = {.r = 1.0f, .g = 0, .b = 0, .a = 1.0f},
                                                                         .kind  = PARTICLE_BLOOD,
-                                                                        .scale = 0.4f,
+                                                                        .scale = 0.3f,
                                                                         .ttl   = 1.5f,
                                                                         .speed = 2.5f,
                                                                         .scaleout = .5f}});

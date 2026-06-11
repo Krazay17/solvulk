@@ -126,3 +126,12 @@ void Sol_Xform_Set(World *world, int id, float x, float y, float z)
     world->xforms[id].pos.y = y;
     world->xforms[id].pos.z = z;
 }
+
+float Sol_Xform_DistanceTo(World *world, int idA, int idB)
+{
+    return glms_vec3_distance(world->xforms[idA].pos, world->xforms[idB].pos);
+}
+float Sol_Xform_DistanceTo2(World *world, int idA, int idB)
+{
+    return glms_vec3_distance2(world->xforms[idA].pos, world->xforms[idB].pos);
+}

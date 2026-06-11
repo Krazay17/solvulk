@@ -24,3 +24,5 @@ void       Sol_Xform_SetPos(World *world, int id, vec3s pos);
 void       Sol_Xform_SetScale(World *world, int id, vec3s scale);
 SolXform   Sol_Xform_GetXform(World *world, int id);
 SolXform   Sol_Xform_GetDrawXform(World *world, int id);
+float Sol_Xform_DistanceTo(World *world, int idA, int idB);
+float Sol_Xform_DistanceTo2(World *world, int idA, int idB);

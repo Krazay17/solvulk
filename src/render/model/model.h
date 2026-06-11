@@ -11,7 +11,7 @@ typedef struct AnimDesc
     float       blendIn, blendOut, seek, speed;
     AnimLayerId layerId;
     u32         anim;
-    bool        oneShot;
+    bool        oneShot, noFade;
 } AnimDesc;
 
 typedef struct
@@ -23,7 +23,7 @@ typedef struct
 typedef struct AnimLayer
 {
     i16   currentAnim, lastAnim, animId;
-    bool  oneShot, force;
+    bool  oneShot, force, noFade;
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
     float fadeOut, fadeOutSpeed;

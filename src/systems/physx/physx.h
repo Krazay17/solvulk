@@ -1,6 +1,7 @@
 #pragma once
 #include "sol/types.h"
 
+#define SPATIAL_STATIC_CELL_SIZE 2.0f
 typedef struct SolRay
 {
     vec3s pos, dir;

@@ -39,8 +39,8 @@ static void Sol_AiController_Debug(World *world, double dt, double time);
 
 void Sol_AiController_Init(World *world)
 {
-    WAddStep(world)      = AiController_Step;
-    WAdd3d(world)        = Sol_AiController_Debug;
+    WAddStep(world) = AiController_Step;
+    // WAdd3d(world)        = Sol_AiController_Debug;
     world->aicontrollers = calloc(MAX_ENTS, sizeof(CompAiController));
 }
 
@@ -52,6 +52,8 @@ void Sol_AiController_Clear(World *world, int id)
 
 void Sol_AiController_Add(World *world, int id, AiControllerKind kind)
 {
+    if (!(world->masks[id] & HAS_AICONTROLLER))
+        memset(&world->aicontrollers[id], 0, sizeof(CompAiController));
     world->masks[id] |= HAS_AICONTROLLER;
 }
 
@@ -148,17 +150,25 @@ u32 AiController_FindTarget(World *world, int id)
     CompAiController *aicontroller = &world->aicontrollers[id];
     if (aicontroller->justHitUs > 0)
         return aicontroller->justHitUs;
+    float closestDistance = 9999999.0f;
+    int   closestTarget   = 0;
     for (int i = 0; i < world->activeCount; i++)
     {
         int otherId = world->activeEntities[i];
-        if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Vital_GetDead(world, otherId))
+        if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Vital_GetDead(world, otherId) ||
+            !(world->masks[otherId] & HAS_VITAL))
             continue;
         vec3s pos       = Sol_Xform_GetPos(world, id);
         vec3s targetPos = Sol_Xform_GetPos(world, otherId);
         float dist      = glms_vec3_distance(pos, targetPos);
-        if (dist < 25.0f)
-            return otherId;
+        if (dist < 25.0f && dist < closestDistance)
+        {
+            closestDistance = dist;
+            closestTarget   = otherId;
+        }
     }
+    if (closestTarget > 0)
+        return closestTarget;
     return 0;
 }
 

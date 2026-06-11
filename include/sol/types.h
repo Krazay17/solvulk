@@ -20,7 +20,7 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 #define MAX_BONES 128
-#define MAX_ENTS (1 << 15)
+#define MAX_ENTS (1 << 14)
 // Forwards
 typedef struct World    World;
 typedef struct SolState SolState;
@@ -118,9 +118,9 @@ typedef enum
     MODELKIND_WIZARD,
     MODELKIND_DUDE,
     // SOL_MODEL_BOX,
-    //SOL_MODEL_WORLD0,
+    SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
-    //SOL_MODEL_WORLD2,
+    SOL_MODEL_WORLD2,
     SOL_MODEL_COUNT,
 } SolModelKind;
 

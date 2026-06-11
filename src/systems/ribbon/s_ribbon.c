@@ -19,6 +19,7 @@ static void Ribbon_Tick_One(Ribbon *r, float fdt);
 static void Ribbon_Draw_One(Ribbon *r);
 static void Ribbon_Tick(World *world, double dt, double time);
 static void Ribbon_Step(World *world, double dt, double time);
+static void Ribbon_Update_Beam(World *world, Ribbon *r);
 static void Sol_Ribbon_Draw(World *world, double dt, double time);
 
 // --- default templates, mirrors emitter_kinds[] ---
@@ -26,12 +27,12 @@ static const Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
     [RIBBONKIND_TRAIL] =
         {
             .segLifetime = 0.3f,
-            .rate        = .1f,
+            .rate        = .5f,
             .width       = 1.5f,
-            .fadeout     = 0.4f,
+            .fadeout     = 0.9f,
             .color       = {1, 1, 1, 1},
-            .inf         = true,
-            .ttl         = 2.0f,
+            .inf         = false,
+            .ttl         = 0.3f,
         },
     [RIBBONKIND_LIGHTNING] =
         {
@@ -71,22 +72,47 @@ void Sol_Ribbon_Add(World *world, int id, RibbonKind kind, float width, vec4s co
     *r          = ribbon_kinds[kind];
     r->width    = width;
     r->followId = id;
-    r->alive    = true;
+
+    r->alive = true;
     if (color.a > 0)
         r->color = color;
 
     world->masks[id] |= HAS_RIBBON;
 }
 
-void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos)
+void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec4s color)
 {
     SolRibbons *s = world->ribbons;
     Sol_Realloc(&s->ribbon, s->ribbon_count, &s->ribbon_capacity, sizeof(Ribbon));
 
     Ribbon *r = &s->ribbon[s->ribbon_count++];
+    r->color  = color;
     *r        = ribbon_kinds[kind];
     r->alive  = true;
     Ribbon_AppendPoint(r, pos);
+}
+
+void Sol_Ribbon_AddBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color)
+{
+    Sol_Ribbon_Add(world, entA, kind, width, color);
+    
+    // Snag the slot we just created to finalize its tracking parameters
+    CompRibbon *cr = &world->compRibbons[entA];
+    Ribbon *r = &cr->ribbons[cr->ribbonCount - 1];
+    
+    r->attachMode = RIBBONATTACH_ENT_TO_ENT;
+    r->targetId   = entB;
+}
+
+void Sol_Ribbon_AddToPosition(World *world, int entA, vec3s targetPos, RibbonKind kind, float width, vec4s color)
+{
+    Sol_Ribbon_Add(world, entA, kind, width, color);
+    
+    CompRibbon *cr = &world->compRibbons[entA];
+    Ribbon *r = &cr->ribbons[cr->ribbonCount - 1];
+    
+    r->attachMode = RIBBONATTACH_ENT_TO_POS;
+    r->targetPos  = targetPos;
 }
 
 // --- internal ---
@@ -135,7 +161,12 @@ static void Ribbon_Tick(World *world, double dt, double time)
             if (r->ttl <= 0)
                 continue;
         }
-
+        if (r->attachMode != RIBBONATTACH_TRAIL)
+        {
+            Ribbon_Update_Beam(world, r);
+            s->ribbon[write++] = *r;
+            continue; // Bypass trail history logic!
+        }
         if (r->followId)
         {
             vec3s pos = Sol_Xform_GetPos(world, r->followId);
@@ -177,6 +208,12 @@ static void Ribbon_Step(World *world, double dt, double time)
                 if (r->ttl <= 0)
                     continue;
             }
+            if (r->attachMode != RIBBONATTACH_TRAIL)
+            {
+                Ribbon_Update_Beam(world, r);
+                cr->ribbons[write++] = *r;
+                continue; // Bypass trail history logic!
+            }
 
             r->accumulator += vecDist(pos, r->points[r->head]);
             if (r->rate == 0 || r->accumulator >= r->rate)
@@ -191,6 +228,38 @@ static void Ribbon_Step(World *world, double dt, double time)
         cr->ribbonCount = write;
         if (write == 0)
             world->masks[id] &= ~HAS_RIBBON;
+    }
+}
+
+static void Ribbon_Update_Beam(World *world, Ribbon *r)
+{
+    if (!r->followId)
+        return;
+
+    // 1. Resolve starting position
+    vec3s startPos = Sol_Xform_GetPos(world, r->followId);
+    vec3s endPos   = r->targetPos;
+
+    // 2. Resolve target destination position if tracked to an entity
+    if (r->attachMode == RIBBONATTACH_ENT_TO_ENT)
+    {
+        endPos = Sol_Xform_GetPos(world, r->targetId);
+    }
+
+    // 3. Clear ring buffer metrics to cleanly overwrite them
+    r->head  = 0;
+    r->count = MAX_RIBBON_SEGS;
+
+    // 4. Interpolate points linearly along the line segment
+    for (int i = 0; i < MAX_RIBBON_SEGS; i++)
+    {
+        float t = (float)i / (float)(MAX_RIBBON_SEGS - 1);
+
+        // Linear interpolation formula: Lerp(A, B, t) = A + t * (B - A)
+        r->points[i] = glms_vec3_add(startPos, glms_vec3_scale(glms_vec3_sub(endPos, startPos), t));
+
+        // Beams maintain full lifespan properties across segments (no trailing decay)
+        //r->ages[i] = 0.0f;
     }
 }
 

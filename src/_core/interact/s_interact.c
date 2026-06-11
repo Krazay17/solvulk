@@ -384,6 +384,14 @@ static void Tooltip_Card_Draw(World *world, int id)
             maxWidth = w;
         lineCount++;
     }
+    if ((totalEffects & EFFECTMASK_CHAINLIGHTNING) && lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Chain Lightning");
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
 
     // --- STAGE 2: CALCULATE FINAL DYNAMIC DIMS ---
     float ySpacing = UISCALE(12.0f);

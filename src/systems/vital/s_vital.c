@@ -80,7 +80,7 @@ u32 Sol_Vital_GetMaxHealth(World *world, int id)
 }
 bool Sol_Vital_GetDead(World *world, int id)
 {
-    return !(world->masks[id] & HAS_VITAL) || (world->vitals[id].health == 0);
+    return (world->masks[id] & HAS_VITAL) && (world->vitals[id].health == 0);
 }
 float Sol_Vital_GetLastHitTime(World *world, int id)
 {

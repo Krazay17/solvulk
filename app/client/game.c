@@ -2,7 +2,7 @@
 
 static World *gameWorld;
 static World *gameWorld2;
-static int player2d;
+static int    player2d;
 
 static void SpawnPlayer(int flags, void *data)
 {
@@ -123,6 +123,21 @@ void RotateGuy(World *world, double dt, double time)
     world->xforms[player2d].quat = Sol_Quat_FromYawPitch(yaw, 0);
 }
 
+void WizSpawner(World *world, double dt)
+{
+    static float          accum = 0;
+    static struct MakeWiz wiz   = {0};
+    wiz.world                   = world;
+    wiz.amount                  = 3;
+
+    accum += dt;
+    if (accum > 1.0f)
+    {
+        accum = 0;
+        MakeAWizard(0, &wiz);
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,8 +152,13 @@ void Create_Sol_Game()
     Sol_View_Crosshair(gameWorld);
 
     SpawnPlayer(0, 0);
+    int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
+    Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
+    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
+    Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
+    WAddStep(gameWorld) = WizSpawner;
 
-    player2d      = Sol_Create_Ent(hud, 0);
+    player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
     Sol_Xform_Add(hud, player2d, (vec3s){1100.0f, 400.0f, 0.0f});
     Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f, 75.0f, 75.0f});
@@ -208,19 +228,6 @@ void Create_Sol_Game()
             Sol_Prefab_AbilityCard(hud, (vec3s){xoffset, yoffset, 0}, i, j);
         }
     }
-    // Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 0);
-    // Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 2);
-    // Sol_Prefab_AbilityCard(hud, (vec3s){570, 500}, ABILITY_STATE_SPINSLASH, 1);
-    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_SPINSLASH, 0);
-    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_CLAW, 0);
-    // Sol_Prefab_AbilityCard(hud, (vec3s){200, 500}, ABILITY_STATE_CLAW, 1);
-    // int pistolCard                    = Sol_Prefab_AbilityCard(hud, (vec3s){390, 400}, ABILITY_STATE_PISTOL, 1);
-    // hud->items[pistolCard].bonusBuffs = BUFFMASK_FIRE;
-
-    int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
-    Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
-    Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
 
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 

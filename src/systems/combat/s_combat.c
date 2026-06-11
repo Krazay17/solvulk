@@ -85,7 +85,8 @@ static void Combat_Step(World *world, double dt, double time)
             e->as.hit.power = e->as.hit.power ? e->as.hit.power : 1.0f;
             e->as.hit.entA  = Sol_Owner_GetOwner(world, e->as.hit.entA);
 
-            bool canDamage = Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
+            bool canDamage = world->masks[e->as.hit.entB] & HAS_VITAL &&
+                             Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                              !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) &&
                              !Sol_Vital_GetDead(world, e->as.hit.entB);
 
@@ -110,6 +111,15 @@ static void Combat_Step(World *world, double dt, double time)
                 }
                 if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                     Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
+
+                if (effectMask & EFFECTMASK_CHAINLIGHTNING)
+                {
+                    // Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, 10);
+                    // Chain_Lightning_Single(world, e->as.hit.entA, e->as.hit.entB, 10);
+
+                    // Chain_Lightning(world, e->as.hit.entA, e->as.hit.entB, 0, 50, 50);
+                    //  Chain_Lightning_NoReassess(world, e->as.hit.entA, e->as.hit.entB, 50, 50);
+                }
                 float knockback         = 0;
                 float knockbackDuration = 0;
                 if (effectMask & EFFECTMASK_KNOCKBACK)
@@ -145,16 +155,15 @@ static void Combat_Step(World *world, double dt, double time)
                     else
                         Sol_Physx_Impulse(world, e->as.hit.entB, vel);
                 }
-
-                if (e->as.hit.fxKind)
-                    Sol_Event_Add(world, (SolEvent){
-                                             .kind        = EVENTKIND_FX,
-                                             .as.fx.kind  = e->as.hit.fxKind,
-                                             .as.fx.entB  = e->as.hit.entB,
-                                             .as.fx.pos   = e->as.hit.pos,
-                                             .as.fx.scale = e->as.hit.power,
-                                         });
             }
+            if (e->as.hit.fxKind)
+                Sol_Event_Add(world, (SolEvent){
+                                         .kind        = EVENTKIND_FX,
+                                         .as.fx.kind  = e->as.hit.fxKind,
+                                         .as.fx.entB  = e->as.hit.entB,
+                                         .as.fx.pos   = e->as.hit.pos,
+                                         .as.fx.scale = e->as.hit.power,
+                                     });
 
             if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[e->as.hit.entB] & HAS_PROJECTILE)
             {
@@ -179,8 +188,8 @@ static void Combat_Step(World *world, double dt, double time)
                                             .as.fx.kind = FXKIND_DEATH_BLOOD,
                                             .as.fx.pos  = Sol_Xform_GetPos(world, e->as.death.entB)});
 
-            if (!vital->doesRespawn)
-                Sol_Destroy_Ent(world, e->as.death.entB);
+            // if (!vital->doesRespawn)
+            //     Sol_Destroy_Ent(world, e->as.death.entB);
         }
         break;
         case EVENTKIND_RESPAWN: {
@@ -193,6 +202,19 @@ static void Combat_Step(World *world, double dt, double time)
         }
         break;
         }
+    }
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        CompCombat *combat = &world->combats[id];
+        combat->chainLightning.accum += dt;
+        if (combat->chainLightning.count > 0)
+            if (combat->chainLightning.accum > combat->chainLightning.delay)
+            {
+                combat->chainLightning.accum = 0;
+                Chain_Lightning_Single(world, id, combat->chainLightning.last, combat->chainLightning.count);
+            }
     }
 }
 

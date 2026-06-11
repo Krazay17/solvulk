@@ -8,9 +8,8 @@
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
 // Cell 1.5, Size (1<<21) loads slow but plays fast
-#define SPATIAL_STATIC_CELL_SIZE 5.0f
 #define SPATIAL_STATIC_SIZE (1 << 19)
-#define SPATIAL_STATIC_ENTRIES 0xFFFFFFF
+#define SPATIAL_STATIC_ENTRIES 0xF
 
 static u32            ents[MAX_ENTS];
 static EntityContacts contacts[MAX_ENTS];
@@ -25,8 +24,8 @@ void Sol_Physx_Init(World *world)
     world->bodies  = calloc(MAX_ENTS, sizeof(CompBody));
     world->spatial = calloc(1, sizeof(WorldPhysx));
 
-    SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
-                      SPATIAL_STATIC_CELL_SIZE);
+    // SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
+    //                   SPATIAL_STATIC_CELL_SIZE);
     SpatialTable_Init(&world->spatial->dynamicGroup.table, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES,
                       SPATIAL_DYNAMIC_CELL_SIZE);
 
@@ -126,7 +125,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
             xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, substep.sub_dt));
             Collisions_Static_Grid(world, staticGroup, body, xform, &contacts[j]);
         }
-        
+
         // Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
         Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
     }
@@ -407,8 +406,8 @@ void Sol_Physx_SetHeight(World *world, int id, float height)
 }
 void Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir)
 {
-    vec3s prevVel = world->bodies[id].vel;
-    float mag = glms_vec3_norm(prevVel);
+    vec3s prevVel         = world->bodies[id].vel;
+    float mag             = glms_vec3_norm(prevVel);
     world->bodies[id].vel = vecSca(glms_vec3_normalize(dir), mag);
 }
 void Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt)

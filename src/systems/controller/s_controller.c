@@ -129,7 +129,7 @@ static void LocalTick(World *world, int id, double dt, double time)
                                                    .dir       = look->lookdir,
                                                    .dist      = 60.f,
                                                });
-
+    aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(look->lookdir, 0.5f));
     vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
     controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
     controller->aimHitEnt = aimTrace.entId;

@@ -99,8 +99,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
             float newSeek = layer->currentSeek + speed;
             if (layer->oneShot && newSeek >= dur - ONESHOT_FADE_DURATION)
             {
-                layer->currentSeek = newSeek < dur ? newSeek : dur;
-                if (!layer->fadeOut)
+                layer->currentSeek = newSeek < dur ? newSeek : dur - 0.001f;
+                if (!layer->fadeOut && !layer->noFade)
                 {
                     layer->fadeOut      = 1.0f;
                     layer->fadeOutSpeed = 1.0f / ONESHOT_FADE_DURATION;
@@ -195,6 +195,7 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     layer->blendSpeed   = 1.0f / blendIn;
     layer->fadeOutSpeed = 1.0f / blendOut;
     layer->fadeOut      = 0.0f;
+    layer->noFade       = desc.noFade;
 }
 
 SolModelKind Sol_Model_GetModelId(World *world, int id)

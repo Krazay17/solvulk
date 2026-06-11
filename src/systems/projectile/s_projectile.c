@@ -1,7 +1,8 @@
 #include "sol_core.h"
 
 static void Projectile_Step(World *world, double dt, double time);
-static void Projectile_Hit(World *world, int id);
+static void Projectile_Hit(World *world, int id, SolHit hit);
+static bool Projectile_Bounce(World *world, int id);
 
 void Sol_Projectile_Init(World *world)
 {
@@ -42,13 +43,15 @@ static void Projectile_Step(World *world, double dt, double time)
             continue;
         if (Sol_Owner_GetOwner(world, proj) == other)
             continue;
-        CompProjectile *projectile   = &world->projectiles[proj];
-        projectile->directHit.entB   = other;
-        projectile->directHit.pos    = e->as.collision.pos;
-        projectile->directHit.vel    = e->as.collision.vel;
-        projectile->directHit.normal = e->as.collision.normal;
+        CompProjectile *projectile = &world->projectiles[proj];
+        SolHit          hit        = projectile->directHit;
+        hit.entB                   = other;
+        hit.pos                    = e->as.collision.pos;
+        hit.vel                    = e->as.collision.vel;
+        hit.normal                 = e->as.collision.normal;
 
-        Projectile_Hit(world, proj);
+        Projectile_Hit(world, proj, hit);
+        Projectile_Bounce(world, proj);
     }
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -72,26 +75,44 @@ static void Projectile_Step(World *world, double dt, double time)
             SolRayResult result = results[i];
             if (!Sol_Owner_GetHostile(world, id, result.entId))
                 continue;
-            CompProjectile *projectile   = &world->projectiles[id];
-            projectile->directHit.entB   = result.entId;
-            projectile->directHit.pos    = result.pos;
-            projectile->directHit.normal = result.norm;
-            projectile->directHit.vel    = body->vel;
+            CompProjectile *projectile = &world->projectiles[id];
+            SolHit          hit        = projectile->directHit;
+            hit.entB                   = result.entId;
+            hit.pos                    = result.pos;
+            hit.normal                 = result.norm;
+            hit.vel                    = body->vel;
 
-            Projectile_Hit(world, id);
+            Projectile_Hit(world, id, hit);
+
+            if (!Projectile_Bounce(world, id))
+                break;
         }
     }
 }
 
-static void Projectile_Hit(World *world, int id)
+static bool Projectile_Bounce(World *world, int id)
 {
     CompProjectile *projectile = &world->projectiles[id];
-    projectile->directHit.entA = projectile->explosionHit.entA = Sol_Owner_GetOwner(world, id);
-    projectile->directHit.power = projectile->explosionHit.power = projectile->power;
+    if (projectile->bounces < 1)
+    {
+        Sol_Destroy_Ent(world, id);
+        return false;
+    }
+    else
+        projectile->bounces--;
+    return true;
+}
+
+static void Projectile_Hit(World *world, int id, SolHit hit)
+{
+    CompProjectile *projectile = &world->projectiles[id];
+    SolHit          aoeHit     = projectile->explosionHit;
+    hit.entA = aoeHit.entA = Sol_Owner_GetOwner(world, id);
+    hit.power = aoeHit.power = projectile->power;
 
     Sol_Event_Add(world, (SolEvent){
                              .kind   = EVENTKIND_HIT,
-                             .as.hit = projectile->directHit,
+                             .as.hit = hit,
                          });
 
     if (projectile->explodeRadius > 0)
@@ -101,21 +122,23 @@ static void Projectile_Hit(World *world, int id)
             projectile->power > 0 ? projectile->explodeRadius * projectile->power : projectile->explodeRadius;
         vec3s pos = xform->pos;
 
-        SolRay       ray = {.pos = pos};
+        SolRay       ray = {.pos = pos, .ignoreEnt = id};
         SolRayResult results[256];
         int          hits = Sol_SphereCast(world, ray, radius, results, 256);
         for (int i = 0; i < hits; i++)
         {
-            SolRayResult result           = results[i];
-            projectile->explosionHit.entB = result.entId;
-            projectile->explosionHit.pos  = result.pos;
-            projectile->explosionHit.vel  = vecSub(result.pos, pos);
-            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = projectile->explosionHit});
+            SolRayResult result = results[i];
+            vec3s        dir    = glms_vec3_normalize(glms_vec3_sub(result.pos, pos));
+            float        dist   = glms_vec3_distance(result.pos, pos);
+
+            SolRayResult losCheck =
+                Sol_RaycastD(world, (SolRay){.pos = pos, .dir = dir, .dist = dist, .ignoreEnt = id, .mask = 0}, 1.0f);
+            if (losCheck.hit)
+                continue;
+            aoeHit.entB = result.entId;
+            aoeHit.pos  = result.pos;
+            aoeHit.vel  = vecSub(result.pos, pos);
+            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = aoeHit});
         }
     }
-
-    if (projectile->bounces < 1)
-        Sol_Destroy_Ent(world, id);
-    else
-        projectile->bounces--;
 }

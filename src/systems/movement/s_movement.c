@@ -97,11 +97,13 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
         CrouchHeight(world, id, fdt);
         Knockback(world, id, fdt);
         RestoreFriction(world, id, movement, fdt);
-    }
-    if (world->playerID > 0)
-    {
-        float speed = glms_vec3_norm(Sol_Physx_GetVel(world, world->playerID));
-        Sol_Debug_Add("Velocity", speed);
+
+        if (id == 1)
+        {
+            float speed = glms_vec3_norm(Sol_Physx_GetVel(world, id));
+            Sol_Debug_Add("Velocity", speed);
+            Sol_Debug_Add("State", movement->state);
+        }
     }
 }
 

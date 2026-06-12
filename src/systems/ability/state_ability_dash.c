@@ -75,9 +75,9 @@ void ADash_State_Enter(World *world, int id)
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
     AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE,
-                     .oneShot = true,
                      .seek    = 0.05f,
                      .speed   = 1.6f - data->duration,
+                     .playKind = ANIMPLAYKIND_ONESHOT,
                      .blendIn = 0.05f};
 
     switch (Sol_GetStrafedir(data->enterDir.x, data->enterDir.z, rot.x, rot.z))

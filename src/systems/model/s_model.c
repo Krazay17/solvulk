@@ -97,17 +97,25 @@ void Sol_Model_Draw(World *world, double dt, double time)
             float dur     = m->skeleton.animations[layer->currentAnim].duration;
             float speed   = layer->playRate != 0 ? layer->playRate * fdt : fdt;
             float newSeek = layer->currentSeek + speed;
-            if (layer->oneShot && newSeek >= dur - ONESHOT_FADE_DURATION)
+            switch (layer->playKind)
             {
+            case ANIMPLAYKIND_NOLOOP:
                 layer->currentSeek = newSeek < dur ? newSeek : dur - 0.001f;
-                if (!layer->fadeOut && !layer->noFade)
+                break;
+            case ANIMPLAYKIND_ONESHOT:
+                layer->currentSeek = newSeek < dur ? newSeek : dur - 0.001f;
+                if (newSeek >= dur - ONESHOT_FADE_DURATION)
                 {
-                    layer->fadeOut      = 1.0f;
-                    layer->fadeOutSpeed = 1.0f / ONESHOT_FADE_DURATION;
+                    if (!layer->fadeOut)
+                    {
+                        layer->fadeOut      = 1.0f;
+                        layer->fadeOutSpeed = 1.0f / ONESHOT_FADE_DURATION;
+                    }
                 }
-            }
-            else
+                break;
+            default:
                 layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
+            }
 
             if (layer->lastAnim >= 0 && layer->blendFactor < 1.0f)
             {
@@ -158,16 +166,16 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
-    AnimLayerId layerId   = desc.layerId;
-    AnimId      animId    = desc.anim;
-    bool        oneShot   = desc.oneShot;
-    float       seek      = desc.seek;
-    float       speed     = desc.speed ? desc.speed : 1.0f;
-    CompModel  *modelComp = &world->models[id];
-    AnimLayer  *layer     = &modelComp->layers[layerId];
-    AnimConfig  config    = anim_configs[desc.anim];
-    float       blendIn   = config.blendIn ? config.blendIn : 0.25f;
-    float       blendOut  = config.blendOut ? config.blendOut : 0.25f;
+    AnimLayerId layerId = desc.layerId;
+    AnimId      animId  = desc.anim;
+    bool       oneShot   = desc.playKind == ANIMPLAYKIND_ONESHOT;
+    float      seek      = desc.seek;
+    float      speed     = desc.speed ? desc.speed : 1.0f;
+    CompModel *modelComp = &world->models[id];
+    AnimLayer *layer     = &modelComp->layers[layerId];
+    AnimConfig config    = anim_configs[desc.anim];
+    float      blendIn   = config.blendIn ? config.blendIn : 0.25f;
+    float      blendOut  = config.blendOut ? config.blendOut : 0.25f;
     if (layer->animId == animId && !oneShot)
         return;
     if (animId < 1)
@@ -189,13 +197,12 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     }
     layer->currentAnim = mappedAnim;
     layer->playRate    = speed;
-    layer->oneShot     = oneShot;
     layer->currentSeek = seek;
 
     layer->blendSpeed   = 1.0f / blendIn;
     layer->fadeOutSpeed = 1.0f / blendOut;
     layer->fadeOut      = 0.0f;
-    layer->noFade       = desc.noFade;
+    layer->playKind     = desc.playKind;
 }
 
 SolModelKind Sol_Model_GetModelId(World *world, int id)

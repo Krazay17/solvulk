@@ -26,8 +26,8 @@ void Dead_State_Enter(World *world, int id)
 {
     Sol_Model_PlayAnim(
         world, id,
-        (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .oneShot = true, .noFade = true});
-    world->movements[id].targetHeight = 0.6f;
+        (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .playKind = ANIMPLAYKIND_NOLOOP});
+    //world->movements[id].targetHeight = 0.6f;
 }
 void Dead_State_Exit(World *world, int id)
 {

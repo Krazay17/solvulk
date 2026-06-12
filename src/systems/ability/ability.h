@@ -85,7 +85,7 @@ typedef struct
     u32   effectMask;
 } AbilityConfig;
 
-extern AbilityConfig ability_config[ABILITY_STATE_COUNT][3];
+extern AbilityConfig ability_config[ABILITY_STATE_COUNT][4];
 
 void Sol_Ability_Init(World *world);
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc);

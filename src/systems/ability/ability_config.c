@@ -2,7 +2,7 @@
 
 #include "ability_i.h"
 
-AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
+AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
     {
         [ABILITY_STATE_FIREBALL][0] =
             {
@@ -23,7 +23,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
                 .cooldown   = 2.0f,
                 .damage     = 20,
                 .buffMask   = BITC(BUFFKIND_FIRE),
-                .effectMask = EFFECTMASK_CHAINLIGHTNING,
+                .effectMask = EFFECTMASK_CHAINLIGHTNING | EFFECTMASK_KNOCKBACK,
             },
         [ABILITY_STATE_SHIELD][0] =
             {
@@ -72,7 +72,17 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][3] =
                 .duration   = 0.5f,
                 .damage     = 25,
                 .buffMask   = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_STUN),
-                .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING,
+                .effectMask = EFFECTMASK_KNOCKUP,
+            },
+        [ABILITY_STATE_SPINSLASH][3] =
+            {
+                .name       = "SpinSlash",
+                .cooldown   = 2.0f,
+                .duration   = 0.5f,
+                .damage     = 25,
+                .buffMask   = BITC(BUFFKIND_FIRE) | BITC(BUFFKIND_STUN),
+                .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING |
+                              EFFECTMASK_HEALONHIT | EFFECTMASK_KNOCKBACK,
             },
         [ABILITY_STATE_DASH][0] =
             {

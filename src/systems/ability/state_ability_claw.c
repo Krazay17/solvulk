@@ -90,7 +90,7 @@ void Claw_State_Enter(World *world, int id)
     AnimDesc desc            = {.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
                                 .layerId = ANIM_LAYER_UPPER,
                                 .speed   = animRate,
-                                .oneShot = true,
+                                .playKind = ANIMPLAYKIND_ONESHOT,
                                 .blendIn = 0.05f};
 
     Sol_Model_PlayAnim(world, id, desc);

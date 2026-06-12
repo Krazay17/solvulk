@@ -30,7 +30,7 @@ void Fireball_State_Update(World *world, int id, float dt)
             data->stage++;
         break;
     case 1:
-        AnimDesc desc = {.anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .oneShot = true};
+        AnimDesc desc = {.anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .playKind = ANIMPLAYKIND_ONESHOT};
         Sol_Model_PlayAnim(world, id, desc);
 
         SolShoot shoot = Sol_Controller_GetShoot(world, id, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge));

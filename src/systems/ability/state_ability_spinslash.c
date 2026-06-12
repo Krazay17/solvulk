@@ -70,7 +70,7 @@ void Spinslash_State_Enter(World *world, int id)
     Sol_Model_PlayAnim(
         world, id,
         (AnimDesc){
-            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true, .speed = 1.8f, .seek = 0.5f});
+            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 1.8f, .seek = 0.5f});
 }
 
 void Spinslash_State_Exit(World *world, int id)

@@ -8,10 +8,10 @@ typedef struct AnimConfig
 
 typedef struct AnimDesc
 {
+    u8          playKind;
     float       blendIn, blendOut, seek, speed;
     AnimLayerId layerId;
     u32         anim;
-    bool        oneShot, noFade;
 } AnimDesc;
 
 typedef struct
@@ -20,10 +20,18 @@ typedef struct
     float        yoffset, yawOffset;
 } ModelDesc;
 
+typedef enum
+{
+    ANIMPLAYKIND_LOOP,
+    ANIMPLAYKIND_NOLOOP,
+    ANIMPLAYKIND_ONESHOT,
+} AnimPlayKind;
+
 typedef struct AnimLayer
 {
+    u8    playKind;
     i16   currentAnim, lastAnim, animId;
-    bool  oneShot, force, noFade;
+    bool  force;
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
     float fadeOut, fadeOutSpeed;
@@ -42,8 +50,7 @@ typedef struct CompModel
 
 extern const AnimConfig anim_configs[ANIM_COUNT];
 
-    u32
-     Sol_Model_GetTriCount(SolModelKind handle);
+u32  Sol_Model_GetTriCount(SolModelKind handle);
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);
 
 void       Sol_Model_Init(World *world);

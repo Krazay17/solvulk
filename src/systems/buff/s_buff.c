@@ -14,6 +14,7 @@ static void Apply_Stun(World *world, int id, int source)
 }
 static void Remove_Stun(World *world, int id, int source)
 {
+    printf("RemoveStun");
     Sol_Movement_ForceState(world, id, MOVE_IDLE);
 }
 
@@ -76,6 +77,9 @@ Buff *Sol_Buff_Add(World *world, int id, BuffKind kind, int source)
     CompBuff *buffs = &world->buffs[id];
     if (!(world->masks[id] & HAS_BUFF))
         memset(buffs, 0, sizeof(CompBuff));
+    if (Sol_Vital_GetDead(world, id))
+        return NULL;
+
     world->masks[id] |= HAS_BUFF;
 
     Buff new_buff = {
@@ -120,16 +124,28 @@ addNewBuff:
 void Sol_Buff_Remove(World *world, int id, BuffKind kind)
 {
     CompBuff *buffs = &world->buffs[id];
+    int write = 0;
+    
     for (int i = 0; i < buffs->count; i++)
     {
         Buff *b = &buffs->buffs[i];
-        if (kind == b->kind)
+        if (b->kind == kind)
         {
-            b->duration = 0;
+            if (buff_config[kind].onRemove)
+            {
+                buff_config[kind].onRemove(world, id, b->source);
+            }
+            // Skip copying this element to compact the array immediately
+            continue; 
         }
+        buffs->buffs[write++] = *b;
     }
+    buffs->count = write;
+    buffs->activeKindsMask &= ~BITC(kind);
+    
+    if (buffs->count <= 0)
+        world->masks[id] &= ~HAS_BUFF;
 }
-
 
 void Sol_Buff_Step(World *world, double dt, double time)
 {
@@ -142,9 +158,11 @@ void Sol_Buff_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
 
-        CompBuff *buff    = &world->buffs[id];
-        int       write   = 0;
-        int       newmask = 0;
+        CompBuff *buff = &world->buffs[id];
+        if (id == 1)
+            sollog(buff->activeKindsMask);
+        int write   = 0;
+        int newmask = 0;
         for (int j = 0; j < buff->count; j++)
         {
             Buff *b = &buff->buffs[j];

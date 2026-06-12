@@ -48,7 +48,7 @@ void Ability_Scripts_Init()
     fireballVolley->duration      = 2.1f;
     fireballVolley->actions[0] =
         (AbilityAction){.kind    = ACTIONKIND_PLAY_ANIM,
-                        .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true}};
+                        .as.anim = (AnimDesc){.anim = ANIM_ABILITY4, .layerId = ANIM_LAYER_OVERRIDE, .playKind = ANIMPLAYKIND_ONESHOT}};
     fireballVolley->actions[1] = (AbilityAction){.kind           = ACTIONKIND_SPAWN_PROJECTILE,
                                                  .as.spawn.spawn = ABILITYSPAWN_FIREBALL,
                                                  .as.spawn.speed = 25.0f,

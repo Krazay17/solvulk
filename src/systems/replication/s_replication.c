@@ -7,6 +7,8 @@
 #define CORRECT_LIGHT 1.0f
 #define CORRECT_MED 4.0f
 
+static void Sync_Buffs(World *world, int id, u32 serverMask);
+
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
     [EVENTKIND_FX]      = 1,
     [EVENTKIND_HIT]     = 1,
@@ -72,9 +74,9 @@ void Net_Send_Snap(World *world)
 {
     static WorldSnap snap;
     memset(&snap, 0, sizeof(WorldSnap));
-    snap.type             = NET_PACKET_SNAPSHOT;
-    snap.worldId          = world->worldId;
-    snap.tickNumber       = world->currentTick;
+    snap.type       = NET_PACKET_SNAPSHOT;
+    snap.worldId    = world->worldId;
+    snap.tickNumber = world->currentTick;
 
     int count = 0;
     for (int i = 0; i < world->activeCount && count < MAX_NET_ENTS; i++)
@@ -98,10 +100,10 @@ void Net_Send_Snap(World *world)
             {
                 if (world->models[id].layers[layer].fadeOut > 0)
                     continue;
-                e->animCurrent[layer] = world->models[id].layers[layer].animId;
-                e->animOneShot[layer] = world->models[id].layers[layer].oneShot;
-                e->animSeek[layer]    = world->models[id].layers[layer].currentSeek;
-                e->animSpeed[layer]   = world->models[id].layers[layer].playRate;
+                e->animCurrent[layer]  = world->models[id].layers[layer].animId;
+                e->animSeek[layer]     = world->models[id].layers[layer].currentSeek;
+                e->animSpeed[layer]    = world->models[id].layers[layer].playRate;
+                e->animPlayKind[layer] = world->models[id].layers[layer].playKind;
             }
         }
         if (world->masks[id] & HAS_ABILITY)
@@ -124,7 +126,10 @@ void Net_Send_Snap(World *world)
         }
 
         if (world->masks[id] & HAS_BODY3)
-            e->vel = world->bodies[id].vel;
+        {
+            e->vel    = world->bodies[id].vel;
+            e->height = world->bodies[id].dims.y;
+        }
         if (world->masks[id] & HAS_OWNER)
         {
             e->ownerId = world->owners[id].ownerId;
@@ -214,8 +219,14 @@ void Net_Apply_Snap(World *world)
                 world->xforms[id].pos = glms_vec3_lerp(world->xforms[id].pos, e->pos, SOL_TIMESTEP);
             else
                 world->xforms[id].pos = e->pos;
-            world->bodies[id].vel  = e->vel;
+
             world->xforms[id].quat = e->rot;
+
+            if (world->masks[id] & HAS_BODY3)
+            {
+                world->bodies[id].vel    = e->vel;
+                world->bodies[id].dims.y = e->height;
+            }
 
             if (world->masks[id] & HAS_MODEL)
             {
@@ -224,11 +235,11 @@ void Net_Apply_Snap(World *world)
                 {
                     Sol_Model_PlayAnim(world, id,
                                        (AnimDesc){
-                                           .layerId = layer,
-                                           .anim    = e->animCurrent[layer],
-                                           .seek    = e->animSeek[layer],
-                                           .oneShot = e->animOneShot[layer],
-                                           .speed   = e->animSpeed[layer],
+                                           .layerId  = layer,
+                                           .anim     = e->animCurrent[layer],
+                                           .seek     = e->animSeek[layer],
+                                           .speed    = e->animSpeed[layer],
+                                           .playKind = e->animPlayKind[layer],
                                        });
                     Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
                 }
@@ -254,8 +265,7 @@ void Net_Apply_Snap(World *world)
                 data->stage         = e->abilityStage;
             }
         }
-
-        world->buffs[id].activeKindsMask = e->buffMask;
+        Sync_Buffs(world, id, e->buffMask);
 
         if (world->masks[id] & HAS_OWNER)
         {
@@ -313,6 +323,7 @@ void Net_Send_Input(World *world)
         {
             inputPacket.abilities[i] = a->bindings[i].pendingState;
             inputPacket.rarity[i]    = a->bindings[i].pendingRarity;
+            inputPacket.addDamage[i] = a->bindings[i].pendingBonusDamage;
             inputPacket.addBuff[i]   = a->bindings[i].pendingBonusBuffs;
             inputPacket.addEffect[i] = a->bindings[i].pendingBonusEffects;
             a->bindings[i].dirtySend = false; // ack: we've sent this request
@@ -374,5 +385,37 @@ void Net_Apply_Events(World *world, EventSnap *snap)
             continue;
         }
         Sol_Event_Add(world, e);
+    }
+}
+
+static void Sync_Buffs(World *world, int id, u32 serverMask)
+{
+    u32 clientMask = world->buffs[id].activeKindsMask;
+
+    if (clientMask != serverMask)
+    {
+        // XOR isolates the bits that do not match
+        u32 changedBits = clientMask ^ serverMask;
+
+        for (int b = 0; b < BUFFKIND_COUNT; b++)
+        {
+            u32 bit = (1 << b);
+            if (changedBits & bit)
+            {
+                if (serverMask & bit)
+                {
+                    // Server has it, client doesn't -> Force Add (triggers onApply)
+                    Sol_Buff_Add(world, id, (BuffKind)b, 0);
+                }
+                else
+                {
+                    // Client has it, server doesn't -> Force Remove (triggers onRemove)
+                    Sol_Buff_Remove(world, id, (BuffKind)b);
+                }
+            }
+        }
+
+        // Ensure our internal tracking mask strictly reflects the server's state
+        world->buffs[id].activeKindsMask = serverMask;
     }
 }

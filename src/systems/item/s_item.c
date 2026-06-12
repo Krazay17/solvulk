@@ -200,7 +200,7 @@ void Sol_Item_SetRarity(World *world, int id, u32 rarity)
         color = (vec4s){1.0f, 0.0f, 1.0f, 1.0f};
         break;
     case 3:
-        color = (vec4s){0.0f, 1.0f, 1.0f, 1.0f};
+        color = (vec4s){1.0f, 0.2f, 0.0f, 1.0f};
         break;
     }
     world->view2d[id].views[1].color      = color;

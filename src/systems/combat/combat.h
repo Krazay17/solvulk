@@ -13,7 +13,7 @@ typedef struct CompCombat
     CombatFlags flags;
     u32         damage, hitPauseDiminish;
     bool        hitEnts[MAX_ENTS];
-    float hitPause, baseAnimRate;
+    float       hitPause, baseAnimRate;
 } CompCombat;
 
 typedef struct

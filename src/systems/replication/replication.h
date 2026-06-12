@@ -33,7 +33,7 @@ typedef struct
     u32     buffMask;
     vec3s   pos, vel;
     versors rot;
-    float   scale, abilityCharge;
+    float   scale, abilityCharge, height;
 
     u32 health, energy;
 
@@ -50,8 +50,7 @@ typedef struct
 
     u8    modelId;
     i16   animCurrent[ANIM_LAYER_COUNT];
-    bool  animOneShot[ANIM_LAYER_COUNT];
-    bool  animForce[ANIM_LAYER_COUNT];
+    u8    animPlayKind[ANIM_LAYER_COUNT];
     float animSpeed[ANIM_LAYER_COUNT];
     float animSeek[ANIM_LAYER_COUNT];
     float blendin[ANIM_LAYER_COUNT];

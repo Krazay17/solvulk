@@ -65,8 +65,9 @@ void MakeAEmitter(int flags, void *data)
 void ClearEnts(int flags, void *data)
 {
     World *world = (World *)data;
-    for (int i = world->activeCount; i > 2; i--)
-        Sol_Destroy_Ent(world, i);
+    if (world)
+        for (int i = world->activeCount; i > 2; i--)
+            Sol_Destroy_Ent(world, i);
 }
 
 void ColorSpheres(int flags, void *data)
@@ -91,6 +92,7 @@ void HostGame(int flags, void *data)
 
 void ClientConnect(int flags, void *data)
 {
+    ClearEnts(0, gameWorld);
     if (data)
         Net_Connect(false, "127.0.0.1", 8080);
     else
@@ -156,7 +158,7 @@ void Create_Sol_Game()
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
     Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
-    WAddStep(gameWorld) = WizSpawner;
+    // WAddStep(gameWorld) = WizSpawner;
 
     player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
@@ -218,6 +220,7 @@ void Create_Sol_Game()
     Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD, 2);
     // Shift
     Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){920, 500, 0}, ABILITY_STATE_SPINSLASH, 3);
 
     for (int i = 1; i < 6; i++)
     {

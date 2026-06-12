@@ -36,7 +36,7 @@ void Pistol_State_Update(World *world, int id, float dt)
                            (AnimDesc){
                                .anim    = ANIM_ATTACK_RIGHT,
                                .speed   = 3.5f,
-                               .oneShot = true,
+                               .playKind = ANIMPLAYKIND_ONESHOT,
                                .seek    = 0.15,
                                .layerId = ANIM_LAYER_UPPER,
                                .blendIn = 0.01,

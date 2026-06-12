@@ -68,6 +68,8 @@ Anim: 23 knockback
 Anim: 24 spinSlash
 Anim: 25 LeftCharge
 Anim: 26 CrouchWalkFwd
+Anim: 27 Slide
+Anim: 28 Stunned
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
     [MODELKIND_WIZARD] =
@@ -115,5 +117,6 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_SLIDE_LEFT]       = 27,
             [ANIM_SLIDE_RIGHT]      = 27,
             [ANIM_DEATH]            = 23,
+            [ANIM_STUN] = 28,
         },
 };

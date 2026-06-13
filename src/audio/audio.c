@@ -18,7 +18,7 @@
 
 #define MAX_SINEWAVES 4
 
-#define MAX_PLAYING_SOUNDS 128
+#define MAX_PLAYING_SOUNDS 512
 
 static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_BEEP1]          = "Beep1.wav",

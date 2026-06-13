@@ -10,10 +10,12 @@ SphereQueue   sphereQueue;
 SphereQueue   sphereFxQueue;
 FireballQueue fireballQueue;
 RibbonQueue   ribbonQueue;
+RibbonQueue   ribbonQueueDepth;
 
 QuadQueue healthQueue;
 QuadQueue spriteQueue0;
 QuadQueue spriteQueue1;
+QuadQueue spriteQueueFront;
 QuadQueue text3dQueue;
 
 RectInstance rectQueue;
@@ -204,6 +206,17 @@ void Flush_Quads()
         spriteQueue1.count = 0;
     }
 
+    if (spriteQueueFront.count > 0)
+    {
+        memcpy(gpu + currentOffset, spriteQueueFront.instances, sizeof(QuadSSBO) * spriteQueueFront.count);
+        Bind_Pipeline(cmd, PIPE_SPRITE_FRONT);
+        vkCmdDraw(cmd, 6, spriteQueueFront.count, 0, currentOffset);
+        currentOffset += spriteQueueFront.count;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+        spriteQueueFront.count = 0;
+    }
+
     u32 textCount = text3dQueue.count;
     if (textCount > 0)
     {
@@ -245,14 +258,25 @@ void Flush_Fonts2d()
 
 void Flush_Ribbons()
 {
-    if (ribbonQueue.count == 0)
-        return;
+    if (ribbonQueue.count > 0)
+    {
+        RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+        VkCommandBuffer cmd = Command_Buffer_Get();
 
-    RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
+        memcpy(gpu, ribbonQueue.instances, sizeof(RibbonSegSSBO) * ribbonQueue.count);
+        Bind_Pipeline(cmd, PIPE_RIBBON);
+        vkCmdDraw(cmd, 6, ribbonQueue.count, 0, 0);
+        ribbonQueue.count = 0;
+    }
 
-    memcpy(gpu, ribbonQueue.instances, sizeof(RibbonSegSSBO) * ribbonQueue.count);
-    Bind_Pipeline(cmd, PIPE_RIBBON);
-    vkCmdDraw(cmd, 6, ribbonQueue.count, 0, 0);
-    ribbonQueue.count = 0;
+    if (ribbonQueueDepth.count > 0)
+    {
+        RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+        VkCommandBuffer cmd = Command_Buffer_Get();
+
+        memcpy(gpu, ribbonQueueDepth.instances, sizeof(RibbonSegSSBO) * ribbonQueueDepth.count);
+        Bind_Pipeline(cmd, PIPE_RIBBON_DEPTH);
+        vkCmdDraw(cmd, 6, ribbonQueueDepth.count, 0, 0);
+        ribbonQueueDepth.count = 0;
+    }
 }

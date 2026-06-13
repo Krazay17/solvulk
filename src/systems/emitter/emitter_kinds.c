@@ -1,6 +1,18 @@
 #include "emitter.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
+    [EMITTERKIND_SINGLE_SPARK] =
+        {
+            .burst = 1,
+            .particle =
+                {
+                    .kind         = PARTICLE_SHOCK,
+                    .ttl          = 0.2f,
+                    .scale        = 1.0f,
+                    .scaleout     = 0.9f,
+                    .color        = {1.0f, 1.0f, 1.0f, .88f},
+                },
+        },
     [EMITTERKIND_FLASH_BALL] =
         {
             .burst = 1,

@@ -7,6 +7,7 @@ typedef enum
 {
     EMITTERKIND_FLASH_BALL,
     EMITTERKIND_FLASH_FIREBALL,
+    EMITTERKIND_SINGLE_SPARK,
     EMITTERKIND_BURST_SPARKS,
     EMITTERKIND_BURST_CLOUDS,
     EMITTERKIND_BURST_FIRE,
@@ -24,6 +25,7 @@ typedef enum
     PARTICLE_CLOUD,
     PARTICLE_BLOOD,
     PARTICLE_FIREBALL,
+    PARTICLE_SPARKFRONT,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -55,13 +57,12 @@ typedef struct CompEmitter
 typedef void (*ParticleFunc)(Particle, double, double);
 
 const extern Emitter emitter_kinds[EMITTERKIND_COUNT];
-//const extern ParticleFunc particle_funcs[4];
 
 void Sol_Emitter_Init(World *world);
 
-void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale);
-void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale);
-void Sol_Emitter_SpawnEx(World *world, Emitter e);
+Emitter *Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale);
+Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, float scale);
+Emitter *Sol_Emitter_SpawnEx(World *world, Emitter src);
 
 u32       Sol_Emitter_GetParticleCount(World *world);
 Particle *Sol_Emitter_GetParticles(World *world);

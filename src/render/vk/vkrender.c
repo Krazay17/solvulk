@@ -177,11 +177,35 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
+    [PIPE_SPRITE_FRONT] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_SPRITE_F",
+            .depthTest         = 0,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ADDITIVE,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
     [PIPE_RIBBON] =
         {
             .vertResource      = "ID_SHADER_RIBBON_V",
             .fragResource      = "ID_SHADER_SPRITE_F",
             .depthTest         = 0,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ADDITIVE,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_RIBBON_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
+    [PIPE_RIBBON_DEPTH] =
+        {
+            .vertResource      = "ID_SHADER_RIBBON_V",
+            .fragResource      = "ID_SHADER_SPRITE_F",
+            .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_NONE,

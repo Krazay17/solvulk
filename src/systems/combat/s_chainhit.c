@@ -10,7 +10,7 @@ typedef struct
 } ChainConfig;
 
 static const ChainConfig chain_config[] = {
-    [CHAINKIND_LIGHTNING] = {.color = {0.8f, 1.0f, 1.0f, 1.0f}, .chainCount = 10, .fxKind = FXKIND_CHAINLIGHTNING},
+    [CHAINKIND_LIGHTNING] = {.color = {.5f, .5f, 1.0f, 1.0f}, .chainCount = 10, .fxKind = FXKIND_CHAINLIGHTNING},
 };
 
 void Chain_Step(World *world, double dt, double time);
@@ -29,8 +29,7 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, ChainKind kind)
 {
     Sol_Event_Add(world,
                   (SolEvent){.kind = EVENTKIND_HIT, .as.hit.entA = dealer, .as.hit.entB = target, .as.hit.damage = 10});
-    Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), (vec4s){0.7f, 1.0f, 0.0f, 1.0f},
-                      0.2f);
+    Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), chain_config[kind].color, 0.2f);
 
     Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;
@@ -67,7 +66,7 @@ void Chain_Step(World *world, double dt, double time)
                                          .as.fx.kind = chain_config[chain->kind].fxKind,
                                          .as.fx.entA = chain->last,
                                          .as.fx.entB = target,
-                                         .as.fx.pos = Sol_Xform_GetPos(world, target),
+                                         .as.fx.pos  = Sol_Xform_GetPos(world, target),
                                      });
                 chain->hitEnts[target] = true;
                 chain->last            = target;

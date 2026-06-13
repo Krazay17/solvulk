@@ -60,5 +60,13 @@ const StateFunc ability_state_func[] = {
             Spinslash_State_CanExit,
             Spinslash_State_CanEnter,
         },
+    [ABILITY_STATE_LASER] =
+        {
+            Laser_State_Update,
+            Laser_State_Enter,
+            Laser_State_Exit,
+            Laser_State_CanExit,
+            Laser_State_CanEnter,
+        },
     [ABILITY_STATE_FIREBALLVOLLEY] = SCRIPT_STATE_FUNCS,
 };

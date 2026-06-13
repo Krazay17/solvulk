@@ -14,8 +14,9 @@
 
 typedef enum
 {
-    RIBBONKIND_TRAIL,
+    RIBBONKIND_BULLETTRAIL,
     RIBBONKIND_LIGHTNING,
+    RIBBONKIND_LASER,
     RIBBONKIND_INFBEAM,
     RIBBONKIND_COUNT,
 } RibbonKind;
@@ -29,30 +30,19 @@ typedef enum
 
 typedef struct Ribbon
 {
-    vec3s points[MAX_RIBBON_SEGS]; // ring buffer of positions
-    u8    segments;
-    float ages[MAX_RIBBON_SEGS]; // age of each segment in seconds
-    int   head;                  // newest point index
-    int   count;                 // active segment count (capped at MAX_RIBBON_SEGS)
+    RibbonKind       kind;
+    RibbonAttachMode attachMode;
 
-    float segLifetime; // how long each segment lives before fading out
-    float rate;        // min distance between new points (0 = every frame)
-    float accumulator; // distance accumulator since last point
-    float stretch;
+    vec3s points[MAX_RIBBON_SEGS];
+    float ages[MAX_RIBBON_SEGS];
+    int   head, count, segments;
 
-    float width;
-    float fadein;
-    float fadeout;
-    vec4s color;
+    float ttl, segLifetime, rate, accumulator, width, stretch;
     vec2s uv, uvv;
+    vec4s color;
 
-    float ttl;      // ribbon lifetime; ignored if inf
-    bool  inf;      // never expire the ribbon itself
-    u32   followId; // if set, head point tracks this entity every tick
-    bool  alive;
-
-    u8    attachMode;
-    u32   targetId;
+    u8  inf;
+    u32 followId, targetId;
     vec3s targetPos;
 } Ribbon;
 
@@ -64,11 +54,6 @@ typedef struct CompRibbon
 
 void Sol_Ribbon_Init(World *world);
 
-// World-spawned (fire-and-forget, like Sol_Emitter_Spawn)
-void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec4s color);
-
-// Entity-attached (like Sol_Emitter_Add — follows the entity each tick)
-void Sol_Ribbon_Add(World *world, int id, RibbonKind kind, float width, vec4s color);
-void Sol_Ribbon_AddBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color);
-void Sol_Ribbon_AddToPosition(World *world, int entA, vec3s targetPos, RibbonKind kind, float width, vec4s color);
-void Sol_Ribbon_SpawnBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color);
+Ribbon *Sol_Ribbon_Add(World *world, int id, RibbonKind kind, float width, vec4s color);
+Ribbon *Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec3s posB, vec4s color);
+Ribbon *Sol_Ribbon_AddBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color);

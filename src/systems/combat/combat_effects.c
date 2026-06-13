@@ -36,8 +36,8 @@ void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, u
 
     if (closestId > 0)
     {
-        Sol_Ribbon_AddBetweenEntities(world, target, closestId, RIBBONKIND_TRAIL, 1.0f,
-                                      (vec4s){0.7f, 1.0f, 0.0f, 1.0f});
+        //Sol_Ribbon_AddBetweenEntities(world, target, closestId, RIBBONKIND_TRAIL, 1.0f,
+        //                              (vec4s){0.7f, 1.0f, 0.0f, 1.0f});
         Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, closestId),
                           (vec4s){0.7f, 1.0f, 0.0f, 1.0f}, 0.2f);
         Chain_Lightning(world, dealer, closestId, target, damage, count);

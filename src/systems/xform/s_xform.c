@@ -9,6 +9,7 @@ void Sol_Xform_Init(World *world)
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
 {
     world->xforms[id].pos = world->xforms[id].lastPos = world->xforms[id].drawPos = pos;
+    return &world->xforms[id];
 }
 
 void Sol_Xform_Snapshot(World **worlds, int count)

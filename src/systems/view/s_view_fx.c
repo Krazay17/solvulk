@@ -23,8 +23,14 @@ void Fx_Event(World *world, double dt, double time)
         case FXKIND_CHAINLIGHTNING: {
             Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, e->as.fx.pos, 1.0f, 0, 12);
             Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){0.8f, 1.0f, 1.0f, 1.0f}, 0.2f);
-            Sol_Ribbon_SpawnBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 0.75f,
-                                            (vec4s){0.8f, 1.0f, 0.5f, 1.0f});
+            Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 1.0f,
+                                          (vec4s){.5f, .5f, 1.0f, 0.8f});
+            Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 0.4f,
+                                          (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.66f);
         }
         break;
         case FXKIND_SWORD_SWING: {

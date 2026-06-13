@@ -36,8 +36,10 @@ typedef enum
 
     PIPE_SPRITE,
     PIPE_SPRITE_ADD,
+    PIPE_SPRITE_FRONT,
     PIPE_HEALTHBAR,
     PIPE_RIBBON,
+    PIPE_RIBBON_DEPTH,
 
     PIPE_SKYBOX,
 
@@ -288,18 +290,28 @@ typedef struct
 } RibbonQueue;
 
 extern RibbonQueue ribbonQueue;
+extern RibbonQueue ribbonQueueDepth;
 
-static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg()
+static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 depth)
 {
-    if (ribbonQueue.count >= MAX_RIBBON_SEGS_TOTAL)
-        return NULL;
-    return &ribbonQueue.instances[ribbonQueue.count++];
+    switch (depth)
+    {
+    case 0:
+        if (ribbonQueue.count >= MAX_RIBBON_SEGS_TOTAL)
+            return NULL;
+        return &ribbonQueue.instances[ribbonQueue.count++];
+    case 1:
+        if (ribbonQueueDepth.count >= MAX_RIBBON_SEGS_TOTAL)
+            return NULL;
+        return &ribbonQueueDepth.instances[ribbonQueueDepth.count++];
+    }
 }
 
 typedef enum
 {
     QUADKIND_SPRITE,
     QUADKIND_SPRITE_ADD,
+    QUADKIND_SPRITE_FRONT,
     QUADKIND_HEALTH,
     QUADKIND_TEXT,
     QUADKIND_RECT,
@@ -325,6 +337,7 @@ extern QuadQueue        healthQueue;
 extern QuadQueue        spriteQueue0;
 extern QuadQueue        spriteQueue1;
 extern QuadQueue        text3dQueue;
+extern QuadQueue        spriteQueueFront;
 static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
 {
     QuadQueue *q;
@@ -341,6 +354,9 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
         break;
     case QUADKIND_TEXT:
         q = &text3dQueue;
+        break;
+    case QUADKIND_SPRITE_FRONT:
+        q = &spriteQueueFront;
         break;
     }
 

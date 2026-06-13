@@ -116,7 +116,8 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
 int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
 {
     float     radius = scale;
-    ShapeDesc shape  = {.radius = radius, .color = {1, 0, 0, 1}, .kind = SHAPEKIND_FIREBALL};
+    vec4s     color  = {1, 0, 0, 1};
+    ShapeDesc shape  = {.radius = radius, .color = color, .kind = SHAPEKIND_FIREBALL};
 
     id                = Sol_Create_Ent(world, id);
     world->ekinds[id] = EKIND_FIREBALL;
@@ -145,9 +146,9 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                                     .as.fx.pos   = pos,
                                     .as.fx.scale = scale,
                                     .as.fx.entA  = id});
-    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FIRE, scale);
-    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FOG, scale);
-    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FIRE, color, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_FOG, color, scale);
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, color, scale);
 
     return id;
 }
@@ -155,14 +156,15 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
 int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
 {
     float     radius = scale;
-    ShapeDesc shape  = {.radius = radius, .color = {1, 0, 0, 1}, .kind = SHAPEKIND_SPHERE};
+    vec4s     color  = {1, 0, 0, 1};
+    ShapeDesc shape  = {.radius = radius, .color = color, .kind = SHAPEKIND_SPHERE};
     u32       kind   = EKIND_BULLET;
 
     id                = Sol_Create_Ent(world, id);
     world->ekinds[id] = EKIND_BULLET;
     Sol_Shape_Add(world, id, shape);
-    CompProjectile *projectile    = Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
-    projectile->directHit.fxKind  = FXKIND_BULLET_HIT;
+    CompProjectile *projectile   = Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
+    projectile->directHit.fxKind = FXKIND_BULLET_HIT;
     Sol_Xform_Teleport(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
     Sol_Body_Add(world, id,
@@ -175,8 +177,8 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
                      .ignoreFriendly = 1,
                  });
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
-    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, scale);
-    Sol_Ribbon_Add(world, id, RIBBONKIND_TRAIL, 0.4f, (vec4s){1, 0, 0, 1});
+    Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, color, scale);
+    // Sol_Ribbon_Add(world, id, RIBBONKIND_TRAIL, 0.4f, (vec4s){1, 0, 0, 1});
 
     return id;
 }

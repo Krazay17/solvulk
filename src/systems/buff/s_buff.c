@@ -14,7 +14,6 @@ static void Apply_Stun(World *world, int id, int source)
 }
 static void Remove_Stun(World *world, int id, int source)
 {
-    printf("RemoveStun");
     Sol_Movement_ForceState(world, id, MOVE_IDLE);
 }
 
@@ -159,8 +158,6 @@ void Sol_Buff_Step(World *world, double dt, double time)
             continue;
 
         CompBuff *buff = &world->buffs[id];
-        if (id == 1)
-            sollog(buff->activeKindsMask);
         int write   = 0;
         int newmask = 0;
         for (int j = 0; j < buff->count; j++)

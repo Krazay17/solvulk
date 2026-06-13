@@ -16,8 +16,13 @@ typedef struct CompCombat
     float       hitPause, baseAnimRate;
 } CompCombat;
 
+typedef enum
+{
+    CHAINKIND_LIGHTNING,
+} ChainKind;
 typedef struct
 {
+    u8    kind;
     int   count, dealer, last;
     int   hitEnts[MAX_ENTS];
     float accum, delay;

@@ -276,6 +276,7 @@ typedef struct
     vec4s posB; // .xyz = world pos, .w = half-width
     vec4s colorA;
     vec4s colorB;
+    vec4s uv;
 } RibbonSegSSBO;
 
 #define MAX_RIBBON_SEGS_TOTAL (1 << 16)

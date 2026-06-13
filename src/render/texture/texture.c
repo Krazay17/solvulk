@@ -33,6 +33,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_BORDER]           = "Border.webp",
     [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
     [SOL_TEXTURE_SPIN_CARD]        = "TornadoCard.png",
+    [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

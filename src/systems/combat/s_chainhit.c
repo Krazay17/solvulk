@@ -2,6 +2,17 @@
 
 #define CHAIN_CAP 0xff
 
+typedef struct
+{
+    vec4s color;
+    u32   chainCount;
+    u8    fxKind;
+} ChainConfig;
+
+static const ChainConfig chain_config[] = {
+    [CHAINKIND_LIGHTNING] = {.color = {0.8f, 1.0f, 1.0f, 1.0f}, .chainCount = 10, .fxKind = FXKIND_CHAINLIGHTNING},
+};
+
 void Chain_Step(World *world, double dt, double time);
 int  Find_NextTarget(World *world, Chain *chain);
 
@@ -14,25 +25,22 @@ void Sol_Chainhit_Init(World *world)
     WAddStep(world)           = Chain_Step;
 }
 
-void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 count)
+void Sol_Chainhit_Trigger(World *world, int dealer, int target, ChainKind kind)
 {
     Sol_Event_Add(world,
                   (SolEvent){.kind = EVENTKIND_HIT, .as.hit.entA = dealer, .as.hit.entB = target, .as.hit.damage = 10});
     Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), (vec4s){0.7f, 1.0f, 0.0f, 1.0f},
                       0.2f);
 
-    if (count > 0)
-    {
-        Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
-        int idx = world->chainhit->count++;
-        memset(&world->chainhit->chains[idx], 0, sizeof(Chain));
-        world->chainhit->chains[idx].count           = count;
-        world->chainhit->chains[idx].dealer          = dealer;
-        world->chainhit->chains[idx].last            = target;
-        world->chainhit->chains[idx].hitEnts[target] = true;
-        world->chainhit->chains[idx].delay           = 0.1f;
-        world->chainhit->chains[idx].accum           = 0.1f;
-    }
+    Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
+    int idx = world->chainhit->count++;
+    memset(&world->chainhit->chains[idx], 0, sizeof(Chain));
+    world->chainhit->chains[idx].count           = chain_config[kind].chainCount;
+    world->chainhit->chains[idx].dealer          = dealer;
+    world->chainhit->chains[idx].last            = target;
+    world->chainhit->chains[idx].hitEnts[target] = true;
+    world->chainhit->chains[idx].delay           = 0.0666f;
+    world->chainhit->chains[idx].accum           = 0.0666f;
 }
 
 void Chain_Step(World *world, double dt, double time)
@@ -54,14 +62,13 @@ void Chain_Step(World *world, double dt, double time)
                                                 .as.hit.entA   = chain->dealer,
                                                 .as.hit.entB   = target,
                                                 .as.hit.damage = 10});
-
-                // Draw a visual ribbon from old target positions to the new target
-                Sol_Ribbon_AddBetweenEntities(world, chain->last, target, RIBBONKIND_TRAIL, 1.0f,
-                                              (vec4s){0.8f, 1.0f, 0.5f, 1.0f});
-                Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target),
-                                  (vec4s){0.8f, 1.0f, 0.5f, 1.0f}, 0.2f);
-
-                // Update tracker state data
+                Sol_Event_Add(world, (SolEvent){
+                                         .kind       = EVENTKIND_FX,
+                                         .as.fx.kind = chain_config[chain->kind].fxKind,
+                                         .as.fx.entA = chain->last,
+                                         .as.fx.entB = target,
+                                         .as.fx.pos = Sol_Xform_GetPos(world, target),
+                                     });
                 chain->hitEnts[target] = true;
                 chain->last            = target;
                 chain->count--;

@@ -43,8 +43,8 @@ static void Combat_Step(World *world, double dt, double time)
 
             bool canDamage = world->masks[e->as.hit.entB] & HAS_VITAL &&
                              Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
-                             !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN) ;
-                             //&& !Sol_Vital_GetDead(world, e->as.hit.entB);
+                             !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN);
+            bool targetDead = Sol_Vital_GetDead(world, e->as.hit.entB);
             if (canDamage)
             {
                 if (damage)
@@ -59,7 +59,7 @@ static void Combat_Step(World *world, double dt, double time)
                     }
 
                     u32 hitSoundId = hit_sounds[world->ekinds[e->as.hit.entB]];
-                    if (hitSoundId)
+                    if (hitSoundId && !targetDead)
                     {
                         Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.hit.entB), 0.2f, 0, 1);
                     }
@@ -67,14 +67,14 @@ static void Combat_Step(World *world, double dt, double time)
                 if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                     Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
 
-                if (effectMask & EFFECTMASK_HEALONHIT)
+                if (effectMask & EFFECTMASK_HEALONHIT && !targetDead)
                 {
                     Sol_Vital_Heal(world, e->as.hit.entA, e->as.hit.entA, 2);
                 }
 
                 if (effectMask & EFFECTMASK_CHAINLIGHTNING)
                 {
-                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, 10);
+                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, CHAINKIND_LIGHTNING);
                 }
                 float knockback         = 0;
                 float knockbackDuration = 0;

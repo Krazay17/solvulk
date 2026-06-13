@@ -18,7 +18,7 @@
 
 #define MAX_SINEWAVES 4
 
-#define MAX_PLAYING_SOUNDS 64
+#define MAX_PLAYING_SOUNDS 128
 
 static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_BEEP1]          = "Beep1.wav",
@@ -35,6 +35,8 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
     [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
     [SOL_AUDIO_PARRY]          = "Parry.mp3",
+    [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
+    [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
 };
 
 typedef struct

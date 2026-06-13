@@ -181,7 +181,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         {
             .vertResource      = "ID_SHADER_RIBBON_V",
             .fragResource      = "ID_SHADER_SPRITE_F",
-            .depthTest         = 1,
+            .depthTest         = 0,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_NONE,
@@ -1273,8 +1273,8 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id)
         .magFilter    = VK_FILTER_LINEAR,
         .minFilter    = VK_FILTER_LINEAR,
         .addressModeU = image_upload[id].Uwrap ? image_upload[id].Uwrap : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
     };
     vkCreateSampler(vkstate->device, &samplerInfo, NULL, &out->sampler);
 

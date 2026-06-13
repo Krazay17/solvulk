@@ -24,17 +24,13 @@ typedef struct SolEmitters
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *init);
 static void      Particle_Tick(World *world, double dt, double time);
-static void      Emitter_Tick(World *world, double dt, double time);
 static void      Sol_Emitter_Step(World *world, double dt, double time);
 
 void Sol_Emitter_Init(World *world)
 {
-    WAddStep(world)     = Sol_Emitter_Step;
-    WAddTick(world)     = Emitter_Tick;
-    WAdd3d(world)       = Sol_View_Particle_Draw;
-    world->emitters     = malloc(sizeof(SolEmitters));
     world->compEmitters = calloc(MAX_ENTS, sizeof(CompEmitter));
 
+    world->emitters                   = malloc(sizeof(SolEmitters));
     world->emitters->emitter_count    = 0;
     world->emitters->emitter_capacity = MAX_EMITTERS;
     world->emitters->emitter          = calloc(world->emitters->emitter_capacity, sizeof(Emitter));
@@ -42,6 +38,10 @@ void Sol_Emitter_Init(World *world)
     world->emitters->particle_count    = 0;
     world->emitters->particle_capacity = MAX_PARTICLES;
     world->emitters->particle          = calloc(world->emitters->particle_capacity, sizeof(Particle));
+
+    WAddStep(world) = Sol_Emitter_Step;
+    WAddTick(world) = Particle_Tick;
+    WAdd3d(world)   = Sol_View_Particle_Draw;
 }
 
 void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale)
@@ -61,11 +61,50 @@ void Sol_Emitter_Add(World *world, int id, EmitterKind kind, float scale)
     world->masks[id] |= HAS_EMITTER;
 }
 
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale)
+{
+    SolEmitters *s = world->emitters;
+    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+
+    Emitter *e = &s->emitter[s->emitter_count++];
+    *e         = emitter_kinds[kind];
+    e->pos     = pos;
+    e->particle.scale *= scale;
+    e->particle.offset *= scale;
+    e->particle.color = color;
+    for (int i = 0; i < e->burst; i++)
+        Particle_Activate(s, e);
+}
+
+void Sol_Emitter_SpawnEx(World *world, Emitter e)
+{
+    SolEmitters *s = world->emitters;
+    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+
+    Emitter *em = &s->emitter[s->emitter_count];
+    *em         = e;
+
+    if (em->particle.ttl == 0)
+        em->particle.ttl = 0.5f;
+    if (em->particle.scale == 0)
+        em->particle.scale = 0.5f;
+
+    for (int i = 0; i < em->burst; i++)
+    {
+        Particle *p = Particle_Activate(s, em);
+    }
+    if (e.rate > 0)
+        s->emitter_count++;
+}
+
 static void Sol_Emitter_Step(World *world, double dt, double time)
 {
+    if (!world->emitters)
+        return;
     float        fdt = (float)dt;
     SolEmitters *sys = world->emitters;
 
+    // Component pass
     int required = HAS_EMITTER;
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -73,7 +112,8 @@ static void Sol_Emitter_Step(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
         CompEmitter *emitterComp = &world->compEmitters[id];
-        int          write       = 0;
+
+        int write = 0;
         for (int b = 0; b < emitterComp->emitterCount; b++)
         {
             Emitter *e = &emitterComp->emitters[b];
@@ -107,52 +147,8 @@ static void Sol_Emitter_Step(World *world, double dt, double time)
         if (write == 0)
             world->masks[id] &= ~HAS_EMITTER;
     }
-}
 
-void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale)
-{
-    SolEmitters *s = world->emitters;
-    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
-    Emitter e         = emitter_kinds[kind];
-    e.pos             = pos;
-    e.particle.scale  = e.particle.scale * scale;
-    e.particle.offset = e.particle.offset * scale;
-    e.particle.color  = color;
-    for (int i = 0; i < e.burst; i++)
-        Particle_Activate(s, &e);
-    if (e.rate > 0)
-        s->emitter[s->emitter_count++] = e;
-}
-
-void Sol_Emitter_SpawnEx(World *world, Emitter e)
-{
-    SolEmitters *s = world->emitters;
-    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
-
-    Emitter *em = &s->emitter[s->emitter_count];
-    *em         = e;
-
-    if (em->particle.ttl == 0)
-        em->particle.ttl = 0.5f;
-    if (em->particle.scale == 0)
-        em->particle.scale = 0.5f;
-
-    for (int i = 0; i < em->burst; i++)
-    {
-        Particle *p = Particle_Activate(s, em);
-    }
-    if (e.rate > 0)
-        s->emitter_count++;
-}
-
-static void Emitter_Tick(World *world, double dt, double time)
-{
-    if (!world->emitters)
-        return;
-
-    float        fdt = (float)dt;
-    SolEmitters *sys = world->emitters;
-
+    // Loose Emitter pass
     int write = 0;
     for (int i = 0; i < sys->emitter_count; i++)
     {
@@ -189,16 +185,14 @@ static void Emitter_Tick(World *world, double dt, double time)
         sys->emitter[write++] = *e;
     }
     world->emitters->emitter_count = write;
-
-    Particle_Tick(world, dt, time);
 }
 
 static void Particle_Tick(World *world, double dt, double time)
 {
-    float        fdt   = (float)dt;
-    SolEmitters *s     = world->emitters;
-    int          write = 0;
+    float        fdt = (float)dt;
+    SolEmitters *s   = world->emitters;
 
+    int write = 0;
     for (int i = 0; i < s->particle_count; i++)
     {
         Particle *p = &s->particle[i];

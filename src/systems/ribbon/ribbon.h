@@ -9,13 +9,14 @@
 #include "sol/types.h"
 
 #define MAX_RIBBONS 512
-#define MAX_RIBBON_SEGS 32
+#define MAX_RIBBON_SEGS 24
 #define MAX_COMPRIBBONS 4
 
 typedef enum
 {
     RIBBONKIND_TRAIL,
     RIBBONKIND_LIGHTNING,
+    RIBBONKIND_INFBEAM,
     RIBBONKIND_COUNT,
 } RibbonKind;
 
@@ -29,18 +30,21 @@ typedef enum
 typedef struct Ribbon
 {
     vec3s points[MAX_RIBBON_SEGS]; // ring buffer of positions
-    float ages[MAX_RIBBON_SEGS];   // age of each segment in seconds
-    int   head;                    // newest point index
-    int   count;                   // active segment count (capped at MAX_RIBBON_SEGS)
+    u8    segments;
+    float ages[MAX_RIBBON_SEGS]; // age of each segment in seconds
+    int   head;                  // newest point index
+    int   count;                 // active segment count (capped at MAX_RIBBON_SEGS)
 
     float segLifetime; // how long each segment lives before fading out
     float rate;        // min distance between new points (0 = every frame)
     float accumulator; // distance accumulator since last point
+    float stretch;
 
     float width;
     float fadein;
     float fadeout;
     vec4s color;
+    vec2s uv, uvv;
 
     float ttl;      // ribbon lifetime; ignored if inf
     bool  inf;      // never expire the ribbon itself
@@ -67,3 +71,4 @@ void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec4s color);
 void Sol_Ribbon_Add(World *world, int id, RibbonKind kind, float width, vec4s color);
 void Sol_Ribbon_AddBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color);
 void Sol_Ribbon_AddToPosition(World *world, int entA, vec3s targetPos, RibbonKind kind, float width, vec4s color);
+void Sol_Ribbon_SpawnBetweenEntities(World *world, int entA, int entB, RibbonKind kind, float width, vec4s color);

@@ -12,6 +12,7 @@ struct RibbonSeg {
     vec4 posB; // .xyz = world pos, .w = half-width
     vec4 colorA;
     vec4 colorB;
+    vec4 uv;
 };
 
 layout(set = 0, binding = 0) uniform Scene {
@@ -39,9 +40,11 @@ void main()
     vec2 ndcA = clipA.xy / clipA.w;
     vec2 ndcB = clipB.xy / clipB.w;
 
-    vec2 dir  = normalize(ndcB - ndcA);
+    // Correct: work in aspect-corrected space, then convert perp back to NDC
+    vec2 dir  = normalize(vec2((ndcB.x - ndcA.x) * aspect, ndcB.y - ndcA.y));
     vec2 perp = vec2(-dir.y, dir.x);
-    perp.x   /= aspect; // correct for aspect ratio
+    perp.x   /= aspect;
+
 
     // 6 verts = 2 triangles, quad corners:
     // vtx 0,3 = A-perp   vtx 1 = A+perp
@@ -60,9 +63,31 @@ void main()
     base.xy += perp * s.x * halfW; 
     gl_Position = base;
 
-    fragTextureId = 13;
+    fragTextureId = 10;
     outColor = color;
 
-    vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);
-    outUV = vec2(1.0 - rawUV.y, rawUV.x);
+//    vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);
+//    outUV = vec2(1.0 - rawUV.y, rawUV.x);
+
+    // Reconstruct normalized raw quad UV space from vertex signatures:
+    // s.x matches -1.0 or +1.0 for cross-section edges. s.y is 0.0 (Start) or 1.0 (End)
+    //vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);
+
+    // Apply the panning translation vector (.xy offset + raw layout mapped by .zw tile weight)
+    //outUV = (rawUV * seg.uv.zw) + seg.uv.xy;
+
+    // Isolate the horizontal edge signature coordinate (cross section)
+    // s.x maps to -1.0 or +1.0 -> converts to 0.0 or 1.0 mapping across the width
+    float uCoord = s.x * 0.5 + 0.5;
+
+    // Pick the correct accumulated distance milestone depending on whether this vertex belongs to A or B
+    float vDistance = isB ? seg.uv.y : seg.uv.x;
+
+    // Optional: Scale vDistance by a texture repeat factor if you want it to wrap tightly
+    float textureTilingFactor = 1.0f; 
+    float vCoord = vDistance * textureTilingFactor;
+
+    // Apply the panning animations to the final output vector coordinates
+    // Adds your frame-by-frame time delta increments seamlessly
+    outUV = vec2(uCoord + seg.uv.z, vCoord + seg.uv.w);
 }

@@ -11,6 +11,7 @@ static void SpawnPlayer(int flags, void *data)
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
+    // Sol_Ribbon_AddToPosition(gameWorld, 1, (vec3s){0,0,0}, RIBBONKIND_INFBEAM, 0.33f, (vec4s){1,1,1,1});
 }
 
 struct MakeWiz

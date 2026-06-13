@@ -142,6 +142,13 @@ static void LocalTick(World *world, int id, double dt, double time)
         Sol_Xform_Teleport(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }
+
+    if (Sol_Input_KeyDown(SOL_KEY_5))
+    {
+        vec3s pos = Sol_Xform_GetPos(world, id);
+
+        Sol_Audio_PlayAt(SOL_AUDIO_WOODCOCK, pos, 1.0f, 0, 12);
+    }
 }
 
 static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)

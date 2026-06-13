@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 #ifdef IS_WINDOWS
     HINSTANCE hInstance = GetModuleHandle(NULL);
     int       nShowCmd  = SW_SHOWDEFAULT;
+    HICON     hIcon     = LoadIcon(hInstance, "MAINICON");
 #endif
 
     const char CLASS_NAME[] = "SolVulk";
@@ -54,6 +55,7 @@ int main(int argc, char *argv[])
     wc.hInstance            = hInstance;
     wc.lpszClassName        = CLASS_NAME;
     wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon                = hIcon;
     RegisterClass(&wc);
 
     g_hwnd = CreateWindowEx(0, CLASS_NAME, "Sol Vulkan", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT,

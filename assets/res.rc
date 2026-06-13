@@ -1,4 +1,5 @@
 //ID_NAME               TYPE            PATH
+MAINICON                ICON            "images/AuraIco.ico"
 FireParticle.png        RCDATA          "images/FireParticle.png"
 ShockParticle.png       RCDATA          "images/ShockParticle.png"
 CloudParticle.png       RCDATA          "images/CloudParticle.png"
@@ -16,6 +17,7 @@ SpikeFrameFilled.webp   RCDATA          "images/SpikeFrameFilled.webp"
 SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
 Cloud2.webp             RCDATA          "images/Cloud2.webp"
 Border.webp             RCDATA          "images/Border.webp"
+Lightning.webp          RCDATA          "images/LightningVert4.webp"
 
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
@@ -38,7 +40,9 @@ FireballImpact.mp3      RCDATA          "sounds/FireballImpact.mp3"
 PlayerHit.mp3           RCDATA          "sounds/PlayerHit.mp3"
 SwordHit.mp3            RCDATA          "sounds/SwordHit.mp3"
 HeavySword.mp3          RCDATA          "sounds/HeavySword.mp3"
-Parry.mp3          RCDATA          "sounds/Parry.mp3"
+Parry.mp3               RCDATA          "sounds/Parry.mp3"
+WoodCock.mp3            RCDATA          "sounds/WoodCock.mp3"
+LightningHit.mp3        RCDATA          "sounds/LightningHit.mp3"
 
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"

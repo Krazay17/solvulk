@@ -11,7 +11,9 @@ static void SpawnPlayer(int flags, void *data)
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
-    // Sol_Ribbon_AddToPosition(gameWorld, 1, (vec3s){0,0,0}, RIBBONKIND_INFBEAM, 0.33f, (vec4s){1,1,1,1});
+    // RibbonHandle handle = Sol_Ribbon_Add(gameWorld, 1, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
+    // Sol_Ribbon_UpdateTargetPos(gameWorld, handle, (vec3s){0, 25, 25});
+    // Sol_Ribbon_AddBetweenEntities(gameWorld, 1, 2, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
 }
 
 struct MakeWiz
@@ -223,7 +225,7 @@ void Create_Sol_Game()
     Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){920, 500, 0}, ABILITY_STATE_SPINSLASH, 3);
 
-    for (int i = 1; i < 6; i++)
+    for (int i = 1; i < 8; i++)
     {
         float yoffset = 70.0f * (float)i;
         for (int j = 0; j < 3; j++)

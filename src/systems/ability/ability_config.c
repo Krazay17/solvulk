@@ -149,6 +149,29 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                               EFFECTMASK_HEALONHIT,
                 .damage     = 30,
             },
+        [ABILITY_STATE_LASER][0] =
+            {
+                .name     = "Laser",
+                .cooldown = 1.0f,
+                .duration = 1.0f,
+                .damage   = 1,
+            },
+        [ABILITY_STATE_LASER][1] =
+            {
+                .name     = "Laser",
+                .cooldown = 1.0f,
+                .duration = 1.0f,
+                .damage   = 1,
+            },
+        [ABILITY_STATE_LASER][2] =
+            {
+                .name       = "Laser",
+                .cooldown   = 1.0f,
+                .duration   = 1.0f,
+                .damage     = 1,
+                .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_CHAINLIGHTNING,
+            },
+
         [ABILITY_STATE_FIREBALLVOLLEY][0] =
             {
                 .cooldown = 6.0f,

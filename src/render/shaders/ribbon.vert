@@ -13,6 +13,7 @@ struct RibbonSeg {
     vec4 colorA;
     vec4 colorB;
     vec4 uv;
+    uint textureId, _pad0, _pad1, _pad2;
 };
 
 layout(set = 0, binding = 0) uniform Scene {
@@ -63,7 +64,7 @@ void main()
     base.xy += perp * s.x * halfW; 
     gl_Position = base;
 
-    fragTextureId = 10;
+    fragTextureId = seg.textureId;
     outColor = color;
 
 //    vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);

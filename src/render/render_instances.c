@@ -10,7 +10,7 @@ SphereQueue   sphereQueue;
 SphereQueue   sphereFxQueue;
 FireballQueue fireballQueue;
 RibbonQueue   ribbonQueue;
-RibbonQueue   ribbonQueueDepth;
+RibbonQueue   ribbonQueueFront;
 
 QuadQueue healthQueue;
 QuadQueue spriteQueue0;
@@ -258,25 +258,31 @@ void Flush_Fonts2d()
 
 void Flush_Ribbons()
 {
-    if (ribbonQueue.count > 0)
-    {
-        RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
-        VkCommandBuffer cmd = Command_Buffer_Get();
+    if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0)
+        return;
+    RibbonSegSSBO  *gpu           = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+    VkCommandBuffer cmd           = Command_Buffer_Get();
+    u32             currentOffset = 0;
 
-        memcpy(gpu, ribbonQueue.instances, sizeof(RibbonSegSSBO) * ribbonQueue.count);
+    u32 regularCount = ribbonQueue.count;
+    if (regularCount > 0)
+    {
+        memcpy(gpu + currentOffset, ribbonQueue.instances, sizeof(RibbonSegSSBO) * regularCount);
         Bind_Pipeline(cmd, PIPE_RIBBON);
-        vkCmdDraw(cmd, 6, ribbonQueue.count, 0, 0);
+
+        vkCmdDraw(cmd, 6, regularCount, 0, currentOffset);
+        currentOffset += regularCount;
+
         ribbonQueue.count = 0;
     }
 
-    if (ribbonQueueDepth.count > 0)
+    u32 frontCount = ribbonQueueFront.count;
+    if (frontCount > 0)
     {
-        RibbonSegSSBO  *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
-        VkCommandBuffer cmd = Command_Buffer_Get();
-
-        memcpy(gpu, ribbonQueueDepth.instances, sizeof(RibbonSegSSBO) * ribbonQueueDepth.count);
-        Bind_Pipeline(cmd, PIPE_RIBBON_DEPTH);
-        vkCmdDraw(cmd, 6, ribbonQueueDepth.count, 0, 0);
-        ribbonQueueDepth.count = 0;
+        memcpy(gpu + currentOffset, ribbonQueueFront.instances, sizeof(RibbonSegSSBO) * frontCount);
+        Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
+        vkCmdDraw(cmd, 6, frontCount, 0, currentOffset);
+        currentOffset += frontCount;
+        ribbonQueueFront.count = 0;
     }
 }

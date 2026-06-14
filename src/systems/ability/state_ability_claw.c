@@ -8,7 +8,7 @@ void Claw_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    CompCombat *combat = &world->combats[id];
+    CompCombat  *combat  = &world->combats[id];
 
     combat->hitPause = fmaxf(0, combat->hitPause - dt * 5.0f);
     if (combat->hitPause > 0)
@@ -18,7 +18,6 @@ void Claw_State_Update(World *world, int id, float dt)
         Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_UPPER, combat->baseAnimRate);
         data->elapsed += dt;
     }
-
 
     if (data->elapsed >= data->duration)
     {
@@ -53,7 +52,7 @@ void Claw_State_Update(World *world, int id, float dt)
             if (dot < 0)
                 continue;
             if (combat->hitEnts[result.entId])
-                return;
+                continue;
             combat->hitEnts[result.entId] = true;
             Sol_Event_Add(world, (SolEvent){
                                      .kind              = EVENTKIND_HIT,
@@ -64,7 +63,7 @@ void Claw_State_Update(World *world, int id, float dt)
                                      .as.hit.entB       = result.entId,
                                      .as.hit.pos        = result.pos,
                                      .as.hit.vel        = controller->aimdir,
-                                     .as.hit.fxKind     = FXKIND_SWORD_HIT,
+                                     .as.hit.damageFx   = FXKIND_SWORD_HIT,
                                  });
             Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 1.0f));
             if (combat->hitPauseDiminish < 4)
@@ -87,11 +86,11 @@ void Claw_State_Enter(World *world, int id)
     combat->baseAnimRate     = animRate;
     combat->hitPause         = 0;
     combat->hitPauseDiminish = 0;
-    AnimDesc desc            = {.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
-                                .layerId = ANIM_LAYER_UPPER,
-                                .speed   = animRate,
+    AnimDesc desc            = {.anim     = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
+                                .layerId  = ANIM_LAYER_UPPER,
+                                .speed    = animRate,
                                 .playKind = ANIMPLAYKIND_ONESHOT,
-                                .blendIn = 0.05f};
+                                .blendIn  = 0.05f};
 
     Sol_Model_PlayAnim(world, id, desc);
     Sol_Event_Add(world, (SolEvent){
@@ -106,15 +105,14 @@ void Claw_State_Exit(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = Sol_GetGameTime();
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId=ANIM_LAYER_UPPER});
-
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    return data->elapsed >= data->duration * 0.8f;
+    return data->elapsed >= data->duration * 0.5f;
 }
 
 bool Claw_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)

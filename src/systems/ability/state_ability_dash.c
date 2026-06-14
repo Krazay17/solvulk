@@ -117,7 +117,7 @@ bool ADash_State_CanExit(World *world, int id, u32 next)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    return data->elapsed >= data->duration * 0.9f;
+    return data->elapsed >= data->duration * 0.5f;
 }
 
 bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)

@@ -178,7 +178,7 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
                  });
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
     Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, color, scale);
-    // Sol_Ribbon_Add(world, id, RIBBONKIND_TRAIL, 0.4f, (vec4s){1, 0, 0, 1});
+    Sol_Ribbon_Add(world, id, RIBBONKIND_BULLETTRAIL, 0.4f, (vec4s){1.0f, 0, 0, 1});
 
     return id;
 }
@@ -332,6 +332,9 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 ra
         break;
     case ABILITY_STATE_CLAW:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
+        break;
+    case ABILITY_STATE_LASER:
+        image->textureID = SOL_TEXTURE_BEAM;
         break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);

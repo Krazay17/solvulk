@@ -1,5 +1,6 @@
 #pragma once
 #include "sol/types.h"
+#include "ribbon/ribbon.h"
 
 #define MAX_MAPPED_SKILLS 10
 
@@ -35,7 +36,10 @@ typedef struct
     u32          damage;
     u32          buffs;
     u32          effects;
+
+    RibbonHandle ribbonHandle;
 } AbilityData;
+
 typedef struct
 {
     SolActions actionBit;

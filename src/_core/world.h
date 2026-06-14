@@ -129,10 +129,9 @@ typedef struct CompView2d       CompView2d;
 typedef struct CompProjectile   CompProjectile;
 typedef struct CompItem         CompItem;
 typedef struct CompTooltip      CompTooltip;
-typedef struct CompRibbon       CompRibbon;
 typedef struct ChainAttacks     ChainAttacks;
 
-typedef struct SolRibbons  SolRibbons;
+typedef struct SolRibbon   SolRibbon;
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
 typedef struct WorldPhysx  WorldPhysx;
@@ -189,10 +188,9 @@ typedef struct World
     CompProjectile   *projectiles;
     CompItem         *items;
     CompTooltip      *tooltips;
-    CompRibbon       *compRibbons;
 
+    SolRibbon    *ribbon;
     ChainAttacks *chainhit;
-    SolRibbons   *ribbons;
     SolEvents    *events;
     WorldPhysx   *spatial;
     WorldLines   *lines;

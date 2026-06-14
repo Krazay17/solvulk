@@ -47,7 +47,7 @@ void Sol_Vital_Add(World *world, int id, VitalKind kind)
 void Sol_Vital_Damage(World *world, int id, int attacker, u32 damage)
 {
     if (!(world->masks[id] & HAS_VITAL))
-        return;
+        return false;
     CompVital *vital = &world->vitals[id];
 
     if (damage >= vital->health)
@@ -57,6 +57,13 @@ void Sol_Vital_Damage(World *world, int id, int attacker, u32 damage)
             if (!Net_IsClient())
                 Sol_Event_Add(world,
                               (SolEvent){.kind = EVENTKIND_DEATH, .as.death.entA = attacker, .as.death.entB = id});
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind       = EVENTKIND_FX,
+                                     .as.fx.entA = attacker,
+                                     .as.fx.entB = id,
+                                     .as.fx.pos  = Sol_Xform_GetPos(world, id),
+                                     .as.fx.kind = FXKIND_TAKEDAMAGE,
+                                 });
             vital->deathTime = Sol_GetGameTime();
         }
         vital->health = 0;

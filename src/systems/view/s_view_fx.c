@@ -1,13 +1,17 @@
 #include "sol_core.h"
 
-void Fx_Event(World *world, double dt, double time);
+static const u32 hit_sounds[EKIND_COUNT] = {
+    [EKIND_PLAYER] = SOL_AUDIO_GOTHIT,
+};
 
-void Sol_View_Fx(World *world)
+static void Fx_Step(World *world, double dt, double time);
+
+void Sol_View_Fx(World *w)
 {
-    WAddStep(world) = Fx_Event;
+    WAddStep(w) = Fx_Step;
 }
 
-void Fx_Event(World *world, double dt, double time)
+static void Fx_Step(World *world, double dt, double time)
 {
     for (int i = 0; i < world->events->count; i++)
     {
@@ -20,17 +24,23 @@ void Fx_Event(World *world, double dt, double time)
 
         switch (e->as.fx.kind)
         {
+        case FXKIND_TAKEDAMAGE: {
+            u32 hitSoundId = hit_sounds[world->ekinds[e->as.fx.entB]];
+            if (hitSoundId)
+                Sol_Audio_PlayAt(hitSoundId, Sol_Xform_GetPos(world, e->as.fx.entB), 0.2f, 0, 1);
+        }
+        break;
         case FXKIND_CHAINLIGHTNING: {
-            Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, e->as.fx.pos, 1.0f, 0, 12);
+            Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, e->as.fx.pos, 1.0f, 0, 64);
             Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){0.8f, 1.0f, 1.0f, 1.0f}, 0.2f);
             Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 1.0f,
                                           (vec4s){.5f, .5f, 1.0f, 0.8f});
             Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 0.4f,
                                           (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
             Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
-            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.5f}, 0.66f);
             Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
-            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.5f}, 0.66f);
         }
         break;
         case FXKIND_SWORD_SWING: {

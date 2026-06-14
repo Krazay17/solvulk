@@ -85,22 +85,6 @@ typedef enum Shape2
 
 typedef enum
 {
-    FXKIND_NONE,
-    FXKIND_FIREBALL_SHOOT,
-    FXKIND_FIREBALL_HIT,
-    FXKIND_FIRE_APPLY,
-    FXKIND_SHIELD_BURST,
-    FXKIND_SHIELD_HIT,
-    FXKIND_SPINHIT,
-    FXKIND_BULLET_HIT,
-    FXKIND_CHAINLIGHTNING,
-    FXKIND_SWORD_HIT,
-    FXKIND_SWORD_SWING,
-    FXKIND_DEATH_BLOOD,
-} FxKind;
-
-typedef enum
-{
     ANIM_LAYER_BASE,  // full body, always active
     ANIM_LAYER_LOWER, // overrides legs
     ANIM_LAYER_UPPER, // overrides torso/arms
@@ -268,6 +252,7 @@ typedef enum
     SOL_TEXTURE_SWIRLFRAME,
     SOL_TEXTURE_CLOUD2,
     SOL_TEXTURE_BORDER,
+    SOL_TEXTURE_BEAM,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
 
@@ -310,4 +295,5 @@ typedef struct SolHit
     u32 buffMask;
     u32 effectMask;
     u32 fxKind;
+    u32 damageFx, noDamageFx;
 } SolHit;

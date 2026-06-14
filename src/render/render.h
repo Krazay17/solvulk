@@ -39,7 +39,7 @@ typedef enum
     PIPE_SPRITE_FRONT,
     PIPE_HEALTHBAR,
     PIPE_RIBBON,
-    PIPE_RIBBON_DEPTH,
+    PIPE_RIBBON_FRONT,
 
     PIPE_SKYBOX,
 
@@ -279,6 +279,7 @@ typedef struct
     vec4s colorA;
     vec4s colorB;
     vec4s uv;
+    u32   textureId, _pad0, _pad1, _pad2;
 } RibbonSegSSBO;
 
 #define MAX_RIBBON_SEGS_TOTAL (1 << 16)
@@ -290,7 +291,7 @@ typedef struct
 } RibbonQueue;
 
 extern RibbonQueue ribbonQueue;
-extern RibbonQueue ribbonQueueDepth;
+extern RibbonQueue ribbonQueueFront;
 
 static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 depth)
 {
@@ -301,9 +302,9 @@ static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 depth)
             return NULL;
         return &ribbonQueue.instances[ribbonQueue.count++];
     case 1:
-        if (ribbonQueueDepth.count >= MAX_RIBBON_SEGS_TOTAL)
+        if (ribbonQueueFront.count >= MAX_RIBBON_SEGS_TOTAL)
             return NULL;
-        return &ribbonQueueDepth.instances[ribbonQueueDepth.count++];
+        return &ribbonQueueFront.instances[ribbonQueueFront.count++];
     }
 }
 

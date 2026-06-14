@@ -46,7 +46,7 @@ static void Combat_Step(World *world, double dt, double time)
             {
                 if (damage)
                 {
-                    Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.buffMask, e->as.hit.entA);
+                    Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.entA, e->as.hit.buffMask);
 
                     Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
                     Sol_Event_Add(world, (SolEvent){
@@ -134,9 +134,7 @@ static void Combat_Step(World *world, double dt, double time)
 
             CompVital *vital = &world->vitals[e->as.death.entB];
             vital->deathTime = Sol_GetGameTime();
-
-            if (world->masks[e->as.death.entB] & HAS_BUFF)
-                memset(&world->buffs[e->as.death.entB], 0, sizeof(CompBuff));
+            world->masks[e->as.death.entB] &= ~HAS_BUFF;
 
             Sol_Event_Add(world, (SolEvent){.kind       = EVENTKIND_FX,
                                             .as.fx.kind = FXKIND_DEATH_BLOOD,

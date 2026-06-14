@@ -8,20 +8,6 @@ const CompModel model_kinds[SOL_MODEL_COUNT] = {
             .yawOffset = GLM_PI_2f,
         },
 };
-const AnimConfig anim_configs[ANIM_COUNT] = {
-    [ANIM_ATTACK_RIGHT] =
-        {
-            .blendIn  = 0.01f,
-            .blendOut = 0.1f,
-            .speed    = 3.0f,
-        },
-    [ANIM_DEATH] =
-        {
-            .blendIn  = 0.25f,
-            .blendOut = 0.1f,
-            .speed    = 0.5f,
-        },
-};
 
 SolModelMasks model_masks[SOL_MODEL_COUNT];
 
@@ -70,6 +56,7 @@ Anim: 25 LeftCharge
 Anim: 26 CrouchWalkFwd
 Anim: 27 Slide
 Anim: 28 Stunned
+Anim: 29 LeftChannel
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
     [MODELKIND_WIZARD] =
@@ -95,6 +82,8 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_DASH_BWD]         = 10,
             [ANIM_DASH_RIGHT]       = 11,
             [ANIM_CHARGE_LEFT]      = 25,
+            [ANIM_CHANNEL_LEFT]     = 29,
+            [ANIM_CHANNEL_RIGHT]    = 29,
             [ANIM_ATTACK_LEFT]      = 16,
             [ANIM_ATTACK_RIGHT]     = 15,
             [ANIM_SPINSLASH]        = 24,
@@ -117,6 +106,6 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_SLIDE_LEFT]       = 27,
             [ANIM_SLIDE_RIGHT]      = 27,
             [ANIM_DEATH]            = 23,
-            [ANIM_STUN] = 28,
+            [ANIM_STUN]             = 28,
         },
 };

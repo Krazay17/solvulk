@@ -58,12 +58,7 @@ void Shield_State_Enter(World *world, int id)
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
     CompCombat *combat = &world->combats[id];
     memset(combat->hitEnts, 0, sizeof(combat->hitEnts));
-    Buff *buff = Sol_Buff_Add(world, id, BUFFKIND_INVULN, id);
-    if (buff)
-    {
-        buff->duration = 1.0f;
-        buff->source   = id;
-    }
+    Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration, 0);
     vec3s pos = Sol_Xform_GetPos(world, id);
     Sol_Audio_PlayAt(SOL_AUDIO_WOONG, Sol_Controller_GetAimPos(world, id), 1.0f, 0.1f, 0);
     Sol_Event_Add(world, (SolEvent){

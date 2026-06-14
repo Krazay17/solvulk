@@ -1,14 +1,9 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct AnimConfig
-{
-    float blendIn, blendOut, speed;
-} AnimConfig;
-
 typedef struct AnimDesc
 {
-    u8          playKind;
+    u8          playKind, force;
     float       blendIn, blendOut, seek, speed;
     AnimLayerId layerId;
     u32         anim;
@@ -47,8 +42,6 @@ typedef struct CompModel
     bool         hasAnim, is2d;
     float        xOffset, yOffset, yawOffset;
 } CompModel;
-
-extern const AnimConfig anim_configs[ANIM_COUNT];
 
 u32  Sol_Model_GetTriCount(SolModelKind handle);
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);

@@ -28,18 +28,14 @@ void Laser_State_Update(World *world, int id, float dt)
         .ignoreEnt = id,
         .pos       = controller->aimpos,
     };
-    SolRayResult lengthResult = Sol_RaycastD(world, lengthCheck, 0.5f);
+    SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
 
-    if (data->stage > 0)
-        Sol_Ribbon_UpdateTargetPos(world, data->ribbonHandle, lengthResult.pos);
     if (Sol_Physx_GetVel(world, id).y < 0.0f)
         Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 0.0f));
 
     switch (data->stage)
     {
     case 0:
-        data->ribbonHandle = Sol_Ribbon_AddWithTarget(world, id, RIBBONKIND_LASER, lengthResult.pos, 1.0f,
-                                                      (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
         data->stage++;
         break;
     case 1:
@@ -98,18 +94,13 @@ void Laser_State_Enter(World *world, int id)
     combat->hitPause         = 0;
     combat->hitPauseDiminish = 0;
 
-    AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
+    AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_CHANNEL_RIGHT : ANIM_CHANNEL_LEFT,
                      .layerId  = ANIM_LAYER_UPPER,
                      .speed    = animRate,
-                     .playKind = ANIMPLAYKIND_ONESHOT,
-                     .blendIn  = 0.05f};
+                     .playKind = ANIMPLAYKIND_LOOP,
+                     .blendIn  = 0.1f};
 
     Sol_Model_PlayAnim(world, id, desc);
-    Sol_Event_Add(world, (SolEvent){
-                             .kind       = EVENTKIND_FX,
-                             .as.fx.kind = FXKIND_SWORD_SWING,
-                             .as.fx.pos  = Sol_Controller_GetAimPos(world, id),
-                         });
 }
 
 void Laser_State_Exit(World *world, int id)
@@ -118,7 +109,6 @@ void Laser_State_Exit(World *world, int id)
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = Sol_GetGameTime();
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
-    Sol_Ribbon_Kill(world, data->ribbonHandle);
 }
 
 bool Laser_State_CanExit(World *world, int id, u32 next)

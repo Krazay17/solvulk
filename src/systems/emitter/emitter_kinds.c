@@ -1,16 +1,30 @@
 #include "emitter.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
+    [EMITTERKIND_POP_FIRE] =
+        {
+            .burst = 10,
+            .particle =
+                {
+                    .kind     = PARTICLE_FIRE,
+                    .ttl      = 1.0f,
+                    .color    = {.85f, 0.07f, 0.05f, 0.7f},
+                    .scale    = 1.0f,
+                    .speed    = 1.0f,
+                    .scalein  = .2f,
+                    .scaleout = .2f,
+                },
+        },
     [EMITTERKIND_SINGLE_SPARK] =
         {
             .burst = 1,
             .particle =
                 {
-                    .kind         = PARTICLE_SHOCK,
-                    .ttl          = 0.2f,
-                    .scale        = 1.0f,
-                    .scaleout     = 0.9f,
-                    .color        = {1.0f, 1.0f, 1.0f, .88f},
+                    .kind     = PARTICLE_SHOCK,
+                    .ttl      = 0.2f,
+                    .scale    = 1.0f,
+                    .scaleout = 0.9f,
+                    .color    = {1.0f, 1.0f, 1.0f, .88f},
                 },
         },
     [EMITTERKIND_FLASH_BALL] =

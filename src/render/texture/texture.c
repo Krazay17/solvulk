@@ -35,6 +35,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_SPIN_CARD]        = "TornadoCard.png",
     [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
     [SOL_TEXTURE_BEAM]             = "Beam.webp",
+    [SOL_TEXTURE_IMPACT]           = "Impact.webp",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

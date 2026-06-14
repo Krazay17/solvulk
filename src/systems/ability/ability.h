@@ -3,6 +3,7 @@
 #include "ribbon/ribbon.h"
 
 #define MAX_MAPPED_SKILLS 10
+#define MAX_ABILITY_RIBBONS 4
 
 typedef struct CompItem CompItem;
 
@@ -36,8 +37,6 @@ typedef struct
     u32          damage;
     u32          buffs;
     u32          effects;
-
-    RibbonHandle ribbonHandle;
 } AbilityData;
 
 typedef struct
@@ -94,7 +93,6 @@ extern AbilityConfig ability_config[ABILITY_STATE_COUNT][4];
 
 void Sol_Ability_Init(World *world);
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc);
-void Sol_Ability_Step(World *world, double dt, double time);
 
 bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
 AbilityState Sol_Ability_GetState(World *world, int id);

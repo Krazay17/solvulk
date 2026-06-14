@@ -13,7 +13,7 @@ void Stun_State_Enter(World *world, int id)
 {
     Sol_Model_PlayAnim(
         world, id,
-        (AnimDesc){.anim = ANIM_STUN, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f});
+        (AnimDesc){.anim = ANIM_STUN, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .force = 1});
 }
 void Stun_State_Exit(World *world, int id)
 {

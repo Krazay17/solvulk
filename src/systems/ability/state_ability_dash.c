@@ -31,7 +31,7 @@ void ADash_State_Update(World *world, int id, float dt)
         vec3s pos                 = Sol_Xform_GetPos(world, id);
         pos                       = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
         SolRayResult results[256] = {0};
-        int          hits         = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, HITRADIUS, results, 256);
+        int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, HITRADIUS, results, 256);
         for (int i = 0; i < hits; i++)
         {
             CompCombat *combat = &world->combats[id];
@@ -40,7 +40,7 @@ void ADash_State_Update(World *world, int id, float dt)
             if (combat->hitEnts[results[i].entId])
                 continue;
             combat->hitEnts[results[i].entId] = true;
-            
+
             Sol_Event_Add(world, (SolEvent){
                                      .kind              = EVENTKIND_HIT,
                                      .as.hit.entA       = id,
@@ -62,9 +62,7 @@ void ADash_State_Enter(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
-    Buff *buff = Sol_Buff_Add(world, id, BUFFKIND_INVULN, id);
-    if (buff)
-        buff->duration = data->duration * 0.5f;
+    Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration * 0.5f, 0);
     Sol_Combat_ClearHits(world, id);
 
     data->enterDir = Sol_Vec3_FromYawPitch(Sol_GetYaw(world, id), 0);
@@ -74,11 +72,11 @@ void ADash_State_Enter(World *world, int id)
     data->enterDir   = glms_vec3_normalize(data->enterDir);
 
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_OVERRIDE,
-                     .seek    = 0.05f,
-                     .speed   = 1.6f - data->duration,
+    AnimDesc desc = {.layerId  = ANIM_LAYER_OVERRIDE,
+                     .seek     = 0.05f,
+                     .speed    = 1.6f - data->duration,
                      .playKind = ANIMPLAYKIND_ONESHOT,
-                     .blendIn = 0.05f};
+                     .blendIn  = 0.05f};
 
     switch (Sol_GetStrafedir(data->enterDir.x, data->enterDir.z, rot.x, rot.z))
     {

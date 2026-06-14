@@ -19,6 +19,7 @@ Cloud2.webp             RCDATA          "images/Cloud2.webp"
 Border.webp             RCDATA          "images/Border.webp"
 Lightning.webp          RCDATA          "images/LightningVert4.webp"
 Beam.webp               RCDATA          "images/Beam.webp"
+Impact.webp               RCDATA          "images/Impact.webp"
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"

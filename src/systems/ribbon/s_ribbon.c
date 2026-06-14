@@ -10,6 +10,33 @@
 #define INIT_CAPACITY 2048
 #define INVALID_INDEX 0xFFFFFFFF
 
+typedef enum
+{
+    RIBBONATTACH_TRAIL,
+    RIBBONATTACH_ENT_TO_ENT,
+    RIBBONATTACH_ENT_TO_POS,
+    RIBBONATTACH_POS_TO_POS,
+} RibbonAttachMode;
+
+typedef struct Ribbon
+{
+    RibbonHandle     handle; // Back-pointer to self-identity slot
+    RibbonKind       kind;
+    RibbonAttachMode attachMode;
+
+    vec3s points[MAX_RIBBON_SEGS];
+    float ages[MAX_RIBBON_SEGS];
+    int   head, count, segments;
+
+    float ttl, segLifetime, rate, accumulator, width, stretch;
+    vec2s uv, uvv;
+    vec4s color;
+
+    u8    inf;
+    u32   followId, targetId, textureId;
+    vec3s targetPos;
+} Ribbon;
+
 typedef struct RibbonSlot
 {
     u32 dense_idx;  // Maps directly to the item's index in the dense array
@@ -43,9 +70,12 @@ typedef struct
     float            width; // Overwrite default if > 0
 } RibbonDesc;
 
+Ribbon             *Ribbon_Get(World *world, RibbonHandle handle);
 static RibbonHandle Ribbon_Make(World *world, RibbonDesc desc);
 static void         Ribbon_Step(World *world, double dt, double time);
 static void         Ribbon_Draw(World *world, double dt, double time);
+static u32          Slot_Alloc(SolRibbon *s);
+static void         Slot_Free(SolRibbon *s, u32 slot_index);
 static void         Ribbon_AppendPoint(Ribbon *r, vec3s pos);
 static void         Ribbon_Update_One(Ribbon *r, float fdt);
 static void         Ribbon_Update_Trail(World *world, Ribbon *r, double dt, double time);
@@ -101,12 +131,12 @@ static const RibbonConfig ribbon_config[RIBBONKIND_COUNT] = {
     [RIBBONKIND_LASER] =
         {
             .inf         = 1,
-            .width       = 0.08f,
+            .width       = 0.5f,
             .segLifetime = 9999.f,
             .segments    = 2,
             .stretch     = 4.0f,
             .color       = {1, 0.2f, 0.2f, 1},
-            .attachMode  = RIBBONATTACH_ENT_TO_POS,
+            .attachMode  = RIBBONATTACH_POS_TO_POS,
             .textureId   = SOL_TEXTURE_BEAM,
 
             .step = Ribbon_Update_Beam,
@@ -148,81 +178,38 @@ void Sol_Ribbon_Init(World *world)
     WAdd3d(world)   = Ribbon_Draw;
 }
 
-// --- Gameplay Modifiers ---
 void Sol_Ribbon_UpdateTargetPos(World *world, RibbonHandle handle, vec3s newTargetPos)
 {
-    Ribbon *r = Sol_Ribbon_Get(world, handle);
+    Ribbon *r = Ribbon_Get(world, handle);
     if (r)
         r->targetPos = newTargetPos;
 }
 
-// --- Internal Slot Allocator ---
-static u32 Slot_Alloc(SolRibbon *s)
+void Sol_Ribbon_UpdatePositions(World *world, RibbonHandle handle, vec3s startPos, vec3s endPos)
 {
-    if (s->free_count > 0)
-    {
-        return s->free_list[--s->free_count];
-    }
+    Ribbon *r = Ribbon_Get(world, handle);
+    if (!r)
+        return;
 
-    if (s->slot_count >= s->slot_capacity)
-    {
-        u32 old_cap = s->slot_capacity;
-        u32 new_cap = old_cap * 2;
-
-        s->slots     = realloc(s->slots, new_cap * sizeof(RibbonSlot));
-        s->free_list = realloc(s->free_list, new_cap * sizeof(u32));
-
-        // Zero out the newly opened slots memory completely
-        memset(&s->slots[old_cap], 0, (new_cap - old_cap) * sizeof(RibbonSlot));
-
-        // Seed generations to start cleanly at 1
-        for (u32 i = old_cap; i < new_cap; i++)
-        {
-            s->slots[i].generation = 1;
-        }
-        s->slot_capacity = new_cap;
-    }
-
-    return s->slot_count++;
-}
-
-// --- Internal Handle Destroyer ---
-static void Slot_Free(SolRibbon *s, u32 slot_index)
-{
-    s->slots[slot_index].generation++; // Automatically kills all existing handles
-    s->slots[slot_index].dense_idx = INVALID_INDEX;
-    s->free_list[s->free_count++]  = slot_index;
-}
-
-// --- O(1) Handle Lookups ---
-Ribbon *Sol_Ribbon_Get(World *world, RibbonHandle handle)
-{
-    SolRibbon *s = world->ribbon;
-    if (!s || handle.index >= s->slot_count)
-        return NULL;
-
-    RibbonSlot *slot = &s->slots[handle.index];
-    if (slot->generation != handle.generation)
-        return NULL; // Stale handle / dead element
-
-    return &s->ribbons[slot->dense_idx];
+    // Explicitly override both points
+    r->points[0] = startPos; // Head anchor
+    r->targetPos = endPos;   // Tail anchor
 }
 
 bool Sol_Ribbon_IsAlive(World *world, RibbonHandle handle)
 {
-    return Sol_Ribbon_Get(world, handle) != NULL;
+    return Ribbon_Get(world, handle) != NULL;
 }
 
 void Sol_Ribbon_Kill(World *world, RibbonHandle handle)
 {
-    Ribbon *r = Sol_Ribbon_Get(world, handle);
+    Ribbon *r = Ribbon_Get(world, handle);
     if (!r)
         return;
     r->inf = 0;
     r->ttl = 0; // Automatically collected during next Ribbon_Step pass
 }
 
-// --- Internal: raw allocation, returns direct pointer ---
 static RibbonHandle Ribbon_Make(World *world, RibbonDesc desc)
 {
     SolRibbon *s = world->ribbon;
@@ -242,12 +229,13 @@ static RibbonHandle Ribbon_Make(World *world, RibbonDesc desc)
     Ribbon             *r   = &s->ribbons[dense_idx];
 
     *r = (Ribbon){
-        .handle      = (RibbonHandle){.index = slot_idx, .generation = s->slots[slot_idx].generation},
-        .kind        = desc.kind,
-        .attachMode  = desc.attachMode,
+        .handle     = (RibbonHandle){.index = slot_idx, .generation = s->slots[slot_idx].generation},
+        .kind       = desc.kind,
+        .attachMode = desc.attachMode,
+
+        .targetPos   = desc.targetPos,
         .followId    = desc.followId,
         .targetId    = desc.targetId,
-        .targetPos   = desc.targetPos,
         .width       = desc.width > 0.0f ? desc.width : cfg->width,
         .color       = desc.color.a > 0.0f ? desc.color : cfg->color,
         .textureId   = cfg->textureId,
@@ -259,26 +247,20 @@ static RibbonHandle Ribbon_Make(World *world, RibbonDesc desc)
         .stretch     = cfg->stretch,
     };
 
-    // Pre-warm configurations depending on type to maintain unified call paths
-    if (r->attachMode == RIBBONATTACH_ENT_TO_ENT || r->attachMode == RIBBONATTACH_ENT_TO_POS)
+    if (r->attachMode != RIBBONATTACH_TRAIL)
     {
         r->count = r->segments;
     }
-    else if (r->followId)
-    {
-        Ribbon_AppendPoint(r, desc.pos);
-    }
-    else
-    {
-        Ribbon_AppendPoint(r, desc.pos);
-    }
+    Ribbon_AppendPoint(r, desc.pos);
+    if (r->attachMode == RIBBONATTACH_POS_TO_POS)
+        Ribbon_AppendPoint(r, desc.targetPos);
 
     return r->handle;
 }
 
 // --- Public API ---
 
-RibbonHandle Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec3s posB, vec4s color)
+RibbonHandle Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec3s posB, vec4s color, float width)
 {
     RibbonDesc desc = {
         .kind       = kind,
@@ -286,6 +268,7 @@ RibbonHandle Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s pos, vec3s po
         .pos        = pos,
         .targetPos  = posB,
         .color      = color,
+        .width      = width,
     };
     return Ribbon_Make(world, desc);
 }
@@ -331,7 +314,61 @@ RibbonHandle Sol_Ribbon_AddBetweenEntities(World *world, int entA, int entB, Rib
     return Ribbon_Make(world, desc);
 }
 
-// --- Core Stream Step Loops ---
+// PRIVATE
+
+static u32 Slot_Alloc(SolRibbon *s)
+{
+    if (s->free_count > 0)
+    {
+        return s->free_list[--s->free_count];
+    }
+
+    if (s->slot_count >= s->slot_capacity)
+    {
+        u32 old_cap = s->slot_capacity;
+        u32 new_cap = old_cap * 2;
+
+        s->slots     = realloc(s->slots, new_cap * sizeof(RibbonSlot));
+        s->free_list = realloc(s->free_list, new_cap * sizeof(u32));
+
+        // Zero out the newly opened slots memory completely
+        memset(&s->slots[old_cap], 0, (new_cap - old_cap) * sizeof(RibbonSlot));
+
+        // Seed generations to start cleanly at 1
+        for (u32 i = old_cap; i < new_cap; i++)
+        {
+            s->slots[i].generation = 1;
+        }
+        s->slot_capacity = new_cap;
+    }
+
+    return s->slot_count++;
+}
+
+// --- Internal Handle Destroyer ---
+static void Slot_Free(SolRibbon *s, u32 slot_index)
+{
+    s->slots[slot_index].generation++; // Automatically kills all existing handles
+    s->slots[slot_index].dense_idx = INVALID_INDEX;
+    s->free_list[s->free_count++]  = slot_index;
+}
+
+// --- O(1) Handle Lookups ---
+Ribbon *Ribbon_Get(World *world, RibbonHandle handle)
+{
+    SolRibbon *s = world->ribbon;
+    if (!s || handle.index >= s->slot_count)
+        return NULL;
+
+    RibbonSlot *slot = &s->slots[handle.index];
+    if (slot->generation != handle.generation)
+        return NULL; // Stale handle / dead element
+
+    return &s->ribbons[slot->dense_idx];
+}
+
+// STEP
+
 static void Ribbon_Step(World *world, double dt, double time)
 {
     SolRibbon *s = world->ribbon;
@@ -382,20 +419,51 @@ static void Ribbon_Step(World *world, double dt, double time)
     s->ribbon_count = write_idx;
 }
 
-static void Ribbon_Draw(World *world, double dt, double time)
+static void Ribbon_Update_Trail(World *world, Ribbon *r, double dt, double time)
 {
-    SolRibbon *s = world->ribbon;
-    if (!s)
-        return;
+    float fdt = (float)dt;
+    vec3s pos = Sol_Xform_GetDrawXform(world, r->followId).pos;
 
-    // Blistering fast hardware iteration path. Zero checks, zero branch misses.
-    for (u32 i = 0; i < s->ribbon_count; i++)
+    r->accumulator += vecDist(pos, r->points[r->head]);
+    if (r->rate == 0 || r->accumulator >= r->rate)
     {
-        ribbon_config[s->ribbons[i].kind].draw(world, &s->ribbons[i], dt, time);
+        Ribbon_AppendPoint(r, pos);
+        r->accumulator = 0;
     }
+    Ribbon_Update_One(r, fdt);
 }
 
-// --- Mathematical Layout Update Mechanics ---
+static void Ribbon_Update_Beam(World *world, Ribbon *r, double dt, double time)
+{
+    vec3s startPos;
+    vec3s endPos = r->targetPos;
+
+    // Resolve where the beam starts
+    if (r->attachMode == RIBBONATTACH_POS_TO_POS)
+    {
+        startPos = r->points[0]; // Passed explicitly by the ability script on tick
+    }
+    else
+    {
+        if (!r->followId)
+            return;
+        startPos = Sol_Xform_GetDrawXform(world, r->followId).pos;
+
+        if (r->attachMode == RIBBONATTACH_ENT_TO_ENT && r->targetId > 0)
+            endPos = Sol_Xform_GetPos(world, r->targetId);
+    }
+
+    r->head  = r->segments - 1;
+    r->count = r->segments;
+
+    // Linearly spread the points across the segment space
+    for (int i = 0; i < r->segments; i++)
+    {
+        float t      = (float)i / (float)(r->segments - 1);
+        r->points[i] = glms_vec3_lerp(startPos, endPos, t);
+        r->ages[i]   = 0.0f;
+    }
+}
 
 static void Ribbon_AppendPoint(Ribbon *r, vec3s pos)
 {
@@ -419,43 +487,20 @@ static void Ribbon_Update_One(Ribbon *r, float fdt)
     r->count = live < r->count ? live + 1 : r->count;
 }
 
-static void Ribbon_Update_Trail(World *world, Ribbon *r, double dt, double time)
-{
-    float fdt = (float)dt;
-    vec3s pos = Sol_Xform_GetDrawXform(world, r->followId).pos;
+// DRAW
 
-    r->accumulator += vecDist(pos, r->points[r->head]);
-    if (r->rate == 0 || r->accumulator >= r->rate)
-    {
-        Ribbon_AppendPoint(r, pos);
-        r->accumulator = 0;
-    }
-    Ribbon_Update_One(r, fdt);
-}
-
-static void Ribbon_Update_Beam(World *world, Ribbon *r, double dt, double time)
+static void Ribbon_Draw(World *world, double dt, double time)
 {
-    if (!r->followId)
+    SolRibbon *s = world->ribbon;
+    if (!s)
         return;
 
-    vec3s startPos = Sol_Xform_GetDrawXform(world, r->followId).pos;
-    vec3s endPos   = r->targetPos;
-
-    if (r->attachMode == RIBBONATTACH_ENT_TO_ENT && r->targetId > 0)
-        endPos = Sol_Xform_GetPos(world, r->targetId);
-
-    r->head  = r->segments - 1;
-    r->count = r->segments;
-
-    for (int i = 0; i < r->segments; i++)
+    // Blistering fast hardware iteration path. Zero checks, zero branch misses.
+    for (u32 i = 0; i < s->ribbon_count; i++)
     {
-        float t      = (float)i / (float)(r->segments - 1);
-        r->points[i] = glms_vec3_lerp(startPos, endPos, t);
-        r->ages[i]   = 0.0f;
+        ribbon_config[s->ribbons[i].kind].draw(world, &s->ribbons[i], dt, time);
     }
 }
-
-// --- Graphical Draw Systems ---
 
 static void Ribbon_Draw_Lightning(World *world, Ribbon *r, double dt, double time)
 {

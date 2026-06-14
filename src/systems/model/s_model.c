@@ -166,17 +166,16 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
-    AnimLayerId layerId = desc.layerId;
-    AnimId      animId  = desc.anim;
-    bool       oneShot   = desc.playKind == ANIMPLAYKIND_ONESHOT;
-    float      seek      = desc.seek;
-    float      speed     = desc.speed ? desc.speed : 1.0f;
     CompModel *modelComp = &world->models[id];
-    AnimLayer *layer     = &modelComp->layers[layerId];
-    AnimConfig config    = anim_configs[desc.anim];
-    float      blendIn   = config.blendIn ? config.blendIn : 0.25f;
-    float      blendOut  = config.blendOut ? config.blendOut : 0.25f;
-    if (layer->animId == animId && !oneShot)
+    AnimLayer *layer     = &modelComp->layers[desc.layerId];
+
+    AnimId animId   = desc.anim;
+    bool   force    = desc.playKind == ANIMPLAYKIND_ONESHOT || desc.force;
+    float  seek     = desc.seek;
+    float  speed    = desc.speed ? desc.speed : 1.0f;
+    float  blendIn  = desc.blendIn ? desc.blendIn : 0.25f;
+    float  blendOut = desc.blendOut ? desc.blendOut : 0.25f;
+    if (layer->animId == animId && !force)
         return;
     if (animId < 1)
     {

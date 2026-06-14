@@ -140,10 +140,6 @@ void Net_Send_Snap(World *world)
             e->health = world->vitals[id].health;
             e->energy = world->vitals[id].energy;
         }
-        if (world->masks[id] & HAS_BUFF)
-        {
-            e->buffMask = world->buffs[id].activeKindsMask;
-        }
     }
     snap.eCount = count; // ← outside the loop
 
@@ -390,7 +386,8 @@ void Net_Apply_Events(World *world, EventSnap *snap)
 
 static void Sync_Buffs(World *world, int id, u32 serverMask)
 {
-    u32 clientMask = world->buffs[id].activeKindsMask;
+
+    u32 clientMask = Sol_Buff_GetMask(world, id);
 
     if (clientMask != serverMask)
     {
@@ -405,7 +402,7 @@ static void Sync_Buffs(World *world, int id, u32 serverMask)
                 if (serverMask & bit)
                 {
                     // Server has it, client doesn't -> Force Add (triggers onApply)
-                    Sol_Buff_Add(world, id, (BuffKind)b, 0);
+                    Sol_Buff_Add(world, id, 0, (BuffKind)b);
                 }
                 else
                 {
@@ -414,8 +411,5 @@ static void Sync_Buffs(World *world, int id, u32 serverMask)
                 }
             }
         }
-
-        // Ensure our internal tracking mask strictly reflects the server's state
-        world->buffs[id].activeKindsMask = serverMask;
     }
 }

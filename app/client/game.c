@@ -45,26 +45,6 @@ void MakeABox(int flags, void *data)
     // Sol_Prefab_Box(world, pos);
 }
 
-void MakeAEmitter(int flags, void *data)
-{
-    World *world = (World *)data;
-    vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
-    Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_FIREBALL_HIT, .as.fx.pos = pos});
-    Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 100,
-                                         .rate     = 0.1f,
-                                         .pos      = pos,
-                                         .inf      = 1,
-                                         .particle = {
-                                             .speed     = 5.0f,
-                                             .ttl       = 5.0f,
-                                             .randScale = 1,
-                                             .kind      = PARTICLE_SHOCK,
-                                             .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
-                                             .rotspeed  = 3.0f,
-                                             .scalein   = 0.2f,
-                                         }});
-}
-
 void ClearEnts(int flags, void *data)
 {
     World *world = (World *)data;
@@ -275,9 +255,8 @@ void Create_Sol_Game()
     Sol_Interact_Set(menu, boxButton,
                      (CompInteract){.onClick = (Callback){.callbackFunc = MakeABox, .callbackData = gameWorld}});
 
-    int emitterButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "MakeAEmitter");
-    Sol_Interact_Set(menu, emitterButton,
-                     (CompInteract){.onHold = (Callback){.callbackFunc = MakeAEmitter, .callbackData = gameWorld}});
+    int testButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "Test");
+    Sol_Interact_Add(menu, testButton);
 
     int hostButton = Sol_Prefab_Button(menu, (vec3s){1130, 150, 0}, "Host");
     Sol_Interact_Set(menu, hostButton, (CompInteract){.onClick = (Callback){.callbackFunc = HostGame}});
@@ -295,8 +274,4 @@ void Create_Sol_Game()
     int world1Button = Sol_Prefab_Button(menu, (vec3s){1130, 500, 0}, "World1");
     Sol_Interact_Set(menu, world1Button,
                      (CompInteract){.onClick = (Callback){.callbackFunc = ChangeWorld, .callbackData = gameWorld}});
-
-    // int world2Button = Sol_Prefab_Button(menu, (vec3s){1130, 550, 0}, "World2");
-    // Sol_Interact_Set(menu, world2Button,
-    //                  (InteractDesc){.onClick = (Callback){.callbackFunc = Disconnect, .callbackData = gameWorld2}});
 }

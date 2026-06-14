@@ -4,10 +4,17 @@
 
 #define MAPPING_COUNT(maps) (sizeof(maps) / sizeof(AbilityMapping))
 
+static void Ability_Step(World *world, double dt, double time);
+static void Ability_Draw(World *world, double dt, double time);
+static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width);
+static void Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time);
+static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time);
+
 void Sol_Ability_Init(World *world)
 {
-    world->stepSystems[world->stepCount++] = Sol_Ability_Step;
-    world->abilities                       = calloc(MAX_ENTS, sizeof(CompAbility));
+    world->abilities = calloc(MAX_ENTS, sizeof(CompAbility));
+    WAddStep(world)  = Ability_Step;
+    WAdd3d(world)    = Ability_Draw;
 
     Ability_Scripts_Init();
 }
@@ -27,61 +34,6 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 
     world->masks[id] |= HAS_ABILITY;
     world->abilities[id] = a;
-}
-
-void Sol_Ability_Step(World *world, double dt, double time)
-{
-    int required = HAS_ACTIVE | HAS_ABILITY;
-    int count    = world->activeCount;
-    for (int i = 0; i < count; i++)
-    {
-        int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
-            continue;
-        if (Sol_Vital_GetDead(world, id))
-        {
-            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
-            continue;
-        }
-        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
-            continue;
-        if (world->replications[id].auth == NETAUTH_REMOTE)
-            continue;
-
-        CompAbility *ability = &world->abilities[id];
-        SolActions   actions = world->controllers[id].actionState;
-
-        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
-        {
-            if (ability->bindings[m].dirtyApply)
-            {
-                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
-                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs,
-                                 ability->bindings[m].pendingBonusEffects);
-                ability->bindings[m].dirtyApply = false;
-            }
-        }
-        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
-        {
-            SkillBinding *b = &ability->bindings[m];
-
-            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
-                continue;
-
-            bool pressed               = (actions & b->actionBit) != 0;
-            ability->stateData[m].held = pressed;
-
-            if (pressed && ability->activeSlot != m)
-            {
-                Sol_Ability_SetState(world, id, b->boundState, m, false);
-            }
-        }
-
-        if (ability->state != ABILITY_STATE_IDLE)
-        {
-            ability_state_func[ability->state].update(world, id, dt);
-        }
-    }
 }
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force)
@@ -165,4 +117,184 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u
 const char *Sol_Ability_GetNameString(u32 ability)
 {
     return ability_config[ability]->name;
+}
+
+// PRIVATE
+
+static void Ability_Step(World *world, double dt, double time)
+{
+    int required = HAS_ACTIVE | HAS_ABILITY;
+    int count    = world->activeCount;
+    for (int i = 0; i < count; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+        if (Sol_Vital_GetDead(world, id))
+        {
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
+            continue;
+        }
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
+            continue;
+        if (world->replications[id].auth == NETAUTH_REMOTE)
+            continue;
+
+        CompAbility *ability = &world->abilities[id];
+        SolActions   actions = world->controllers[id].actionState;
+
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            if (ability->bindings[m].dirtyApply)
+            {
+                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
+                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs,
+                                 ability->bindings[m].pendingBonusEffects);
+                ability->bindings[m].dirtyApply = false;
+            }
+        }
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            SkillBinding *b = &ability->bindings[m];
+
+            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
+                continue;
+
+            bool pressed               = (actions & b->actionBit) != 0;
+            ability->stateData[m].held = pressed;
+
+            if (pressed && ability->activeSlot != m)
+            {
+                Sol_Ability_SetState(world, id, b->boundState, m, false);
+            }
+        }
+
+        if (ability->state != ABILITY_STATE_IDLE)
+        {
+            ability_state_func[ability->state].update(world, id, dt);
+        }
+    }
+}
+
+static void Ability_Draw(World *world, double dt, double time)
+{
+    int required = HAS_ABILITY;
+    int count    = world->activeCount;
+    for (int i = 0; i < count; i++)
+    {
+        int id = world->activeEntities[i];
+        if ((world->masks[id] & required) != required)
+            continue;
+
+        CompXform   *xform   = &world->xforms[id];
+        CompAbility *ability = &world->abilities[id];
+
+        switch (ability->state)
+        {
+        case ABILITY_STATE_FIREBALL: {
+
+            AbilityData *data = &world->abilities[id].stateData[world->abilities[id].activeSlot];
+            if (data->stage > 0)
+                break;
+            float scale = data->charge * 2.0f + 0.5f;
+            vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L");
+            pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
+            pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
+
+            SphereSSBO *push = Sol_Render_GetNext_Fireball();
+            push->pos        = (vec4s){pos.x, pos.y, pos.z, scale};
+            push->color      = (vec4s){1, 0, 0, 0.8f};
+        }
+        break;
+        case ABILITY_STATE_DASH:
+            break;
+        case ABILITY_STATE_CLAW:
+            break;
+        case ABILITY_STATE_SHIELD: {
+            SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
+            o->pos        = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
+            o->color      = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
+        }
+        break;
+        case ABILITY_STATE_LASER: {
+            CompController *controller = &world->controllers[id];
+            vec3s           startPos   = Sol_Model_GetBoneXform(world, id, "hand.L");
+
+            SolRay lengthCheck = {
+                .dir       = controller->aimdir,
+                .dist      = 15.0f,
+                .ignoreEnt = id,
+                .pos       = startPos,
+            };
+            SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
+            vec3s        endPos       = lengthResult.pos;
+            Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, time);
+            Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f, time);
+            Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f, time);
+            Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f, time);
+            Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.6f);
+            Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.4f);
+            Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f);
+        }
+        break;
+        }
+    }
+}
+
+static const vec2s sprite_section[4] = {{0.0f, 0.5f}, {0.5f, 0.5f}, {0.5f, 0.0f}, {0.5f, 0.0f}};
+static void        Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time)
+{
+    u32       frame_index = ((u32)(time * 15.0)) % 4;
+    vec2s     uv          = sprite_section[frame_index];
+    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
+    ssbo->textureId       = SOL_TEXTURE_IMPACT;
+    ssbo->color           = color;
+    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
+    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+}
+static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
+{
+    u32       frame_index = ((u32)(time * 10.0)) % 4;
+    vec2s     uv          = sprite_section[frame_index];
+    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE);
+    ssbo->textureId       = SOL_TEXTURE_IMPACT;
+    ssbo->color           = color;
+    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
+    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+}
+
+static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width)
+{
+    // Draw a multi-segmented continuous beam on the fly
+    int   segments = 4; // Use a few cuts to support animated texture scrolling cleanly
+    float invSegs  = 1.0f / (float)(segments - 1);
+    float stretch  = 4.0f;
+
+    // Calculate texture coordinates based on running runtime cycles
+    float uv_scroll_x = fmodf((float)time * 2.0f, 1.0f);
+
+    for (int j = 0; j < segments - 1; j++)
+    {
+        float tA = (float)j * invSegs;
+        float tB = (float)(j + 1) * invSegs;
+
+        vec3s pA = glms_vec3_lerp(startPos, endPos, tA);
+        vec3s pB = glms_vec3_lerp(startPos, endPos, tB);
+
+        // Push directly into your existing GPU pipeline structure
+        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(0);
+        if (!seg)
+            break;
+
+        seg->posA   = (vec4s){pA.x, pA.y, pA.z, width};
+        seg->posB   = (vec4s){pB.x, pB.y, pB.z, width};
+        seg->colorA = color;
+        seg->colorB = color;
+
+        // Keep texture stretching consistent down the line segment links
+        float distA    = glms_vec3_distance(startPos, pA);
+        float distB    = glms_vec3_distance(startPos, pB);
+        seg->uv        = (vec4s){distA * stretch, distB * stretch, 0.0f, uv_scroll_x};
+        seg->textureId = SOL_TEXTURE_BEAM;
+    }
 }

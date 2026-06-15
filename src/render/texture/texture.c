@@ -36,6 +36,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
     [SOL_TEXTURE_BEAM]             = "Beam.webp",
     [SOL_TEXTURE_IMPACT]           = "Impact.webp",
+    [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
 };
 
 SolTexture loaded_images[SOL_TEXTURE_COUNT];

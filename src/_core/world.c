@@ -46,6 +46,7 @@ static SystemInit init_system[WORLD_SYS_COUNT] = {
     [WORLD_SYS_ITEM]         = Sol_Item_Init,
     [WORLD_SYS_RIBBON]       = Sol_Ribbon_Init,
     [WORLD_SYS_CHAINHIT]     = Sol_Chainhit_Init,
+    [WORLD_SYS_AUDIO]        = Sol_World_Audio_Init,
 };
 
 World *World_Create(WorldKind kind)

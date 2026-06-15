@@ -85,6 +85,8 @@ typedef enum
     WORLD_SYS_VITAL,
     WORLD_SYS_MOVEMENT,
 
+    WORLD_SYS_AUDIO,
+    
     // Draw
     WORLD_SYS_MODEL,
     WORLD_SYS_LINE,
@@ -105,10 +107,10 @@ typedef void (*SystemFunc)(World *, double, double);
 
 typedef uint64_t Mask;
 
+typedef struct CompAudio        CompAudio;
 typedef struct CompReplication  CompReplication;
 typedef struct CompAiController CompAiController;
 typedef struct CompParent       CompParent;
-typedef struct CompAudio        CompAudio;
 typedef struct CompTimer        CompTimer;
 typedef struct CompXform        CompXform;
 typedef struct CompBody         CompBody;

@@ -304,11 +304,9 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 ra
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 1, 1);
     body->zindex     = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
-    // Sol_Parent_SetActive(world, id, false);
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
     SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
-    image->textureUV         = (vec2s){1, 0.816};
     image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
     image->zindex            = 2;
     world->view2d[id].zindex = 1;
@@ -317,24 +315,29 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 ra
     {
     case ABILITY_STATE_FIREBALL:
         image->textureID = SOL_TEXTURE_FIREBALL_CARD;
+        image->textureUV = (vec2s){1, 0.816};
         break;
     case ABILITY_STATE_PISTOL:
         image->textureID = SOL_TEXTURE_PISTOL_CARD;
+        image->textureUV = (vec2s){1, 0.816};
         break;
     case ABILITY_STATE_SHIELD:
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
+        image->textureUV = (vec2s){1, 0.816};
         break;
     case ABILITY_STATE_SPINSLASH:
         image->textureID = SOL_TEXTURE_SPIN_CARD;
+        image->textureUV = (vec2s){1, 0.816};
         break;
     case ABILITY_STATE_DASH:
         image->textureID = SOL_TEXTURE_DASH_CARD;
         break;
     case ABILITY_STATE_CLAW:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
+        image->textureUV = (vec2s){1, 0.816};
         break;
     case ABILITY_STATE_LASER:
-        image->textureID = SOL_TEXTURE_BEAM;
+        image->textureID = SOL_TEXTURE_LASER_CARD;
         break;
     }
     SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);

@@ -167,7 +167,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             {
                 .name       = "Laser",
                 .cooldown   = 1.0f,
-                .duration   = 1.0f,
+                .duration   = 2.0f,
                 .damage     = 1,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_CHAINLIGHTNING,
             },

@@ -89,6 +89,9 @@ void Laser_State_Enter(World *world, int id)
     data->stage          = 0;
     Sol_Combat_ClearHits(world, id);
 
+    // Sol_Audio_PlayAt(SOL_AUDIO_LASER, Sol_Controller_GetShootPos(world, id, 0.5f), 0.5f, 0, 6);
+    Sol_World_Audio_Add(world, id, SOL_AUDIO_LASER, 0.3f, 0);
+
     float animRate           = 1.0f;
     combat->baseAnimRate     = animRate;
     combat->hitPause         = 0;
@@ -109,6 +112,7 @@ void Laser_State_Exit(World *world, int id)
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = Sol_GetGameTime();
     Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
+    Sol_World_Audio_Remove(world, id, 0);
 }
 
 bool Laser_State_CanExit(World *world, int id, u32 next)

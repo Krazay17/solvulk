@@ -20,6 +20,7 @@ Border.webp             RCDATA          "images/Border.webp"
 Lightning.webp          RCDATA          "images/LightningVert4.webp"
 Beam.webp               RCDATA          "images/Beam.webp"
 Impact.webp               RCDATA          "images/Impact.webp"
+LaserCard.webp  RCDATA  "images/LaserCard.webp"
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
@@ -44,6 +45,8 @@ HeavySword.mp3          RCDATA          "sounds/HeavySword.mp3"
 Parry.mp3               RCDATA          "sounds/Parry.mp3"
 WoodCock.mp3            RCDATA          "sounds/WoodCock.mp3"
 LightningHit.mp3        RCDATA          "sounds/LightningHit.mp3"
+Laser.mp3        RCDATA          "sounds/Laser.mp3"
+
 
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"

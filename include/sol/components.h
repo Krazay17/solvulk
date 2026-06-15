@@ -10,15 +10,10 @@
 
 #define MAX_VIEWS 8
 
-// AUDIO----------------
-typedef struct CompAudio CompAudio;
-typedef struct
-{
-    bool doesLoop, is3D;
-} AudioDesc;
+// AUDIO-----------------
 void Sol_World_Audio_Init(World *world);
-void Sol_World_Audio_Add(World *world, int id, AudioDesc desc);
-void Sol_World_Audio_Step(World *world, double dt, double time);
+void Sol_World_Audio_Add(World *world, int id, u32 audioId, float volume, u32 slot);
+void Sol_World_Audio_Remove(World *world, int id, u32 slot);
 
 // TIMER-----------------
 typedef struct CompTimer CompTimer;

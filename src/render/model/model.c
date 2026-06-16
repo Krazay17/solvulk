@@ -35,6 +35,7 @@ int Sol_Models_Init()
     {
         SolResource res   = Sol_LoadResource(model_path[i]);
         SolModel   *model = Parse_Model(res, i);
+        Sol_Render_UploadModel(model, i);
     }
     return 0;
 }
@@ -341,11 +342,45 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
             // Material
             dst->material = (SolMaterial){.baseColor = {1.0f, 1.0f, 1.0f, 1.0f}, .roughness = 1.0f};
             memset(dst->material.emissive, 0, sizeof(float) * 4);
+
             if (prim->material && prim->material->has_pbr_metallic_roughness)
             {
-                cgltf_pbr_metallic_roughness *pbr = &prim->material->pbr_metallic_roughness;
-                memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
+                cgltf_pbr_metallic_roughness *pbr     = &prim->material->pbr_metallic_roughness;
+                cgltf_texture                *texture = pbr->base_color_texture.texture;
+                if (texture)
+                {
+                    cgltf_image *image = texture->image;
+                    if (image && image->buffer_view)
+                    {
+                        cgltf_buffer_view *view      = image->buffer_view;
+                        void              *data      = (uint8_t *)view->buffer->data + view->offset;
+                        size_t             size      = view->size;
+                        const char        *mime_type = image->mime_type;
+                        // if (!mime_type && data && size > 4)
+                        // {
+                        //     uint8_t *bytes = (uint8_t *)data;
+                        //     if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
+                        //     {
+                        //         mime_type = "image/png";
+                        //     }
+                        //     else if (bytes[0] == 0xFF && bytes[1] == 0xD8)
+                        //     {
+                        //         mime_type = "image/jpeg";
+                        //     }
+                        //     else if (bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F')
+                        //     {
+                        //         mime_type = "image/webp";
+                        //     }
+                        // }
+                        int textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                        if (textureId)
+                        {
+                            dst->material.textureId = textureId;
+                        }
+                    }
+                }
 
+                memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
                 dst->material.metallic  = pbr->metallic_factor;
                 dst->material.roughness = pbr->roughness_factor;
 

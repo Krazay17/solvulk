@@ -10,6 +10,7 @@ layout(location = 2) out vec3 fragWorldPos;
 layout(location = 3) flat out int instanceIndex;
 layout(location = 4) flat out uint flags;
 layout(location = 5) flat out float fragHitTime;
+layout(location = 6) out vec2 fragUV;
 
 
 layout(set = 1, binding = 0) uniform Scene {
@@ -100,6 +101,7 @@ void main() {
         gl_Position   = scene.viewProj * vec4(worldPos, 1.0);
 
         fragWorldPos = worldPos;
+        fragUV = inUV;
         fragNormal   = mat * inNormal;
     }
 }

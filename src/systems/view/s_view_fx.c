@@ -37,10 +37,10 @@ static void Fx_Step(World *world, double dt, double time)
                                           (vec4s){.5f, .5f, 1.0f, 0.8f});
             Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 0.4f,
                                           (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
-            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
-            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.5f}, 0.66f);
-            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.66f);
-            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.5f}, 0.66f);
+            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.4f);
+            Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.2f}, 0.4f);
+            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.4f);
+            Sol_Emitter_Add(world, e->as.fx.entB, EMITTERKIND_SINGLE_SPARK, (vec4s){1.0f, 1.0f, 1.0f, 0.2f}, 0.4f);
         }
         break;
         case FXKIND_SWORD_SWING: {

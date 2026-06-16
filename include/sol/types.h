@@ -157,6 +157,7 @@ typedef struct SolMaterial
     float emissive[4];
     float metallic;
     float roughness;
+    u32   textureId;
 } SolMaterial;
 
 // TEXTURE---------------

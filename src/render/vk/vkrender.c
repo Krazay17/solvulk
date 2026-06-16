@@ -9,7 +9,7 @@ static SolVkState solvkstate = {0};
 
 static u32 boundPipeline;
 
-static SolGpuImage gpuImages[SOL_TEXTURE_COUNT];
+static SolGpuImage gpuImages[1024];
 static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
 static SolPipe pipes[PIPE_COUNT];
@@ -44,8 +44,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .type              = VERTEX_TRI,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO},
-            .descCount         = 4,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
+            .descCount         = 5,
         },
     [PIPE_MODEL_SKINNED] =
         {
@@ -59,8 +59,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_SKINNING_SSBO, DESC_ORTHO_UBO},
-            .descCount         = 5,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_SKINNING_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
+            .descCount         = 6,
         },
     [PIPE_TEXT] =
         {
@@ -190,6 +190,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 3,
         },
     [PIPE_RIBBON] =
+        {
+            .vertResource      = "ID_SHADER_RIBBON_V",
+            .fragResource      = "ID_SHADER_SPRITE_F",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_RIBBON_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
+    [PIPE_RIBBON_ADD] =
         {
             .vertResource      = "ID_SHADER_RIBBON_V",
             .fragResource      = "ID_SHADER_SPRITE_F",
@@ -353,8 +365,8 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
         return 8;
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
-    if (Sol_Render_UploadAll() != 0)
-        return 10;
+//    if (Sol_Render_UploadAll() != 0)
+//        return 10;
     if (Sol_Render_BuildPipes() != 0)
         return 11;
     return 0;
@@ -362,15 +374,15 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
 
 int Sol_Render_UploadAll()
 {
-    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
-    {
-        Sol_UploadImage(Sol_GetImage(i), i);
-    }
-
-    for (int i = 0; i < SOL_MODEL_COUNT; i++)
-    {
-        Sol_UploadModel(Sol_GetModel(i), i);
-    }
+//    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
+//    {
+//        Sol_UploadImage(Sol_GetImage(i), i);
+//    }
+//
+//    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+//    {
+//        Sol_UploadModel(Sol_GetModel(i), i);
+//    }
     return 0;
 }
 
@@ -385,7 +397,8 @@ int Sol_Render_BuildPipes()
         }
         else if (cfg->kind == DESC_KIND_IMAGES)
         {
-            Sol_ImageDescriptor_Build(&solvkstate, gpuImages, &image_array_descriptor);
+            Sol_ImageDescriptor_BuildLayout(&solvkstate, &image_array_descriptor);
+            // Sol_ImageDescriptor_Build(&solvkstate, gpuImages, &image_array_descriptor);
         }
     }
     for (int i = 0; i < PIPE_COUNT; i++)
@@ -443,7 +456,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
 
     if (cfg->descCount > 0)
     {
-        VkDescriptorSet sets[6];
+        VkDescriptorSet sets[8];
         for (u32 i = 0; i < cfg->descCount; i++)
         {
             DescriptorId did = cfg->descId[i];
@@ -1055,7 +1068,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-int Sol_UploadModel(SolModel *model, SolModelKind modelId)
+void  Sol_Render_UploadModel(SolModel *model, u32 modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)
@@ -1152,9 +1165,15 @@ int Sol_UploadModel(SolModel *model, SolModelKind modelId)
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id)
 {
-    const void *pixels = image->pixels;
+        const void *pixels = image->pixels;
     u32         width  = image->width;
     u32         height = image->height;
+
+    Sol_Render_UploadImage(width, height, pixels, id);
+}
+
+void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
+{
     int         format = id == 0 ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
 
     SolGpuImage *out     = &gpuImages[id];
@@ -1296,11 +1315,86 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id)
         .sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter    = VK_FILTER_LINEAR,
         .minFilter    = VK_FILTER_LINEAR,
-        .addressModeU = image_upload[id].Uwrap ? image_upload[id].Uwrap : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, // image_upload[id].Uwrap ? image_upload[id].Uwrap : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
     };
     vkCreateSampler(vkstate->device, &samplerInfo, NULL, &out->sampler);
 
+    Sol_ImageDescriptor_UpdateSlot(&solvkstate, &image_array_descriptor, out, id);
+
+    return;
+}
+
+// Called at pipe build time — no images needed
+int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out)
+{
+    VkDescriptorBindingFlags bindingFlags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo = {
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .bindingCount  = 1,
+        .pBindingFlags = &bindingFlags,
+    };
+    VkDescriptorSetLayoutBinding binding = {
+        .binding         = 0,
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = SOL_TEXTURE_COUNT,
+        .stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT,
+    };
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext        = &flagsInfo,
+        .flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+        .bindingCount = 1,
+        .pBindings    = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkstate->device, &layoutInfo, NULL, &out->layout);
+
+    VkDescriptorPoolSize poolSize = {
+        .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = SOL_TEXTURE_COUNT,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags         = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        .maxSets       = 1,
+        .poolSizeCount = 1,
+        .pPoolSizes    = &poolSize,
+    };
+    vkCreateDescriptorPool(vkstate->device, &poolInfo, NULL, &out->pool);
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool     = out->pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts        = &out->layout,
+    };
+    vkAllocateDescriptorSets(vkstate->device, &allocInfo, &out->set);
+
     return 0;
+}
+
+// Called whenever a single texture finishes loading
+void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc,
+                                    SolGpuImage *image, u32 slotIndex)
+{
+    
+    VkDescriptorImageInfo imageInfo = {
+        .sampler     = image->sampler,
+        .imageView   = image->view,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+    VkWriteDescriptorSet write = {
+        .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet          = desc->set,
+        .dstBinding      = 0,
+        .dstArrayElement = slotIndex,   // just this one slot
+        .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .pImageInfo      = &imageInfo,
+    };
+    vkUpdateDescriptorSets(vkstate->device, 1, &write, 0, NULL);
 }

@@ -17,6 +17,7 @@
 #define MAX_LINE_VERTICES 0xffffff
 
 typedef struct SolCamera SolCamera;
+typedef struct SolModel SolModel;
 
 typedef enum
 {
@@ -39,6 +40,7 @@ typedef enum
     PIPE_SPRITE_FRONT,
     PIPE_HEALTHBAR,
     PIPE_RIBBON,
+    PIPE_RIBBON_ADD,
     PIPE_RIBBON_FRONT,
 
     PIPE_SKYBOX,
@@ -291,20 +293,26 @@ typedef struct
 } RibbonQueue;
 
 extern RibbonQueue ribbonQueue;
+extern RibbonQueue ribbonQueueAdd;
 extern RibbonQueue ribbonQueueFront;
 
-static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 depth)
+static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 kind)
 {
-    switch (depth)
+    u32 totalSegCount = ribbonQueue.count + ribbonQueueAdd.count + ribbonQueueFront.count;
+    switch (kind)
     {
     case 0:
-        if (ribbonQueue.count >= MAX_RIBBON_SEGS_TOTAL)
+        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
             return NULL;
         return &ribbonQueue.instances[ribbonQueue.count++];
     case 1:
-        if (ribbonQueueFront.count >= MAX_RIBBON_SEGS_TOTAL)
+        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
             return NULL;
         return &ribbonQueueFront.instances[ribbonQueueFront.count++];
+    case 2:
+        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
+            return NULL;
+        return &ribbonQueueAdd.instances[ribbonQueueAdd.count++];
     }
 }
 
@@ -381,3 +389,5 @@ void  Sol_Render_DrawSkybox(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
 void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
 void  Sol_Render_DrawText(SolFontDesc desc);
+void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id);
+void  Sol_Render_UploadModel(SolModel *model, u32 modelId);

@@ -9,6 +9,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
+#define INIT_VOLUME 1.0f
 #define DEVICE_FORMAT ma_format_f32
 #define DEVICE_CHANNELS 2
 #define DEVICE_SAMPLE_RATE 48000
@@ -195,7 +196,7 @@ int Sol_Audio_Init(void)
     if (ma_engine_init(&cfg, &audio_engine) != MA_SUCCESS)
         return -1;
 
-    ma_engine_set_volume(&audio_engine, 0.1f);
+    ma_engine_set_volume(&audio_engine, INIT_VOLUME);
     ma_engine_listener_set_world_up(&audio_engine, 0, 0.0f, 1.0f, 0.0f);
 
     for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)

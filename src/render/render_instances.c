@@ -10,6 +10,7 @@ SphereQueue   sphereQueue;
 SphereQueue   sphereFxQueue;
 FireballQueue fireballQueue;
 RibbonQueue   ribbonQueue;
+RibbonQueue   ribbonQueueAdd;
 RibbonQueue   ribbonQueueFront;
 
 QuadQueue healthQueue;
@@ -258,7 +259,7 @@ void Flush_Fonts2d()
 
 void Flush_Ribbons()
 {
-    if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0)
+    if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0 && ribbonQueueAdd.count == 0)
         return;
     RibbonSegSSBO  *gpu           = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
     VkCommandBuffer cmd           = Command_Buffer_Get();
@@ -274,6 +275,18 @@ void Flush_Ribbons()
         currentOffset += regularCount;
 
         ribbonQueue.count = 0;
+    }
+    
+    u32 addCount = ribbonQueueAdd.count;
+    if (addCount > 0)
+    {
+        memcpy(gpu + currentOffset, ribbonQueueAdd.instances, sizeof(RibbonSegSSBO) * addCount);
+        Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
+
+        vkCmdDraw(cmd, 6, addCount, 0, currentOffset);
+        currentOffset += addCount;
+
+        ribbonQueueAdd.count = 0;
     }
 
     u32 frontCount = ribbonQueueFront.count;

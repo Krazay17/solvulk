@@ -8,11 +8,12 @@
 #include "sol_core.h"
 
 #include "texture.h"
-
+#include "render/render_i.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
 #include "webp/decode.h"
+
+#define MAX_GLOBAL_TEXTURES 1024
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
@@ -39,50 +40,34 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
 };
 
-SolTexture loaded_images[SOL_TEXTURE_COUNT];
+SolTexture      loaded_images[MAX_GLOBAL_TEXTURES];
+static uint32_t next_free_texture_idx = SOL_TEXTURE_COUNT;
 
-static SolTexture *Parse_Texture(SolResource res, u32 id);
-
-SolTexture *Sol_GetImage(SolTextureId id)
-{
-    return &loaded_images[id];
-}
-
-int Sol_Textures_Init()
-{
-    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
-    {
-        SolResource res   = Sol_LoadResource(image_path[i]);
-        SolTexture *image = Parse_Texture(res, i);
-    }
-    return 0;
-}
-
-static SolTexture *Parse_Texture(SolResource res, u32 id)
+static SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id)
 {
     SolTexture *image = &loaded_images[id];
+    image->data       = data;
 
-    if (strstr(image_path[id], ".raw"))
+    if (extension && strstr(extension, ".raw"))
     {
-        image->pixels = res.data;
+        image->pixels = data;
         image->height = 224;
         image->width  = 224;
         image->loaded = true;
         return image;
     }
 
-    if (strstr(image_path[id], ".webp"))
+    if (extension && strstr(extension, ".webp"))
     {
-        int width, height;
-        int info      = WebPGetInfo(res.data, res.size, &width, &height);
-        image->pixels = WebPDecodeRGBA(res.data, res.size, &image->width, &image->height);
+        image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
+        image->loaded = true;
         return image;
     }
 
     int w, h, channels;
-    image->pixels = stbi_load_from_memory((const stbi_uc *)res.data,        // pointer cast, not compound literal
-                                          (int)res.size, &w, &h, &channels, // output addresses
-                                          4                                 // force 4 channels (RGBA)
+    image->pixels = stbi_load_from_memory((const stbi_uc *)data,        // pointer cast, not compound literal
+                                          (int)size, &w, &h, &channels, // output addresses
+                                          4                             // force 4 channels (RGBA)
     );
 
     if (!image->pixels)
@@ -99,4 +84,50 @@ static SolTexture *Parse_Texture(SolResource res, u32 id)
     printf("Image upload width:%d\n", image->width);
 
     return image;
+}
+
+SolTexture *Sol_GetImage(u32 id)
+{
+    return &loaded_images[id];
+}
+
+int Sol_Textures_Init()
+{
+    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
+    {
+        SolResource res   = Sol_LoadResource(image_path[i]);
+        const char *ext   = strrchr(image_path[i], '.');
+        SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
+        Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
+    }
+    return 0;
+}
+
+uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_extension)
+{
+    if (next_free_texture_idx >= MAX_GLOBAL_TEXTURES)
+    {
+        printf("Error: Global texture registry full!\n");
+        return 0; // Return a default fallback texture index
+    }
+
+    for (int i = 0; i < next_free_texture_idx; i++)
+    {
+        if (loaded_images[i].data == data)
+            return i;
+    }
+
+    uint32_t assignedSlot = next_free_texture_idx++;
+
+    // Parse the embedded JPEG/PNG/WebP straight into our pool
+    SolTexture *image = Parse_Texture(data, size, hint_extension, assignedSlot);
+
+    Sol_UploadImage(image, assignedSlot);
+
+    // --- VULKAN WORK ---
+    // 1. Create your VkImage / VkImageView for loaded_images[assignedSlot]
+    // 2. Transition layout, stage pixels to GPU memory
+    // 3. Update your Global Bindless Descriptor Set at index `assignedSlot`
+
+    return assignedSlot; // This ID goes into your MeshMaterial push constant!
 }

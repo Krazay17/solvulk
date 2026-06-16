@@ -178,7 +178,8 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
                  });
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
     Sol_Emitter_Add(world, id, EMITTERKIND_FOUNTAIN_SPARKS, color, scale);
-    Sol_Ribbon_Add(world, id, RIBBONKIND_BULLETTRAIL, 0.4f, (vec4s){1.0f, 0, 0, 1});
+    Sol_Ribbon_Add(world, id, RIBBONKIND_BULLETTRAIL, 0.3f, (vec4s){1.0f, 0, 0, 1});
+    Sol_Ribbon_Add(world, id, RIBBONKIND_BULLETTRAIL, 0.2f, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
 
     return id;
 }

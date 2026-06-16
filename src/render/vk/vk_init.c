@@ -95,8 +95,6 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     VkPhysicalDeviceProperties selectedProps;
     vkGetPhysicalDeviceProperties(vkstate->physicalDevice, &selectedProps);
 
-    // VkPhysicalDeviceFeatures
-
     printf("%s\n", selectedProps.deviceName);
 
     return 0;
@@ -117,6 +115,17 @@ int SolVkDevice(SolVkState *vkstate)
     VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeature = {0};
     dynamicRenderingFeature.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
     dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+
+    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {
+        .sType                                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+        .descriptorBindingPartiallyBound              = VK_TRUE,
+        .descriptorBindingUpdateUnusedWhilePending    = VK_TRUE,
+        .runtimeDescriptorArray                       = VK_TRUE,
+        .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+        .pNext                                        = NULL,
+    };
+
+    dynamicRenderingFeature.pNext = &indexingFeatures;
 
     VkDeviceCreateInfo createInfo      = {0};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -546,8 +555,8 @@ int Sol_CreateDescriptorImageArray(SolVkState *vkstate, SolGpuImage *images, int
         imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
     VkWriteDescriptorSet write = {
-        .sType  = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = set,
+        .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet          = set,
         .dstBinding      = 0,
         .dstArrayElement = 0,
         .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

@@ -86,3 +86,4 @@ void Sol_Movement_SetSpeedMod(World *world, int id, float amnt);
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
 void Sol_Movement_ForceState(World *world, int id, MoveState nextState);
 void Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float duration);
+u32 Sol_Movement_GetState(World *world, int id);

@@ -196,3 +196,6 @@ VkCommandBuffer   Command_Buffer_Get(void);
 SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id);
 
 void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
+int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out);
+void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc,
+                                    SolGpuImage *image, u32 slotIndex);

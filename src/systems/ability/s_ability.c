@@ -188,12 +188,12 @@ static void Ability_Draw(World *world, double dt, double time)
 
         CompXform   *xform   = &world->xforms[id];
         CompAbility *ability = &world->abilities[id];
+        AbilityData *data    = &ability->stateData[ability->activeSlot];
 
         switch (ability->state)
         {
         case ABILITY_STATE_FIREBALL: {
 
-            AbilityData *data = &world->abilities[id].stateData[world->abilities[id].activeSlot];
             if (data->stage > 0)
                 break;
             float scale = data->charge * 2.0f + 0.5f;
@@ -217,24 +217,32 @@ static void Ability_Draw(World *world, double dt, double time)
         }
         break;
         case ABILITY_STATE_LASER: {
-            CompController *controller = &world->controllers[id];
-            vec3s           startPos   = Sol_Model_GetBoneXform(world, id, "hand.L");
+            switch (data->stage)
+            {
 
-            SolRay lengthCheck = {
-                .dir       = controller->aimdir,
-                .dist      = 15.0f,
-                .ignoreEnt = id,
-                .pos       = startPos,
-            };
-            SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
-            vec3s        endPos       = lengthResult.pos;
-            Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, time);
-            Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f, time);
-            Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f, time);
-            Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f, time);
-            Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.6f);
-            Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.4f);
-            Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f);
+            case 2:
+                CompController *controller = &world->controllers[id];
+                const char     *hand       = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+                vec3s           startPos   = Sol_Model_GetBoneXform(world, id, hand);
+
+                SolRay lengthCheck = {
+                    .dir       = controller->aimdir,
+                    .dist      = 15.0f,
+                    .ignoreEnt = id,
+                    .pos       = startPos,
+                };
+                SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
+                vec3s        endPos       = lengthResult.pos;
+                Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, time);
+                Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f, time);
+                Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f, time);
+                Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f, time);
+                Draw_Laser(startPos, endPos, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f);
+                Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f);
+                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f);
+                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f);
+                break;
+            }
         }
         break;
         }
@@ -265,13 +273,10 @@ static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
 
 static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width)
 {
-    // Draw a multi-segmented continuous beam on the fly
-    int   segments = 4; // Use a few cuts to support animated texture scrolling cleanly
-    float invSegs  = 1.0f / (float)(segments - 1);
-    float stretch  = 4.0f;
-
-    // Calculate texture coordinates based on running runtime cycles
-    float uv_scroll_x = fmodf((float)time * 2.0f, 1.0f);
+    int   segments    = 4;
+    float invSegs     = 1.0f / (float)(segments - 1);
+    float uv_scroll_x = fmodf((float)time * -5.1f, 1.0f);
+    float stretch     = 0.1f;
 
     for (int j = 0; j < segments - 1; j++)
     {
@@ -281,7 +286,6 @@ static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, f
         vec3s pA = glms_vec3_lerp(startPos, endPos, tA);
         vec3s pB = glms_vec3_lerp(startPos, endPos, tB);
 
-        // Push directly into your existing GPU pipeline structure
         RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(0);
         if (!seg)
             break;
@@ -291,10 +295,9 @@ static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, f
         seg->colorA = color;
         seg->colorB = color;
 
-        // Keep texture stretching consistent down the line segment links
         float distA    = glms_vec3_distance(startPos, pA);
         float distB    = glms_vec3_distance(startPos, pB);
-        seg->uv        = (vec4s){distA * stretch, distB * stretch, 0.0f, uv_scroll_x};
+        seg->uv        = (vec4s){distA * stretch, distB * stretch, uv_scroll_x, 0.0f};
         seg->textureId = SOL_TEXTURE_BEAM;
     }
 }

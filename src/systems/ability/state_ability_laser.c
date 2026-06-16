@@ -3,13 +3,24 @@
 #include "ability_i.h"
 
 #define HITINTERVAL 0.1f
-#define HITDELAY 0.1f
+#define HITDELAY 0.3f
+#define LASER_LENGTH 15.0f
+
+static bool Leave_State(World *world, int id, CompAbility *ability)
+{
+    if (!ability->stateData[ability->activeSlot].held)
+        if (Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true))
+            return true;
+    return false;
+}
 
 void Laser_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    CompCombat  *combat  = &world->combats[id];
+    if (Leave_State(world, id, ability))
+        return;
+    AbilityData *data   = &ability->stateData[ability->activeSlot];
+    CompCombat  *combat = &world->combats[id];
     data->elapsed += dt;
 
     if (data->elapsed >= data->duration)
@@ -17,28 +28,37 @@ void Laser_State_Update(World *world, int id, float dt)
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
         return;
     }
-    if (data->elapsed < HITDELAY)
-        return;
 
     CompController *controller = &world->controllers[id];
 
     SolRay lengthCheck = {
         .dir       = controller->aimdir,
-        .dist      = 15.0f,
+        .dist      = LASER_LENGTH,
         .ignoreEnt = id,
         .pos       = controller->aimpos,
     };
     SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
-
-    if (Sol_Physx_GetVel(world, id).y < 0.0f)
+    if (Sol_Physx_GetVel(world, id).y < 0.0f && (Sol_Movement_GetState(world, id) == MOVE_FALL))
         Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 0.0f));
 
     switch (data->stage)
     {
     case 0:
-        data->stage++;
+        if (data->elapsed >= HITDELAY)
+            data->stage++;
+
         break;
     case 1:
+        AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_CHANNEL_RIGHT : ANIM_CHANNEL_LEFT,
+                         .layerId  = ANIM_LAYER_UPPER,
+                         .speed    = 1.0f,
+                         .playKind = ANIMPLAYKIND_LOOP,
+                         .blendIn  = 0.1f};
+
+        Sol_Model_PlayAnim(world, id, desc);
+        data->stage++;
+        break;
+    case 2:
         data->accum += dt;
         if (data->accum < HITINTERVAL)
             return;
@@ -89,7 +109,6 @@ void Laser_State_Enter(World *world, int id)
     data->stage          = 0;
     Sol_Combat_ClearHits(world, id);
 
-    // Sol_Audio_PlayAt(SOL_AUDIO_LASER, Sol_Controller_GetShootPos(world, id, 0.5f), 0.5f, 0, 6);
     Sol_World_Audio_Add(world, id, SOL_AUDIO_LASER, 0.3f, 0);
 
     float animRate           = 1.0f;
@@ -97,11 +116,11 @@ void Laser_State_Enter(World *world, int id)
     combat->hitPause         = 0;
     combat->hitPauseDiminish = 0;
 
-    AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_CHANNEL_RIGHT : ANIM_CHANNEL_LEFT,
+    AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
                      .layerId  = ANIM_LAYER_UPPER,
                      .speed    = animRate,
                      .playKind = ANIMPLAYKIND_LOOP,
-                     .blendIn  = 0.1f};
+                     .blendIn  = 0.05f};
 
     Sol_Model_PlayAnim(world, id, desc);
 }
@@ -119,7 +138,7 @@ bool Laser_State_CanExit(World *world, int id, u32 next)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    return data->elapsed >= data->duration * 0.8f;
+    return true; // data->elapsed >= data->duration * 0.8f;
 }
 
 bool Laser_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)

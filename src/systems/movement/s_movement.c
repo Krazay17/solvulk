@@ -26,6 +26,11 @@ void Sol_Movement_Add(World *world, int id, MovementKind kind)
     Sol_Movement_SetState(world, id, MOVE_IDLE);
 }
 
+u32 Sol_Movement_GetState(World *world, int id)
+{
+    return world->movements[id].state;
+}
+
 void Sol_Movement_Prestep(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)

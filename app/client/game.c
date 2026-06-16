@@ -139,7 +139,7 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
+    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD2, 0);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
     // WAddStep(gameWorld) = WizSpawner;
 

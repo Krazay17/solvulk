@@ -495,7 +495,6 @@ static void Ribbon_Draw(World *world, double dt, double time)
     if (!s)
         return;
 
-    // Blistering fast hardware iteration path. Zero checks, zero branch misses.
     for (u32 i = 0; i < s->ribbon_count; i++)
     {
         ribbon_config[s->ribbons[i].kind].draw(world, &s->ribbons[i], dt, time);
@@ -518,7 +517,7 @@ static void Ribbon_Draw_Lightning(World *world, Ribbon *r, double dt, double tim
         float tA   = glm_clamp(1.0f - (r->ages[idxA] / r->segLifetime), 0.0f, 1.0f);
         float tB   = glm_clamp(1.0f - (r->ages[idxB] / r->segLifetime), 0.0f, 1.0f);
 
-        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(1);
+        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(2);
         if (!seg)
             return;
 

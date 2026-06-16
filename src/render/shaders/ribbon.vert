@@ -67,28 +67,31 @@ void main()
     fragTextureId = seg.textureId;
     outColor = color;
 
-//    vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);
-//    outUV = vec2(1.0 - rawUV.y, rawUV.x);
+    // // Isolate the horizontal edge signature coordinate (cross section)
+    // // s.x maps to -1.0 or +1.0 -> converts to 0.0 or 1.0 mapping across the width
+    // float uCoord = s.x * 0.5 + 0.5;
 
-    // Reconstruct normalized raw quad UV space from vertex signatures:
-    // s.x matches -1.0 or +1.0 for cross-section edges. s.y is 0.0 (Start) or 1.0 (End)
-    //vec2 rawUV = vec2(s.x * 0.5 + 0.5, s.y);
+    // // Pick the correct accumulated distance milestone depending on whether this vertex belongs to A or B
+    // float vDistance = isB ? seg.uv.y : seg.uv.x;
 
-    // Apply the panning translation vector (.xy offset + raw layout mapped by .zw tile weight)
-    //outUV = (rawUV * seg.uv.zw) + seg.uv.xy;
+    // // Optional: Scale vDistance by a texture repeat factor if you want it to wrap tightly
+    // float textureTilingFactor = 1.0f; 
+    // float vCoord = vDistance * textureTilingFactor;
 
-    // Isolate the horizontal edge signature coordinate (cross section)
-    // s.x maps to -1.0 or +1.0 -> converts to 0.0 or 1.0 mapping across the width
-    float uCoord = s.x * 0.5 + 0.5;
+    // // Apply the panning animations to the final output vector coordinates
+    // // Adds your frame-by-frame time delta increments seamlessly
+    // outUV = vec2(uCoord + seg.uv.z, vCoord + seg.uv.w);
 
-    // Pick the correct accumulated distance milestone depending on whether this vertex belongs to A or B
-    float vDistance = isB ? seg.uv.y : seg.uv.x;
+    // Width profile across the ribbon (left edge to right edge) maps to V (Y)
+    float vCoord = s.x * 0.5 + 0.5;
 
-    // Optional: Scale vDistance by a texture repeat factor if you want it to wrap tightly
+    // Accumulated distance along the ribbon length maps to U (X)
+    float uDistance = isB ? seg.uv.y : seg.uv.x;
+
     float textureTilingFactor = 1.0f; 
-    float vCoord = vDistance * textureTilingFactor;
+    float uCoord = uDistance * textureTilingFactor;
 
-    // Apply the panning animations to the final output vector coordinates
-    // Adds your frame-by-frame time delta increments seamlessly
+    // Pass out the swapped coordinates: U is length, V is cross-section width.
+    // Also swap your panning offsets (uv.z for length panning, uv.w for width panning)
     outUV = vec2(uCoord + seg.uv.z, vCoord + seg.uv.w);
 }

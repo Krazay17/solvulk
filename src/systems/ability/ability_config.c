@@ -153,22 +153,22 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             {
                 .name     = "Laser",
                 .cooldown = 1.0f,
-                .duration = 1.0f,
-                .damage   = 1,
+                .duration = 3.5f,
+                .damage   = 60,
             },
         [ABILITY_STATE_LASER][1] =
             {
                 .name     = "Laser",
                 .cooldown = 1.0f,
-                .duration = 1.0f,
-                .damage   = 1,
+                .duration = 3.5f,
+                .damage   = 80,
             },
         [ABILITY_STATE_LASER][2] =
             {
                 .name       = "Laser",
                 .cooldown   = 1.0f,
-                .duration   = 2.0f,
-                .damage     = 1,
+                .duration   = 3.5f,
+                .damage     = 100,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_CHAINLIGHTNING,
             },
 

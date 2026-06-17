@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, u32 damage, int count)
+void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, float damage, int count)
 {
     Sol_Vital_Damage(world, target, dealer, damage);
     count--;

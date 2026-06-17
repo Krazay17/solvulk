@@ -35,7 +35,7 @@ typedef struct
     float yaw;
     u32   abilities[10];
     u32   rarity[10];
-    u32   addDamage[10];
+    float addDamage[10];
     u32   addBuff[10];
     u32   addEffect[10];
     bool  hasEquipRequest;

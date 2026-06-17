@@ -17,7 +17,7 @@
 #define MAX_LINE_VERTICES 0xffffff
 
 typedef struct SolCamera SolCamera;
-typedef struct SolModel SolModel;
+typedef struct SolModel  SolModel;
 
 typedef enum
 {
@@ -384,10 +384,11 @@ void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
 
-float Sol_Render_GetAspect(void);
-void  Sol_Render_DrawSkybox(void);
-void  Sol_Render_DrawLine(SolLine *lines, int count);
-void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
-void  Sol_Render_DrawText(SolFontDesc desc);
-void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id);
-void  Sol_Render_UploadModel(SolModel *model, u32 modelId);
+float     Sol_Render_GetAspect(void);
+void      Sol_Render_DrawSkybox(void);
+void      Sol_Render_DrawLine(SolLine *lines, int count);
+void      Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
+void      Sol_Render_DrawText(SolFontDesc desc);
+void      Sol_Render_UploadImage(float width, float height, void *pixels, u32 id);
+void      Sol_Render_UploadModel(SolModel *model, u32 modelId);
+SceneUBO *Sol_Render_GetNext_Scene();

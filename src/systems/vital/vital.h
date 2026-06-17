@@ -9,8 +9,8 @@ typedef enum
 
 typedef struct CompVital
 {
-    u32    maxHealth, maxEnergy, maxMana;
-    u32    health, energy, mana;
+    float  maxHealth, maxEnergy, maxMana;
+    float  health, energy, mana;
     bool   doesRespawn;
     float  respawnTime;
     double deathTime, lastHitTime;
@@ -20,11 +20,11 @@ void Sol_Vital_Init(World *world);
 void Sol_Vital_Add(World *world, int id, VitalKind kind);
 
 void  Sol_Vital_Step(World *world, double dt, double time);
-u32   Sol_Vital_GetHealth(World *world, int id);
-u32   Sol_Vital_GetMaxHealth(World *world, int id);
+float Sol_Vital_GetHealth(World *world, int id);
+float Sol_Vital_GetMaxHealth(World *world, int id);
 bool  Sol_Vital_GetDead(World *world, int id);
 float Sol_Vital_GetLastHitTime(World *world, int id);
 void  Sol_Vital_Die(World *world, int id);
 void  Sol_Vital_Respawn(World *world, int id);
-void  Sol_Vital_Damage(World *world, int id, int attacker, u32 damage);
+void  Sol_Vital_Damage(World *world, int id, int attacker, float damage);
 void  Sol_Vital_Heal(World *world, int id, int healer, u32 heal);

@@ -67,7 +67,7 @@ AbilityState Sol_Ability_GetState(World *world, int id)
     return world->abilities[id].state;
 }
 
-void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
                              u32 bonusEffects)
 {
     CompAbility *a = &world->abilities[id];
@@ -86,7 +86,7 @@ void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 ra
     b->dirtySend  = true;
 }
 
-void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
                       u32 bonusEffects)
 {
     CompAbility *a = &world->abilities[id];
@@ -186,9 +186,10 @@ static void Ability_Draw(World *world, double dt, double time)
         if ((world->masks[id] & required) != required)
             continue;
 
-        CompXform   *xform   = &world->xforms[id];
-        CompAbility *ability = &world->abilities[id];
-        AbilityData *data    = &ability->stateData[ability->activeSlot];
+        CompXform      *xform      = &world->xforms[id];
+        CompController *controller = &world->controllers[id];
+        CompAbility    *ability    = &world->abilities[id];
+        AbilityData    *data       = &ability->stateData[ability->activeSlot];
 
         switch (ability->state)
         {
@@ -217,15 +218,12 @@ static void Ability_Draw(World *world, double dt, double time)
         }
         break;
         case ABILITY_STATE_LASER: {
-            switch (data->stage)
+            if (data->stage > 0)
             {
-
-            case 2:
-                CompController *controller = &world->controllers[id];
-                const char     *hand       = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-                vec3s           startPos   = Sol_Model_GetBoneXform(world, id, hand);
-
-                SolRay lengthCheck = {
+                const char *hand        = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+                vec3s       startPos    = Sol_Model_GetBoneXform(world, id, hand);
+                float       widthScale  = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
+                SolRay      lengthCheck = {
                     .dir       = controller->aimdir,
                     .dist      = 15.0f,
                     .ignoreEnt = id,
@@ -233,15 +231,14 @@ static void Ability_Draw(World *world, double dt, double time)
                 };
                 SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
                 vec3s        endPos       = lengthResult.pos;
-                Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, time);
-                Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f, time);
-                Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f, time);
-                Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f, time);
-                Draw_Laser(startPos, endPos, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f);
-                Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f);
-                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f);
-                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f);
-                break;
+                Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f * widthScale, time);
+                Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f * widthScale, time);
+                Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f * widthScale, time);
+                Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f * widthScale, time);
+                Draw_Laser(startPos, endPos, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+                Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f * widthScale);
+                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f * widthScale);
             }
         }
         break;

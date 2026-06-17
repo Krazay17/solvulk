@@ -1,7 +1,5 @@
 #include "sol_core.h"
 
-#include "render_i.h"
-
 SolCamera sol_camera = {
     .fov       = 60.0f,
     .nearClip  = 0.2f,
@@ -76,7 +74,7 @@ void Sol_Cam_Update(double dt)
 
     sol_camera.viewProj = glms_mat4_mul(sol_camera.proj, sol_camera.view);
 
-    SceneUBO *ubo       = Sol_GetDescriptorMapping(DESC_SCENE_UBO);
+    SceneUBO *ubo       = Sol_Render_GetNext_Scene();
     ubo->view           = sol_camera.view;
     ubo->proj           = sol_camera.proj;
     ubo->viewProjection = sol_camera.viewProj;

@@ -129,6 +129,13 @@ static inline void TransformNrm(const float m[16], const float in[3], float out[
 
 static inline float Sol_Math_Lerp(float start, float end, float amount)
 {
+    // amount = fmaxf(0, fminf(1.0f, amount));
+    return start + amount * (end - start);
+}
+
+static inline float Sol_Math_Lerp_Clamped(float start, float end, float amount)
+{
+    amount = fmaxf(0, fminf(1.0f, amount));
     return start + amount * (end - start);
 }
 

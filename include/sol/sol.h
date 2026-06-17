@@ -24,12 +24,11 @@
 
 #include "components.h"
 #include "world.h"
-
+#include "camera.h"
+#include "font/font.h"
+#include "model/model.h"
+#include "texture/texture.h"
 #include "render/render.h"
-#include "render/camera.h"
-#include "render/font/font.h"
-#include "render/model/model.h"
-#include "render/texture/texture.h"
 
 #include "ability/ability.h"
 #include "audio/audio.h"

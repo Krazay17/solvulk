@@ -334,16 +334,16 @@ static void Tooltip_Card_Draw(World *world, int id)
         lineCount++;
     }
 
-    u32 totalDamage = cfg.damage + item->bonusDamage;
+    float totalDamage = cfg.damage + item->bonusDamage;
     if (totalDamage > 0 && lineCount < MAX_TOOLTIP_LINES)
     {
         if (item->bonusDamage > 0)
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %d (+%d)", totalDamage, item->bonusDamage);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f (+%.0f)", totalDamage, item->bonusDamage);
         }
         else
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %d", totalDamage);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f", totalDamage);
         }
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)

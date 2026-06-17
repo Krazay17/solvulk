@@ -25,9 +25,9 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
         SolXform xform = Sol_Xform_GetDrawXform(world, id);
         xform.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
 
-        u32   health    = Sol_Vital_GetHealth(world, id);
-        u32   maxHealth = Sol_Vital_GetMaxHealth(world, id);
-        float fill      = maxHealth > 0 ? (float)health / (float)maxHealth : 0.0f;
+        float health    = Sol_Vital_GetHealth(world, id);
+        float maxHealth = Sol_Vital_GetMaxHealth(world, id);
+        float fill      = maxHealth > 0 ? health / maxHealth : 0.0f;
 
         QuadSSBO *ssbo = Sol_Render_GetNext_Quad(QUADKIND_HEALTH);
         if (!ssbo)
@@ -35,9 +35,9 @@ void Sol_View_Healthbar_Draw(World *world, double dt, double time)
 
         float healthbarWidthScale = 1.0f;
         ssbo->pos                 = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, healthbarWidthScale};
-        ssbo->rot = GLMS_VEC4_ZERO;
-        ssbo->color = (vec4s){0.1f, 0.85f, 0.2f, 1.0f};
-        ssbo->uv = (vec4s){0, 0, 1, 1};
+        ssbo->rot                 = GLMS_VEC4_ZERO;
+        ssbo->color               = (vec4s){0.1f, 0.85f, 0.2f, 1.0f};
+        ssbo->uv                  = (vec4s){0, 0, 1, 1};
         // Shader Parameters Allocation (x = fill percentage, y = border outline scale)
         ssbo->extra = (vec4s){fill, 0.015f, 0, 0};
         // Explicit Subsystem Binding Types

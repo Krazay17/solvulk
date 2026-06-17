@@ -1,8 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-#include "combat/combat_types.h"
-
 typedef enum
 {
     BUFFKIND_FIRE,

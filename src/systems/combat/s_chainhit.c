@@ -25,16 +25,18 @@ void Sol_Chainhit_Init(World *world)
     WAddStep(world)           = Chain_Step;
 }
 
-void Sol_Chainhit_Trigger(World *world, int dealer, int target, ChainKind kind)
+void Sol_Chainhit_Trigger(World *world, int dealer, int target, ChainKind kind, float damage)
 {
-    Sol_Event_Add(world,
-                  (SolEvent){.kind = EVENTKIND_HIT, .as.hit.entA = dealer, .as.hit.entB = target, .as.hit.damage = 10});
+    Sol_Event_Add(
+        world,
+        (SolEvent){.kind = EVENTKIND_HIT, .as.hit.entA = dealer, .as.hit.entB = target, .as.hit.damage = damage});
     Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), chain_config[kind].color, 0.2f);
 
     Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;
     memset(&world->chainhit->chains[idx], 0, sizeof(Chain));
     world->chainhit->chains[idx].count           = chain_config[kind].chainCount;
+    world->chainhit->chains[idx].damage          = damage;
     world->chainhit->chains[idx].dealer          = dealer;
     world->chainhit->chains[idx].last            = target;
     world->chainhit->chains[idx].hitEnts[target] = true;
@@ -57,10 +59,12 @@ void Chain_Step(World *world, double dt, double time)
             int target   = Find_NextTarget(world, chain);
             if (target > 0)
             {
-                Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_HIT,
-                                                .as.hit.entA   = chain->dealer,
-                                                .as.hit.entB   = target,
-                                                .as.hit.damage = 10});
+                Sol_Event_Add(world, (SolEvent){
+                                         .kind          = EVENTKIND_HIT,
+                                         .as.hit.entA   = chain->dealer,
+                                         .as.hit.entB   = target,
+                                         .as.hit.damage = chain->damage,
+                                     });
                 Sol_Event_Add(world, (SolEvent){
                                          .kind       = EVENTKIND_FX,
                                          .as.fx.kind = chain_config[chain->kind].fxKind,

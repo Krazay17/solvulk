@@ -32,10 +32,10 @@ static void Combat_Step(World *world, double dt, double time)
         switch (e->kind)
         {
         case EVENTKIND_HIT: {
-            u32 damage      = e->as.hit.damage;
-            u32 effectMask  = e->as.hit.effectMask;
-            e->as.hit.power = e->as.hit.power ? e->as.hit.power : 1.0f;
-            e->as.hit.entA  = Sol_Owner_GetOwner(world, e->as.hit.entA);
+            float damage     = e->as.hit.damage;
+            u32   effectMask = e->as.hit.effectMask;
+            e->as.hit.power  = e->as.hit.power ? e->as.hit.power : 1.0f;
+            e->as.hit.entA   = Sol_Owner_GetOwner(world, e->as.hit.entA);
 
             bool canDamage  = world->masks[e->as.hit.entB] & HAS_VITAL &&
                               Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
@@ -72,7 +72,8 @@ static void Combat_Step(World *world, double dt, double time)
 
                 if (effectMask & EFFECTMASK_CHAINLIGHTNING)
                 {
-                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, CHAINKIND_LIGHTNING);
+                    float damage = Sol_Math_Lerp(0.001f, 10.0f, e->as.hit.power);
+                    Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, CHAINKIND_LIGHTNING, damage);
                 }
                 float knockback         = 0;
                 float knockbackDuration = 0;

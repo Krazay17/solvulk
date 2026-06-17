@@ -8,6 +8,7 @@ typedef struct SolTexture
     u32          width, height;
     u32          channels;
     bool         loaded;
+    size_t       size;
 } SolTexture;
 
 int Sol_Textures_Init();

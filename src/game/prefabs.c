@@ -184,25 +184,14 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
     return id;
 }
 
-int Sol_Prefab_Floor(World *world, vec3s pos)
-{
-    int id            = Sol_Create_Ent(world, 0);
-    world->ekinds[id] = EKIND_FLOOR;
-    Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, SOL_MODEL_WORLD0, 1.0f);
-    Sol_Body_Add(world, id, (BodyDesc){.shape = SHAPE3_MOD});
-
-    return id;
-}
-
 int Sol_Prefab_Box(World *world, vec3s pos)
 {
 
     int id            = Sol_Create_Ent(world, 0);
     world->ekinds[id] = EKIND_BOX;
     Sol_Xform_Teleport(world, id, pos);
-    // Sol_Model_Add(world, id, SOL_MODEL_BOX, 1.0f);
-    Sol_Body_Add(world, id, (BodyDesc){.mass = 0, .radius = 1.0f, .shape = SHAPE3_MOD, .group = 0b01});
+    Sol_Model_Add(world, id, SOL_MODEL_BOX, 1.0f);
+    Sol_Body_Add(world, id, (BodyDesc){.mass = 1.0f, .radius = 1.0f, .shape = SHAPE3_SPH, .group = 0b01});
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 

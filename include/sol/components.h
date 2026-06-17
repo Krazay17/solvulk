@@ -132,9 +132,9 @@ typedef struct CompItem
     u8       rarity;
     bool     onCooldown;
 
-    u32 bonusDamage;
-    u32 bonusBuffs;
-    u32 bonusEffects;
+    float bonusDamage;
+    u32   bonusBuffs;
+    u32   bonusEffects;
 } CompItem;
 
 void      Sol_Item_Init(World *world);

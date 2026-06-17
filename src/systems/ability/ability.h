@@ -34,7 +34,7 @@ typedef struct
     float        elapsed, duration, accum, recovery, charge, cooldown;
     double       lastEntered, lastExited;
     u32          stage;
-    u32          damage;
+    float        damage;
     u32          buffs;
     u32          effects;
 } AbilityData;
@@ -43,17 +43,17 @@ typedef struct
 {
     SolActions actionBit;
 
-    u32 boundState;
-    u32 boundRarity;
-    u32 boundBonusDamage;
-    u32 boundBonusBuffs;
-    u32 boundBonusEffects;
+    u32   boundState;
+    u32   boundRarity;
+    u32   boundBonusBuffs;
+    u32   boundBonusEffects;
+    float boundBonusDamage;
 
-    u32 pendingState;
-    u32 pendingRarity;
-    u32 pendingBonusDamage;
-    u32 pendingBonusBuffs;
-    u32 pendingBonusEffects;
+    u32   pendingState;
+    u32   pendingRarity;
+    u32   pendingBonusBuffs;
+    u32   pendingBonusEffects;
+    float pendingBonusDamage;
 
     bool dirtyApply, dirtySend;
 } SkillBinding;
@@ -84,7 +84,7 @@ typedef struct
 {
     char  name[32];
     float cooldown, duration;
-    u32   damage;
+    float damage;
     u32   buffMask;
     u32   effectMask;
 } AbilityConfig;
@@ -98,7 +98,7 @@ bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, 
 AbilityState Sol_Ability_GetState(World *world, int id);
 const char  *Sol_Ability_GetNameString(u32 ability);
 
-void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
                              u32 bonusEffects);
-void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, u32 bonusDamage, u32 bonusBuffs,
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
                       u32 bonusEffects);

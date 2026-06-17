@@ -13,6 +13,11 @@ ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_CAP][SHAPE3_CAP] = Collide_Capsule_Capsule,
     [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere,
     [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
+    [SHAPE3_MOD][SHAPE3_MOD] = Collide_Sphere_Sphere,
+    [SHAPE3_MOD][SHAPE3_SPH] = Collide_Sphere_Sphere,
+    [SHAPE3_BOX][SHAPE3_BOX] = Collide_Box_Box,
+    [SHAPE3_BOX][SHAPE3_SPH] = Collide_Sphere_Box,
+    [SHAPE3_SPH][SHAPE3_BOX] = Collide_Sphere_Box,
 };
 
 RaycastTest ray_shape_test[SHAPE3_CNT] = {
@@ -758,6 +763,16 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
     hit->pos         = bestTriPoint;
 
     return true;
+}
+
+bool Collide_Box_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
+{
+
+}
+
+bool Collide_Box_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
+{
+    
 }
 
 bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)

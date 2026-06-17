@@ -14,7 +14,7 @@ SolModelMasks model_masks[SOL_MODEL_COUNT];
 const char *model_path[SOL_MODEL_COUNT] = {
     [MODELKIND_WIZARD] = "Wizard.glb",
     [MODELKIND_DUDE]   = "Dude.glb",
-    //[SOL_MODEL_BOX] = "Box.glb",
+    [SOL_MODEL_BOX] = "Box.glb",
     [SOL_MODEL_WORLD0] = "World0.glb",
     [SOL_MODEL_WORLD1] = "World1.glb",
     [SOL_MODEL_WORLD2] = "World2.glb",
@@ -57,6 +57,7 @@ Anim: 26 CrouchWalkFwd
 Anim: 27 Slide
 Anim: 28 Stunned
 Anim: 29 LeftChannel
+Anim: 30 RightChannel
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
     [MODELKIND_WIZARD] =
@@ -83,7 +84,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_DASH_RIGHT]       = 11,
             [ANIM_CHARGE_LEFT]      = 25,
             [ANIM_CHANNEL_LEFT]     = 29,
-            [ANIM_CHANNEL_RIGHT]    = 29,
+            [ANIM_CHANNEL_RIGHT]    = 30,
             [ANIM_ATTACK_LEFT]      = 16,
             [ANIM_ATTACK_RIGHT]     = 15,
             [ANIM_SPINSLASH]        = 24,

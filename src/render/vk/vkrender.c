@@ -1,7 +1,7 @@
 
 #include "sol_core.h"
 
-#include "render/model/model_i.h"
+#include "model/model_i.h"
 #include "render/render_i.h"
 #include "vkrender.h"
 
@@ -429,6 +429,11 @@ VkCommandBuffer Command_Buffer_Get()
 void *Sol_GetDescriptorMapping(DescriptorId id)
 {
     return descriptors[id].mapped[solvkstate.currentFrame];
+}
+
+SceneUBO *Sol_Render_GetNext_Scene()
+{
+    return Sol_GetDescriptorMapping(DESC_SCENE_UBO);
 }
 
 SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id)

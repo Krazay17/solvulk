@@ -41,8 +41,8 @@ void MakeAWizard(int flags, void *data)
 void MakeABox(int flags, void *data)
 {
     World *world = (World *)data;
-    vec3s  pos   = Sol_Controller_GetAimPos(world, world->playerID);
-    // Sol_Prefab_Box(world, pos);
+    vec3s  pos   = Sol_Controller_GetAimPos(world, 1);
+    Sol_Prefab_Box(world, pos);
 }
 
 void ClearEnts(int flags, void *data)
@@ -141,7 +141,7 @@ void Create_Sol_Game()
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
     Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD2, 0);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
-    // WAddStep(gameWorld) = WizSpawner;
+    WAddStep(gameWorld) = WizSpawner;
 
     player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);

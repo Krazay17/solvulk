@@ -1,8 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-#include "combat_types.h"
-
 typedef enum
 {
     COMBATFLAG_REFLECTING = (1 << 0),
@@ -23,6 +21,7 @@ typedef enum
 typedef struct
 {
     u8    kind;
+    float damage;
     int   count, dealer, last;
     int   hitEnts[MAX_ENTS];
     float accum, delay;
@@ -41,6 +40,6 @@ void Sol_Combat_RemoveFlags(World *world, int id, CombatFlags flags);
 void Sol_Combat_ClearFlags(World *world, int id, CombatFlags flags);
 void Sol_Combat_ClearHits(World *world, int id);
 
-void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, u32 damage, int count);
+void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, float damage, int count);
 void Sol_Chainhit_Init(World *world);
-void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 count);
+void Sol_Chainhit_Trigger(World *world, int dealer, int target, ChainKind kind, float damage);

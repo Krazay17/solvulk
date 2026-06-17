@@ -102,7 +102,7 @@ typedef enum
 {
     MODELKIND_WIZARD,
     MODELKIND_DUDE,
-    // SOL_MODEL_BOX,
+    SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
     SOL_MODEL_WORLD2,
@@ -296,7 +296,7 @@ typedef struct SolHit
     vec3s vel;
     float power;
 
-    u32 damage;
+    float damage;
     u32 buffMask;
     u32 effectMask;
     u32 fxKind;

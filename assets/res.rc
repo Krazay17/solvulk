@@ -27,7 +27,7 @@ Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
 World1.glb              RCDATA          "models/World1.glb"
 World2.glb              RCDATA          "models/World2.glb"
-//Box.glb                 RCDATA          "models/Box.glb"
+Box.glb                 RCDATA          "models/Box.glb"
 Dude.glb                RCDATA          "models/Dude.glb"
 
 Beep1.wav               RCDATA          "sounds/Beep1.wav"

@@ -1,5 +1,4 @@
 #pragma once
-#include "combat/combat_types.h"
 #include "sol/types.h"
 
 typedef enum

@@ -1,6 +1,6 @@
 #include "sol_core.h"
 
-#include "render/model/model_i.h"
+#include "model/model_i.h"
 
 #define ONESHOT_FADE_DURATION 0.25f
 

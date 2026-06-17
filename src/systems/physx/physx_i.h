@@ -183,6 +183,8 @@ bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, 
 bool Collide_Capsule_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Capsule(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Capsule_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Box_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
+bool Collide_Box_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 void Resolve_Dynamic_Pair(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit);
 void Add_Contact(EntityContacts *c, u32 otherId, vec3s normal, vec3s pos);

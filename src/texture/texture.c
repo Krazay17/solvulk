@@ -54,6 +54,7 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
         image->height = 224;
         image->width  = 224;
         image->loaded = true;
+        printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
     }
 
@@ -61,6 +62,7 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
     {
         image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
         image->loaded = true;
+        printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
     }
 
@@ -81,7 +83,7 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
     image->channels = 4; // we forced 4
     image->loaded   = true;
 
-    printf("Image upload width:%d\n", image->width);
+    printf("ID: %d, Image upload width:%d\n", id, image->width);
 
     return image;
 }
@@ -111,10 +113,21 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
         return 0; // Return a default fallback texture index
     }
 
-    for (int i = 0; i < next_free_texture_idx; i++)
+    // Deduplicate by checking if an image with the exact same size and starting bytes already exists
+    for (uint32_t i = 0; i < next_free_texture_idx; i++)
     {
+        // 1. Static images might not have a tracked payload size, so check if data pointer is identical first
         if (loaded_images[i].data == data)
             return i;
+
+        // 2. For runtime glb chunks, match size and the first 16 signature bytes
+        // (Saves you from running an expensive full memcmp over megabytes of image bytes)
+        if (loaded_images[i].loaded && loaded_images[i].width > 0)
+        {
+            // You can add a .size field to your SolTexture struct to make this 100% robust:
+            if (loaded_images[i].size == size && memcmp(loaded_images[i].pixels, ((SolTexture *)data)->pixels, 16) == 0)
+                return i;
+        }
     }
 
     uint32_t assignedSlot = next_free_texture_idx++;

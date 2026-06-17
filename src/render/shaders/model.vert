@@ -77,7 +77,7 @@ void main() {
     fragColor = inst.color;
 
     // Check if the 2D flag bit is set
-    if ((inst.flags & FLAG_2D) != 0u) 
+    if ((inst.flags & FLAG_2D) != 0u)
     {
         // 1. Compute 2D position using local inPos vertices, scale, and translation offset
         // Typically, UI meshes are flat unit quads on the XY plane (Z=0)

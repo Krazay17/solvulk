@@ -71,11 +71,11 @@ void Laser_State_Update(World *world, int id, float dt)
     data->accum += dt;
     if (data->accum < HITINTERVAL)
         return;
-    data->accum        = 0;
-    CompCombat *combat = &world->combats[id];
-    float finalDamage = (data->damage * data->charge) * HITINTERVAL;
+    data->accum             = 0;
+    CompCombat *combat      = &world->combats[id];
+    float       finalCharge = data->charge * HITINTERVAL;
+    float       finalDamage = data->damage * finalCharge;
 
-    
     Sol_Combat_ClearHits(world, id);
     SolRay ray = {
         .dir       = controller->aimdir,
@@ -103,13 +103,13 @@ void Laser_State_Update(World *world, int id, float dt)
         Sol_Event_Add(world, (SolEvent){
                                  .kind              = EVENTKIND_HIT,
                                  .as.hit.damage     = finalDamage,
+                                 .as.hit.power      = finalCharge,
                                  .as.hit.buffMask   = data->buffs,
                                  .as.hit.effectMask = data->effects,
                                  .as.hit.entA       = id,
                                  .as.hit.entB       = result.entId,
                                  .as.hit.pos        = result.pos,
                                  .as.hit.vel        = controller->aimdir,
-                                 .as.hit.power      = data->charge,
                              });
     }
 }

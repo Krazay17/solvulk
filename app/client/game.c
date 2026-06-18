@@ -10,7 +10,7 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
-//    gameWorld->models[1].modelId = MODELKIND_ZORGON;
+    gameWorld->models[1].modelId = MODELKIND_ZORGON;
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
     // RibbonHandle handle = Sol_Ribbon_Add(gameWorld, 1, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
     // Sol_Ribbon_UpdateTargetPos(gameWorld, handle, (vec3s){0, 25, 25});

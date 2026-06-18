@@ -59,7 +59,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_SKINNING_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES, DESC_SKINNING_SSBO},
             .descCount         = 6,
         },
     [PIPE_TEXT] =

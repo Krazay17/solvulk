@@ -75,6 +75,7 @@ void main() {
     flags = inst.flags;
     fragHitTime = inst.hitTime;
     fragColor = inst.color;
+    fragUV = inUV;
 
     // Check if the 2D flag bit is set
     if ((inst.flags & FLAG_2D) != 0u)
@@ -101,7 +102,6 @@ void main() {
         gl_Position   = scene.viewProj * vec4(worldPos, 1.0);
 
         fragWorldPos = worldPos;
-        fragUV = inUV;
         fragNormal   = mat * inNormal;
     }
 }

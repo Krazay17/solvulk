@@ -3,7 +3,7 @@
 // ─── Vertex inputs ──────────────────────────────────────────────────────────
 layout(location = 0) in vec3  inPos;
 layout(location = 1) in vec3  inNormal;
-layout(location = 2) in vec2  inUv;
+layout(location = 2) in vec2  inUV;
 layout(location = 3) in uvec4 inBoneIndices;
 layout(location = 4) in vec4  inBoneWeights;
 
@@ -14,6 +14,7 @@ layout(location = 2) out vec3 fragWorldPos;
 layout(location = 3) flat out int   instanceIndex;
 layout(location = 4) flat out uint  flags;
 layout(location = 5) flat out float fragHitTime;
+layout(location = 6) out vec2 fragUV;
 
 // ─── Descriptors ────────────────────────────────────────────────────────────
 layout(set = 0, binding = 0) uniform GameData {
@@ -48,7 +49,7 @@ struct InstanceSkinning {
     mat4 bones[MAX_BONES];
 };
 
-layout(set = 3, binding = 0) readonly buffer Skinning {
+layout(set = 5, binding = 0) readonly buffer Skinning {
     InstanceSkinning skins[];
 };
 
@@ -119,6 +120,7 @@ void main() {
     fragWorldPos  = worldPos;
     fragNormal    = transformedNormal;
     fragColor     = inst.color;
+    fragUV        = inUV;
     instanceIndex = gl_InstanceIndex;
     flags         = inst.flags;
     fragHitTime   = inst.hitTime;

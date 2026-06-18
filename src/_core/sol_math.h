@@ -129,7 +129,6 @@ static inline void TransformNrm(const float m[16], const float in[3], float out[
 
 static inline float Sol_Math_Lerp(float start, float end, float amount)
 {
-    // amount = fmaxf(0, fminf(1.0f, amount));
     return start + amount * (end - start);
 }
 
@@ -142,6 +141,16 @@ static inline float Sol_Math_Lerp_Clamped(float start, float end, float amount)
 static inline float Sol_YawFromQuat(versor q)
 {
     return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
+}
+
+static inline float Sol_YawFromVec(vec3s v)
+{
+    return atan2f(v.x, v.z);
+}
+
+static inline float Sol_PitchFromVec(vec3s v)
+{
+    return asinf(v.y);
 }
 
 static inline float Sol_Math_RandRange(float a, float b)

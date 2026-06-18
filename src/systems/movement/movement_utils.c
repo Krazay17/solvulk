@@ -52,5 +52,6 @@ vec3s ProjectOntoGround(World *world, int id, vec3s wishdir)
 {
     vec3s ground = Sol_Physx_GetGround(world, id);
     float dot    = glms_vec3_dot(wishdir, ground);
+    dot = fmaxf(-0.5f, fminf(0.5, dot));
     return glms_vec3_sub(wishdir, glms_vec3_scale(ground, dot));
 }

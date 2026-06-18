@@ -86,7 +86,7 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
 
 static void RemoteTick(World *world, int id, CompController *controller, double dt, double time)
 {
-    // world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
+    controller->aimdir = Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch);
 }
 
 static void LocalTick(World *world, int id, double dt, double time)
@@ -116,8 +116,8 @@ static void LocalTick(World *world, int id, double dt, double time)
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_FWD;
 
-    controller->yaw     = look->yaw;
-    controller->pitch   = look->pitch;
+    // controller->yaw     = look->yaw;
+    // controller->pitch   = look->pitch;
     controller->lookdir = look->lookdir;
     controller->wishdir = CalcWishdir3(controller->actionState, look->lookdir, WORLD_UP);
 
@@ -131,7 +131,10 @@ static void LocalTick(World *world, int id, double dt, double time)
                                                });
     aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(look->lookdir, 0.5f));
     vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
+
     controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
+    controller->yaw       = Sol_YawFromVec(controller->aimdir);
+    controller->pitch     = Sol_PitchFromVec(controller->aimdir);
     controller->aimHitEnt = aimTrace.entId;
 
     // #### DEBUG ACTIONS ####
@@ -155,9 +158,7 @@ static void LocalTick(World *world, int id, double dt, double time)
     }
     if (Sol_Input_KeyPressed(SOL_KEY_6))
     {
-        
     }
-
 }
 
 static vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)

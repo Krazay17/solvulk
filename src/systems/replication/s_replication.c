@@ -92,7 +92,11 @@ void Net_Send_Snap(World *world)
         e->pos            = world->xforms[id].pos;
         e->rot            = world->xforms[id].quat;
         e->scale          = world->xforms[id].scale.x;
-
+        if (world->masks[id] & HAS_CONTROLLER)
+        {
+            e->yaw   = world->controllers[id].yaw;
+            e->pitch = world->controllers[id].pitch;
+        }
         if (world->masks[id] & HAS_MODEL)
         {
             e->modelId = world->models[id].modelId;
@@ -217,7 +221,11 @@ void Net_Apply_Snap(World *world)
                 world->xforms[id].pos = e->pos;
 
             world->xforms[id].quat = e->rot;
-
+            if (world->masks[id] & HAS_CONTROLLER)
+            {
+                world->controllers[id].yaw   = e->yaw;
+                world->controllers[id].pitch = e->pitch;
+            }
             if (world->masks[id] & HAS_BODY3)
             {
                 world->bodies[id].vel    = e->vel;
@@ -300,6 +308,7 @@ void Net_Send_Input(World *world)
         .wishdir     = controller->wishdir,
         .aimdir      = controller->aimdir,
         .yaw         = controller->yaw,
+        .pitch       = controller->pitch,
         .isStrafing  = controller->isStrafing,
         .currentTick = world->currentTick,
     };

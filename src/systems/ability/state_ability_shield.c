@@ -20,7 +20,7 @@ void Shield_State_Update(World *world, int id, float dt)
         {
             data->accum               = 0;
             vec3s        pos          = Sol_Xform_GetPos(world, id);
-            SolRayResult results[256] = {0};
+            SolRayResult results[256];
             int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 4.0f, results, 256);
             for (int i = 0; i < hits; i++)
             {

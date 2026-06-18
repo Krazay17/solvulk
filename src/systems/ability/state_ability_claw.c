@@ -40,8 +40,8 @@ void Claw_State_Update(World *world, int id, float dt)
             .pos       = controller->aimpos,
             .mask      = 0b1,
         };
-        SolRayResult results[32] = {0};
-        int          hits        = Sol_SphereCast(world, ray, .66f, results, 32);
+        SolRayResult results[128];
+        int          hits        = Sol_SphereCast(world, ray, .66f, results, 128);
 
         for (int i = 0; i < hits; i++)
         {

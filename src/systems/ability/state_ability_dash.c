@@ -30,7 +30,7 @@ void ADash_State_Update(World *world, int id, float dt)
         data->accum               = 0;
         vec3s pos                 = Sol_Xform_GetPos(world, id);
         pos                       = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
-        SolRayResult results[256] = {0};
+        SolRayResult results[256];
         int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, HITRADIUS, results, 256);
         for (int i = 0; i < hits; i++)
         {

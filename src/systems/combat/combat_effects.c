@@ -12,9 +12,9 @@ void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, f
         return;
     }
 
-    SolRayResult results[64] = {0};
+    SolRayResult results[64];
     SolRay       ray         = {.pos = Sol_Xform_GetPos(world, target), .mask = 1, .ignoreEnt = target};
-    int          hits        = Sol_SphereCast(world, ray, 5.0f, results, count);
+    int          hits        = Sol_SphereCast(world, ray, 5.0f, results, 64);
     float        closest     = 999999.9f;
     float        farthest    = 0;
     int          closestId   = 0;

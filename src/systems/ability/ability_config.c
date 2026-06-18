@@ -37,7 +37,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             {
                 .name       = "Shield",
                 .cooldown   = 10.0f,
-                .damage     = 15,
+                .damage     = 10,
                 .duration   = 0.5f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
             },
@@ -45,7 +45,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             {
                 .name       = "Shield",
                 .cooldown   = 8.0f,
-                .damage     = 20,
+                .damage     = 15,
                 .duration   = 1.0f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE |
                               EFFECTMASK_CHAINLIGHTNING,
@@ -130,7 +130,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .name     = "Claw",
                 .cooldown = 1.5f,
                 .duration = 0.5f,
-                .damage   = 20,
+                .damage   = 25,
             },
         [ABILITY_STATE_CLAW][1] =
             {
@@ -138,7 +138,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .cooldown = 1.2f,
                 .duration = 0.5f,
 
-                .damage = 25,
+                .damage = 30,
             },
         [ABILITY_STATE_CLAW][2] =
             {
@@ -147,27 +147,24 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .duration   = 0.5f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING |
                               EFFECTMASK_HEALONHIT,
-                .damage     = 30,
+                .damage     = 35,
             },
         [ABILITY_STATE_LASER][0] =
             {
                 .name     = "Laser",
-                .cooldown = 1.0f,
-                .duration = 3.5f,
+                .cooldown = 2.0f,
                 .damage   = 60,
             },
         [ABILITY_STATE_LASER][1] =
             {
                 .name     = "Laser",
-                .cooldown = 1.0f,
-                .duration = 3.5f,
+                .cooldown = 2.0f,
                 .damage   = 80,
             },
         [ABILITY_STATE_LASER][2] =
             {
                 .name       = "Laser",
-                .cooldown   = 1.0f,
-                .duration   = 3.5f,
+                .cooldown   = 2.0f,
                 .damage     = 100,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_CHAINLIGHTNING,
             },

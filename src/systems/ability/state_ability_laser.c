@@ -7,7 +7,7 @@
 #define LASER_LENGTH 15.0f
 #define MAX_DURATION 3.5f
 #define MAX_CHARGE 2.0f
-#define MIN_CHARGE 0.1f
+#define MIN_CHARGE 0.2f
 
 static bool Leave_State(World *world, int id, CompAbility *ability)
 {
@@ -25,11 +25,11 @@ void Laser_State_Update(World *world, int id, float dt)
     AbilityData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
 
-    // if (data->elapsed >= data->duration)
-    // {
-    //     Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
-    //     return;
-    // }
+    if (data->elapsed >= MAX_DURATION)
+    {
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
+        return;
+    }
 
     CompController *controller = &world->controllers[id];
 
@@ -85,8 +85,8 @@ void Laser_State_Update(World *world, int id, float dt)
         .mask      = 0b1,
     };
 
-    SolRayResult results[64];
-    int          hits = Sol_SphereCast(world, ray, Sol_Math_Lerp(0.1f, 0.77f, data->charge / MAX_CHARGE), results, 64);
+    SolRayResult results[256];
+    int          hits = Sol_SphereCast(world, ray, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
 
     for (int i = 0; i < hits; i++)
     {

@@ -385,6 +385,7 @@ void Net_Recv_Packet(ENetEvent *event)
         c->lookdir                  = inputPacket->lookdir;
         c->aimdir                   = inputPacket->aimdir;
         c->yaw                      = inputPacket->yaw;
+        c->pitch                    = inputPacket->pitch;
         c->isStrafing               = inputPacket->isStrafing;
         if (inputPacket->hasEquipRequest)
         {
@@ -392,7 +393,8 @@ void Net_Recv_Packet(ENetEvent *event)
             {
                 // TODO Validate here
                 Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot],
-                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot], inputPacket->addEffect[slot]);
+                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot],
+                                 inputPacket->addEffect[slot]);
             }
         }
     }
@@ -440,7 +442,7 @@ void Net_Recv_Packet(ENetEvent *event)
         // Copy into a properly-sized buffer
         static WorldSnap fullSnap;
         memset(&fullSnap, 0, sizeof(WorldSnap));
-        size_t    copySize = event->packet->dataLength;
+        size_t copySize = event->packet->dataLength;
         if (copySize > sizeof(WorldSnap))
         {
             copySize = sizeof(WorldSnap); // clamp

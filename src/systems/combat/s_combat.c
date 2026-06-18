@@ -69,10 +69,9 @@ static void Combat_Step(World *world, double dt, double time)
                 {
                     Sol_Vital_Heal(world, e->as.hit.entA, e->as.hit.entA, 2);
                 }
-
                 if (effectMask & EFFECTMASK_CHAINLIGHTNING)
                 {
-                    float damage = Sol_Math_Lerp(0.01f, 10.0f, e->as.hit.power);
+                    float damage = Sol_Math_Lerp(0.01f, 5.0f, e->as.hit.power);
                     Sol_Chainhit_Trigger(world, e->as.hit.entA, e->as.hit.entB, CHAINKIND_LIGHTNING, damage);
                 }
                 float knockback         = 0;

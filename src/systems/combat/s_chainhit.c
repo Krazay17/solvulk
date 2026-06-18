@@ -89,9 +89,9 @@ void Chain_Step(World *world, double dt, double time)
 
 int Find_NextTarget(World *world, Chain *chain)
 {
-    SolRayResult results[64] = {0};
+    SolRayResult results[256];
     SolRay       ray         = {.pos = Sol_Xform_GetPos(world, chain->last), .mask = 1, .ignoreEnt = chain->dealer};
-    int          hits        = Sol_SphereCast(world, ray, 10.0f, results, 64);
+    int          hits        = Sol_SphereCast(world, ray, 10.0f, results, 256);
     float        closest     = 999999.9f;
     int          closestId   = 0;
     for (int i = 0; i < hits; i++)

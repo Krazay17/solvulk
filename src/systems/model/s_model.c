@@ -15,6 +15,7 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
     CompModel model = model_kinds[kind];
     model.modelId   = kind;
     model.yOffset   = -height * 0.5f;
+    
 
     SolModel *m = Sol_GetModel(kind);
     if (m->skeleton.animationCount > 0)

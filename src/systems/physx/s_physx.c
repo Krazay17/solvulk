@@ -166,27 +166,35 @@ void Ground_Trace(World *world, int count, float fdt)
         CompBody  *body  = &world->bodies[id];
 
         // Start from center-bottom of the body
-        vec3s origin        = xform->pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.3f));
-        body->groundNormal  = (vec3s){0, 0, 0};
-        SolRayResult result = {0};
+        vec3s origin       = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
+        body->groundNormal = (vec3s){0, 0, 0};
+        SolRayResult results[9];
         for (int j = 0; j < 9; j++)
         {
             // Rotate the local offset by the entity's rotation
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
 
-            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x));
+            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.9f));
 
-            result = Sol_Raycast(
+            results[j] = Sol_Raycast(
                 world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.6f, .ignoreEnt = id, .mask = 0});
-            if (result.hit && result.norm.y > 0.5f)
-                break;
+                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.2f, .ignoreEnt = id, .mask = 0});
         }
-        if (result.hit && result.norm.y > 0.5f)
+        float flattestNorm = -1.0f;
+        int idx = 0;
+        for (int j = 0; j < 9; j++)
+        {
+            if (results[j].norm.y > flattestNorm)
+            {
+                flattestNorm = results[j].norm.y;
+                idx = j;
+            }
+        }
+        if (flattestNorm > 0.5f)
         {
             body->airtime = 0;
             body->groundtime += fdt;
-            body->groundNormal = result.norm;
+            body->groundNormal = results[idx].norm;
         }
         else
         {

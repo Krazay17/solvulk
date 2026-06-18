@@ -21,6 +21,8 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     {
     case EKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
+        if (auth == NETAUTH_REMOTE)
+            Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
         break;
     case EKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
@@ -108,6 +110,39 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                                   }});
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
+    Sol_Vital_Add(world, id, VITALKIND_WIZARD);
+
+    return id;
+}
+
+int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
+{
+    vec2s dims = {.x = 0.5f, .y = 1.6f};
+    glms_vec2_scale(dims, scale);
+
+    dims = glms_vec2_scale(dims, scale);
+    id   = Sol_Create_Ent(world, id);
+    if (id < 0)
+        return -1;
+    world->ekinds[id] = EKIND_ZORGON;
+    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
+    Sol_Model_Add(world, id, MODELKIND_ZORGON, dims.y);
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .height      = dims.y,
+                     .radius      = dims.x,
+                     .mass        = 1.0f,
+                     .shape       = SHAPE3_CAP,
+                     .restitution = 0.1f,
+                     .group       = 1,
+                 });
+    Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
+    Sol_Ability_Add(world, id,
+                    (AbilityDesc){.bindings = {
+                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
+                                  }});
+                                  
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
 
     return id;

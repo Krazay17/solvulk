@@ -77,8 +77,7 @@ void Sol_System_Movement_3d_Step(World *world, double dt, double time)
             switch (movement->state)
             {
             case MOVE_STUN:
-                if (vel.y < 0)
-                    body->gravity.y *= 1.33f;
+                body->gravity.y *= 1.33f;
                 vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
                 Sol_Physx_SetVel(world, id, vel);
                 break;

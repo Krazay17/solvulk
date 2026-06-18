@@ -32,7 +32,7 @@ typedef struct
     bool  isStrafing;
     u32   actionMask, currentTick;
     vec3s lookdir, wishdir, aimdir;
-    float yaw;
+    float yaw, pitch;
     u32   abilities[10];
     u32   rarity[10];
     float addDamage[10];

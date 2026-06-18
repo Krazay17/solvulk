@@ -33,7 +33,7 @@ typedef struct
     u32     buffMask;
     vec3s   pos, vel;
     versors rot;
-    float   scale, abilityCharge, height;
+    float   scale, abilityCharge, height, yaw, pitch;
 
     u32 health, energy;
 

@@ -5,7 +5,7 @@ SolCamera sol_camera = {
     .nearClip  = 0.2f,
     .farClip   = 1000.0f,
     .lerpspeed = 20.0f,
-    .distance  = 6.5f,
+    .distance  = 4.5f,
     .offset    = 1.0f,
 };
 

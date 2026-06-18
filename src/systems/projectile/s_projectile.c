@@ -68,7 +68,7 @@ static void Projectile_Step(World *world, double dt, double time)
             .pos       = xform->lastPos,
             .ignoreEnt = id,
         };
-        SolRayResult results[24] = {0};
+        SolRayResult results[24];
         int          hits        = Sol_SphereCast(world, ray, body->dims.x, results, 24);
         for (int i = 0; i < hits; i++)
         {

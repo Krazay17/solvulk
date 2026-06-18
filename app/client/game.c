@@ -10,6 +10,7 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
+//    gameWorld->models[1].modelId = MODELKIND_ZORGON;
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
     // RibbonHandle handle = Sol_Ribbon_Add(gameWorld, 1, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
     // Sol_Ribbon_UpdateTargetPos(gameWorld, handle, (vec3s){0, 25, 25});
@@ -32,7 +33,7 @@ void MakeAWizard(int flags, void *data)
     double          epsilonB = cos(time) * 10.0 + 25.0;
     for (int i = 0; i < wizard->amount; i++)
     {
-        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 0.85f);
+        int id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
         Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
     }
@@ -141,7 +142,7 @@ void Create_Sol_Game()
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
     Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
-    WAddStep(gameWorld) = WizSpawner;
+    // WAddStep(gameWorld) = WizSpawner;
 
     player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);

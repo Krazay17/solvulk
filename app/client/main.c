@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     // load hot reload api
     // load_api("libsolvulk.dll");
 
-    if (!Sol_GetState()->isRunning)
+    if (!solEngine.isRunning)
     {
         MessageBoxA(g_hwnd, "Engine flagged as not running before message loop started.", "Error", MB_OK);
         return 1;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
     // Main thread is now 100% dedicated to pumping Windows messages.
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0) && Sol_GetState()->isRunning) // blocks until a message arrives – zero CPU waste
+    while (GetMessage(&msg, NULL, 0, 0) && solEngine.isRunning) // blocks until a message arrives – zero CPU waste
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -145,10 +145,9 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
         double dt      = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)freq.QuadPart;
         double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
         lastTime       = currentTime;
-        POINT cursorPos;
-        GetCursorPos(&cursorPos);
-        DebugFPS(dt);
-        dt *= Sol_GetState()->timescale;
+        //POINT cursorPos;
+        //GetCursorPos(&cursorPos);
+        dt *= solState.timescale;
         Sol_Tick(dt, runTime);
 
         QueryPerformanceFrequency(&freq);

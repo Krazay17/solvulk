@@ -10,32 +10,49 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
-    gameWorld->models[1].modelId = MODELKIND_ZORGON;
+    //    gameWorld->models[1].modelId = MODELKIND_ZORGON;
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
     // RibbonHandle handle = Sol_Ribbon_Add(gameWorld, 1, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
     // Sol_Ribbon_UpdateTargetPos(gameWorld, handle, (vec3s){0, 25, 25});
     // Sol_Ribbon_AddBetweenEntities(gameWorld, 1, 2, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
 }
 
-struct MakeWiz
+typedef enum
+{
+    ENEMYKIND_WIZARD,
+    ENEMYKIND_ZORGON,
+} EnemyKind;
+struct MakeEnemy
 {
     World *world;
-    u32    amount;
+    u32    enemyKind;
 };
-void MakeAWizard(int flags, void *data)
+void SpawnEnemy(int flags, void *data)
 {
     if (Net_IsClient())
         return;
-    static int      posInc;
-    struct MakeWiz *wizard   = (struct MakeWiz *)data;
-    double          time     = Sol_GetGameTime();
-    double          epsilonA = sin(time) * 10.0;
-    double          epsilonB = cos(time) * 10.0 + 25.0;
-    for (int i = 0; i < wizard->amount; i++)
+    static int        posInc;
+    struct MakeEnemy *enemy    = (struct MakeEnemy *)data;
+    double            time     = solState.gameTime;
+    double            epsilonA = sin(time) * 10.0;
+    double            epsilonB = cos(time) * 10.0 + 25.0;
+
+    switch (enemy->enemyKind)
     {
-        int id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
-        Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+    case ENEMYKIND_WIZARD: {
+
+        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
+        Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
+    }
+    break;
+    case ENEMYKIND_ZORGON: {
+
+        int id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
+        Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+        Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
+    }
+    break;
     }
 }
 
@@ -70,7 +87,7 @@ void HostGame(int flags, void *data)
             gameWorld, 0, EKIND_WIZARD,
             (EntDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
         if (id)
-            Sol_AiController_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+            Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
     }
 }
 
@@ -111,16 +128,21 @@ void RotateGuy(World *world, double dt, double time)
 
 void WizSpawner(World *world, double dt)
 {
-    static float          accum = 0;
-    static struct MakeWiz wiz   = {0};
-    wiz.world                   = world;
-    wiz.amount                  = 3;
+    static float            accum  = 0;
+    static u32              amount = 3;
+    static struct MakeEnemy enemy  = {0};
+    enemy.world                    = world;
+    enemy.enemyKind                = ENEMYKIND_WIZARD;
 
     accum += dt;
+
     if (accum > 1.0f)
     {
         accum = 0;
-        MakeAWizard(0, &wiz);
+        for (int i = 0; i < amount; i++)
+        {
+            SpawnEnemy(0, &enemy);
+        }
     }
 }
 
@@ -135,7 +157,7 @@ void Create_Sol_Game()
 
     Sol_World_SetActive(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
-    Sol_View_Crosshair(gameWorld);
+    // Sol_View_Crosshair(gameWorld);
 
     SpawnPlayer(0, 0);
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
@@ -221,17 +243,23 @@ void Create_Sol_Game()
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Set(menu, quitButton, (CompInteract){.onClick = (Callback){QuitApp}});
 
-    int                   wizOneButton = Sol_Prefab_Button(menu, (vec3s){10, 250, 0}, "1 Wizard");
-    static struct MakeWiz wizOne       = {0};
-    wizOne.amount                      = 1;
-    wizOne.world                       = gameWorld;
-    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (Callback){MakeAWizard, &wizOne}});
+    int                     wizOneButton = Sol_Prefab_Button(menu, (vec3s){10, 250, 0}, "Spawn 1Wizard");
+    static struct MakeEnemy wizOne       = {0};
+    wizOne.world                         = gameWorld;
+    wizOne.enemyKind                     = ENEMYKIND_WIZARD;
+    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (Callback){SpawnEnemy, &wizOne}});
 
-    int                   wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "100 Wizards");
-    static struct MakeWiz wizhundred       = {0};
-    wizhundred.amount                      = 1;
-    wizhundred.world                       = gameWorld;
-    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (Callback){MakeAWizard, &wizhundred}});
+    int                     wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "Spawn Wizards");
+    static struct MakeEnemy wizhundred       = {0};
+    wizhundred.world                         = gameWorld;
+    wizhundred.enemyKind                     = ENEMYKIND_WIZARD;
+    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (Callback){SpawnEnemy, &wizhundred}});
+
+    int                     spawnZorgonButton = Sol_Prefab_Button(menu, (vec3s){160, 300, 0}, "Spawn Zorgons");
+    static struct MakeEnemy makeEnemyZorgon   = {0};
+    makeEnemyZorgon.world                     = gameWorld;
+    makeEnemyZorgon.enemyKind                 = ENEMYKIND_ZORGON;
+    Sol_Interact_Set(menu, spawnZorgonButton, (CompInteract){.onHold = (Callback){SpawnEnemy, &makeEnemyZorgon}});
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
     Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (Callback){SpawnPlayer, gameWorld}});

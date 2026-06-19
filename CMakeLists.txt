@@ -37,7 +37,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c11 /W1)
+    target_compile_options(solvulk PRIVATE /std:c11 /W2)
     set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -55,9 +55,12 @@ target_include_directories(solvulk
         "${CMAKE_SOURCE_DIR}/include"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/_core"
-        "${CMAKE_SOURCE_DIR}/src/systems"
-        "${CMAKE_SOURCE_DIR}/vendored/"
+        "${CMAKE_SOURCE_DIR}/src/core"
+        "${CMAKE_SOURCE_DIR}/src/world"
+        "${CMAKE_SOURCE_DIR}/include/sol"
+        "${CMAKE_SOURCE_DIR}/vendored"
+        "${CMAKE_SOURCE_DIR}/extern"
+        "${CMAKE_SOURCE_DIR}/extern/libwebp/include"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -67,9 +70,11 @@ if(SOL_DEV_MODE)
     target_include_directories(solvulk 
     PUBLIC 
         "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/_core"
-        "${CMAKE_SOURCE_DIR}/src/systems"
+        "${CMAKE_SOURCE_DIR}/src/core"
+        "${CMAKE_SOURCE_DIR}/src/world"
+        "${CMAKE_SOURCE_DIR}/include/sol"
         "${CMAKE_SOURCE_DIR}/vendored"
+        "${CMAKE_SOURCE_DIR}/extern"
         "${CMAKE_SOURCE_DIR}/extern/libwebp/include"
     )
 endif()

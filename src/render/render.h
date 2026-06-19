@@ -8,7 +8,8 @@
 #pragma once
 #include "sol/types.h"
 
-#include "font/font.h"
+#include "font.h"
+#include "model.h"
 
 #define MAX_MODEL_INSTANCES (1 << 14)
 #define MAX_RECT_INSTANCES (1 << 14)
@@ -179,17 +180,6 @@ typedef struct
     bool         isfx;
 } SpriteDesc;
 
-typedef struct
-{
-    const char *text;
-    vec3s       pos;
-    float       size;
-    vec4s       color;
-    SolFontKind font;
-    bool        billboard; // face camera or use rotation
-    versors     rotation;  // if not billboard
-} Text3DDesc;
-
 typedef struct ModelPushDesc
 {
     SolModelKind handle;
@@ -314,6 +304,7 @@ static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 kind)
             return NULL;
         return &ribbonQueueAdd.instances[ribbonQueueAdd.count++];
     }
+    return NULL;
 }
 
 typedef enum
@@ -389,6 +380,7 @@ void      Sol_Render_DrawSkybox(void);
 void      Sol_Render_DrawLine(SolLine *lines, int count);
 void      Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
 void      Sol_Render_DrawText(SolFontDesc desc);
-void      Sol_Render_UploadImage(float width, float height, void *pixels, u32 id);
+void      Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id);
 void      Sol_Render_UploadModel(SolModel *model, u32 modelId);
 SceneUBO *Sol_Render_GetNext_Scene();
+void      Sol_Render_DrawText3D(Text3DDesc desc);

@@ -11,7 +11,6 @@
 #define SOLAPI
 #endif
 
-#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define WORLD_FORWARD (vec3s){0, 0, 1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
@@ -19,11 +18,8 @@
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
-#define MAX_BONES 128
-#define MAX_ENTS (1 << 14)
+
 // Forwards
-typedef struct World    World;
-typedef struct SolState SolState;
 typedef enum
 {
     EKIND_PLAYER = 1,
@@ -37,27 +33,6 @@ typedef enum
     EKIND_COUNT,
 } EKind;
 // Enums
-typedef enum
-{
-    ACTION_NONE     = 0,
-    ACTION_ABILITY1 = (1 << 0),
-    ACTION_ABILITY2 = (1 << 1),
-    ACTION_ABILITY3 = (1 << 2),
-    ACTION_ABILITY4 = (1 << 3),
-    ACTION_ABILITY5 = (1 << 4),
-    ACTION_ABILITY6 = (1 << 5),
-    ACTION_ABILITY7 = (1 << 6),
-    ACTION_ABILITY8 = (1 << 7),
-    ACTION_ABILITY9 = (1 << 8),
-    ACTION_DASH     = (1 << 10),
-
-    ACTION_FWD    = (1 << 11),
-    ACTION_BWD    = (1 << 12),
-    ACTION_LEFT   = (1 << 13),
-    ACTION_RIGHT  = (1 << 14),
-    ACTION_JUMP   = (1 << 15),
-    ACTION_CROUCH = (1 << 16),
-} SolActions;
 
 typedef enum
 {
@@ -66,15 +41,6 @@ typedef enum
     COLLISIONGROUP_PAWN       = (1 << 1),
     COLLISIONGROUP_PROJECTILE = (1 << 2),
 } CollisionGroup;
-
-typedef enum Shape3
-{
-    SHAPE3_SPH,
-    SHAPE3_CAP,
-    SHAPE3_BOX,
-    SHAPE3_MOD,
-    SHAPE3_CNT,
-} Shape3;
 
 typedef enum Shape2
 {
@@ -86,30 +52,21 @@ typedef enum Shape2
 
 typedef enum
 {
-    ANIM_LAYER_BASE,  // full body, always active
-    ANIM_LAYER_LOWER, // overrides legs
-    ANIM_LAYER_UPPER, // overrides torso/arms
-    ANIM_LAYER_OVERRIDE,
-    ANIM_LAYER_COUNT
-} AnimLayerId;
-
-typedef enum
-{
     FRAMEBUFFER_LINE,
     FRAMEBUFFER_COUNT,
 } FrameBufferId;
 
 typedef enum
 {
-    MODELKIND_WIZARD,
-    MODELKIND_DUDE,
-    MODELKIND_ZORGON,
-    SOL_MODEL_BOX,
-    SOL_MODEL_WORLD0,
-    SOL_MODEL_WORLD1,
-    SOL_MODEL_WORLD2,
-    SOL_MODEL_COUNT,
-} SolModelKind;
+    STRAFE_FWD,
+    STRAFE_FWD_LEFT,
+    STRAFE_LEFT,
+    STRAFE_BWD_LEFT,
+    STRAFE_BWD,
+    STRAFE_BWD_RIGHT,
+    STRAFE_RIGHT,
+    STRAFE_FWD_RIGHT,
+} StrafeDir;
 
 typedef enum
 {
@@ -131,7 +88,7 @@ typedef struct SolXform
     versors quat;
 } SolXform;
 
-typedef void (*CallbackFunc)(int flags, void *);
+typedef void (*CallbackFunc)(int, void *);
 typedef struct
 {
     CallbackFunc callbackFunc;
@@ -299,8 +256,55 @@ typedef struct SolHit
     float power;
 
     float damage;
-    u32 buffMask;
-    u32 effectMask;
-    u32 fxKind;
-    u32 damageFx, noDamageFx;
+    u32   buffMask;
+    u32   effectMask;
+    u32   fxKind;
+    u32   damageFx, noDamageFx;
 } SolHit;
+
+typedef enum
+{
+    EFFECTMASK_KNOCKBACK         = (1 << 0),
+    EFFECTMASK_KNOCKBACK_STRONG  = (1 << 1),
+    EFFECTMASK_KNOCKUP           = (1 << 2),
+    EFFECTMASK_REFLECTPROJECTILE = (1 << 3),
+    EFFECTMASK_CHAINLIGHTNING    = (1 << 4),
+    EFFECTMASK_HEALONHIT         = (1 << 5),
+} EffectMask;
+
+typedef enum
+{
+    COMBATFLAG_REFLECTING = (1 << 0),
+} CombatFlags;
+
+typedef struct
+{
+    u32 ability, rarity, newAbility, newRarity;
+} AbilityBind;
+
+typedef enum
+{
+    ACTION_NONE     = 0,
+    ACTION_ABILITY1 = (1 << 0),
+    ACTION_ABILITY2 = (1 << 1),
+    ACTION_ABILITY3 = (1 << 2),
+    ACTION_ABILITY4 = (1 << 3),
+    ACTION_ABILITY5 = (1 << 4),
+    ACTION_ABILITY6 = (1 << 5),
+    ACTION_ABILITY7 = (1 << 6),
+    ACTION_ABILITY8 = (1 << 7),
+    ACTION_ABILITY9 = (1 << 8),
+    ACTION_DASH     = (1 << 10),
+
+    ACTION_FWD    = (1 << 11),
+    ACTION_BWD    = (1 << 12),
+    ACTION_LEFT   = (1 << 13),
+    ACTION_RIGHT  = (1 << 14),
+    ACTION_JUMP   = (1 << 15),
+    ACTION_CROUCH = (1 << 16),
+} SolActions;
+
+typedef struct
+{
+    vec3s pos, vel;
+} SolShoot;

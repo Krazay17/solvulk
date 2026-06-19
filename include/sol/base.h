@@ -4,15 +4,36 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef int8_t   i8;
-typedef int16_t  i16;
-typedef int32_t  i32;
-typedef int64_t  i64;
+#include <assert.h>
+#include <limits.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <float.h>
+
+#define SOL_VERSION 1
+#define FLOATING_EPSILON 1e-7f
+#define BITC(x) (1u << (x))
+
+#define logd(x) printf("%d\n", x)
+#define logfloat(x) printf("%f\n", x)
+#define logs(x) printf("%s\n", x)
+#define sollog(X)                                                                                                      \
+    _Generic((X),                                                                                                      \
+        int: printf("%d\n", (int)X),                                                                                   \
+        u32: printf("%u\n", (unsigned int)(X)),                                                                        \
+        float: printf("%f\n", X),                                                                                      \
+        double: printf("%f\n", X),                                                                                     \
+        char *: printf("%s\n", X))
 
 typedef unsigned char byte;
-
-#define FLOATING_EPSILON 1e-7f
+typedef uint8_t       u8;
+typedef uint16_t      u16;
+typedef uint32_t      u32;
+typedef uint64_t      u64;
+typedef int8_t        i8;
+typedef int16_t       i16;
+typedef int32_t       i32;
+typedef int64_t       i64;

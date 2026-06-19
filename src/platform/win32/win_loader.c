@@ -1,4 +1,5 @@
 #include "sol_core.h"
+#include "platform/platform.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

@@ -1,4 +1,4 @@
-#include "sol_core.h"
+#include "sol/sol.h"
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
 {
@@ -115,6 +115,17 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     return id;
 }
 
+int Sol_Prefab_ItemDrop(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, 0);
+    if (id < 1)
+        return 0;
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body_Add(world, id, (BodyDesc){.radius = 0.5f, .mass = 1.0f, .shape = SHAPE3_SPH});
+    Sol_Shape_Add(world, id, (ShapeDesc){.radius = 0.5f, .kind = SHAPEKIND_SPHERE, .color = (vec4s){1, 1, 1, 1}});
+    return id;
+}
+
 int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.5f, .y = 1.6f};
@@ -142,7 +153,7 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
                     (AbilityDesc){.bindings = {
                                       {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
-                                  
+
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
 
     return id;
@@ -266,26 +277,26 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
     Sol_World_SetTracker(world, id, entWorld, entId);
     Sol_Flags_Add(world, id, EFLAG_HEALTHBAR);
 
-    SolView2d *bg  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    SolView2d *bg  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
     bg->zindex     = 2;
     bg->hoverColor = (vec4s){1, 1, 1, 0.5f};
 
-    SolView2d *bg2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.2, 0.2, 0.2, 1}, dims.x, dims.y);
+    SolView2d *bg2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.2f, 0.2f, 0.2f, 1.0f}, dims.x, dims.y);
     bg2->zindex    = 2;
     bg2->textureID = SOL_TEXTURE_HEALTH;
 
-    SolView2d *bar  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 0, 0, 1}, dims.x, dims.y);
+    SolView2d *bar  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
     bar->zindex     = 2;
     bar->fillSpeed  = 4.0f;
     bar->hoverColor = (vec4s){1, 1, 0, 0.5f};
     bar->textureID  = SOL_TEXTURE_HEALTH;
 
-    SolView2d *bar2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 1, 0, 1}, dims.x, dims.y);
+    SolView2d *bar2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 1.0f, 0.0f, 1.0f}, dims.x, dims.y);
     bar2->zindex     = 2;
     bar2->hoverColor = (vec4s){1, 1, 0, 0.5f};
     bar2->textureID  = SOL_TEXTURE_HEALTH;
 
-    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
     border->zindex    = 2;
     border->border    = 2.0f;
 
@@ -319,7 +330,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     return id;
 }
 
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 rarity)
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, u32 ability, u32 rarity)
 {
     vec2s dims = {62.0f, 62.0f};
 
@@ -340,26 +351,26 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, u32 ra
     {
     case ABILITY_STATE_FIREBALL:
         image->textureID = SOL_TEXTURE_FIREBALL_CARD;
-        image->textureUV = (vec2s){1, 0.816};
+        image->textureUV = (vec2s){1.0f, 0.816f};
         break;
     case ABILITY_STATE_PISTOL:
         image->textureID = SOL_TEXTURE_PISTOL_CARD;
-        image->textureUV = (vec2s){1, 0.816};
+        image->textureUV = (vec2s){1.0f, 0.816f};
         break;
     case ABILITY_STATE_SHIELD:
         image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
-        image->textureUV = (vec2s){1, 0.816};
+        image->textureUV = (vec2s){1.0f, 0.816f};
         break;
     case ABILITY_STATE_SPINSLASH:
         image->textureID = SOL_TEXTURE_SPIN_CARD;
-        image->textureUV = (vec2s){1, 0.816};
+        image->textureUV = (vec2s){1.0f, 0.816f};
         break;
     case ABILITY_STATE_DASH:
         image->textureID = SOL_TEXTURE_DASH_CARD;
         break;
     case ABILITY_STATE_CLAW:
         image->textureID = SOL_TEXTURE_BLADE_CARD;
-        image->textureUV = (vec2s){1, 0.816};
+        image->textureUV = (vec2s){1.0f, 0.816f};
         break;
     case ABILITY_STATE_LASER:
         image->textureID = SOL_TEXTURE_LASER_CARD;

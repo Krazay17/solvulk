@@ -1,9 +1,10 @@
-
-#include "sol_core.h"
-
-#include "model/model_i.h"
-#include "render/render_i.h"
 #include "vkrender.h"
+#include "render/render_i.h"
+#include "sol_core.h"
+#include "sol_math.h"
+#include "platform/platform.h"
+#include "model.h"
+#include "image.h"
 
 static SolVkState solvkstate = {0};
 
@@ -59,8 +60,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .pushRangeSize     = sizeof(SolMaterial),
             .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES, DESC_SKINNING_SSBO},
-            .descCount         = 6,
+            .descId = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES, DESC_SKINNING_SSBO},
+            .descCount = 6,
         },
     [PIPE_TEXT] =
         {
@@ -365,8 +366,8 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
         return 8;
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
-//    if (Sol_Render_UploadAll() != 0)
-//        return 10;
+    //    if (Sol_Render_UploadAll() != 0)
+    //        return 10;
     if (Sol_Render_BuildPipes() != 0)
         return 11;
     return 0;
@@ -374,15 +375,15 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
 
 int Sol_Render_UploadAll()
 {
-//    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
-//    {
-//        Sol_UploadImage(Sol_GetImage(i), i);
-//    }
-//
-//    for (int i = 0; i < SOL_MODEL_COUNT; i++)
-//    {
-//        Sol_UploadModel(Sol_GetModel(i), i);
-//    }
+    //    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
+    //    {
+    //        Sol_UploadImage(Sol_GetImage(i), i);
+    //    }
+    //
+    //    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    //    {
+    //        Sol_UploadModel(Sol_GetModel(i), i);
+    //    }
     return 0;
 }
 
@@ -663,7 +664,7 @@ void Sol_Begin_Draw()
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
 
     GameUtilUBO *util = descriptors[DESC_GAME_UBO].mapped[solvkstate.currentFrame];
-    util->gameTime    = Sol_GetGameTime();
+    util->gameTime    = solState.gameTime;
 }
 
 void Sol_End_Draw()
@@ -1073,7 +1074,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-void  Sol_Render_UploadModel(SolModel *model, u32 modelId)
+void Sol_Render_UploadModel(SolModel *model, u32 modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)
@@ -1165,21 +1166,22 @@ void  Sol_Render_UploadModel(SolModel *model, u32 modelId)
     gpuModels[modelId] = gpuModel;
     // printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 
-    return 0;
+    return;
 }
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id)
 {
-        const void *pixels = image->pixels;
+    const void *pixels = image->pixels;
     u32         width  = image->width;
     u32         height = image->height;
 
     Sol_Render_UploadImage(width, height, pixels, id);
+    return 0;
 }
 
-void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
+void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
 {
-    int         format = id == 0 ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
+    int format = id == 0 ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
 
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;
@@ -1192,7 +1194,7 @@ void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
     if (SolCreateBuffer(&solvkstate, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &staging,
                         &stagingMem) != 0)
-        return 1;
+        return;
 
     void *mapped;
     vkMapMemory(solvkstate.device, stagingMem, 0, imageSize, 0, &mapped);
@@ -1226,7 +1228,7 @@ void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
         vkDestroyImage(vkstate->device, out->image, NULL);
         vkDestroyBuffer(vkstate->device, staging, NULL);
         vkFreeMemory(vkstate->device, stagingMem, NULL);
-        return 1;
+        return;
     }
 
     VkMemoryAllocateInfo allocInfo = {
@@ -1320,7 +1322,8 @@ void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
         .sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter    = VK_FILTER_LINEAR,
         .minFilter    = VK_FILTER_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, // image_upload[id].Uwrap ? image_upload[id].Uwrap : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, // image_upload[id].Uwrap ? image_upload[id].Uwrap :
+                                                        // VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
     };
@@ -1335,8 +1338,7 @@ void  Sol_Render_UploadImage(float width, float height, void *pixels, u32 id)
 int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out)
 {
     VkDescriptorBindingFlags bindingFlags =
-        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo = {
         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
@@ -1383,10 +1385,9 @@ int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out
 }
 
 // Called whenever a single texture finishes loading
-void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc,
-                                    SolGpuImage *image, u32 slotIndex)
+void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc, SolGpuImage *image, u32 slotIndex)
 {
-    
+
     VkDescriptorImageInfo imageInfo = {
         .sampler     = image->sampler,
         .imageView   = image->view,
@@ -1396,7 +1397,7 @@ void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *des
         .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet          = desc->set,
         .dstBinding      = 0,
-        .dstArrayElement = slotIndex,   // just this one slot
+        .dstArrayElement = slotIndex, // just this one slot
         .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount = 1,
         .pImageInfo      = &imageInfo,

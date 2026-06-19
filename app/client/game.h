@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef SOL_DEV_MODE
-#include "sol_core.h"
+#include "sol/sol.h"
 #else
 #include "sol/sol.h"
 #endif

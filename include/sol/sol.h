@@ -5,87 +5,50 @@
  * Created: 2026-05-08
  * ==== Sol Blade ====
  */
-
 #pragma once
-
-#include <assert.h>
-#include <limits.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "sol/types.h"
-
-#include "input.h"
-#include "resource.h"
-#include "sol_math.h"
-
-#include "components.h"
+#include "sol_core.h"
+#include "sol_engine.h"
 #include "world.h"
-#include "camera.h"
-#include "font/font.h"
-#include "model/model.h"
-#include "texture/texture.h"
+
+#include "audio.h"
+#include "input.h"
+#include "sol_math.h"
+#include "font.h"
+#include "model.h"
+#include "image.h"
+#include "network.h"
+#include "profiler.h"
 #include "render/render.h"
-
-#include "ability/ability.h"
-#include "audio/audio.h"
-#include "buff/buff.h"
-#include "combat/combat.h"
-#include "controller/aicontroller.h"
-#include "controller/controller.h"
-#include "emitter/emitter.h"
-#include "interact/interact.h"
-#include "line/line.h"
-#include "ribbon/ribbon.h"
-#include "movement/movement.h"
-#include "owner/owner.h"
-#include "parent/parent.h"
-#include "physx/physx.h"
 #include "platform/platform.h"
-#include "replication/replication.h"
-#include "view/view.h"
-#include "vital/vital.h"
-#include "xform/xform.h"
-
 #include "game/prefabs.h"
 
-#define logd(x) printf("%d\n", x)
-#define logfloat(x) printf("%f\n", x)
-#define logs(x) printf("%s\n", x)
-#define sollog(X)                                                                                                      \
-    _Generic((X),                                                                                                      \
-        int: printf("%d\n", (int)X),                                                                                        \
-        u32: printf("%u\n", (unsigned int)(X)),                                                                        \
-        float: printf("%f\n", X),                                                                                      \
-        double: printf("%f\n", X),                                                                                     \
-        char *: printf("%s\n", X))
+#include "xform/s_xform.h"
+#include "ability/s_ability.h"
+#include "audio/s_audio.h"
+#include "buff/s_buff.h"
+#include "combat/s_combat.h"
+#include "ai/s_ai.h"
+#include "controller/s_controller.h"
+#include "emitter/s_emitter.h"
+#include "event/s_event.h"
+#include "interact/s_interact.h"
+#include "item/s_item.h"
+#include "owner/s_owner.h"
+#include "model/s_model.h"
+#include "buff/s_buff.h"
+#include "line/s_line.h"
+#include "ribbon/s_ribbon.h"
+#include "movement/s_movement.h"
+#include "owner/s_owner.h"
+#include "parent/s_parent.h"
+#include "projectile/s_projectile.h"
+#include "shape/s_shape.h"
+#include "timer/s_timer.h"
+#include "physx/s_body.h"
+#include "physx/s_body2d.h"
+#include "replication/s_replication.h"
+#include "view/s_view.h"
+#include "view/s_view2d.h"
+#include "vital/s_vital.h"
 
-SOLAPI int       Sol_Init(void *hwnd, void *hInstance);
-SOLAPI void      Sol_Tick(double dt, double time);
-SOLAPI void      Sol_Destroy();
-SOLAPI SolState *Sol_GetState();
-SOLAPI double    Sol_GetGameTime();
-
-void Sol_Debug_Add(const char *text, float value);
-void DebugFPS(double dt);
-
-// Doubles capacity if data bigger than cap
-static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
-{
-    if (count >= *capacity)
-    {
-        int   newCap = (*capacity <= 0) ? 128 : *capacity * 2;
-        void *tmp    = realloc(*data, size * newCap);
-        if (!tmp)
-        {
-            fprintf(stderr, "Failed to realloc\n");
-            return 1;
-        }
-        *data     = tmp;
-        *capacity = newCap;
-    }
-    return 0;
-}
+#include "game/prefabs.h"

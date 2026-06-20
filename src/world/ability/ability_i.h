@@ -3,7 +3,7 @@
 #include "estate.h"
 
 #define MAX_LASER_BOUNCES 8
-#define LASER_LENGTH 15.0f
+#define LASER_LENGTH 25.0f
 
 extern const StateFunc ability_state_func[];
 

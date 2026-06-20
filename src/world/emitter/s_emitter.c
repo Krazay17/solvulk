@@ -293,6 +293,10 @@ static void Particle_Draw(World *world, double dt, double time)
                 break;
             case PARTICLE_SHOCK:
                 textureId = SOL_TEXTURE_SHOCKPARTICLE;
+                quadKind  = QUADKIND_SPRITE;
+                break;
+            case PARTICLE_SHOCK_ADD:
+                textureId = SOL_TEXTURE_SHOCKPARTICLE;
                 quadKind  = QUADKIND_SPRITE_ADD;
                 break;
             case PARTICLE_FIRE:

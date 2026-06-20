@@ -68,6 +68,7 @@ static void Laser(World *world, int id, vec3s pos, vec3s dir)
                                  .as.hit.entB       = result.entId,
                                  .as.hit.pos        = result.pos,
                                  .as.hit.vel        = dir,
+                                 .as.hit.fxKind     = FXKIND_LASER_HIT,
                              });
     }
     if (ray1Result.hit)

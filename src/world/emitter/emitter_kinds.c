@@ -20,7 +20,7 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .burst = 1,
             .particle =
                 {
-                    .kind     = PARTICLE_SHOCK,
+                    .kind     = PARTICLE_SHOCK_ADD,
                     .ttl      = 0.2f,
                     .scale    = 1.0f,
                     .scaleout = 0.9f,
@@ -63,7 +63,7 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .burst = 100,
             .particle =
                 {
-                    .kind         = PARTICLE_SHOCK,
+                    .kind         = PARTICLE_SHOCK_ADD,
                     .ttl          = 0.33f,
                     .randScaleout = 1,
                     .scaleout     = 0.9f,
@@ -123,7 +123,7 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
                           .offset    = 0.2f,
                           .scale     = 0.15f,
                           .color     = {1.0, .5f, .0f, .7f},
-                          .kind      = PARTICLE_SHOCK,
+                          .kind      = PARTICLE_SHOCK_ADD,
                           .speed     = 3.0f,
                           .scalein   = 0.1f,
                           .scaleout  = 0.3f},

@@ -30,6 +30,19 @@ static void Fx_Step(World *world, double dt, double time)
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
         switch (e->as.fx.kind)
         {
+        case FXKIND_LASER_HIT: {
+            Sol_Emitter_SpawnEx(world, (Emitter){.pos      = e->as.fx.pos,
+                                                 .burst    = 25,
+                                                 .particle = {
+                                                     .kind    = PARTICLE_SHOCK,
+                                                     .scale   = 0.3f,
+                                                     .ttl     = 0.2f,
+                                                     .color   = (vec4s){1.0f, 0.0f, 0.0f, 1.0f},
+                                                     .fadeout = 1.0f,
+                                                     .speed   = 7.0f,
+                                                 }});
+        }
+        break;
         case FXKIND_LIGHTNING: {
             Sol_Emitter_Spawn(world, EMITTERKIND_SINGLE_SPARK, e->as.fx.pos, (vec4s){0.8f, 1.0f, 1.0f, 1.0f}, 1.0f);
         }
@@ -42,9 +55,9 @@ static void Fx_Step(World *world, double dt, double time)
         break;
         case FXKIND_CHAINLIGHTNING: {
             Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, e->as.fx.pos, 1.0f, 0, 64);
-            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){0.8f, 1.0f, 1.0f, 1.0f}, 0.2f);
+            Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, e->as.fx.pos, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.2f);
             Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 1.0f,
-                                          (vec4s){.5f, .5f, 1.0f, 0.8f});
+                                          (vec4s){0.5f, 0.5f, 1.0f, 0.8f});
             Sol_Ribbon_AddBetweenEntities(world, e->as.fx.entA, e->as.fx.entB, RIBBONKIND_LIGHTNING, 0.4f,
                                           (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
             Sol_Emitter_Add(world, e->as.fx.entA, EMITTERKIND_SINGLE_SPARK, (vec4s){0.5f, 0.5f, 1.0f, 0.8f}, 0.4f);
@@ -112,7 +125,7 @@ static void Fx_Step(World *world, double dt, double time)
             //                                               .ttl       = 0.5f,
             //                                               .scale     = 0.5f * scale,
             //                                               .color     = {1.0, .5f, .0f, .7f},
-            //                                               .kind      = PARTICLE_SHOCK,
+            //                                               .kind      = PARTICLE_SHOCK_ADD,
             //                                               .speed     = 3.0f * scale,
             //                                               .scalein   = 0.1f,
             //                                               .scaleout  = 0.3f}});
@@ -129,7 +142,7 @@ static void Fx_Step(World *world, double dt, double time)
                                                               .ttl       = 0.3f,
                                                               .scale     = 0.5f * scale,
                                                               .color     = {1, .1f, .2f, .7f},
-                                                              .kind      = PARTICLE_SHOCK,
+                                                              .kind      = PARTICLE_SHOCK_ADD,
                                                               .speed     = 15.0f * scale,
                                                               .scalein   = 0.1f,
                                                               .scaleout  = 0.3f}});
@@ -212,7 +225,7 @@ static void Fx_Step(World *world, double dt, double time)
                                                  .ttl      = 1.0f,
                                                  .burst    = 260,
                                                  .particle = {
-                                                     .kind         = PARTICLE_SHOCK,
+                                                     .kind         = PARTICLE_SHOCK_ADD,
                                                      .ttl          = 1.5f * scale,
                                                      .randLife     = 1,
                                                      .randScaleout = 1,
@@ -258,7 +271,7 @@ static void Fx_Step(World *world, double dt, double time)
                                                               .ttl       = 0.5f,
                                                               .scale     = 0.3f,
                                                               .randScale = 1,
-                                                              .kind      = PARTICLE_SHOCK,
+                                                              .kind      = PARTICLE_SHOCK_ADD,
                                                               .color     = (vec4s){0.25f, 0.1f, 0.5f, 0.6f},
                                                               .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                                               .rotspeed  = 6.0f,
@@ -285,7 +298,7 @@ static void Fx_Step(World *world, double dt, double time)
                                                               .ttl       = 0.5f,
                                                               .scale     = 0.3f,
                                                               .randScale = 1,
-                                                              .kind      = PARTICLE_SHOCK,
+                                                              .kind      = PARTICLE_SHOCK_ADD,
                                                               .color     = (vec4s){0.25f, 0.1f, 1.0f, 1.0f},
                                                               .rot       = Sol_Math_RandRange2(-2.0f, 2.0f),
                                                               .rotspeed  = 6.0f,

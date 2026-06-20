@@ -4,7 +4,7 @@
 #define MAX_MAPPED_SKILLS 10
 #define MAX_ABILITY_RIBBONS 4
 
-typedef struct World World;
+typedef struct World    World;
 typedef struct CompItem CompItem;
 
 typedef enum
@@ -37,6 +37,15 @@ typedef struct
     float        damage;
     u32          buffs;
     u32          effects;
+    union {
+        struct
+        {
+            vec3s laserPoints[24];
+            int   laserPointCount;
+            vec3s laserPointsVisual[24];
+            int   laserPointCountVisual;
+        } laser;
+    } as;
 } AbilityData;
 
 typedef struct

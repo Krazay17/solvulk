@@ -13,6 +13,7 @@
 #define vecSub(a, b) glms_vec3_sub(a, b)
 #define vecSca(a, b) glms_vec3_scale(a, b)
 #define vecDot(a, b) glms_vec3_dot(a, b)
+#define vecNorm(a) glms_vec3_normalize(a)
 #define vecCrs(a, b) glms_vec3_cross(a, b)
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
 #define vecDist(a, b) glms_vec3_distance(a, b)
@@ -226,4 +227,15 @@ static inline int get_index_from_mask(unsigned int mask)
         index++;
     }
     return index;
+}
+static inline vec3s Sol_ProjectVec(vec3s a, vec3s b)
+{
+    float dot = glms_vec3_dot(a, b);
+    return glms_vec3_sub(a, glms_vec3_scale(b, dot));
+}
+static inline vec3s Sol_BounceVec(vec3s a, vec3s b)
+{
+    float dot = glms_vec3_dot(a, b);
+    dot *= 2;
+    return glms_vec3_sub(a, glms_vec3_scale(b, dot));
 }

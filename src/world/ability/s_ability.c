@@ -16,6 +16,7 @@
 
 static void Ability_Step(World *world, double dt, double time);
 static void Ability_Draw(World *world, double dt, double time);
+static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounceCount);
 static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width);
 static void Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time);
 static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time);
@@ -139,14 +140,14 @@ static void Ability_Step(World *world, double dt, double time)
     {
         int id = world->activeEntities[i];
         if ((world->masks[id] & required) != required)
-        continue;
+            continue;
         if (Sol_Vital_GetDead(world, id))
         {
             Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
             continue;
         }
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
-        continue;
+            continue;
         if (world->replications[id].auth == NETAUTH_REMOTE)
             continue;
 
@@ -229,29 +230,49 @@ static void Ability_Draw(World *world, double dt, double time)
         case ABILITY_STATE_LASER: {
             if (data->stage > 0)
             {
-                const char *hand        = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-                vec3s       startPos    = Sol_Model_GetBoneXform(world, id, hand);
-                float       widthScale  = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
-                SolRay      lengthCheck = {
-                    .dir       = controller->aimdir,
-                    .dist      = 15.0f,
-                    .ignoreEnt = id,
-                    .pos       = startPos,
-                };
-                SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
-                vec3s        endPos       = lengthResult.pos;
-                Draw_LaserStart(startPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f * widthScale, time);
-                Draw_LaserStart(startPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f * widthScale, time);
-                Draw_LaserImpact(endPos, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f * widthScale, time);
-                Draw_LaserImpact(endPos, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f * widthScale, time);
-                Draw_Laser(startPos, endPos, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
-                Draw_Laser(startPos, endPos, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
-                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f * widthScale);
-                Draw_Laser(startPos, endPos, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f * widthScale);
+                const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+                vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand);
+                float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
+                data->as.laser.laserPointCountVisual = 0;
+                Laser_Bounces(world, id, controller->aimpos, controller->aimdir, 0);
+                for (int l = 0; l < data->as.laser.laserPointCountVisual; l += 2)
+                {
+                    vec3s posA = l == 0 ? startPos : data->as.laser.laserPointsVisual[l];
+                    vec3s posB = data->as.laser.laserPointsVisual[l + 1];
+                    Draw_LaserStart(posA, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f * widthScale, time);
+                    Draw_LaserStart(posA, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f * widthScale, time);
+                    Draw_LaserImpact(posB, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f * widthScale, time);
+                    Draw_LaserImpact(posB, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f * widthScale, time);
+                    Draw_Laser(posA, posB, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+                    Draw_Laser(posA, posB, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+                    Draw_Laser(posA, posB, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f * widthScale);
+                    Draw_Laser(posA, posB, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f * widthScale);
+                }
             }
         }
         break;
         }
+    }
+}
+
+static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounceCount)
+{
+    if (bounceCount >= MAX_LASER_BOUNCES)
+        return;
+    CompAbility *ability                      = &world->abilities[id];
+    AbilityData *data                         = &ability->stateData[ability->activeSlot];
+    SolRay       ray                          = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
+    SolRayResult result                       = Sol_Raycast(world, ray);
+    int          idx                          = data->as.laser.laserPointCountVisual;
+    data->as.laser.laserPointsVisual[idx]     = pos;
+    data->as.laser.laserPointsVisual[idx + 1] = result.pos;
+    data->as.laser.laserPointCountVisual += 2;
+    if (result.hit)
+    {
+        // Push the next ray origin outward by a tiny epsilon fraction along the hit normal
+        vec3s biasedOrigin = glms_vec3_add(result.pos, glms_vec3_scale(result.norm, 0.001f));
+
+        Laser_Bounces(world, id, biasedOrigin, Sol_BounceVec(dir, result.norm), bounceCount + 1);
     }
 }
 

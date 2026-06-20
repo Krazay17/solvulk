@@ -43,11 +43,9 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float 
                              .as.hit.entB   = target,
                              .as.hit.pos    = Sol_Xform_GetPos(world, target),
                              .as.hit.damage = damage,
-                             .as.hit.fxKind = FXKIND_BULLET_HIT,
+                             .as.hit.fxKind = FXKIND_LIGHTNING,
                          });
 
-    // Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, Sol_Xform_GetPos(world, target), chain_config[kind].color,
-    // 0.2f);
 
     Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;

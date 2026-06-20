@@ -2,6 +2,9 @@
 #include "s_ability.h"
 #include "estate.h"
 
+#define MAX_LASER_BOUNCES 8
+#define LASER_LENGTH 15.0f
+
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);

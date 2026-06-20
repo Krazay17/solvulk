@@ -9,8 +9,10 @@
 #include "world.h"
 #include "xform/s_xform.h"
 #include "event/s_event.h"
+#include "ability/s_ability.h"
 #include "movement/s_movement.h"
 #include "emitter/s_emitter.h"
+#include "vital/s_vital.h"
 
 #define BASE_TICK_INTERVAL 1.0f
 

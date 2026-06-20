@@ -1,6 +1,7 @@
 #include "sol/sol.h"
 #include "sol_engine.h"
 
+
 #define MAX_DEBUGS 14
 #define MAX_STR_LEN 64
 
@@ -17,8 +18,6 @@ static double    fps;
 static double    total, throttle;
 static char      fpsbuffer[64];
 static int       count;
-
-void Sol_Debug_Draw(double dt);
 
 void Sol_Debug_Add(const char *text, float value)
 {
@@ -43,7 +42,7 @@ void Sol_Debug_Add(const char *text, float value)
 
 void Sol_Debug_Draw(double dt)
 {
-    if (solState.debug)
+    if (!solState.debug)
         return;
     float offset  = 48.0f;
     float spacing = 24.0f;

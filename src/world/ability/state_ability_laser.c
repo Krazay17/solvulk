@@ -13,10 +13,66 @@
 
 #define HITINTERVAL 0.1f
 #define HITDELAY 0.25f
-#define LASER_LENGTH 15.0f
 #define MAX_DURATION 3.5f
 #define MAX_CHARGE 2.0f
 #define MIN_CHARGE 0.2f
+
+static void Laser(World *world, int id, vec3s pos, vec3s dir)
+{
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    if (data->as.laser.laserPointCount >= MAX_LASER_BOUNCES * 2)
+        return;
+    Sol_Combat_ClearHits(world, id);
+    CompCombat *combat = &world->combats[id];
+    vec3s      *pointA = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
+    vec3s      *pointB = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
+    *pointA            = pos;
+
+    float  finalCharge = data->charge * HITINTERVAL;
+    float  finalDamage = data->damage * finalCharge;
+    SolRay ray1        = {
+        .pos       = pos,
+        .dir       = dir,
+        .dist      = LASER_LENGTH,
+        .ignoreEnt = id,
+    };
+    SolRayResult ray1Result = Sol_Raycast(world, ray1);
+    *pointB                 = ray1Result.pos;
+
+    SolRay rayDamage = {
+        .dir       = dir,
+        .dist      = ray1.dist,
+        .ignoreEnt = id,
+        .pos       = pos,
+        .mask      = 0b1,
+    };
+
+    SolRayResult results[256];
+    int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
+    for (int i = 0; i < hits; i++)
+    {
+        SolRayResult result = results[i];
+
+        if (combat->hitEnts[result.entId])
+            continue;
+        combat->hitEnts[result.entId] = true;
+
+        Sol_Event_Add(world, (SolEvent){
+                                 .kind              = EVENTKIND_HIT,
+                                 .as.hit.damage     = finalDamage,
+                                 .as.hit.power      = finalCharge,
+                                 .as.hit.buffMask   = data->buffs,
+                                 .as.hit.effectMask = data->effects,
+                                 .as.hit.entA       = id,
+                                 .as.hit.entB       = result.entId,
+                                 .as.hit.pos        = result.pos,
+                                 .as.hit.vel        = dir,
+                             });
+    }
+    if (ray1Result.hit)
+        Laser(world, id, ray1Result.pos, Sol_BounceVec(dir, ray1Result.norm));
+}
 
 static bool Leave_State(World *world, int id, CompAbility *ability)
 {
@@ -42,13 +98,6 @@ void Laser_State_Update(World *world, int id, float dt)
 
     CompController *controller = &world->controllers[id];
 
-    SolRay lengthCheck = {
-        .dir       = controller->aimdir,
-        .dist      = LASER_LENGTH,
-        .ignoreEnt = id,
-        .pos       = controller->aimpos,
-    };
-    SolRayResult lengthResult = Sol_Raycast(world, lengthCheck);
     if (Sol_Physx_GetVel(world, id).y < 0.0f && (Sol_Movement_GetState(world, id) == MOVE_FALL))
         Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 0.0f));
 
@@ -68,59 +117,23 @@ void Laser_State_Update(World *world, int id, float dt)
 
     if (data->stage == 1)
     {
-        data->charge += dt * 10.0f;
+        data->charge += dt * 8.0f;
         if (data->charge >= MAX_CHARGE)
             data->stage = 2;
     }
     else
-        data->charge -= dt * 6.0f;
+        data->charge -= dt * 1.0f;
 
     data->charge = fminf(MAX_CHARGE, fmaxf(MIN_CHARGE, data->charge));
 
     data->accum += dt;
     if (data->accum < HITINTERVAL)
         return;
-    data->accum             = 0;
-    CompCombat *combat      = &world->combats[id];
-    float       finalCharge = data->charge * HITINTERVAL;
-    float       finalDamage = data->damage * finalCharge;
+    data->accum = 0;
 
     Sol_Combat_ClearHits(world, id);
-    SolRay ray = {
-        .dir       = controller->aimdir,
-        .dist      = lengthResult.dist,
-        .ignoreEnt = id,
-        .pos       = controller->aimpos,
-        .mask      = 0b1,
-    };
-
-    SolRayResult results[256];
-    int          hits = Sol_SphereCast(world, ray, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
-
-    for (int i = 0; i < hits; i++)
-    {
-        SolRayResult result = results[i];
-
-        float dot =
-            glms_vec3_dot(controller->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, controller->aimpos)));
-        if (dot < 0)
-            continue;
-        if (combat->hitEnts[result.entId])
-            continue;
-        combat->hitEnts[result.entId] = true;
-
-        Sol_Event_Add(world, (SolEvent){
-                                 .kind              = EVENTKIND_HIT,
-                                 .as.hit.damage     = finalDamage,
-                                 .as.hit.power      = finalCharge,
-                                 .as.hit.buffMask   = data->buffs,
-                                 .as.hit.effectMask = data->effects,
-                                 .as.hit.entA       = id,
-                                 .as.hit.entB       = result.entId,
-                                 .as.hit.pos        = result.pos,
-                                 .as.hit.vel        = controller->aimdir,
-                             });
-    }
+    data->as.laser.laserPointCount = 0;
+    Laser(world, id, controller->aimpos, controller->aimdir);
 }
 
 void Laser_State_Enter(World *world, int id)

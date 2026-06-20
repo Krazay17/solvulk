@@ -32,5 +32,6 @@ void Sol_Tick(double dt, double time);
 void Sol_Destroy();
 void Sol_Window_OnResize(int x, int y, int width, int height);
 void Sol_FPS(double dt);
+void Sol_Debug_Draw(double dt);
 void Sol_Interact_Update(World **world, int worldCount);
 void Sol_Cam_Update(double dt);

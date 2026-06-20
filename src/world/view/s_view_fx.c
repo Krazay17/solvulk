@@ -28,9 +28,12 @@ static void Fx_Step(World *world, double dt, double time)
         vec3s pos   = e->as.fx.pos;
         vec3s rot   = e->as.fx.rot;
         float scale = e->as.fx.scale > 0 ? e->as.fx.scale : 0.2f;
-        sollog(e->as.fx.kind);
         switch (e->as.fx.kind)
         {
+        case FXKIND_LIGHTNING: {
+            Sol_Emitter_Spawn(world, EMITTERKIND_SINGLE_SPARK, e->as.fx.pos, (vec4s){0.8f, 1.0f, 1.0f, 1.0f}, 1.0f);
+        }
+        break;
         case FXKIND_TAKEDAMAGE: {
             u32 hitSoundId = hit_sounds[world->ekinds[e->as.fx.entB]];
             if (hitSoundId)

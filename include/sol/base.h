@@ -16,6 +16,8 @@
 #define SOL_VERSION 1
 #define FLOATING_EPSILON 1e-7f
 #define BITC(x) (1u << (x))
+#define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
+#define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
 
 #define logd(x) printf("%d\n", x)
 #define logfloat(x) printf("%f\n", x)

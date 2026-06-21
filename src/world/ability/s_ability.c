@@ -221,6 +221,15 @@ static void Ability_Draw(World *world, double dt, double time)
             break;
         case ABILITY_STATE_CLAW:
             break;
+        case ABILITY_STATE_WHIP:
+        vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
+        const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+        vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand);
+        for(int w = 0; w< 10;w++)
+        {
+            Draw_Laser(startPos, data->as.whip.whipPoints[w], time, color, 1.0f);
+        }
+            break;
         case ABILITY_STATE_SHIELD: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
             o->pos        = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
@@ -230,6 +239,7 @@ static void Ability_Draw(World *world, double dt, double time)
         case ABILITY_STATE_LASER: {
             if (data->stage > 0)
             {
+                vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
                 const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
                 vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand);
                 float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
@@ -239,14 +249,14 @@ static void Ability_Draw(World *world, double dt, double time)
                 {
                     vec3s posA = l == 0 ? startPos : data->as.laser.laserPointsVisual[l];
                     vec3s posB = data->as.laser.laserPointsVisual[l + 1];
-                    Draw_LaserStart(posA, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.5f * widthScale, time);
-                    Draw_LaserStart(posA, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.3f * widthScale, time);
-                    Draw_LaserImpact(posB, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 1.0f * widthScale, time);
-                    Draw_LaserImpact(posB, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.5f * widthScale, time);
-                    Draw_Laser(posA, posB, time, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
-                    Draw_Laser(posA, posB, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
-                    Draw_Laser(posA, posB, time, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, 0.3f * widthScale);
-                    Draw_Laser(posA, posB, time, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 0.2f * widthScale);
+                    Draw_LaserStart(posA, color, 0.5f * widthScale, time);
+                    Draw_LaserStart(posA, VEC4_WHITE, 0.3f * widthScale, time);
+                    Draw_LaserImpact(posB, color, 1.0f * widthScale, time);
+                    Draw_LaserImpact(posB, VEC4_WHITE, 0.5f * widthScale, time);
+                    Draw_Laser(posA, posB, time, VEC4_BLACK, 0.4f * widthScale);
+                    // Draw_Laser(posA, posB, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+                    Draw_Laser(posA, posB, time, color, 0.3f * widthScale);
+                    Draw_Laser(posA, posB, time, VEC4_WHITE, 0.2f * widthScale);
                 }
             }
         }

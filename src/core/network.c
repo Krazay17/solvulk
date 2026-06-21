@@ -1,6 +1,6 @@
+#include "network.h"
 #include "sol/sol.h"
 #include "sol_engine.h"
-#include "network.h"
 #include "sol_core.h"
 #include "world.h"
 #include "replication/s_replication.h"

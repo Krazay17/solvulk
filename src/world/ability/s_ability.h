@@ -17,6 +17,7 @@ typedef enum
     ABILITY_STATE_CLAW,
     ABILITY_STATE_SHIELD,
     ABILITY_STATE_LASER,
+    ABILITY_STATE_WHIP,
     ABILITY_STATE_FIREBALLVOLLEY,
     ABILITY_STATE_COUNT,
 } AbilityState;
@@ -40,11 +41,16 @@ typedef struct
     union {
         struct
         {
-            vec3s laserPoints[24];
+            vec3s laserPoints[16];
             int   laserPointCount;
-            vec3s laserPointsVisual[24];
+            vec3s laserPointsVisual[16];
             int   laserPointCountVisual;
         } laser;
+        struct
+        {
+            vec3s whipPoints[16];
+            int   whipPointCount;
+        } whip;
     } as;
 } AbilityData;
 

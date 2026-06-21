@@ -63,3 +63,9 @@ void Laser_State_Enter(World *world, int id);
 void Laser_State_Exit(World *world, int id);
 bool Laser_State_CanExit(World *world, int id, u32 next);
 bool Laser_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+
+void Whip_State_Update(World *world, int id, float dt);
+void Whip_State_Enter(World *world, int id);
+void Whip_State_Exit(World *world, int id);
+bool Whip_State_CanExit(World *world, int id, u32 next);
+bool Whip_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);

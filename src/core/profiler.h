@@ -49,7 +49,7 @@ static inline void Prof_Reset(SolProfiler *p)
 static inline void Prof_EndEz(SolProfiler *p, bool onTick)
 {
     Prof_End(p);
-    if (onTick && p->limiter++ % 500 != 0)
+    if (onTick && p->limiter++ % 100 != 0)
         return;
 
     Prof_Print(p);

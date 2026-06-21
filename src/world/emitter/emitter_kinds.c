@@ -60,7 +60,7 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
     [EMITTERKIND_BURST_SPARKS] =
         {
             .ttl   = 1.0f,
-            .burst = 100,
+            .burst = 25,
             .particle =
                 {
                     .kind         = PARTICLE_SHOCK_ADD,

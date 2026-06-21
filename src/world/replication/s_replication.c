@@ -147,6 +147,10 @@ void Net_Send_Snap(World *world)
             e->health = world->vitals[id].health;
             e->energy = world->vitals[id].energy;
         }
+        if(world->masks[id] & HAS_BUFF)
+        {
+            e->buffMask = Sol_Buff_GetMask(world, id);
+        }
     }
     snap.eCount = count; // ← outside the loop
 
@@ -398,14 +402,13 @@ void Net_Apply_Events(World *world, EventSnap *snap)
 
 static void Sync_Buffs(World *world, int id, u32 serverMask)
 {
-
     u32 clientMask = Sol_Buff_GetMask(world, id);
-
+    
     if (clientMask != serverMask)
     {
         // XOR isolates the bits that do not match
         u32 changedBits = clientMask ^ serverMask;
-
+        
         for (int b = 0; b < BUFFKIND_COUNT; b++)
         {
             u32 bit = (1 << b);

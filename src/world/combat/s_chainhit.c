@@ -10,6 +10,8 @@
 #include "event/s_event.h"
 #include "physx/s_body.h"
 
+#include "profiler.h"
+
 #define CHAIN_CAP 0xff
 
 typedef struct
@@ -20,7 +22,7 @@ typedef struct
 } ChainConfig;
 
 static const ChainConfig chain_config[] = {
-    [CHAINKIND_LIGHTNING] = {.color = {.5f, .5f, 1.0f, 1.0f}, .chainCount = 10, .fxKind = FXKIND_CHAINLIGHTNING},
+    [CHAINKIND_LIGHTNING] = {.color = {.5f, .5f, 1.0f, 1.0f}, .chainCount = 8, .fxKind = FXKIND_CHAINLIGHTNING},
 };
 
 void Chain_Step(World *world, double dt, double time);
@@ -59,9 +61,12 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float 
     world->chainhit->chains[idx].accum           = 0.0666f;
 }
 
+static SolProfiler chainProfile = {.name = "Chain Step"};
 void Chain_Step(World *world, double dt, double time)
 {
     int newCount = 0;
+    
+    Prof_Begin(&chainProfile);
     for (int i = 0; i < world->chainhit->count; i++)
     {
         Chain *chain = &world->chainhit->chains[i];
@@ -100,6 +105,7 @@ void Chain_Step(World *world, double dt, double time)
         }
     }
     world->chainhit->count = newCount;
+//    Prof_EndEz(&chainProfile, true);
 }
 
 int Find_NextTarget(World *world, Chain *chain)

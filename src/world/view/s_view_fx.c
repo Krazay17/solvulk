@@ -37,7 +37,7 @@ static void Fx_Step(World *world, double dt, double time)
                                                      .kind    = PARTICLE_SHOCK,
                                                      .scale   = 0.3f,
                                                      .ttl     = 0.2f,
-                                                     .color   = (vec4s){1.0f, 0.0f, 0.0f, 1.0f},
+                                                     .color   = (vec4s){0.0f, 1.0f, 0.0f, 1.0f},
                                                      .fadeout = 1.0f,
                                                      .speed   = 7.0f,
                                                  }});

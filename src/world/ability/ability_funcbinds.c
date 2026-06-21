@@ -68,5 +68,13 @@ const StateFunc ability_state_func[] = {
             Laser_State_CanExit,
             Laser_State_CanEnter,
         },
+    [ABILITY_STATE_WHIP] =
+        {
+            Whip_State_Update,
+            Whip_State_Enter,
+            Whip_State_Exit,
+            Whip_State_CanExit,
+            Whip_State_CanEnter,
+        },
     [ABILITY_STATE_FIREBALLVOLLEY] = SCRIPT_STATE_FUNCS,
 };

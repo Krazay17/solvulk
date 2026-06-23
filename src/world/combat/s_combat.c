@@ -18,8 +18,19 @@ static void Combat_Step(World *world, double dt, double time);
 
 void Sol_Combat_Init(World *world)
 {
-    WAddStep(world) = Combat_Step;
-    world->combats  = calloc(MAX_ENTS, sizeof(CompCombat));
+    world->combats               = calloc(MAX_ENTS, sizeof(CompCombat));
+    world->dmgNumbers            = malloc(sizeof(Dmgnumbers));
+    world->dmgNumbers->dmgNumber = calloc(1, sizeof(Dmgnumber));
+    world->dmgNumbers->count     = 0;
+    world->dmgNumbers->cap       = 1;
+    WAddStep(world)              = Combat_Step;
+    WAddStep(world)              = Dmgnumbers_Step;
+    WAdd3d(world)                = Dmgnumbers_Draw;
+}
+
+void Sol_Combat_Add(World *world, int id)
+{
+    world->masks[id] |= HAS_COMBAT;
 }
 
 static void Combat_Step(World *world, double dt, double time)
@@ -62,7 +73,15 @@ static void Combat_Step(World *world, double dt, double time)
                 {
                     Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.entA, e->as.hit.buffMask);
 
-                    Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
+                    if (Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage))
+                    {
+                        Sol_Dmgnumbers_Spawn(world, e->as.hit.entB, (u32)damage, e->as.hit.pos);
+                        if (e->as.hit.entA == 1)
+                        {
+                            Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 128);
+                        }
+                    }
+
                     Sol_Event_Add(world, (SolEvent){
                                              .kind       = EVENTKIND_FX,
                                              .as.fx.kind = e->as.hit.damageFx,
@@ -70,11 +89,6 @@ static void Combat_Step(World *world, double dt, double time)
                                              .as.fx.entA = e->as.fx.entA,
                                              .as.fx.entB = e->as.fx.entB,
                                          });
-
-                    if (e->as.hit.entA == 1)
-                    {
-                        Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 128);
-                    }
                 }
                 if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
                     Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);

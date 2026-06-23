@@ -9,21 +9,6 @@
 #define MAX_QUEUE_FAMILIES 16
 
 // ─── GPU data ──────────────────────────────────────────────
-typedef struct
-{
-    VkBuffer       vertexBuffer;
-    VkDeviceMemory vertexMemory;
-    VkBuffer       indexBuffer;
-    VkDeviceMemory indexMemory;
-    uint32_t       indexCount;
-    SolMaterial    material;
-} SolGpuMesh;
-
-typedef struct
-{
-    SolGpuMesh *meshes;
-    u32         mesh_count;
-} SolGpuModel;
 
 typedef struct
 {

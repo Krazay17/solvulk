@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-06-10
- * 
-*/
+ *
+ */
 #include "sol_core.h"
 #include "sol_math.h"
 #include "render_i.h"
@@ -73,6 +73,7 @@ QuadQueue spriteQueue0;
 QuadQueue spriteQueue1;
 QuadQueue spriteQueueFront;
 QuadQueue text3dQueue;
+QuadQueue text3dFrontQueue;
 
 RectInstance rectQueue;
 FontInstance font2dQueue;
@@ -284,6 +285,18 @@ void Flush_Quads()
             currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
         text3dQueue.count = 0;
     }
+
+    u32 textFrontCount = text3dFrontQueue.count;
+    if (textFrontCount > 0)
+    {
+        memcpy(gpu + currentOffset, text3dFrontQueue.instances, sizeof(QuadSSBO) * textFrontCount);
+        Bind_Pipeline(cmd, PIPE_TEXT_3D_FRONT);
+        vkCmdDraw(cmd, 6, textFrontCount, 0, currentOffset);
+        currentOffset += textFrontCount;
+        if (currentOffset >= MAX_QUAD_INSTANCES)
+            currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+        text3dFrontQueue.count = 0;
+    }
 }
 
 void Flush_Rects()
@@ -331,7 +344,7 @@ void Flush_Ribbons()
 
         ribbonQueue.count = 0;
     }
-    
+
     u32 addCount = ribbonQueueAdd.count;
     if (addCount > 0)
     {
@@ -443,7 +456,23 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         //       vec2 size from q.extra and pass non-uniform dimensions.
         // float halfSize = fmaxf(gw, gh) * 0.5f;
 
-        QuadSSBO *q = Sol_Render_GetNext_Quad(QUADKIND_TEXT);
+        // OUTLINE
+        QuadKind  quadKind = desc.inFront ? QUADKIND_TEXT_FRONT : QUADKIND_TEXT;
+        QuadSSBO *q        = Sol_Render_GetNext_Quad(quadKind);
+        if (!q)
+            break;
+
+        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 0}};
+        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
+                                      : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
+        q->color     = (vec4s){0,0,0,1.0f};
+        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
+        q->extra     = (vec4s){{0, 0, gw * 0.6f, gh * 0.54f}};
+        q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
+        q->textureId = atlas;
+        q->flags     = 0;
+
+        q        = Sol_Render_GetNext_Quad(quadKind);
         if (!q)
             break;
 
@@ -463,43 +492,49 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
 
 void Sol_Render_DrawText2D(SolFontDesc desc)
 {
-    if (!desc.str || desc.str[0] == '\0') return;
-    if (desc.size <= 0.0f) return;
-    
+    if (!desc.str || desc.str[0] == '\0')
+        return;
+    if (desc.size <= 0.0f)
+        return;
+
     SolFont *font = Sol_GetFont(desc.kind);
-    
+
     float cursorX  = desc.x;
     float baseSize = desc.size / 32.0f;
     float pad      = 0.2f * baseSize * (224.0f / 32.0f);
-    
+
     for (const char *c = desc.str; *c; c++)
     {
-        if (*c == ' ') {
+        if (*c == ' ')
+        {
             cursorX += font->glyph[' '].yadvance * desc.size;
             continue;
         }
-        if ((unsigned char)*c >= 128) continue;
-        
+        if ((unsigned char)*c >= 128)
+            continue;
+
         SolGlyph *g = &font->glyph[(unsigned char)*c];
-        if (g->uw == 0.0f) continue;
-        
+        if (g->uw == 0.0f)
+            continue;
+
         FontSSBO *ssbo = Sol_Render_GetNext_Font();
-        if (!ssbo) break;
-        
-        ssbo->pos = (vec4s){{
+        if (!ssbo)
+            break;
+
+        ssbo->pos   = (vec4s){{
             cursorX + g->xoffset * desc.size - pad,
             desc.y - g->ytop * desc.size - pad,
             g->uw * 224.0f * baseSize + pad * 2.0f,
             g->vh * 224.0f * baseSize + pad * 2.0f,
         }};
         ssbo->color = desc.color;
-        ssbo->uv = (vec4s){{
+        ssbo->uv    = (vec4s){{
             g->u,
             1.0f - g->v - g->vh,
             g->uw,
             g->vh,
         }};
-        
+
         cursorX += g->yadvance * desc.size;
     }
 }

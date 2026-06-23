@@ -1,17 +1,17 @@
 #include "model.h"
+#include "image.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "platform/platform.h"
-
 
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
 SolModel loaded_models[SOL_MODEL_COUNT];
 
-static SolModel     *Parse_Model(SolResource res, u32 id);
-static SolSkeleton   ParseSkeleton(cgltf_data *data);
-SolModelMasks model_masks[SOL_MODEL_COUNT];
+static SolModel   *Parse_Model(SolResource res, u32 id);
+static SolSkeleton ParseSkeleton(cgltf_data *data);
+SolModelMasks      model_masks[SOL_MODEL_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount,
                             uint32_t *outIndexCount);
@@ -342,57 +342,78 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                     wghAcc = attr->data;
             }
 
-            // Material
-            dst->material = (SolMaterial){.baseColor = {1.0f, 1.0f, 1.0f, 1.0f}, .roughness = 1.0f};
-            memset(dst->material.emissive, 0, sizeof(float) * 4);
-
-            if (prim->material && prim->material->has_pbr_metallic_roughness)
+            if (prim->material)
             {
-                cgltf_pbr_metallic_roughness *pbr     = &prim->material->pbr_metallic_roughness;
-                cgltf_texture                *texture = pbr->base_color_texture.texture;
-                if (texture)
+                // Material
+                dst->material = (SolMaterial){
+                    .baseColor       = {1.0f, 1.0f, 1.0f, 1.0f},
+                    .roughness       = 1.0f,
+                    .textureScale    = {1.0f, 1.0f},
+                    .fogTextureScale = {1.0f, 1.0f},
+                };
+                memset(dst->material.emissive, 0, sizeof(float) * 4);
+                if (prim->material->extras.data)
                 {
-                    cgltf_image *image = texture->image;
-                    if (image && image->buffer_view)
-                    {
-                        cgltf_buffer_view *view      = image->buffer_view;
-                        void              *data      = (uint8_t *)view->buffer->data + view->offset;
-                        size_t             size      = view->size;
-                        const char        *mime_type = image->mime_type;
-                        // if (!mime_type && data && size > 4)
-                        // {
-                        //     uint8_t *bytes = (uint8_t *)data;
-                        //     if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
-                        //     {
-                        //         mime_type = "image/png";
-                        //     }
-                        //     else if (bytes[0] == 0xFF && bytes[1] == 0xD8)
-                        //     {
-                        //         mime_type = "image/jpeg";
-                        //     }
-                        //     else if (bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F')
-                        //     {
-                        //         mime_type = "image/webp";
-                        //     }
-                        // }
-                        int textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
-                        if (textureId)
-                        {
-                            dst->material.textureId = textureId;
-                        }
-                    }
+                    const char *extrasJson        = prim->material->extras.data;
+                    dst->material.textureScale.x = Sol_GetExtrasFloat(extrasJson, "uv_scale_x", 1.0f);
+                    dst->material.textureScale.y = Sol_GetExtrasFloat(extrasJson, "uv_scale_y", 1.0f);
+
+                    dst->material.fogTextureScale.x = Sol_GetExtrasFloat(extrasJson, "fog_scale_x", 1.0f);
+                    dst->material.fogTextureScale.y = Sol_GetExtrasFloat(extrasJson, "fog_scale_y", 1.0f);
                 }
 
-                memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
-                dst->material.metallic  = pbr->metallic_factor;
-                dst->material.roughness = pbr->roughness_factor;
+                if (prim->material->emissive_texture.texture)
+                {
+                    cgltf_buffer_view *view              = prim->material->emissive_texture.texture->image->buffer_view;
+                    void              *data              = (uint8_t *)view->buffer->data + view->offset;
+                    int                emissiveTextureId = Sol_Texture_RegisterRuntime(
+                        data, view->size, prim->material->emissive_texture.texture->image->mime_type);
+                    if (emissiveTextureId)
+                        dst->material.emissiveTextureId = emissiveTextureId;
+                }
 
-                memcpy(dst->material.emissive, prim->material->emissive_factor, sizeof(float) * 3);
-                float strength = 1.0f;
-                if (prim->material->has_emissive_strength)
-                    strength = prim->material->emissive_strength.emissive_strength;
+                if (prim->material->normal_texture.texture)
+                {
+                    cgltf_buffer_view *view            = prim->material->normal_texture.texture->image->buffer_view;
+                    void              *data            = (uint8_t *)view->buffer->data + view->offset;
+                    int                normalTextureId = Sol_Texture_RegisterRuntime(
+                        data, view->size, prim->material->normal_texture.texture->image->mime_type);
+                    if (normalTextureId)
+                        dst->material.normalTextureId = normalTextureId;
+                }
 
-                dst->material.emissive[3] = strength;
+                if (prim->material->has_pbr_metallic_roughness)
+                {
+                    cgltf_pbr_metallic_roughness *pbr     = &prim->material->pbr_metallic_roughness;
+                    cgltf_texture                *texture = pbr->base_color_texture.texture;
+                    if (texture)
+                    {
+                        cgltf_image *image = texture->image;
+                        if (image && image->buffer_view)
+                        {
+                            cgltf_buffer_view *view      = image->buffer_view;
+                            void              *data      = (uint8_t *)view->buffer->data + view->offset;
+                            size_t             size      = view->size;
+                            const char        *mime_type = image->mime_type;
+                            int                textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                            if (textureId)
+                            {
+                                dst->material.textureId = textureId;
+                            }
+                        }
+                    }
+
+                    memcpy(dst->material.baseColor, pbr->base_color_factor, 16);
+                    dst->material.metallic  = pbr->metallic_factor;
+                    dst->material.roughness = pbr->roughness_factor;
+
+                    memcpy(dst->material.emissive, prim->material->emissive_factor, sizeof(float) * 3);
+                    float strength = 1.0f;
+                    if (prim->material->has_emissive_strength)
+                        strength = prim->material->emissive_strength.emissive_strength;
+
+                    dst->material.emissive[3] = strength;
+                }
             }
 
             // Vertices — read local, transform to world, store

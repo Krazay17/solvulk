@@ -12,6 +12,7 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [MODELKIND_WIZARD] = "Wizard.glb",
     [MODELKIND_DUDE]   = "Dude.glb",
     [MODELKIND_ZORGON]  = "Zorgon.glb", 
+    [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     [SOL_MODEL_BOX]     = "Box.glb",
     [SOL_MODEL_WORLD0] = "World0.glb",
     [SOL_MODEL_WORLD1] = "World1.glb",

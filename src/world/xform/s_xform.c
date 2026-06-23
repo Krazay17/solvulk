@@ -83,9 +83,8 @@ SolXform Sol_Xform_GetXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
     return (SolXform){
-        .pos   = xform->pos,
-        .scale = xform->scale,
-        .quat  = xform->quat,
+        .pos = xform->pos,
+        .quat = xform->quat,
     };
 }
 
@@ -93,9 +92,8 @@ SolXform Sol_Xform_GetDrawXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
     return (SolXform){
-        .pos   = xform->drawPos,
-        .scale = xform->drawScale,
-        .quat  = xform->drawQuat,
+        .pos = xform->drawPos,
+        .quat = xform->drawQuat,
     };
 }
 
@@ -127,6 +125,11 @@ void Sol_Xform_Set(World *world, int id, float x, float y, float z)
     world->xforms[id].pos.x = x;
     world->xforms[id].pos.y = y;
     world->xforms[id].pos.z = z;
+}
+void Sol_Xform_SetXform(World *world, int id, SolXform xform)
+{
+    world->xforms[id].pos = world->xforms[id].drawPos = world->xforms[id].lastPos = xform.pos;
+    world->xforms[id].quat = world->xforms[id].drawQuat = world->xforms[id].lastQuat = xform.quat;
 }
 
 float Sol_Xform_DistanceTo(World *world, int idA, int idB)

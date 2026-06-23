@@ -520,7 +520,7 @@ static void Ribbon_Draw_Lightning(World *world, Ribbon *r, double dt, double tim
         float tA   = glm_clamp(1.0f - (r->ages[idxA] / r->segLifetime), 0.0f, 1.0f);
         float tB   = glm_clamp(1.0f - (r->ages[idxB] / r->segLifetime), 0.0f, 1.0f);
 
-        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(2);
+        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(1);
         if (!seg)
             return;
 

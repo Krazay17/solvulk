@@ -15,7 +15,7 @@
 #include "game/prefabs.h"
 
 #define MIN_POWER 0.5f
-#define MAX_POWER 3.0f
+#define MAX_POWER 2.5f
 #define MAX_DURATION 4.0f
 
 #define RECOVERYTIME 0.3f
@@ -42,7 +42,8 @@ void Fireball_State_Update(World *world, int id, float dt)
             data->stage++;
         break;
     case 1:
-        AnimDesc desc = {.anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .playKind = ANIMPLAYKIND_ONESHOT};
+        AnimDesc desc = {
+            .anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .playKind = ANIMPLAYKIND_ONESHOT};
         Sol_Model_PlayAnim(world, id, desc);
 
         SolShoot shoot = Sol_Controller_GetShoot(world, id, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge));
@@ -54,10 +55,10 @@ void Fireball_State_Update(World *world, int id, float dt)
             Sol_Physx_SetVel(world, ball, shoot.vel);
             Sol_Owner_Add(world, ball, id);
             world->projectiles[ball].directHit.damage        = data->damage;
-            world->projectiles[ball].explosionHit.damage     = data->damage;
+            world->projectiles[ball].explosionHit.damage     = data->damage * power;
             world->projectiles[ball].explosionHit.buffMask   = data->buffs;
             world->projectiles[ball].explosionHit.effectMask = data->effects;
-            world->projectiles[ball].explodeRadius           = 4.0f;
+            world->projectiles[ball].explodeRadius           = 1.5f * power;
         }
 
         data->stage++;

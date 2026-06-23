@@ -27,6 +27,7 @@ typedef enum
 
     PIPE_TEXT,
     PIPE_TEXT_3D,
+    PIPE_TEXT_3D_FRONT,
     PIPE_TEXT_2D,
     PIPE_RECT,
     PIPE_RECTI,
@@ -314,6 +315,7 @@ typedef enum
     QUADKIND_SPRITE_FRONT,
     QUADKIND_HEALTH,
     QUADKIND_TEXT,
+    QUADKIND_TEXT_FRONT,
     QUADKIND_RECT,
     QUADKIND_TEXT2D,
     QUADKIND_COUNT,
@@ -337,6 +339,7 @@ extern QuadQueue        healthQueue;
 extern QuadQueue        spriteQueue0;
 extern QuadQueue        spriteQueue1;
 extern QuadQueue        text3dQueue;
+extern QuadQueue        text3dFrontQueue;
 extern QuadQueue        spriteQueueFront;
 static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
 {
@@ -354,6 +357,9 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
         break;
     case QUADKIND_TEXT:
         q = &text3dQueue;
+        break;
+    case QUADKIND_TEXT_FRONT:
+        q = &text3dFrontQueue;
         break;
     case QUADKIND_SPRITE_FRONT:
         q = &spriteQueueFront;
@@ -383,4 +389,5 @@ void      Sol_Render_DrawText(SolFontDesc desc);
 void      Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id);
 void      Sol_Render_UploadModel(SolModel *model, u32 modelId);
 SceneUBO *Sol_Render_GetNext_Scene();
+void      Sol_Render_DrawText2D(SolFontDesc desc);
 void      Sol_Render_DrawText3D(Text3DDesc desc);

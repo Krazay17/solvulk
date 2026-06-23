@@ -6,6 +6,7 @@
 #include "xform/s_xform.h"
 #include "model/s_model.h"
 #include "physx/s_body.h"
+#include "combat/s_combat.h"
 #include "controller/s_controller.h"
 #include "buff/s_buff.h"
 #include "replication/s_replication.h"
@@ -123,6 +124,7 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
     data->damage      = ability_config[ability][rarity].damage + bonusDamage;
     data->buffs       = ability_config[ability][rarity].buffMask | bonusBuffs;
     data->effects     = ability_config[ability][rarity].effectMask | bonusEffects;
+    Sol_Weapon_Equip(world, id, ability, slot);
 }
 
 const char *Sol_Ability_GetNameString(u32 ability)
@@ -208,7 +210,7 @@ static void Ability_Draw(World *world, double dt, double time)
             if (data->stage > 0)
                 break;
             float scale = data->charge * 2.0f + 0.5f;
-            vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L");
+            vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
             pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
             pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
 
@@ -222,13 +224,13 @@ static void Ability_Draw(World *world, double dt, double time)
         case ABILITY_STATE_CLAW:
             break;
         case ABILITY_STATE_WHIP:
-        vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
-        const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-        vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand);
-        for(int w = 0; w< 10;w++)
-        {
-            Draw_Laser(startPos, data->as.whip.whipPoints[w], time, color, 1.0f);
-        }
+            vec4s       color    = {0.0f, 1.0f, 0.0f, 1.0f};
+            const char *hand     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+            vec3s       startPos = Sol_Model_GetBoneXform(world, id, hand).pos;
+            for (int w = 0; w < 10; w++)
+            {
+                Draw_Laser(startPos, data->as.whip.whipPoints[w], time, color, 1.0f);
+            }
             break;
         case ABILITY_STATE_SHIELD: {
             SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
@@ -241,7 +243,7 @@ static void Ability_Draw(World *world, double dt, double time)
             {
                 vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
                 const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-                vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand);
+                vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand).pos;
                 float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
                 data->as.laser.laserPointCountVisual = 0;
                 Laser_Bounces(world, id, controller->aimpos, controller->aimdir, 0);

@@ -78,6 +78,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                                       {ACTION_DASH, 0},
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
+    Sol_Combat_Add(world, id);
     return id;
 }
 

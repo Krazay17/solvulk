@@ -4,6 +4,8 @@
 #include "world.h"
 #include "sol_math.h"
 #include "xform/s_xform.h"
+#include "model/s_model.h"
+#include "combat/s_combat.h"
 #include "physx/s_body.h"
 #include "render/render.h"
 #include "vital/s_vital.h"
@@ -12,12 +14,14 @@
 
 static void Sol_View_Crosshair_Draw(World *world, double dt, double time);
 static void Sol_View_Healthbar_Draw(World *world, double dt, double time);
+static void Weapon_Draw(World *world, double dt, double time);
 
 void Sol_View_Init(World *world)
 {
     Sol_View_Fx(world);
     WAdd3d(world) = Sol_View_Healthbar_Draw;
     WAdd2d(world) = Sol_View_Crosshair_Draw;
+    WAdd3d(world) = Weapon_Draw;
 }
 
 static void Sol_View_Crosshair_Draw(World *world, double dt, double time)
@@ -77,5 +81,23 @@ static void Sol_View_Healthbar_Draw(World *world, double dt, double time)
         ssbo->type      = QUADTYPE_FACECAM;
         ssbo->flags     = 0;
         ssbo->textureId = 0;
+    }
+}
+
+static void Weapon_Draw(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!(world->masks[id] & HAS_COMBAT))
+            continue;
+        CompCombat *combat         = &world->combats[id];
+
+        SolXform leftXform  = Sol_Model_GetBoneXform(world, id, "hand.L.Weapon");
+
+        Sol_Xform_SetXform(world, combat->leftWeaponEnt, leftXform);
+
+        SolXform rightXform  = Sol_Model_GetBoneXform(world, id, "hand.R.Weapon");
+        Sol_Xform_SetXform(world, combat->rightWeaponEnt, rightXform);
     }
 }

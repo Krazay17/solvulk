@@ -6,6 +6,22 @@
 #include "model.h"
 #include "image.h"
 
+typedef struct
+{
+    VkBuffer       vertexBuffer;
+    VkDeviceMemory vertexMemory;
+    VkBuffer       indexBuffer;
+    VkDeviceMemory indexMemory;
+    uint32_t       indexCount;
+    SolMaterial    material;
+} SolGpuMesh;
+
+typedef struct
+{
+    SolGpuMesh *meshes;
+    u32         mesh_count;
+} SolGpuModel;
+
 static SolVkState solvkstate = {0};
 
 static u32 boundPipeline;
@@ -90,6 +106,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .fragResource      = "ID_SHADER_TEXT3D_F",
             .depthTest         = 1,
             .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 3,
+        },
+    [PIPE_TEXT_3D_FRONT] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_TEXT3D_F",
+            .depthTest         = 0,
+            .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -1322,9 +1350,10 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
         .sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter    = VK_FILTER_LINEAR,
         .minFilter    = VK_FILTER_LINEAR,
+        .mipmapMode   = VK_SAMPLER_MIPMAP_MODE_LINEAR,
         .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, // image_upload[id].Uwrap ? image_upload[id].Uwrap :
                                                         // VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
         .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
     };
     vkCreateSampler(vkstate->device, &samplerInfo, NULL, &out->sampler);

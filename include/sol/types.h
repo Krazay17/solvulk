@@ -84,7 +84,7 @@ typedef enum
 
 typedef struct SolXform
 {
-    vec3s   pos, rot, scale;
+    vec3s   pos;
     versors quat;
 } SolXform;
 
@@ -109,15 +109,6 @@ typedef enum
     EMITTER_FOUNTAIN,
     EMITTER_COUNT,
 } EmitterKind;
-
-typedef struct SolMaterial
-{
-    float baseColor[4];
-    float emissive[4];
-    float metallic;
-    float roughness;
-    u32   textureId;
-} SolMaterial;
 
 // TEXTURE---------------
 

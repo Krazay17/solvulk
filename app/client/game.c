@@ -166,6 +166,14 @@ void Create_Sol_Game()
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
     // WAddStep(gameWorld) = WizSpawner;
 
+    // int blade = Sol_Create_Ent(gameWorld, 0);
+    // Sol_Xform_Add(gameWorld, blade, (vec3s){0,0,0});
+    // Sol_Xform_SetScale(gameWorld, blade, (vec3s){20.0f, 20.0f, 20.0f});
+    // Sol_Model_Add(gameWorld, blade, MODELKIND_WEAPONBLADE, 0);
+    // Sol_Body_Add(gameWorld, blade, (BodyDesc){.mass = 0, .shape = SHAPE3_MOD});
+
+    Sol_Dmgnumbers_Spawn(gameWorld, 0, 25, (vec3s){0,1,0});
+
     player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
     Sol_Xform_Add(hud, player2d, (vec3s){1100.0f, 400.0f, 0.0f});

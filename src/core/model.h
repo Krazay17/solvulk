@@ -9,6 +9,7 @@ typedef enum
     MODELKIND_WIZARD,
     MODELKIND_DUDE,
     MODELKIND_ZORGON,
+    MODELKIND_WEAPONBLADE,
     SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
@@ -76,6 +77,20 @@ typedef struct SolSkeleton
     SolAnimation *animations;
     int           animationCount;
 } SolSkeleton;
+
+typedef struct SolMaterial
+{
+    float baseColor[4];
+    float emissive[4];
+    float metallic;
+    float roughness;
+    u32   textureId;
+    u32   emissiveTextureId;
+    u32   normalTextureId;
+    u32   panningFogId;
+    vec2s textureScale;
+    vec2s fogTextureScale;
+} SolMaterial;
 
 typedef struct SolMesh
 {
@@ -153,3 +168,23 @@ void         Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 u32          Sol_Model_GetTriCount(SolModelKind handle);
 void         Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);
 SolModelKind Sol_Model_GetModelId(World *world, int id);
+
+static inline float Sol_GetExtrasFloat(const char* json_string, const char* key, float default_value) {
+if (!json_string) return default_value;
+    
+    const char* found = strstr(json_string, key);
+    if (!found) return default_value;
+    
+    found = strchr(found, ':');
+    if (!found) return default_value;
+    found++; // Step over ':'
+    
+    // Skip any potential spaces or opening quotes if Blender formats with whitespace
+    while (*found == ' ' || *found == '"') {
+        found++;
+    }
+    
+    // atof stops at the first non-numeric character (like a comma ',' or bracket '}'), 
+    // but validating it protects your data floats from breaking
+    return (float)atof(found);
+}

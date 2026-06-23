@@ -1,5 +1,6 @@
 #include "s_model.h"
 #include "sol_core.h"
+#include "sol_math.h"
 #include "world.h"
 #include "model.h"
 #include "xform/s_xform.h"
@@ -9,10 +10,12 @@
 
 #define ONESHOT_FADE_DURATION 0.25f
 
+void Model_Draw(World *world, double dt, double time);
+
 void Sol_Model_Init(World *world)
 {
     world->models = calloc(MAX_ENTS, sizeof(CompModel));
-    WAdd3d(world) = Sol_Model_Draw;
+    WAdd3d(world) = Model_Draw;
 }
 
 CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
@@ -20,7 +23,6 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
     CompModel model = model_kinds[kind];
     model.modelId   = kind;
     model.yOffset   = -height * 0.5f;
-    
 
     SolModel *m = Sol_GetModel(kind);
     if (m->skeleton.animationCount > 0)
@@ -41,7 +43,7 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
     return &world->models[id];
 }
 
-void Sol_Model_Draw(World *world, double dt, double time)
+void Model_Draw(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
     int   required = HAS_ACTIVE | HAS_MODEL;
@@ -54,6 +56,8 @@ void Sol_Model_Draw(World *world, double dt, double time)
 
         CompXform *xform     = &world->xforms[id];
         CompModel *modelComp = &world->models[id];
+        if (modelComp->modelId < 0)
+            continue;
 
         ModelSSBO modelSSBO = {0};
         if (world->masks[id] & HAS_INTERACT)
@@ -210,6 +214,10 @@ void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
     layer->playKind     = desc.playKind;
 }
 
+void Sol_Model_SetModelId(World *world, int id, int modelId)
+{
+    world->models[id].modelId = modelId;
+}
 SolModelKind Sol_Model_GetModelId(World *world, int id)
 {
     return world->models[id].modelId;
@@ -241,8 +249,9 @@ void Sol_Model_SetTint(World *world, int id, vec4s color)
 {
 }
 
-vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name)
+SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
+    SolXform     result   = {0};
     CompModel   *model    = &world->models[id];
     SolSkeleton *skeleton = &loaded_models[model->modelId].skeleton;
     CompXform   *xform    = &world->xforms[id];
@@ -257,40 +266,50 @@ vec3s Sol_Model_GetBoneXform(World *world, int id, const char *name)
         }
     }
     if (boneIdx < 0)
-        return (vec3s){{0, 0, 0}};
+    {
+        result.pos  = GLMS_VEC3_ZERO;
+        result.quat = GLMS_QUAT_IDENTITY;
+        return result;
+    }
 
-    // Get the bone's bind position in model space (from inverseBind)
-    // inverseBind transforms model-space to bone-local. Its inverse goes the other way.
-    // The bone's origin in model space at bind pose is: inverse(inverseBind) * (0,0,0,1)
-    // Equivalently: -inverseBind[3].xyz with rotation undone, OR just invert and grab translation.
+    // 1. Get the bone's animated pose in Model Space.
+    // model->bones contains: AnimatedBonePose * InverseBindPose
+    // To extract the actual current Model Space position and rotation of the bone,
+    // we multiply it back by the original bindPose matrix.
     mat4 bindPose;
     glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
-    vec3 bindPos = {bindPose[3][0], bindPose[3][1], bindPose[3][2]};
 
-    // Transform bind position by the current skinning matrix to get current model-space pos
-    vec4 bindPos4 = {bindPos[0], bindPos[1], bindPos[2], 1.0f};
-    vec4 modelSpacePos;
-    glm_mat4_mulv(model->bones[boneIdx], bindPos4, modelSpacePos);
+    mat4 boneModelSpace;
+    glm_mat4_mul(model->bones[boneIdx], bindPose, boneModelSpace);
 
-    // Now apply the entity's world transform (position + rotation + scale)
-    vec3 scaledPos = {
-        modelSpacePos[0] * xform->drawScale.x,
-        modelSpacePos[1] * xform->drawScale.y,
-        modelSpacePos[2] * xform->drawScale.z,
-    };
+    // 2. Construct the Entity's World Transform Matrix
+    mat4 entityWorld;
+    glm_mat4_identity(entityWorld);
 
-    // Rotate by entity quat
-    vec3 rotated;
-    glm_quat_rotatev(xform->drawQuat.raw, scaledPos, rotated);
+    // Apply position (including your yOffset adjustment)
+    vec3 actualDrawPos = {xform->drawPos.x, xform->drawPos.y + model->yOffset, xform->drawPos.z};
+    glm_translate(entityWorld, actualDrawPos);
 
-    // Translate
-    vec3s worldPos = {{
-        rotated[0] + xform->drawPos.x,
-        rotated[1] + xform->drawPos.y + model->yOffset,
-        rotated[2] + xform->drawPos.z,
-    }};
+    // Apply rotation
+    glm_quat_rotate(entityWorld, xform->drawQuat.raw, entityWorld);
 
-    return worldPos;
+    // Apply scale
+    glm_scale(entityWorld, xform->drawScale.raw);
+
+    // 3. Combine them: Final World Matrix = EntityWorld * BoneModelSpace
+    mat4 finalWorldMat;
+    glm_mat4_mul(entityWorld, boneModelSpace, finalWorldMat);
+
+    // 4. Decompose the final matrix to extract raw position and quaternion
+    // Extract Position vector directly from the 4th column
+    result.pos.x = finalWorldMat[3][0];
+    result.pos.y = finalWorldMat[3][1];
+    result.pos.z = finalWorldMat[3][2];
+
+    // Extract Rotation quaternion cleanly from the upper-left 3x3
+    glm_mat4_quat(finalWorldMat, result.quat.raw);
+
+    return result;
 }
 
 float Sol_Model_GetOffsetY(World *world, int id)

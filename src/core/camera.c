@@ -31,7 +31,7 @@ SolCamera solCamera = {
     .nearClip  = 0.2f,
     .farClip   = 1000.0f,
     .lerpspeed = 20.0f,
-    .distance  = 4.5f,
+    .distance  = 3.5f,
     .offset    = 1.0f,
 };
 
@@ -105,7 +105,7 @@ void Sol_Cam_Update(double dt)
     ubo->proj           = solCamera.proj;
     ubo->viewProjection = solCamera.viewProj;
     ubo->cameraPos      = (vec4s){solCamera.pos.x, solCamera.pos.y, solCamera.pos.z, 1.0f};
-    ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.2f};
+    ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.5f};
     ubo->aspect         = solState.aspectRatio;
 }
 

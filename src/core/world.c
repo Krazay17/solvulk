@@ -205,7 +205,7 @@ void World_System_Add(World *world, WorldSystem system)
 {
     if (world && init_system[system])
         init_system[system](world);
-    world->systemBits |= SYS_BIT(system);
+    world->systemBits |= BITC(system);
 }
 
 int Sol_Create_Ent(World *world, u32 id)

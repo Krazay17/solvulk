@@ -48,11 +48,14 @@ void Sol_Vital_Add(World *world, int id, VitalKind kind)
     world->vitals[id] = vital;
 }
 
-void Sol_Vital_Damage(World *world, int id, int attacker, float damage)
+bool Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 {
     if (!(world->masks[id] & HAS_VITAL))
-        return;
+        return false;
     CompVital *vital = &world->vitals[id];
+
+    if (vital->health == 0)
+        return false;
 
     if (damage >= vital->health)
     {
@@ -77,6 +80,7 @@ void Sol_Vital_Damage(World *world, int id, int attacker, float damage)
         vital->health -= damage;
         vital->lastHitTime = solState.gameTime;
     }
+    return true;
 }
 
 void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)

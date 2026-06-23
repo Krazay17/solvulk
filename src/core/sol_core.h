@@ -20,7 +20,7 @@ typedef struct SolState
     double uiScale, aspectRatio;
 } SolState;
 
-extern SolState       solState;
+extern SolState solState;
 #define UIUNSCALE(v) ((v) / solState.uiScale)
 #define UISCALE(v) ((v) * solState.uiScale)
 

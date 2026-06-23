@@ -3,7 +3,6 @@
 
 #define MAX_ENTS (1 << 14)
 #define MAX_SYSTEMS 64
-#define SYS_BIT(x) (1u << (x))
 
 #define WAdd2d(w) w->draw2dSystems[w->draw2dCount++]
 #define WAdd3d(w) w->draw3dSystems[w->draw3dCount++]
@@ -72,17 +71,17 @@ typedef enum
     WORLD_SYS_PICKUP,
     WORLD_SYS_OWNER,
     WORLD_SYS_PARENT,
-    
+
     // Event flow
     WORLD_SYS_BUFF,
     WORLD_SYS_ABILITY,
     WORLD_SYS_CHAINHIT,
     WORLD_SYS_ITEM,
-    
+
     WORLD_SYS_PHYSX,
     WORLD_SYS_BODY2,
     WORLD_SYS_PROJECTILE,
-    
+
     WORLD_SYS_COMBAT,
     WORLD_SYS_VITAL,
     WORLD_SYS_AICONTROLLER,
@@ -110,32 +109,33 @@ typedef void (*SystemFunc)(World *, double, double);
 
 typedef uint64_t Mask;
 
-typedef struct CompAudio        CompAudio;
-typedef struct CompReplication  CompReplication;
-typedef struct CompAi CompAi;
-typedef struct CompParent       CompParent;
-typedef struct CompTimer        CompTimer;
-typedef struct CompXform        CompXform;
-typedef struct CompBody         CompBody;
-typedef struct CompMovement     CompMovement;
-typedef struct CompModel        CompModel;
-typedef struct CompInteract     CompInteract;
-typedef struct CompShape        CompShape;
-typedef struct CompVital        CompVital;
-typedef struct CompController   CompController;
-typedef struct CompBuff         CompBuff;
-typedef struct CompAbility      CompAbility;
-typedef struct CompOwner        CompOwner;
-typedef struct CompContact      CompContact;
-typedef struct CompCombat       CompCombat;
-typedef struct CompEmitter      CompEmitter;
-typedef struct CompBody2d       CompBody2d;
-typedef struct CompView2d       CompView2d;
-typedef struct CompProjectile   CompProjectile;
-typedef struct CompItem         CompItem;
-typedef struct CompTooltip      CompTooltip;
-typedef struct ChainAttacks     ChainAttacks;
+typedef struct CompAudio       CompAudio;
+typedef struct CompReplication CompReplication;
+typedef struct CompAi          CompAi;
+typedef struct CompParent      CompParent;
+typedef struct CompTimer       CompTimer;
+typedef struct CompXform       CompXform;
+typedef struct CompBody        CompBody;
+typedef struct CompMovement    CompMovement;
+typedef struct CompModel       CompModel;
+typedef struct CompInteract    CompInteract;
+typedef struct CompShape       CompShape;
+typedef struct CompVital       CompVital;
+typedef struct CompController  CompController;
+typedef struct CompBuff        CompBuff;
+typedef struct CompAbility     CompAbility;
+typedef struct CompOwner       CompOwner;
+typedef struct CompContact     CompContact;
+typedef struct CompCombat      CompCombat;
+typedef struct CompEmitter     CompEmitter;
+typedef struct CompBody2d      CompBody2d;
+typedef struct CompView2d      CompView2d;
+typedef struct CompProjectile  CompProjectile;
+typedef struct CompItem        CompItem;
+typedef struct CompTooltip     CompTooltip;
+typedef struct ChainAttacks    ChainAttacks;
 
+typedef struct Dmgnumbers  Dmgnumbers;
 typedef struct SolRibbon   SolRibbon;
 typedef struct SolEvents   SolEvents;
 typedef struct SolEmitters SolEmitters;
@@ -170,30 +170,31 @@ struct World
     CompFlags   flags[MAX_ENTS];
     CompTracker trackers[MAX_ENTS];
 
-    CompReplication  *replications;
-    CompParent       *parents;
-    CompAudio        *audios;
-    CompTimer        *timers;
-    CompXform        *xforms;
-    CompBody         *bodies;
-    CompMovement     *movements;
-    CompModel        *models;
-    CompInteract     *interacts;
-    CompShape        *spheres;
-    CompVital        *vitals;
-    CompController   *controllers;
-    CompBuff         *buffs;
-    CompAbility      *abilities;
-    CompOwner        *owners;
-    CompAi *aicontrollers;
-    CompCombat       *combats;
-    CompEmitter      *compEmitters;
-    CompBody2d       *body2d;
-    CompView2d       *view2d;
-    CompProjectile   *projectiles;
-    CompItem         *items;
-    CompTooltip      *tooltips;
+    CompReplication *replications;
+    CompParent      *parents;
+    CompAudio       *audios;
+    CompTimer       *timers;
+    CompXform       *xforms;
+    CompBody        *bodies;
+    CompMovement    *movements;
+    CompModel       *models;
+    CompInteract    *interacts;
+    CompShape       *spheres;
+    CompVital       *vitals;
+    CompController  *controllers;
+    CompBuff        *buffs;
+    CompAbility     *abilities;
+    CompOwner       *owners;
+    CompAi          *aicontrollers;
+    CompCombat      *combats;
+    CompEmitter     *compEmitters;
+    CompBody2d      *body2d;
+    CompView2d      *view2d;
+    CompProjectile  *projectiles;
+    CompItem        *items;
+    CompTooltip     *tooltips;
 
+    Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;
     ChainAttacks *chainhit;
     SolEvents    *events;
@@ -250,7 +251,6 @@ void Sol_Destroy_Ent(World *world, int id);
 
 void Sol_Flags_Add(World *world, int id, EFlag flags);
 void Sol_Flags_Remove(World *world, int id, EFlag flags);
-
 
 #define ENTITY_INDEX_BITS 16
 #define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)

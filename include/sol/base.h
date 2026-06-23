@@ -19,9 +19,6 @@
 #define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
 #define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
 
-#define logd(x) printf("%d\n", x)
-#define logfloat(x) printf("%f\n", x)
-#define logs(x) printf("%s\n", x)
 #define sollog(X)                                                                                                      \
     _Generic((X),                                                                                                      \
         int: printf("%d\n", (int)X),                                                                                   \

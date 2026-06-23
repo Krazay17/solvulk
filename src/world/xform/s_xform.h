@@ -25,3 +25,4 @@ SolXform   Sol_Xform_GetXform(World *world, int id);
 SolXform   Sol_Xform_GetDrawXform(World *world, int id);
 float      Sol_Xform_DistanceTo(World *world, int idA, int idB);
 float      Sol_Xform_DistanceTo2(World *world, int idA, int idB);
+void Sol_Xform_SetXform(World *world, int id, SolXform xform);

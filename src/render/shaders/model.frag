@@ -33,7 +33,8 @@ layout(push_constant) uniform MeshMaterial {
     uint textureId;
     uint emissiveTextureId;
     uint normalTextureId;
-    uint panningFogTextureId;
+    uint fogTextureId;
+    uint _pad;
 
     vec2 textureScale;
     vec2 fogTextureScale;
@@ -103,6 +104,28 @@ void main()
     float alpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
     alpha *= baseTex.a;
 
+    vec3 hybridFogEmmisive = vec3(0.0);
+    if (material.fogTextureId != 0u)
+    {
+        vec2 fogUV     = fragUV * material.fogTextureScale + vec2(1, fTime * 0.05);
+        vec4 fogSample = texture(textures[material.fogTextureId], fogUV);
+
+        float invAlpha = 1.0 - baseTex.a;
+        float glowMask = invAlpha * fogSample.a;
+
+        // 1. Force the physical under-surface albedo to match the fog color explicitly
+        // (This completely overrides any black texture artifacts)
+        albedo = mix(albedo, fogSample.rgb, glowMask);
+
+        // 2. Inject a controlled fallback emissive value so it stays visible in pitch-black shadows
+        hybridFogEmmisive = fogSample.rgb * glowMask * 1.0; // Soft self-illumination base
+
+        // 3. Keep the fragment opaque where the mask shows through
+        alpha = max(alpha, glowMask);
+        float pulse = 3.75 + 0.25 * sin(fTime *0.2);
+        alpha *= pulse;
+    }
+
     // --- Vectors ---
     vec3 V = normalize(scene.cameraPos.xyz - fragWorldPos);
     vec3 N = (material.normalTextureId != 0u)
@@ -113,14 +136,6 @@ void main()
 
     float NdotV = max(dot(N, V), 0.0001);
     float NdotL = max(dot(N, L), 0.0);
-
-    // --- Panning fog underlayer ---
-    if (material.panningFogTextureId != 0u)
-    {
-        vec2 fogUV    = fragUV + vec2(fTime * 0.04, fTime * 0.02);
-        vec4 fogSample = texture(textures[material.panningFogTextureId], fogUV);
-        albedo = mix(fogSample.rgb, albedo, baseTex.a);
-    }
 
     // --- Reflectivity ---
     vec3 F0 = mix(vec3(0.04), albedo, material.metallic);
@@ -150,10 +165,13 @@ void main()
     vec3 finalRGB = ambient + directLighting;
 
     // --- Emission ---
-    vec3 emissive = material.emissive.rgb * material.emissive.a;
+    vec3 emissive = material.emissive.rgb * material.emissive.a * 0.5;
     if (material.emissiveTextureId != 0u)
         emissive *= texture(textures[material.emissiveTextureId], fragUV).rgb;
+
+    emissive += fragColor.rgb;
     finalRGB += emissive;
+    finalRGB += hybridFogEmmisive;
 
     // --- GAMEPLAY VISUAL FLAGS (cheap, high impact — keep these front and center) ---
     if ((flags & FLAG_FRESNEL) != 0u)
@@ -166,6 +184,7 @@ void main()
         finalRGB += vec3(1.0, 1.0, 0.0);
     }
 
+
     float timeSinceHit = fTime - fragHitTime;
     if (timeSinceHit >= 0.0 && timeSinceHit < 0.3)
     {
@@ -176,6 +195,7 @@ void main()
     // --- Cheap punchy tonemap + gamma ---
     finalRGB = TonemapPunchy(finalRGB);
     finalRGB = pow(finalRGB, vec3(1.0 / 2.2));
+
 
     outColor = vec4(finalRGB, alpha);
 }

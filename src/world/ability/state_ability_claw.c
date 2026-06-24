@@ -13,6 +13,8 @@
 
 #define HITINTERVAL 0.05f
 #define HITDELAY 0.275f
+#define MELEE_RANGE 3.0f
+
 void Claw_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
@@ -44,7 +46,7 @@ void Claw_State_Update(World *world, int id, float dt)
 
         SolRay ray = {
             .dir       = controller->aimdir,
-            .dist      = 3.0f,
+            .dist      = MELEE_RANGE,
             .ignoreEnt = id,
             .pos       = controller->aimpos,
             .mask      = 0b1,

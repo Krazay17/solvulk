@@ -33,6 +33,7 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     case EKIND_BULLET:
         id = Sol_Prefab_Bullet(world, id, desc.pos, desc.scale);
         break;
+        
     }
 
     if (auth != NETAUTH_NONE)
@@ -86,7 +87,6 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.5f, .y = 3.0f};
     glms_vec2_scale(dims, scale);
-
     dims = glms_vec2_scale(dims, scale);
     id   = Sol_Create_Ent(world, id);
     if (id < 0)

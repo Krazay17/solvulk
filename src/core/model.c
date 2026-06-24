@@ -349,17 +349,18 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                     .baseColor       = {1.0f, 1.0f, 1.0f, 1.0f},
                     .roughness       = 1.0f,
                     .textureScale    = {1.0f, 1.0f},
-                    .fogTextureScale = {1.0f, 1.0f},
+                    .fogTextureScale = {0.01f, 0.01f},
                 };
                 memset(dst->material.emissive, 0, sizeof(float) * 4);
                 if (prim->material->extras.data)
                 {
-                    const char *extrasJson        = prim->material->extras.data;
+                    const char *extrasJson       = prim->material->extras.data;
                     dst->material.textureScale.x = Sol_GetExtrasFloat(extrasJson, "uv_scale_x", 1.0f);
                     dst->material.textureScale.y = Sol_GetExtrasFloat(extrasJson, "uv_scale_y", 1.0f);
 
                     dst->material.fogTextureScale.x = Sol_GetExtrasFloat(extrasJson, "fog_scale_x", 1.0f);
                     dst->material.fogTextureScale.y = Sol_GetExtrasFloat(extrasJson, "fog_scale_y", 1.0f);
+                    dst->material.fogTextureId      = (int)Sol_GetExtrasFloat(extrasJson, "fog_id", 0);
                 }
 
                 if (prim->material->emissive_texture.texture)

@@ -65,10 +65,16 @@ void MakeABox(int flags, void *data)
 
 void ClearEnts(int flags, void *data)
 {
+    return;
     World *world = (World *)data;
     if (world)
         for (int i = world->activeCount; i > 2; i--)
+        {
+            int id = world->activeEntities[i];
+            if (world->masks[id] & HAS_REPLICATION && world->replications[id].auth == NETAUTH_AUTH)
+                continue;
             Sol_Destroy_Ent(world, i);
+        }
 }
 
 void ColorSpheres(int flags, void *data)
@@ -157,7 +163,8 @@ void Create_Sol_Game()
 
     Sol_World_SetActive(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
-    // Sol_View_Crosshair(gameWorld);
+
+    WAdd2d(gameWorld) = Sol_Crosshair_Draw;
 
     SpawnPlayer(0, 0);
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
@@ -172,7 +179,6 @@ void Create_Sol_Game()
     // Sol_Model_Add(gameWorld, blade, MODELKIND_WEAPONBLADE, 0);
     // Sol_Body_Add(gameWorld, blade, (BodyDesc){.mass = 0, .shape = SHAPE3_MOD});
 
-    Sol_Dmgnumbers_Spawn(gameWorld, 0, 25, (vec3s){0,1,0});
 
     player2d                 = Sol_Create_Ent(hud, 0);
     CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
@@ -188,12 +194,19 @@ void Create_Sol_Game()
 
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
-    int leftAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){390, 600, 0}, 0, "Q");
-    Sol_Interact_Add(hud, leftAbility);
-    int rightAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){820, 600, 0}, 1, "E");
-    Sol_Interact_Add(hud, rightAbility);
+    int attackBar = Sol_Create_Ent(hud, 0);
+    Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);
+    Sol_Xform_Set(hud, attackBar, 340, 650, 0);
+    Sol_View2d_Add(hud, attackBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 140, 70);
+    Sol_Interact_Add(hud, attackBar);
+    for (int i = 0; i < 2; i++)
+    {
+        char *label = i == 0 ? "L" : "R";
+        int   slot  = Sol_Prefab_AbilitySlot(hud, (vec3s){1.0f, 1.0f, 1.0f}, i, label);
+        Sol_Parent_Set(hud, slot, (CompParent){.active = true, .parentId = attackBar, .localOffset = {70.0f * i}});
+    }
 
-    int dashAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){920, 600, 0}, 9, "Shift");
+    int dashAbility = Sol_Prefab_AbilitySlot(hud, (vec3s){800, 650, 0}, 9, "Shift");
     Sol_Interact_Add(hud, dashAbility);
 
     int abilityBar = Sol_Create_Ent(hud, 0);
@@ -225,15 +238,15 @@ void Create_Sol_Game()
                        (CompParent){.active = true, .parentId = abilityBar, .localOffset = {70.0f * i}});
     }
     // Left and right
-    Sol_Prefab_AbilityCard(hud, (vec3s){390, 600}, ABILITY_STATE_CLAW, 2);
-    Sol_Prefab_AbilityCard(hud, (vec3s){820, 600}, ABILITY_STATE_FIREBALL, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){340, 650}, ABILITY_STATE_CLAW, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){410, 650}, ABILITY_STATE_FIREBALL, 2);
     // 1,2,3,4
     Sol_Prefab_AbilityCard(hud, (vec3s){500, 650}, ABILITY_STATE_SPINSLASH, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){570, 650}, ABILITY_STATE_SPINSLASH, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){640, 650}, ABILITY_STATE_SHIELD, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){710, 650}, ABILITY_STATE_SHIELD, 2);
     // Shift
-    Sol_Prefab_AbilityCard(hud, (vec3s){920, 600, 0}, ABILITY_STATE_DASH, 2);
+    Sol_Prefab_AbilityCard(hud, (vec3s){800, 650, 0}, ABILITY_STATE_DASH, 2);
     Sol_Prefab_AbilityCard(hud, (vec3s){920, 500, 0}, ABILITY_STATE_SPINSLASH, 3);
 
     for (int i = 1; i < 8; i++)

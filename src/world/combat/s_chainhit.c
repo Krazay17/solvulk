@@ -48,7 +48,6 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float 
                              .as.hit.fxKind = FXKIND_LIGHTNING,
                          });
 
-
     Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;
     memset(&world->chainhit->chains[idx], 0, sizeof(Chain));
@@ -62,10 +61,10 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float 
 }
 
 static SolProfiler chainProfile = {.name = "Chain Step"};
-void Chain_Step(World *world, double dt, double time)
+void               Chain_Step(World *world, double dt, double time)
 {
     int newCount = 0;
-    
+
     Prof_Begin(&chainProfile);
     for (int i = 0; i < world->chainhit->count; i++)
     {
@@ -84,6 +83,7 @@ void Chain_Step(World *world, double dt, double time)
                                          .as.hit.entA   = chain->dealer,
                                          .as.hit.entB   = target,
                                          .as.hit.damage = chain->damage,
+                                         .as.hit.pos    = Sol_Xform_GetPos(world, target),
                                      });
                 Sol_Event_Add(world, (SolEvent){
                                          .kind       = EVENTKIND_FX,
@@ -105,7 +105,7 @@ void Chain_Step(World *world, double dt, double time)
         }
     }
     world->chainhit->count = newCount;
-//    Prof_EndEz(&chainProfile, true);
+    //    Prof_EndEz(&chainProfile, true);
 }
 
 int Find_NextTarget(World *world, Chain *chain)

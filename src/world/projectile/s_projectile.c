@@ -144,6 +144,7 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
                 continue;
             aoeHit.entB = result.entId;
             aoeHit.pos  = result.pos;
+            sollog(aoeHit.pos.x);
             aoeHit.vel  = vecSub(result.pos, pos);
             Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = aoeHit});
         }

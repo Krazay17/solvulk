@@ -904,9 +904,8 @@ bool Collide_Sphere_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, 
 
     hit->normal      = glms_vec3_scale(delta, 1.0f / distance);
     hit->penetration = radiusSum - distance;
-
     // Contact point is halfway between the two surfaces
-    hit->pos = glms_vec3_add(bXform->pos, glms_vec3_scale(hit->normal, bBody->dims.x));
+    hit->pos = glms_vec3_add(bXform->pos, glms_vec3_scale(hit->normal, hit->penetration));
 
     return true;
 }

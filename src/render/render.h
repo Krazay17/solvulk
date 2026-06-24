@@ -341,7 +341,7 @@ extern QuadQueue        spriteQueue1;
 extern QuadQueue        text3dQueue;
 extern QuadQueue        text3dFrontQueue;
 extern QuadQueue        spriteQueueFront;
-static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
+static inline QuadSSBO *Sol_Render_GetNext_Quad(u8 kind)
 {
     QuadQueue *q;
     switch (kind)
@@ -373,6 +373,7 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u32 kind)
 
     return &q->instances[q->count++];
 }
+SceneUBO *Sol_Render_GetNext_Scene();
 
 void Sol_Begin_Draw();
 void Sol_End_Draw();
@@ -381,13 +382,12 @@ void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
 
-float     Sol_Render_GetAspect(void);
-void      Sol_Render_DrawSkybox(void);
-void      Sol_Render_DrawLine(SolLine *lines, int count);
-void      Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
-void      Sol_Render_DrawText(SolFontDesc desc);
-void      Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id);
-void      Sol_Render_UploadModel(SolModel *model, u32 modelId);
-SceneUBO *Sol_Render_GetNext_Scene();
-void      Sol_Render_DrawText2D(SolFontDesc desc);
-void      Sol_Render_DrawText3D(Text3DDesc desc);
+float Sol_Render_GetAspect(void);
+void  Sol_Render_DrawSkybox(void);
+void  Sol_Render_DrawLine(SolLine *lines, int count);
+void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
+void  Sol_Render_DrawText(SolFontDesc desc);
+void  Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id);
+void  Sol_Render_UploadModel(SolModel *model, u32 modelId);
+void  Sol_Render_DrawText2D(SolFontDesc desc);
+void  Sol_Render_DrawText3D(Text3DDesc desc);

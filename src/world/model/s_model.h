@@ -31,11 +31,13 @@ typedef struct AnimLayer
 typedef struct CompModel
 {
     mat4         bones[MAX_BONES];
+    vec4s color;
     AnimLayer    layers[ANIM_LAYER_COUNT];
     SolModelKind modelId;
     u8           playingId[ANIM_LAYER_COUNT];
     bool         hasAnim, is2d;
     float        xOffset, yOffset, yawOffset;
+    u32          leftWeaponEnt, rightWeaponEnt;
 } CompModel;
 
 const extern CompModel model_kinds[SOL_MODEL_COUNT];
@@ -43,11 +45,11 @@ const extern CompModel model_kinds[SOL_MODEL_COUNT];
 void       Sol_Model_Init(World *world);
 CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height);
 
-void  Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
-void  Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate);
-void  Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek);
+void     Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
+void     Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate);
+void     Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek);
 SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name);
-float Sol_Model_GetOffsetY(World *world, int id);
-void  Sol_Model_SetOffsetY(World *world, int id, float offset);
-float Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId);
-void  Sol_Model_SetModelId(World *world, int id, int modelId);
+float    Sol_Model_GetOffsetY(World *world, int id);
+void     Sol_Model_SetOffsetY(World *world, int id, float offset);
+float    Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId);
+void     Sol_Model_SetModelId(World *world, int id, int modelId);

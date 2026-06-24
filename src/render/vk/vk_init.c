@@ -155,6 +155,7 @@ int SolVkDepthResources(SolVkState *vkstate)
     VkImageCreateInfo imageInfo = {0};
     imageInfo.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType         = VK_IMAGE_TYPE_2D;
+    imageInfo.format            = VK_FORMAT_R16G16B16A16_SFLOAT;
     imageInfo.extent.width      = vkstate->swapchainExtent.width;
     imageInfo.extent.height     = vkstate->swapchainExtent.height;
     imageInfo.extent.depth      = 1;

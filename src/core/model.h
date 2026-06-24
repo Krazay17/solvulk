@@ -84,10 +84,13 @@ typedef struct SolMaterial
     float emissive[4];
     float metallic;
     float roughness;
+    
     u32   textureId;
     u32   emissiveTextureId;
     u32   normalTextureId;
-    u32   panningFogId;
+    u32   fogTextureId;
+    u32   _pad;
+
     vec2s textureScale;
     vec2s fogTextureScale;
 } SolMaterial;
@@ -154,10 +157,10 @@ typedef struct PoseRequest
     mat4     *outBones;                      // final skinning matrices
 } PoseRequest;
 
-extern SolModel loaded_models[SOL_MODEL_COUNT];
+extern SolModel      loaded_models[SOL_MODEL_COUNT];
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];
-const char     *model_path[SOL_MODEL_COUNT];
-const i32       model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+const char          *model_path[SOL_MODEL_COUNT];
+const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 int          Sol_Models_Init();
 SolModel    *Sol_GetModel(SolModelKind id);
@@ -169,22 +172,27 @@ u32          Sol_Model_GetTriCount(SolModelKind handle);
 void         Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);
 SolModelKind Sol_Model_GetModelId(World *world, int id);
 
-static inline float Sol_GetExtrasFloat(const char* json_string, const char* key, float default_value) {
-if (!json_string) return default_value;
-    
-    const char* found = strstr(json_string, key);
-    if (!found) return default_value;
-    
+static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
+{
+    if (!json_string)
+        return default_value;
+
+    const char *found = strstr(json_string, key);
+    if (!found)
+        return default_value;
+
     found = strchr(found, ':');
-    if (!found) return default_value;
+    if (!found)
+        return default_value;
     found++; // Step over ':'
-    
+
     // Skip any potential spaces or opening quotes if Blender formats with whitespace
-    while (*found == ' ' || *found == '"') {
+    while (*found == ' ' || *found == '"')
+    {
         found++;
     }
-    
-    // atof stops at the first non-numeric character (like a comma ',' or bracket '}'), 
+
+    // atof stops at the first non-numeric character (like a comma ',' or bracket '}'),
     // but validating it protects your data floats from breaking
     return (float)atof(found);
 }

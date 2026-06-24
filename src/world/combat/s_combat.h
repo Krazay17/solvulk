@@ -9,7 +9,6 @@ typedef struct CompCombat
     u32   damage, hitPauseDiminish;
     bool  hitEnts[65536];
     float hitPause, baseAnimRate;
-    u32   leftWeaponEnt, rightWeaponEnt;
 } CompCombat;
 
 typedef struct Dmgnumber

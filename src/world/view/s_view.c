@@ -12,41 +12,34 @@
 
 #define HEALTHBAR_HIDE_DURATION 5.0f
 
-static void Sol_View_Crosshair_Draw(World *world, double dt, double time);
-static void Sol_View_Healthbar_Draw(World *world, double dt, double time);
+void        Sol_Crosshair_Draw(World *world, double dt, double time);
+static void Healthbar_Draw(World *world, double dt, double time);
 static void Weapon_Draw(World *world, double dt, double time);
 
 void Sol_View_Init(World *world)
 {
     Sol_View_Fx(world);
-    WAdd3d(world) = Sol_View_Healthbar_Draw;
-    WAdd2d(world) = Sol_View_Crosshair_Draw;
+    WAdd3d(world) = Healthbar_Draw;
     WAdd3d(world) = Weapon_Draw;
 }
 
-static void Sol_View_Crosshair_Draw(World *world, double dt, double time)
+void Sol_Crosshair_Draw(World *world, double dt, double time)
 {
-    float width  = (float)solEngine.windowWidth / 2;
-    float height = (float)solEngine.windowHeight / 2;
-    Sol_Render_DrawRectangle(
-        (vec4s){
-            .x = width,
-            .y = height,
-            .z = 3,
-            .w = 12,
-        },
-        (vec4s){255, 0, 0, 255}, 0, 1.0f);
-    Sol_Render_DrawRectangle(
-        (vec4s){
-            .x = width,
-            .y = height,
-            .z = 12,
-            .w = 3,
-        },
-        (vec4s){255, 0, 0, 255}, 0, 1.0f);
+    float     x      = (float)WINDOW_WIDTH / 2.0f;
+    float     y      = (float)WINDOW_HEIGHT / 2.0f;
+    float     width  = 11.0f;
+    float     height = 11.0f;
+    RectSSBO *ssbo   = Sol_Render_GetNext_Rect();
+    ssbo->pos        = (vec4s){UISCALE(x - width * 0.5f), UISCALE(y - height * 0.5f), 1, 1.0f};
+    ssbo->dims       = (vec4s){UISCALE(width), UISCALE(height), 0, 1.0f};
+    ssbo->color      = (vec4s){1, 1, 1, 1};
+    ssbo->textureID  = SOL_TEXTURE_CROSSHAIR;
+    ssbo->uv         = (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
+    ssbo->type       = 0;
+    ssbo->flags      = 0;
 }
 
-static void Sol_View_Healthbar_Draw(World *world, double dt, double time)
+static void Healthbar_Draw(World *world, double dt, double time)
 {
     int required = HAS_ACTIVE | HAS_VITAL;
     int count    = world->activeCount;
@@ -91,13 +84,12 @@ static void Weapon_Draw(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (!(world->masks[id] & HAS_COMBAT))
             continue;
-        CompCombat *combat         = &world->combats[id];
+        CompModel *model = &world->models[id];
 
-        SolXform leftXform  = Sol_Model_GetBoneXform(world, id, "hand.L.Weapon");
+        SolXform leftXform = Sol_Model_GetBoneXform(world, id, "hand.L.Weapon");
+        Sol_Xform_SetXform(world, model->leftWeaponEnt, leftXform);
 
-        Sol_Xform_SetXform(world, combat->leftWeaponEnt, leftXform);
-
-        SolXform rightXform  = Sol_Model_GetBoneXform(world, id, "hand.R.Weapon");
-        Sol_Xform_SetXform(world, combat->rightWeaponEnt, rightXform);
+        SolXform rightXform = Sol_Model_GetBoneXform(world, id, "hand.R.Weapon");
+        Sol_Xform_SetXform(world, model->rightWeaponEnt, rightXform);
     }
 }

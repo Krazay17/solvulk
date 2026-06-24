@@ -30,6 +30,12 @@ typedef struct
     SolEvent events[MAX_NET_EVENTS];
 } EventSnap;
 
+typedef struct NetWeapon
+{
+    u16 modelId;
+    u32 entId;
+} NetWeapon;
+
 typedef struct
 {
     u32     id, ownerId;
@@ -58,6 +64,8 @@ typedef struct
     float animSpeed[ANIM_LAYER_COUNT];
     float animSeek[ANIM_LAYER_COUNT];
     float blendin[ANIM_LAYER_COUNT];
+    NetWeapon weapons[2];
+    u32   leftWeaponEnt, rightWeaponEnt;
 } NetEntityState;
 
 typedef struct

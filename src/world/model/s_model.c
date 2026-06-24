@@ -60,6 +60,7 @@ void Model_Draw(World *world, double dt, double time)
             continue;
 
         ModelSSBO modelSSBO = {0};
+        modelSSBO.color = modelComp->color;
         if (world->masks[id] & HAS_INTERACT)
             if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
                 modelSSBO.flags |= (1 << 0);

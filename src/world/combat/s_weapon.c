@@ -42,8 +42,7 @@ void Sol_Weapon_Equip(World *world, int id, int ability, int slot)
         if (!model->leftWeaponEnt)
         {
             model->leftWeaponEnt = Sol_Create_Ent(world, 0);
-            Sol_Model_Add(world, model->leftWeaponEnt, MODELKIND_WEAPONBLADE, 0);
-            //world->models[model->leftWeaponEnt].color = (vec4s){0, 1, 1, 1};
+            Sol_Model_Add(world, model->leftWeaponEnt, MODELKIND_WEAPONBLADE);
 
             Sol_Replication_Add(world, model->leftWeaponEnt, NETAUTH_AUTH, 0);
         }
@@ -54,7 +53,7 @@ void Sol_Weapon_Equip(World *world, int id, int ability, int slot)
         if (!model->rightWeaponEnt)
         {
             model->rightWeaponEnt = Sol_Create_Ent(world, 0);
-            Sol_Model_Add(world, model->rightWeaponEnt, MODELKIND_WEAPONBLADE, 0);
+            Sol_Model_Add(world, model->rightWeaponEnt, MODELKIND_WEAPONBLADE);
 
             Sol_Replication_Add(world, model->rightWeaponEnt, NETAUTH_AUTH, 0);
         }

@@ -22,8 +22,8 @@ void Dead_State_Update(World *world, int id, float dt)
     }
     if (data->elapsed > REMOVE_PHYSX_TIMER)
     {
-        world->masks[id] &= ~HAS_BODY3;
-        world->masks[id] &= ~HAS_BODY2;
+        world->masks[id] &= ~BITC(HAS_BODY3);
+        world->masks[id] &= ~BITC(HAS_BODY2);
     }
 }
 void Dead_State_Enter(World *world, int id)

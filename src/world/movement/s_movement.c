@@ -1,3 +1,11 @@
+/*
+ * File: s_movement.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-06-28
+ * Example of how systems operate with forward declared flat component pointers
+ */
+
 #include "movement_i.h"
 #include "sol_core.h"
 #include "sol_math.h"
@@ -12,10 +20,10 @@ static void Movement2d_Step(World *world, double dt, double time);
 
 void Sol_Movement_Init(World *world)
 {
+    world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
+
     WAddPrestep(world) = Movement_Prestep;
     WAddStep(world)    = Movement3d_Step;
-
-    world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
 }
 
 void Sol_Movement_Add(World *world, int id, MovementKind kind)
@@ -28,7 +36,7 @@ void Sol_Movement_Add(World *world, int id, MovementKind kind)
     movement.frictionMod  = 1.0f;
     movement.speedMod     = 1.0f;
 
-    world->masks[id] |= HAS_MOVEMENT;
+    world->masks[id] |= BITC(HAS_MOVEMENT);
     world->movements[id] = movement;
 
     Sol_Movement_SetState(world, id, MOVE_IDLE);
@@ -44,7 +52,7 @@ static void Movement_Prestep(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (world->masks[id] & HAS_MOVEMENT)
+        if (world->masks[id] & BITC(HAS_MOVEMENT))
             world->movements[id].speedMod = 1.0f;
     }
 }
@@ -52,7 +60,7 @@ static void Movement_Prestep(World *world, double dt, double time)
 static void Movement3d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_MOVEMENT;
+    int   required = BITC(HAS_MOVEMENT);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -63,7 +71,7 @@ static void Movement3d_Step(World *world, double dt, double time)
             continue;
 
         CompMovement *movement = &world->movements[id];
-        if (world->masks[id] & HAS_BODY3)
+        if (world->masks[id] & BITC(HAS_BODY3))
         {
             CompBody             *body   = &world->bodies[id];
             const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->kind][movement->state];
@@ -164,14 +172,14 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     return true;
 }
 
+static int   movement2d_step_required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY2) | BITC(HAS_CONTROLLER);
 static void Movement2d_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_MOVEMENT | HAS_BODY2 | HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) == required)
+        if (WHas(world, id, movement2d_step_required))
         {
             return;
             CompMovement         *movement = &world->movements[id];

@@ -44,13 +44,13 @@ void Sol_Vital_Add(World *world, int id, VitalKind kind)
 {
     CompVital vital   = vital_config[kind];
     vital.lastHitTime = -FLT_MAX;
-    world->masks[id] |= HAS_VITAL;
+    world->masks[id] |= BITC(HAS_VITAL);
     world->vitals[id] = vital;
 }
 
 bool Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 {
-    if (!(world->masks[id] & HAS_VITAL))
+    if (!(world->masks[id] & BITC(HAS_VITAL)))
         return false;
     CompVital *vital = &world->vitals[id];
 
@@ -85,7 +85,7 @@ bool Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 
 void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)
 {
-    if (!(world->masks[id] & HAS_VITAL))
+    if (!(world->masks[id] & BITC(HAS_VITAL)))
         return;
     CompVital *vital = &world->vitals[id];
 
@@ -101,7 +101,7 @@ void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)
 
 float Sol_Vital_GetHealth(World *world, int id)
 {
-    if (!(world->masks[id] & HAS_VITAL))
+    if (!(world->masks[id] & BITC(HAS_VITAL)))
         return 1;
     return world->vitals[id].health;
 }
@@ -111,7 +111,7 @@ float Sol_Vital_GetMaxHealth(World *world, int id)
 }
 bool Sol_Vital_GetDead(World *world, int id)
 {
-    return (world->masks[id] & HAS_VITAL) && (world->vitals[id].health == 0);
+    return (world->masks[id] & BITC(HAS_VITAL)) && (world->vitals[id].health == 0);
 }
 float Sol_Vital_GetLastHitTime(World *world, int id)
 {

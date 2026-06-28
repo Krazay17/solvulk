@@ -5,6 +5,7 @@
 void Sol_Xform_Init(World *world)
 {
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
+    //world->components[HAS_XFORM] = world->xforms;
 }
 
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)

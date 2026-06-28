@@ -20,14 +20,14 @@ void Sol_Pickup_Init(World *world)
     world->stepSystems[idx] = Sol_Pickup_Step;
 }
 
+static int      step_required = BITC(HAS_INTERACT);
 void Sol_Pickup_Step(World *world, double dt, double time)
 {
     SolMouse mouse    = Sol_Input_GetMouse();
-    u32      required = HAS_INTERACT;
     for (int i = 0; i < world->activeCount; i++)
     {
         u32 id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required || !(world->flags[id].flags & EFLAG_PICKUPABLE))
+        if (!WHas(world, id, step_required) || !(world->flags[id].flags & EFLAG_PICKUPABLE))
             continue;
 
         CompFlags *flags = &world->flags[id];

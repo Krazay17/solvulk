@@ -118,7 +118,7 @@ void Sol_Buff_Remove(World *world, int id, BuffKind kind)
     buffs->activeKindsMask &= ~BITC(kind);
 
     if (buffs->count <= 0)
-        world->masks[id] &= ~HAS_BUFF;
+        world->masks[id] &= ~BITC(HAS_BUFF);
 }
 
 u32 Sol_Buff_GetMask(World *world, int id)
@@ -128,7 +128,7 @@ u32 Sol_Buff_GetMask(World *world, int id)
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 {
-    return world->masks[id] & HAS_BUFF && (world->buffs[id].activeKindsMask & BITC(kind)) != 0;
+    return world->masks[id] & BITC(HAS_BUFF) && (world->buffs[id].activeKindsMask & BITC(kind)) != 0;
 }
 
 // Private
@@ -136,7 +136,7 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 static void Buff_Make(World *world, int id, int source, BuffDesc desc)
 {
     CompBuff *buffs = &world->buffs[id];
-    if (!(world->masks[id] & HAS_BUFF))
+    if (!(world->masks[id] & BITC(HAS_BUFF)))
     {
         buffs->count           = 0;
         buffs->activeKindsMask = 0;
@@ -144,7 +144,7 @@ static void Buff_Make(World *world, int id, int source, BuffDesc desc)
     if (Sol_Vital_GetDead(world, id))
         return;
 
-    world->masks[id] |= HAS_BUFF;
+    world->masks[id] |= BITC(HAS_BUFF);
 
     Buff new_buff = {
         .source   = source,
@@ -213,15 +213,15 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b)
     }
 }
 
+static int   step_required = BITC(HAS_BUFF);
 static void Buff_Step(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_BUFF;
     int   count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, step_required))
             continue;
 
         CompBuff *buff    = &world->buffs[id];
@@ -248,7 +248,7 @@ static void Buff_Step(World *world, double dt, double time)
         buff->activeKindsMask = newmask;
 
         if (buff->count <= 0)
-            world->masks[id] &= ~HAS_BUFF;
+            world->masks[id] &= ~BITC(HAS_BUFF);
     }
 }
 

@@ -1,30 +1,39 @@
 #pragma once
 #include "base.h"
 
-typedef struct World World;
-
-typedef enum
+typedef struct Item
 {
-    ITEMKIND_ABILITY_CARD,
-    ITEMKIND_ABILITY_SLOT,
-    ITEMKIND_COUNT,
-} ItemKind;
-typedef struct CompItem
-{
-    ItemKind kind;
-    u32      ability;
-    u32      slot;
-    u8       rarity;
-    bool     onCooldown;
+    u32  ability;
+    u32  slot;
+    u8   rarity;
+    bool onCooldown;
 
     float bonusDamage;
     u32   bonusBuffs;
     u32   bonusEffects;
+} Item;
+
+typedef struct CompItem
+{
+    Item item;
 } CompItem;
 
-void      Sol_Item_Init(World *world);
-CompItem *Sol_Item_Add(World *world, int id, ItemKind kind);
-void      Sol_Item_AddAbility(World *world, int id, u32 ability);
-void      Sol_Item_AddAbilitySlot(World *world, int id, int slot);
-void      Sol_Item_SetRarity(World *world, int id, u32 rarity);
-void      Sol_Item_Drop(World *world, int id);
+typedef struct CompAbilitySlot
+{
+    int slot;
+    bool onCooldown;
+} CompAbilitySlot;
+
+typedef struct CompInventory
+{
+    Item *items;
+    int   cnt, cap;
+} CompInventory;
+
+void Sol_Item_Init(World *world);
+void Sol_Item_AddAbility(World *world, int id, u32 ability);
+void Sol_Item_AddAbilitySlot(World *world, int id, int slot);
+void Sol_Item_SetRarity(World *world, int id, u32 rarity);
+void Sol_Item_Drop(World *world, int id);
+
+void Sol_Inventory_AddItem(World *world, int id, Item item);

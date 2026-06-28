@@ -14,19 +14,19 @@ CompParent *Sol_Parent_Add(World *world, int id, int parentId)
 {
     world->parents[id].parentId = parentId;
     world->parents[id].active   = true;
-    world->masks[id] |= HAS_PARENT;
+    world->masks[id] |= BITC(HAS_PARENT);
     return &world->parents[id];
 }
 
 void Sol_Parent_Set(World *world, int id, CompParent desc)
 {
     world->parents[id] = desc;
-    world->masks[id] |= HAS_PARENT;
+    world->masks[id] |= BITC(HAS_PARENT);
 }
 
 void Sol_Parent_Step(World *world, double dt, double time)
 {
-    int required = HAS_PARENT;
+    int required = BITC(HAS_PARENT);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -36,7 +36,7 @@ void Sol_Parent_Step(World *world, double dt, double time)
         CompXform  *xform  = &world->xforms[id];
         if (!parent->active)
             continue;
-        if (world->masks[id] & HAS_BODY2)
+        if (world->masks[id] & BITC(HAS_BODY2))
             world->body2d[id].vel = GLMS_VEC2_ZERO;
         xform->pos  = vecAdd(world->xforms[parent->parentId].pos, parent->localOffset);
         xform->quat = glms_quat_mul(parent->localQuat, world->xforms[parent->parentId].quat);
@@ -45,7 +45,7 @@ void Sol_Parent_Step(World *world, double dt, double time)
 
 u32 Sol_Parent_GetParent(World *world, int id)
 {
-    if (world->masks[id] & HAS_PARENT && world->parents[id].parentId)
+    if (world->masks[id] & BITC(HAS_PARENT) && world->parents[id].parentId)
         return world->parents[id].parentId;
     else
         return id;
@@ -53,7 +53,7 @@ u32 Sol_Parent_GetParent(World *world, int id)
 void Sol_Parent_SetActive(World *world, int id, bool active)
 {
     world->parents[id].active = active;
-    world->masks[id] |= HAS_PARENT;
+    world->masks[id] |= BITC(HAS_PARENT);
 }
 bool Sol_Parent_IsActive(World *world, int id)
 {

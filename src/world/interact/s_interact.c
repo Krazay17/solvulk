@@ -30,8 +30,10 @@ typedef struct InteractingEnt
 } InteractingEnt;
 
 typedef void (*TooltipDrawFunc)(World *, int);
-static void                  SetMoving(World *world, CompInteract *interact, int id);
-static void                  Tooltip_Card_Draw(World *, int);
+
+static void SetMoving(World *world, CompInteract *interact, int id);
+static void Tooltip_Card_Draw(World *, int);
+
 static const TooltipDrawFunc tooltip_funcs[TOOLTIPKIND_COUNT] = {
     [TOOLTIPKIND_CARD] = Tooltip_Card_Draw,
 };
@@ -41,39 +43,48 @@ static InteractingEnt interactingEnt;
 
 void Sol_Interact_Init(World *world)
 {
+    // world->components[HAS_INTERACT] = calloc(MAX_ENTS, sizeof(CompInteract));
+    // world->components[HAS_TOOLTIP]  = calloc(MAX_ENTS, sizeof(CompTooltip));
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
     world->tooltips  = calloc(MAX_ENTS, sizeof(CompTooltip));
 }
 
 CompInteract *Sol_Interact_Add(World *world, int id)
 {
-    CompInteract interact = {0};
-    world->interacts[id]  = interact;
-    world->masks[id] |= HAS_INTERACT;
-    return &world->interacts[id];
+    CompInteract  new      = {0};
+    CompInteract *interact = &world->interacts[id];
+    *interact              = new;
+    WAddComp(world, id, HAS_INTERACT);
+    return interact;
 }
 
 CompTooltip *Sol_Tooltip_Add(World *world, int id, TooltipKind kind)
 {
-    world->masks[id] |= HAS_TOOLTIP;
-    return &world->tooltips[id];
+    CompTooltip  new     = {0};
+    CompTooltip *tooltip = &world->tooltips[id];
+    *tooltip             = new;
+    WAddComp(world, id, HAS_TOOLTIP);
+    return tooltip;
 }
 
 void Sol_Interact_Set(World *world, int id, CompInteract desc)
 {
-    world->interacts[id] = desc;
-    world->masks[id] |= HAS_INTERACT;
+    CompInteract *interact = &world->interacts[id];
+    *interact              = desc;
+    WAddComp(world, id, HAS_INTERACT);
 }
 
+static int topmost_required = BITC(HAS_INTERACT) | BITC(HAS_BODY2);
 static int FindTopMost(World *world)
 {
+    CompBody2d *body2ds = &world->body2d;
+
     int topZ     = INT_MIN;
     int winnerId = -1;
-    int required = HAS_INTERACT | HAS_BODY2;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, topmost_required))
             continue;
         vec4s bounds = {
             Sol_Xform_GetPos(world, id).x,
@@ -83,7 +94,7 @@ static int FindTopMost(World *world)
         };
         if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
         {
-            int z = world->body2d[id].zindex;
+            int z = body2ds[id].zindex;
             if (z > topZ)
             {
                 topZ     = z;
@@ -97,7 +108,6 @@ static int FindTopMost(World *world)
 void Sol_Interact_Update(World **worlds, int count)
 {
     SolMouse mouse = Sol_Input_GetMouse();
-
     // =========================================================================
     // STATE 1: ACTIVE DRAGGING LAYER
     // =========================================================================
@@ -121,7 +131,7 @@ void Sol_Interact_Update(World **worlds, int count)
         // This ensures State 2 cannot trigger a click event on the drop frame.
         interact->state &= ~INTERACT_PRESSED;
 
-        if (mWorld->masks[mId] & HAS_PARENT)
+        if (mWorld->masks[mId] & BITC(HAS_PARENT))
         {
             if (body->overlapCount)
             {
@@ -165,7 +175,7 @@ void Sol_Interact_Update(World **worlds, int count)
         if (interactingEnt.world && interactingEnt.id != -1)
         {
             int oldId = interactingEnt.id;
-            if (interactingEnt.world->masks[oldId] & HAS_INTERACT)
+            if (interactingEnt.world->masks[oldId] & BITC(HAS_INTERACT))
             {
                 CompInteract *oldInteract = &interactingEnt.world->interacts[oldId];
                 oldInteract->state &= ~INTERACT_HOVERED;
@@ -244,7 +254,7 @@ void Sol_Tooltip_Update(double dt)
     {
         int    id    = interactingEnt.id;
         World *world = interactingEnt.world;
-        if ((world->masks[id] & HAS_TOOLTIP))
+        if ((world->masks[id] & BITC(HAS_TOOLTIP)))
         {
             tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
             return;
@@ -256,14 +266,14 @@ void Sol_Tooltip_Update(double dt)
 InteractState Sol_Interact_GetState(World *world, int id)
 {
     // Self first
-    if (world->masks[id] & HAS_INTERACT)
+    if (world->masks[id] & BITC(HAS_INTERACT))
         return world->interacts[id].state;
 
     // Fall back to parent
-    if (world->masks[id] & HAS_PARENT)
+    if (world->masks[id] & BITC(HAS_PARENT))
     {
         int parentId = world->parents[id].parentId;
-        if (world->masks[parentId] & HAS_INTERACT)
+        if (world->masks[parentId] & BITC(HAS_INTERACT))
             return world->interacts[parentId].state;
     }
 
@@ -283,7 +293,7 @@ static void SetMoving(World *world, CompInteract *interact, int id)
     interactingEnt.movingId = id;
     interact->grabOffset =
         glms_vec2_sub(Sol_Input_GetMouseUI(), (vec2s){world->xforms[id].pos.x, world->xforms[id].pos.y});
-    if (world->masks[id] & HAS_PARENT)
+    if (world->masks[id] & BITC(HAS_PARENT))
         Sol_Parent_SetActive(world, id, false);
 }
 
@@ -296,6 +306,7 @@ void Sol_Tooltip_Draw()
     CompTooltip *tooltip = &world->tooltips[id];
     tooltip_funcs[tooltip->kind](world, id);
 }
+
 static void Render_Tooltip_Line(const char *str, float centerX, float y, float size)
 {
     float       width = Sol_MeasureText(str, UISCALE(size), SOL_FONT_ICE);
@@ -311,11 +322,11 @@ static void Render_Tooltip_Line(const char *str, float centerX, float y, float s
 
 static void Tooltip_Card_Draw(World *world, int id)
 {
-    if (!(world->masks[id] & HAS_TOOLTIP))
+    if (!(world->masks[id] & BITC(HAS_TOOLTIP)))
         return;
 
     CompTooltip  *tooltip = &world->tooltips[id];
-    CompItem     *item    = &world->items[id];
+    Item         *item    = &world->items[id].item;
     AbilityConfig cfg     = ability_config[item->ability][item->rarity];
 
     // --- STAGE 1: COMPUTE STRINGS & MEASURE WIDTHS ---

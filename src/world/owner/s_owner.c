@@ -9,7 +9,7 @@ void Sol_Owner_Init(World *world)
 void Sol_Owner_Add(World *world, int id, int ownerId)
 {
     world->owners[id].ownerId = ownerId;
-    world->masks[id] |= HAS_OWNER;
+    world->masks[id] |= BITC(HAS_OWNER);
 }
 
 void Sol_Owner_SetTeam(World *world, int id, u32 team)
@@ -19,14 +19,14 @@ void Sol_Owner_SetTeam(World *world, int id, u32 team)
 
 u32 Sol_Owner_GetOwner(World *world, int id)
 {
-    if (world->masks[id] & HAS_OWNER)
+    if (world->masks[id] & BITC(HAS_OWNER))
         return world->owners[id].ownerId;
     return id;
 }
 
 u32 Sol_Owner_GetTeam(World *world, int id)
 {
-    if (world->masks[id] & HAS_OWNER)
+    if (world->masks[id] & BITC(HAS_OWNER))
         return world->owners[Sol_Owner_GetOwner(world, id)].team;
     return world->owners[id].team;
 }

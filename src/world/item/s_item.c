@@ -1,3 +1,11 @@
+/*
+ * File: s_item.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-06-28
+ * Example of how systems could operate under void *components
+ */
+
 #include "s_item.h"
 #include "sol_engine.h"
 #include "sol_core.h"
@@ -5,73 +13,109 @@
 #include "world.h"
 #include "xform/s_xform.h"
 #include "physx/s_body2d.h"
+#include "game/prefabs.h"
 #include "ability/s_ability.h"
 #include "parent/s_parent.h"
 #include "interact/s_interact.h"
 #include "view/s_view2d.h"
 
+#define MAX_ITEMS (1 << 12)
+
 static void AbilitySlots(World *world, double dt, double time);
+static void Inventory_Update(World *world, double dt, double time);
+static void Inventory_Draw(World *world, double dt, double time);
+static void Inventory_Deinit(World *world);
+static void Item_Deinit(World *world);
+static void AbilitySlot_Deinit(World *world);
 
 void Sol_Item_Init(World *world)
 {
-    world->items    = calloc(MAX_ENTS, sizeof(CompItem));
-    WAddStep(world) = AbilitySlots;
+    // CompInventory *inventory         = calloc(MAX_ENTS, sizeof(CompInventory));
+    // world->components[HAS_INVENTORY] = inventory;
+    world->inventories = calloc(MAX_ENTS, sizeof(CompInventory));
+
+    // CompItem *item              = calloc(MAX_ENTS, sizeof(CompItem));
+    // world->components[HAS_ITEM] = item;
+    world->items = calloc(MAX_ENTS, sizeof(CompItem));
+
+    // CompAbilitySlot *abilitySlot       = calloc(MAX_ENTS, sizeof(CompAbilitySlot));
+    // world->components[HAS_ABILITYSLOT] = abilitySlot;
+    world->abilitySlots = calloc(MAX_ENTS, sizeof(CompAbilitySlot));
+
+    WAddStep(world)   = AbilitySlots;
+    WAddStep(world)   = Inventory_Update;
+    WAdd2d(world)     = Inventory_Draw;
+    WAddDeinit(world) = Inventory_Deinit;
+    WAddDeinit(world) = Item_Deinit;
+    WAddDeinit(world) = AbilitySlot_Deinit;
 }
 
-CompItem *Sol_Item_Add(World *world, int id, ItemKind kind)
+void Inventory_Deinit(World *world)
 {
-    CompItem item    = {.kind = kind};
-    world->items[id] = item;
-    world->masks[id] |= HAS_ITEM;
-    return &world->items[id];
+}
+void Item_Deinit(World *world)
+{
+}
+void AbilitySlot_Deinit(World *world)
+{
 }
 
 void Sol_Item_AddAbility(World *world, int id, u32 ability)
 {
-    CompItem item    = {.ability = ability, .kind = ITEMKIND_ABILITY_CARD};
-    world->items[id] = item;
-    world->masks[id] |= HAS_ITEM;
+    CompItem new     = {0};
+    new.item.ability = ability;
+    CompItem *item   = &world->items[id];
+    *item            = new;
+    world->masks[id] |= BITC(HAS_ITEM);
+}
+
+void Sol_Inventory_AddItem(World *world, int id, Item item)
+{
+    CompInventory *inventory = &world->inventories[id];
+    if (Sol_Realloc(&inventory->items, inventory->cnt, &inventory->cap, sizeof(Item)) != 0)
+        return;
+    inventory->items[inventory->cnt++] = item;
 }
 
 void Sol_Item_AddAbilitySlot(World *world, int id, int slot)
 {
-    CompItem item    = {.slot = slot, .kind = ITEMKIND_ABILITY_SLOT};
-    world->items[id] = item;
-    world->masks[id] |= HAS_ITEM;
+    world->abilitySlots[id].slot = slot;
+    world->masks[id] |= BITC(HAS_ABILITYSLOT);
 }
 
+static int ability_slots_required = BITC(HAS_ABILITYSLOT);
 static void AbilitySlots(World *world, double dt, double time)
 {
-    int required = HAS_ITEM;
+    CompItem        *items        = world->items;
+    CompAbilitySlot *abilitySlots = world->abilitySlots;
+    CompBody2d      *body2ds      = world->body2d;
+    CompInteract    *interacts    = world->interacts;
+    CompView2d      *view2ds      = world->view2d;
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, ability_slots_required))
             continue;
-        CompItem *item = &world->items[id];
-        if (item->kind != ITEMKIND_ABILITY_SLOT)
-            continue;
-        CompBody2d *body    = &world->body2d[id];
-        vec3s       slotPos = Sol_Xform_GetPos(world, id);
+
+        CompAbilitySlot *abilitySlot = &abilitySlots[id];
+        CompBody2d      *body        = &body2ds[id];
 
         // Find the center of the slot rectangle
+        vec3s slotPos    = Sol_Xform_GetPos(world, id);
         vec2s slotCenter = {slotPos.x + (body->dims.x * 0.5f), slotPos.y + (body->dims.y * 0.5f)};
+        int   slot       = abilitySlot->slot;
 
-        int          count         = 0;
-        int          bestCardId    = -1;
-        AbilityState bestAbility   = 0;
-        float        minDistanceSq = 9999999.0f;
+        int   bestCardId    = -1;
+        float minDistanceSq = 9999999.0f;
         for (int j = 0; j < body->overlapCount; j++)
         {
             int overlappingId = body->overlapping[j];
-            if (world->masks[overlappingId] & HAS_ITEM)
+            if (world->masks[overlappingId] & BITC(HAS_ITEM))
             {
-                count++;
-                CompItem *cardItem = &world->items[overlappingId];
-                if (cardItem->kind != ITEMKIND_ABILITY_CARD)
-                    continue;
+                CompItem   *cardItem = &items[overlappingId];
+                CompBody2d *cardBody = &body2ds[overlappingId];
                 vec3s       cardPos  = Sol_Xform_GetPos(world, overlappingId);
-                CompBody2d *cardBody = &world->body2d[overlappingId];
 
                 // Find the center of the card rectangle
                 vec2s cardCenter = {cardPos.x + (cardBody->dims.x * 0.5f), cardPos.y + (cardBody->dims.y * 0.5f)};
@@ -86,56 +130,54 @@ static void AbilitySlots(World *world, double dt, double time)
                 {
                     minDistanceSq = distSq;
                     bestCardId    = overlappingId;
-                    bestAbility   = cardItem->ability;
                 }
             }
         }
+
         World *activeWorld = solEngine.activeWorld;
-        if (bestCardId != -1)
+        if (bestCardId == -1)
         {
-            Sol_Ability_RequestBind(activeWorld, 1, item->slot, world->items[bestCardId].ability,
-                                    world->items[bestCardId].rarity, world->items[bestCardId].bonusDamage,
-                                    world->items[bestCardId].bonusBuffs, world->items[bestCardId].bonusEffects);
-
-            vec3s       cardPos    = Sol_Xform_GetPos(world, bestCardId);
-            CompBody2d *cardBody   = &world->body2d[bestCardId];
-            float       halfWidth  = cardBody->dims.x * 0.5f;
-            float       halfHeight = cardBody->dims.y * 0.5f;
-            vec2s       cardCenter = {cardPos.x + (halfWidth), cardPos.y + (halfHeight)};
-
-            float dx = slotCenter.x - cardCenter.x;
-            float dy = slotCenter.y - cardCenter.y;
-
-            cardBody->vel.x = fmaxf(-5.0f, fminf(5.0f, dx));
-            cardBody->vel.y = fmaxf(-5.0f, fminf(5.0f, dy));
-
-            if (world->interacts[Sol_Parent_GetParent(world, id)].state & INTERACT_MOVING)
-            {
-                Sol_Xform_SetPos(world, bestCardId, (vec3s){slotCenter.x - halfWidth, slotCenter.y - halfHeight, 0});
-            }
+            Sol_Ability_RequestBind(activeWorld, 1, abilitySlot->slot, 0, 0, 0, 0, 0);
+            continue;
         }
-        else
+        Item bestCardItem = items[bestCardId].item;
+        Sol_Ability_RequestBind(activeWorld, 1, abilitySlot->slot, bestCardItem.ability, bestCardItem.rarity,
+                                bestCardItem.bonusDamage, bestCardItem.bonusBuffs, bestCardItem.bonusEffects);
+
+        vec3s       cardPos    = Sol_Xform_GetPos(world, bestCardId);
+        CompBody2d *cardBody   = &body2ds[bestCardId];
+        float       halfWidth  = cardBody->dims.x * 0.5f;
+        float       halfHeight = cardBody->dims.y * 0.5f;
+        vec2s       cardCenter = {cardPos.x + (halfWidth), cardPos.y + (halfHeight)};
+
+        float dx = slotCenter.x - cardCenter.x;
+        float dy = slotCenter.y - cardCenter.y;
+
+        cardBody->vel.x = fmaxf(-5.0f, fminf(5.0f, dx));
+        cardBody->vel.y = fmaxf(-5.0f, fminf(5.0f, dy));
+
+        if (interacts[Sol_Parent_GetParent(world, id)].state & INTERACT_MOVING)
         {
-            Sol_Ability_RequestBind(activeWorld, 1, item->slot, 0, 0, 0, 0, 0);
+            Sol_Xform_SetPos(world, bestCardId, (vec3s){slotCenter.x - halfWidth, slotCenter.y - halfHeight, 0});
         }
+
         CompAbility *ability    = &activeWorld->abilities[1];
-        SolView2d   *cdView     = &world->view2d[id].views[6];
-        SolView2d   *activeView = &world->view2d[id].views[5];
-        SolView2d   *pressView  = &world->view2d[id].views[3];
-        SolView2d   *cdFlash    = &world->view2d[id].views[7];
-        SolView2d   *slotText   = &world->view2d[id].views[4];
+        SolView2d   *cdView     = &view2ds[id].views[6];
+        SolView2d   *activeView = &view2ds[id].views[5];
+        SolView2d   *pressView  = &view2ds[id].views[3];
+        SolView2d   *cdFlash    = &view2ds[id].views[7];
+        SolView2d   *slotText   = &view2ds[id].views[4];
 
-        if (bestAbility != 0)
+        if (bestCardItem.ability != 0)
         {
-            CompAbility *ability          = &activeWorld->abilities[1];
-            AbilityData *data             = &ability->stateData[item->slot];
+            AbilityData *data             = &ability->stateData[slot];
             float        elapsed          = solState.gameTime - data->lastExited;
             float        cooldownDuration = data->cooldown;
             float        duration         = data->duration;
 
             if (Sol_Parent_IsActive(world, bestCardId))
             {
-                CompBody2d *cardBody  = &world->body2d[bestCardId];
+                CompBody2d *cardBody  = &body2ds[bestCardId];
                 vec2s       offsetPos = glms_vec2_sub(body->dims, cardBody->dims);
                 offsetPos             = glms_vec2_scale(offsetPos, 0.5f);
                 offsetPos             = glms_vec2_add(offsetPos, (vec2s){slotPos.x, slotPos.y});
@@ -143,7 +185,7 @@ static void AbilitySlots(World *world, double dt, double time)
                 Sol_Xform_SetPos(world, bestCardId, (vec3s){offsetPos.x, offsetPos.y});
             }
 
-            if (ability->activeSlot == item->slot)
+            if (ability->activeSlot == slot)
             {
                 activeView->color = (vec4s){0.5f, 1.0f, 0.5f, 0.5f};
             }
@@ -157,7 +199,7 @@ static void AbilitySlots(World *world, double dt, double time)
             if (currentlyOnCooldown)
             {
                 cdView->fill = cdView->targetFill = 1.0f - (elapsed / cooldownDuration);
-                item->onCooldown                  = true;
+                abilitySlot->onCooldown           = true;
                 slotText->color                   = (vec4s){1.0f, 0, 0, 1.0f};
             }
             else
@@ -165,20 +207,20 @@ static void AbilitySlots(World *world, double dt, double time)
                 cdView->fill = cdView->targetFill = 0.0f;
                 slotText->color                   = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
 
-                if (item->onCooldown)
+                if (abilitySlot->onCooldown)
                 {
-                    cdFlash->clickAnim = 1.0f;
-                    item->onCooldown   = false;
+                    cdFlash->clickAnim      = 1.0f;
+                    abilitySlot->onCooldown = false;
                 }
             }
         }
         else
         {
             cdView->fill = cdView->targetFill = 0.0f;
-            item->onCooldown                  = false;
+            abilitySlot->onCooldown           = false;
         }
 
-        if ((Sol_Controller_GetActionState(activeWorld, 1) & ability->bindings[item->slot].actionBit) != 0)
+        if ((Sol_Controller_GetActionState(activeWorld, 1) & ability->bindings[slot].actionBit) != 0)
         {
             pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
         }
@@ -189,12 +231,48 @@ static void AbilitySlots(World *world, double dt, double time)
     }
 }
 
+struct Query
+{
+    CompInventory   *inv;
+    CompItem        *item;
+    CompAbilitySlot *ability;
+};
+static void Inventory_Update(World *world, double dt, double time)
+{
+    // int          required = BITC(HAS_INVENTORY);
+    // struct Query q        = {
+    //     .inv     = world->components[HAS_INVENTORY],
+    //     .item    = world->components[HAS_ITEM],
+    //     .ability = world->components[HAS_ABILITYSLOT],
+    // };
+
+    // for (int i = 0; i < world->activeCount; i++)
+    // {
+    //     int id = world->activeEntities[i];
+    //     if ((world->masks[id] & required) != required)
+    //         continue;
+    //     CompAbilitySlot *slot = &q.ability[id];
+    // }
+}
+
+static int inventory_draw_required = BITC(HAS_INVENTORY);
+static void Inventory_Draw(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, inventory_draw_required))
+            continue;
+    }
+}
+
 void Sol_Item_SetRarity(World *world, int id, u32 rarity)
 {
     rarity               = min(3, rarity);
     CompItem    *item    = &world->items[id];
     CompTooltip *tooltip = &world->tooltips[id];
-    item->rarity         = rarity;
+    CompView2d  *view    = &world->view2d[id];
+    item->item.rarity    = rarity;
     vec4s color;
     switch (rarity)
     {
@@ -211,8 +289,8 @@ void Sol_Item_SetRarity(World *world, int id, u32 rarity)
         color = (vec4s){1.0f, 0.2f, 0.0f, 1.0f};
         break;
     }
-    world->view2d[id].views[1].color      = color;
-    world->view2d[id].views[1].hoverColor = color;
+    view->views[1].color      = color;
+    view->views[1].hoverColor = color;
 }
 
 void Sol_Item_Drop(World *world, int id)

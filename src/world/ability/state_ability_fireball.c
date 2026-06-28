@@ -12,6 +12,7 @@
 #include "movement/s_movement.h"
 #include "buff/s_buff.h"
 #include "projectile/s_projectile.h"
+#include "owner/s_owner.h"
 #include "game/prefabs.h"
 
 #define MIN_POWER 0.5f

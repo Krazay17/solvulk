@@ -5,6 +5,15 @@ const CompModel model_kinds[SOL_MODEL_COUNT] = {
     [MODELKIND_DUDE] =
         {
             .yawOffset = GLM_PI_2f,
+            .yOffset = -0.825f,
+        },
+        [MODELKIND_WIZARD] = 
+        {
+            .yOffset = -1.5f,
+        },
+        [MODELKIND_ZORGON] = 
+        {
+            .yOffset = -0.8f,
         },
 };
 

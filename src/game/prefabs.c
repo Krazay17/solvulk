@@ -33,7 +33,6 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     case EKIND_BULLET:
         id = Sol_Prefab_Bullet(world, id, desc.pos, desc.scale);
         break;
-        
     }
 
     if (auth != NETAUTH_NONE)
@@ -52,7 +51,8 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
         return -1;
     world->ekinds[id] = EKIND_PLAYER;
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, MODELKIND_DUDE, dims.y);
+    CompModel *model = Sol_Model_Add(world, id, MODELKIND_DUDE);
+    // model->yOffset   = dims.y * 0.5f;
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -94,7 +94,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     world->ekinds[id] = EKIND_WIZARD;
     Sol_Xform_Add(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
-    Sol_Model_Add(world, id, MODELKIND_WIZARD, dims.y);
+    CompModel *model = Sol_Model_Add(world, id, MODELKIND_WIZARD);
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -139,7 +139,7 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
     world->ekinds[id] = EKIND_ZORGON;
     Sol_Xform_Add(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
-    Sol_Model_Add(world, id, MODELKIND_ZORGON, dims.y);
+    CompModel *model = Sol_Model_Add(world, id, MODELKIND_ZORGON);
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -237,8 +237,9 @@ int Sol_Prefab_Box(World *world, vec3s pos)
     int id            = Sol_Create_Ent(world, 0);
     world->ekinds[id] = EKIND_BOX;
     Sol_Xform_Teleport(world, id, pos);
-    Sol_Model_Add(world, id, SOL_MODEL_BOX, 1.0f);
     Sol_Body_Add(world, id, (BodyDesc){.mass = 1.0f, .radius = 1.0f, .shape = SHAPE3_SPH, .group = 0b01});
+    CompModel *model = Sol_Model_Add(world, id, SOL_MODEL_BOX);
+    model->yOffset   = 1.0f * 0.5f;
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
 
@@ -444,6 +445,23 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     cdFlash->clickColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     cdFlash->textureID  = SOL_TEXTURE_SHOCKPARTICLE;
     cdFlash->zindex     = 3;
+
+    return id;
+}
+
+int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
+
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01, 0b01);
+    body->grav       = (vec2s){0, 9.0f};
+
+    CompModel *model = Sol_Model_Add(world, id, MODELKIND_DUDE);
+    model->is2d      = true;
+    model->xOffset   = 50.0f;
+    model->yOffset   = -300.0f;
 
     return id;
 }

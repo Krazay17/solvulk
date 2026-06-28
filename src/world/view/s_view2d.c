@@ -44,7 +44,7 @@ SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, fl
     int idx = compView->count;
     compView->count++;
     compView->views[idx] = view;
-    world->masks[id] |= HAS_VIEW2D;
+    world->masks[id] |= BITC(HAS_VIEW2D);
 
     return &world->view2d[id].views[idx];
 }
@@ -52,7 +52,7 @@ SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, fl
 void Sol_View2d_Set(World *world, int id, CompView2d view)
 {
     world->view2d[id] = view;
-    world->masks[id] |= HAS_VIEW2D;
+    world->masks[id] |= BITC(HAS_VIEW2D);
 }
 
 CompView2d *Sol_View2d_Get(World *world, int id)
@@ -60,20 +60,20 @@ CompView2d *Sol_View2d_Get(World *world, int id)
     return &world->view2d[id];
 }
 
+static int healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
 static void PlayerHealthbar(World *world, double dt, double time)
 {
-    int required = HAS_VIEW2D | HAS_TRACKER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, healthbar_required))
             continue;
         if (!(world->flags[id].flags & EFLAG_HEALTHBAR))
             continue;
         CompTracker *tracker = &world->trackers[id];
         if (!tracker->world || !tracker->entId)
             continue;
-        if (!(tracker->world->masks[tracker->entId] & HAS_VITAL))
+        if (!(tracker->world->masks[tracker->entId] & BITC(HAS_VITAL)))
             continue;
         CompVital  *v    = &tracker->world->vitals[tracker->entId];
         CompView2d *view = &world->view2d[id];
@@ -86,7 +86,7 @@ static void PlayerHealthbar(World *world, double dt, double time)
 
 static void Draw(World *world, double dt, double time)
 {
-    int required = HAS_VIEW2D;
+    int required = BITC(HAS_VIEW2D);
     for (int layer = 0; layer < UILAYER_COUNT; layer++)
         for (int i = 0; i < world->activeCount; i++)
         {

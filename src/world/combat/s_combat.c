@@ -13,6 +13,7 @@
 #include "movement/s_movement.h"
 #include "physx/s_body.h"
 #include "owner/s_owner.h"
+#include "item/s_item.h"
 
 static void Combat_Step(World *world, double dt, double time);
 
@@ -30,18 +31,18 @@ void Sol_Combat_Init(World *world)
 
 void Sol_Combat_Add(World *world, int id)
 {
-    world->masks[id] |= HAS_COMBAT;
+    world->masks[id] |= BITC(HAS_COMBAT);
 }
 
+static int step_required = BITC(HAS_VITAL);
 static void Combat_Step(World *world, double dt, double time)
 {
     if (!Net_IsClient())
     {
-        int required = HAS_VITAL;
         for (int i = 0; i < world->activeCount; i++)
         {
             int id = world->activeEntities[i];
-            if ((world->masks[id] & required) != required)
+            if (!WHas(world, id, step_required))
                 continue;
             CompVital *vital = &world->vitals[id];
             if (Sol_Vital_GetDead(world, id) && vital->doesRespawn && time > vital->deathTime + vital->respawnTime)
@@ -62,7 +63,7 @@ static void Combat_Step(World *world, double dt, double time)
             e->as.hit.power  = e->as.hit.power ? e->as.hit.power : 1.0f;
             e->as.hit.entA   = Sol_Owner_GetOwner(world, e->as.hit.entA);
 
-            bool canDamage  = world->masks[e->as.hit.entB] & HAS_VITAL &&
+            bool canDamage  = world->masks[e->as.hit.entB] & BITC(HAS_VITAL) &&
                               Sol_Owner_GetHostile(world, e->as.hit.entA, e->as.hit.entB) &&
                               !Sol_Buff_HasBuff(world, e->as.hit.entB, BUFFKIND_INVULN);
             bool targetDead = Sol_Vital_GetDead(world, e->as.hit.entB);
@@ -90,7 +91,7 @@ static void Combat_Step(World *world, double dt, double time)
                                              .as.fx.entB = e->as.fx.entB,
                                          });
                 }
-                if (world->masks[e->as.hit.entB] & HAS_AICONTROLLER)
+                if (world->masks[e->as.hit.entB] & BITC(HAS_AICONTROLLER))
                     Sol_AiController_SetLastHit(world, e->as.hit.entB, e->as.hit.entA, damage);
 
                 if (effectMask & EFFECTMASK_HEALONHIT && !targetDead)
@@ -117,7 +118,7 @@ static void Combat_Step(World *world, double dt, double time)
                 if (knockback)
                 {
                     vec3s vel = vecSca(glms_vec3_normalize(e->as.hit.vel), knockback * e->as.hit.power);
-                    if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
+                    if (world->masks[e->as.hit.entB] & BITC(HAS_MOVEMENT))
                         Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockbackDuration);
                     else
                         Sol_Physx_Impulse(world, e->as.hit.entB, vel);
@@ -132,7 +133,7 @@ static void Combat_Step(World *world, double dt, double time)
                 if (knockup)
                 {
                     vec3s vel = vecSca(glms_vec3_normalize(WORLD_UP), knockup * e->as.hit.power);
-                    if (world->masks[e->as.hit.entB] & HAS_MOVEMENT)
+                    if (world->masks[e->as.hit.entB] & BITC(HAS_MOVEMENT))
                         Sol_Movement_SetKnockback(world, e->as.hit.entB, vel, knockupDuration);
                     else
                         Sol_Physx_Impulse(world, e->as.hit.entB, vel);
@@ -147,7 +148,7 @@ static void Combat_Step(World *world, double dt, double time)
                                          .as.fx.scale = e->as.hit.power,
                                      });
 
-            if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[e->as.hit.entB] & HAS_PROJECTILE)
+            if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[e->as.hit.entB] & BITC(HAS_PROJECTILE))
             {
                 Sol_Physx_SetRedirectVel(world, e->as.hit.entB, Sol_Controller_GetAimdir(world, e->as.hit.entA));
                 Sol_Owner_Add(world, e->as.hit.entB, e->as.hit.entA);
@@ -162,7 +163,7 @@ static void Combat_Step(World *world, double dt, double time)
 
             CompVital *vital = &world->vitals[e->as.death.entB];
             vital->deathTime = solState.gameTime;
-            world->masks[e->as.death.entB] &= ~HAS_BUFF;
+            world->masks[e->as.death.entB] &= ~BITC(HAS_BUFF);
 
             Sol_Event_Add(world, (SolEvent){.kind       = EVENTKIND_FX,
                                             .as.fx.kind = FXKIND_DEATH_BLOOD,

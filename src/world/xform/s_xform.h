@@ -1,8 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct World World;
-
 typedef struct CompXform
 {
     vec3s   pos, lastPos, drawPos;

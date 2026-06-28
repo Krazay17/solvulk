@@ -387,7 +387,7 @@ static void Ribbon_Step(World *world, double dt, double time)
         Ribbon *r = &s->ribbons[read_idx];
 
         // Synced entity lifetime cleanup check
-        if (r->followId && !(world->masks[r->followId] & HAS_ACTIVE))
+        if (r->followId && !(world->masks[r->followId] & BITC(HAS_ACTIVE)))
         {
             r->followId = 0;
             r->targetId = 0;
@@ -520,7 +520,7 @@ static void Ribbon_Draw_Lightning(World *world, Ribbon *r, double dt, double tim
         float tA   = glm_clamp(1.0f - (r->ages[idxA] / r->segLifetime), 0.0f, 1.0f);
         float tB   = glm_clamp(1.0f - (r->ages[idxB] / r->segLifetime), 0.0f, 1.0f);
 
-        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(1);
+        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(0);
         if (!seg)
             return;
 

@@ -18,11 +18,10 @@ void Sol_Model_Init(World *world)
     WAdd3d(world) = Model_Draw;
 }
 
-CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
+CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind)
 {
     CompModel model = model_kinds[kind];
     model.modelId   = kind;
-    model.yOffset   = -height * 0.5f;
 
     SolModel *m = Sol_GetModel(kind);
     if (m->skeleton.animationCount > 0)
@@ -36,22 +35,22 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height)
         }
     }
     world->models[id] = model;
-    world->masks[id] |= HAS_MODEL;
+    world->masks[id] |= BITC(HAS_MODEL);
 
     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
 
     return &world->models[id];
 }
 
+static int   model_draw_required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
 void Model_Draw(World *world, double dt, double time)
 {
     float fdt      = (float)dt;
-    int   required = HAS_ACTIVE | HAS_MODEL;
 
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, model_draw_required))
             continue;
 
         CompXform *xform     = &world->xforms[id];
@@ -61,14 +60,14 @@ void Model_Draw(World *world, double dt, double time)
 
         ModelSSBO modelSSBO = {0};
         modelSSBO.color = modelComp->color;
-        if (world->masks[id] & HAS_INTERACT)
+        if (world->masks[id] & BITC(HAS_INTERACT))
             if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
                 modelSSBO.flags |= (1 << 0);
 
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
             modelSSBO.flags |= (1 << 1);
 
-        if (world->masks[id] & HAS_VITAL)
+        if (world->masks[id] & BITC(HAS_VITAL))
             modelSSBO.hitTime = Sol_Vital_GetLastHitTime(world, id);
         else
             modelSSBO.hitTime = -100.0f;
@@ -77,7 +76,7 @@ void Model_Draw(World *world, double dt, double time)
         if (modelComp->is2d)
         {
             modelSSBO.flags |= (1 << 2);
-            drawPos.y += modelComp->yOffset;
+            drawPos.y += (modelComp->yOffset * xform->scale.y);
             modelSSBO.position = (vec4s){UISCALE(drawPos.x + modelComp->xOffset), UISCALE(drawPos.y), drawPos.z, 1.0f};
             modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
             modelSSBO.scale =
@@ -85,7 +84,7 @@ void Model_Draw(World *world, double dt, double time)
         }
         else
         {
-            drawPos.y += modelComp->yOffset;
+            drawPos.y += (modelComp->yOffset * xform->scale.y);
             modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
             modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
             modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
@@ -288,7 +287,7 @@ SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_identity(entityWorld);
 
     // Apply position (including your yOffset adjustment)
-    vec3 actualDrawPos = {xform->drawPos.x, xform->drawPos.y + model->yOffset, xform->drawPos.z};
+    vec3 actualDrawPos = {xform->drawPos.x, xform->drawPos.y + (model->yOffset * xform->scale.y), xform->drawPos.z};
     glm_translate(entityWorld, actualDrawPos);
 
     // Apply rotation

@@ -9,6 +9,8 @@
 #include "movement/s_movement.h"
 #include "render/render.h"
 
+#define CAMERA_LERP_SPEED 10.0f
+
 typedef struct SolCamera
 {
     mat4s proj;
@@ -80,7 +82,7 @@ void Sol_Cam_Update(double dt)
 
     // === Wallrun tilt ===
     float targetRoll = 0.0f;
-    if (world->masks[1] & HAS_MOVEMENT)
+    if (world->masks[1] & BITC(HAS_MOVEMENT))
     {
         CompMovement *m = &world->movements[1];
         if (m->state == MOVE_WALLRUN)
@@ -88,9 +90,9 @@ void Sol_Cam_Update(double dt)
             targetRoll = (float)m->wallDot * 15.0f * (3.14159f / 180.0f);
         }
     }
-    float rollFactor = 1.0f - expf(-8.0f * fdt); // slower lerp for cinematic feel
-    solCamera.roll  = Sol_Math_Lerp(solCamera.roll, targetRoll, rollFactor);
-    solCamera.up    = glms_vec3_rotate(WORLD_UP, solCamera.roll, solCamera.dir); // rotate up around forward
+    float rollFactor = 1.0f - expf(-CAMERA_LERP_SPEED * fdt); // slower lerp for cinematic feel
+    solCamera.roll   = Sol_Math_Lerp(solCamera.roll, targetRoll, rollFactor);
+    solCamera.up     = glms_vec3_rotate(WORLD_UP, solCamera.roll, solCamera.dir); // rotate up around forward
 
     solCamera.view = glms_lookat(solCamera.pos, solCamera.target, solCamera.up);
 

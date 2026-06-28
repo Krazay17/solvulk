@@ -89,7 +89,6 @@ typedef struct SolMaterial
     u32   emissiveTextureId;
     u32   normalTextureId;
     u32   fogTextureId;
-    u32   _pad;
 
     vec2s textureScale;
     vec2s fogTextureScale;

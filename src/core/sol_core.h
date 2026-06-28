@@ -36,7 +36,7 @@ static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size
 {
     if (count >= *capacity)
     {
-        int   newCap = (*capacity <= 0) ? 128 : *capacity * 2;
+        int   newCap = (*capacity <= 0) ? 32 : *capacity * 2;
         void *tmp    = realloc(*data, size * newCap);
         if (!tmp)
         {

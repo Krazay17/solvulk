@@ -30,7 +30,7 @@ void Sol_Replication_Add(World *world, int id, NetAuth auth, u8 prefabKind)
         .auth       = auth,
         .prefabKind = prefabKind,
     };
-    world->masks[id] |= HAS_REPLICATION;
+    world->masks[id] |= BITC(HAS_REPLICATION);
     world->replications[id] = rep;
 
     if (auth == NETAUTH_LOCAL)
@@ -94,12 +94,12 @@ void Net_Send_Snap(World *world)
         e->pos            = world->xforms[id].pos;
         e->rot            = world->xforms[id].quat;
         e->scale          = world->xforms[id].scale.x;
-        if (world->masks[id] & HAS_CONTROLLER)
+        if (world->masks[id] & BITC(HAS_CONTROLLER))
         {
             e->yaw   = world->controllers[id].yaw;
             e->pitch = world->controllers[id].pitch;
         }
-        if (world->masks[id] & HAS_MODEL)
+        if (world->masks[id] & BITC(HAS_MODEL))
         {
             e->modelId        = world->models[id].modelId;
             e->leftWeaponEnt  = world->models[id].leftWeaponEnt;
@@ -120,7 +120,7 @@ void Net_Send_Snap(World *world)
                 e->animPlayKind[layer] = world->models[id].layers[layer].playKind;
             }
         }
-        if (world->masks[id] & HAS_ABILITY)
+        if (world->masks[id] & BITC(HAS_ABILITY))
         {
             CompAbility *a    = &world->abilities[id];
             AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
@@ -139,22 +139,22 @@ void Net_Send_Snap(World *world)
             }
         }
 
-        if (world->masks[id] & HAS_BODY3)
+        if (world->masks[id] & BITC(HAS_BODY3))
         {
             e->vel    = world->bodies[id].vel;
             e->height = world->bodies[id].dims.y;
         }
-        if (world->masks[id] & HAS_OWNER)
+        if (world->masks[id] & BITC(HAS_OWNER))
         {
             e->ownerId = world->owners[id].ownerId;
             e->team    = world->owners[id].team;
         }
-        if (world->masks[id] & HAS_VITAL)
+        if (world->masks[id] & BITC(HAS_VITAL))
         {
             e->health = world->vitals[id].health;
             e->energy = world->vitals[id].energy;
         }
-        if (world->masks[id] & HAS_BUFF)
+        if (world->masks[id] & BITC(HAS_BUFF))
         {
             e->buffMask = Sol_Buff_GetMask(world, id);
         }
@@ -238,18 +238,18 @@ void Net_Apply_Snap(World *world)
                 world->xforms[id].pos = e->pos;
 
             world->xforms[id].quat = e->rot;
-            if (world->masks[id] & HAS_CONTROLLER)
+            if (world->masks[id] & BITC(HAS_CONTROLLER))
             {
                 world->controllers[id].yaw   = e->yaw;
                 world->controllers[id].pitch = e->pitch;
             }
-            if (world->masks[id] & HAS_BODY3)
+            if (world->masks[id] & BITC(HAS_BODY3))
             {
                 world->bodies[id].vel    = e->vel;
                 world->bodies[id].dims.y = e->height;
             }
 
-            if (world->masks[id] & HAS_MODEL)
+            if (world->masks[id] & BITC(HAS_MODEL))
             {
                 world->models[id].modelId        = e->modelId;
                 sollog(world->models[id].leftWeaponEnt);
@@ -269,7 +269,7 @@ void Net_Apply_Snap(World *world)
                     Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
                 }
             }
-            if (world->masks[id] & HAS_ABILITY)
+            if (world->masks[id] & BITC(HAS_ABILITY))
             {
                 CompAbility *ability = &world->abilities[id];
                 for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
@@ -292,13 +292,13 @@ void Net_Apply_Snap(World *world)
         }
         Sync_Buffs(world, id, e->buffMask);
 
-        if (world->masks[id] & HAS_OWNER)
+        if (world->masks[id] & BITC(HAS_OWNER))
         {
             world->owners[id].ownerId = net->hostToLocalMap[e->ownerId];
             world->owners[id].team    = e->team;
         }
 
-        if (world->masks[id] & HAS_VITAL)
+        if (world->masks[id] & BITC(HAS_VITAL))
         {
             world->vitals[id].health = e->health;
             world->vitals[id].energy = e->energy;
@@ -318,7 +318,7 @@ void Net_Apply_Snap(World *world)
 
 void Net_Send_Input(World *world)
 {
-    if (!(world->masks[1] & HAS_CONTROLLER))
+    if (!(world->masks[1] & BITC(HAS_CONTROLLER)))
         return;
     CompController *controller = &world->controllers[1];
 

@@ -361,7 +361,7 @@ void Net_Recv_Packet(ENetEvent *event)
         World            *world                                  = Sol_GetWorldById(welcomePacket->worldId);
         world->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
         solState.stepCounter                                     = welcomePacket->currentTick;
-        if (world->masks[1] & HAS_ABILITY)
+        if (world->masks[1] & BITC(HAS_ABILITY))
         {
             for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
                 world->abilities[1].bindings[i].dirtySend = true;

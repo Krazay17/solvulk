@@ -135,7 +135,7 @@ static void Emitter_Step(World *world, double dt, double time)
         Emitter *e = &sys->emitter[i];
 
         // Detach if the followed entity died — let ttl drain naturally
-        if (!(world->masks[e->followId] & HAS_ACTIVE))
+        if (!(world->masks[e->followId] & BITC(HAS_ACTIVE)))
         {
             e->followId = 0;
             e->inf      = false;

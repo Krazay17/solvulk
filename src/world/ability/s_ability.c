@@ -24,9 +24,12 @@ static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time);
 
 void Sol_Ability_Init(World *world)
 {
-    world->abilities = calloc(MAX_ENTS, sizeof(CompAbility));
-    WAddStep(world)  = Ability_Step;
-    WAdd3d(world)    = Ability_Draw;
+    CompAbility *abilities         = calloc(MAX_ENTS, sizeof(CompAbility));
+    // world->components[HAS_ABILITY] = abilities;
+    world->abilities = abilities;
+
+    WAddStep(world) = Ability_Step;
+    WAdd3d(world)   = Ability_Draw;
 
     Ability_Scripts_Init();
 }
@@ -44,8 +47,9 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
     }
     a.activeSlot = -1;
 
-    world->masks[id] |= HAS_ABILITY;
+    // *WGetComp(world, id, HAS_ABILITY, CompAbility) = a;
     world->abilities[id] = a;
+    WAddComp(world, id, HAS_ABILITY);
 }
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force)
@@ -82,6 +86,7 @@ AbilityState Sol_Ability_GetState(World *world, int id)
 void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
                              u32 bonusEffects)
 {
+
     CompAbility *a = &world->abilities[id];
     if (slot >= MAX_MAPPED_SKILLS)
         return;
@@ -134,14 +139,17 @@ const char *Sol_Ability_GetNameString(u32 ability)
 
 // PRIVATE
 
+int step_required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
 static void Ability_Step(World *world, double dt, double time)
 {
-    int required = HAS_ACTIVE | HAS_ABILITY;
-    int count    = world->activeCount;
-    for (int i = 0; i < count; i++)
+    CompAbility     *abilities    = world->abilities;
+    CompController  *controllers  = world->controllers;
+    CompReplication *replications = world->replications;
+
+    for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, step_required))
             continue;
         if (Sol_Vital_GetDead(world, id))
         {
@@ -150,11 +158,11 @@ static void Ability_Step(World *world, double dt, double time)
         }
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
             continue;
-        if (world->replications[id].auth == NETAUTH_REMOTE)
+        if (replications[id].auth == NETAUTH_REMOTE)
             continue;
 
-        CompAbility *ability = &world->abilities[id];
-        SolActions   actions = world->controllers[id].actionState;
+        CompAbility *ability = &abilities[id];
+        SolActions   actions = controllers[id].actionState;
 
         for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
         {
@@ -188,19 +196,22 @@ static void Ability_Step(World *world, double dt, double time)
     }
 }
 
+static int draw_required = BITC(HAS_ABILITY);
 static void Ability_Draw(World *world, double dt, double time)
 {
-    int required = HAS_ABILITY;
-    int count    = world->activeCount;
-    for (int i = 0; i < count; i++)
+    CompXform      *xforms      = world->xforms;
+    CompAbility    *abilities   = world->abilities;
+    CompController *controllers = world->controllers;
+
+    for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, draw_required))
             continue;
 
-        CompXform      *xform      = &world->xforms[id];
-        CompController *controller = &world->controllers[id];
-        CompAbility    *ability    = &world->abilities[id];
+        CompXform      *xform      = &xforms[id];
+        CompController *controller = &controllers[id];
+        CompAbility    *ability    = &abilities[id];
         AbilityData    *data       = &ability->stateData[ability->activeSlot];
 
         switch (ability->state)

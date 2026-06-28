@@ -23,25 +23,25 @@ CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, fl
     projectile.power          = power;
 
     world->projectiles[id] = projectile;
-    world->masks[id] |= HAS_PROJECTILE;
+    world->masks[id] |= BITC(HAS_PROJECTILE);
     return &world->projectiles[id];
 }
 
+static int step_required = BITC(HAS_PROJECTILE);
 static void Projectile_Step(World *world, double dt, double time)
 {
-    int required = HAS_PROJECTILE;
     for (int i = 0; i < world->events->count; i++)
     {
         SolEvent *e = &world->events->event[i];
         if (e->kind != EVENTKIND_COLLISION)
             continue;
         int proj, other;
-        if (world->masks[e->as.collision.entA] & HAS_PROJECTILE)
+        if (world->masks[e->as.collision.entA] & BITC(HAS_PROJECTILE))
         {
             proj  = e->as.collision.entA;
             other = e->as.collision.entB;
         }
-        else if (world->masks[e->as.collision.entB] & HAS_PROJECTILE)
+        else if (world->masks[e->as.collision.entB] & BITC(HAS_PROJECTILE))
         {
             proj  = e->as.collision.entB;
             other = e->as.collision.entA;
@@ -63,7 +63,7 @@ static void Projectile_Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, step_required))
             continue;
         CompXform *xform = &world->xforms[id];
         CompBody  *body  = &world->bodies[id];

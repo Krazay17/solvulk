@@ -40,7 +40,7 @@ void Sol_Physx_Init(World *world)
 
 void Sol_Body_Add(World *world, int id, BodyDesc desc)
 {
-    world->masks[id] |= HAS_BODY3;
+    world->masks[id] |= BITC(HAS_BODY3);
 
     CompBody body = {
         .mass           = desc.mass,
@@ -67,7 +67,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     if (solState.fps < 30)
         return;
     float       fdt      = (float)dt;
-    int         required = HAS_BODY3;
+    int         required = BITC(HAS_BODY3);
     int         i, j, k, l;
     int         count        = 0;
     int         activeCount  = world->activeCount;
@@ -157,15 +157,15 @@ void Sol_Physx_Step(World *world, double dt, double time)
     }
 }
 
+static int ground_trace_required = BITC(HAS_BODY3) | BITC(HAS_MOVEMENT);
 void Ground_Trace(World *world, int count, float fdt)
 {
-    u32 required = HAS_BODY3 | HAS_MOVEMENT;
     int i;
 #pragma omp parallel for if (count > 500) schedule(dynamic, 16)
     for (i = 0; i < count; i++)
     {
         int id = ents[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, ground_trace_required))
             continue;
 
         CompXform *xform = &world->xforms[id];
@@ -253,7 +253,7 @@ int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results
     {
         int otherID = candidates[i];
 
-        if (!(world->masks[otherID] & HAS_BODY3))
+        if (!(world->masks[otherID] & BITC(HAS_BODY3)))
             continue;
         if (otherID == ray.ignoreEnt)
             continue;

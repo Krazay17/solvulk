@@ -52,20 +52,20 @@ void Sol_Controller_Add(World *world, int id, ControllerKind kind)
     CompController controller = {
         .kind = kind,
     };
-    world->masks[id] |= HAS_CONTROLLER;
+    world->masks[id] |= BITC(HAS_CONTROLLER);
     world->controllers[id] = controller;
 
     if (kind == CONTROLLER_LOCAL)
         world->playerID = id;
 }
 
+static int tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 static void Sol_Controller_Tick(World *world, double dt, double time)
 {
-    int required = HAS_ACTIVE | HAS_CONTROLLER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, tick_required))
             continue;
 
         CompController *controller = &world->controllers[id];

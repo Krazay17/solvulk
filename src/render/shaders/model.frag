@@ -34,7 +34,6 @@ layout(push_constant) uniform MeshMaterial {
     uint emissiveTextureId;
     uint normalTextureId;
     uint fogTextureId;
-    uint _pad;
 
     vec2 textureScale;
     vec2 fogTextureScale;

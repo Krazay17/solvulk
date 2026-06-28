@@ -39,16 +39,16 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
     ssbo->flags      = 0;
 }
 
+static int draw_required = BITC(HAS_ACTIVE) | BITC(HAS_VITAL);
 static void Healthbar_Draw(World *world, double dt, double time)
 {
-    int required = HAS_ACTIVE | HAS_VITAL;
     int count    = world->activeCount;
     for (int i = 0; i < count; i++)
     {
         int id = world->activeEntities[i];
         if (id == 1)
             continue;
-        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required)
+        if (Sol_Vital_GetDead(world, id) || !WHas(world, id, draw_required))
             continue;
         if (time - Sol_Vital_GetLastHitTime(world, id) > HEALTHBAR_HIDE_DURATION)
             continue;
@@ -82,7 +82,7 @@ static void Weapon_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!(world->masks[id] & HAS_COMBAT))
+        if (!(world->masks[id] & BITC(HAS_COMBAT)))
             continue;
         CompModel *model = &world->models[id];
 

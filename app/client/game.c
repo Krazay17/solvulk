@@ -71,7 +71,8 @@ void ClearEnts(int flags, void *data)
         for (int i = world->activeCount; i > 2; i--)
         {
             int id = world->activeEntities[i];
-            if (world->masks[id] & HAS_REPLICATION && world->replications[id].auth == NETAUTH_AUTH)
+            if (WHas(world, id, BITC(HAS_REPLICATION)) &&
+                world->replications[id].auth == NETAUTH_AUTH)
                 continue;
             Sol_Destroy_Ent(world, i);
         }
@@ -165,34 +166,18 @@ void Create_Sol_Game()
     Sol_World_SetReplicates(gameWorld, true);
 
     WAdd2d(gameWorld) = Sol_Crosshair_Draw;
-
     SpawnPlayer(0, 0);
+    Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
+
     int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
     Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1, 0);
+    Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD1);
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
     // WAddStep(gameWorld) = WizSpawner;
 
-    // int blade = Sol_Create_Ent(gameWorld, 0);
-    // Sol_Xform_Add(gameWorld, blade, (vec3s){0,0,0});
-    // Sol_Xform_SetScale(gameWorld, blade, (vec3s){20.0f, 20.0f, 20.0f});
-    // Sol_Model_Add(gameWorld, blade, MODELKIND_WEAPONBLADE, 0);
-    // Sol_Body_Add(gameWorld, blade, (BodyDesc){.mass = 0, .shape = SHAPE3_MOD});
-
-
-    player2d                 = Sol_Create_Ent(hud, 0);
-    CompModel *player2dModel = Sol_Model_Add(hud, player2d, MODELKIND_DUDE, -300.0f);
-    Sol_Xform_Add(hud, player2d, (vec3s){1100.0f, 400.0f, 0.0f});
-    Sol_Xform_SetScale(hud, player2d, (vec3s){75.0f, 75.0f, 75.0f});
-    player2dModel->is2d    = true;
-    player2dModel->xOffset = 50.0f;
-
-    WAddStep(hud)            = RotateGuy;
-    CompBody2d *player2dBody = Sol_Body2d_Add(hud, player2d, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01, 0b01);
-    player2dBody->grav       = (vec2s){0, 9.0f};
+    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 0.0f}, 75.0f);
     Sol_Interact_Add(hud, player2d);
-
-    Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
+    WAddStep(hud) = RotateGuy;
 
     int attackBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);

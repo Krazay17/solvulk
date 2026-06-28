@@ -19,7 +19,7 @@ void Sol_Shape_Init(World *world)
 
 void Sol_Shape_Add(World *world, int id, ShapeDesc desc)
 {
-    world->masks[id] |= HAS_SHAPE;
+    world->masks[id] |= BITC(HAS_SHAPE);
     CompShape sphere = {
         .kind   = desc.kind,
         .radius = desc.radius,
@@ -30,7 +30,7 @@ void Sol_Shape_Add(World *world, int id, ShapeDesc desc)
 
 void Sol_Shape_Draw(World *world, double dt, double time)
 {
-    int required = HAS_SHAPE;
+    int required = BITC(HAS_SHAPE);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -60,7 +60,7 @@ void Sol_Shape_Draw(World *world, double dt, double time)
 
 void Sol_Shape_ColorAll(World *world, vec4s color)
 {
-    int required = HAS_SHAPE;
+    int required = BITC(HAS_SHAPE);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];

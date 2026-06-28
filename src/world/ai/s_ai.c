@@ -29,26 +29,20 @@ void Sol_Ai_Init(World *world)
     // WAdd3d(world)        = AiController_Debug;
 }
 
-void Sol_Ai_Clear(World *world, int id)
-{
-    world->masks[id] &= ~HAS_AICONTROLLER;
-    memset(&world->aicontrollers[id], 0, sizeof(CompAi));
-}
-
 void Sol_Ai_Add(World *world, int id, AiKind kind)
 {
-    if (!(world->masks[id] & HAS_AICONTROLLER))
+    if (!(world->masks[id] & BITC(HAS_AICONTROLLER)))
         memset(&world->aicontrollers[id], 0, sizeof(CompAi));
-    world->masks[id] |= HAS_AICONTROLLER;
+    world->masks[id] |= BITC(HAS_AICONTROLLER);
 }
 
+static int  step_required = BITC(HAS_ACTIVE) | BITC(HAS_AICONTROLLER);
 static void AiController_Step(World *world, double dt, double time)
 {
-    int required = HAS_ACTIVE | HAS_AICONTROLLER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required ||
+        if (Sol_Vital_GetDead(world, id) || !WHas(world, id, step_required) ||
             world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompController *controller   = &world->controllers[id];
@@ -86,13 +80,13 @@ static void AiController_Step(World *world, double dt, double time)
     }
 }
 
+static int  debug_required = BITC(HAS_ACTIVE) | BITC(HAS_AICONTROLLER);
 static void AiController_Debug(World *world, double dt, double time)
 {
-    int required = HAS_ACTIVE | HAS_AICONTROLLER;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || (world->masks[id] & required) != required ||
+        if (Sol_Vital_GetDead(world, id) || !WHas(world, id, debug_required) ||
             world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompController *controller   = &world->controllers[id];
@@ -141,7 +135,7 @@ u32 AiController_FindTarget(World *world, int id)
     {
         int otherId = world->activeEntities[i];
         if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Vital_GetDead(world, otherId) ||
-            !(world->masks[otherId] & HAS_VITAL))
+            !(world->masks[otherId] & BITC(HAS_VITAL)))
             continue;
         vec3s pos       = Sol_Xform_GetPos(world, id);
         vec3s targetPos = Sol_Xform_GetPos(world, otherId);

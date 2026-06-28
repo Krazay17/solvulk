@@ -18,12 +18,12 @@ void Sol_Timer_Init(World *world)
 void Sol_Timer_Add(World *world, int id, CompTimer timer)
 {
     world->timers[id] = timer;
-    world->masks[id] |= HAS_TIMER;
+    world->masks[id] |= BITC(HAS_TIMER);
 }
 
 void Sol_Timer_Step(World *world, double dt, double time)
 {
-    int required = HAS_TIMER;
+    int required = BITC(HAS_TIMER);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];

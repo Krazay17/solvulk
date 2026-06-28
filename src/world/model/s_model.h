@@ -43,7 +43,7 @@ typedef struct CompModel
 const extern CompModel model_kinds[SOL_MODEL_COUNT];
 
 void       Sol_Model_Init(World *world);
-CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind, float height);
+CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind);
 
 void     Sol_Model_PlayAnim(World *world, int id, AnimDesc desc);
 void     Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate);

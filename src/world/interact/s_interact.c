@@ -77,8 +77,6 @@ void Sol_Interact_Set(World *world, int id, CompInteract desc)
 static int topmost_required = BITC(HAS_INTERACT) | BITC(HAS_BODY2);
 static int FindTopMost(World *world)
 {
-    CompBody2d *body2ds = &world->body2d;
-
     int topZ     = INT_MIN;
     int winnerId = -1;
     for (int i = 0; i < world->activeCount; i++)
@@ -94,7 +92,7 @@ static int FindTopMost(World *world)
         };
         if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
         {
-            int z = body2ds[id].zindex;
+            int z = world->body2d[id].zindex;
             if (z > topZ)
             {
                 topZ     = z;

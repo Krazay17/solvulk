@@ -88,47 +88,6 @@ static void Fx_Step(World *world, double dt, double time)
         break;
         case FXKIND_FIREBALL_SHOOT: {
             Sol_Audio_PlayAt(SOL_AUDIO_FIREBALL, e->as.fx.pos, 1.0f, 0.0f, 0);
-            // Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
-            //                                  .ttl      = 1.0f,
-            //                                  .burst    = 1,
-            //                                  .rate     = 0.1f,
-            //                                  .followId = e->as.fx.entA,
-            //                                  .particle = {
-            //                                      .kind     = PARTICLE_CLOUD,
-            //                                      .ttl      = 5.2f,
-            //                                      .scaleout = 0.9f,
-            //                                      .scalein  = 0.04f,
-            //                                      .scale    = .2f * scale,
-            //                                      .speed    = 2.0f,
-            //                                      .color    = {.2f, .2f, .2f, .88f},
-            //                                  }});
-            // Sol_Emitter_SpawnEx(world, (Emitter){.pos      = pos,
-            //                                  .ttl      = 2.0f,
-            //                                  .burst    = 5,
-            //                                  .rate     = 0.01f,
-            //                                  .followId = e->as.fx.entA,
-            //                                  .particle = {
-            //                                      .kind     = PARTICLE_FIRE,
-            //                                      .ttl      = 0.6f,
-            //                                      .scaleout = 0.1f,
-            //                                      .scalein  = 0.9f,
-            //                                      .scale    = .2f * scale,
-            //                                      .speed    = 2.0f,
-            //                                      .color    = {.9f, 0, 0, .98f},
-            //                                  }});
-            // Sol_Emitter_SpawnEx(world, (Emitter){.burst    = 10,
-            //                                  .pos      = pos,
-            //                                  .rate     = 0.02f,
-            //                                  .ttl      = 2.0f,
-            //                                  .followId = e->as.fx.entA,
-            //                                  .particle = {.randScale = 1,
-            //                                               .ttl       = 0.5f,
-            //                                               .scale     = 0.5f * scale,
-            //                                               .color     = {1.0, .5f, .0f, .7f},
-            //                                               .kind      = PARTICLE_SHOCK_ADD,
-            //                                               .speed     = 3.0f * scale,
-            //                                               .scalein   = 0.1f,
-            //                                               .scaleout  = 0.3f}});
         }
         break;
         case FXKIND_FIREBALL_HIT: {

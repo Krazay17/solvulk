@@ -2,9 +2,6 @@
 #include "s_ability.h"
 #include "estate.h"
 
-#define MAX_LASER_BOUNCES 8
-#define LASER_LENGTH 25.0f
-
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);
@@ -39,12 +36,14 @@ void Shield_State_Enter(World *world, int id);
 void Shield_State_Exit(World *world, int id);
 bool Shield_State_CanExit(World *world, int id, u32 next);
 bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+void Shield_State_Draw(World *world, int id, double dt, double time);
 
 void Fireball_State_Update(World *world, int id, float dt);
 void Fireball_State_Enter(World *world, int id);
 void Fireball_State_Exit(World *world, int id);
 bool Fireball_State_CanExit(World *world, int id, u32 next);
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+void Fireball_State_Draw(World *world, int id, double dt, double time);
 
 void Pistol_State_Update(World *world, int id, float dt);
 void Pistol_State_Enter(World *world, int id);
@@ -63,6 +62,7 @@ void Laser_State_Enter(World *world, int id);
 void Laser_State_Exit(World *world, int id);
 bool Laser_State_CanExit(World *world, int id, u32 next);
 bool Laser_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+void Laser_State_Draw(World *world, int id, double dt, double time);
 
 void Whip_State_Update(World *world, int id, float dt);
 void Whip_State_Enter(World *world, int id);

@@ -4,6 +4,7 @@
 typedef struct World World;
 
 typedef void (*StateUpdate)(World *world, int id, float dt);
+typedef void (*StateDraw)(World *world, int id, double dt, double time);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);
 typedef bool (*StateCanExit)(World *world, int id, u32 next);
@@ -16,6 +17,7 @@ typedef struct
     StateExit     exit;
     StateCanExit  canExit;
     StateCanEnter canEnter;
+    StateDraw     draw;
 } StateFunc;
 
 // void State_Update(World *world, int id, float dt);
@@ -55,12 +57,13 @@ typedef struct
 //     CompAbility *ability = &world->abilities[id];
 //     AbilityData *data    = &ability->stateData[ability->activeSlot];
 //     data->elapsed += dt;
-    
+
 // }
 
 // void Spinslash_State_Enter(World *world, int id)
 // {
-//     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_OVERRIDE, .oneShot = true});
+//     Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_ABILITY0, .layerId = ANIM_LAYER_OVERRIDE, .oneShot =
+//     true});
 // }
 
 // void Spinslash_State_Exit(World *world, int id)

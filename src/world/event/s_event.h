@@ -1,8 +1,6 @@
 #pragma once
 #include "sol/types.h"
 
-typedef struct World World;
-
 typedef enum
 {
     FXKIND_NONE,
@@ -27,6 +25,7 @@ typedef enum
     EVENTKIND_COLLISION,
     EVENTKIND_HIT,
     EVENTKIND_FX,
+    EVENTKIND_EMITTER,
     EVENTKIND_DEATH,
     EVENTKIND_RESPAWN,
     EVENTKIND_EQUIP,
@@ -53,9 +52,9 @@ typedef struct SolEvent
         } death;
         struct
         {
+            u32   kind;
             u32   entA, entB;
             vec3s pos, rot;
-            u32   kind;
             float scale;
         } fx;
         struct

@@ -14,6 +14,7 @@
 #include "projectile/s_projectile.h"
 #include "owner/s_owner.h"
 #include "game/prefabs.h"
+#include "render/render.h"
 
 #define MIN_POWER 0.5f
 #define MAX_POWER 2.5f
@@ -105,4 +106,21 @@ bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &world->abilities[id].stateData[slot];
     return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+}
+
+void Fireball_State_Draw(World *world, int id, double dt, double time)
+{
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &world->abilities[id].stateData[ability->activeSlot];
+
+    if (data->stage > 0)
+        return;
+    float scale = data->charge * 2.0f + 0.5f;
+    vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
+    pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
+    pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
+
+    SphereSSBO *push = Sol_Render_GetNext_Fireball();
+    push->pos        = (vec4s){pos.x, pos.y, pos.z, scale};
+    push->color      = (vec4s){1, 0, 0, 0.8f};
 }

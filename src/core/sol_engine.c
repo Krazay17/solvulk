@@ -86,18 +86,17 @@ void Sol_Tick(double dt, double time)
     float alpha = (float)(accumulator / SOL_TIMESTEP);
     Sol_Xform_Interpolate(solEngine.worlds, solEngine.worldCount, alpha);
     // ######### END STEP AND INTERP #########
-
+    
     if (solEngine.activeWorld)
         Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, 1), Sol_Cam_GetFwd());
 
     Sol_Begin_Draw();
-
+    
     Sol_Cam_Update(dt);
     Sol_Render_DrawSkybox();
 
     Worlds_Draw3d(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Render_Flush3D();
-
     Worlds_Draw2d(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Tooltip_Draw();
     Sol_Render_Flush2D();

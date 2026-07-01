@@ -27,6 +27,7 @@ const StateFunc ability_state_func[] = {
             Fireball_State_Exit,
             Fireball_State_CanExit,
             Fireball_State_CanEnter,
+            Fireball_State_Draw,
         },
     [ABILITY_STATE_SHIELD] =
         {
@@ -35,6 +36,7 @@ const StateFunc ability_state_func[] = {
             Shield_State_Exit,
             Shield_State_CanExit,
             Shield_State_CanEnter,
+            Shield_State_Draw,
         },
     [ABILITY_STATE_CLAW] =
         {
@@ -67,6 +69,7 @@ const StateFunc ability_state_func[] = {
             Laser_State_Exit,
             Laser_State_CanExit,
             Laser_State_CanEnter,
+            Laser_State_Draw,
         },
     [ABILITY_STATE_WHIP] =
         {

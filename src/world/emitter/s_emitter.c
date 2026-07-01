@@ -10,6 +10,7 @@
 #include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
+#include "event/s_event.h"
 #include "render/render.h"
 #include "xform/s_xform.h"
 #include "physx/s_body.h"
@@ -82,7 +83,7 @@ Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, fl
         return NULL;
 
     e->followId       = id;
-    e->followIdGen = Sol_GetEntGen(id);
+    e->followIdGen    = Sol_GetEntGen(id);
     e->particle.color = color;
     return e;
 }
@@ -125,11 +126,19 @@ static void Emitter_Step(World *world, double dt, double time)
 {
     if (!world->emitters)
         return;
+    float fdt = (float)dt;
 
-    float        fdt   = (float)dt;
-    SolEmitters *sys   = world->emitters;
-    int          write = 0;
+    SolEvents *events = world->events;
+    for (int i = 0; i < events->count; i++)
+    {
+        SolEvent *event = &events->event[i];
+        if (event->kind != EVENTKIND_EMITTER)
+            continue;
+    }
 
+    SolEmitters *sys = world->emitters;
+
+    int write = 0;
     for (int i = 0; i < sys->emitter_count; i++)
     {
         Emitter *e = &sys->emitter[i];

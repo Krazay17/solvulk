@@ -13,18 +13,12 @@
 #include "vital/s_vital.h"
 #include "render/render.h"
 
-#define MAPPING_COUNT(maps) (sizeof(maps) / sizeof(AbilityMapping))
-
 static void Ability_Step(World *world, double dt, double time);
 static void Ability_Draw(World *world, double dt, double time);
-static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounceCount);
-static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width);
-static void Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time);
-static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time);
 
 void Sol_Ability_Init(World *world)
 {
-    CompAbility *abilities         = calloc(MAX_ENTS, sizeof(CompAbility));
+    CompAbility *abilities = calloc(MAX_ENTS, sizeof(CompAbility));
     // world->components[HAS_ABILITY] = abilities;
     world->abilities = abilities;
 
@@ -139,7 +133,7 @@ const char *Sol_Ability_GetNameString(u32 ability)
 
 // PRIVATE
 
-int step_required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+static int  step_required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
 static void Ability_Step(World *world, double dt, double time)
 {
     CompAbility     *abilities    = world->abilities;
@@ -196,158 +190,18 @@ static void Ability_Step(World *world, double dt, double time)
     }
 }
 
-static int draw_required = BITC(HAS_ABILITY);
+static int  draw_required = BITC(HAS_ABILITY);
 static void Ability_Draw(World *world, double dt, double time)
 {
-    CompXform      *xforms      = world->xforms;
-    CompAbility    *abilities   = world->abilities;
-    CompController *controllers = world->controllers;
-
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if (!WHas(world, id, draw_required))
             continue;
 
-        CompXform      *xform      = &xforms[id];
-        CompController *controller = &controllers[id];
-        CompAbility    *ability    = &abilities[id];
-        AbilityData    *data       = &ability->stateData[ability->activeSlot];
+        CompAbility *ability = &world->abilities[id];
 
-        switch (ability->state)
-        {
-        case ABILITY_STATE_FIREBALL: {
-
-            if (data->stage > 0)
-                break;
-            float scale = data->charge * 2.0f + 0.5f;
-            vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
-            pos         = vecAdd(pos, vecSca(Sol_Controller_GetAimdir(world, id), scale));
-            pos         = vecAdd(pos, vecSca(WORLD_UP, scale));
-
-            SphereSSBO *push = Sol_Render_GetNext_Fireball();
-            push->pos        = (vec4s){pos.x, pos.y, pos.z, scale};
-            push->color      = (vec4s){1, 0, 0, 0.8f};
-        }
-        break;
-        case ABILITY_STATE_DASH:
-            break;
-        case ABILITY_STATE_CLAW:
-            break;
-        case ABILITY_STATE_WHIP:
-            vec4s       color    = {0.0f, 1.0f, 0.0f, 1.0f};
-            const char *hand     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-            vec3s       startPos = Sol_Model_GetBoneXform(world, id, hand).pos;
-            for (int w = 0; w < 10; w++)
-            {
-                Draw_Laser(startPos, data->as.whip.whipPoints[w], time, color, 1.0f);
-            }
-            break;
-        case ABILITY_STATE_SHIELD: {
-            SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
-            o->pos        = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
-            o->color      = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
-        }
-        break;
-        case ABILITY_STATE_LASER: {
-            if (data->stage > 0)
-            {
-                vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
-                const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-                vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand).pos;
-                float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
-                data->as.laser.laserPointCountVisual = 0;
-                Laser_Bounces(world, id, controller->aimpos, controller->aimdir, 0);
-                for (int l = 0; l < data->as.laser.laserPointCountVisual; l += 2)
-                {
-                    vec3s posA = l == 0 ? startPos : data->as.laser.laserPointsVisual[l];
-                    vec3s posB = data->as.laser.laserPointsVisual[l + 1];
-                    Draw_LaserStart(posA, color, 0.5f * widthScale, time);
-                    Draw_LaserStart(posA, VEC4_WHITE, 0.3f * widthScale, time);
-                    Draw_LaserImpact(posB, color, 1.0f * widthScale, time);
-                    Draw_LaserImpact(posB, VEC4_WHITE, 0.5f * widthScale, time);
-                    Draw_Laser(posA, posB, time, VEC4_BLACK, 0.4f * widthScale);
-                    // Draw_Laser(posA, posB, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
-                    Draw_Laser(posA, posB, time, color, 0.3f * widthScale);
-                    Draw_Laser(posA, posB, time, VEC4_WHITE, 0.2f * widthScale);
-                }
-            }
-        }
-        break;
-        }
-    }
-}
-
-static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounceCount)
-{
-    if (bounceCount >= MAX_LASER_BOUNCES)
-        return;
-    CompAbility *ability                      = &world->abilities[id];
-    AbilityData *data                         = &ability->stateData[ability->activeSlot];
-    SolRay       ray                          = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
-    SolRayResult result                       = Sol_Raycast(world, ray);
-    int          idx                          = data->as.laser.laserPointCountVisual;
-    data->as.laser.laserPointsVisual[idx]     = pos;
-    data->as.laser.laserPointsVisual[idx + 1] = result.pos;
-    data->as.laser.laserPointCountVisual += 2;
-    if (result.hit)
-    {
-        // Push the next ray origin outward by a tiny epsilon fraction along the hit normal
-        vec3s biasedOrigin = glms_vec3_add(result.pos, glms_vec3_scale(result.norm, 0.001f));
-
-        Laser_Bounces(world, id, biasedOrigin, Sol_BounceVec(dir, result.norm), bounceCount + 1);
-    }
-}
-
-static const vec2s sprite_section[4] = {{0.0f, 0.5f}, {0.5f, 0.5f}, {0.5f, 0.0f}, {0.5f, 0.0f}};
-static void        Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time)
-{
-    u32       frame_index = ((u32)(time * 15.0)) % 4;
-    vec2s     uv          = sprite_section[frame_index];
-    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
-    ssbo->textureId       = SOL_TEXTURE_IMPACT;
-    ssbo->color           = color;
-    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
-    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
-}
-static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
-{
-    u32       frame_index = ((u32)(time * 10.0)) % 4;
-    vec2s     uv          = sprite_section[frame_index];
-    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE);
-    ssbo->textureId       = SOL_TEXTURE_IMPACT;
-    ssbo->color           = color;
-    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
-    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
-}
-
-static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width)
-{
-    int   segments    = 4;
-    float invSegs     = 1.0f / (float)(segments - 1);
-    float uv_scroll_x = fmodf((float)time * -5.1f, 1.0f);
-    float stretch     = 0.1f;
-
-    for (int j = 0; j < segments - 1; j++)
-    {
-        float tA = (float)j * invSegs;
-        float tB = (float)(j + 1) * invSegs;
-
-        vec3s pA = glms_vec3_lerp(startPos, endPos, tA);
-        vec3s pB = glms_vec3_lerp(startPos, endPos, tB);
-
-        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(0);
-        if (!seg)
-            break;
-
-        seg->posA   = (vec4s){pA.x, pA.y, pA.z, width};
-        seg->posB   = (vec4s){pB.x, pB.y, pB.z, width};
-        seg->colorA = color;
-        seg->colorB = color;
-
-        float distA    = glms_vec3_distance(startPos, pA);
-        float distB    = glms_vec3_distance(startPos, pB);
-        seg->uv        = (vec4s){distA * stretch, distB * stretch, uv_scroll_x, 0.0f};
-        seg->textureId = SOL_TEXTURE_BEAM;
+        if (ability_state_func[ability->state].draw)
+            ability_state_func[ability->state].draw(world, id, dt, time);
     }
 }

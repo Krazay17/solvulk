@@ -13,6 +13,7 @@
 #include "movement/s_movement.h"
 #include "emitter/s_emitter.h"
 #include "vital/s_vital.h"
+#include "render/render.h"
 
 #define BASE_TICK_INTERVAL 1.0f
 
@@ -27,6 +28,7 @@ typedef struct BuffDesc
 } BuffDesc;
 
 static void Buff_Step(World *world, double dt, double time);
+static void Buff_Draw(World *world, double dt, double time);
 static void Buff_Make(World *world, int id, int source, BuffDesc desc);
 static void Apply_Stun(World *world, int id, int source);
 static void Remove_Stun(World *world, int id, int source);
@@ -58,8 +60,9 @@ const BuffDesc buff_config[BUFFKIND_COUNT] = {
 
 void Sol_Buff_Init(World *world)
 {
-    WAddStep(world) = Buff_Step;
     world->buffs    = calloc(MAX_ENTS, sizeof(CompBuff));
+    WAddStep(world) = Buff_Step;
+    //WAdd3d(world)   = Buff_Draw;
 }
 
 void Sol_Buff_AddFromMask(World *world, int id, int source, u32 mask)
@@ -209,16 +212,15 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b)
                                         .as.hit.damage = 2,
                                         .as.hit.pos    = Sol_Xform_GetPos(world, id),
                                         .as.hit.entB   = id});
-        Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){1,0,0,1}, 1.0f);
+        Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){1, 0, 0, 1}, 1.0f);
     }
 }
 
-static int   step_required = BITC(HAS_BUFF);
+static int  step_required = BITC(HAS_BUFF);
 static void Buff_Step(World *world, double dt, double time)
 {
-    float fdt      = (float)dt;
-    int   count    = world->activeCount;
-    for (int i = 0; i < count; i++)
+    float fdt = (float)dt;
+    for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if (!WHas(world, id, step_required))
@@ -252,6 +254,22 @@ static void Buff_Step(World *world, double dt, double time)
     }
 }
 
-static Buff_Draw(World *world, double dt, double time)
+static void Draw_Fire(World *world, double dt, double time)
 {
+    QuadSSBO *ssbo = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
+}
+
+static UpdateFunc buff_draw_funcs[BUFFKIND_COUNT] = {
+    [BUFFKIND_FIRE] = Draw_Fire,
+};
+static void Buff_Draw(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, step_required))
+            continue;
+
+        CompBuff *buff = &world->buffs[id];
+    }
 }

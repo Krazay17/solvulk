@@ -310,6 +310,9 @@ void Sol_Flags_Remove(World *world, int id, EFlag flags);
 
 #define ENTITY_INDEX_BITS 16
 #define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)
+#define EntIdx(id) (id & ENTITY_INDEX_MASK)
+#define EntGen(id) (id >> ENTITY_INDEX_BITS)
+#define EntIdxGen(id, gen) ((gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK))
 static inline u32 Sol_GetEntIndex(int id)
 {
     return id & ENTITY_INDEX_MASK;

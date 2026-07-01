@@ -22,8 +22,6 @@ void Sol_Combat_Init(World *world)
     world->combats               = calloc(MAX_ENTS, sizeof(CompCombat));
     world->dmgNumbers            = malloc(sizeof(Dmgnumbers));
     world->dmgNumbers->dmgNumber = calloc(1, sizeof(Dmgnumber));
-    world->dmgNumbers->count     = 0;
-    world->dmgNumbers->cap       = 1;
     WAddStep(world)              = Combat_Step;
     WAddStep(world)              = Dmgnumbers_Step;
     WAdd3d(world)                = Dmgnumbers_Draw;
@@ -34,7 +32,7 @@ void Sol_Combat_Add(World *world, int id)
     world->masks[id] |= BITC(HAS_COMBAT);
 }
 
-static int step_required = BITC(HAS_VITAL);
+static int  step_required = BITC(HAS_VITAL);
 static void Combat_Step(World *world, double dt, double time)
 {
     if (!Net_IsClient())
@@ -76,7 +74,7 @@ static void Combat_Step(World *world, double dt, double time)
 
                     if (Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage))
                     {
-                        Sol_Dmgnumbers_Spawn(world, e->as.hit.entB, (u32)damage, e->as.hit.pos);
+                        Sol_Dmgnumbers_Spawn(world, e->as.hit.entB, max((u32)damage, 1), e->as.hit.pos);
                         if (e->as.hit.entA == 1)
                         {
                             Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 128);
@@ -148,7 +146,8 @@ static void Combat_Step(World *world, double dt, double time)
                                          .as.fx.scale = e->as.hit.power,
                                      });
 
-            if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[e->as.hit.entB] & BITC(HAS_PROJECTILE))
+            if (e->as.hit.effectMask & EFFECTMASK_REFLECTPROJECTILE &&
+                world->masks[e->as.hit.entB] & BITC(HAS_PROJECTILE))
             {
                 Sol_Physx_SetRedirectVel(world, e->as.hit.entB, Sol_Controller_GetAimdir(world, e->as.hit.entA));
                 Sol_Owner_Add(world, e->as.hit.entB, e->as.hit.entA);

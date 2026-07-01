@@ -33,11 +33,9 @@ extern const StateFunc aistate_func[AISTATE_COUNT];
 
 void Sol_Ai_Init(World *world);
 void Sol_Ai_Add(World *world, int id, AiKind kind);
-void Sol_Ai_Clear(World *world, int id);
 
-bool         Ai_SetState(World *world, int id, AiState nextState, u32 slot);
-AiStateData *Ai_GetStatedata(World *world, int id);
-u32          AiController_FindTarget(World *world, int id);
+bool Ai_SetState(World *world, int id, AiState nextState, u32 slot);
+u32  AiController_FindTarget(World *world, int id);
 
 void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage);
 void Sol_AiController_TargetDied(World *world, int id, int target);

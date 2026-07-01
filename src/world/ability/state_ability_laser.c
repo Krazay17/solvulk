@@ -10,12 +10,20 @@
 #include "event/s_event.h"
 #include "physx/s_body.h"
 #include "movement/s_movement.h"
+#include "render/render.h"
 
 #define HITINTERVAL 0.1f
 #define HITDELAY 0.25f
 #define MAX_DURATION 3.5f
 #define MAX_CHARGE 2.0f
 #define MIN_CHARGE 0.2f
+#define LASER_LENGTH 25.0f
+#define MAX_LASER_BOUNCES 8
+
+static void Laser_Bounces_Visual(World *world, int id, vec3s pos, vec3s dir, int bounceCount);
+static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width);
+static void Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time);
+static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time);
 
 static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounceCount)
 {
@@ -38,63 +46,63 @@ static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounce
     }
 }
 
-static void Laser(World *world, int id, vec3s pos, vec3s dir)
-{
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    if (data->as.laser.laserPointCount >= MAX_LASER_BOUNCES * 2)
-        return;
-    Sol_Combat_ClearHits(world, id);
-    CompCombat *combat = &world->combats[id];
-    vec3s      *pointA = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
-    vec3s      *pointB = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
-    *pointA            = pos;
+// static void Laser(World *world, int id, vec3s pos, vec3s dir)
+// {
+//     CompAbility *ability = &world->abilities[id];
+//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+//     if (data->as.laser.laserPointCount >= MAX_LASER_BOUNCES * 2)
+//         return;
+//     Sol_Combat_ClearHits(world, id);
+//     CompCombat *combat = &world->combats[id];
+//     vec3s      *pointA = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
+//     vec3s      *pointB = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
+//     *pointA            = pos;
 
-    float  finalCharge = data->charge * HITINTERVAL;
-    float  finalDamage = data->damage * finalCharge;
-    SolRay ray1        = {
-        .pos       = pos,
-        .dir       = dir,
-        .dist      = LASER_LENGTH,
-        .ignoreEnt = id,
-    };
-    SolRayResult ray1Result = Sol_Raycast(world, ray1);
-    *pointB                 = ray1Result.pos;
+//     float  finalCharge = data->charge * HITINTERVAL;
+//     float  finalDamage = data->damage * finalCharge;
+//     SolRay ray1        = {
+//         .pos       = pos,
+//         .dir       = dir,
+//         .dist      = LASER_LENGTH,
+//         .ignoreEnt = id,
+//     };
+//     SolRayResult ray1Result = Sol_Raycast(world, ray1);
+//     *pointB                 = ray1Result.pos;
 
-    SolRay rayDamage = {
-        .dir       = dir,
-        .dist      = ray1.dist,
-        .ignoreEnt = id,
-        .pos       = pos,
-        .mask      = 0b1,
-    };
+//     SolRay rayDamage = {
+//         .dir       = dir,
+//         .dist      = ray1.dist,
+//         .ignoreEnt = id,
+//         .pos       = pos,
+//         .mask      = 0b1,
+//     };
 
-    SolRayResult results[256];
-    int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
-    for (int i = 0; i < hits; i++)
-    {
-        SolRayResult result = results[i];
+//     SolRayResult results[256];
+//     int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
+//     for (int i = 0; i < hits; i++)
+//     {
+//         SolRayResult result = results[i];
 
-        if (combat->hitEnts[result.entId])
-            continue;
-        combat->hitEnts[result.entId] = true;
+//         if (combat->hitEnts[result.entId])
+//             continue;
+//         combat->hitEnts[result.entId] = true;
 
-        Sol_Event_Add(world, (SolEvent){
-                                 .kind              = EVENTKIND_HIT,
-                                 .as.hit.damage     = finalDamage,
-                                 .as.hit.power      = finalCharge,
-                                 .as.hit.buffMask   = data->buffs,
-                                 .as.hit.effectMask = data->effects,
-                                 .as.hit.entA       = id,
-                                 .as.hit.entB       = result.entId,
-                                 .as.hit.pos        = result.pos,
-                                 .as.hit.vel        = dir,
-                                 .as.hit.fxKind     = FXKIND_LASER_HIT,
-                             });
-    }
-    if (ray1Result.hit)
-        Laser(world, id, ray1Result.pos, Sol_BounceVec(dir, ray1Result.norm));
-}
+//         Sol_Event_Add(world, (SolEvent){
+//                                  .kind              = EVENTKIND_HIT,
+//                                  .as.hit.damage     = finalDamage,
+//                                  .as.hit.power      = finalCharge,
+//                                  .as.hit.buffMask   = data->buffs,
+//                                  .as.hit.effectMask = data->effects,
+//                                  .as.hit.entA       = id,
+//                                  .as.hit.entB       = result.entId,
+//                                  .as.hit.pos        = result.pos,
+//                                  .as.hit.vel        = dir,
+//                                  .as.hit.fxKind     = FXKIND_LASER_HIT,
+//                              });
+//     }
+//     if (ray1Result.hit)
+//         Laser(world, id, ray1Result.pos, Sol_BounceVec(dir, ray1Result.norm));
+// }
 
 static bool Leave_State(World *world, int id, CompAbility *ability)
 {
@@ -249,4 +257,107 @@ bool Laser_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
     return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+}
+
+void Laser_State_Draw(World *world, int id, double dt, double time)
+{
+    CompAbility    *ability    = &world->abilities[id];
+    AbilityData    *data       = &ability->stateData[ability->activeSlot];
+    CompController *controller = &world->controllers[id];
+    if (data->stage > 0)
+    {
+        vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
+        const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
+        vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand).pos;
+        float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
+        data->as.laser.laserPointCountVisual = 0;
+        Laser_Bounces_Visual(world, id, controller->aimpos, controller->aimdir, 0);
+        for (int l = 0; l < data->as.laser.laserPointCountVisual; l += 2)
+        {
+            vec3s posA = l == 0 ? startPos : data->as.laser.laserPointsVisual[l];
+            vec3s posB = data->as.laser.laserPointsVisual[l + 1];
+            Draw_LaserStart(posA, color, 0.5f * widthScale, time);
+            Draw_LaserStart(posA, VEC4_WHITE, 0.3f * widthScale, time);
+            Draw_LaserImpact(posB, color, 1.0f * widthScale, time);
+            Draw_LaserImpact(posB, VEC4_WHITE, 0.5f * widthScale, time);
+            Draw_Laser(posA, posB, time, VEC4_BLACK, 0.4f * widthScale);
+            // Draw_Laser(posA, posB, time, (vec4s){0.5f, 0.0f, 0.0f, 1.0f}, 0.4f * widthScale);
+            Draw_Laser(posA, posB, time, color, 0.3f * widthScale);
+            Draw_Laser(posA, posB, time, VEC4_WHITE, 0.2f * widthScale);
+        }
+    }
+}
+
+static void Laser_Bounces_Visual(World *world, int id, vec3s pos, vec3s dir, int bounceCount)
+{
+    if (bounceCount >= MAX_LASER_BOUNCES)
+        return;
+    CompAbility *ability                      = &world->abilities[id];
+    AbilityData *data                         = &ability->stateData[ability->activeSlot];
+    SolRay       ray                          = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
+    SolRayResult result                       = Sol_Raycast(world, ray);
+    int          idx                          = data->as.laser.laserPointCountVisual;
+    data->as.laser.laserPointsVisual[idx]     = pos;
+    data->as.laser.laserPointsVisual[idx + 1] = result.pos;
+    data->as.laser.laserPointCountVisual += 2;
+    if (result.hit)
+    {
+        // Push the next ray origin outward by a tiny epsilon fraction along the hit normal
+        vec3s biasedOrigin = glms_vec3_add(result.pos, glms_vec3_scale(result.norm, 0.001f));
+
+        Laser_Bounces_Visual(world, id, biasedOrigin, Sol_BounceVec(dir, result.norm), bounceCount + 1);
+    }
+}
+
+static const vec2s sprite_section[4] = {{0.0f, 0.5f}, {0.5f, 0.5f}, {0.5f, 0.0f}, {0.5f, 0.0f}};
+static void        Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time)
+{
+    u32       frame_index = ((u32)(time * 15.0)) % 4;
+    vec2s     uv          = sprite_section[frame_index];
+    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
+    ssbo->textureId       = SOL_TEXTURE_IMPACT;
+    ssbo->color           = color;
+    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
+    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+}
+static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
+{
+    u32       frame_index = ((u32)(time * 10.0)) % 4;
+    vec2s     uv          = sprite_section[frame_index];
+    QuadSSBO *ssbo        = Sol_Render_GetNext_Quad(QUADKIND_SPRITE);
+    ssbo->textureId       = SOL_TEXTURE_IMPACT;
+    ssbo->color           = color;
+    ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
+    ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+}
+
+static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width)
+{
+    int   segments    = 4;
+    float invSegs     = 1.0f / (float)(segments - 1);
+    float uv_scroll_x = fmodf((float)time * -5.1f, 1.0f);
+    float stretch     = 0.1f;
+
+    for (int j = 0; j < segments - 1; j++)
+    {
+        float tA = (float)j * invSegs;
+        float tB = (float)(j + 1) * invSegs;
+
+        vec3s pA = glms_vec3_lerp(startPos, endPos, tA);
+        vec3s pB = glms_vec3_lerp(startPos, endPos, tB);
+
+        RibbonSegSSBO *seg = Sol_Render_GetNext_RibbonSeg(0);
+        if (!seg)
+            break;
+
+        seg->posA   = (vec4s){pA.x, pA.y, pA.z, width};
+        seg->posB   = (vec4s){pB.x, pB.y, pB.z, width};
+        seg->colorA = color;
+        seg->colorB = color;
+
+        float distA    = glms_vec3_distance(startPos, pA);
+        float distB    = glms_vec3_distance(startPos, pB);
+        seg->uv        = (vec4s){distA * stretch, distB * stretch, uv_scroll_x, 0.0f};
+        seg->textureId = SOL_TEXTURE_BEAM;
+    }
 }

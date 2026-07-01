@@ -11,6 +11,7 @@
 #include "physx/s_body.h"
 #include "movement/s_movement.h"
 #include "buff/s_buff.h"
+#include "render/render.h"
 
 #define HITINTERVAL 0.1f
 
@@ -28,8 +29,8 @@ void Shield_State_Update(World *world, int id, float dt)
     {
         if (data->accum > HITINTERVAL)
         {
-            data->accum               = 0;
-            vec3s        pos          = Sol_Xform_GetPos(world, id);
+            data->accum      = 0;
+            vec3s        pos = Sol_Xform_GetPos(world, id);
             SolRayResult results[256];
             int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, 4.0f, results, 256);
             for (int i = 0; i < hits; i++)
@@ -101,4 +102,15 @@ bool Shield_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[slot];
     return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+}
+
+void Shield_State_Draw(World *world, int id, double dt, double time)
+{
+    CompAbility *ability = &world->abilities[id];
+    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompXform   *xform   = &world->xforms[id];
+    
+    SphereSSBO  *o       = Sol_Render_GetNext_Sphere(true);
+    o->pos               = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
+    o->color             = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
 }

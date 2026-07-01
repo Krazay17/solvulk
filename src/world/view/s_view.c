@@ -19,7 +19,7 @@ static void Weapon_Draw(World *world, double dt, double time);
 void Sol_View_Init(World *world)
 {
     Sol_View_Fx(world);
-    WAdd3d(world) = Healthbar_Draw;
+    Sol_Nameplate_Init(world);
     WAdd3d(world) = Weapon_Draw;
 }
 
@@ -39,11 +39,10 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
     ssbo->flags      = 0;
 }
 
-static int draw_required = BITC(HAS_ACTIVE) | BITC(HAS_VITAL);
+static int  draw_required = BITC(HAS_ACTIVE) | BITC(HAS_VITAL);
 static void Healthbar_Draw(World *world, double dt, double time)
 {
-    int count    = world->activeCount;
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
         if (id == 1)

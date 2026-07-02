@@ -27,7 +27,7 @@ CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, fl
     return &world->projectiles[id];
 }
 
-static int step_required = BITC(HAS_PROJECTILE);
+static int  step_required = BITC(HAS_PROJECTILE);
 static void Projectile_Step(World *world, double dt, double time)
 {
     for (int i = 0; i < world->events->count; i++)
@@ -124,10 +124,9 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
 
     if (projectile->explodeRadius > 0)
     {
-        CompXform *xform = &world->xforms[id];
-        float      radius =
-            projectile->power > 0 ? projectile->explodeRadius * projectile->power : projectile->explodeRadius;
-        vec3s pos = xform->pos;
+        CompXform *xform  = &world->xforms[id];
+        float      radius = projectile->explodeRadius;
+        vec3s      pos    = xform->pos;
 
         SolRay       ray = {.pos = pos, .ignoreEnt = id};
         SolRayResult results[256];
@@ -144,7 +143,6 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
                 continue;
             aoeHit.entB = result.entId;
             aoeHit.pos  = result.pos;
-            sollog(aoeHit.pos.x);
             aoeHit.vel  = vecSub(result.pos, pos);
             Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = aoeHit});
         }

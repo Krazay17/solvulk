@@ -60,7 +60,7 @@ void Fireball_State_Update(World *world, int id, float dt)
             world->projectiles[ball].explosionHit.damage     = data->damage * power;
             world->projectiles[ball].explosionHit.buffMask   = data->buffs;
             world->projectiles[ball].explosionHit.effectMask = data->effects;
-            world->projectiles[ball].explodeRadius           = 1.5f * power;
+            world->projectiles[ball].explodeRadius           = 2.0f * power;
         }
 
         data->stage++;

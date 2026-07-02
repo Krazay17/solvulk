@@ -27,7 +27,7 @@ struct MakeEnemy
     World *world;
     u32    enemyKind;
 };
-void SpawnEnemy(int flags, void *data)
+int SpawnEnemy(int flags, void *data)
 {
     if (Net_IsClient())
         return;
@@ -36,24 +36,25 @@ void SpawnEnemy(int flags, void *data)
     double            time     = solState.gameTime;
     double            epsilonA = sin(time) * 10.0;
     double            epsilonB = cos(time) * 10.0 + 25.0;
-
+    int               id;
     switch (enemy->enemyKind)
     {
     case ENEMYKIND_WIZARD: {
 
-        int id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
+        id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
         Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
     }
     break;
     case ENEMYKIND_ZORGON: {
 
-        int id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
+        id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
         Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
     }
     break;
     }
+    return id;
 }
 
 void MakeABox(int flags, void *data)
@@ -71,8 +72,7 @@ void ClearEnts(int flags, void *data)
         for (int i = world->activeCount; i > 2; i--)
         {
             int id = world->activeEntities[i];
-            if (WHas(world, id, BITC(HAS_REPLICATION)) &&
-                world->replications[id].auth == NETAUTH_AUTH)
+            if (WHas(world, id, BITC(HAS_REPLICATION)) && world->replications[id].auth == NETAUTH_AUTH)
                 continue;
             Sol_Destroy_Ent(world, i);
         }
@@ -245,6 +245,9 @@ void Create_Sol_Game()
     }
 
     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
+
+    int invulnEnemy = SpawnEnemy(0, &(struct MakeEnemy){.enemyKind = ENEMYKIND_WIZARD, .world = gameWorld});
+    Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 25.0f, 0);
 
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Set(menu, quitButton, (CompInteract){.onClick = (Callback){QuitApp}});

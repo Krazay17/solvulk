@@ -23,7 +23,7 @@ typedef enum
 
 typedef struct
 {
-    u8    kind, inf;
+    u8    kind, inf, harmful;
     u32   source;
     float duration, accum;
     float freq, power;
@@ -35,6 +35,8 @@ typedef struct CompBuff
     u32  count;
     u32  activeKindsMask;
 } CompBuff;
+
+extern const u32 buff_icon_map[BUFFKIND_COUNT];
 
 void Sol_Buff_Init(World *world);
 

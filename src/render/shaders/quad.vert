@@ -17,6 +17,7 @@ layout(set = 0, binding = 0) uniform Scene {
 
 struct Quad {
     vec4 pos;       // xyz = world position, w = size
+    vec4 rect;      // xy = offset, zw = dims
     vec4 rot;       // quaternion OR rot.x = spin angle
     vec4 color;
     vec4 uv;
@@ -48,6 +49,12 @@ void main() {
     Quad q = quads[gl_InstanceIndex];
     vec2 corner = CORNERS[gl_VertexIndex];
     float size = q.pos.w;
+
+    vec2 halfDim    = vec2(size, size);
+    halfDim.x = q.rect.z > 0.0 ? q.rect.z * size : size;
+    halfDim.y = q.rect.w > 0.0 ? q.rect.w * size : size;
+    vec2 viewOffset = q.rect.xy; // Our new local translation values
+
     vec3 worldPos;
         
     if (q.type == QUADTYPE_FACECAM) {
@@ -60,12 +67,14 @@ void main() {
         vec3 right = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
         vec3 up    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
 
-        // Non-uniform half-dimensions from extra.zw, else uniform from pos.w
-        vec2 halfDim = (q.extra.z > 0.0) ? q.extra.zw : vec2(size, size);
-        worldPos = q.pos.xyz + right * spun.x * halfDim.x + up * spun.y * halfDim.y;
+        // Extract sizes and layout displacements
+
+        // Compute the final vertex position in camera-aligned space
+        worldPos = q.pos.xyz + 
+                   right * (viewOffset.x + spun.x * halfDim.x) + 
+                   up    * (viewOffset.y + spun.y * halfDim.y);
     } else {
         // QUADTYPE_QUAT
-        vec2 halfDim = (q.extra.z > 0.0) ? q.extra.zw : vec2(size, size);
         vec3 localPos = vec3(corner.x * halfDim.x, corner.y * halfDim.y, 0.0);
         worldPos = q.pos.xyz + rotateByQuat(q.rot, localPos);
     }
@@ -74,7 +83,7 @@ void main() {
     fragUV = q.uv.xy + uvLocal * q.uv.zw;
     
     fragColor     = q.color;
-    fragExtra     = q.extra;    
+    fragExtra     = q.extra;
     fragType      = q.type;
     fragTextureId = q.textureId;
     fragFlags     = q.flags;

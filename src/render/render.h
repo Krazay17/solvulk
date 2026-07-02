@@ -327,7 +327,7 @@ typedef enum
 } QuadType;
 typedef struct
 {
-    vec4s pos, rot, color, uv, extra;
+    vec4s pos, rect, rot, color, uv, extra;
     u32   type, flags, textureId, _pad;
 } QuadSSBO;
 typedef struct

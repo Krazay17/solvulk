@@ -44,7 +44,7 @@ void Dmgnumbers_Draw(World *world, double dt, double time)
         Dmgnumber *dmgNumber = &dmgNumbers->dmgNumber[i];
         char       buffer[8];
         sprintf(buffer, "%d", dmgNumber->amnt);
-        float size = Sol_Math_Lerp(0.2f, 1.0f, (float)dmgNumber->amnt / MAX_DAMAGE_FONT_SIZE);
+        float size = Sol_Math_Lerp(0.1f, 0.8f, (float)dmgNumber->amnt / MAX_DAMAGE_FONT_SIZE);
         Sol_Render_DrawText3D((Text3DDesc){.pos       = dmgNumber->pos,
                                            .color     = dmgNumber->color,
                                            .billboard = true,

@@ -447,41 +447,34 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
             glyphPos = vecAdd(desc.pos, rotated);
         }
 
-        // --- Push quad ---
-        // NOTE: your vertex shader uses a single `size = q.pos.w` for both axes,
-        //       so quads are uniform-scaled squares. We use max(gw, gh)/2 as the
-        //       half-size, which means narrow glyphs (I, l) get a square quad with
-        //       the glyph stretched horizontally to fill it. For most text this is
-        //       acceptable; for crisp typography, modify the vert shader to take a
-        //       vec2 size from q.extra and pass non-uniform dimensions.
-        // float halfSize = fmaxf(gw, gh) * 0.5f;
-
+        float halfWidth  = gw * 0.5f;
+        float halfHeight = gh * 0.5f;
         // OUTLINE
         QuadKind  quadKind = desc.inFront ? QUADKIND_TEXT_FRONT : QUADKIND_TEXT;
         QuadSSBO *q        = Sol_Render_GetNext_Quad(quadKind);
         if (!q)
             break;
 
-        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 0}};
+        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
         q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
-        q->color     = (vec4s){0,0,0,1.0f};
+        q->color     = (vec4s){0, 0, 0, 1.0f};
         q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->extra     = (vec4s){{0, 0, gw * 0.6f, gh * 0.54f}};
+        q->rect      = (vec4s){0, 0, halfWidth * 1.1f, halfHeight * 1.1f};
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;
 
-        q        = Sol_Render_GetNext_Quad(quadKind);
+        q = Sol_Render_GetNext_Quad(quadKind);
         if (!q)
             break;
 
-        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 0}};
+        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
         q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
         q->color     = desc.color;
         q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->extra     = (vec4s){{0, 0, gw * 0.5f, gh * 0.5f}};
+        q->rect      = (vec4s){0, 0, halfWidth, halfHeight};
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;

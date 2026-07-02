@@ -21,7 +21,7 @@ typedef void (*BuffEvent)(World *, int, int);
 typedef void (*BuffTick)(World *world, int id, double dt, double time, Buff *b);
 typedef struct BuffDesc
 {
-    u8        inf, kind, add;
+    u8        inf, kind, add, harmful;
     float     duration, freq, power, speedMod;
     BuffEvent onApply, onRemove;
     BuffTick  step, draw;
@@ -37,22 +37,25 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b);
 const BuffDesc buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_STUN] =
         {
-            .duration = 2.0f,
+            .duration = 6.0f,
             .onApply  = Apply_Stun,
             .onRemove = Remove_Stun,
+            .harmful  = 1,
         },
     [BUFFKIND_FIRE] =
         {
             .freq     = 0.2f,
-            .duration = 2.0f,
+            .duration = 6.0f,
             .speedMod = 0.7f,
             .add      = BUFFADD_ADD,
             .step     = Fire_Step,
+            .harmful  = 1,
         },
     [BUFFKIND_INVULN] =
         {
             .duration = 0.2f,
             .add      = BUFFADD_SET,
+            .harmful  = 0,
         },
 };
 
@@ -62,7 +65,7 @@ void Sol_Buff_Init(World *world)
 {
     world->buffs    = calloc(MAX_ENTS, sizeof(CompBuff));
     WAddStep(world) = Buff_Step;
-    //WAdd3d(world)   = Buff_Draw;
+    // WAdd3d(world)   = Buff_Draw;
 }
 
 void Sol_Buff_AddFromMask(World *world, int id, int source, u32 mask)
@@ -75,9 +78,7 @@ void Sol_Buff_AddFromMask(World *world, int id, int source, u32 mask)
         // Check if the bit for this specific buff index is set
         if (mask & (1ULL << i))
         {
-            // Cast the index back to your regular sequential BuffKind enum
-            BuffKind kind = (BuffKind)i;
-            Sol_Buff_Add(world, id, source, kind);
+            Sol_Buff_Add(world, id, source, i);
         }
     }
 }
@@ -156,6 +157,7 @@ static void Buff_Make(World *world, int id, int source, BuffDesc desc)
         .freq     = desc.freq,
         .inf      = desc.inf,
         .power    = desc.power,
+        .harmful  = desc.harmful,
     };
 
     if (desc.add != BUFFADD_MULTIPLY)

@@ -41,6 +41,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
     [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
     [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
+    [SOL_TEXTURE_SHIELD]           = "Shield.png",
 };
 
 SolTexture      loaded_images[MAX_GLOBAL_TEXTURES];

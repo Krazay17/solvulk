@@ -3,6 +3,7 @@
 #include "sol_core.h"
 #include "sol_math.h"
 #include "platform/platform.h"
+#include "render/render.h"
 
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
@@ -27,13 +28,9 @@ void Sol_FreeModel(SolModel *model)
     memset(model, 0, sizeof(SolModel));
 }
 
-SolModel *Sol_GetModel(SolModelKind id)
-{
-    return &loaded_models[id];
-}
-
 int Sol_Models_Init()
 {
+    sollog(sizeof(SolMaterial));
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
         SolResource res   = Sol_LoadResource(model_path[i]);
@@ -89,10 +86,10 @@ static SolModel *Parse_Model(SolResource res, u32 id)
     model->tris      = malloc(model->tri_count * sizeof(SolTri));
 
     uint32_t triIdx = 0;
-    for (uint32_t m = 0; m < model->mesh_count; m++)
+    for (int m = 0; m < model->mesh_count; m++)
     {
         SolMesh *mesh = &model->meshes[m];
-        for (uint32_t i = 0; i < mesh->indexCount; i += 3)
+        for (int i = 0; i < mesh->indexCount; i += 3)
         {
             SolTri *t = &model->tris[triIdx++];
 
@@ -396,7 +393,8 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                             void              *data      = (uint8_t *)view->buffer->data + view->offset;
                             size_t             size      = view->size;
                             const char        *mime_type = image->mime_type;
-                            int                textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                            int textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                            sollog(image->name);
                             if (textureId)
                             {
                                 dst->material.textureId = textureId;
@@ -418,7 +416,7 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
             }
 
             // Vertices — read local, transform to world, store
-            for (uint32_t v = 0; v < dst->vertexCount; v++)
+            for (int v = 0; v < dst->vertexCount; v++)
             {
                 SolVertex *vert = &model->vertices[*vOff + v];
 
@@ -449,7 +447,7 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
 
             // Indices
             if (prim->indices)
-                for (uint32_t i = 0; i < dst->indexCount; i++)
+                for (int i = 0; i < dst->indexCount; i++)
                     model->indices[*iOff + i] = (uint32_t)cgltf_accessor_read_index(prim->indices, i);
 
             *vOff += dst->vertexCount;
@@ -676,6 +674,7 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
             Mark_Bone_And_Descendants(skel, i, mask);
     }
 }
+
 void Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skel)
 {
     SolModelMasks *masks = &model_masks[modelId];

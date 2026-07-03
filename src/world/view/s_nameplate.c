@@ -32,11 +32,12 @@ static void Nameplate_Draw(World *world, double dt, double time)
         if (id == 1)
             continue;
 
-        if (!WHas(world, id, BITC(HAS_VITAL)) || Sol_Vital_GetDead(world, id) )
+        if (!WHas(world, id, BITC(HAS_VITAL)) || Sol_Vital_GetDead(world, id))
             continue;
 
         SolXform anchor = Sol_Xform_GetDrawXform(world, id);
         anchor.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
+        vec4s anchor4 = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
 
         float health    = Sol_Vital_GetHealth(world, id);
         float maxHealth = Sol_Vital_GetMaxHealth(world, id);
@@ -46,7 +47,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
         if (!ssbo)
             continue;
 
-        ssbo->pos       = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
+        ssbo->pos       = anchor4;
         ssbo->rot       = GLMS_VEC4_ZERO;
         ssbo->color     = (vec4s){0.1f, 0.85f, 0.2f, 1.0f};
         ssbo->uv        = (vec4s){0, 0, 1, 1};
@@ -57,7 +58,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
         float hbHalfWidth  = 1.0f;
         float hbHalfHeight = 0.1f;
         ssbo->rect         = (vec4s){0, 0, hbHalfWidth, hbHalfHeight};
-        ssbo->extra        = (vec4s){fill, 0.015f, 0, 0};
+        ssbo->extra        = (vec4s){0, 0.015f, fill, 0};
 
         if (WHas(world, id, BITC(HAS_BUFF)))
         {
@@ -88,7 +89,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
                 QuadSSBO *bg           = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
                 if (bg)
                 {
-                    bg->pos   = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
+                    bg->pos   = anchor4;
                     bg->color = (vec4s){0.0f, 0.0f, 0.0f, 1.0f};
                     bg->rect  = (vec4s){localOffsetX, localOffsetY, iconHW, iconHH};
                 }
@@ -96,7 +97,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
                 QuadSSBO *border = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
                 if (border)
                 {
-                    border->pos   = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
+                    border->pos   = anchor4;
                     border->color = buff->harmful ? (vec4s){0.5f, 0.0f, 0.0f, 1.0f} : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
                     border->rect  = (vec4s){localOffsetX, localOffsetY, iconHW, iconHH};
                     border->textureId = SOL_TEXTURE_SPIKEFRAMEFILLED;
@@ -107,7 +108,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
                 QuadSSBO *buffIcon = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
                 if (buffIcon)
                 {
-                    buffIcon->pos   = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
+                    buffIcon->pos   = anchor4;
                     buffIcon->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
                     buffIcon->type  = QUADTYPE_FACECAM;
 
@@ -118,6 +119,19 @@ static void Nameplate_Draw(World *world, double dt, double time)
                         buffIcon->textureId = buff_icon_map[buff->kind];
                         buffIcon->uv        = (vec4s){0, 0, 1, 1};
                     }
+                }
+
+                QuadSSBO *cdBar = Sol_Render_GetNext_Quad(QUADKIND_SPRITE_FRONT);
+                if (cdBar)
+                {
+                    cdBar->pos       = anchor4;
+                    cdBar->rect      = (vec4s){localOffsetX, localOffsetY, iconHW, iconHH};
+                    cdBar->color     = (vec4s){0.1f, 0.0f, 0.0f, 1.0f};
+                    cdBar->type      = QUADTYPE_FACECAM;
+                    cdBar->textureId = SOL_TEXTURE_CLOUD2;
+                    cdBar->uv        = (vec4s){0, 0, 1, 1};
+                    cdBar->extra     = (vec4s){ 1.0f - (buff->ttl / buff->duration), 0, 0, 0};
+                    cdBar->flags     = BITC(QUADFLAG_FILL_VERTICAL) | BITC(QUADFLAG_FILL_INVERT);
                 }
             }
         }

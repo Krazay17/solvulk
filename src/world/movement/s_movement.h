@@ -34,7 +34,7 @@ typedef struct CompMovement
 {
     u8            kind;
     MoveState     state;
-    vec3s         updir, dashdir, wallNormal, lastTouch, knockVel;
+    vec3s         updir, dashdir, wallNormal, lastTouch, knockVel, lastMoveDir;
     float         baseHeight, targetHeight;
     float         speedMod, frictionMod, knockDur;
     float         wallDot;

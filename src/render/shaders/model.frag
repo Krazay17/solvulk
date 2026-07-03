@@ -21,7 +21,7 @@ layout(set = 1, binding = 0) uniform Scene {
     vec4 sun; // xyz = direction, w = intensity
 } scene;
 
-layout(set = 4, binding = 0) uniform sampler2D textures[64];
+layout(set = 4, binding = 0) uniform sampler2D textures[128];
 
 // Unchanged size from your original — no growth, no extra push constant cost
 layout(push_constant) uniform MeshMaterial {
@@ -37,6 +37,8 @@ layout(push_constant) uniform MeshMaterial {
 
     vec2 textureScale;
     vec2 fogTextureScale;
+
+    uint _pad[2];
 } material;
 
 const uint FLAG_FRESNEL = 1u << 0;
@@ -93,15 +95,26 @@ void main()
 {
     float fTime = float(time);
 
-    // --- Albedo & alpha ---
-    vec2 scaledUV = fragUV * material.textureScale;
-    vec4 baseTex  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
+// --- Albedo & alpha ---
+vec2 scaledUV = fragUV * material.textureScale;
+vec4 baseTex  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
 
-    vec3 albedo = (fragColor.a > 0.0) ? mix(material.baseColor.rgb, fragColor.rgb, fragColor.a) : material.baseColor.rgb;
-    albedo *= baseTex.rgb;
+vec3 albedo = (fragColor.a > 0.0) ? mix(material.baseColor.rgb, fragColor.rgb, fragColor.a) : material.baseColor.rgb;
+albedo *= baseTex.rgb;
 
-    float alpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
-    alpha *= baseTex.a;
+// FIX: If both colors provide 0.0 alpha, treat it as opaque (1.0) instead of completely clear
+float rawAlpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
+if (rawAlpha <= 0.0) {
+    rawAlpha = 1.0;
+}
+
+// FIX: Safeguard against textures without alpha channels returning 0
+float texAlpha = (material.textureId != 0u) ? baseTex.a : 1.0;
+if (texAlpha <= 0.0) {
+    texAlpha = 1.0;
+}
+
+float alpha = rawAlpha * texAlpha;
 
     vec3 hybridFogEmmisive = vec3(0.0);
     if (material.fogTextureId != 0u)

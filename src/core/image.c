@@ -14,7 +14,7 @@
 #include "stb_image.h"
 #include "webp/decode.h"
 
-#define MAX_GLOBAL_TEXTURES 1024
+#define MAX_GLOBAL_TEXTURES 512
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
@@ -42,6 +42,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
     [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
     [SOL_TEXTURE_SHIELD]           = "Shield.png",
+    [SOL_TEXTURE_GRID]             = "Grid.png",
 };
 
 SolTexture      loaded_images[MAX_GLOBAL_TEXTURES];
@@ -104,6 +105,10 @@ int Sol_Textures_Init()
         SolResource res   = Sol_LoadResource(image_path[i]);
         const char *ext   = strrchr(image_path[i], '.');
         SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
+
+        // FIX: Ensure size property is explicitly set for static assets!
+        image->size = res.size;
+
         Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
     }
     return 0;
@@ -114,22 +119,19 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
     if (next_free_texture_idx >= MAX_GLOBAL_TEXTURES)
     {
         printf("Error: Global texture registry full!\n");
-        return 0; // Return a default fallback texture index
+        return 0;
     }
 
-    // Deduplicate by checking if an image with the exact same size and starting bytes already exists
-    for (uint32_t i = 0; i < next_free_texture_idx; i++)
+    // Deduplicate by checking if we've already loaded this exact asset data chunk
+    for (int i = 0; i < next_free_texture_idx; i++)
     {
-        // 1. Static images might not have a tracked payload size, so check if data pointer is identical first
         if (loaded_images[i].data == data)
             return i;
 
-        // 2. For runtime glb chunks, match size and the first 16 signature bytes
-        // (Saves you from running an expensive full memcmp over megabytes of image bytes)
-        if (loaded_images[i].loaded && loaded_images[i].width > 0)
+        // FIX: Verify size matches perfectly AND is greater than zero to prevent junk collisions
+        if (loaded_images[i].loaded && loaded_images[i].size > 0 && loaded_images[i].size == size)
         {
-            // You can add a .size field to your SolTexture struct to make this 100% robust:
-            if (loaded_images[i].size == size && memcmp(loaded_images[i].pixels, ((SolTexture *)data)->pixels, 16) == 0)
+            if (loaded_images[i].data && memcmp(loaded_images[i].data, data, 16) == 0)
                 return i;
         }
     }
@@ -139,12 +141,10 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
     // Parse the embedded JPEG/PNG/WebP straight into our pool
     SolTexture *image = Parse_Texture(data, size, hint_extension, assignedSlot);
 
+    // Save the size on the struct so the check works next time around
+    image->size = size;
+
     Sol_UploadImage(image, assignedSlot);
 
-    // --- VULKAN WORK ---
-    // 1. Create your VkImage / VkImageView for loaded_images[assignedSlot]
-    // 2. Transition layout, stage pixels to GPU memory
-    // 3. Update your Global Bindless Descriptor Set at index `assignedSlot`
-
-    return assignedSlot; // This ID goes into your MeshMaterial push constant!
+    return assignedSlot;
 }

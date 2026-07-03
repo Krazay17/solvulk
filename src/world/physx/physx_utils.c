@@ -83,12 +83,11 @@ void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
 
 void Physx_ParseModel(World *world, int id, PhysxGroup *group)
 {
-    CompXform *xform  = &world->xforms[id];
-    u32        handle = Sol_Model_GetModelId(world, id);
-    u32        modelTriCount =
-        Sol_Model_GetTriCount(handle); // SolModel  *model    = Sol_GetModel(Sol_Model_GetModelId(world, id));
-    u32 oldCount = group->triCount;
-    u32 newCount = oldCount + modelTriCount;
+    CompXform *xform         = &world->xforms[id];
+    u32        handle        = Sol_Model_GetModelId(world, id);
+    u32        modelTriCount = Sol_Model_GetTriCount(handle);
+    u32        oldCount      = group->triCount;
+    u32        newCount      = oldCount + modelTriCount;
 
     if (newCount > group->capacity)
     {

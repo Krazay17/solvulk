@@ -25,7 +25,7 @@ typedef struct
 {
     u8    kind, inf, harmful;
     u32   source;
-    float duration, accum;
+    float ttl, duration, accum;
     float freq, power;
 } Buff;
 

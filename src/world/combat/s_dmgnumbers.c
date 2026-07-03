@@ -22,7 +22,7 @@ void Sol_Dmgnumbers_Spawn(World *world, int id, int amnt, vec3s pos)
 void Dmgnumbers_Step(World *world, double dt, double time)
 {
     Dmgnumbers *dmgNumbers = world->dmgNumbers;
-    int         write      = 0;
+    int write = 0;
     for (int i = 0; i < dmgNumbers->count; i++)
     {
         Dmgnumber *dmgNumber = &dmgNumbers->dmgNumber[i];

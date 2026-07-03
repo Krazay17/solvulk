@@ -81,3 +81,4 @@ void         Sol_Physx_SetHeight(World *world, int id, float height);
 float        Sol_Physx_GetHeight(World *world, int id);
 void         Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir);
 void         Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt);
+float        Sol_Physx_Get_Ground_Norm(World *world, int id);

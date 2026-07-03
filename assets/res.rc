@@ -24,17 +24,20 @@ LaserCard.webp          RCDATA          "images/LaserCard.webp"
 Crosshair.png          RCDATA          "images/Crosshair4.png"
 FogStrip.png          RCDATA          "images/FogStrip.png"
 Shield.png          RCDATA          "images/Shield.png"
-
+Grid.png          RCDATA          "images/Grid.png"
 
 
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
 World1.glb              RCDATA          "models/World1.glb"
 World2.glb              RCDATA          "models/World2.glb"
+World6.glb              RCDATA          "models/World6.glb"
 Box.glb                 RCDATA          "models/Box.glb"
 Dude.glb                RCDATA          "models/Dude.glb"
 Zorgon.glb              RCDATA          "models/Zorgon.glb"
 WeaponBlade.glb              RCDATA          "models/WeaponBlade.glb"
+
+
 
 
 Beep1.wav               RCDATA          "sounds/Beep1.wav"

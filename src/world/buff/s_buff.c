@@ -154,6 +154,7 @@ static void Buff_Make(World *world, int id, int source, BuffDesc desc)
         .source   = source,
         .kind     = desc.kind,
         .duration = desc.duration,
+        .ttl      = desc.duration,
         .freq     = desc.freq,
         .inf      = desc.inf,
         .power    = desc.power,
@@ -170,10 +171,12 @@ static void Buff_Make(World *world, int id, int source, BuffDesc desc)
                 switch (desc.add)
                 {
                 case BUFFADD_ADD:
-                    b->duration += new_buff.duration;
+                    b->duration = b->ttl + new_buff.duration;
+                    b->ttl += new_buff.duration;
                     break;
                 default:
                     b->duration = new_buff.duration;
+                    b->ttl      = new_buff.duration;
                     break;
                 }
                 b->source = source;
@@ -235,8 +238,8 @@ static void Buff_Step(World *world, double dt, double time)
         {
             Buff *b = &buff->buffs[j];
             b->accum += fdt;
-            b->duration -= fdt;
-            if (b->duration <= 0 && !b->inf)
+            b->ttl -= fdt;
+            if (b->ttl <= 0 && !b->inf)
             {
                 if (buff_config[b->kind].onRemove)
                     buff_config[b->kind].onRemove(world, id, b->source);

@@ -23,7 +23,7 @@ vec4 renderHealthbar() {
     }
     
     // Fill Value from extra.x
-    float fill = clamp(fragExtra.x, 0.0, 1.0);
+    float fill = clamp(fragExtra.z, 0.0, 1.0);
     vec3 emptyColor = vec3(0.15, 0.0, 0.0); // Deep red background fill
     vec3 fillColor  = fragColor.rgb;        // Core life bar color passed via CPU
     

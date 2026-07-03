@@ -310,6 +310,13 @@ static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 kind)
 
 typedef enum
 {
+    QUADFLAG_NONE,
+    QUADFLAG_FILL_VERTICAL,
+    QUADFLAG_FILL_INVERT,
+} QuadFlags;
+
+typedef enum
+{
     QUADKIND_SPRITE,
     QUADKIND_SPRITE_ADD,
     QUADKIND_SPRITE_FRONT,
@@ -320,6 +327,7 @@ typedef enum
     QUADKIND_TEXT2D,
     QUADKIND_COUNT,
 } QuadKind;
+
 typedef enum
 {
     QUADTYPE_FACECAM,

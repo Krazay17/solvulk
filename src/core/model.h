@@ -14,6 +14,7 @@ typedef enum
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
     SOL_MODEL_WORLD2,
+    SOL_MODEL_WORLD6,
     SOL_MODEL_COUNT,
 } SolModelKind;
 
@@ -92,6 +93,8 @@ typedef struct SolMaterial
 
     vec2s textureScale;
     vec2s fogTextureScale;
+
+    u32 _pad[2];
 } SolMaterial;
 
 typedef struct SolMesh
@@ -162,7 +165,6 @@ const char          *model_path[SOL_MODEL_COUNT];
 const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 int          Sol_Models_Init();
-SolModel    *Sol_GetModel(SolModelKind id);
 void         Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skele);
 void         Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int          Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);

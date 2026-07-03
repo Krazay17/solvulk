@@ -6,9 +6,9 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 
-#define DASH_VEL 8.0f
+#define DASH_VEL 9.0f
 #define DASH_DURATION 0.2f
-#define DAMPING 7.0f
+#define DAMPING 6.0f
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
@@ -25,7 +25,7 @@ void Walljump_State_Update(World *world, int id, float dt)
 
     vec3s vel = Sol_Physx_GetVel(world, id);
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
-    vel       = Sol_Math_DampDir(vel, data->dir, alpha, DAMPING, dt);
+    //vel       = Sol_Math_DampDir(vel, data->dir, alpha, DAMPING, dt);
     Sol_Physx_SetVel(world, id, vel);
 }
 
@@ -35,12 +35,11 @@ void Walljump_State_Enter(World *world, int id)
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
     vec3s          vel  = glms_vec3_normalize(Sol_Physx_GetVel(world, id));
     vel.y               = 0;
-    vec3s dir           = glms_vec3_normalize(glms_vec3_lerp(move->wallNormal, WORLD_UP, 0.2f));
-    dir = data->dir = glms_vec3_normalize(glms_vec3_lerp(dir, vel, 0.2f));
+    vec3s finalDir      = vecAdd(move->wallNormal, WORLD_UP);
+    finalDir            = vecAdd(finalDir, vel);
+    data->dir           = vecNorm(finalDir);
 
-    // if (Sol_Physx_GetVel(world, id).y < 0)
-    //     Sol_Physx_SetVelY(world, id, 0);
-    Sol_Physx_AddVel(world, id, vecSca(dir, DASH_VEL));
+    Sol_Physx_AddVel(world, id, vecSca(data->dir, DASH_VEL));
 }
 
 void Walljump_State_Exit(World *world, int id)

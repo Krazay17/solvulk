@@ -17,6 +17,8 @@
 #define SPATIAL_STATIC_SIZE (1 << 19)
 #define SPATIAL_STATIC_ENTRIES 0xF
 
+#define WALKABLE_SLOPE 0.7f
+
 static u32            ents[MAX_ENTS];
 static EntityContacts contacts[MAX_ENTS];
 
@@ -140,7 +142,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     for (int i = 0; i < count; i++)
     {
         int id = ents[i];
-        for (u32 j = 0; j < contacts[i].count; j++)
+        for (int j = 0; j < contacts[i].count; j++)
         {
             SolContact *r = &contacts[i].records[j];
             Sol_Event_Add(world, (SolEvent){
@@ -157,8 +159,41 @@ void Sol_Physx_Step(World *world, double dt, double time)
     }
 }
 
+float Sol_Physx_Get_Ground_Norm(World *world, int id)
+{
+    CompXform *xform = &world->xforms[id];
+    CompBody  *body  = &world->bodies[id];
+
+    // Start from center-bottom of the body
+    vec3s origin       = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
+    body->groundNormal = (vec3s){0, 0, 0};
+    SolRayResult results[9];
+    for (int j = 0; j < 9; j++)
+    {
+        // Rotate the local offset by the entity's rotation
+        vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
+
+        vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
+
+        results[j] = Sol_Raycast(
+            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.25f, .ignoreEnt = id, .mask = 0});
+    }
+    float flattestNorm = -1.0f;
+    int   idx          = 0;
+    for (int j = 0; j < 9; j++)
+    {
+        if (results[j].norm.y > flattestNorm)
+        {
+            flattestNorm = results[j].norm.y;
+            idx          = j;
+        }
+    }
+    body->groundNormal = results[idx].norm;
+    return flattestNorm;
+}
+
 static int ground_trace_required = BITC(HAS_BODY3) | BITC(HAS_MOVEMENT);
-void Ground_Trace(World *world, int count, float fdt)
+void       Ground_Trace(World *world, int count, float fdt)
 {
     int i;
 #pragma omp parallel for if (count > 500) schedule(dynamic, 16)
@@ -167,40 +202,13 @@ void Ground_Trace(World *world, int count, float fdt)
         int id = ents[i];
         if (!WHas(world, id, ground_trace_required))
             continue;
+        CompBody *body = &world->bodies[id];
 
-        CompXform *xform = &world->xforms[id];
-        CompBody  *body  = &world->bodies[id];
-
-        // Start from center-bottom of the body
-        vec3s origin       = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
-        body->groundNormal = (vec3s){0, 0, 0};
-        SolRayResult results[9];
-        for (int j = 0; j < 9; j++)
-        {
-            // Rotate the local offset by the entity's rotation
-            vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
-
-            vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.9f));
-
-            results[j] = Sol_Raycast(
-                world,
-                (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.2f, .ignoreEnt = id, .mask = 0});
-        }
-        float flattestNorm = -1.0f;
-        int idx = 0;
-        for (int j = 0; j < 9; j++)
-        {
-            if (results[j].norm.y > flattestNorm)
-            {
-                flattestNorm = results[j].norm.y;
-                idx = j;
-            }
-        }
-        if (flattestNorm > 0.5f)
+        float flattestNorm = Sol_Physx_Get_Ground_Norm(world, id);
+        if (flattestNorm > WALKABLE_SLOPE)
         {
             body->airtime = 0;
             body->groundtime += fdt;
-            body->groundNormal = results[idx].norm;
         }
         else
         {
@@ -214,7 +222,11 @@ SolRayResult Sol_Raycast(World *world, SolRay ray)
 {
     WorldPhysx *ws = world->spatial;
 
-    SolRayResult result = {.dist = ray.dist, .pos = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist))};
+    SolRayResult result = {
+        .dist = ray.dist,
+        .norm = {0.0f, 0.0f, 0.0f},
+        .pos  = glms_vec3_add(ray.pos, glms_vec3_scale(ray.dir, ray.dist)),
+    };
 
     SolRayResult sub = {0};
 
@@ -288,8 +300,8 @@ int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results
 // dont fill pos or dir in ray
 SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ray)
 {
-    float      winW = (float)solEngine.windowWidth;
-    float      winH = (float)solEngine.windowHeight;
+    float winW = (float)solEngine.windowWidth;
+    float winH = (float)solEngine.windowHeight;
 
     // 1. Convert screen pixel → NDC [-1, 1]
     float ndcX = (2.0f * screenX / winW) - 1.0f;

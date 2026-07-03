@@ -23,8 +23,7 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind)
     CompModel model = model_kinds[kind];
     model.modelId   = kind;
 
-    SolModel *m = Sol_GetModel(kind);
-    if (m->skeleton.animationCount > 0)
+    if (loaded_models[kind].skeleton.animationCount > 0)
     {
         model.hasAnim = true;
         for (int i = 0; i < ANIM_LAYER_COUNT; i++)
@@ -42,10 +41,10 @@ CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind)
     return &world->models[id];
 }
 
-static int   model_draw_required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
-void Model_Draw(World *world, double dt, double time)
+static int model_draw_required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
+void       Model_Draw(World *world, double dt, double time)
 {
-    float fdt      = (float)dt;
+    float fdt = (float)dt;
 
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -59,7 +58,7 @@ void Model_Draw(World *world, double dt, double time)
             continue;
 
         ModelSSBO modelSSBO = {0};
-        modelSSBO.color = modelComp->color;
+        modelSSBO.color     = modelComp->color;
         if (world->masks[id] & BITC(HAS_INTERACT))
             if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
                 modelSSBO.flags |= (1 << 0);
@@ -96,7 +95,7 @@ void Model_Draw(World *world, double dt, double time)
             continue;
         }
         BonesSSBO bonesSSBO = {0};
-        SolModel *m         = Sol_GetModel(modelComp->modelId);
+        SolModel *m         = &loaded_models[modelComp->modelId];
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {

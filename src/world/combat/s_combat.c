@@ -20,7 +20,7 @@ static void Combat_Step(World *world, double dt, double time);
 void Sol_Combat_Init(World *world)
 {
     world->combats               = calloc(MAX_ENTS, sizeof(CompCombat));
-    world->dmgNumbers            = malloc(sizeof(Dmgnumbers));
+    world->dmgNumbers            = calloc(1, sizeof(Dmgnumbers));
     world->dmgNumbers->dmgNumber = calloc(1, sizeof(Dmgnumber));
     WAddStep(world)              = Combat_Step;
     WAddStep(world)              = Dmgnumbers_Step;

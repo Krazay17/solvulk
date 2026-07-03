@@ -15,8 +15,13 @@
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
+    if (Sol_Controller_IsActionState(world, id, ACTION_JUMP))
+        if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
+            return true;
+
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_JUMP];
+
     data->elapsed += dt;
     float alpha = 1.0f - (data->elapsed / JUMP_DURATION);
 

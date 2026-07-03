@@ -61,6 +61,9 @@ int Sol_Init(void *hwnd, void *hInstance)
 
 void Sol_Tick(double dt, double time)
 {
+    sollog("Ticking");
+    if (dt < 0.0 || dt > 1.0)
+        dt = 0.0166666;
     solState.gameTime += dt;
     solState.tickCounter++;
     Sol_Input_Update();
@@ -86,12 +89,12 @@ void Sol_Tick(double dt, double time)
     float alpha = (float)(accumulator / SOL_TIMESTEP);
     Sol_Xform_Interpolate(solEngine.worlds, solEngine.worldCount, alpha);
     // ######### END STEP AND INTERP #########
-    
+
     if (solEngine.activeWorld)
         Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, 1), Sol_Cam_GetFwd());
 
     Sol_Begin_Draw();
-    
+
     Sol_Cam_Update(dt);
     Sol_Render_DrawSkybox();
 

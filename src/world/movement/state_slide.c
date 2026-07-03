@@ -15,17 +15,11 @@ static bool LeaveState(World *world, int id)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (Sol_GetActions(world, id) & ACTION_JUMP)
-    {
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
-        {
-//            Sol_Physx_SetVelY(world, id, Sol_Physx_GetVel(world, id).y + 4.0f);
-            
             return true;
-        }
-    }
-    if (Sol_Physx_GetAirtime(world, id) > 0.1f)
-        if (Sol_Movement_SetState(world, id, MOVE_FALL))
-            return true;
+    // if (Sol_Physx_GetAirtime(world, id) > 0.1f)
+    //     if (Sol_Movement_SetState(world, id, MOVE_FALL))
+    //         return true;
     return false;
 }
 
@@ -86,8 +80,8 @@ void Slide_State_Enter(World *world, int id)
 
     vec3s wishdir  = Sol_Controller_GetWishdir(world, id);
     vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
-    //float dot      = glms_vec3_dot(wishdir, Sol_Physx_GetGround(world, id));
-    //vec3s slopeDir = glms_vec3_sub(wishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
+    // float dot      = glms_vec3_dot(wishdir, Sol_Physx_GetGround(world, id));
+    // vec3s slopeDir = glms_vec3_sub(wishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
 
     Sol_Physx_Impulse(world, id, vecSca(slopeDir, 250.0f));
 }
@@ -105,5 +99,6 @@ bool Slide_State_CanExit(World *world, int id, u32 nextState)
 
 bool Slide_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
+    //sollog(Sol_Physx_Get_Ground_Norm(world, id));
     return Sol_Physx_GetSpeed(world, id) > 5.5f;
 }

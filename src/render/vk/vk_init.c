@@ -61,7 +61,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     vkEnumeratePhysicalDevices(vkstate->instance, &deviceCount, devices);
 
     // pick the first discrete GPU we find, fallback to first device
-    for (uint32_t i = 0; i < deviceCount; i++)
+    for (int i = 0; i < deviceCount; i++)
     {
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(devices[i], &props);
@@ -83,7 +83,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     VkQueueFamilyProperties queueFamilies[16];
     vkGetPhysicalDeviceQueueFamilyProperties(vkstate->physicalDevice, &queueFamilyCount, queueFamilies);
 
-    for (uint32_t i = 0; i < queueFamilyCount; i++)
+    for (int i = 0; i < queueFamilyCount; i++)
     {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
@@ -215,7 +215,7 @@ int SolVkSwapchain(SolVkState *vkstate)
 
     // prefer BGRA8 + sRGB, fallback to first available
     VkSurfaceFormatKHR chosenFormat = formats[0];
-    for (uint32_t i = 0; i < formatCount; i++)
+    for (int i = 0; i < formatCount; i++)
     {
         if (formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
@@ -234,7 +234,7 @@ int SolVkSwapchain(SolVkState *vkstate)
 
     // prefer mailbox (triple buffering), fallback to FIFO (vsync, always available)
     VkPresentModeKHR chosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-    for (uint32_t i = 0; i < presentModeCount; i++)
+    for (int i = 0; i < presentModeCount; i++)
     {
         if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
         {
@@ -289,7 +289,7 @@ int SolVkSwapchain(SolVkState *vkstate)
 
 int SolVkImageViews(SolVkState *vkstate)
 {
-    for (uint32_t i = 0; i < vkstate->swapchainImageCount; i++)
+    for (int i = 0; i < vkstate->swapchainImageCount; i++)
     {
         VkImageViewCreateInfo createInfo           = {0};
         createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -379,7 +379,7 @@ int SolFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMe
     VkPhysicalDeviceMemoryProperties memProps;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
 
-    for (uint32_t i = 0; i < memProps.memoryTypeCount; i++)
+    for (int i = 0; i < memProps.memoryTypeCount; i++)
     {
         if ((typeFilter & (1 << i)) && (memProps.memoryTypes[i].propertyFlags & properties) == properties)
         {

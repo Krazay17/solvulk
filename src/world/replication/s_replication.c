@@ -181,7 +181,7 @@ void Net_Apply_Snap(World *world)
 
     memset(net->seenThisSnap, 0, sizeof(net->seenThisSnap));
 
-    for (u32 i = 0; i < snap->eCount; i++)
+    for (int i = 0; i < snap->eCount; i++)
     {
         NetEntityState *e      = &snap->entities[i];
         int             hostId = e->id;

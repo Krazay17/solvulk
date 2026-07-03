@@ -408,7 +408,7 @@ int Sol_Render_UploadAll()
     //
     //    for (int i = 0; i < SOL_MODEL_COUNT; i++)
     //    {
-    //        Sol_UploadModel(Sol_GetModel(i), i);
+    //
     //    }
     return 0;
 }
@@ -489,7 +489,7 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     if (cfg->descCount > 0)
     {
         VkDescriptorSet sets[8];
-        for (u32 i = 0; i < cfg->descCount; i++)
+        for (int i = 0; i < cfg->descCount; i++)
         {
             DescriptorId did = cfg->descId[i];
             if (desc_config[did].kind == DESC_KIND_IMAGES)
@@ -525,7 +525,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     vkDestroyImage(solvkstate.device, solvkstate.depthImage, NULL);
     vkFreeMemory(solvkstate.device, solvkstate.depthMemory, NULL);
 
-    for (uint32_t i = 0; i < solvkstate.swapchainImageCount; i++)
+    for (int i = 0; i < solvkstate.swapchainImageCount; i++)
         vkDestroyImageView(solvkstate.device, solvkstate.swapchainImageViews[i], NULL);
 
     vkDestroySwapchainKHR(solvkstate.device, solvkstate.swapchain, NULL);
@@ -556,7 +556,7 @@ void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstIns
     Bind_Pipeline(cmd, PIPE_MODEL);
 
     SolGpuModel *model = &gpuModels[handle];
-    for (uint32_t m = 0; m < model->mesh_count; m++)
+    for (int m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
@@ -573,7 +573,7 @@ void Render_Model_Skinned(SolModelKind handle, uint32_t instanceCount, uint32_t 
     Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
 
     SolGpuModel *model = &gpuModels[handle];
-    for (uint32_t m = 0; m < model->mesh_count; m++)
+    for (int m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL_SKINNED].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
@@ -1148,7 +1148,7 @@ void Sol_Render_UploadModel(SolModel *model, u32 modelId)
     vkBeginCommandBuffer(copyCmd, &beginInfo);
 
     // 6. Create GPU buffers and record copy commands
-    for (uint32_t m = 0; m < model->mesh_count; m++)
+    for (int m = 0; m < model->mesh_count; m++)
     {
         SolMesh    *src = &model->meshes[m];
         SolGpuMesh *dst = &gpuModel.meshes[m];
@@ -1190,7 +1190,7 @@ void Sol_Render_UploadModel(SolModel *model, u32 modelId)
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
     gpuModels[modelId] = gpuModel;
-    // printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
+    printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
 
     return;
 }

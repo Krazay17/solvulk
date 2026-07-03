@@ -81,7 +81,7 @@ void SpatialTable_Compact(SpatialTable *table)
 {
     // 1. Count entries per bucket
     u32 *counts = calloc(table->size, sizeof(u32));
-    for (u32 i = 0; i < table->size; i++)
+    for (int i = 0; i < table->size; i++)
     {
         u32 entry = table->head[i];
         while (entry != SPATIAL_NULL)
@@ -94,7 +94,7 @@ void SpatialTable_Compact(SpatialTable *table)
     // 2. Compute offsets (prefix sum)
     u32 *offsets = malloc(table->size * sizeof(u32));
     offsets[0]   = 0;
-    for (u32 i = 1; i < table->size; i++)
+    for (int i = 1; i < table->size; i++)
         offsets[i] = offsets[i - 1] + counts[i - 1];
 
     // 3. Copy values into sorted order
@@ -102,7 +102,7 @@ void SpatialTable_Compact(SpatialTable *table)
     u32 *cursor = malloc(table->size * sizeof(u32));
     memcpy(cursor, offsets, table->size * sizeof(u32));
 
-    for (u32 i = 0; i < table->size; i++)
+    for (int i = 0; i < table->size; i++)
     {
         u32 entry = table->head[i];
         while (entry != SPATIAL_NULL)
@@ -115,7 +115,7 @@ void SpatialTable_Compact(SpatialTable *table)
     // 4. Rebuild as contiguous — head points to start, next is just +1
     memcpy(table->value, sorted, table->count * sizeof(u32));
 
-    for (u32 i = 0; i < table->size; i++)
+    for (int i = 0; i < table->size; i++)
     {
         if (counts[i] == 0)
         {
@@ -124,7 +124,7 @@ void SpatialTable_Compact(SpatialTable *table)
         else
         {
             table->head[i] = offsets[i];
-            for (u32 j = 0; j < counts[i] - 1; j++)
+            for (int j = 0; j < counts[i] - 1; j++)
                 table->next[offsets[i] + j] = offsets[i] + j + 1;
             table->next[offsets[i] + counts[i] - 1] = SPATIAL_NULL;
         }

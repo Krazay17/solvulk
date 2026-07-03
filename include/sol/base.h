@@ -25,6 +25,8 @@
         u32: printf("%u\n", (unsigned int)(X)),                                                                        \
         float: printf("%f\n", X),                                                                                      \
         double: printf("%f\n", X),                                                                                     \
+        size_t: printf("%zu bytes\n", X),                                                                                     \
+        long long: printf("%zu bytes\n", X),                                                                                     \
         char *: printf("%s\n", X))
 
 typedef unsigned char byte;

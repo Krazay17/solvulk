@@ -9,7 +9,9 @@
 
 #define MIN_WALL_ANGLE -0.7f
 #define MAX_WALL_ANGLE 0.7f
-#define COYOTE_TIMER 0.2f
+#define COYOTE_TIMER 0.15f
+#define BOOST_TIMEOUT 2.0f
+#define BOOST_AMOUNT 10.0f
 
 static bool CheckWall(World *world, int id, SolRayResult *result)
 {
@@ -17,12 +19,12 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
     float      radius = dims.x * 2.2f;
-    for (int i = -1; i < 1; i++)
+    for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
         {
             vec3s finalPos = pos;
-            finalPos.y += (float)i * (dims.y * 0.35f);
+            finalPos.y += (float)i * (dims.y * 0.4f);
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
             *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
             float dot            = glms_vec3_dot(result->norm, WORLD_UP);
@@ -42,6 +44,42 @@ static bool LeaveState(World *world, int id)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     return false;
+}
+
+void RunVel(World *world, int id, float boost)
+{
+    CompMovement  *movement    = &world->movements[id];
+    MoveStateData *data        = &movement->stateData[MOVE_WALLRUN];
+    vec3s          prevvel     = Sol_Physx_GetVel(world, id);
+    vec3s          prevLatVel = prevvel;
+    prevLatVel.y              = 0;
+    float targetSpeed          = fmaxf(glms_vec3_norm(prevLatVel), boost);
+
+    vec3s project;
+    vec3s targetVel;
+    vec3s lookdir      = world->controllers[id].lookdir;
+    vec3s wishdir      = Sol_Controller_GetWishdir(world, id);
+    lookdir.y          = 0;
+    lookdir            = vecNorm(lookdir);
+    float lookIntoWall = -glms_vec3_dot(lookdir, movement->wallNormal);
+    Sol_Debug_Add("Dot", vecDot(wishdir, prevvel));
+    if (lookIntoWall > 0.7f)
+    {
+        project   = glms_vec3_sub(lookdir, glms_vec3_scale(movement->wallNormal, -lookIntoWall));
+        project.y = lookIntoWall;
+        project   = glms_vec3_normalize(project);
+        targetVel = glms_vec3_scale(project, targetSpeed);
+    }
+    else
+    {
+        float push_into_wall = glms_vec3_dot(prevLatVel, movement->wallNormal);
+        project              = glms_vec3_sub(prevLatVel, glms_vec3_scale(movement->wallNormal, push_into_wall));
+        project              = glms_vec3_normalize(project);
+        targetVel            = glms_vec3_scale(project, targetSpeed);
+        targetVel.y          = prevvel.y;
+    }
+
+    Sol_Physx_SetVel(world, id, targetVel);
 }
 
 void Wallrun_State_Update(World *world, int id, float dt)
@@ -69,24 +107,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
         return;
     }
 
-    movement->wallDot = vecDot(movement->wallNormal, Sol_Cam_GetRight());
-    vec3s prevVel     = Sol_Physx_GetVel(world, id);
-    // vec3s wishdir     = Sol_GetLookdir(world, id);
-    vec3s wishdir = Sol_Controller_GetWishdir(world, id);
-
-    float push_into_wall = glms_vec3_dot(wishdir, movement->wallNormal);
-
-    // 3. Subtract that inward push from the original wishdir to get the plane tangent
-    vec3s project = glms_vec3_sub(wishdir, glms_vec3_scale(movement->wallNormal, push_into_wall));
-
-    // 4. Normalize to get a pure directional vector along the wall
-    // (Check for zero length in case wishdir was perfectly perpendicular to the wall)
-    if (glms_vec3_norm2(project) > 0.001f)
-    {
-        project = glms_vec3_normalize(project);
-        Sol_Physx_SetVel(world, id,
-                         glms_vec3_lerp(prevVel, glms_vec3_scale(project, Sol_Physx_GetSpeed(world, id)), 0.01f));
-    }
+    RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT));
 
     vec3s dirToWall = glms_vec3_sub(xform->pos, movement->lastTouch);
     dirToWall       = glms_vec3_normalize(dirToWall);
@@ -138,14 +159,13 @@ void Wallrun_State_Enter(World *world, int id)
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
     if (Sol_Physx_GetVel(world, id).y < 0.0f)
         Sol_Physx_SetVelY(world, id, 0.0f);
-
     data->enterVel = Sol_Physx_GetVel(world, id);
-    data->accum    = 0;
+    RunVel(world, id, BOOST_AMOUNT);
+    data->accum = 0;
 }
 
 void Wallrun_State_Exit(World *world, int id)
 {
-    world->movements[id].wallDot = 0;
 }
 
 bool Wallrun_State_CanExit(World *world, int id, u32 nextState)

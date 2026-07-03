@@ -36,8 +36,10 @@ const vec2 CORNERS[6] = vec2[](
     vec2(-1, -1), vec2( 1, -1), vec2( 1,  1),
     vec2(-1, -1), vec2( 1,  1), vec2(-1,  1)
 );
-
-// Explicitly mapping to your QuadType Enum
+// flags
+const uint UI_FLAG_FILL_VERTICAL = 1u << 1;
+const uint UI_FLAG_FILL_INVERT   = 1u << 2;
+// type
 const uint QUADTYPE_FACECAM = 0u;
 const uint QUADTYPE_QUAT    = 1u;
 
@@ -50,10 +52,30 @@ void main() {
     vec2 corner = CORNERS[gl_VertexIndex];
     float size = q.pos.w;
 
-    vec2 halfDim    = vec2(size, size);
+    // Base dimensions from rect.zw
+    vec2 halfDim = vec2(size, size);
     halfDim.x = q.rect.z > 0.0 ? q.rect.z * size : size;
     halfDim.y = q.rect.w > 0.0 ? q.rect.w * size : size;
-    vec2 viewOffset = q.rect.xy; // Our new local translation values
+    
+    vec2 viewOffset = q.rect.xy;
+    vec2 localExtent = halfDim;
+    vec2 pivotShift = vec2(0.0);
+    
+    // --- 3D FILL PATTERN MATH ---
+    float fill = (q.extra.x > 0.0) ? clamp(q.extra.x, 0.0, 1.0) : 1.0;
+    
+    // Determine fill axes
+    vec2 fillAxis  = ((q.flags & UI_FLAG_FILL_VERTICAL) != 0u) ? vec2(0.0, 1.0) : vec2(1.0, 0.0);
+    vec2 otherAxis = vec2(1.0) - fillAxis;
+    
+    // Scale the geometry along the selected fill axis
+    localExtent = halfDim * (otherAxis + fillAxis * fill);
+    
+    // Shift the center origin so the bar drains from side-to-side rather than shrinking into the center
+    pivotShift = halfDim * fillAxis * (fill - 1.0);
+    if ((q.flags & UI_FLAG_FILL_INVERT) != 0u) {
+        pivotShift *= -1.0; // Drain from opposite direction
+    }
 
     vec3 worldPos;
         
@@ -61,26 +83,29 @@ void main() {
         float angle = q.rot.x;
         float c = cos(angle);
         float s = sin(angle);
-        vec2 spun = vec2(corner.x * c - corner.y * s,
-                         corner.x * s + corner.y * c);
+        
+        // Spin the layout corner bounds locally
+        vec2 spun = vec2(corner.x * localExtent.x * c - corner.y * localExtent.y * s,
+                         corner.x * localExtent.x * s + corner.y * localExtent.y * c);
 
         vec3 right = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
         vec3 up    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
 
-        // Extract sizes and layout displacements
-
-        // Compute the final vertex position in camera-aligned space
+        // Shift viewOffset by pivotShift to keep the anchored edge stable
         worldPos = q.pos.xyz + 
-                   right * (viewOffset.x + spun.x * halfDim.x) + 
-                   up    * (viewOffset.y + spun.y * halfDim.y);
+                   right * (viewOffset.x + pivotShift.x + spun.x) + 
+                   up    * (viewOffset.y + pivotShift.y + spun.y);
     } else {
         // QUADTYPE_QUAT
-        vec3 localPos = vec3(corner.x * halfDim.x, corner.y * halfDim.y, 0.0);
+        vec3 localPos = vec3(pivotShift.x + corner.x * localExtent.x, 
+                             pivotShift.y + corner.y * localExtent.y, 0.0);
         worldPos = q.pos.xyz + rotateByQuat(q.rot, localPos);
     }
     
+    // Clip the UVs exactly alongside the fill scale
     vec2 uvLocal = vec2(corner.x, -corner.y) * 0.5 + 0.5;   
-    fragUV = q.uv.xy + uvLocal * q.uv.zw;
+    vec2 uvScale = otherAxis + fillAxis * fill;
+    fragUV = q.uv.xy + uvLocal * q.uv.zw * uvScale;
     
     fragColor     = q.color;
     fragExtra     = q.extra;

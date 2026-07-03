@@ -103,7 +103,7 @@ void Physx_Grid_Static_Rebuild(PhysxGroup *group)
     {
         vec3s min = {1e9f, 1e9f, 1e9f};
         vec3s max = {-1e9f, -1e9f, -1e9f};
-        for (u32 t = 0; t < group->triCount; t++)
+        for (int t = 0; t < group->triCount; t++)
         {
             SolTri *tri = &group->tris[t];
             min.x       = fminf(min.x, fminf(tri->a.x, fminf(tri->b.x, tri->c.x)));
@@ -177,7 +177,7 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
 //             u32 start = grid->offsets[cell];
 //             u32 end   = grid->offsets[cell + 1];
 
-//             for (u32 e = start; e < end; e++)
+//             for (int e = start; e < end; e++)
 //             {
 //                 if (++checks > 1000)
 //                     return col;
@@ -392,7 +392,7 @@ void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, Com
                 u32 start = grid->offsets[cell];
                 u32 end   = grid->offsets[cell + 1];
 
-                for (u32 e = start; e < end; e++)
+                for (int e = start; e < end; e++)
                 {
                     if (++checks > 1000)
                         return;
@@ -411,7 +411,7 @@ void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, Com
 void Add_Contact(EntityContacts *c, u32 otherId, vec3s normal, vec3s pos)
 {
     // Dedupe: don't add if otherId is already in the list
-    for (u32 i = 0; i < c->count; i++)
+    for (int i = 0; i < c->count; i++)
     {
         if (c->records[i].entId == otherId)
             return;
@@ -551,14 +551,14 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
 
     grid->offsets    = malloc((cellCount + 1) * sizeof(u32));
     grid->offsets[0] = 0;
-    for (u32 i = 0; i < cellCount; i++)
+    for (int i = 0; i < cellCount; i++)
         grid->offsets[i + 1] = grid->offsets[i] + counts[i];
 
     grid->values = malloc(totalEntries * sizeof(u32));
     u32 *cursor  = malloc(cellCount * sizeof(u32));
     memcpy(cursor, grid->offsets, cellCount * sizeof(u32));
 
-    for (u32 t = 0; t < group->triCount; t++)
+    for (int t = 0; t < group->triCount; t++)
     {
         SolTri *tri  = &group->tris[t];
         float   minX = fminf(tri->a.x, fminf(tri->b.x, tri->c.x));
@@ -595,7 +595,7 @@ void Physx_Grid_Static_Build(PhysxGroup *group, vec3s min, vec3s max, float cell
     free(cursor);
 
     u32 worst = 0;
-    for (u32 i = 0; i < cellCount; i++)
+    for (int i = 0; i < cellCount; i++)
     {
         u32 len = grid->offsets[i + 1] - grid->offsets[i];
         if (len > worst)
@@ -1001,7 +1001,7 @@ SolRayResult Raycast_Static_Grid_Tri(PhysxGroup *group, SolRay ray)
         // The hitDist along the ray at which we leave this cell
         float tCellExit = fminf(tMaxX, fminf(tMaxY, tMaxZ));
 
-        for (u32 e = start; e < end; e++)
+        for (int e = start; e < end; e++)
         {
             SolTri *tri = &group->tris[grid->values[e]];
             vec3s   normal;
@@ -1214,7 +1214,7 @@ SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray)
         u32 start   = grid->offsets[cellIdx];
         u32 end     = grid->offsets[cellIdx + 1];
 
-        for (u32 e = start; e < end; e++)
+        for (int e = start; e < end; e++)
         {
             SolTri *tri = &group->tris[grid->values[e]];
             vec3s   normal;

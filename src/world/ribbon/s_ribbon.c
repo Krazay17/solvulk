@@ -338,7 +338,7 @@ static u32 Slot_Alloc(SolRibbon *s)
         memset(&s->slots[old_cap], 0, (new_cap - old_cap) * sizeof(RibbonSlot));
 
         // Seed generations to start cleanly at 1
-        for (u32 i = old_cap; i < new_cap; i++)
+        for (int i = old_cap; i < new_cap; i++)
         {
             s->slots[i].generation = 1;
         }
@@ -382,7 +382,7 @@ static void Ribbon_Step(World *world, double dt, double time)
     u32   write_idx = 0;
 
     // Fast linear stream pass over dense memory arrays
-    for (u32 read_idx = 0; read_idx < s->ribbon_count; read_idx++)
+    for (int read_idx = 0; read_idx < s->ribbon_count; read_idx++)
     {
         Ribbon *r = &s->ribbons[read_idx];
 
@@ -498,7 +498,7 @@ static void Ribbon_Draw(World *world, double dt, double time)
     if (!s)
         return;
 
-    for (u32 i = 0; i < s->ribbon_count; i++)
+    for (int i = 0; i < s->ribbon_count; i++)
     {
         ribbon_config[s->ribbons[i].kind].draw(world, &s->ribbons[i], dt, time);
     }

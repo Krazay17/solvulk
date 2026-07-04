@@ -12,13 +12,14 @@
 #define COYOTE_TIMER 0.15f
 #define BOOST_TIMEOUT 2.0f
 #define BOOST_AMOUNT 10.0f
+#define DISTANCE_CHECK 0.125f
 
 static bool CheckWall(World *world, int id, SolRayResult *result)
 {
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
-    float      radius = dims.x * 2.2f;
+    float      radius = dims.x + DISTANCE_CHECK;
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)

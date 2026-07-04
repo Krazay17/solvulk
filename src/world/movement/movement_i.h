@@ -32,7 +32,7 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
 
     vec3s       vel       = prevvel;
     const float dotdir    = glms_vec3_dot(wishdir, glms_vec3_normalize(vel));
-    float       lerpalpha = (1.0f - dotdir) * 0.5f;
+    float       lerpalpha = (1.0f - dotdir);
 
     vec3s projected     = glms_vec3_proj(vel, wishdir);
     float steerStrength = fminf(1.0f, accel * dt);

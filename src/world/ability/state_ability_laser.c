@@ -46,64 +46,6 @@ static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounce
     }
 }
 
-// static void Laser(World *world, int id, vec3s pos, vec3s dir)
-// {
-//     CompAbility *ability = &world->abilities[id];
-//     AbilityData *data    = &ability->stateData[ability->activeSlot];
-//     if (data->as.laser.laserPointCount >= MAX_LASER_BOUNCES * 2)
-//         return;
-//     Sol_Combat_ClearHits(world, id);
-//     CompCombat *combat = &world->combats[id];
-//     vec3s      *pointA = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
-//     vec3s      *pointB = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
-//     *pointA            = pos;
-
-//     float  finalCharge = data->charge * HITINTERVAL;
-//     float  finalDamage = data->damage * finalCharge;
-//     SolRay ray1        = {
-//         .pos       = pos,
-//         .dir       = dir,
-//         .dist      = LASER_LENGTH,
-//         .ignoreEnt = id,
-//     };
-//     SolRayResult ray1Result = Sol_Raycast(world, ray1);
-//     *pointB                 = ray1Result.pos;
-
-//     SolRay rayDamage = {
-//         .dir       = dir,
-//         .dist      = ray1.dist,
-//         .ignoreEnt = id,
-//         .pos       = pos,
-//         .mask      = 0b1,
-//     };
-
-//     SolRayResult results[256];
-//     int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
-//     for (int i = 0; i < hits; i++)
-//     {
-//         SolRayResult result = results[i];
-
-//         if (combat->hitEnts[result.entId])
-//             continue;
-//         combat->hitEnts[result.entId] = true;
-
-//         Sol_Event_Add(world, (SolEvent){
-//                                  .kind              = EVENTKIND_HIT,
-//                                  .as.hit.damage     = finalDamage,
-//                                  .as.hit.power      = finalCharge,
-//                                  .as.hit.buffMask   = data->buffs,
-//                                  .as.hit.effectMask = data->effects,
-//                                  .as.hit.entA       = id,
-//                                  .as.hit.entB       = result.entId,
-//                                  .as.hit.pos        = result.pos,
-//                                  .as.hit.vel        = dir,
-//                                  .as.hit.fxKind     = FXKIND_LASER_HIT,
-//                              });
-//     }
-//     if (ray1Result.hit)
-//         Laser(world, id, ray1Result.pos, Sol_BounceVec(dir, ray1Result.norm));
-// }
-
 static bool Leave_State(World *world, int id, CompAbility *ability)
 {
     if (!ability->stateData[ability->activeSlot].held)
@@ -119,12 +61,6 @@ void Laser_State_Update(World *world, int id, float dt)
         return;
     AbilityData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
-
-    // if (data->elapsed >= MAX_DURATION)
-    // {
-    //     Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
-    //     return;
-    // }
 
     CompController *controller = &world->controllers[id];
 
@@ -163,7 +99,6 @@ void Laser_State_Update(World *world, int id, float dt)
 
     CompCombat *combat = &world->combats[id];
     Sol_Combat_ClearHits(world, id);
-    // Laser(world, id, controller->aimpos, controller->aimdir);
 
     float finalCharge = data->charge * HITINTERVAL;
     float finalDamage = data->damage * finalCharge;
@@ -268,13 +203,13 @@ void Laser_State_Draw(World *world, int id, double dt, double time)
     {
         vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
         const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
-        vec3s       startPos                 = Sol_Model_GetBoneXform(world, id, hand).pos;
+        vec3s       handPos                  = Sol_Model_GetBoneXform(world, id, hand).pos;
         float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
         data->as.laser.laserPointCountVisual = 0;
         Laser_Bounces_Visual(world, id, controller->aimpos, controller->aimdir, 0);
         for (int l = 0; l < data->as.laser.laserPointCountVisual; l += 2)
         {
-            vec3s posA = l == 0 ? startPos : data->as.laser.laserPointsVisual[l];
+            vec3s posA = l == 0 ? handPos : data->as.laser.laserPointsVisual[l];
             vec3s posB = data->as.laser.laserPointsVisual[l + 1];
             Draw_LaserStart(posA, color, 0.5f * widthScale, time);
             Draw_LaserStart(posA, VEC4_WHITE, 0.3f * widthScale, time);
@@ -309,8 +244,13 @@ static void Laser_Bounces_Visual(World *world, int id, vec3s pos, vec3s dir, int
     }
 }
 
-static const vec2s sprite_section[4] = {{0.0f, 0.5f}, {0.5f, 0.5f}, {0.5f, 0.0f}, {0.5f, 0.0f}};
-static void        Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time)
+static const vec2s sprite_section[4] = {
+    {0.0f, 0.0f},
+    {0.0f, 0.5f},
+    {0.5f, 0.0f},
+    {0.5f, 0.5f},
+};
+static void Draw_LaserImpact(vec3s pos, vec4s color, float scale, double time)
 {
     u32       frame_index = ((u32)(time * 15.0)) % 4;
     vec2s     uv          = sprite_section[frame_index];
@@ -319,6 +259,8 @@ static void        Draw_LaserImpact(vec3s pos, vec4s color, float scale, double 
     ssbo->color           = color;
     ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
     ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+    ssbo->rect            = GLMS_VEC4_ZERO;
+    ssbo->extra           = GLMS_VEC4_ZERO;
 }
 static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
 {
@@ -329,6 +271,8 @@ static void Draw_LaserStart(vec3s pos, vec4s color, float scale, double time)
     ssbo->color           = color;
     ssbo->pos             = (vec4s){pos.x, pos.y, pos.z, scale};
     ssbo->uv              = (vec4s){uv.x, uv.y, 0.5f, 0.5f};
+    ssbo->rect            = GLMS_VEC4_ZERO;
+    ssbo->extra           = GLMS_VEC4_ZERO;
 }
 
 static void Draw_Laser(vec3s startPos, vec3s endPos, double time, vec4s color, float width)

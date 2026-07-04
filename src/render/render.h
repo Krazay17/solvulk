@@ -389,6 +389,7 @@ void Sol_End_Draw();
 void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
+void Sol_Render_CheckGpuUploads();
 
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);

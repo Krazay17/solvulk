@@ -83,16 +83,17 @@ typedef struct SolMaterial
 {
     float baseColor[4];
     float emissive[4];
-    float metallic;
-    float roughness;
-    
-    u32   textureId;
-    u32   emissiveTextureId;
-    u32   normalTextureId;
-    u32   fogTextureId;
 
     vec2s textureScale;
     vec2s fogTextureScale;
+
+    float metallic;
+    float roughness;
+
+    u32 textureId;
+    u32 emissiveTextureId;
+    u32 normalTextureId;
+    u32 fogTextureId;
 
     u32 _pad[2];
 } SolMaterial;

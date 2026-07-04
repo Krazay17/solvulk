@@ -14,8 +14,6 @@
 #include "stb_image.h"
 #include "webp/decode.h"
 
-#define MAX_GLOBAL_TEXTURES 512
-
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
     [SOL_TEXTURE_FIREPARTICLE]     = "FireParticle.png",
@@ -46,7 +44,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
 };
 
 SolTexture      loaded_images[MAX_GLOBAL_TEXTURES];
-static uint32_t next_free_texture_idx = SOL_TEXTURE_COUNT;
+uint32_t next_free_texture_idx = SOL_TEXTURE_COUNT;
 
 static SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id)
 {
@@ -108,8 +106,8 @@ int Sol_Textures_Init()
 
         // FIX: Ensure size property is explicitly set for static assets!
         image->size = res.size;
-
-        Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
+        image->needsGpuUpload = true;
+        // Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
     }
     return 0;
 }
@@ -143,8 +141,9 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
 
     // Save the size on the struct so the check works next time around
     image->size = size;
+    image->needsGpuUpload = true;
 
-    Sol_UploadImage(image, assignedSlot);
+    // Sol_UploadImage(image, assignedSlot);
 
     return assignedSlot;
 }

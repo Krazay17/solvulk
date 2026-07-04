@@ -11,7 +11,7 @@
 #define MAX_WALL_ANGLE 0.7f
 #define COYOTE_TIMER 0.15f
 #define BOOST_TIMEOUT 2.0f
-#define BOOST_AMOUNT 10.0f
+#define BOOST_AMOUNT 8.0f
 #define DISTANCE_CHECK 0.125f
 
 static bool CheckWall(World *world, int id, SolRayResult *result)
@@ -49,12 +49,12 @@ static bool LeaveState(World *world, int id)
 
 void RunVel(World *world, int id, float boost)
 {
-    CompMovement  *movement    = &world->movements[id];
-    MoveStateData *data        = &movement->stateData[MOVE_WALLRUN];
-    vec3s          prevvel     = Sol_Physx_GetVel(world, id);
+    CompMovement  *movement   = &world->movements[id];
+    MoveStateData *data       = &movement->stateData[MOVE_WALLRUN];
+    vec3s          prevvel    = Sol_Physx_GetVel(world, id);
     vec3s          prevLatVel = prevvel;
     prevLatVel.y              = 0;
-    float targetSpeed          = fmaxf(glms_vec3_norm(prevLatVel), boost);
+    float targetSpeed         = fmaxf(glms_vec3_norm(prevLatVel), boost);
 
     vec3s project;
     vec3s targetVel;
@@ -63,7 +63,7 @@ void RunVel(World *world, int id, float boost)
     lookdir.y          = 0;
     lookdir            = vecNorm(lookdir);
     float lookIntoWall = -glms_vec3_dot(lookdir, movement->wallNormal);
-    Sol_Debug_Add("Dot", vecDot(wishdir, prevvel));
+    
     if (lookIntoWall > 0.7f)
     {
         project   = glms_vec3_sub(lookdir, glms_vec3_scale(movement->wallNormal, -lookIntoWall));

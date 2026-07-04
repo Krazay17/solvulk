@@ -1,15 +1,20 @@
 #pragma once
 #include "sol/types.h"
 
+#define MAX_GLOBAL_TEXTURES 512
+
 typedef struct SolTexture
 {
     SolTextureId id;
     void        *pixels, *data;
     u32          width, height;
     u32          channels;
-    bool         loaded;
+    bool         loaded, needsGpuUpload;
     size_t       size;
 } SolTexture;
+
+extern SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
+extern uint32_t   next_free_texture_idx;
 
 int Sol_Textures_Init();
 

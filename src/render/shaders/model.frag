@@ -27,16 +27,17 @@ layout(set = 4, binding = 0) uniform sampler2D textures[128];
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
     vec4 emissive;
+
+    vec2 textureScale;
+    vec2 fogTextureScale;
+
     float metallic;
     float roughness;
-
+    
     uint textureId;
     uint emissiveTextureId;
     uint normalTextureId;
     uint fogTextureId;
-
-    vec2 textureScale;
-    vec2 fogTextureScale;
 
     uint _pad[2];
 } material;

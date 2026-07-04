@@ -61,7 +61,6 @@ int Sol_Init(void *hwnd, void *hInstance)
 
 void Sol_Tick(double dt, double time)
 {
-    sollog("Ticking");
     if (dt < 0.0 || dt > 1.0)
         dt = 0.0166666;
     solState.gameTime += dt;
@@ -93,6 +92,7 @@ void Sol_Tick(double dt, double time)
     if (solEngine.activeWorld)
         Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, 1), Sol_Cam_GetFwd());
 
+    Sol_Render_CheckGpuUploads();
     Sol_Begin_Draw();
 
     Sol_Cam_Update(dt);

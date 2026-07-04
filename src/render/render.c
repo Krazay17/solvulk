@@ -9,6 +9,7 @@
 #include "sol_math.h"
 #include "render_i.h"
 #include "render/vk/vkrender.h"
+#include "image.h"
 
 void Sol_Render_Resize(uint32_t width, uint32_t height)
 {
@@ -37,6 +38,18 @@ void Sol_Render_DrawSkybox()
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_SKYBOX);
     vkCmdDraw(cmd, 3, 1, 0, 0);
+}
+
+void Sol_Render_CheckGpuUploads()
+{
+    for (int i = 0; i < next_free_texture_idx; i++)
+    {
+        if (loaded_images[i].needsGpuUpload)
+        {
+            Sol_Render_UploadImage(loaded_images[i].width, loaded_images[i].height, loaded_images[i].pixels, i);
+            loaded_images[i].needsGpuUpload = false;
+        }
+    }
 }
 
 void Sol_Render_DrawLine(SolLine *lines, int count)

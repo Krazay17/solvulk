@@ -1,3 +1,11 @@
+/*
+ * File: vkrender.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-07-04
+ * 
+*/
+
 #include "vkrender.h"
 #include "render/render_i.h"
 #include "sol_core.h"
@@ -560,6 +568,7 @@ void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstIns
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
+     //                      sollog(model->meshes[m].material.textureId);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -1213,7 +1222,10 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
     SolVkState  *vkstate = &solvkstate;
 
     VkDeviceSize imageSize = width * height * 4; // assumes 4 bytes per pixel
-
+printf("VULKAN UPLOAD: ID %u, Dim: %ux%u, Format: %s, Pixels Ptr: %p\n",
+       id, width, height, 
+       (format == VK_FORMAT_R8G8B8A8_SRGB ? "sRGB" : "UNORM"), 
+       pixels);
     // 1. Staging buffer
     VkBuffer       staging;
     VkDeviceMemory stagingMem;
@@ -1361,6 +1373,8 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
     return;
 }
 
+#define MAX_BINDLESS_TEXTURES 128
+
 // Called at pipe build time — no images needed
 int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out)
 {
@@ -1375,7 +1389,7 @@ int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out
     VkDescriptorSetLayoutBinding binding = {
         .binding         = 0,
         .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = SOL_TEXTURE_COUNT,
+        .descriptorCount = MAX_BINDLESS_TEXTURES,
         .stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT,
     };
     VkDescriptorSetLayoutCreateInfo layoutInfo = {
@@ -1389,7 +1403,7 @@ int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out
 
     VkDescriptorPoolSize poolSize = {
         .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = SOL_TEXTURE_COUNT,
+        .descriptorCount = MAX_BINDLESS_TEXTURES,
     };
     VkDescriptorPoolCreateInfo poolInfo = {
         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,

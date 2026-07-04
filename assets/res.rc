@@ -27,6 +27,9 @@ Shield.png          RCDATA          "images/Shield.png"
 Grid.png          RCDATA          "images/Grid.png"
 
 
+
+
+
 Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
 World1.glb              RCDATA          "models/World1.glb"

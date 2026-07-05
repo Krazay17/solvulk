@@ -8,15 +8,18 @@
 
 static bool LeaveState(World *world, int id)
 {
-    if (Sol_Controller_IsActionState(world, id, ACTION_JUMP))
-        if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
+    if (Sol_Physx_GetGroundtime(world, id))
+        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH))
         if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
             return true;
-    if (Sol_Physx_GetGroundtime(world, id))
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+    if (Sol_Controller_IsActionState(world, id, ACTION_JUMP))
+    {
+
+        if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
             return true;
+    }
     if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;

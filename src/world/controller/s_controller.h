@@ -37,3 +37,4 @@ SolActions Sol_Controller_GetActionState(World *world, int id);
 vec3s      Sol_Controller_GetShootPos(World *world, int id, float offset);
 SolShoot   Sol_Controller_GetShoot(World *world, int id, float speed);
 bool       Sol_Controller_IsActionState(World *world, int id, SolActions mask);
+bool       Sol_Controller_WantsMove(World *world, int id);

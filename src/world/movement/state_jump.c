@@ -9,9 +9,9 @@
 
 #define JUMP_BUFFER 0.1f
 
-#define JUMP_VEL 9.0f
-#define JUMP_DURATION 0.3f
-#define DAMPING 4.0f
+#define JUMP_VEL 10.0f
+#define JUMP_DURATION 0.4f
+#define DAMPING 4.5f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {

@@ -11,15 +11,15 @@
 #define MAX_WALL_ANGLE 0.7f
 #define COYOTE_TIMER 0.15f
 #define BOOST_TIMEOUT 2.0f
-#define BOOST_AMOUNT 8.0f
-#define DISTANCE_CHECK 0.125f
+#define BOOST_AMOUNT 9.0f
+#define DISTANCE_CHECK 0.15f
 
-static bool CheckWall(World *world, int id, SolRayResult *result)
+static bool CheckWall(World *world, int id, SolRayResult *result, float addRadius)
 {
     CompXform *xform  = &world->xforms[id];
     vec3s      pos    = xform->pos;
     vec3s      dims   = Sol_Physx_GetDims(world, id);
-    float      radius = dims.x + DISTANCE_CHECK;
+    float      radius = dims.x + addRadius;
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
@@ -30,19 +30,26 @@ static bool CheckWall(World *world, int id, SolRayResult *result)
             *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
             float dot            = glms_vec3_dot(result->norm, WORLD_UP);
             if (result->hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
+            {
+                world->movements[id].lastTouch = result->norm;
                 return true;
+            }
         }
     }
+
     return false;
 }
 
 static bool LeaveState(World *world, int id)
 {
+    CompMovement *move = &world->movements[id];
+
+    if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH) ||
+        Sol_Physx_GetGroundtime(world, id) > COYOTE_TIMER)
+        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+            return true;
     if (!Sol_Controller_IsActionState(world, id, ACTION_JUMP))
         if (Sol_Movement_SetState(world, id, MOVE_WALLJUMP))
-            return true;
-    if (Sol_Physx_GetGroundtime(world, id) > COYOTE_TIMER)
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     return false;
 }
@@ -63,7 +70,7 @@ void RunVel(World *world, int id, float boost)
     lookdir.y          = 0;
     lookdir            = vecNorm(lookdir);
     float lookIntoWall = -glms_vec3_dot(lookdir, movement->wallNormal);
-    
+
     if (lookIntoWall > 0.7f)
     {
         project   = glms_vec3_sub(lookdir, glms_vec3_scale(movement->wallNormal, -lookIntoWall));
@@ -95,7 +102,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
     data->accum += dt;
 
     SolRayResult result   = {0};
-    bool         goodWall = CheckWall(world, id, &result);
+    bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK + 0.1f);
     if (goodWall)
     {
         data->accum          = 0;
@@ -167,6 +174,10 @@ void Wallrun_State_Enter(World *world, int id)
 
 void Wallrun_State_Exit(World *world, int id)
 {
+    CompMovement  *movement = &world->movements[id];
+    MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
+
+    data->lastExited = solState.gameTime;
 }
 
 bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
@@ -176,19 +187,16 @@ bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
 
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    CompMovement *move = &world->movements[id];
-    // MoveStateData *data    = &move->stateData[MOVE_WALLRUN];
-    // double         now     = solState.gameTime;
-    // double         readyAt = data->lastExited + COOLDOWN;
-    // if (now < readyAt)
-    //     return false;
+    if (Sol_Controller_IsActionState(world, id, MOVE_CROUCH))
+        return false;
 
     SolRayResult result   = {0};
-    bool         goodWall = CheckWall(world, id, &result);
+    bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);
     if (goodWall)
     {
-        move->lastTouch  = result.pos;
-        move->wallNormal = result.norm;
+        CompMovement *move = &world->movements[id];
+        move->lastTouch    = result.pos;
+        move->wallNormal   = result.norm;
     }
 
     return goodWall;

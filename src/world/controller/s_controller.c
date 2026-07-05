@@ -204,6 +204,11 @@ static vec2s GetWishDir2(uint32_t action)
     return glms_vec2_normalize(wishdir);
 }
 
+bool Sol_Controller_WantsMove(World *world, int id)
+{
+    return glms_vec3_norm2(world->controllers[id].wishdir) > 0.0f;
+}
+
 bool Sol_Controller_IsActionState(World *world, int id, SolActions mask)
 {
     return (world->controllers[id].actionState & mask) != 0;

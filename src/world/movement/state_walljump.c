@@ -6,14 +6,14 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 
-#define DASH_VEL 9.0f
-#define DASH_DURATION 0.2f
-#define DAMPING 2.0f
+#define DASH_VEL 13.0f
+#define DASH_DURATION 0.4f
+#define DAMPING 4.0f
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
     CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
+    MoveStateData *data = &move->stateData[MOVE_WALLJUMP];
     data->elapsed += dt;
     float alpha = 1.0f - (data->elapsed / DASH_DURATION);
 
@@ -31,13 +31,13 @@ void Walljump_State_Update(World *world, int id, float dt)
 
 void Walljump_State_Enter(World *world, int id)
 {
-    CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
-    vec3s          vel  = Sol_Physx_GetVel(world, id);
-    vec3s worldUp2 = {0.0f, 2.0f, 0.0f};
-    vec3s finalDir = vecAdd(move->wallNormal, worldUp2);
-    finalDir       = vecAdd(finalDir, vecNorm(vel));
-    data->dir      = vecNorm(finalDir);
+    CompMovement  *move     = &world->movements[id];
+    MoveStateData *data     = &move->stateData[MOVE_WALLJUMP];
+    vec3s          vel      = Sol_Physx_GetVel(world, id);
+    vec3s          up2      = {0.0f, 1.8f, 0.0f};
+    vec3s          finalDir = vecAdd(move->wallNormal, up2);
+    finalDir                = vecAdd(finalDir, vecNorm(vel));
+    data->dir               = vecNorm(finalDir);
 
     vec3s finalVel    = vecSca(data->dir, DASH_VEL);
     float targetUpVel = finalVel.y;
@@ -46,11 +46,33 @@ void Walljump_State_Enter(World *world, int id)
     else
         finalVel.y = 0;
 
-    sollog(targetUpVel);
-    sollog(vel.y);
-    sollog(finalVel.y);
-
     Sol_Physx_AddVel(world, id, finalVel);
+
+    vec3s dirToWall = glms_vec3_sub(Sol_Xform_GetPos(world, id), move->lastTouch);
+    dirToWall       = glms_vec3_normalize(dirToWall);
+    float x = dirToWall.x;
+    float z = dirToWall.z;
+    vec3s    rot    = Sol_RotFromQuat(world->xforms[id].quat);
+    AnimDesc desc   = {.anim = ANIM_WALLJUMP_LEFT, .layerId = ANIM_LAYER_BASE, .blendIn = 0.05f, .playKind = ANIMPLAYKIND_ONESHOT};
+    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
+    {
+    case STRAFE_LEFT:
+    case STRAFE_FWD_LEFT:
+    case STRAFE_BWD_LEFT:
+        desc.anim = ANIM_WALLJUMP_LEFT;
+        Sol_Model_PlayAnim(world, id, desc);
+        break;
+    case STRAFE_RIGHT:
+    case STRAFE_BWD_RIGHT:
+    case STRAFE_FWD_RIGHT:
+        desc.anim = ANIM_WALLJUMP_RIGHT;
+        Sol_Model_PlayAnim(world, id, desc);
+        break;
+    default:
+        desc.anim = ANIM_WALLJUMP_LEFT;
+        Sol_Model_PlayAnim(world, id, desc);
+        break;
+    }
 }
 
 void Walljump_State_Exit(World *world, int id)

@@ -21,6 +21,7 @@ typedef struct SolState
 } SolState;
 
 extern SolState solState;
+
 #define UIUNSCALE(v) ((v) / solState.uiScale)
 #define UISCALE(v) ((v) * solState.uiScale)
 

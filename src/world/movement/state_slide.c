@@ -1,4 +1,5 @@
 #include "movement_i.h"
+#include "core/sol_core.h"
 #include "world.h"
 #include "sol_math.h"
 #include "xform/s_xform.h"
@@ -30,12 +31,17 @@ void Slide_State_Update(World *world, int id, float dt)
 
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[move->state];
+    vec3s          vel  = Sol_Physx_GetVel(world, id);
+    vec3s          rot  = Sol_RotFromQuat(world->xforms[id].quat);
 
-    float    x    = Sol_Controller_GetWishdir(world, id).x;
-    float    z    = Sol_Controller_GetWishdir(world, id).z;
-    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
+    if (move->groundDot < 0.9f)
+    {
+        Sol_Physx_Impulse(world, id, vecSca(vecNorm(GroundSlope(world, id)), 10.0f));
+
+    }
+
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
-    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
+    switch (Sol_GetStrafedir(vel.x, vel.z, rot.x, rot.z))
     {
     case STRAFE_FWD:
         desc.anim = ANIM_SLIDE_FWD;
@@ -67,7 +73,7 @@ void Slide_State_Update(World *world, int id, float dt)
     // float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
     // Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
 
-    Sol_Physx_Impulse(world, id, vecSca(GroundSlope(world, id), 10.0f));
+    // Sol_Physx_Impulse(world, id, vecSca(GroundSlope(world, id), 10.0f));
 }
 
 void Slide_State_Enter(World *world, int id)
@@ -99,6 +105,6 @@ bool Slide_State_CanExit(World *world, int id, u32 nextState)
 
 bool Slide_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    //sollog(Sol_Physx_Get_Ground_Norm(world, id));
+    // sollog(Sol_Physx_Get_Ground_Dot(world, id));
     return Sol_Physx_GetSpeed(world, id) > 5.5f;
 }

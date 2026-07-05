@@ -40,6 +40,7 @@ void Sol_Movement_Jump_Enter(World *world, int id)
     CompMovement *movement = &world->movements[id];
     movement->wantsJump    = false;
     movement->groundtime   = 0;
+    movement->airtime      = JUMP_BUFFER;
 
     if (Sol_Physx_GetVel(world, id).y < 0)
         Sol_Physx_SetVelY(world, id, 0);

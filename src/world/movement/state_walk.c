@@ -21,6 +21,9 @@ static bool LeaveState(World *world, int id)
     if (glms_vec3_norm(Sol_GetWishdir(world, id)) == 0)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
+    // if (Sol_Controller_WantsMove(world, id))
+    //     if (Sol_Movement_SetState(world, id, MOVE_MANTLE))
+    //         return true;
     return false;
 }
 

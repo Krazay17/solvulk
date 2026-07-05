@@ -23,6 +23,9 @@ static bool LeaveState(World *world, int id)
     if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
+    // if (Sol_Controller_WantsMove(world, id))
+    //     if (Sol_Movement_SetState(world, id, MOVE_MANTLE))
+    //         return true;
     return false;
 }
 

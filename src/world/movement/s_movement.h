@@ -29,6 +29,7 @@ typedef struct
         {
             vec3s pos;
             float dist;
+            u8 closeEnough;
         } mantle;
     } as;
     vec3s enterVel, dir;
@@ -46,7 +47,7 @@ typedef struct CompMovement
     vec3s     updir, dashdir, wallNormal, lastTouch, knockVel, lastMoveDir;
     float     baseHeight, targetHeight;
     float     speedMod, frictionMod, knockDur;
-    float     wallDot;
+    float     wallDot, groundDot;
     float     airtime, groundtime;
 
     bool          wantsJump, jumpPressedLastFrame;

@@ -37,7 +37,7 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b);
 const BuffDesc buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_STUN] =
         {
-            .duration = 6.0f,
+            .duration = 0.5f,
             .onApply  = Apply_Stun,
             .onRemove = Remove_Stun,
             .harmful  = 1,
@@ -45,7 +45,7 @@ const BuffDesc buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_FIRE] =
         {
             .freq     = 0.2f,
-            .duration = 6.0f,
+            .duration = 2.0f,
             .speedMod = 0.7f,
             .add      = BUFFADD_ADD,
             .step     = Fire_Step,

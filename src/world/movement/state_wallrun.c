@@ -187,7 +187,7 @@ bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
 
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    if (Sol_Controller_IsActionState(world, id, MOVE_CROUCH))
+    if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH))
         return false;
 
     SolRayResult result   = {0};

@@ -35,7 +35,6 @@ typedef struct CompBody
 {
     vec3s  vel, impulse, force, groundNormal, dims;
     vec3s  gravity;
-    float  groundtime, airtime;
     float  mass, invMass, restitution;
     Shape3 shape;
     u8     group;
@@ -59,8 +58,6 @@ void         Sol_Physx2d_Step(World *world, double dt, double time);
 vec3s        Sol_Physx_GetVel(World *world, int id);
 vec3s        Sol_Physx_GetVelDir(World *world, int id);
 vec3s        Sol_Physx_GetGround(World *world, int id);
-float        Sol_Physx_GetGroundtime(World *world, int id);
-float        Sol_Physx_GetAirtime(World *world, int id);
 SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ray);
 void         Sol_Physx_SetGrav(World *world, int id, vec3s vel);
 vec3s        Sol_Physx_GetDims(World *world, int id);

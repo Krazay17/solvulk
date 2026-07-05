@@ -162,7 +162,7 @@ SolRayResult Raycast_Dynamic_Table_Walk(World *world, SolRay ray);
 float        Ray_Sphere_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Capsule_Test(SolRay ray, CompXform *xform, CompBody *body, vec3s *outNormal);
 float        Ray_Tri_Test(vec3s origin, vec3s dir, SolTri *tri, vec3s *outNormal);
-void         Ground_Trace(World *world, int count, float fdt);
+// void         Ground_Trace(World *world, int count, float fdt);
 
 void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, CompXform *xform,
                             EntityContacts *contacts);

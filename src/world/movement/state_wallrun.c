@@ -43,8 +43,7 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
 static bool LeaveState(World *world, int id)
 {
     CompMovement *move = &world->movements[id];
-
-    if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH) || Sol_Physx_GetGroundtime(world, id) > COYOTE_TIMER)
+    if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH) || Sol_Movement_GetGroundtime(world, id) > COYOTE_TIMER)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (!Sol_Controller_IsActionState(world, id, ACTION_JUMP))

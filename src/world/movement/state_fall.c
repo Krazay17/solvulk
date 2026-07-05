@@ -8,7 +8,7 @@
 
 static bool LeaveState(World *world, int id)
 {
-    if (Sol_Physx_GetGroundtime(world, id))
+    if (Sol_Movement_GetGroundtime(world, id))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH))

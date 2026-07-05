@@ -14,6 +14,8 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 
+#define WALKABLE_SLOPE 0.7f
+
 const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
     [MOVE_IDLE] =
         {
@@ -117,6 +119,20 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
 static void Movement_Prestep(World *world, double dt, double time);
 static void Movement3d_Step(World *world, double dt, double time);
 static void Movement2d_Step(World *world, double dt, double time);
+static void CheckGround(World *world, int id, float fdt, CompMovement *movement)
+{
+    float flattestNorm = Sol_Physx_Get_Ground_Norm(world, id);
+    if (flattestNorm > WALKABLE_SLOPE)
+    {
+        movement->airtime = 0;
+        movement->groundtime += fdt;
+    }
+    else
+    {
+        movement->groundtime = 0;
+        movement->airtime += fdt;
+    }
+}
 
 void Sol_Movement_Init(World *world)
 {
@@ -210,6 +226,9 @@ static void Movement3d_Step(World *world, double dt, double time)
                 vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
                 Sol_Physx_SetVellat(world, id, vel);
             }
+            
+            if (movement->state != MOVE_JUMP)
+                CheckGround(world, id, fdt, movement);
         }
 
         MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
@@ -254,7 +273,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     if (!nextfunc->canEnter(world, id, movement->state, (u32)nextState, 0))
         return false;
 
-    // printf("LastState: %d, CurrentState: %d\n", movement->state, nextState);
+    printf("LastState: %d, CurrentState: %d\n", movement->state, nextState);
 
     prevfunc->exit(world, id);
     movement->stateData[movement->state].lastExited = solState.gameTime;
@@ -306,4 +325,13 @@ void Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float duration)
 {
     world->movements[id].knockDur = duration;
     world->movements[id].knockVel = vel;
+}
+float Sol_Movement_GetGroundtime(World *world, int id)
+{
+    return world->movements[id].groundtime;
+}
+
+float Sol_Movement_GetAirtime(World *world, int id)
+{
+    return world->movements[id].airtime;
 }

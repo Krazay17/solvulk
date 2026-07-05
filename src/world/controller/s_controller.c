@@ -142,7 +142,7 @@ static void LocalTick(World *world, int id, double dt, double time)
     vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
 
     controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
-    controller->yaw       = Sol_YawFromVec(controller->aimdir);
+    controller->yaw       = Sol_YawFromVec(controller->lookdir);
     controller->pitch     = Sol_PitchFromVec(controller->aimdir);
     controller->aimHitEnt = aimTrace.entId;
 

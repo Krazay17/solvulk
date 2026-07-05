@@ -17,7 +17,7 @@ static bool LeaveState(World *world, int id)
     if (Sol_GetActions(world, id) & ACTION_JUMP)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
-    // if (Sol_Physx_GetAirtime(world, id) > 0.1f)
+    // if (Sol_Movement_GetAirtime(world, id) > 0.1f)
     //     if (Sol_Movement_SetState(world, id, MOVE_FALL))
     //         return true;
     return false;

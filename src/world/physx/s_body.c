@@ -17,8 +17,6 @@
 #define SPATIAL_STATIC_SIZE (1 << 19)
 #define SPATIAL_STATIC_ENTRIES 0xF
 
-#define WALKABLE_SLOPE 0.7f
-
 static u32            ents[MAX_ENTS];
 static EntityContacts contacts[MAX_ENTS];
 
@@ -92,7 +90,6 @@ void Sol_Physx_Step(World *world, double dt, double time)
 
     Physx_Grid_Static_Rebuild(staticGroup);
     Fill_Dynamic_Table(world, count, ents);
-    Ground_Trace(world, count, fdt);
 
     // Prof_Begin(&prof_static);
     //  velocity and static collisions
@@ -190,32 +187,6 @@ float Sol_Physx_Get_Ground_Norm(World *world, int id)
     }
     body->groundNormal = results[idx].norm;
     return flattestNorm;
-}
-
-static int ground_trace_required = BITC(HAS_BODY3) | BITC(HAS_MOVEMENT);
-void       Ground_Trace(World *world, int count, float fdt)
-{
-    int i;
-#pragma omp parallel for if (count > 500) schedule(dynamic, 16)
-    for (i = 0; i < count; i++)
-    {
-        int id = ents[i];
-        if (!WHas(world, id, ground_trace_required))
-            continue;
-        CompBody *body = &world->bodies[id];
-
-        float flattestNorm = Sol_Physx_Get_Ground_Norm(world, id);
-        if (flattestNorm > WALKABLE_SLOPE)
-        {
-            body->airtime = 0;
-            body->groundtime += fdt;
-        }
-        else
-        {
-            body->groundtime = 0;
-            body->airtime += fdt;
-        }
-    }
 }
 
 SolRayResult Sol_Raycast(World *world, SolRay ray)
@@ -408,14 +379,7 @@ void Sol_Physx_SetVelZ(World *world, int id, float z)
 {
     world->bodies[id].vel.z = z;
 }
-float Sol_Physx_GetGroundtime(World *world, int id)
-{
-    return world->bodies[id].groundtime;
-}
-float Sol_Physx_GetAirtime(World *world, int id)
-{
-    return world->bodies[id].airtime;
-}
+
 vec3s Sol_Physx_GetHeadPos(World *world, int id)
 {
     vec3s head = world->xforms[id].pos;

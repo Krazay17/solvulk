@@ -49,8 +49,6 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
     return vel;
 }
 
-void Sol_Movement_Prestep(World *world, double dt, double time);
-
 void  CrouchHeight(World *world, int id, float fdt);
 vec3s GroundSlope(World *world, int id);
 vec3s ProjectOntoGround(World *world, int id, vec3s wishdir);
@@ -122,3 +120,10 @@ void Stun_State_Enter(World *world, int id);
 void Stun_State_Exit(World *world, int id);
 bool Stun_State_CanExit(World *world, int id, u32 next);
 bool Stun_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+
+void Mantle_State_Update(World *world, int id, float dt);
+void Mantle_State_Enter(World *world, int id);
+void Mantle_State_Exit(World *world, int id);
+bool Mantle_State_CanExit(World *world, int id, u32 nextState);
+bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot);
+void Mantle_State_Draw(World *world, int id, double dt, double time);

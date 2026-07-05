@@ -115,6 +115,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_STUN]             = 28,
             [ANIM_WALLJUMP_LEFT]    = 31,
             [ANIM_WALLJUMP_RIGHT]   = 32,
+            [ANIM_MANTLE]           = 33,
         },
     [MODELKIND_ZORGON] =
         {

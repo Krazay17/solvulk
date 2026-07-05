@@ -14,15 +14,24 @@ typedef enum
     MOVE_SLIDE,
     MOVE_WALLRUN,
     MOVE_WALLJUMP,
+    MOVE_MANTLE,
     MOVE_FLY,
     MOVE_DEAD,
     MOVE_STATE_COUNT
 } MoveState;
 typedef struct
 {
+    u8     kind;
     double lastEntered, lastExited;
     float  elapsed, accum;
-    vec3s  enterVel, dir;
+    union {
+        struct
+        {
+            vec3s pos;
+            float dist;
+        } mantle;
+    } as;
+    vec3s enterVel, dir;
 } MoveStateData;
 typedef enum
 {

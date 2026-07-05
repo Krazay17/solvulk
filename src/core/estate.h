@@ -24,7 +24,8 @@ typedef struct
 // void State_Enter(World *world, int id);
 // void State_Exit(World *world, int id);
 // bool State_CanExit(World *world, int id, u32 nextState);
-// bool State_CanEnter(World *world, int id, u32 lastState, u32 nextState);
+// bool State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot);
+// void State_Draw(World *world, int id, double dt, double time);
 
 // bool SetState(World *world, int id, u32 nextState)
 // {

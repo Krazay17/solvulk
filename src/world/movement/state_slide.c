@@ -37,7 +37,6 @@ void Slide_State_Update(World *world, int id, float dt)
     if (move->groundDot < 0.9f)
     {
         Sol_Physx_Impulse(world, id, vecSca(vecNorm(GroundSlope(world, id)), 10.0f));
-
     }
 
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
@@ -69,9 +68,15 @@ void Slide_State_Update(World *world, int id, float dt)
         break;
     }
 
-    // const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->configId][move->state];
-    // float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
-    // Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
+    if (move->groundtime > 0)
+    {
+        const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->state];
+        float                 speedDif = (Sol_Physx_GetSpeed(world, id) / forces->speed) * 0.5f;
+        speedDif                       = fminf(speedDif, 3.0f);
+        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
+    }
+    else
+        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, 0.5f);
 
     // Sol_Physx_Impulse(world, id, vecSca(GroundSlope(world, id), 10.0f));
 }

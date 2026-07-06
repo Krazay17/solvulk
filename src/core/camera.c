@@ -92,7 +92,6 @@ void Sol_Cam_Update(double dt)
             dir = vecNorm(dir);
             vec3s right = vecCrs(solCamera.dir, WORLD_UP);
             float dot = vecDot(right,dir);
-            sollog(dot);
             targetRoll = -dot * 15.0f * (3.14159f / 180.0f);
         }
     }

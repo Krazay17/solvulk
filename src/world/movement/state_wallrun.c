@@ -117,15 +117,17 @@ void Wallrun_State_Update(World *world, int id, float dt)
 
     RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT));
 
-    vec3s dirToWall = glms_vec3_sub(xform->pos, movement->lastTouch);
-    dirToWall       = glms_vec3_normalize(dirToWall);
+    vec3s dirToWall    = glms_vec3_sub(xform->pos, movement->lastTouch);
+    dirToWall          = glms_vec3_normalize(dirToWall);
+    float velToWallDot = -vecDot(Sol_Physx_GetVel(world, id), vecCrs(dirToWall, WORLD_UP));
+    sollog(velToWallDot);
 
     // ANIMATION
-    float    x           = dirToWall.x;
-    float    z           = dirToWall.z;
-    vec3s    rot         = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc        = {.layerId = ANIM_LAYER_BASE};
-    float    animReverse = 1.0f;
+    float    x        = dirToWall.x;
+    float    z        = dirToWall.z;
+    vec3s    rot      = Sol_RotFromQuat(world->xforms[id].quat);
+    AnimDesc desc     = {.layerId = ANIM_LAYER_BASE};
+    float    speedMod = 1.0f;
     switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
     {
     case STRAFE_FWD:
@@ -133,20 +135,22 @@ void Wallrun_State_Update(World *world, int id, float dt)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_BWD:
-        desc.anim   = ANIM_WALK_BWD;
-        animReverse = -1.0f;
+        desc.anim = ANIM_WALLRUN_FWD;
+        // speedMod = -1.0f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_LEFT:
     case STRAFE_FWD_LEFT:
     case STRAFE_BWD_LEFT:
-        desc.anim = ANIM_WALK_LEFT;
+        desc.anim = ANIM_WALLRUN_RIGHT;
+        speedMod  = velToWallDot < 0 ? 1.5f : -1.5f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_RIGHT:
     case STRAFE_BWD_RIGHT:
     case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_WALK_RIGHT;
+        desc.anim = ANIM_WALLRUN_LEFT;
+        speedMod  = velToWallDot > 0 ? 1.5f : -1.5f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     default:
@@ -156,7 +160,7 @@ void Wallrun_State_Update(World *world, int id, float dt)
     }
     const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->state];
     float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
-    Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * animReverse);
+    Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * speedMod);
 }
 
 void Wallrun_State_Enter(World *world, int id)

@@ -85,9 +85,15 @@ void Sol_Cam_Update(double dt)
     if (world->masks[1] & BITC(HAS_MOVEMENT))
     {
         CompMovement *m = &world->movements[1];
+        CompXform *xform = &world->xforms[1];
         if (m->state == MOVE_WALLRUN)
         {
-            targetRoll = (float)m->wallDot * 15.0f * (3.14159f / 180.0f);
+            vec3s dir = vecSub(m->lastTouch, xform->pos);
+            dir = vecNorm(dir);
+            vec3s right = vecCrs(solCamera.dir, WORLD_UP);
+            float dot = vecDot(right,dir);
+            sollog(dot);
+            targetRoll = -dot * 15.0f * (3.14159f / 180.0f);
         }
     }
     float rollFactor = 1.0f - expf(-CAMERA_LERP_SPEED * fdt); // slower lerp for cinematic feel

@@ -159,6 +159,7 @@ void WizSpawner(World *world, double dt)
 void Create_Sol_Game()
 {
     gameWorld   = World_Create_Default(WORLDKIND_GAME);
+    
     World *hud  = World_Create_Default(WORLDKIND_MENU);
     World *menu = World_Create_Default(WORLDKIND_MENU);
 

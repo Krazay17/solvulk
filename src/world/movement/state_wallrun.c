@@ -5,6 +5,7 @@
 #include "xform/s_xform.h"
 #include "model/s_model.h"
 #include "physx/s_body.h"
+#include "ability/ability_i.h"
 #include "controller/s_controller.h"
 
 #define MIN_WALL_ANGLE -0.7f
@@ -29,7 +30,9 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
             vec3s rotated_offset = glms_quat_rotatev(xform->quat, VECTOR_RADIAL_DIRECTIONS[j]);
             *result              = Sol_Raycast(world, (SolRay){.dist = radius, .dir = rotated_offset, .pos = finalPos});
             float dot            = glms_vec3_dot(result->norm, WORLD_UP);
-            if (result->hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
+            vec3s lookDir        = Sol_Vec3_FromYawPitch(world->controllers[id].yaw, 0);
+            float lookDot        = vecDot(lookDir, result->norm);
+            if (result->hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE && lookDot < 0.6f)
             {
                 world->movements[id].lastTouch = result->norm;
                 return true;
@@ -117,10 +120,11 @@ void Wallrun_State_Update(World *world, int id, float dt)
 
     RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT));
 
-    vec3s dirToWall    = glms_vec3_sub(xform->pos, movement->lastTouch);
-    dirToWall          = glms_vec3_normalize(dirToWall);
-    float velToWallDot = -vecDot(Sol_Physx_GetVel(world, id), vecCrs(dirToWall, WORLD_UP));
-    sollog(velToWallDot);
+    vec3s dirToWall                    = glms_vec3_sub(xform->pos, movement->lastTouch);
+    dirToWall                          = glms_vec3_normalize(dirToWall);
+    float                 velToWallDot = -vecDot(Sol_Physx_GetVel(world, id), vecCrs(dirToWall, WORLD_UP));
+    float                 speedDif     = 1.0f;
+    const MoveStateForce *forces       = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
     // ANIMATION
     float    x        = dirToWall.x;
@@ -136,13 +140,14 @@ void Wallrun_State_Update(World *world, int id, float dt)
         break;
     case STRAFE_BWD:
         desc.anim = ANIM_WALLRUN_FWD;
-        // speedMod = -1.0f;
+        speedDif  = Sol_Physx_GetSpeed(world, id) / forces->speed;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     case STRAFE_LEFT:
     case STRAFE_FWD_LEFT:
     case STRAFE_BWD_LEFT:
         desc.anim = ANIM_WALLRUN_RIGHT;
+        speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
         speedMod  = velToWallDot < 0 ? 1.5f : -1.5f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
@@ -150,16 +155,16 @@ void Wallrun_State_Update(World *world, int id, float dt)
     case STRAFE_BWD_RIGHT:
     case STRAFE_FWD_RIGHT:
         desc.anim = ANIM_WALLRUN_LEFT;
+        speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
         speedMod  = velToWallDot > 0 ? 1.5f : -1.5f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
-    default:
-        desc.anim = ANIM_WALK_FWD;
-        Sol_Model_PlayAnim(world, id, desc);
-        break;
+    // default:
+    //     desc.anim = ANIM_WALK_FWD;
+    //     Sol_Model_PlayAnim(world, id, desc);
+    //     break;
     }
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[movement->kind][movement->state];
-    float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
+    speedDif = speedDif > 0 ? speedDif : 0.01f;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * speedMod);
 }
 
@@ -193,7 +198,8 @@ bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, 
 {
     if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH))
         return false;
-
+    if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
+        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);
     if (goodWall)

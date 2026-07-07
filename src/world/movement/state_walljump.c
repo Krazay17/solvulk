@@ -69,7 +69,8 @@ void Walljump_State_Enter(World *world, int id)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     default:
-        desc.anim = ANIM_WALLJUMP_LEFT;
+        desc.anim = ANIM_BACKFLIP;
+        desc.speed = 1.1f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
     }

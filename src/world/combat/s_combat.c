@@ -71,10 +71,16 @@ static void Combat_Step(World *world, double dt, double time)
                 if (damage)
                 {
                     Sol_Buff_AddFromMask(world, e->as.hit.entB, e->as.hit.entA, e->as.hit.buffMask);
-
-                    if (Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage))
+                    float damageDealt = Sol_Vital_Damage(world, e->as.hit.entB, e->as.hit.entA, damage);
+                    if (damageDealt)
                     {
                         Sol_Dmgnumbers_Spawn(world, e->as.hit.entB, max((u32)damage, 1), e->as.hit.pos);
+                        Sol_Event_Add(world, (SolEvent){
+                                                 .kind                 = EVENTKIND_SCORE,
+                                                 .entA                 = e->as.hit.entA,
+                                                 .entB                 = e->as.hit.entB,
+                                                 .as.score.damageDealt = damageDealt,
+                                             });
                         if (e->as.hit.entA == 1)
                         {
                             Sol_Audio_Play(SOL_AUDIO_HIT, 0.1f, 0.05f, 128);

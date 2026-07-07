@@ -495,7 +495,19 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
 
     if (ch->path == ANIM_PATH_ROTATION)
     {
-        glm_quat_nlerp(v0, v1, a, out);
+        // Compute the dot product between the two quaternion keyframes
+        float dot = v0[0]*v1[0] + v0[1]*v1[1] + v0[2]*v1[2] + v0[3]*v1[3];
+        
+        if (dot < 0.0f)
+        {
+            // They have opposite polarity; invert one to force the shortest path
+            float inverted_v1[4] = { -v1[0], -v1[1], -v1[2], -v1[3] };
+            glm_quat_nlerp(v0, inverted_v1, a, out);
+        }
+        else
+        {
+            glm_quat_nlerp(v0, v1, a, out);
+        }
     }
     else
     {

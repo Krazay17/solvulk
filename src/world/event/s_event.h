@@ -29,6 +29,7 @@ typedef enum
     EVENTKIND_DEATH,
     EVENTKIND_RESPAWN,
     EVENTKIND_EQUIP,
+    EVENTKIND_SCORE,
     EVENTKIND_COUNT,
 } EventKind;
 typedef enum
@@ -38,6 +39,7 @@ typedef enum
 typedef struct SolEvent
 {
     EventKind kind;
+    u32       entA, entB;
     union {
         SolHit hit;
         struct
@@ -74,6 +76,11 @@ typedef struct SolEvent
             u32 ability;
             u32 rarity;
         } equip;
+        struct
+        {
+            u32   entA, entB;
+            float damageDealt;
+        } score;
     } as;
 } SolEvent;
 

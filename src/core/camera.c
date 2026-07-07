@@ -32,7 +32,7 @@ SolCamera solCamera = {
     .fov       = 60.0f,
     .nearClip  = 0.2f,
     .farClip   = 1000.0f,
-    .lerpspeed = 20.0f,
+    .lerpspeed = 10.0f,
     .distance  = 3.5f,
     .offset    = 1.0f,
 };
@@ -46,7 +46,6 @@ void Sol_Cam_Update(double dt)
     vec3s lookdir   = look->lookdir;
     vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
     vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
-    float factor    = 1.0f - expf(-solCamera.lerpspeed * fdt);
 
     vec3s head = Sol_Xform_GetDrawXform(world, 1).pos;
     head.y += Sol_Physx_GetHeight(world, 1) * 0.5f;
@@ -60,8 +59,15 @@ void Sol_Cam_Update(double dt)
         SolRayResult anchortrace =
             Sol_Raycast(world, (SolRay){.pos = head, .dir = offsetvec, .dist = solCamera.offset * 2.0f});
         solCamera.currentOffset = anchortrace.dist - solCamera.offset;
-        solCamera.anchor =
-            glms_vec3_lerp(solCamera.anchor, vecAdd(head, vecSca(offsetvec, solCamera.currentOffset)), factor);
+        vec3s offsetPos         = vecSca(offsetvec, solCamera.currentOffset);
+        vec3s finalOffsetPos    = vecAdd(head, offsetPos);
+        float offsetDistance    = glms_vec3_distance2(solCamera.anchor, finalOffsetPos);
+        // if (offsetDistance > 4.0f)
+        //     solCamera.lerpspeed = 25.0f;
+        // else
+        //     solCamera.lerpspeed = 10.0f;
+        float factor = 1.0f - expf(-(solCamera.lerpspeed + offsetDistance) * fdt);
+        solCamera.anchor = glms_vec3_lerp(solCamera.anchor, finalOffsetPos, factor);
 
         SolRayResult camDistTrace =
             Sol_Raycast(world, (SolRay){.pos = solCamera.anchor, .dir = invDir, .dist = solCamera.distance * 1.2f});
@@ -84,15 +90,15 @@ void Sol_Cam_Update(double dt)
     float targetRoll = 0.0f;
     if (world->masks[1] & BITC(HAS_MOVEMENT))
     {
-        CompMovement *m = &world->movements[1];
-        CompXform *xform = &world->xforms[1];
+        CompMovement *m     = &world->movements[1];
+        CompXform    *xform = &world->xforms[1];
         if (m->state == MOVE_WALLRUN)
         {
-            vec3s dir = vecSub(m->lastTouch, xform->pos);
-            dir = vecNorm(dir);
+            vec3s dir   = vecSub(m->lastTouch, xform->pos);
+            dir         = vecNorm(dir);
             vec3s right = vecCrs(solCamera.dir, WORLD_UP);
-            float dot = vecDot(right,dir);
-            targetRoll = -dot * 15.0f * (3.14159f / 180.0f);
+            float dot   = vecDot(right, dir);
+            targetRoll  = -dot * 15.0f * (3.14159f / 180.0f);
         }
     }
     float rollFactor = 1.0f - expf(-CAMERA_LERP_SPEED * fdt); // slower lerp for cinematic feel

@@ -29,7 +29,7 @@ typedef struct
         {
             vec3s pos;
             float dist;
-            u8 closeEnough;
+            u8 closeEnough, doRoll;
         } mantle;
     } as;
     vec3s enterVel, dir;

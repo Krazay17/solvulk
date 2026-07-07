@@ -15,7 +15,7 @@
 #include "ability/s_ability.h"
 
 #define RAY_COUNT 12
-#define MANTLE_TIME 0.4f
+#define MANTLE_TIME 0.5f
 
 static bool CheckWall(World *world, int id)
 {
@@ -33,7 +33,7 @@ static bool CheckWall(World *world, int id)
         float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 1.33f));
         vec3s pos    = basePos;
         pos.y -= offset;
-        SolRay       ray = {.pos = pos, .dist = body->dims.x * 2.4f, .dir = Sol_Vec3_FromYawPitch(controller->yaw, 0)};
+        SolRay       ray = {.pos = pos, .dist = body->dims.x * 3.0f, .dir = Sol_Vec3_FromYawPitch(controller->yaw, 0)};
         SolRayResult rayResult = Sol_Raycast(world, ray);
         if (!rayResult.hit)
         {
@@ -79,7 +79,7 @@ void Mantle_State_Update(World *world, int id, float dt)
     targetPos.y += Sol_Physx_GetDims(world, id).y * 0.5f;
     if (pos.y < targetPos.y && CheckWall(world, id))
     {
-        Sol_Physx_SetVelY(world, id, 6.0f);
+        Sol_Physx_SetVelY(world, id, 8.0f);
     }
     else
     {
@@ -97,7 +97,17 @@ void Mantle_State_Enter(World *world, int id)
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_MANTLE, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 2.3f});
+    if (Sol_Physx_GetVel(world, id).y > 5.0f)
+    {
+        data->as.mantle.doRoll = 1;
+        Sol_Model_PlayAnim(world, id,
+                           (AnimDesc){.anim = ANIM_MANTLE_ROLL, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 1.45f});
+    }
+    else
+    {
+        data->as.mantle.doRoll = 0;
+        Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_MANTLE, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 2.3f});
+    }
 }
 
 void Mantle_State_Exit(World *world, int id)

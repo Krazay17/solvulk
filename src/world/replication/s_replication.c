@@ -251,7 +251,7 @@ void Net_Apply_Snap(World *world)
 
             if (world->masks[id] & BITC(HAS_MODEL))
             {
-                world->models[id].modelId        = e->modelId;
+                world->models[id].modelId = e->modelId;
                 sollog(world->models[id].leftWeaponEnt);
                 world->models[id].leftWeaponEnt  = world->worldNet->hostToLocalMap[e->leftWeaponEnt];
                 world->models[id].rightWeaponEnt = world->worldNet->hostToLocalMap[e->rightWeaponEnt];
@@ -389,6 +389,8 @@ void Net_Apply_Events(World *world, EventSnap *snap)
     for (int i = 0; i < snap->eventCount; i++)
     {
         SolEvent e = snap->events[i];
+        e.entA     = world->worldNet->hostToLocalMap[e.entA];
+        e.entB     = world->worldNet->hostToLocalMap[e.entB];
         switch (e.kind)
         {
         case EVENTKIND_FX:

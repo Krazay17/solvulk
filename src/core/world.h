@@ -44,6 +44,7 @@ typedef struct World World;
     X(WORLD_SYS_EMITTER, Sol_Emitter_Init)                                                                             \
     X(WORLD_SYS_RIBBON, Sol_Ribbon_Init)                                                                               \
     X(WORLD_SYS_SHAPE, Sol_Shape_Init)                                                                                 \
+    X(WORLD_SYS_SCORE, Sol_Score_Init)                                                                                 \
     X(WORLD_SYS_VIEW2D, Sol_View2d_Init)                                                                               \
     X(WORLD_SYS_VIEW, Sol_View_Init)
 
@@ -193,6 +194,7 @@ typedef struct WorldPhysx   WorldPhysx;
 typedef struct WorldLines   WorldLines;
 typedef struct SolCamera    SolCamera;
 typedef struct WorldNet     WorldNet;
+typedef struct SolScore     SolScore;
 
 typedef struct CompFlags
 {
@@ -258,6 +260,7 @@ struct World
     WorldLines   *lines;
     SolEmitters  *emitters;
     WorldNet     *worldNet;
+    SolScore     *scores;
 
     bool doesSimulate;
     bool doesRender;

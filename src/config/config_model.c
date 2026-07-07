@@ -117,8 +117,10 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_WALLJUMP_RIGHT]   = 32,
             [ANIM_WALLRUN_FWD]      = 34,
             [ANIM_MANTLE]           = 33,
+            [ANIM_MANTLE_ROLL]      = 37,
             [ANIM_WALLRUN_LEFT]     = 35,
             [ANIM_WALLRUN_RIGHT]    = 36,
+            [ANIM_BACKFLIP]         = 38,
         },
     [MODELKIND_ZORGON] =
         {

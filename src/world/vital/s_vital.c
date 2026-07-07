@@ -48,14 +48,14 @@ void Sol_Vital_Add(World *world, int id, VitalKind kind)
     world->vitals[id] = vital;
 }
 
-bool Sol_Vital_Damage(World *world, int id, int attacker, float damage)
+float Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 {
     if (!(world->masks[id] & BITC(HAS_VITAL)))
-        return false;
-    CompVital *vital = &world->vitals[id];
-
+        return 0;
+    CompVital *vital       = &world->vitals[id];
+    float      damageDealt = 0.0f;
     if (vital->health == 0)
-        return false;
+        return 0;
 
     if (damage >= vital->health)
     {
@@ -64,23 +64,27 @@ bool Sol_Vital_Damage(World *world, int id, int attacker, float damage)
             if (!Net_IsClient())
                 Sol_Event_Add(world,
                               (SolEvent){.kind = EVENTKIND_DEATH, .as.death.entA = attacker, .as.death.entB = id});
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind       = EVENTKIND_FX,
-                                     .as.fx.entA = attacker,
-                                     .as.fx.entB = id,
-                                     .as.fx.pos  = Sol_Xform_GetPos(world, id),
-                                     .as.fx.kind = FXKIND_TAKEDAMAGE,
-                                 });
             vital->deathTime = solState.gameTime;
         }
+        damageDealt   = vital->health;
         vital->health = 0;
     }
     else
     {
         vital->health -= damage;
         vital->lastHitTime = solState.gameTime;
+        damageDealt        = damage;
     }
-    return true;
+
+    Sol_Event_Add(world, (SolEvent){
+                             .kind       = EVENTKIND_FX,
+                             .as.fx.entA = attacker,
+                             .as.fx.entB = id,
+                             .as.fx.pos  = Sol_Xform_GetPos(world, id),
+                             .as.fx.kind = FXKIND_TAKEDAMAGE,
+                         });
+
+    return damageDealt;
 }
 
 void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)

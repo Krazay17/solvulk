@@ -48,11 +48,20 @@ void Sol_Movement_Jump_Enter(World *world, int id)
     Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
 
     AnimDesc desc = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE};
+    // if (rand() < RAND_MAX / 2)
+    // {
+    //     desc.anim = ANIM_MANTLE_ROLL;
+    //     desc.layerId = ANIM_LAYER_OVERRIDE;
+    //     desc.speed = -1.2f;
+    // }
+
     Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)
 {
+    
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
 }
 
 bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)

@@ -295,5 +295,5 @@ void Sol_Item_SetRarity(World *world, int id, u32 rarity)
 
 void Sol_Item_Drop(World *world, int id)
 {
-    Sol_Prefab_ItemDrop(world, Sol_Xform_GetPos(world, id));
+    // Sol_Prefab_ItemDrop(world, Sol_Xform_GetPos(world, id));
 }

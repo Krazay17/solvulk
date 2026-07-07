@@ -31,7 +31,7 @@ typedef struct AnimLayer
 typedef struct CompModel
 {
     mat4         bones[MAX_BONES];
-    vec4s color;
+    vec4s        color;
     AnimLayer    layers[ANIM_LAYER_COUNT];
     SolModelKind modelId;
     u8           playingId[ANIM_LAYER_COUNT];
@@ -53,3 +53,4 @@ float    Sol_Model_GetOffsetY(World *world, int id);
 void     Sol_Model_SetOffsetY(World *world, int id, float offset);
 float    Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId);
 void     Sol_Model_SetModelId(World *world, int id, int modelId);
+void     Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId);

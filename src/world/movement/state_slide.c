@@ -7,6 +7,8 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 
+#define BOOST_CD 2.5f
+
 static bool LeaveState(World *world, int id)
 {
     if (Sol_Physx_GetSpeed(world, id) < 5.5f)
@@ -28,15 +30,19 @@ void Slide_State_Update(World *world, int id, float dt)
 {
     if (LeaveState(world, id))
         return;
+    float          fdt    = (float)dt;
+    CompMovement  *move   = &world->movements[id];
+    MoveStateData *data   = &move->stateData[move->state];
+    vec3s          vel    = Sol_Physx_GetVel(world, id);
+    vec3s          rot    = Sol_RotFromQuat(world->xforms[id].quat);
+    vec3s          latvel = vel;
+    latvel.y              = 0;
+    latvel                = vecNorm(latvel);
+    data->as.slide.boost  = fmaxf(data->as.slide.boost - fdt, 0.0f);
 
-    CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[move->state];
-    vec3s          vel  = Sol_Physx_GetVel(world, id);
-    vec3s          rot  = Sol_RotFromQuat(world->xforms[id].quat);
-
-    if (move->groundDot < 0.9f)
+    if (move->groundDot > 0.01f && move->groundDot < 0.99f)
     {
-        Sol_Physx_Impulse(world, id, vecSca(vecNorm(GroundSlope(world, id)), 9.66f));
+        Sol_Physx_AddVel(world, id, vecSca(vecNorm(GroundSlope(world, id)), 12.0f * fdt));
     }
 
     AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
@@ -86,19 +92,23 @@ void Slide_State_Enter(World *world, int id)
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[move->state];
     move->targetHeight  = move->baseHeight * 0.65f;
-
-    vec3s wishdir  = Sol_Controller_GetWishdir(world, id);
-    vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
-    // float dot      = glms_vec3_dot(wishdir, Sol_Physx_GetGround(world, id));
-    // vec3s slopeDir = glms_vec3_sub(wishdir, glms_vec3_scale(Sol_Physx_GetGround(world, id), dot));
-
-    Sol_Physx_Impulse(world, id, vecSca(slopeDir, 250.0f));
+    data->lastEntered   = solState.gameTime;
+    if (move->groundtime > 0)
+    {
+        data->as.slide.boost = fminf(data->as.slide.boost + (solState.gameTime - data->lastExited), BOOST_CD);
+        Sol_Physx_Impulse(world, id,
+                          vecSca(vecNorm(ProjectOntoGround(world, id, Sol_Physx_GetVelDir(world, id))),
+                                 Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost)));
+        data->as.slide.boost /= 2.0f;
+    }
 }
 
 void Slide_State_Exit(World *world, int id)
 {
-    CompMovement *move = &world->movements[id];
-    move->targetHeight = move->baseHeight;
+    CompMovement  *move = &world->movements[id];
+    MoveStateData *data = &move->stateData[MOVE_SLIDE];
+    data->lastExited    = solState.gameTime;
+    move->targetHeight  = move->baseHeight;
 }
 
 bool Slide_State_CanExit(World *world, int id, u32 nextState)
@@ -108,6 +118,5 @@ bool Slide_State_CanExit(World *world, int id, u32 nextState)
 
 bool Slide_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    // sollog(Sol_Physx_Get_Ground_Dot(world, id));
     return Sol_Physx_GetSpeed(world, id) > 5.5f;
 }

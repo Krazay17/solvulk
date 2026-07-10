@@ -10,7 +10,7 @@
 
 void Sol_Dmgnumbers_Spawn(World *world, int id, int amnt, vec3s pos)
 {
-    Sol_Realloc(&world->dmgNumbers->dmgNumber, world->dmgNumbers->count, &world->dmgNumbers->cap, sizeof(Dmgnumber));
+    Sol_Realloc((void **)&world->dmgNumbers->dmgNumber, world->dmgNumbers->count, &world->dmgNumbers->cap, sizeof(Dmgnumber));
     u32        idx       = world->dmgNumbers->count++;
     Dmgnumber *dmgNumber = &world->dmgNumbers->dmgNumber[idx];
     dmgNumber->color     = (vec4s){1.0f, 1.0f, 0.0f, 1.0f};

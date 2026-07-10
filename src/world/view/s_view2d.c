@@ -2,6 +2,7 @@
 #include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
+#include "interact/s_interact.h"
 #include "xform/s_xform.h"
 #include "render/render.h"
 #include "vital/s_vital.h"

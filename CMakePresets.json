@@ -14,12 +14,27 @@
                 "value": "x64",
                 "strategy": "external"
             },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {
                     "hostOS": [
                         "Windows"
                     ]
                 }
+            }
+        },
+        {
+            "name": "base-gcc",
+            "hidden": true,
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "x64-mingw-static"
             }
         },
         {
@@ -36,6 +51,22 @@
             "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "release-gcc",
+            "inherits": "base-gcc",
+            "binaryDir": "${sourceDir}/build/release-gcc",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "debug-gcc",
+            "inherits": "base-gcc",
+            "binaryDir": "${sourceDir}/build/debug-gcc",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         }
     ]

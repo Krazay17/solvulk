@@ -54,7 +54,7 @@ void Sol_Emitter_Init(World *world)
 Emitter *Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale)
 {
     SolEmitters *s = world->emitters;
-    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+    Sol_Realloc((void**)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
 
     Emitter *e = &s->emitter[s->emitter_count++];
     *e         = emitter_kinds[kind];
@@ -91,7 +91,7 @@ Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, fl
 Emitter *Sol_Emitter_SpawnEx(World *world, Emitter src)
 {
     SolEmitters *s = world->emitters;
-    Sol_Realloc(&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+    Sol_Realloc((void**)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
 
     Emitter *e = &s->emitter[s->emitter_count++];
     *e         = src;
@@ -215,7 +215,7 @@ static void Particle_Tick(World *world, double dt, double time)
 
 static Particle *Particle_Activate(SolEmitters *s, Emitter *e)
 {
-    Sol_Realloc(&s->particle, s->particle_count, &s->particle_capacity, sizeof(Particle));
+    Sol_Realloc((void **)&s->particle, s->particle_count, &s->particle_capacity, sizeof(Particle));
 
     Particle *p = &s->particle[s->particle_count++];
     memcpy(p, &e->particle, sizeof(Particle));

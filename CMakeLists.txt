@@ -15,6 +15,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(cglm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Threads REQUIRED)
+find_package(WebP REQUIRED)
 add_subdirectory(vendored/enet)
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
@@ -28,7 +30,7 @@ if(WIN32)
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
     set(PLATFORM_LIBS user32 gdi32 dwmapi
-        "${CMAKE_SOURCE_DIR}/extern/libwebp/lib/libwebp.lib"
+        #"${CMAKE_SOURCE_DIR}/extern/libwebp/lib/libwebp.lib"
     )
 else()
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
@@ -39,6 +41,8 @@ endif()
 if(MSVC)
     target_compile_options(solvulk PRIVATE /std:c11 /W2)
     set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    list(REMOVE_ITEM CMAKE_SYSTEM_INCLUDE_PATH "C:/msys64/mingw64/include")
+    set(CMAKE_IGNORE_PATH "C:/msys64" "C:/msys64/mingw64" "C:/msys64/mingw64/include")
 endif()
 
 if(BUILD_SHARED_LIBS)
@@ -58,9 +62,8 @@ target_include_directories(solvulk
         "${CMAKE_SOURCE_DIR}/src/core"
         "${CMAKE_SOURCE_DIR}/src/world"
         "${CMAKE_SOURCE_DIR}/include/sol"
-        "${CMAKE_SOURCE_DIR}/vendored"
         "${CMAKE_SOURCE_DIR}/extern"
-        "${CMAKE_SOURCE_DIR}/extern/libwebp/include"
+        "${CMAKE_SOURCE_DIR}/vendored/enet/include"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -73,9 +76,7 @@ if(SOL_DEV_MODE)
         "${CMAKE_SOURCE_DIR}/src/core"
         "${CMAKE_SOURCE_DIR}/src/world"
         "${CMAKE_SOURCE_DIR}/include/sol"
-        "${CMAKE_SOURCE_DIR}/vendored"
         "${CMAKE_SOURCE_DIR}/extern"
-        "${CMAKE_SOURCE_DIR}/extern/libwebp/include"
     )
 endif()
 
@@ -85,6 +86,7 @@ target_link_libraries(solvulk
         cglm::cglm
         OpenMP::OpenMP_C
         enet::enet_static
+        WebP::webp
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -100,7 +102,11 @@ if(WIN32)
         "${CMAKE_SOURCE_DIR}/app/client/game.c"
         "${CMAKE_SOURCE_DIR}/assets/res.rc"
     )
-    #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
+    if(MSVC)
+        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup")
+        #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
+    endif()
+
 else()
     add_executable(solapp
         "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
@@ -118,7 +124,6 @@ endif()
 
 set_target_properties(solapp PROPERTIES 
     OUTPUT_NAME "SolApp"
-    LINK_FLAGS "/ENTRY:mainCRTStartup"
 )
 #--------------------------------------
 # compile shaders

@@ -6,6 +6,7 @@
  * Lines!
  */
 #include "s_line.h"
+#include "render/render.h"
 #include "world.h"
 
 #define MAX_WORLD_LINES 0xffffff

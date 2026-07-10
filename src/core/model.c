@@ -188,6 +188,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
 
     // Parse animations
     skel.animationCount = (int)data->animations_count;
+    sollog(skel.animationCount);
     if (skel.animationCount > 0)
     {
         skel.animations = calloc(skel.animationCount, sizeof(SolAnimation));

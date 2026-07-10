@@ -1,0 +1,8 @@
+{
+  "name": "solvulk",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "cglm",
+    "libwebp"
+  ]
+}

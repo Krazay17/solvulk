@@ -93,7 +93,7 @@ typedef struct
 {
     CallbackFunc callbackFunc;
     void        *callbackData;
-} Callback;
+} SolCallback;
 
 // ─── Font data ───────────────────────────────────────────────────
 
@@ -103,12 +103,6 @@ typedef struct SolLine
     vec4s aColor, bColor;
     float ttl;
 } SolLine;
-
-typedef enum
-{
-    EMITTER_FOUNTAIN,
-    EMITTER_COUNT,
-} EmitterKind;
 
 // TEXTURE---------------
 
@@ -163,6 +157,20 @@ typedef enum
     ANIM_SPINSLASH,
     ANIM_COUNT,
 } AnimId;
+
+typedef enum
+{
+    MODELKIND_WIZARD,
+    MODELKIND_DUDE,
+    MODELKIND_ZORGON,
+    MODELKIND_WEAPONBLADE,
+    SOL_MODEL_BOX,
+    SOL_MODEL_WORLD0,
+    SOL_MODEL_WORLD1,
+    SOL_MODEL_WORLD2,
+    SOL_MODEL_WORLD6,
+    SOL_MODEL_COUNT,
+} SolModelKind;
 
 typedef struct SolVertex
 {

@@ -10,8 +10,8 @@ typedef struct CompInteract
     float         value;
     double        pressedAccum;
 
-    Callback onClick;
-    Callback onHold;
+    SolCallback onClick;
+    SolCallback onHold;
     vec2s    grabOffset, pressPos;
 } CompInteract;
 

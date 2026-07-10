@@ -2,6 +2,8 @@
 #include "s_ability.h"
 #include "estate.h"
 
+#include "owner/s_owner.h"
+
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);

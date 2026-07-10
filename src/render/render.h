@@ -383,6 +383,8 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u8 kind)
 }
 SceneUBO *Sol_Render_GetNext_Scene();
 
+int Sol_Render_Init(void *hwnd, void *hInstance);
+
 void Sol_Begin_Draw();
 void Sol_End_Draw();
 

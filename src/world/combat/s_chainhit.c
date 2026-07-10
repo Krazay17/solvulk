@@ -9,6 +9,7 @@
 #include "model/s_model.h"
 #include "event/s_event.h"
 #include "physx/s_body.h"
+#include "owner/s_owner.h"
 
 #include "profiler.h"
 
@@ -48,7 +49,7 @@ void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float 
                              .as.hit.fxKind = FXKIND_LIGHTNING,
                          });
 
-    Sol_Realloc(&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
+    Sol_Realloc((void **)&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;
     memset(&world->chainhit->chains[idx], 0, sizeof(Chain));
     world->chainhit->chains[idx].count           = chain_config[kind].chainCount;

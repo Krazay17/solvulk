@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-Sol_Free_Resource(SolResource *res)
+void Sol_Free_Resource(SolResource *res)
 {
     if (res->isHeap)
     {

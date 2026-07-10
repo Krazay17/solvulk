@@ -13,7 +13,7 @@
 #define TARGET_FRAME_TIME (1.0 / 500.0)
 
 // --- Shared state between threads ---
-static volatile g_running = TRUE;
+static volatile long int g_running = 1;
 static HWND g_hwnd        = NULL;
 static bool isFullscreen;
 

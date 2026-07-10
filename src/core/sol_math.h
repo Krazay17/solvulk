@@ -36,9 +36,6 @@ versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
 
-vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt);
-vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt);
-
 // INLINES-------------------
 static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 {
@@ -159,6 +156,13 @@ static inline float Sol_Math_Lerp_Clamped(float start, float end, float amount)
 {
     amount = fmaxf(0, fminf(1.0f, amount));
     return start + amount * (end - start);
+}
+
+static inline float Sol_Math_MapRange(float startA, float endA, float startB, float endB, float amount)
+{
+    if (amount == 0)
+        return 0.0f;
+    return Sol_Math_Lerp(startA, endA, amount / (endB - startB));
 }
 
 static inline float Sol_YawFromQuat(versor q)

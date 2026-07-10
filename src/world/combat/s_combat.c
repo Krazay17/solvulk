@@ -6,6 +6,7 @@
 #include "audio.h"
 #include "xform/s_xform.h"
 #include "vital/s_vital.h"
+#include "ai/s_ai.h"
 #include "event/s_event.h"
 #include "buff/s_buff.h"
 #include "ability/s_ability.h"

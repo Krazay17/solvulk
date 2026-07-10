@@ -17,6 +17,7 @@
 #include "xform/s_xform.h"
 #include "interact/s_interact.h"
 #include "render/render.h"
+#include "event/s_event.h"
 
 SolEngine solEngine;
 SolState  solState;

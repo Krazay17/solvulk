@@ -101,12 +101,25 @@ void Mantle_State_Enter(World *world, int id)
     {
         data->as.mantle.doRoll = 1;
         Sol_Model_PlayAnim(world, id,
-                           (AnimDesc){.anim = ANIM_MANTLE_ROLL, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 1.45f});
+                           (AnimDesc){
+                               .anim     = ANIM_MANTLE_ROLL,
+                               .playKind = ANIMPLAYKIND_ONESHOT,
+                               .speed    = 1.45f,
+                               .layerId  = ANIM_LAYER_OVERRIDE,
+                               .blendIn  = 0.1f,
+                           });
     }
     else
     {
         data->as.mantle.doRoll = 0;
-        Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_MANTLE, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 2.3f});
+        Sol_Model_PlayAnim(world, id,
+                           (AnimDesc){
+                               .anim     = ANIM_MANTLE,
+                               .playKind = ANIMPLAYKIND_ONESHOT,
+                               .layerId  = ANIM_LAYER_OVERRIDE,
+                               .speed    = 2.3f,
+                               .blendIn  = 0.1f,
+                           });
     }
 }
 

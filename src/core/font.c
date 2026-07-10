@@ -4,7 +4,7 @@
 #include "render/render.h"
 
 const char *font_path[SOL_FONT_COUNT] = {
-    [SOL_FONT_ICE] = {"atlas.json"},
+    [SOL_FONT_ICE] = "atlas.json",
 };
 
 SolFont loaded_fonts[SOL_FONT_COUNT];

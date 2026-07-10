@@ -33,7 +33,7 @@ u32 Sol_Owner_GetTeam(World *world, int id)
 
 bool Sol_Owner_GetHostile(World *world, int id, int target)
 {
-// 1. Resolve absolute root entities down to their true controllers
+    // 1. Resolve absolute root entities down to their true controllers
     u32 rootA = Sol_Owner_GetOwner(world, id);
     u32 rootB = Sol_Owner_GetOwner(world, target);
 

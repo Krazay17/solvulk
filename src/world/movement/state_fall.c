@@ -16,7 +16,6 @@ static bool LeaveState(World *world, int id)
             return true;
     if (Sol_Controller_IsActionState(world, id, ACTION_JUMP))
     {
-
         if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
             return true;
     }
@@ -52,7 +51,7 @@ bool Sol_Movement_Fall_CanExit(World *world, int id, u32 next)
 {
     return true;
 }
-bool Sol_Movement_Fall_CanEnter(World *world, int id, u32 last, u32 next)
+bool Sol_Movement_Fall_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     return true;
 }

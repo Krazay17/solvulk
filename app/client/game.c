@@ -27,10 +27,11 @@ struct MakeEnemy
     World *world;
     u32    enemyKind;
 };
+
 int SpawnEnemy(int flags, void *data)
 {
     if (Net_IsClient())
-        return;
+        return 0;
     static int        posInc;
     struct MakeEnemy *enemy    = (struct MakeEnemy *)data;
     double            time     = solState.gameTime;
@@ -55,6 +56,11 @@ int SpawnEnemy(int flags, void *data)
     break;
     }
     return id;
+}
+
+void SpawnEnemyCallback(int flags, void *data)
+{
+    SpawnEnemy(flags, data);
 }
 
 void MakeABox(int flags, void *data)
@@ -176,9 +182,9 @@ void Create_Sol_Game()
     Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
     // WAddStep(gameWorld) = WizSpawner;
 
-    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 0.0f}, 75.0f);
-    Sol_Interact_Add(hud, player2d);
-    WAddStep(hud) = RotateGuy;
+    // player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 0.0f}, 75.0f);
+    // Sol_Interact_Add(hud, player2d);
+    // WAddStep(hud) = RotateGuy;
 
     int attackBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);
@@ -251,66 +257,66 @@ void Create_Sol_Game()
     Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 25.0f, 0);
 
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
-    Sol_Interact_Set(menu, quitButton, (CompInteract){.onClick = (Callback){QuitApp}});
+    Sol_Interact_Set(menu, quitButton, (CompInteract){.onClick = (SolCallback){QuitApp}});
 
     int                     wizOneButton = Sol_Prefab_Button(menu, (vec3s){10, 250, 0}, "Spawn 1Wizard");
     static struct MakeEnemy wizOne       = {0};
     wizOne.world                         = gameWorld;
     wizOne.enemyKind                     = ENEMYKIND_WIZARD;
-    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (Callback){SpawnEnemy, &wizOne}});
+    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (SolCallback){SpawnEnemyCallback, &wizOne}});
 
     int                     wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "Spawn Wizards");
     static struct MakeEnemy wizhundred       = {0};
     wizhundred.world                         = gameWorld;
     wizhundred.enemyKind                     = ENEMYKIND_WIZARD;
-    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (Callback){SpawnEnemy, &wizhundred}});
+    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &wizhundred}});
 
     int                     spawnZorgonButton = Sol_Prefab_Button(menu, (vec3s){160, 300, 0}, "Spawn Zorgons");
     static struct MakeEnemy makeEnemyZorgon   = {0};
     makeEnemyZorgon.world                     = gameWorld;
     makeEnemyZorgon.enemyKind                 = ENEMYKIND_ZORGON;
-    Sol_Interact_Set(menu, spawnZorgonButton, (CompInteract){.onHold = (Callback){SpawnEnemy, &makeEnemyZorgon}});
+    Sol_Interact_Set(menu, spawnZorgonButton, (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &makeEnemyZorgon}});
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
-    Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (Callback){SpawnPlayer, gameWorld}});
+    Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (SolCallback){SpawnPlayer, gameWorld}});
 
     int button4 = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
-    Sol_Interact_Set(menu, button4, (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (Callback){W_Set_Ontop}});
+    Sol_Interact_Set(menu, button4, (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (SolCallback){W_Set_Ontop}});
 
     int buttonClearEnts = Sol_Prefab_Button(menu, (vec3s){10, 450, 0}, "Clear Ents");
     Sol_Interact_Set(menu, buttonClearEnts,
-                     (CompInteract){.onClick = (Callback){.callbackFunc = ClearEnts, .callbackData = gameWorld}});
+                     (CompInteract){.onClick = (SolCallback){.callbackFunc = ClearEnts, .callbackData = gameWorld}});
 
     int buttonColorSpheres = Sol_Prefab_Button(menu, (vec3s){10, 500, 0}, "ColorSpheres");
     Sol_Interact_Set(menu, buttonColorSpheres,
-                     (CompInteract){.onClick = (Callback){.callbackFunc = ColorSpheres, .callbackData = gameWorld}});
+                     (CompInteract){.onClick = (SolCallback){.callbackFunc = ColorSpheres, .callbackData = gameWorld}});
 
     int fullscreen = Sol_Prefab_Button(menu, (vec3s){10, 550, 0}, "FullScreen");
     Sol_Interact_Set(
         menu, fullscreen,
-        (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (Callback){.callbackFunc = W_Set_Fullscreen}});
+        (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (SolCallback){.callbackFunc = W_Set_Fullscreen}});
 
     int boxButton = Sol_Prefab_Button(menu, (vec3s){10, 600, 0}, "MakeABox");
     Sol_Interact_Set(menu, boxButton,
-                     (CompInteract){.onClick = (Callback){.callbackFunc = MakeABox, .callbackData = gameWorld}});
+                     (CompInteract){.onClick = (SolCallback){.callbackFunc = MakeABox, .callbackData = gameWorld}});
 
     int testButton = Sol_Prefab_Button(menu, (vec3s){10, 650, 0}, "Test");
     Sol_Interact_Add(menu, testButton);
 
     int hostButton = Sol_Prefab_Button(menu, (vec3s){1130, 150, 0}, "Host");
-    Sol_Interact_Set(menu, hostButton, (CompInteract){.onClick = (Callback){.callbackFunc = HostGame}});
+    Sol_Interact_Set(menu, hostButton, (CompInteract){.onClick = (SolCallback){.callbackFunc = HostGame}});
 
     int connectButton = Sol_Prefab_Button(menu, (vec3s){1130, 200, 0}, "Connect");
-    Sol_Interact_Set(menu, connectButton, (CompInteract){.onClick = (Callback){.callbackFunc = ClientConnect}});
+    Sol_Interact_Set(menu, connectButton, (CompInteract){.onClick = (SolCallback){.callbackFunc = ClientConnect}});
 
     int connectButtonLocal = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "ConnectLocal");
     Sol_Interact_Set(menu, connectButtonLocal,
-                     (CompInteract){.onClick = (Callback){.callbackFunc = ClientConnect, .callbackData = (void *)1}});
+                     (CompInteract){.onClick = (SolCallback){.callbackFunc = ClientConnect, .callbackData = (void *)1}});
 
     int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 300, 0}, "Disconnect");
-    Sol_Interact_Set(menu, disconnectButton, (CompInteract){.onClick = (Callback){.callbackFunc = Disconnect}});
+    Sol_Interact_Set(menu, disconnectButton, (CompInteract){.onClick = (SolCallback){.callbackFunc = Disconnect}});
 
     int world1Button = Sol_Prefab_Button(menu, (vec3s){1130, 500, 0}, "World1");
     Sol_Interact_Set(menu, world1Button,
-                     (CompInteract){.onClick = (Callback){.callbackFunc = ChangeWorld, .callbackData = gameWorld}});
+                     (CompInteract){.onClick = (SolCallback){.callbackFunc = ChangeWorld, .callbackData = gameWorld}});
 }

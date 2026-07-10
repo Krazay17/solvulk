@@ -10,6 +10,7 @@ typedef struct
 } EntDesc;
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc);
+int Sol_Prefab_Box(World *world, vec3s pos);
 int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale);

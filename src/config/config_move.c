@@ -5,7 +5,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
         [MOVEMENTKIND_PLAYER] =
             {
                 [MOVE_IDLE]     = {.speed = 0, .accell = 0, .friction = 50.0f, .gravity = -13.0f},
-                [MOVE_WALK]     = {.speed = 6.5f, .accell = 20.0f, .friction = 10.0f, .gravity = -13.0f},
+                [MOVE_WALK]     = {.speed = 7.0f, .accell = 12.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_CROUCH]   = {.speed = 4.0f, .accell = 20.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_FALL]     = {.speed = 6.0f, .accell = 2.0f, .friction = 0.1f, .gravity = -13.0f},
                 [MOVE_JUMP]     = {.speed = 6.0f, .accell = 3.0f, .friction = 0.1f, .gravity = -13.0f},

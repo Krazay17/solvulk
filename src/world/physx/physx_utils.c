@@ -4,6 +4,7 @@
 #include "world.h"
 #include "profiler.h"
 #include "xform/s_xform.h"
+#include "model/s_model.h"
 
 void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
                                     vec3s p2, vec3s q2, // segment B: p2 → q2

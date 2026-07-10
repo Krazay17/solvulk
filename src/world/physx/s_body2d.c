@@ -3,6 +3,7 @@
 #include "sol_math.h"
 #include "input.h"
 #include "xform/s_xform.h"
+#include "parent/s_parent.h"
 #include "interact/s_interact.h"
 
 static void Step(World *world, double dt, double time);

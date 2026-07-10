@@ -3,6 +3,7 @@
 #include "world.h"
 #include "sol_math.h"
 #include "audio.h"
+#include "audio/s_audio.h"
 #include "xform/s_xform.h"
 #include "controller/s_controller.h"
 #include "combat/s_combat.h"

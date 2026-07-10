@@ -1,5 +1,6 @@
 #include "sol_core.h"
 #include "vkrender.h"
+#include "platform/platform.h"
 
 VkResult SolVkInstance(SolVkState *vkstate)
 {

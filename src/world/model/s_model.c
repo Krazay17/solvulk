@@ -3,6 +3,7 @@
 #include "sol_math.h"
 #include "world.h"
 #include "model.h"
+#include "interact/s_interact.h"
 #include "xform/s_xform.h"
 #include "buff/s_buff.h"
 #include "render/render.h"
@@ -18,7 +19,7 @@ void Sol_Model_Init(World *world)
     WAdd3d(world) = Model_Draw;
 }
 
-CompModel *Sol_Model_Add(World *world, int id, SolModelKind kind)
+CompModel *Sol_Model_Add(World *world, int id, int kind)
 {
     CompModel model = model_kinds[kind];
     model.modelId   = kind;
@@ -102,7 +103,15 @@ void       Model_Draw(World *world, double dt, double time)
             AnimLayer *layer = &modelComp->layers[L];
             if (layer->currentAnim < 0)
                 continue;
-
+if (!m->skeleton.animations) {
+        printf("CRITICAL: modelId %d has NULL animations array!\n", modelComp->modelId);
+        continue;
+    }
+    if (layer->currentAnim >= m->skeleton.animationCount) {
+        printf("CRITICAL: Out of bounds anim index! Trying to play enum index %d, but model only has %d animations.\n", 
+               layer->currentAnim, m->skeleton.animationCount);
+        continue;
+    }
             float dur     = m->skeleton.animations[layer->currentAnim].duration;
             float speed   = layer->playRate != 0 ? layer->playRate * fdt : fdt;
             float newSeek = layer->currentSeek + speed;

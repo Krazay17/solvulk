@@ -2,6 +2,7 @@
 #include "sol_engine.h"
 #include "sol_math.h"
 #include "world.h"
+#include "platform/platform.h"
 
 #define SOL_KEYCODE_SPACE 32
 #define SOL_KEYCODE_ESCAPE 27

@@ -2,6 +2,7 @@
 
 #include <cglm/types-struct.h>
 #include <stdbool.h>
+#include <float.h>
 #include <stdint.h>
 
 #include <assert.h>
@@ -11,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <float.h>
 
 #define SOL_VERSION 1
 #define FLOATING_EPSILON 1e-7f
@@ -29,6 +29,14 @@
         size_t: printf("%zu bytes\n", X),                                                                              \
         long long: printf("%zu bytes\n", X),                                                                           \
         char *: printf("%s\n", X))
+
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
 
 typedef unsigned char byte;
 typedef uint8_t       u8;

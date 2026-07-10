@@ -42,7 +42,6 @@ typedef enum
     BLEND_ADDITIVE,
 } BlendMode;
 
-int Sol_Render_Init(void *hwnd, void *hInstance);
 int Sol_Render_BuildPipes();
 
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height);

@@ -5,6 +5,7 @@
 #include "audio.h"
 #include "game/prefabs.h"
 #include "model/s_model.h"
+#include "physx/s_body.h"
 #include "controller/s_controller.h"
 #include "owner/s_owner.h"
 

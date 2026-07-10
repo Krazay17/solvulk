@@ -31,6 +31,10 @@ typedef struct
             float dist;
             u8 closeEnough, doRoll;
         } mantle;
+        struct
+        {
+            float boost;
+        } slide;
     } as;
     vec3s enterVel, dir;
 } MoveStateData;

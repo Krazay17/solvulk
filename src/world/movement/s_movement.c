@@ -121,7 +121,7 @@ static void Movement3d_Step(World *world, double dt, double time);
 static void Movement2d_Step(World *world, double dt, double time);
 static void CheckGround(World *world, int id, float fdt, CompMovement *movement)
 {
-    float flattestNorm = Sol_Physx_Get_Ground_Dot(world, id);
+    float flattestNorm  = Sol_Physx_Get_Ground_Dot(world, id);
     movement->groundDot = flattestNorm;
     if (flattestNorm > WALKABLE_SLOPE)
     {
@@ -138,6 +138,10 @@ static void CheckGround(World *world, int id, float fdt, CompMovement *movement)
 void Sol_Movement_Init(World *world)
 {
     world->movements = calloc(MAX_ENTS, sizeof(CompMovement));
+    for (int i = 0; i < MAX_ENTS; i++)
+    {
+        world->movements[i].stateData->as.slide.boost = 3.0f;
+    }
 
     WAddPrestep(world) = Movement_Prestep;
     WAddStep(world)    = Movement3d_Step;

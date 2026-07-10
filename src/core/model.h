@@ -6,20 +6,6 @@
 
 typedef enum
 {
-    MODELKIND_WIZARD,
-    MODELKIND_DUDE,
-    MODELKIND_ZORGON,
-    MODELKIND_WEAPONBLADE,
-    SOL_MODEL_BOX,
-    SOL_MODEL_WORLD0,
-    SOL_MODEL_WORLD1,
-    SOL_MODEL_WORLD2,
-    SOL_MODEL_WORLD6,
-    SOL_MODEL_COUNT,
-} SolModelKind;
-
-typedef enum
-{
     ANIM_LAYER_BASE,  // full body, always active
     ANIM_LAYER_LOWER, // overrides legs
     ANIM_LAYER_UPPER, // overrides torso/arms
@@ -162,8 +148,8 @@ typedef struct PoseRequest
 
 extern SolModel      loaded_models[SOL_MODEL_COUNT];
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];
-const char          *model_path[SOL_MODEL_COUNT];
-const i32            model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+extern const char   *model_path[SOL_MODEL_COUNT];
+extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 int          Sol_Models_Init();
 void         Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skele);

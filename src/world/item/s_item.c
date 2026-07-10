@@ -14,6 +14,7 @@
 #include "xform/s_xform.h"
 #include "physx/s_body2d.h"
 #include "game/prefabs.h"
+#include "controller/s_controller.h"
 #include "ability/s_ability.h"
 #include "parent/s_parent.h"
 #include "interact/s_interact.h"
@@ -72,7 +73,7 @@ void Sol_Item_AddAbility(World *world, int id, u32 ability)
 void Sol_Inventory_AddItem(World *world, int id, Item item)
 {
     CompInventory *inventory = &world->inventories[id];
-    if (Sol_Realloc(&inventory->items, inventory->cnt, &inventory->cap, sizeof(Item)) != 0)
+    if (Sol_Realloc((void**)&inventory->items, inventory->cnt, &inventory->cap, sizeof(Item)) != 0)
         return;
     inventory->items[inventory->cnt++] = item;
 }

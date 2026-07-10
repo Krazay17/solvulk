@@ -4,6 +4,7 @@
 #include "world.h"
 #include "profiler.h"
 #include "xform/s_xform.h"
+#include "owner/s_owner.h"
 
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,

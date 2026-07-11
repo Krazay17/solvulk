@@ -11,9 +11,10 @@
 
 void Sol_Event_Init(World *w)
 {
-    w->events        = malloc(sizeof(SolEvents));
-    w->events->event = malloc(sizeof(SolEvent));
-    w->events->count = 0;
+    w->events           = malloc(sizeof(SolEvents));
+    w->events->event    = malloc(sizeof(SolEvent));
+    w->events->count    = 0;
+    w->events->capacity = 0;
 }
 
 void Sol_Event_Add(World *w, SolEvent d)
@@ -24,8 +25,7 @@ void Sol_Event_Add(World *w, SolEvent d)
     if (Sol_Realloc((void **)&s->event, s->count, &s->capacity, sizeof(SolEvent)) != 0)
         return;
 
-    s->event[s->count] = d;
-    s->count++;
+    s->event[s->count++] = d;
 }
 
 void Sol_Events_Clear(World **worlds, int count)

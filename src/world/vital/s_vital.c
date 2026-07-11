@@ -13,6 +13,7 @@
 #include "event/s_event.h"
 #include "movement/s_movement.h"
 #include "ability/s_ability.h"
+#include "item/s_item.h"
 
 const CompVital vital_config[] = {
     [VITALKIND_PLAYER] =

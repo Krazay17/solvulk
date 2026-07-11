@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-07-04
- * 
-*/
+ *
+ */
 
 #include "vkrender.h"
 #include "render/render_i.h"
@@ -382,6 +382,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
 
 int Sol_Render_Init(void *hwnd, void *hInstance)
 {
+    solvkstate.currentFrame = 0;
     if (SolVkInstance(&solvkstate) != 0)
         return 1;
     if (SolVkSurface(&solvkstate, hwnd, hInstance) != 0)
@@ -404,6 +405,7 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
     //        return 10;
     if (Sol_Render_BuildPipes() != 0)
         return 11;
+
     return 0;
 }
 
@@ -568,7 +570,7 @@ void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstIns
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
-     //                      sollog(model->meshes[m].material.textureId);
+        //                      sollog(model->meshes[m].material.textureId);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -1222,10 +1224,8 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
     SolVkState  *vkstate = &solvkstate;
 
     VkDeviceSize imageSize = width * height * 4; // assumes 4 bytes per pixel
-printf("VULKAN UPLOAD: ID %u, Dim: %ux%u, Format: %s, Pixels Ptr: %p\n",
-       id, width, height, 
-       (format == VK_FORMAT_R8G8B8A8_SRGB ? "sRGB" : "UNORM"), 
-       pixels);
+    printf("VULKAN UPLOAD: ID %u, Dim: %ux%u, Format: %s, Pixels Ptr: %p\n", id, width, height,
+           (format == VK_FORMAT_R8G8B8A8_SRGB ? "sRGB" : "UNORM"), pixels);
     // 1. Staging buffer
     VkBuffer       staging;
     VkDeviceMemory stagingMem;

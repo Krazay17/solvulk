@@ -31,16 +31,8 @@ static void AbilitySlot_Deinit(World *world);
 
 void Sol_Item_Init(World *world)
 {
-    // CompInventory *inventory         = calloc(MAX_ENTS, sizeof(CompInventory));
-    // world->components[HAS_INVENTORY] = inventory;
-    world->inventories = calloc(MAX_ENTS, sizeof(CompInventory));
-
-    // CompItem *item              = calloc(MAX_ENTS, sizeof(CompItem));
-    // world->components[HAS_ITEM] = item;
-    world->items = calloc(MAX_ENTS, sizeof(CompItem));
-
-    // CompAbilitySlot *abilitySlot       = calloc(MAX_ENTS, sizeof(CompAbilitySlot));
-    // world->components[HAS_ABILITYSLOT] = abilitySlot;
+    world->inventories  = calloc(MAX_ENTS, sizeof(CompInventory));
+    world->items        = calloc(MAX_ENTS, sizeof(CompItem));
     world->abilitySlots = calloc(MAX_ENTS, sizeof(CompAbilitySlot));
 
     WAddStep(world)   = AbilitySlots;
@@ -73,7 +65,7 @@ void Sol_Item_AddAbility(World *world, int id, u32 ability)
 void Sol_Inventory_AddItem(World *world, int id, Item item)
 {
     CompInventory *inventory = &world->inventories[id];
-    if (Sol_Realloc((void**)&inventory->items, inventory->cnt, &inventory->cap, sizeof(Item)) != 0)
+    if (Sol_Realloc((void **)&inventory->items, inventory->cnt, &inventory->cap, sizeof(Item)) != 0)
         return;
     inventory->items[inventory->cnt++] = item;
 }
@@ -84,7 +76,7 @@ void Sol_Item_AddAbilitySlot(World *world, int id, int slot)
     world->masks[id] |= BITC(HAS_ABILITYSLOT);
 }
 
-static int ability_slots_required = BITC(HAS_ABILITYSLOT);
+static int  ability_slots_required = BITC(HAS_ABILITYSLOT);
 static void AbilitySlots(World *world, double dt, double time)
 {
     CompItem        *items        = world->items;
@@ -256,7 +248,7 @@ static void Inventory_Update(World *world, double dt, double time)
     // }
 }
 
-static int inventory_draw_required = BITC(HAS_INVENTORY);
+static int  inventory_draw_required = BITC(HAS_INVENTORY);
 static void Inventory_Draw(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)

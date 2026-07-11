@@ -20,12 +20,15 @@ static void Combat_Step(World *world, double dt, double time);
 
 void Sol_Combat_Init(World *world)
 {
-    world->combats               = calloc(MAX_ENTS, sizeof(CompCombat));
-    world->dmgNumbers            = calloc(1, sizeof(Dmgnumbers));
-    world->dmgNumbers->dmgNumber = calloc(1, sizeof(Dmgnumber));
-    // WAddStep(world)              = Combat_Step;
-    WAddStep(world)              = Dmgnumbers_Step;
-    WAdd3d(world)                = Dmgnumbers_Draw;
+    world->combats    = calloc(MAX_ENTS, sizeof(CompCombat));
+    world->dmgNumbers = calloc(1, sizeof(Dmgnumbers));
+
+    world->dmgNumbers->dmgNumber = malloc(sizeof(Dmgnumber));
+    world->dmgNumbers->count     = 0;
+    world->dmgNumbers->cap       = 0;
+
+    WAddStep(world) = Dmgnumbers_Step;
+    WAdd3d(world)   = Dmgnumbers_Draw;
 }
 
 void Sol_Combat_Add(World *world, int id)
@@ -133,7 +136,12 @@ void Sol_Combat_ApplyHit(World *world, int id, SolHit hit)
     {
         Sol_Physx_SetRedirectVel(world, id, Sol_Controller_GetAimdir(world, attacker));
         Sol_Owner_Add(world, id, attacker);
-        Sol_Audio_PlayAt(SOL_AUDIO_PARRY, hit.pos, 0.5f, 0, 12);
+        Sol_Event_Add(world, (SolEvent){
+                                 .kind            = EVENTKIND_SOUND,
+                                 .as.sound.kind   = SOL_AUDIO_PARRY,
+                                 .as.sound.pos    = hit.pos,
+                                 .as.sound.volume = 1.0f,
+                             });
     }
 }
 

@@ -43,8 +43,6 @@ static InteractingEnt interactingEnt;
 
 void Sol_Interact_Init(World *world)
 {
-    // world->components[HAS_INTERACT] = calloc(MAX_ENTS, sizeof(CompInteract));
-    // world->components[HAS_TOOLTIP]  = calloc(MAX_ENTS, sizeof(CompTooltip));
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
     world->tooltips  = calloc(MAX_ENTS, sizeof(CompTooltip));
 }

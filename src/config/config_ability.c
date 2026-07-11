@@ -29,7 +29,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .name       = "Shield",
                 .cooldown   = 12.0f,
                 .damage     = 10,
-                .duration   = 0.5f,
+                .duration   = 0.25f,
                 .effectMask = EFFECTMASK_KNOCKBACK,
             },
         [ABILITY_STATE_SHIELD][1] =
@@ -37,7 +37,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .name       = "Shield",
                 .cooldown   = 10.0f,
                 .damage     = 10,
-                .duration   = 0.5f,
+                .duration   = 0.25f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
             },
         [ABILITY_STATE_SHIELD][2] =
@@ -45,7 +45,7 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
                 .name       = "Shield",
                 .cooldown   = 8.0f,
                 .damage     = 15,
-                .duration   = 1.0f,
+                .duration   = 0.5f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE |
                               EFFECTMASK_CHAINLIGHTNING,
             },

@@ -8,6 +8,7 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 #include "owner/s_owner.h"
+#include "event/s_event.h"
 
 typedef enum
 {
@@ -38,7 +39,6 @@ typedef struct AbilityAction
 } AbilityAction;
 
 static void Ability_ExecuteAction(World *world, int id, AbilityAction *a);
-
 
 typedef struct
 {
@@ -136,7 +136,12 @@ static void Ability_ExecuteAction(World *world, int id, AbilityAction *a)
 
         break;
     case ACTIONKIND_PLAY_SOUND:
-        Sol_Audio_PlayAt(a->as.sound.sound, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
+        Sol_Event_Add(world, (SolEvent){
+                                 .kind            = EVENTKIND_SOUND,
+                                 .as.sound.kind   = a->as.sound.sound,
+                                 .as.sound.pos    = Sol_Controller_GetAimPos(world, id),
+                                 .as.sound.volume = 1.0f,
+                             });
         break;
     case ACTIONKIND_APPLY_BUFF:
 

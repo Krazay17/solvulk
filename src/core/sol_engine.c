@@ -28,6 +28,7 @@ static void   Sol_OnResize();
 int Sol_Init(void *hwnd, void *hInstance)
 {
     solState.timescale = 1.0;
+    
     solEngine.g_hwnd   = hwnd;
     int result;
 

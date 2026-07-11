@@ -16,8 +16,7 @@ float stiffness = 5.0f;
 
 void Sol_Pickup_Init(World *world)
 {
-    u32 idx                 = world->stepCount++;
-    world->stepSystems[idx] = Sol_Pickup_Step;
+    WAddStep(world) = Sol_Pickup_Step;
 }
 
 static int      step_required = BITC(HAS_INTERACT);

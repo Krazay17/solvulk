@@ -7,13 +7,6 @@
 #include "emitter/s_emitter.h"
 #include "ribbon/s_ribbon.h"
 
-// static void Fx_Step(World *world, double dt, double time);
-
-void Sol_View_Fx(World *w)
-{
-   // WAddStep(w) = Fx_Step;
-}
-
 // static void Fx_Step(World *world, double dt, double time)
 // {
 //     for (int i = 0; i < world->events->count; i++)

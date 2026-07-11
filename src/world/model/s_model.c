@@ -16,6 +16,7 @@ void Model_Draw(World *world, double dt, double time);
 void Sol_Model_Init(World *world)
 {
     world->models = calloc(MAX_ENTS, sizeof(CompModel));
+    
     WAdd3d(world) = Model_Draw;
 }
 

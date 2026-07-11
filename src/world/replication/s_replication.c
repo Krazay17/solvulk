@@ -12,7 +12,8 @@
 static void Sync_Buffs(World *world, int id, u32 serverMask);
 
 u32 event_kinds_replicate[EVENTKIND_COUNT] = {
-    [EVENTKIND_FX]      = 1,
+    [EVENTKIND_FX]    = 1,
+    [EVENTKIND_SOUND] = 1,
 };
 
 void Sol_Replication_Init(World *world)
@@ -249,7 +250,6 @@ void Net_Apply_Snap(World *world)
             if (world->masks[id] & BITC(HAS_MODEL))
             {
                 world->models[id].modelId = e->modelId;
-                sollog(world->models[id].leftWeaponEnt);
                 world->models[id].leftWeaponEnt  = world->worldNet->hostToLocalMap[e->leftWeaponEnt];
                 world->models[id].rightWeaponEnt = world->worldNet->hostToLocalMap[e->rightWeaponEnt];
 

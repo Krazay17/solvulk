@@ -76,13 +76,14 @@ void Shield_State_Enter(World *world, int id)
     data->accum          = HITINTERVAL;
     Sol_Combat_AddFlags(world, id, COMBATFLAG_REFLECTING);
     Sol_Combat_ClearHits(world, id);
-    Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration, 0);
+    // Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration, 0);
     vec3s pos = Sol_Xform_GetPos(world, id);
     Sol_Event_Add(world, (SolEvent){
-                             .kind       = EVENTKIND_FX,
-                             .as.fx.kind = FXKIND_SHIELD_BURST,
-                             .as.fx.pos  = pos,
-                             .as.fx.entA = id,
+                             .kind           = EVENTKIND_FX,
+                             .as.fx.kind     = FXKIND_SHIELD_BURST,
+                             .as.fx.pos      = pos,
+                             .as.fx.entA     = id,
+                             .as.fx.duration = data->duration,
                          });
 }
 
@@ -116,7 +117,7 @@ void Shield_State_Draw(World *world, int id, double dt, double time)
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     CompXform   *xform   = &world->xforms[id];
 
-    SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
-    o->pos        = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
-    o->color      = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
+    // SphereSSBO *o = Sol_Render_GetNext_Sphere(true);
+    // o->pos        = (vec4s){xform->drawPos.x, xform->drawPos.y, xform->drawPos.z, 1.0f};
+    // o->color      = (vec4s){0.25f, 0.1f, 0.5f, 0.25f};
 }

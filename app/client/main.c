@@ -10,7 +10,7 @@
 
 #include "game.h"
 
-#define TARGET_FRAME_TIME (1.0 / 500.0)
+#define TARGET_FRAME_TIME (1.0 / 1000.0)
 
 // --- Shared state between threads ---
 static volatile long int g_running = 1;
@@ -108,6 +108,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     Create_Sol_Game();
+    
+    MemoryBarrier();
 
     //------------------------------------------
 

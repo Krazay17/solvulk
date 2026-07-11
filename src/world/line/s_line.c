@@ -22,10 +22,11 @@ static void Line_Draw(World *world, double dt, double time);
 
 void Sol_Line_Init(World *world)
 {
+    world->lines = malloc(sizeof(WorldLines));
+    world->lines->count = 0;
+
     WAddTick(world) = Line_Tick;
     WAdd3d(world)   = Line_Draw;
-
-    world->lines = calloc(1, sizeof(WorldLines));
 }
 
 void Sol_Line_Add(World *world, LineDesc desc)

@@ -31,6 +31,7 @@ typedef enum
 {
     EVENTKIND_COLLISION,
     EVENTKIND_FX,
+    EVENTKIND_SOUND,
     EVENTKIND_EQUIP,
     EVENTKIND_SCORE,
     EVENTKIND_COUNT,
@@ -55,7 +56,7 @@ typedef struct SolEvent
             vec3s pos;
             vec4s color;
             u32   kind, entA, entB;
-            float scale;
+            float scale, duration;
         } fx;
         struct
         {

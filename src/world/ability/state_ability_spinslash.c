@@ -39,29 +39,29 @@ void Spinslash_State_Update(World *world, int id, float dt)
     {
         if (data->accum > HITINTERVAL)
         {
-            data->accum               = 0;
-            vec3s pos                 = Sol_Xform_GetPos(world, id);
-            pos                       = glms_vec3_add(pos, cont->lookdir);
-            SolRay       ray          = {.pos = glms_vec3_add(pos, vecSca(Sol_Physx_GetVelDir(world, id), 1.0f)), .ignoreEnt = id};
+            data->accum = 0;
+            vec3s pos   = Sol_Xform_GetPos(world, id);
+            pos         = glms_vec3_add(pos, cont->lookdir);
+            SolRay ray  = {.pos = glms_vec3_add(pos, vecSca(Sol_Physx_GetVelDir(world, id), 1.0f)), .ignoreEnt = id};
             SolRayResult results[256];
-            int          hits         = Sol_SphereCast(world, ray, 1.7f, results, 256);
+            int          hits = Sol_SphereCast(world, ray, 1.7f, results, 256);
             for (int i = 0; i < hits; i++)
             {
                 CompCombat *combat = &world->combats[id];
                 if (combat->hitEnts[results[i].entId])
                     continue;
                 combat->hitEnts[results[i].entId] = true;
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind              = EVENTKIND_HIT,
-                                         .as.hit.entA       = id,
-                                         .as.hit.entB       = results[i].entId,
-                                         .as.hit.damage     = data->damage,
-                                         .as.hit.effectMask = data->effects,
-                                         .as.hit.buffMask   = data->buffs,
-                                         .as.hit.pos        = results[i].pos,
-                                         .as.hit.vel        = vecSub(results[i].pos, pos),
-                                         .as.hit.fxKind     = FXKIND_SPINHIT,
-                                     });
+                
+                Sol_Combat_ApplyHit(world, results[i].entId,
+                                    (SolHit){
+                                        .entA       = id,
+                                        .entB       = results[i].entId,
+                                        .damage     = data->damage,
+                                        .effectMask = data->effects,
+                                        .buffMask   = data->buffs,
+                                        .pos        = results[i].pos,
+                                        .vel        = vecSub(results[i].pos, pos),
+                                    });
             }
         }
     }
@@ -76,10 +76,12 @@ void Spinslash_State_Enter(World *world, int id)
     data->accum = HITINTERVAL;
     Sol_Combat_ClearHits(world, id);
     Ability_BoostToDir(world, id, cont->lookdir, VELOCITY);
-    Sol_Model_PlayAnim(
-        world, id,
-        (AnimDesc){
-            .anim = ANIM_SPINSLASH, .layerId = ANIM_LAYER_OVERRIDE, .playKind = ANIMPLAYKIND_ONESHOT, .speed = 1.8f, .seek = 0.5f});
+    Sol_Model_PlayAnim(world, id,
+                       (AnimDesc){.anim     = ANIM_SPINSLASH,
+                                  .layerId  = ANIM_LAYER_OVERRIDE,
+                                  .playKind = ANIMPLAYKIND_ONESHOT,
+                                  .speed    = 1.8f,
+                                  .seek     = 0.5f});
 }
 
 void Spinslash_State_Exit(World *world, int id)

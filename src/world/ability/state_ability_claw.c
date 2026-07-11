@@ -10,7 +10,6 @@
 #include "event/s_event.h"
 #include "physx/s_body.h"
 
-
 #define HITINTERVAL 0.05f
 #define HITDELAY 0.275f
 #define MELEE_RANGE 3.0f
@@ -52,7 +51,7 @@ void Claw_State_Update(World *world, int id, float dt)
             .mask      = 0b1,
         };
         SolRayResult results[128];
-        int          hits        = Sol_SphereCast(world, ray, .66f, results, 128);
+        int          hits = Sol_SphereCast(world, ray, .66f, results, 128);
 
         for (int i = 0; i < hits; i++)
         {
@@ -65,17 +64,17 @@ void Claw_State_Update(World *world, int id, float dt)
             if (combat->hitEnts[result.entId])
                 continue;
             combat->hitEnts[result.entId] = true;
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind              = EVENTKIND_HIT,
-                                     .as.hit.damage     = data->damage,
-                                     .as.hit.buffMask   = data->buffs,
-                                     .as.hit.effectMask = data->effects,
-                                     .as.hit.entA       = id,
-                                     .as.hit.entB       = result.entId,
-                                     .as.hit.pos        = result.pos,
-                                     .as.hit.vel        = controller->aimdir,
-                                     .as.hit.damageFx   = FXKIND_SWORD_HIT,
-                                 });
+
+            SolHit hit;
+            hit.damage     = data->damage;
+            hit.buffMask   = data->buffs;
+            hit.effectMask = data->effects;
+            hit.entA       = id;
+            hit.entB       = result.entId;
+            hit.pos        = result.pos;
+            hit.vel        = controller->aimdir;
+            Sol_Combat_ApplyHit(world, result.entId, hit);
+
             Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 1.0f));
             if (combat->hitPauseDiminish < 4)
             {

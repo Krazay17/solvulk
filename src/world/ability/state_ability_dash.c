@@ -21,15 +21,15 @@ void ADash_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    float       *elapsed = &data->elapsed;
+    data->elapsed += dt;
     data->accum += dt;
-    *elapsed += dt;
-    if (*elapsed >= data->duration)
+
+    if (data->elapsed >= data->duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
         return;
     }
-    float alpha = DASH_ALPHAMOD - (*elapsed / data->duration);
+    float alpha = DASH_ALPHAMOD - (data->elapsed / data->duration);
 
     Sol_Physx_SetVel(world, id, glms_vec3_scale(data->enterDir, alpha * DASH_VEL));
 
@@ -37,9 +37,9 @@ void ADash_State_Update(World *world, int id, float dt)
         return;
     if (data->accum > HITINTERVAL)
     {
-        data->accum               = 0;
-        vec3s pos                 = Sol_Xform_GetPos(world, id);
-        pos                       = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
+        data->accum = 0;
+        vec3s pos   = Sol_Xform_GetPos(world, id);
+        pos         = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
         SolRayResult results[256];
         int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, HITRADIUS, results, 256);
         for (int i = 0; i < hits; i++)
@@ -51,18 +51,17 @@ void ADash_State_Update(World *world, int id, float dt)
                 continue;
             combat->hitEnts[results[i].entId] = true;
 
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind              = EVENTKIND_HIT,
-                                     .as.hit.entA       = id,
-                                     .as.hit.entB       = results[i].entId,
-                                     .as.hit.pos        = results[i].pos,
-                                     .as.hit.damage     = data->damage,
-                                     .as.hit.effectMask = data->effects,
-                                     .as.hit.buffMask   = data->buffs,
-                                     .as.hit.kind       = HITKIND_SHIELD_PULSE,
-                                     .as.hit.vel        = vecSub(results[i].pos, pos),
-                                     .as.hit.fxKind     = FXKIND_SPINHIT,
-                                 });
+            SolHit hit = {
+                .entA       = id,
+                .entB       = results[i].entId,
+                .pos        = results[i].pos,
+                .damage     = data->damage,
+                .effectMask = data->effects,
+                .buffMask   = data->buffs,
+                .kind       = HITKIND_SHIELD_PULSE,
+                .vel        = vecSub(results[i].pos, pos),
+            };
+            Sol_Combat_ApplyHit(world, results[i].entId, hit);
         }
     }
 }
@@ -71,7 +70,6 @@ void ADash_State_Enter(World *world, int id)
 {
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
-    Sol_Audio_PlayAt(SOL_AUDIO_DASH, Sol_Controller_GetAimPos(world, id), 1.0f, 0, 0);
     Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration * 0.5f, 0);
     Sol_Combat_ClearHits(world, id);
 
@@ -111,6 +109,10 @@ void ADash_State_Enter(World *world, int id)
         break;
     }
     Sol_Model_PlayAnim(world, id, desc);
+
+    Sol_Event_Add(
+        world,
+        (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = SOL_AUDIO_DASH, .as.fx.pos = Sol_Xform_GetPos(world, id)});
 }
 
 void ADash_State_Exit(World *world, int id)

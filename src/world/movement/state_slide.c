@@ -11,7 +11,7 @@
 
 static bool LeaveState(World *world, int id)
 {
-    if (Sol_Physx_GetSpeed(world, id) < 5.5f)
+    if (world->movements[id].groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (!(Sol_GetActions(world, id) & ACTION_CROUCH))
@@ -92,7 +92,6 @@ void Slide_State_Enter(World *world, int id)
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[move->state];
     move->targetHeight  = move->baseHeight * 0.65f;
-    data->lastEntered   = solState.gameTime;
     if (move->groundtime > 0)
     {
         data->as.slide.boost = fminf(data->as.slide.boost + (solState.gameTime - data->lastExited), BOOST_CD);
@@ -107,7 +106,6 @@ void Slide_State_Exit(World *world, int id)
 {
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[MOVE_SLIDE];
-    data->lastExited    = solState.gameTime;
     move->targetHeight  = move->baseHeight;
 }
 

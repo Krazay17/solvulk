@@ -192,6 +192,8 @@ static void Movement3d_Step(World *world, double dt, double time)
             continue;
 
         CompMovement *movement = &world->movements[id];
+        movement->stateData[movement->state].elapsed += dt;
+        
         if (world->masks[id] & BITC(HAS_BODY3))
         {
             CompBody             *body   = &world->bodies[id];

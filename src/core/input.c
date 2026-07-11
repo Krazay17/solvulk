@@ -8,20 +8,6 @@
 #define SOL_KEYCODE_ESCAPE 27
 #define SOL_KEYCODE_SHIFT 16
 
-// typedef struct
-// {
-//     bool  mouseLocked, toggleLocked;
-//     bool  keys[SOL_KEY_COUNT];
-//     bool  keysPrev[SOL_KEY_COUNT];
-//     bool  mouseButtons[SOL_MOUSE_COUNT];
-//     bool  mouseButtonsPrev[SOL_MOUSE_COUNT];
-//     float mouseWheelDelta;
-//     int   mouseX, mouseY;
-//     int   mouseDeltaX, mouseDeltaY;
-//     u32   action;
-// } LocalInput;
-// static LocalInput local_input;
-
 static int keyMap[256] = {
     [48] = SOL_KEY_0,     [49] = SOL_KEY_1,      [50] = SOL_KEY_2,     [51] = SOL_KEY_3,    [52] = SOL_KEY_4,
     [53] = SOL_KEY_5,     [54] = SOL_KEY_6,      [55] = SOL_KEY_7,     [56] = SOL_KEY_8,    [57] = SOL_KEY_9,
@@ -30,22 +16,25 @@ static int keyMap[256] = {
     [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,
 };
 
-static  bool rawKeys[SOL_KEY_COUNT];
-static  bool rawMouseButtons[SOL_MOUSE_COUNT];
-static volatile int  rawMouseWheelDelta;
-static volatile int  rawMouseX, rawMouseY;
-static volatile int  rawMouseDeltaX, rawMouseDeltaY;
+static bool         rawKeys[SOL_KEY_COUNT];
+static bool         rawMouseButtons[SOL_MOUSE_COUNT];
+static volatile int rawMouseWheelDelta;
+static volatile int rawMouseX, rawMouseY;
+static volatile int rawMouseDeltaX, rawMouseDeltaY;
 
 // snapshot read by game thread
-static bool    mouseLocked, toggleLocked;
-static bool    keys[SOL_KEY_COUNT];
-static bool    keysPrev[SOL_KEY_COUNT];
-static bool    mouseButtons[SOL_MOUSE_COUNT];
-static bool    mouseButtonsPrev[SOL_MOUSE_COUNT];
-static int     mouseWheelDelta;
-static int     mouseX, mouseY;
-static int     mouseDeltaX, mouseDeltaY;
-static SolLook sol_look = {.sens = 0.001f};
+static bool mouseLocked, toggleLocked;
+static bool keys[SOL_KEY_COUNT];
+static bool keysPrev[SOL_KEY_COUNT];
+static bool mouseButtons[SOL_MOUSE_COUNT];
+static bool mouseButtonsPrev[SOL_MOUSE_COUNT];
+static int  mouseWheelDelta;
+static int  mouseX, mouseY;
+static int  mouseDeltaX, mouseDeltaY;
+
+float       input_sens = 0.001f;
+float       input_yaw;
+float       input_pitch;
 
 void Sol_Input_Init()
 {
@@ -66,7 +55,7 @@ void Sol_Input_OnMouseMove(int x, int y)
     rawMouseY = y;
 }
 
-void Sol_Input_OnMouseButton(SolMouseButton btn, bool down)
+void Sol_Input_OnMouseButton(int btn, bool down)
 {
     rawMouseButtons[btn] = down;
 }
@@ -127,21 +116,25 @@ void Sol_Input_Update()
 
     if (mouseLocked)
     {
-        sol_look.yaw -= mouseDeltaX * sol_look.sens;
-        sol_look.pitch -= mouseDeltaY * sol_look.sens;
+        input_yaw -= mouseDeltaX * input_sens;
+        input_pitch -= mouseDeltaY * input_sens;
 
-        sol_look.yaw = fmodf(sol_look.yaw, 2.0f * GLM_PIf);
-        if (sol_look.yaw > GLM_PIf)
-            sol_look.yaw -= 2.0f * GLM_PIf;
-        else if (sol_look.yaw < -GLM_PIf)
-            sol_look.yaw += 2.0f * GLM_PIf;
+        input_yaw = fmodf(input_yaw, 2.0f * GLM_PIf);
+        if (input_yaw > GLM_PIf)
+            input_yaw -= 2.0f * GLM_PIf;
+        else if (input_yaw < -GLM_PIf)
+            input_yaw += 2.0f * GLM_PIf;
 
-        if (sol_look.pitch > MAX_PITCH)
-            sol_look.pitch = MAX_PITCH;
-        if (sol_look.pitch < -MAX_PITCH)
-            sol_look.pitch = -MAX_PITCH;
+        if (input_pitch > MAX_PITCH)
+            input_pitch = MAX_PITCH;
+        if (input_pitch < -MAX_PITCH)
+            input_pitch = -MAX_PITCH;
     }
-    sol_look.lookdir = glms_normalize(Sol_Vec3_FromYawPitch(sol_look.yaw, sol_look.pitch));
+}
+
+vec3s Sol_Input_GetLookDir()
+{
+    return vecNorm(Sol_Vec3_FromYawPitch(input_yaw, input_pitch));
 }
 
 bool Sol_Input_KeyDown(SolKey key)
@@ -178,14 +171,9 @@ SolMouse Sol_Input_GetMouse()
 void Sol_Input_SetYawPitch(float y, float p)
 {
     if (!isnan(y))
-        sol_look.yaw = y;
+        input_yaw = y;
     if (!isnan(p))
-        sol_look.pitch = p;
-}
-
-SolLook *Sol_Input_GetLook()
-{
-    return &sol_look;
+        input_pitch = p;
 }
 
 void Sol_Input_SetLocked(bool lock)

@@ -11,7 +11,6 @@ void Stun_State_Update(World *world, int id, float dt)
 {
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[movement->state];
-    data->elapsed += dt;
     
 }
 void Stun_State_Enter(World *world, int id)

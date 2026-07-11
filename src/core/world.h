@@ -18,8 +18,8 @@ typedef struct World World;
 #define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
 
 #define SOL_SYSTEM_LIST(X)                                                                                             \
-    X(WORLD_SYS_REPLICATION, Sol_Replication_Init)                                                                     \
     X(WORLD_SYS_XFORM, Sol_Xform_Init)                                                                                 \
+    X(WORLD_SYS_REPLICATION, Sol_Replication_Init)                                                                     \
     X(WORLD_SYS_EVENT, Sol_Event_Init)                                                                                 \
     X(WORLD_SYS_CONTROLLER, Sol_Controller_Init)                                                                       \
     X(WORLD_SYS_INTERACT, Sol_Interact_Init)                                                                           \
@@ -38,11 +38,12 @@ typedef struct World World;
     X(WORLD_SYS_VITAL, Sol_Vital_Init)                                                                                 \
     X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init)                                                                             \
     X(WORLD_SYS_MOVEMENT, Sol_Movement_Init)                                                                           \
-    X(WORLD_SYS_AUDIO, Sol_World_Audio_Init)                                                                           \
     X(WORLD_SYS_MODEL, Sol_Model_Init)                                                                                 \
     X(WORLD_SYS_LINE, Sol_Line_Init)                                                                                   \
+    X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init)                                                               \
     X(WORLD_SYS_EMITTER, Sol_Emitter_Init)                                                                             \
     X(WORLD_SYS_RIBBON, Sol_Ribbon_Init)                                                                               \
+    X(WORLD_SYS_AUDIO, Sol_World_Audio_Init)                                                                           \
     X(WORLD_SYS_SHAPE, Sol_Shape_Init)                                                                                 \
     X(WORLD_SYS_SCORE, Sol_Score_Init)                                                                                 \
     X(WORLD_SYS_VIEW2D, Sol_View2d_Init)                                                                               \
@@ -96,55 +97,6 @@ typedef enum
     HAS_INVENTORY,
     COMPONENT_COUNT,
 } SolComponents;
-
-// typedef enum
-// {
-//     // Replication pumps events for systems
-//     WORLD_SYS_REPLICATION,
-
-//     // Misc
-//     WORLD_SYS_XFORM,
-//     WORLD_SYS_EVENT,
-
-//     // Tick
-//     WORLD_SYS_CONTROLLER,
-//     WORLD_SYS_INTERACT,
-
-//     // Step
-//     WORLD_SYS_TIMER,
-//     WORLD_SYS_PICKUP,
-//     WORLD_SYS_OWNER,
-//     WORLD_SYS_PARENT,
-
-//     // Event flow
-//     WORLD_SYS_BUFF,
-//     WORLD_SYS_ABILITY,
-//     WORLD_SYS_CHAINHIT,
-//     WORLD_SYS_ITEM,
-
-//     WORLD_SYS_PHYSX,
-//     WORLD_SYS_BODY2,
-//     WORLD_SYS_PROJECTILE,
-
-//     WORLD_SYS_COMBAT,
-//     WORLD_SYS_VITAL,
-//     WORLD_SYS_AICONTROLLER,
-//     WORLD_SYS_MOVEMENT,
-
-//     WORLD_SYS_AUDIO,
-
-//     // Draw
-//     WORLD_SYS_MODEL,
-//     WORLD_SYS_LINE,
-//     WORLD_SYS_EMITTER,
-//     WORLD_SYS_RIBBON,
-//     WORLD_SYS_SHAPE,
-//     WORLD_SYS_VIEW2D,
-
-//     WORLD_SYS_VIEW,
-
-//     WORLD_SYS_COUNT,
-// } WorldSystem;
 
 typedef enum
 {

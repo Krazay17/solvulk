@@ -37,7 +37,7 @@ void Sol_Ai_Add(World *world, int id, AiKind kind);
 bool Ai_SetState(World *world, int id, AiState nextState, u32 slot);
 u32  AiController_FindTarget(World *world, int id);
 
-void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage);
+void Sol_AiController_SetLastHit(World *world, int id, int source, float damage);
 void Sol_AiController_TargetDied(World *world, int id, int target);
 
 void Patrol_State_Update(World *world, int id, float dt);

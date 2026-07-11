@@ -59,7 +59,7 @@ void Sol_Controller_Add(World *world, int id, ControllerKind kind)
         world->playerID = id;
 }
 
-static int tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
+static int  tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 static void Sol_Controller_Tick(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)
@@ -100,8 +100,7 @@ static void RemoteTick(World *world, int id, CompController *controller, double 
 static void LocalTick(World *world, int id, double dt, double time)
 {
     CompController *controller = &world->controllers[id];
-    SolLook        *look       = Sol_Input_GetLook();
-
+    vec3s           lookdir    = Sol_Input_GetLookDir();
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (Sol_Input_KeyDown(i))
@@ -124,33 +123,30 @@ static void LocalTick(World *world, int id, double dt, double time)
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         controller->actionState |= ACTION_FWD;
 
-    // controller->yaw     = look->yaw;
-    // controller->pitch   = look->pitch;
-    controller->lookdir = look->lookdir;
-    controller->wishdir = CalcWishdir3(controller->actionState, look->lookdir, WORLD_UP);
+    controller->lookdir = lookdir;
+    controller->wishdir = CalcWishdir3(controller->actionState, lookdir, WORLD_UP);
 
     controller->aimHitEnt = -1;
     SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
                                                    .pos       = Sol_Cam_GetPos(),
                                                    .ignoreEnt = id,
                                                    .mask      = 0b01,
-                                                   .dir       = look->lookdir,
+                                                   .dir       = lookdir,
                                                    .dist      = 60.f,
                                                });
-    aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(look->lookdir, 0.5f));
+    aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(lookdir, 0.5f));
     controller->aimHitPos = aimTrace.pos;
     vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
 
-    controller->aimdir    = vecDot(dir, look->lookdir) > 0.7f ? dir : look->lookdir;
-    controller->yaw       = Sol_YawFromVec(controller->lookdir);
-    controller->pitch     = Sol_PitchFromVec(controller->aimdir);
+    controller->aimdir    = vecDot(dir, lookdir) > 0.7f ? dir : lookdir;
+    controller->yaw       = input_yaw;
+    controller->pitch     = input_pitch;
     controller->aimHitEnt = aimTrace.entId;
 
     // #### DEBUG ACTIONS ####
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id),
-                                  glms_vec3_scale(Sol_Input_GetLook()->lookdir, (float)dt * 60.0f));
+        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, id), glms_vec3_scale(lookdir, (float)dt * 60.0f));
         Sol_Xform_Teleport(world, id, pos);
         Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
     }

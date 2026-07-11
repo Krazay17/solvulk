@@ -5,6 +5,7 @@ typedef struct World World;
 
 typedef struct CompVital
 {
+    vec3s  respawnPos;
     float  maxHealth, maxEnergy, maxMana;
     float  health, energy, mana;
     bool   doesRespawn;

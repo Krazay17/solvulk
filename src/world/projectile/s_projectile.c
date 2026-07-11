@@ -6,6 +6,7 @@
 #include "owner/s_owner.h"
 #include "physx/s_body.h"
 #include "event/s_event.h"
+#include "combat/s_combat.h"
 
 static void Projectile_Step(World *world, double dt, double time);
 static void Projectile_Hit(World *world, int id, SolHit hit);
@@ -117,9 +118,14 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
     hit.entA = aoeHit.entA = Sol_Owner_GetOwner(world, id);
     hit.power = aoeHit.power = projectile->power;
 
+    Sol_Combat_ApplyHit(world, hit.entB, hit);
     Sol_Event_Add(world, (SolEvent){
-                             .kind   = EVENTKIND_HIT,
-                             .as.hit = hit,
+                             .kind        = EVENTKIND_FX,
+                             .as.fx.kind  = projectile->hitFX,
+                             .as.fx.pos   = hit.pos,
+                             .as.fx.entA  = hit.entA,
+                             .as.fx.entB  = hit.entB,
+                             .as.fx.scale = hit.power,
                          });
 
     if (projectile->explodeRadius > 0)
@@ -144,7 +150,15 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
             aoeHit.entB = result.entId;
             aoeHit.pos  = result.pos;
             aoeHit.vel  = vecSub(result.pos, pos);
-            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_HIT, .as.hit = aoeHit});
+            Sol_Combat_ApplyHit(world, result.entId, aoeHit);
+            Sol_Event_Add(world, (SolEvent){
+                                     .kind        = EVENTKIND_FX,
+                                     .as.fx.kind  = projectile->explodeHitFX,
+                                     .as.fx.pos   = aoeHit.pos,
+                                     .as.fx.entA  = aoeHit.entA,
+                                     .as.fx.entB  = aoeHit.entB,
+                                     .as.fx.scale = aoeHit.power,
+                                 });
         }
     }
 }

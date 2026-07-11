@@ -101,7 +101,6 @@ void Wallrun_State_Update(World *world, int id, float dt)
     CompXform     *xform    = &world->xforms[id];
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
-    data->elapsed += dt;
     data->accum += dt;
 
     SolRayResult result   = {0};

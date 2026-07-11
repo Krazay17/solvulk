@@ -181,10 +181,10 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                      .ignoreFriendly = 1,
                  });
     Sol_Projectile_Add(world, id, PROJECTILEKIND_FIREBALL, scale);
-    world->projectiles[id].directHit.fxKind    = FXKIND_FIREBALL_HIT;
     world->projectiles[id].directHit.damage    = 10;
     world->projectiles[id].explosionHit.damage = 10;
     world->projectiles[id].explodeRadius       = 3.0f;
+    world->projectiles[id].hitFX               = FXKIND_FIREBALL_HIT;
 
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Flags_Add(world, id, EFLAG_PROJECTILE);
@@ -210,8 +210,7 @@ int Sol_Prefab_Bullet(World *world, u32 id, vec3s pos, float scale)
     id                = Sol_Create_Ent(world, id);
     world->ekinds[id] = EKIND_BULLET;
     Sol_Shape_Add(world, id, shape);
-    CompProjectile *projectile   = Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
-    projectile->directHit.fxKind = FXKIND_BULLET_HIT;
+    CompProjectile *projectile = Sol_Projectile_Add(world, id, PROJECTILEKIND_BULLET, 1.0f);
     Sol_Xform_Teleport(world, id, pos);
     Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
     Sol_Body_Add(world, id,

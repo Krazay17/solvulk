@@ -9,6 +9,7 @@
 #include "sol_math.h"
 #include "xform/s_xform.h"
 #include "render/render.h"
+#include "event/s_event.h"
 
 #define INIT_CAPACITY 2048
 #define INVALID_INDEX 0xFFFFFFFF
@@ -141,9 +142,8 @@ static const RibbonConfig ribbon_config[RIBBONKIND_COUNT] = {
             .color       = {1, 0.2f, 0.2f, 1},
             .attachMode  = RIBBONATTACH_POS_TO_POS,
             .textureId   = SOL_TEXTURE_BEAM,
-
-            .step = Ribbon_Update_Beam,
-            .draw = Ribbon_Draw_Laser,
+            .step        = Ribbon_Update_Beam,
+            .draw        = Ribbon_Draw_Laser,
         },
     [RIBBONKIND_INFBEAM] =
         {
@@ -385,7 +385,8 @@ static void Ribbon_Step(World *world, double dt, double time)
     for (int read_idx = 0; read_idx < s->ribbon_count; read_idx++)
     {
         Ribbon *r = &s->ribbons[read_idx];
-
+        if (!r)
+            continue;
         // Synced entity lifetime cleanup check
         if (r->followId && !(world->masks[r->followId] & BITC(HAS_ACTIVE)))
         {

@@ -7,16 +7,13 @@
  */
 #include "s_event.h"
 #include "world.h"
-
-
-#define MAX_EVENTS 65536
+#include "sol_core.h"
 
 void Sol_Event_Init(World *w)
 {
-    w->events           = malloc(sizeof(SolEvents));
-    w->events->count    = 0;
-    w->events->capacity = MAX_EVENTS;
-    w->events->event    = calloc(w->events->capacity, sizeof(SolEvent));
+    w->events        = malloc(sizeof(SolEvents));
+    w->events->event = malloc(sizeof(SolEvent));
+    w->events->count = 0;
 }
 
 void Sol_Event_Add(World *w, SolEvent d)
@@ -24,7 +21,7 @@ void Sol_Event_Add(World *w, SolEvent d)
     SolEvents *s = w->events;
     if (!s)
         return;
-    if (s->count >= s->capacity)
+    if (Sol_Realloc((void **)&s->event, s->count, &s->capacity, sizeof(SolEvent)) != 0)
         return;
 
     s->event[s->count] = d;

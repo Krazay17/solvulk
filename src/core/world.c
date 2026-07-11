@@ -16,37 +16,6 @@ static SystemFunc init_system[WORLD_SYS_COUNT] = {
 #undef AS_ARRAY_MAPPING
 };
 
-// static SystemFunc init_system[WORLD_SYS_COUNT] = {
-//     [WORLD_SYS_EVENT]        = Sol_Event_Init,
-//     [WORLD_SYS_TIMER]        = Sol_Timer_Init,
-//     [WORLD_SYS_PHYSX]        = Sol_Physx_Init,
-//     [WORLD_SYS_PARENT]       = Sol_Parent_Init,
-//     [WORLD_SYS_CONTROLLER]   = Sol_Controller_Init,
-//     [WORLD_SYS_XFORM]        = Sol_Xform_Init,
-//     [WORLD_SYS_INTERACT]     = Sol_Interact_Init,
-//     [WORLD_SYS_MOVEMENT]     = Sol_Movement_Init,
-//     [WORLD_SYS_COMBAT]       = Sol_Combat_Init,
-//     [WORLD_SYS_ABILITY]      = Sol_Ability_Init,
-//     [WORLD_SYS_BUFF]         = Sol_Buff_Init,
-//     [WORLD_SYS_VITAL]        = Sol_Vital_Init,
-//     [WORLD_SYS_MODEL]        = Sol_Model_Init,
-//     [WORLD_SYS_LINE]         = Sol_Line_Init,
-//     [WORLD_SYS_EMITTER]      = Sol_Emitter_Init,
-//     [WORLD_SYS_SHAPE]        = Sol_Shape_Init,
-//     [WORLD_SYS_PICKUP]       = Sol_Pickup_Init,
-//     [WORLD_SYS_VIEW]         = Sol_View_Init,
-//     [WORLD_SYS_OWNER]        = Sol_Owner_Init,
-//     [WORLD_SYS_AICONTROLLER] = Sol_Ai_Init,
-//     [WORLD_SYS_REPLICATION]  = Sol_Replication_Init,
-//     [WORLD_SYS_BODY2]        = Sol_Body2d_Init,
-//     [WORLD_SYS_VIEW2D]       = Sol_View2d_Init,
-//     [WORLD_SYS_PROJECTILE]   = Sol_Projectile_Init,
-//     [WORLD_SYS_ITEM]         = Sol_Item_Init,
-//     [WORLD_SYS_RIBBON]       = Sol_Ribbon_Init,
-//     [WORLD_SYS_CHAINHIT]     = Sol_Chainhit_Init,
-//     [WORLD_SYS_AUDIO]        = Sol_World_Audio_Init,
-// };
-
 World *World_Create(WorldKind kind)
 {
     World *world = calloc(1, sizeof(World));

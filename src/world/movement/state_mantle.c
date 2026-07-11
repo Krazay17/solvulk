@@ -69,7 +69,6 @@ void Mantle_State_Update(World *world, int id, float dt)
 {
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[MOVE_MANTLE];
-    data->elapsed += dt;
     if (LeaveState(world, id, data))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return;

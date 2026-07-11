@@ -39,11 +39,10 @@ SolCamera solCamera = {
 
 void Sol_Cam_Update(double dt)
 {
-    float    fdt   = (float)dt;
-    World   *world = Sol_GetActiveWorld();
-    SolLook *look  = Sol_Input_GetLook();
+    float  fdt   = (float)dt;
+    World *world = solEngine.activeWorld;
 
-    vec3s lookdir   = look->lookdir;
+    vec3s lookdir   = Sol_Input_GetLookDir();
     vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
     vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
 
@@ -62,12 +61,8 @@ void Sol_Cam_Update(double dt)
         vec3s offsetPos         = vecSca(offsetvec, solCamera.currentOffset);
         vec3s finalOffsetPos    = vecAdd(head, offsetPos);
         float offsetDistance    = glms_vec3_distance2(solCamera.anchor, finalOffsetPos);
-        // if (offsetDistance > 4.0f)
-        //     solCamera.lerpspeed = 25.0f;
-        // else
-        //     solCamera.lerpspeed = 10.0f;
-        float factor = 1.0f - expf(-(solCamera.lerpspeed + offsetDistance) * fdt);
-        solCamera.anchor = glms_vec3_lerp(solCamera.anchor, finalOffsetPos, factor);
+        float factor            = 1.0f - expf(-(solCamera.lerpspeed + offsetDistance) * fdt);
+        solCamera.anchor        = glms_vec3_lerp(solCamera.anchor, finalOffsetPos, factor);
 
         SolRayResult camDistTrace =
             Sol_Raycast(world, (SolRay){.pos = solCamera.anchor, .dir = invDir, .dist = solCamera.distance * 1.2f});
@@ -83,7 +78,7 @@ void Sol_Cam_Update(double dt)
     if (Sol_Input_GetMouse().wheelV)
         solCamera.distance -= changeDist;
 
-    solCamera.target = vecAdd(solCamera.pos, look->lookdir);
+    solCamera.target = vecAdd(solCamera.pos, lookdir);
     solCamera.dir    = glms_vec3_normalize(glms_vec3_sub(solCamera.target, solCamera.pos));
 
     // === Wallrun tilt ===

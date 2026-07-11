@@ -1,10 +1,11 @@
 #pragma once
 #include "sol/types.h"
 
+typedef struct Emitter Emitter;
+
 typedef enum
 {
-    FXKIND_NONE,
-    FXKIND_FIREBALL_SHOOT,
+    FXKIND_FIREBALL_SHOOT = 1,
     FXKIND_FIREBALL_HIT,
     FXKIND_FIRE_APPLY,
     FXKIND_SHIELD_BURST,
@@ -18,30 +19,27 @@ typedef enum
     FXKIND_SWORD_SWING,
     FXKIND_TAKEDAMAGE,
     FXKIND_DEATH_BLOOD,
+    FXKIND_COUNT,
 } FxKind;
 
 typedef enum
 {
+    TRIGGERKIND_SPAWN_WIZARD,
+} TriggerKind;
+
+typedef enum
+{
     EVENTKIND_COLLISION,
-    EVENTKIND_HIT,
     EVENTKIND_FX,
-    EVENTKIND_EMITTER,
-    EVENTKIND_DEATH,
-    EVENTKIND_RESPAWN,
     EVENTKIND_EQUIP,
     EVENTKIND_SCORE,
     EVENTKIND_COUNT,
 } EventKind;
-typedef enum
-{
-    TRIGGERKIND_SPAWN_WIZARD,
-} TriggerKind;
 typedef struct SolEvent
 {
     EventKind kind;
     u32       entA, entB;
     union {
-        SolHit hit;
         struct
         {
             vec3s pos, normal, vel;
@@ -54,11 +52,17 @@ typedef struct SolEvent
         } death;
         struct
         {
-            u32   kind;
-            u32   entA, entB;
-            vec3s pos, rot;
+            vec3s pos;
+            vec4s color;
+            u32   kind, entA, entB;
             float scale;
         } fx;
+        struct
+        {
+            u32   kind;
+            vec3s pos;
+            float volume;
+        } sound;
         struct
         {
             TriggerKind kind;
@@ -92,7 +96,9 @@ typedef struct SolEvents
     u32 capacity;
 } SolEvents;
 
+void Sol_Event_Init(World *world);
+void Sol_Event_HandleFx_Init(World *w);
+
 void Sol_Event_Add(World *world, SolEvent event);
 void Sol_Events_Clear(World **worlds, int count);
-void Sol_Event_Init(World *world);
 void Sol_Event_Clear(World *world);

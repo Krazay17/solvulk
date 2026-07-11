@@ -1,8 +1,6 @@
 #pragma once
 #include "types.h"
 
-typedef struct World World;
-
 #define MAX_COMPEMITTERS 8
 
 typedef enum
@@ -50,7 +48,7 @@ typedef struct Emitter
     float       ttl, rate, accumulator;
     Particle    particle;
     u32         burst, inf, followId, rateBurst;
-    u32 followIdGen;
+    u32         followIdGen;
 } Emitter;
 
 typedef struct CompEmitter
@@ -61,13 +59,14 @@ typedef struct CompEmitter
 
 typedef void (*ParticleFunc)(Particle, double, double);
 
-const extern Emitter emitter_kinds[EMITTERKIND_COUNT];
+extern const Emitter   emitter_kinds[];
 
 void Sol_Emitter_Init(World *world);
 
 Emitter *Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale);
 Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, float scale);
 Emitter *Sol_Emitter_SpawnEx(World *world, Emitter src);
+void     Sol_Make_Emitter(World *world, Emitter e);
 
 u32       Sol_Emitter_GetParticleCount(World *world);
 Particle *Sol_Emitter_GetParticles(World *world);

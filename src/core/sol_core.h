@@ -26,7 +26,6 @@ extern SolState solState;
 #define UISCALE(v) ((v) * solState.uiScale)
 
 void   Sol_Debug_Add(const char *text, float value);
-World *Sol_GetActiveWorld(void);
 vec3s  Sol_Cam_GetRight();
 vec3s  Sol_Cam_GetFwd();
 vec3s  Sol_Cam_GetPos();

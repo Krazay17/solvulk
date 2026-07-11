@@ -128,7 +128,7 @@ set_target_properties(solapp PROPERTIES
 #--------------------------------------
 # compile shaders
 #--------------------------------------
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/render/shaders")
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/core/render/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 

@@ -15,6 +15,7 @@ typedef struct CompProjectile
     u32            bounces;
     float          power;
     float          explodeRadius;
+    u32            hitFX, explodeHitFX;
 
     SolHit directHit;
     SolHit explosionHit;

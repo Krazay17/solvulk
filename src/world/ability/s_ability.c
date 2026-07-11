@@ -156,8 +156,8 @@ static void Ability_Step(World *world, double dt, double time)
             continue;
 
         CompAbility *ability = &abilities[id];
-        SolActions   actions = controllers[id].actionState;
 
+        SolActions actions = controllers[id].actionState;
         for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
         {
             if (ability->bindings[m].dirtyApply)

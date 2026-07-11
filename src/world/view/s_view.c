@@ -18,7 +18,7 @@ static void Weapon_Draw(World *world, double dt, double time);
 
 void Sol_View_Init(World *world)
 {
-    Sol_View_Fx(world);
+    // Sol_View_Fx(world);
     Sol_Nameplate_Init(world);
     WAdd3d(world) = Weapon_Draw;
 }

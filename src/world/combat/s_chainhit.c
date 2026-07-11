@@ -40,14 +40,13 @@ void Sol_Chainhit_Init(World *world)
 
 void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float damage)
 {
-    Sol_Event_Add(world, (SolEvent){
-                             .kind          = EVENTKIND_HIT,
-                             .as.hit.entA   = dealer,
-                             .as.hit.entB   = target,
-                             .as.hit.pos    = Sol_Xform_GetPos(world, target),
-                             .as.hit.damage = damage,
-                             .as.hit.fxKind = FXKIND_LIGHTNING,
-                         });
+    SolHit hit = {
+        .entA   = dealer,
+        .entB   = target,
+        .pos    = Sol_Xform_GetPos(world, target),
+        .damage = damage,
+    };
+    Sol_Combat_ApplyHit(world, target, hit);
 
     Sol_Realloc((void **)&world->chainhit->chains, world->chainhit->count, &world->chainhit->capacity, sizeof(Chain));
     int idx = world->chainhit->count++;
@@ -79,13 +78,13 @@ void               Chain_Step(World *world, double dt, double time)
             int target   = Find_NextTarget(world, chain);
             if (target > 0)
             {
-                Sol_Event_Add(world, (SolEvent){
-                                         .kind          = EVENTKIND_HIT,
-                                         .as.hit.entA   = chain->dealer,
-                                         .as.hit.entB   = target,
-                                         .as.hit.damage = chain->damage,
-                                         .as.hit.pos    = Sol_Xform_GetPos(world, target),
-                                     });
+                SolHit hit = {
+                    .entA   = chain->dealer,
+                    .entB   = target,
+                    .damage = chain->damage,
+                    .pos    = Sol_Xform_GetPos(world, target),
+                };
+                Sol_Combat_ApplyHit(world, target, hit);
                 Sol_Event_Add(world, (SolEvent){
                                          .kind       = EVENTKIND_FX,
                                          .as.fx.kind = chain_config[chain->kind].fxKind,

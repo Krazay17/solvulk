@@ -18,6 +18,13 @@
 #define MAX_EMITTERS 0xFFF
 #define MAX_PARTICLES 0xFFFF
 
+typedef struct EmitterQueue
+{
+    vec3s pos, rot, color;
+    float scale;
+    u8    kind, entA, entB;
+} EmitterQueue;
+
 typedef struct SolEmitters
 {
     Emitter *emitter;
@@ -33,6 +40,18 @@ static Particle *Particle_Activate(SolEmitters *s, Emitter *e);
 static void      Particle_Tick(World *world, double dt, double time);
 static void      Particle_Draw(World *world, double dt, double time);
 static void      Emitter_Step(World *world, double dt, double time);
+
+void Sol_Make_Emitter(World *world, Emitter e)
+{
+    SolEmitters *s = world->emitters;
+    for (int i = 0; i < e.burst; i++)
+        Particle_Activate(s, &e);
+    if (e.ttl > 0 || e.inf)
+    {
+        Sol_Realloc((void **)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+        s->emitter[s->emitter_count++] = e;
+    }
+}
 
 void Sol_Emitter_Init(World *world)
 {
@@ -54,7 +73,7 @@ void Sol_Emitter_Init(World *world)
 Emitter *Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s color, float scale)
 {
     SolEmitters *s = world->emitters;
-    Sol_Realloc((void**)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+    Sol_Realloc((void **)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
 
     Emitter *e = &s->emitter[s->emitter_count++];
     *e         = emitter_kinds[kind];
@@ -88,10 +107,30 @@ Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, fl
     return e;
 }
 
+void Sol_Emitter_SpawnMulti(World *world, const Emitter *emitters, int count, vec3s pos, vec4s color, float scale,
+                            int id)
+{
+    for (int i = 0; i < count; i++)
+    {
+        Emitter e = emitters[i];
+        e.pos     = pos;
+        if (id)
+        {
+            e.followId          = id;
+            e.particle.followId = id;
+        }
+        e.particle.scale *= scale;
+        e.particle.offset *= scale;
+        if (color.a > 0)
+            e.particle.color = color;
+        Sol_Make_Emitter(world, e);
+    }
+}
+
 Emitter *Sol_Emitter_SpawnEx(World *world, Emitter src)
 {
     SolEmitters *s = world->emitters;
-    Sol_Realloc((void**)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
+    Sol_Realloc((void **)&s->emitter, s->emitter_count, &s->emitter_capacity, sizeof(Emitter));
 
     Emitter *e = &s->emitter[s->emitter_count++];
     *e         = src;
@@ -127,14 +166,6 @@ static void Emitter_Step(World *world, double dt, double time)
     if (!world->emitters)
         return;
     float fdt = (float)dt;
-
-    SolEvents *events = world->events;
-    for (int i = 0; i < events->count; i++)
-    {
-        SolEvent *event = &events->event[i];
-        if (event->kind != EVENTKIND_EMITTER)
-            continue;
-    }
 
     SolEmitters *sys = world->emitters;
 

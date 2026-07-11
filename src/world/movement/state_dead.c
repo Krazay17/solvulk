@@ -13,7 +13,6 @@ void Dead_State_Update(World *world, int id, float dt)
 {
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[movement->state];
-    data->elapsed += dt;
     
     if (data->elapsed > DESTROY_TIMER)
     {

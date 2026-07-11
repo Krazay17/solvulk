@@ -1,4 +1,6 @@
 #include "s_emitter.h"
+#include "event/s_event.h"
+#include "sol_math.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
     [EMITTERKIND_POP_FIRE] =

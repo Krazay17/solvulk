@@ -14,6 +14,7 @@
 #include "emitter/s_emitter.h"
 #include "vital/s_vital.h"
 #include "render/render.h"
+#include "combat/s_combat.h"
 
 #define BASE_TICK_INTERVAL 1.0f
 
@@ -212,11 +213,13 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b)
     if (b->accum > interval)
     {
         b->accum -= interval;
-        Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_HIT,
-                                        .as.hit.entA   = b->source,
-                                        .as.hit.damage = 2,
-                                        .as.hit.pos    = Sol_Xform_GetPos(world, id),
-                                        .as.hit.entB   = id});
+        SolHit hit = {
+            .entA   = b->source,
+            .damage = 2,
+            .pos    = Sol_Xform_GetPos(world, id),
+            .entB   = id,
+        };
+        Sol_Combat_ApplyHit(world, id, hit);
         Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){1, 0, 0, 1}, 1.0f);
     }
 }

@@ -101,6 +101,7 @@ void Sol_Tick(double dt, double time)
 
     Worlds_Draw3d(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Render_Flush3D();
+
     Worlds_Draw2d(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Tooltip_Draw();
     Sol_Render_Flush2D();
@@ -159,8 +160,4 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
     solState.uiScale = fminf(sx, sy);
 
     solEngine.needsResize = true; // game thread picks this up in Sol_OnResize
-}
-World *Sol_GetActiveWorld()
-{
-    return solEngine.activeWorld;
 }

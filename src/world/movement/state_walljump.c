@@ -14,7 +14,6 @@ void Walljump_State_Update(World *world, int id, float dt)
 {
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[MOVE_WALLJUMP];
-    data->elapsed += dt;
     float alpha = 1.0f - (data->elapsed / DASH_DURATION);
 
     if (data->elapsed >= DASH_DURATION)

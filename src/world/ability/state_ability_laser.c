@@ -130,18 +130,17 @@ void Laser_State_Update(World *world, int id, float dt)
                 continue;
             combat->hitEnts[result.entId] = true;
 
-            Sol_Event_Add(world, (SolEvent){
-                                     .kind              = EVENTKIND_HIT,
-                                     .as.hit.damage     = finalDamage,
-                                     .as.hit.power      = finalCharge,
-                                     .as.hit.buffMask   = data->buffs,
-                                     .as.hit.effectMask = data->effects,
-                                     .as.hit.entA       = id,
-                                     .as.hit.entB       = result.entId,
-                                     .as.hit.pos        = result.pos,
-                                     .as.hit.vel        = dir,
-                                     .as.hit.fxKind     = FXKIND_LASER_HIT,
-                                 });
+            SolHit hit = {
+                .damage     = finalDamage,
+                .power      = finalCharge,
+                .buffMask   = data->buffs,
+                .effectMask = data->effects,
+                .entA       = id,
+                .entB       = result.entId,
+                .pos        = result.pos,
+                .vel        = dir,
+            };
+            Sol_Combat_ApplyHit(world, result.entId, hit);
         }
     }
 }

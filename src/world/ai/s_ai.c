@@ -151,7 +151,7 @@ u32 AiController_FindTarget(World *world, int id)
     return 0;
 }
 
-void Sol_AiController_SetLastHit(World *world, int id, int source, u32 damage)
+void Sol_AiController_SetLastHit(World *world, int id, int source, float damage)
 {
     world->aicontrollers[id].justHitUs = source;
     world->aicontrollers[id].lastHit   = damage;

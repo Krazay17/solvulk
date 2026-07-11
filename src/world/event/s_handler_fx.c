@@ -287,9 +287,9 @@ static const FxHandler fxHandler[FXKIND_COUNT] = {
 
     [FXKIND_FIRE_APPLY] = Handle_FireApply,         [FXKIND_SHIELD_BURST] = Handle_ShieldBurst,
     [FXKIND_SHIELD_HIT] = Handle_ShieldBurstHit,    [FXKIND_SPINHIT] = Handle_SpinHit,
-    [FXKIND_BULLET_HIT] = Handle_SwordSwing,        [FXKIND_CHAINLIGHTNING] = Handle_ChainLightning,
-    [FXKIND_LIGHTNING] = Handle_Lightning,          [FXKIND_SWORD_HIT] = Handle_SwordSwing,
-    [FXKIND_TAKEDAMAGE] = Handle_TakeDamage,        [FXKIND_DEATH_BLOOD] = Handle_SwordSwing,
+    [FXKIND_BULLET_HIT] = Handle_BulletHit,         [FXKIND_CHAINLIGHTNING] = Handle_ChainLightning,
+    [FXKIND_LIGHTNING] = Handle_Lightning,          [FXKIND_SWORD_HIT] = Handle_SwordHit,
+    [FXKIND_TAKEDAMAGE] = Handle_TakeDamage,        [FXKIND_DEATH_BLOOD] = Handle_Death,
 };
 
 static void Event_HandleFx(World *world, double dt, double time)
@@ -306,7 +306,7 @@ static void Event_HandleFx(World *world, double dt, double time)
             if (handler)
                 handler(world, e);
         }
-        if(e->kind == EVENTKIND_SOUND)
+        if (e->kind == EVENTKIND_SOUND)
         {
             Sol_Audio_PlayAt(e->as.sound.kind, e->as.sound.pos, e->as.sound.volume, 0.0f, 4);
         }

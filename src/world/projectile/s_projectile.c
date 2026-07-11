@@ -31,6 +31,7 @@ CompProjectile *Sol_Projectile_Add(World *world, int id, ProjectileKind kind, fl
 static int  step_required = BITC(HAS_PROJECTILE);
 static void Projectile_Step(World *world, double dt, double time)
 {
+    // check physx collisions
     for (int i = 0; i < world->events->count; i++)
     {
         SolEvent *e = &world->events->event[i];
@@ -61,6 +62,7 @@ static void Projectile_Step(World *world, double dt, double time)
         Projectile_Hit(world, proj, hit);
         Projectile_Bounce(world, proj);
     }
+    // sphere trace path for collision misses
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -81,11 +83,12 @@ static void Projectile_Step(World *world, double dt, double time)
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            if (!Sol_Owner_GetHostile(world, id, result.entId))
+            u32          hitid  = result.entId;
+            if (!Sol_Owner_GetHostile(world, id, hitid) || !Sol_Physx_DoesCollide(world, id, hitid))
                 continue;
             CompProjectile *projectile = &world->projectiles[id];
             SolHit          hit        = projectile->directHit;
-            hit.entB                   = result.entId;
+            hit.entB                   = hitid;
             hit.pos                    = result.pos;
             hit.normal                 = result.norm;
             hit.vel                    = body->vel;
@@ -144,7 +147,7 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
             float        dist   = glms_vec3_distance(result.pos, pos);
 
             SolRayResult losCheck =
-                Sol_RaycastD(world, (SolRay){.pos = pos, .dir = dir, .dist = dist, .ignoreEnt = id, .mask = 0}, 1.0f);
+                Sol_RaycastD(world, (SolRay){.pos = pos, .dir = dir, .dist = dist, .ignoreEnt = id}, 1.0f);
             if (losCheck.hit)
                 continue;
             aoeHit.entB = result.entId;

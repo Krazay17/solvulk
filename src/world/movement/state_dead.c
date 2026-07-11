@@ -13,7 +13,7 @@ void Dead_State_Update(World *world, int id, float dt)
 {
     CompMovement  *movement = &world->movements[id];
     MoveStateData *data     = &movement->stateData[movement->state];
-    
+
     if (data->elapsed > DESTROY_TIMER)
     {
         Sol_Destroy_Ent(world, id);
@@ -25,12 +25,13 @@ void Dead_State_Update(World *world, int id, float dt)
         world->masks[id] &= ~BITC(HAS_BODY2);
     }
 }
+
 void Dead_State_Enter(World *world, int id)
 {
     Sol_Model_PlayAnim(
         world, id,
         (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .playKind = ANIMPLAYKIND_NOLOOP});
-    //world->movements[id].targetHeight = 0.6f;
+    world->movements[id].targetHeight = 0.9f;
 }
 void Dead_State_Exit(World *world, int id)
 {

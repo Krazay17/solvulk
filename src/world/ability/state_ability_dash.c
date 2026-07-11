@@ -50,18 +50,20 @@ void ADash_State_Update(World *world, int id, float dt)
             if (combat->hitEnts[results[i].entId])
                 continue;
             combat->hitEnts[results[i].entId] = true;
+            vec3s hitpos                      = results[i].pos;
 
-            SolHit hit = {
-                .entA       = id,
-                .entB       = results[i].entId,
-                .pos        = results[i].pos,
-                .damage     = data->damage,
-                .effectMask = data->effects,
-                .buffMask   = data->buffs,
-                .kind       = HITKIND_SHIELD_PULSE,
-                .vel        = vecSub(results[i].pos, pos),
-            };
-            Sol_Combat_ApplyHit(world, results[i].entId, hit);
+            Sol_Combat_ApplyHit(world, results[i].entId,
+                                (SolHit){
+                                    .entA       = id,
+                                    .entB       = results[i].entId,
+                                    .pos        = hitpos,
+                                    .damage     = data->damage,
+                                    .effectMask = data->effects,
+                                    .buffMask   = data->buffs,
+                                    .kind       = HITKIND_SHIELD_PULSE,
+                                    .vel        = vecSub(hitpos, pos),
+                                });
+            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_SPINHIT, .as.fx.pos = hitpos});
         }
     }
 }
@@ -110,9 +112,9 @@ void ADash_State_Enter(World *world, int id)
     }
     Sol_Model_PlayAnim(world, id, desc);
 
-    Sol_Event_Add(
-        world,
-        (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = SOL_AUDIO_DASH, .as.fx.pos = Sol_Xform_GetPos(world, id)});
+    Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_SOUND,
+                                    .as.sound.kind = SOL_AUDIO_DASH,
+                                    .as.sound.pos  = Sol_Xform_GetPos(world, id)});
 }
 
 void ADash_State_Exit(World *world, int id)

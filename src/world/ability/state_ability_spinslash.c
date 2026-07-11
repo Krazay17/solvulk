@@ -51,7 +51,7 @@ void Spinslash_State_Update(World *world, int id, float dt)
                 if (combat->hitEnts[results[i].entId])
                     continue;
                 combat->hitEnts[results[i].entId] = true;
-                
+                vec3s hitPos                      = results[i].pos;
                 Sol_Combat_ApplyHit(world, results[i].entId,
                                     (SolHit){
                                         .entA       = id,
@@ -59,9 +59,13 @@ void Spinslash_State_Update(World *world, int id, float dt)
                                         .damage     = data->damage,
                                         .effectMask = data->effects,
                                         .buffMask   = data->buffs,
-                                        .pos        = results[i].pos,
-                                        .vel        = vecSub(results[i].pos, pos),
+                                        .pos        = hitPos,
+                                        .vel        = vecSub(hitPos, pos),
                                     });
+                Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
+                                                .as.fx.kind  = FXKIND_SPINHIT,
+                                                .as.fx.pos   = hitPos,
+                                                .as.fx.scale = data->charge});
             }
         }
     }

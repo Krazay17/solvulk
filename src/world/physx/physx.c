@@ -6,6 +6,8 @@
 #include "xform/s_xform.h"
 #include "owner/s_owner.h"
 
+#define SPATIAL_STATIC_CELL_SIZE 1.0f
+
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
     [SHAPE3_CAP] = Collide_Capsule_Tri,
@@ -13,14 +15,10 @@ ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
 };
 
 ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
-    [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
-    [SHAPE3_CAP][SHAPE3_CAP] = Collide_Capsule_Capsule,
-    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere,
-    [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
-    [SHAPE3_MOD][SHAPE3_MOD] = Collide_Sphere_Sphere,
-    [SHAPE3_MOD][SHAPE3_SPH] = Collide_Sphere_Sphere,
-    [SHAPE3_BOX][SHAPE3_BOX] = Collide_Box_Box,
-    [SHAPE3_BOX][SHAPE3_SPH] = Collide_Sphere_Box,
+    [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,  [SHAPE3_CAP][SHAPE3_CAP] = Collide_Capsule_Capsule,
+    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere, [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
+    [SHAPE3_MOD][SHAPE3_MOD] = Collide_Sphere_Sphere,  [SHAPE3_MOD][SHAPE3_SPH] = Collide_Sphere_Sphere,
+    [SHAPE3_BOX][SHAPE3_BOX] = Collide_Box_Box,        [SHAPE3_BOX][SHAPE3_SPH] = Collide_Sphere_Box,
     [SHAPE3_SPH][SHAPE3_BOX] = Collide_Sphere_Box,
 };
 
@@ -137,8 +135,9 @@ void Collisions_Dynamic_Hashed(World *world, int id, CompBody *body, CompXform *
             if (id < otherID)
             {
                 CompBody *other_body = &world->bodies[otherID];
-                if ((body->ignoreFriendly || other_body->ignoreFriendly) && !Sol_Owner_GetHostile(world, id, otherID))
+                if (!Sol_Physx_DoesCollide(world, id, otherID))
                     goto skip;
+
                 CompXform *other_xform = &world->xforms[otherID];
                 SolContact contact     = {0};
                 if (shape_pair_test[body->shape][other_body->shape](body, xform, other_body, other_xform, &contact))
@@ -762,12 +761,10 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
 
 bool Collide_Box_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
 {
-
 }
 
 bool Collide_Box_Sphere(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
 {
-    
 }
 
 bool Collide_Sphere_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)

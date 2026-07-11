@@ -60,7 +60,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
                      .restitution = 0.01f,
-                     .group       = 1,
+                     .group       = PHYSXMASK(0b10, 0b111),
                  });
 
     Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
@@ -102,7 +102,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
                      .restitution = 0.1f,
-                     .group       = 1,
+                     .group       = PHYSXMASK(0b10, 0b111),
                  });
     Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
@@ -177,7 +177,7 @@ int Sol_Prefab_Fireball(World *world, u32 id, vec3s pos, float scale)
                      .shape          = SHAPE3_SPH,
                      .mass           = 1.0f * shape.radius,
                      .restitution    = 0.5f,
-                     .group          = 0b10,
+                     .group          = PHYSXMASK(0b100, 0b111),
                      .ignoreFriendly = 1,
                  });
     Sol_Projectile_Add(world, id, PROJECTILEKIND_FIREBALL, scale);

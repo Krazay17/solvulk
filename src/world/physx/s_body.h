@@ -1,7 +1,7 @@
 #pragma once
 #include "base.h"
 
-#define SPATIAL_STATIC_CELL_SIZE 1.0f
+#define PHYSXMASK(g, m) ((g << 16) | m)
 
 typedef enum Shape3
 {
@@ -37,7 +37,8 @@ typedef struct CompBody
     vec3s  gravity;
     float  mass, invMass, restitution;
     Shape3 shape;
-    u8     group;
+    u32    group, base_group;
+    u32    ray_group, ray_base_group;
     bool   ignoreFriendly;
 } CompBody;
 
@@ -47,7 +48,7 @@ typedef struct
     float  radius, height, length;
     float  mass, restitution;
     Shape3 shape;
-    u8     group;
+    u32    group;
     bool   is2d, ignoreFriendly;
 } BodyDesc;
 
@@ -79,3 +80,5 @@ float        Sol_Physx_GetHeight(World *world, int id);
 void         Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir);
 void         Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt);
 float        Sol_Physx_Get_Ground_Dot(World *world, int id);
+bool         Sol_Physx_DoesCollide(World *world, int id, int idB);
+bool         Sol_Physx_DoesRayCollide(World *world, int id, int idB);

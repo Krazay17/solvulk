@@ -82,7 +82,7 @@ void Crouch_State_Enter(World *world, int id)
 
     CompMovement  *move = &world->movements[id];
     MoveStateData *data = &move->stateData[move->state];
-    move->targetHeight  = move->baseHeight * 0.65f;
+    move->targetHeight  = move->baseHeight * 0.55f;
 }
 
 void Crouch_State_Exit(World *world, int id)

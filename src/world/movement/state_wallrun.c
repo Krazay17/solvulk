@@ -158,10 +158,10 @@ void Wallrun_State_Update(World *world, int id, float dt)
         speedMod  = velToWallDot > 0 ? 1.5f : -1.5f;
         Sol_Model_PlayAnim(world, id, desc);
         break;
-    // default:
-    //     desc.anim = ANIM_WALK_FWD;
-    //     Sol_Model_PlayAnim(world, id, desc);
-    //     break;
+        // default:
+        //     desc.anim = ANIM_WALK_FWD;
+        //     Sol_Model_PlayAnim(world, id, desc);
+        //     break;
     }
     speedDif = speedDif > 0 ? speedDif : 0.01f;
     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * speedMod);
@@ -197,12 +197,12 @@ bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, 
 {
     if (Sol_Controller_IsActionState(world, id, ACTION_CROUCH))
         return false;
-    if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);
     if (goodWall)
     {
+        if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
         CompMovement *move = &world->movements[id];
         move->lastTouch    = result.pos;
         move->wallNormal   = result.norm;

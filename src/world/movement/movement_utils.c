@@ -21,6 +21,7 @@ void CrouchHeight(World *world, int id, float fdt)
         if (result.hit)
             return;
     }
+
     Sol_Physx_SetHeight(world, id, newHeight);
     Sol_Model_SetOffsetY(world, id, newHeight * -0.5f);
 }

@@ -6,10 +6,11 @@
 #include "profiler.h"
 #include "xform/s_xform.h"
 #include "event/s_event.h"
+#include "owner/s_owner.h"
 #include "replication/s_replication.h"
 #include <omp.h>
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 4.0f
+#define SPATIAL_DYNAMIC_CELL_SIZE 1.0f
 #define SPATIAL_DYNAMIC_SIZE (1 << 18)
 #define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
 
@@ -46,6 +47,7 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
         .mass           = desc.mass,
         .shape          = desc.shape,
         .group          = desc.group,
+        .base_group     = desc.group,
         .gravity        = SOL_PHYS_GRAV,
         .invMass        = desc.mass > 0 ? 1.0f / desc.mass : 0,
         .restitution    = desc.restitution ? desc.restitution : 0.5f,
@@ -106,7 +108,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
             continue;
         }
 
-        if (xform->pos.y < -500.0f)
+        if (xform->pos.y < -250.0f)
         {
             if (world->flags[id].flags & EFLAG_PROJECTILE)
             {
@@ -407,4 +409,18 @@ void Sol_Physx_SetRedirectVel(World *world, int id, vec3s dir)
 void Sol_Physx_LerpVel(World *world, int id, vec3s vel, float amnt)
 {
     world->bodies[id].vel = glms_vec3_lerp(world->bodies[id].vel, vel, amnt);
+}
+bool Sol_Physx_DoesCollide(World *world, int id, int idB)
+{
+    if (!Sol_Owner_GetHostile(world, id, idB) &&
+        (world->bodies[id].ignoreFriendly || world->bodies[idB].ignoreFriendly))
+        return false;
+    return world->bodies[id].group << 16 & world->bodies[idB].group;
+}
+bool Sol_Physx_DoesRayCollide(World *world, int id, int idB)
+{
+    if (!Sol_Owner_GetHostile(world, id, idB) &&
+        (world->bodies[id].ignoreFriendly || world->bodies[idB].ignoreFriendly))
+        return false;
+    return world->bodies[id].ray_group << 16 & world->bodies[idB].ray_group;
 }

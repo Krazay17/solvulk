@@ -146,6 +146,8 @@ static void Handle_BulletHit(World *world, const SolEvent *e)
     vec3s pos = e->as.fx.pos;
     Sol_Emitter_Spawn(world, EMITTERKIND_FLASH_BALL, pos, (vec4s){1, 0, 0, 1}, 0.25f);
     Sol_Emitter_Spawn(world, EMITTERKIND_BURST_SPARKS, pos, (vec4s){1, 1, 1, 1}, 0.25f);
+    Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, pos, 1.0f, 0, 4);
+
 }
 
 static void Handle_LaserHit(World *world, const SolEvent *e)

@@ -48,7 +48,6 @@ void Claw_State_Update(World *world, int id, float dt)
             .dist      = MELEE_RANGE,
             .ignoreEnt = id,
             .pos       = controller->aimpos,
-            .mask      = 0b1,
         };
         SolRayResult results[128];
         int          hits = Sol_SphereCast(world, ray, .66f, results, 128);

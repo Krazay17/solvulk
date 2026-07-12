@@ -147,7 +147,7 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
                      .mass        = 1.0f,
                      .shape       = SHAPE3_CAP,
                      .restitution = 0.1f,
-                     .group       = 1,
+                     .group       = PHYSXMASK(0b10, 0b111),
                  });
     Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
@@ -250,8 +250,8 @@ int Sol_Prefab_Clouds(World *world, vec3s pos)
 {
     Sol_Emitter_SpawnEx(world, (Emitter){.pos       = pos,
                                          .inf       = 1,
-                                         .burst     = 1000,
-                                         .rate      = 0.2f,
+                                         .burst     = 240,
+                                         .rate      = 1.0f,
                                          .rateBurst = 2,
                                          .particle  = (Particle){
                                              .randScale = 1,

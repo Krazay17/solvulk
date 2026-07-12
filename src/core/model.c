@@ -375,10 +375,12 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                 {
                     cgltf_buffer_view *view            = prim->material->normal_texture.texture->image->buffer_view;
                     void              *data            = (uint8_t *)view->buffer->data + view->offset;
-                    int                normalTextureId = Sol_Texture_RegisterRuntime(
+                    int                normalTextureId = Sol_Texture_RegisterUnormTexture(
                         data, view->size, prim->material->normal_texture.texture->image->mime_type);
                     if (normalTextureId)
-                        dst->material.normalTextureId = normalTextureId;
+                    {
+                        dst->material.normalTextureId        = normalTextureId;
+                    }
                 }
 
                 if (prim->material->has_pbr_metallic_roughness)
@@ -387,14 +389,23 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                     cgltf_texture                *texture = pbr->base_color_texture.texture;
                     if (texture)
                     {
-                        cgltf_image *image = texture->image;
+                        cgltf_image *image = NULL;
+                        if (texture->has_webp)
+                        {
+                            image = texture->webp_image;
+                        }
+                        else
+                        {
+                            image = texture->image;
+                        }
+
                         if (image && image->buffer_view)
                         {
                             cgltf_buffer_view *view      = image->buffer_view;
                             void              *data      = (uint8_t *)view->buffer->data + view->offset;
                             size_t             size      = view->size;
                             const char        *mime_type = image->mime_type;
-                            int textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                            int                textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
                             sollog(image->name);
                             if (textureId)
                             {
@@ -497,12 +508,12 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
     if (ch->path == ANIM_PATH_ROTATION)
     {
         // Compute the dot product between the two quaternion keyframes
-        float dot = v0[0]*v1[0] + v0[1]*v1[1] + v0[2]*v1[2] + v0[3]*v1[3];
-        
+        float dot = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2] + v0[3] * v1[3];
+
         if (dot < 0.0f)
         {
             // They have opposite polarity; invert one to force the shortest path
-            float inverted_v1[4] = { -v1[0], -v1[1], -v1[2], -v1[3] };
+            float inverted_v1[4] = {-v1[0], -v1[1], -v1[2], -v1[3]};
             glm_quat_nlerp(v0, inverted_v1, a, out);
         }
         else

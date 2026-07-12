@@ -398,7 +398,7 @@ void  Sol_Render_DrawSkybox(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
 void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
 void  Sol_Render_DrawText(SolFontDesc desc);
-void  Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id);
+void  Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
 void  Sol_Render_UploadModel(SolModel *model, u32 modelId);
 void  Sol_Render_DrawText2D(SolFontDesc desc);
 void  Sol_Render_DrawText3D(Text3DDesc desc);

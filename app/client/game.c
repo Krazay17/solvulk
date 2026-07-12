@@ -251,7 +251,7 @@ void Create_Sol_Game()
         }
     }
 
-    Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
+    // Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
     int invulnEnemy = SpawnEnemy(0, &(struct MakeEnemy){.enemyKind = ENEMYKIND_WIZARD, .world = gameWorld});
     Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 25.0f, 0);

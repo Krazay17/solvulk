@@ -44,10 +44,11 @@ void Sol_Render_CheckGpuUploads()
 {
     for (int i = 0; i < next_free_texture_idx; i++)
     {
-        if (loaded_images[i].needsGpuUpload)
+        SolTexture *texture = &loaded_images[i];
+        if (texture->needsGpuUpload)
         {
-            Sol_Render_UploadImage(loaded_images[i].width, loaded_images[i].height, loaded_images[i].pixels, i);
-            loaded_images[i].needsGpuUpload = false;
+            Sol_Render_UploadImage(texture->width, texture->height, texture->pixels, i, texture->unorm);
+            texture->needsGpuUpload = false;
         }
     }
 }

@@ -104,7 +104,7 @@ void Sol_Cam_Update(double dt)
 
     solCamera.proj =
         glms_perspective(glm_rad(solCamera.fov), Sol_Render_GetAspect(), solCamera.nearClip, solCamera.farClip);
-    solCamera.proj.raw[1][1] *= -1;
+    solCamera.proj.raw[1][1] *= -1.0f;
 
     solCamera.viewProj = glms_mat4_mul(solCamera.proj, solCamera.view);
 

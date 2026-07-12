@@ -12,7 +12,7 @@
 void Sol_Event_Init(World *w)
 {
     w->events           = malloc(sizeof(SolEvents));
-    w->events->event    = malloc(sizeof(SolEvent));
+    w->events->event    = NULL;
     w->events->count    = 0;
     w->events->capacity = 0;
 }

@@ -50,7 +50,7 @@
             "inherits": "base",
             "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+                "CMAKE_BUILD_TYPE": "MinSizeRel"
             }
         },
         {

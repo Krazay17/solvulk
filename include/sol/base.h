@@ -28,7 +28,8 @@
         double: printf("%f\n", X),                                                                                     \
         size_t: printf("%zu bytes\n", X),                                                                              \
         long long: printf("%zu bytes\n", X),                                                                           \
-        char *: printf("%s\n", X))
+        char *: printf("%s\n", X),                                                                                     \
+        const char *: printf("%s\n", X))
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))

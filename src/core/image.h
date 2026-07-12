@@ -11,6 +11,7 @@ typedef struct SolTexture
     u32          channels;
     bool         loaded, needsGpuUpload;
     size_t       size;
+    u8           unorm;
 } SolTexture;
 
 extern SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
@@ -20,3 +21,4 @@ int Sol_Textures_Init();
 
 SolTexture *Sol_GetImage(u32 id);
 uint32_t    Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_extension);
+u32         Sol_Texture_RegisterUnormTexture(void *data, size_t size, const char *hint_extension);

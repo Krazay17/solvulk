@@ -1211,14 +1211,15 @@ int Sol_UploadImage(SolTexture *image, SolTextureId id)
     const void *pixels = image->pixels;
     u32         width  = image->width;
     u32         height = image->height;
+    u8          unorm  = image->unorm;
 
-    Sol_Render_UploadImage(width, height, pixels, id);
+    Sol_Render_UploadImage(width, height, pixels, id, unorm);
     return 0;
 }
 
-void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id)
+void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm)
 {
-    int format = id == 0 ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
+    int format = unorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_SRGB;
 
     SolGpuImage *out     = &gpuImages[id];
     SolVkState  *vkstate = &solvkstate;

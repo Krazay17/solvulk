@@ -23,7 +23,6 @@ layout(set = 1, binding = 0) uniform Scene {
 
 layout(set = 4, binding = 0) uniform sampler2D textures[128];
 
-// Unchanged size from your original — no growth, no extra push constant cost
 layout(push_constant) uniform MeshMaterial {
     vec4 baseColor;
     vec4 emissive;
@@ -49,18 +48,12 @@ const uint FLAG_DAMAGED = 1u << 2;
 const float PI = 3.14159265359;
 const uint  SKY_TEXTURE_ID = 5u;
 
-// ============================================================
-// Cheap arcade-style specular — single Blinn-Phong-ish GGX term,
-// no geometry term, no Smith shadowing. Looks punchy, costs way less
-// than full Cook-Torrance, and at game distances the difference from
-// "correct" is invisible while the framerate difference isn't.
-// ============================================================
 float SpecularGGX_Fast(vec3 N, vec3 H, float roughness)
 {
-    float a    = max(roughness * roughness, 0.01);
-    float a2   = a * a;
+    float a     = max(roughness * roughness, 0.01);
+    float a2    = a * a;
     float NdotH = max(dot(N, H), 0.0);
-    float d    = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
+    float d     = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
     return a2 / (PI * d * d + 0.0001);
 }
 
@@ -77,45 +70,40 @@ vec3 PerturbNormal(vec3 N, vec3 V, vec2 uv, uint normalTexId)
     vec2 st1 = dFdx(uv);
     vec2 st2 = dFdy(uv);
     vec3 T   = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 B   = -normalize(cross(N, T));
+    vec3 B   = normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
     return normalize(TBN * mapNormal);
 }
 
-// Cheaper than full ACES — a Reinhard-ish curve that still punches contrast
-// without the polynomial divide ACES needs. Tune the exposure multiplier to taste.
-
 vec3 TonemapPunchy(vec3 x)
 {
     x *= 1.2;
-    vec3 toe = x * x / (x + 0.08);   // toe crushes shadows instead of lifting them
-    return toe / (toe + 0.8);         // shoulder rolloff, same family as before
+    vec3 toe = x * x / (x + 0.08);
+    return toe / (toe + 0.8);
 }
 
 void main()
 {
     float fTime = float(time);
 
-// --- Albedo & alpha ---
-vec2 scaledUV = fragUV * material.textureScale;
-vec4 baseTex  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
+    // --- Albedo & alpha ---
+    vec2 scaledUV = fragUV * material.textureScale;
+    vec4 baseTex  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
 
-vec3 albedo = (fragColor.a > 0.0) ? mix(material.baseColor.rgb, fragColor.rgb, fragColor.a) : material.baseColor.rgb;
-albedo *= baseTex.rgb;
+    vec3 albedo = (fragColor.a > 0.0) ? mix(material.baseColor.rgb, fragColor.rgb, fragColor.a) : material.baseColor.rgb;
+    albedo *= baseTex.rgb;
 
-// FIX: If both colors provide 0.0 alpha, treat it as opaque (1.0) instead of completely clear
-float rawAlpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
-if (rawAlpha <= 0.0) {
-    rawAlpha = 1.0;
-}
+    float rawAlpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
+    if (rawAlpha <= 0.0) {
+        rawAlpha = 1.0;
+    }
 
-// FIX: Safeguard against textures without alpha channels returning 0
-float texAlpha = (material.textureId != 0u) ? baseTex.a : 1.0;
-if (texAlpha <= 0.0) {
-    texAlpha = 1.0;
-}
+    float texAlpha = (material.textureId != 0u) ? baseTex.a : 1.0;
+    if (texAlpha <= 0.0) {
+        texAlpha = 1.0;
+    }
 
-float alpha = rawAlpha * texAlpha;
+    float alpha = rawAlpha * texAlpha;
 
     vec3 hybridFogEmmisive = vec3(0.0);
     if (material.fogTextureId != 0u)
@@ -126,24 +114,22 @@ float alpha = rawAlpha * texAlpha;
         float invAlpha = 1.0 - baseTex.a;
         float glowMask = invAlpha * fogSample.a;
 
-        // 1. Force the physical under-surface albedo to match the fog color explicitly
-        // (This completely overrides any black texture artifacts)
         albedo = mix(albedo, fogSample.rgb, glowMask);
+        hybridFogEmmisive = fogSample.rgb * glowMask * 1.0;
 
-        // 2. Inject a controlled fallback emissive value so it stays visible in pitch-black shadows
-        hybridFogEmmisive = fogSample.rgb * glowMask * 1.0; // Soft self-illumination base
-
-        // 3. Keep the fragment opaque where the mask shows through
         alpha = max(alpha, glowMask);
-        float pulse = 3.75 + 0.25 * sin(fTime *0.2);
+        float pulse = 3.75 + 0.25 * sin(fTime * 0.2);
         alpha *= pulse;
     }
 
     // --- Vectors ---
     vec3 V = normalize(scene.cameraPos.xyz - fragWorldPos);
+    
+    // Normal map is plugged back in safely here
     vec3 N = (material.normalTextureId != 0u)
                  ? PerturbNormal(normalize(fragNormal), V, scaledUV, material.normalTextureId)
                  : normalize(fragNormal);
+                 
     vec3 L = normalize(scene.sun.xyz);
     vec3 H = normalize(V + L);
 
@@ -153,27 +139,32 @@ float alpha = rawAlpha * texAlpha;
     // --- Reflectivity ---
     vec3 F0 = mix(vec3(0.04), albedo, material.metallic);
 
-    // --- Direct light: cheap single-lobe specular + Schlick Fresnel, no Smith G term ---
-    float D = SpecularGGX_Fast(N, H, material.roughness);
-    vec3  F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-    vec3  specular = vec3(D) * F / max(4.0 * NdotV * NdotL, 0.05); // floor avoids edge spiking, also skips one branch
-
-    vec3 kD = (1.0 - material.metallic) * albedo;
-
+    // --- Ambient Lighting Calculation ---
     vec3 ambientSpecular = vec3(0.0);
-    vec3 ambientFill = vec3(0.02, 0.025, 0.035); // much darker — let direct light do the work
+    vec3 ambientFill = vec3(0.02, 0.025, 0.035);
     if (material.metallic > 0.01)
     {
         vec3 R = reflect(-V, N);
         vec2 skyUV = vec2(atan(R.z, R.x) / (2.0 * PI) + 0.5, acos(clamp(R.y, -1.0, 1.0)) / PI);
-        ambientSpecular = texture(textures[SKY_TEXTURE_ID], skyUV).rgb * F0;
+        float horizonGlowMask = clamp(N.y + 0.5, 0.0, 1.0); 
+        ambientSpecular = texture(textures[SKY_TEXTURE_ID], skyUV).rgb * F0 * horizonGlowMask;
     }
-    vec3 ambientDiffuse = ambientFill * albedo * mix(0.5, 1.0, NdotL); // shadowed faces get half ambient
+    vec3 ambientDiffuse = ambientFill * albedo * mix(0.2, 1.0, NdotL);
     vec3 ambient = mix(ambientDiffuse, ambientSpecular, material.metallic);
 
-    // --- Direct light assembly ---
-    float sunIntensity = (scene.sun.w > 0.0) ? scene.sun.w : 1.0;
-    vec3  directLighting = (kD / PI + specular) * sunIntensity * NdotL;
+    // --- Direct Light Assembly (Cleaned up and protected) ---
+    vec3 directLighting = vec3(0.0);
+    if (NdotL > 0.0) 
+    {
+        float D = SpecularGGX_Fast(N, H, material.roughness);
+        vec3  F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+        vec3  specular = vec3(D) * F / max(4.0 * NdotV * NdotL, 0.25);
+
+        vec3 kD = (1.0 - material.metallic) * albedo;
+        float sunIntensity = (scene.sun.w > 0.0) ? scene.sun.w : 1.0;
+        
+        directLighting = (kD / PI + specular) * sunIntensity * NdotL;
+    }
 
     vec3 finalRGB = ambient + directLighting;
 
@@ -186,10 +177,10 @@ float alpha = rawAlpha * texAlpha;
     finalRGB += emissive;
     finalRGB += hybridFogEmmisive;
 
-    // --- GAMEPLAY VISUAL FLAGS (cheap, high impact — keep these front and center) ---
+    // --- Visual Flags ---
     if ((flags & FLAG_FRESNEL) != 0u)
     {
-        float rim = pow(1.0 - NdotV, 3.0); // slightly cheaper power than original's 4.0
+        float rim = pow(1.0 - NdotV, 3.0);
         finalRGB += rim * vec3(1.0);
     }
     if ((flags & FLAG_YELLOW) != 0u)
@@ -197,18 +188,16 @@ float alpha = rawAlpha * texAlpha;
         finalRGB += vec3(1.0, 1.0, 0.0);
     }
 
-
     float timeSinceHit = fTime - fragHitTime;
     if (timeSinceHit >= 0.0 && timeSinceHit < 0.3)
     {
         float flashAlpha = 1.0 - (timeSinceHit / 0.3);
-        finalRGB = mix(finalRGB, vec3(1.0), flashAlpha * 0.85); // slightly punchier flash
+        finalRGB = mix(finalRGB, vec3(1.0), flashAlpha * 0.85);
     }
 
-    // --- Cheap punchy tonemap + gamma ---
+    // --- Tonemap & Gamma ---
     finalRGB = TonemapPunchy(finalRGB);
     finalRGB = pow(finalRGB, vec3(1.0 / 2.2));
-
 
     outColor = vec4(finalRGB, alpha);
 }

@@ -43,25 +43,27 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_GRID]             = "Grid.png",
 };
 
-SolTexture      loaded_images[MAX_GLOBAL_TEXTURES];
-uint32_t next_free_texture_idx = SOL_TEXTURE_COUNT;
+SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
+uint32_t   next_free_texture_idx = SOL_TEXTURE_COUNT;
 
 static SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id)
 {
     SolTexture *image = &loaded_images[id];
     image->data       = data;
+    sollog(extension);
 
-    if (extension && strstr(extension, ".raw"))
+    if (extension && strstr(extension, "raw"))
     {
         image->pixels = data;
         image->height = 224;
         image->width  = 224;
         image->loaded = true;
+        image->unorm  = 1;
         printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
     }
 
-    if (extension && strstr(extension, ".webp"))
+    if (extension && strstr(extension, "webp"))
     {
         image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
         image->loaded = true;
@@ -105,11 +107,17 @@ int Sol_Textures_Init()
         SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
 
         // FIX: Ensure size property is explicitly set for static assets!
-        image->size = res.size;
+        image->size           = res.size;
         image->needsGpuUpload = true;
         // Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
     }
     return 0;
+}
+
+u32 Sol_Texture_RegisterUnormTexture(void *data, size_t size, const char *hint_extension)
+{
+    u32 id                  = Sol_Texture_RegisterRuntime(data, size, hint_extension);
+    loaded_images[id].unorm = 1;
 }
 
 uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_extension)
@@ -140,7 +148,7 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
     SolTexture *image = Parse_Texture(data, size, hint_extension, assignedSlot);
 
     // Save the size on the struct so the check works next time around
-    image->size = size;
+    image->size           = size;
     image->needsGpuUpload = true;
 
     // Sol_UploadImage(image, assignedSlot);

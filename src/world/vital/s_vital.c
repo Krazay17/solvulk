@@ -55,8 +55,7 @@ static void OnDeath(World *world, int id)
                              .as.fx.kind = FXKIND_DEATH_BLOOD,
                              .as.fx.pos  = Sol_Xform_GetPos(world, id),
                          });
-    world->bodies[id].group           = 0;
-    //world->movements[id].targetHeight = 0.2f;
+    world->bodies[id].group           = PHYSXMASK(0, 1);
 }
 
 static void OnRespawn(World *world, int id)
@@ -68,7 +67,6 @@ static void OnRespawn(World *world, int id)
     Sol_Xform_Teleport(world, id, vital->respawnPos);
     Sol_Movement_SetState(world, id, MOVE_IDLE);
     world->bodies[id].group           = world->bodies[id].base_group;
-    //world->movements[id].targetHeight = world->movements[id].baseHeight;
 }
 
 static int  required_step = BITC(HAS_VITAL);

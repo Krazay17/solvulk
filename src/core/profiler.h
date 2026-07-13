@@ -1,37 +1,42 @@
 #pragma once
 
 #include <stdio.h>
-#include <windows.h>
+
+#ifdef WIN32
+#define LONGINT LARGE_INTEGER
+#else
+#define LONGINT long
+#endif
 
 typedef struct
 {
-    const char   *name;
-    LARGE_INTEGER start;
-    double        totalMs;
-    int           count;
-    int           limiter;
+    const char *name;
+    LONGINT     start;
+    double      totalMs;
+    int         count;
+    int         limiter;
 } SolProfiler;
 
-static LARGE_INTEGER _profFreq;
-static int           _profFreqInit = 0;
+static LONGINT _profFreq;
+static int     _profFreqInit = 0;
 
 static inline void Prof_Begin(SolProfiler *p)
 {
-    if (!_profFreqInit)
-    {
-        QueryPerformanceFrequency(&_profFreq);
-        _profFreqInit = 1;
-    }
-    QueryPerformanceCounter(&p->start);
+    // if (!_profFreqInit)
+    // {
+    //     QueryPerformanceFrequency(&_profFreq);
+    //     _profFreqInit = 1;
+    // }
+    // QueryPerformanceCounter(&p->start);
 }
 
 static inline void Prof_End(SolProfiler *p)
 {
-    LARGE_INTEGER end;
-    QueryPerformanceCounter(&end);
-    double ms = (double)(end.QuadPart - p->start.QuadPart) / _profFreq.QuadPart * 1000.0;
-    p->totalMs += ms;
-    p->count++;
+    // LARGE_INTEGER end;
+    // QueryPerformanceCounter(&end);
+    // double ms = (double)(end.QuadPart - p->start.QuadPart) / _profFreq.QuadPart * 1000.0;
+    // p->totalMs += ms;
+    // p->count++;
 }
 
 static inline void Prof_Print(SolProfiler *p)

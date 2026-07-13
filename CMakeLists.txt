@@ -12,12 +12,14 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # --- Dependencies ---
-find_package(cglm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
-find_package(WebP REQUIRED)
+#find_package(cglm REQUIRED)
+#find_package(WebP REQUIRED)
+add_subdirectory(vendored/cglm)
 add_subdirectory(vendored/enet)
+#add_subdirectory(vendored/webp)
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
 # --- Core Sources ---
@@ -33,6 +35,7 @@ if(WIN32)
         #"${CMAKE_SOURCE_DIR}/extern/libwebp/lib/libwebp.lib"
     )
 else()
+    list(FILTER SOURCES EXCLUDE REGEX "src/platform/win32/*.c")
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_XLIB_KHR)
@@ -64,6 +67,7 @@ target_include_directories(solvulk
         "${CMAKE_SOURCE_DIR}/include/sol"
         "${CMAKE_SOURCE_DIR}/extern"
         "${CMAKE_SOURCE_DIR}/vendored/enet/include"
+        "${CMAKE_SOURCE_DIR}/vendored/cglm/include"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -83,10 +87,10 @@ endif()
 target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
-        cglm::cglm
         OpenMP::OpenMP_C
         enet::enet_static
-        WebP::webp
+        #cglm::cglm
+        #WebP::webp
     PRIVATE
         ${PLATFORM_LIBS}
 )
@@ -110,7 +114,7 @@ if(WIN32)
 else()
     add_executable(solapp
         "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
-        "${CMAKE_SOURCE_DIR}/app/client/game.c"
+        #"${CMAKE_SOURCE_DIR}/app/client/game.c"
     )
 endif()
 

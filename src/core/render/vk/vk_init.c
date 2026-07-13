@@ -6,7 +6,9 @@ VkResult SolVkInstance(SolVkState *vkstate)
 {
     const char *extensions[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
+#ifdef WIN32
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
     };
 
     VkApplicationInfo appInfo  = {0};
@@ -30,12 +32,13 @@ VkResult SolVkInstance(SolVkState *vkstate)
     return 0;
 }
 
-int SolVkSurface(SolVkState *vkstate, HWND hwnd, HINSTANCE hInstance)
+int SolVkSurface(SolVkState *vkstate, void *hwnd, void *hInstance)
 {
+    #ifdef WIN32
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {0};
     surfaceCreateInfo.sType                       = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.hwnd                        = hwnd;
-    surfaceCreateInfo.hinstance                   = hInstance;
+    surfaceCreateInfo.hwnd                        = (HWND)hwnd;
+    surfaceCreateInfo.hinstance                   = (HINSTANCE)hInstance;
 
     VkResult result = vkCreateWin32SurfaceKHR(vkstate->instance, &surfaceCreateInfo, NULL, &vkstate->surface);
     if (result != VK_SUCCESS)
@@ -44,6 +47,9 @@ int SolVkSurface(SolVkState *vkstate, HWND hwnd, HINSTANCE hInstance)
         return 1;
     }
     return 0;
+    #else
+
+    #endif
 }
 
 int SolVkPhysicalDevice(SolVkState *vkstate)

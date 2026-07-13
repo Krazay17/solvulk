@@ -12,7 +12,7 @@
 #include "render/render_i.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include "webp/decode.h"
+// #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
@@ -63,13 +63,13 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
         return image;
     }
 
-    if (extension && strstr(extension, "webp"))
-    {
-        image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
-        image->loaded = true;
-        printf("ID: %d, Image upload width:%d\n", id, image->width);
-        return image;
-    }
+    // if (extension && strstr(extension, "webp"))
+    // {
+    //     image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
+    //     image->loaded = true;
+    //     printf("ID: %d, Image upload width:%d\n", id, image->width);
+    //     return image;
+    // }
 
     int w, h, channels;
     image->pixels = stbi_load_from_memory((const stbi_uc *)data,        // pointer cast, not compound literal

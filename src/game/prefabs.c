@@ -326,7 +326,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     border->border    = 3.0f;
 
     SolView2d *textView = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){0.0f, 1.0f, 0.0f, 1.0f}, 16.0f, 0);
-    strncpy_s(textView->text, sizeof(textView->text), text, 64);
+    strncpy(textView->text, text, sizeof(textView->text));
     textView->offset = (vec4s){dims.x * 0.5f, dims.y * 0.5f};
 
     return id;

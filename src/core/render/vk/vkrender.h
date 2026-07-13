@@ -152,7 +152,7 @@ typedef struct SolVkState
 // ─── Vulkan init functions ───────────────────────────────────────
 
 VkResult SolVkInstance(SolVkState *vk);
-int      SolVkSurface(SolVkState *vk, HWND hwnd, HINSTANCE hInstance);
+int      SolVkSurface(SolVkState *vk, void *hwnd, void *hInstance);
 int      SolVkPhysicalDevice(SolVkState *vk);
 int      SolVkDevice(SolVkState *vk);
 int      SolVkSwapchain(SolVkState *vk);
@@ -182,6 +182,5 @@ VkCommandBuffer   Command_Buffer_Get(void);
 SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id);
 
 void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
-int Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out);
-void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc,
-                                    SolGpuImage *image, u32 slotIndex);
+int  Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out);
+void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc, SolGpuImage *image, u32 slotIndex);

@@ -14,7 +14,7 @@
 #include "movement/s_movement.h"
 #include "xform/s_xform.h"
 #include "vital/s_vital.h"
-#include "physx./s_body.h"
+#include "physx/s_body.h"
 #include "owner/s_owner.h"
 
 #include "render/render.h"

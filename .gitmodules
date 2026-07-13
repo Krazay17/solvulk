@@ -7,3 +7,6 @@
 [submodule "vendored/cglm"]
 	path = vendored/cglm
 	url = https://github.com/recp/cglm
+[submodule "vendored/webp"]
+	path = vendored/webp
+	url = https://github.com/webmproject/libwebp

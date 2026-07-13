@@ -1,4 +1,13 @@
 ```json
+//vcpkg
+{
+  "name": "solvulk",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "cglm",
+    "libwebp"
+  ]
+}
 //launch.json
 {
     "version": "0.2.0",

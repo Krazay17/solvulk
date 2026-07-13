@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #ifdef WIN32
+#include <Windows.h>
 #define LONGINT LARGE_INTEGER
 #else
 #define LONGINT long

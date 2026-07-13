@@ -1,9 +1,0 @@
-{
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Microsoft, AlignConsecutiveAssignments: true, AlignConsecutiveDeclarations: true, SortIncludes: Never }",
-    "cmake.debugConfig": {
-        "console": "integratedTerminal"
-    },
-    "C_Cpp.default.compileCommands": [
-        "${workspaceFolder}/build/compile_commands.json"
-    ]
-}

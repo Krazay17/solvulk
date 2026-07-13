@@ -6,9 +6,7 @@
             "hidden": true,
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl",
-                "CMAKE_TOOLCHAIN_FILE": "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+                "CMAKE_C_COMPILER": "cl"
             },
             "architecture": {
                 "value": "x64",
@@ -64,8 +62,6 @@
             "inherits": "base-gcc",
             "binaryDir": "${sourceDir}/build/debug-gcc",
             "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-ming-static",
-
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
@@ -74,7 +70,6 @@
             "inherits": "base-gcc",
             "binaryDir": "${sourceDir}/build/debug-gcc-linux",
             "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-linux",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         }

@@ -60,6 +60,7 @@ endif()
 target_include_directories(solvulk
     PUBLIC
         "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_SOURCE_DIR}/vendored/cglm/include"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/core"
@@ -67,7 +68,6 @@ target_include_directories(solvulk
         "${CMAKE_SOURCE_DIR}/include/sol"
         "${CMAKE_SOURCE_DIR}/extern"
         "${CMAKE_SOURCE_DIR}/vendored/enet/include"
-        "${CMAKE_SOURCE_DIR}/vendored/cglm/include"
         ${Vulkan_INCLUDE_DIRS}
 )
 

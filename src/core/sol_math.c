@@ -1,5 +1,5 @@
-#include <cglm/cglm.h>
-#include <cglm/struct.h>
+#include "cglm/include/cglm/cglm.h"
+#include "cglm/include/cglm/struct.h"
 
 const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     // Cardinal Directions

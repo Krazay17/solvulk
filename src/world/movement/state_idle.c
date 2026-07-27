@@ -28,13 +28,19 @@ void Sol_Movement_Idle_Update(World *world, int id, float dt)
 {
     if (LeaveState(world, id))
         return;
+    CompMovement *move = &world->movements[id];
+    move->gravityMod   = 0.0f;
+    if (Sol_Physx_GetSpeed(world, id) < 0.5f)
+    {
+        Sol_Physx_AddVel(
+            world, id, vecSca(Sol_Physx_GetGround(world, id), MOVE_STATE_FORCES[move->kind][move->state].gravity * dt));
+    }
 }
 
 void Sol_Movement_Idle_Enter(World *world, int id)
 {
     if (LeaveState(world, id))
         return;
-
     CompMovement *move = &world->movements[id];
     move->targetHeight = move->baseHeight;
 

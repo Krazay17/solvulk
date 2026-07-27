@@ -112,6 +112,8 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
+    Sol_Ai_Add(world, id, AICONTROLLERKIND_WIZARD);
+    Sol_Replication_Add(world, id, NETAUTH_AUTH, EKIND_WIZARD);
 
     return id;
 }
@@ -464,4 +466,9 @@ int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
     model->yOffset   = -300.0f;
 
     return id;
+}
+
+int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale)
+{
+    sollog("DamageZone");
 }

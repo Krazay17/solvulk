@@ -11,11 +11,9 @@
 #include "render/render_i.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "stb/stb_image.h"
 
-#define JEBP_IMPLEMENTATION
-#include "jebp.h"
-// #include "webp/decode.h"
+#include "webp/src/webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
@@ -68,19 +66,7 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
 
     if (extension && strstr(extension, "webp"))
     {
-        // image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
-        jebp_image_t jebp_image;
-        int          err = jebp_decode(&jebp_image, size, data);
-        if (err != 0)
-        {
-            fprintf(stderr, "jebp fail %d", err);
-            return NULL;
-        }
-
-        image->width  = jebp_image.width;
-        image->height = jebp_image.height;
-        image->pixels = jebp_image.pixels;
-
+        image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
         image->loaded = true;
         printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
@@ -133,6 +119,7 @@ u32 Sol_Texture_RegisterUnormTexture(void *data, size_t size, const char *hint_e
 {
     u32 id                  = Sol_Texture_RegisterRuntime(data, size, hint_extension);
     loaded_images[id].unorm = 1;
+    return id;
 }
 
 uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_extension)

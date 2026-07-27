@@ -31,13 +31,13 @@ typedef struct World World;
     X(WORLD_SYS_ABILITY, Sol_Ability_Init)                                                                             \
     X(WORLD_SYS_CHAINHIT, Sol_Chainhit_Init)                                                                           \
     X(WORLD_SYS_ITEM, Sol_Item_Init)                                                                                   \
+    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init)                                                                           \
     X(WORLD_SYS_PHYSX, Sol_Physx_Init)                                                                                 \
     X(WORLD_SYS_BODY2, Sol_Body2d_Init)                                                                                \
     X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init)                                                                       \
     X(WORLD_SYS_COMBAT, Sol_Combat_Init)                                                                               \
     X(WORLD_SYS_VITAL, Sol_Vital_Init)                                                                                 \
     X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init)                                                                             \
-    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init)                                                                           \
     X(WORLD_SYS_MODEL, Sol_Model_Init)                                                                                 \
     X(WORLD_SYS_LINE, Sol_Line_Init)                                                                                   \
     X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init)                                                               \
@@ -46,6 +46,7 @@ typedef struct World World;
     X(WORLD_SYS_AUDIO, Sol_World_Audio_Init)                                                                           \
     X(WORLD_SYS_SHAPE, Sol_Shape_Init)                                                                                 \
     X(WORLD_SYS_SCORE, Sol_Score_Init)                                                                                 \
+    X(WORLD_SYS_STAGE, Sol_Stage_Init)                                                                                 \
     X(WORLD_SYS_VIEW2D, Sol_View2d_Init)                                                                               \
     X(WORLD_SYS_VIEW, Sol_View_Init)
 
@@ -147,6 +148,7 @@ typedef struct WorldLines   WorldLines;
 typedef struct SolCamera    SolCamera;
 typedef struct WorldNet     WorldNet;
 typedef struct SolScore     SolScore;
+typedef struct Stage        Stage;
 
 typedef struct CompFlags
 {
@@ -176,13 +178,12 @@ struct World
     CompTracker trackers[MAX_ENTS];
 
     // void *components[COMPONENT_COUNT];
-    // CompXform *xforms;
 
+    CompXform       *xforms;
     CompReplication *replications;
     CompParent      *parents;
     CompAudio       *audios;
     CompTimer       *timers;
-    CompXform       *xforms;
     CompBody        *bodies;
     CompMovement    *movements;
     CompModel       *models;
@@ -213,6 +214,7 @@ struct World
     SolEmitters  *emitters;
     WorldNet     *worldNet;
     SolScore     *scores;
+    Stage        *stage;
 
     bool doesSimulate;
     bool doesRender;

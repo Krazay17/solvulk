@@ -9,7 +9,7 @@
 #include "sol_core.h"
 
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
+#include "miniaudio/miniaudio.h"
 
 #define INIT_VOLUME 0.5f
 #define DEVICE_FORMAT ma_format_f32

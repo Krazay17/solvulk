@@ -174,7 +174,11 @@ static void Movement_Prestep(World *world, double dt, double time)
     {
         int id = world->activeEntities[i];
         if (world->masks[id] & BITC(HAS_MOVEMENT))
-            world->movements[id].speedMod = 1.0f;
+        {
+            CompMovement *movement = &world->movements[id];
+            movement->speedMod     = 1.0f;
+            movement->gravityMod   = 1.0f;
+        }
     }
 }
 
@@ -207,11 +211,13 @@ static void Movement3d_Step(World *world, double dt, double time)
                 movement->wantsJump = false;
             movement->jumpPressedLastFrame = isJumpDown;
 
+            MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
+
             vec3s vel           = Sol_Physx_GetVel(world, id);
             vec3s wishdir       = Sol_GetWishdir(world, id);
             float finalSpeed    = forces->speed * movement->speedMod;
             float finalFriction = forces->friction * movement->frictionMod;
-            body->gravity.y     = forces->gravity;
+            body->gravity.y     = forces->gravity * movement->gravityMod;
 
             switch (movement->state)
             {
@@ -220,6 +226,7 @@ static void Movement3d_Step(World *world, double dt, double time)
                 vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
                 Sol_Physx_SetVel(world, id, vel);
                 break;
+            case MOVE_IDLE:
             case MOVE_WALK:
                 vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
                 vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
@@ -236,13 +243,11 @@ static void Movement3d_Step(World *world, double dt, double time)
 
             if (movement->state != MOVE_JUMP)
                 CheckGround(world, id, fdt, movement);
+
+            Knockback(world, id, fdt);
+            RestoreFriction(world, id, movement, fdt);
         }
-
-        MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
-
         CrouchHeight(world, id, fdt);
-        Knockback(world, id, fdt);
-        RestoreFriction(world, id, movement, fdt);
 
         if (id == 1)
         {

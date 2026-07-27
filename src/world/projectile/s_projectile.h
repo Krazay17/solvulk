@@ -1,8 +1,12 @@
 #pragma once
 #include "types.h"
 
-typedef struct World World;
-
+typedef struct HitCallbackData
+{
+    World *world;
+    vec3s  pos;
+    float  scale;
+} HitCallbackData;
 typedef enum
 {
     PROJECTILEKIND_BULLET,
@@ -17,8 +21,10 @@ typedef struct CompProjectile
     float          explodeRadius;
     u32            hitFX, explodeHitFX;
 
-    SolHit directHit;
-    SolHit explosionHit;
+    SolCallback callback;
+    u32         callbackFlags;
+    SolHit      directHit;
+    SolHit      explosionHit;
 } CompProjectile;
 
 void            Sol_Projectile_Init(World *world);

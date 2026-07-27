@@ -7,7 +7,7 @@
  */
 #pragma once
 #include "sol/types.h"
-#include <cglm/struct.h>
+#include "cglm/include/cglm/struct.h"
 
 #define vecAdd(a, b) glms_vec3_add(a, b)
 #define vecSub(a, b) glms_vec3_sub(a, b)

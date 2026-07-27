@@ -15,11 +15,16 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
-#find_package(cglm REQUIRED)
-#find_package(WebP REQUIRED)
-add_subdirectory(vendored/cglm)
-add_subdirectory(vendored/enet)
-#add_subdirectory(vendored/webp)
+add_subdirectory(extern/cglm)
+add_subdirectory(extern/enet)
+# --- WebP Lib ---
+file(GLOB_RECURSE WEBP_SOURCES
+    "extern/webp/src/dec/*.c"
+    "extern/webp/src/dsp/*.c"
+    "extern/webp/src/utils/*.c"
+)
+add_library(webp_lib STATIC ${WEBP_SOURCES})
+target_include_directories(webp_lib PRIVATE "${CMAKE_SOURCE_DIR}/extern/webp")
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
 # --- Core Sources ---
@@ -29,11 +34,9 @@ target_sources(solvulk PRIVATE ${SOURCES})
 # Platform Logic
 if(WIN32)
     file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
-    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
+    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES} )
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-    set(PLATFORM_LIBS user32 gdi32 dwmapi
-        #"${CMAKE_SOURCE_DIR}/extern/libwebp/lib/libwebp.lib"
-    )
+    set(PLATFORM_LIBS user32 gdi32 dwmapi)
 else()
     list(FILTER SOURCES EXCLUDE REGEX "src/platform/win32/*.c")
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
@@ -43,9 +46,7 @@ endif()
 # Compiler Specifics
 if(MSVC)
     target_compile_options(solvulk PRIVATE /std:c11 /W2)
-    set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    list(REMOVE_ITEM CMAKE_SYSTEM_INCLUDE_PATH "C:/msys64/mingw64/include")
-    set(CMAKE_IGNORE_PATH "C:/msys64" "C:/msys64/mingw64" "C:/msys64/mingw64/include")
+    #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 if(BUILD_SHARED_LIBS)
@@ -60,14 +61,12 @@ endif()
 target_include_directories(solvulk
     PUBLIC
         "${CMAKE_SOURCE_DIR}/include"
-        "${CMAKE_SOURCE_DIR}/vendored/cglm/include"
+        "${CMAKE_SOURCE_DIR}/extern"
     PRIVATE
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/core"
         "${CMAKE_SOURCE_DIR}/src/world"
         "${CMAKE_SOURCE_DIR}/include/sol"
-        "${CMAKE_SOURCE_DIR}/extern"
-        "${CMAKE_SOURCE_DIR}/vendored/enet/include"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -80,7 +79,6 @@ if(SOL_DEV_MODE)
         "${CMAKE_SOURCE_DIR}/src/core"
         "${CMAKE_SOURCE_DIR}/src/world"
         "${CMAKE_SOURCE_DIR}/include/sol"
-        "${CMAKE_SOURCE_DIR}/extern"
     )
 endif()
 
@@ -89,9 +87,8 @@ target_link_libraries(solvulk
         Vulkan::Vulkan
         OpenMP::OpenMP_C
         enet::enet_static
-        #cglm::cglm
-        #WebP::webp
     PRIVATE
+        webp_lib
         ${PLATFORM_LIBS}
 )
 
@@ -102,8 +99,8 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 if(WIN32)
     add_executable(solapp 
-        "${CMAKE_SOURCE_DIR}/app/client/main.c"
-        "${CMAKE_SOURCE_DIR}/app/client/game.c"
+        "${CMAKE_SOURCE_DIR}/app/win_main.c"
+        "${CMAKE_SOURCE_DIR}/app/game.c"
         "${CMAKE_SOURCE_DIR}/assets/res.rc"
     )
     if(MSVC)
@@ -113,12 +110,10 @@ if(WIN32)
 
 else()
     add_executable(solapp
-        "${CMAKE_SOURCE_DIR}/app/client/linmain.c"
-        #"${CMAKE_SOURCE_DIR}/app/client/game.c"
+        "${CMAKE_SOURCE_DIR}/app/lin_main.c"
+        #"${CMAKE_SOURCE_DIR}/src/game/game.c"
     )
 endif()
-
-target_include_directories(solapp PRIVATE "${CMAKE_SOURCE_DIR}/app/client")
 
 if(HOT_RELOAD)
     target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
@@ -186,20 +181,3 @@ add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 
 add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
-
-#---- Server App ----
-# add_executable(solvulk_server app/server/main.c)
-
-# target_include_directories(solvulk_server 
-# PRIVATE
-#     "app/server"
-#     "vendored/enet/include"
-# )
-
-# if(WIN32)
-#     target_link_libraries(solvulk_server PRIVATE ws2_32 winmm)
-# endif()
-
-# set_target_properties(solvulk_server PROPERTIES 
-#     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-# )

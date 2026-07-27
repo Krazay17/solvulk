@@ -43,6 +43,7 @@
 #include "parent/s_parent.h"
 #include "projectile/s_projectile.h"
 #include "shape/s_shape.h"
+#include "stage/s_stage.h"
 #include "timer/s_timer.h"
 #include "physx/s_body.h"
 #include "physx/s_body2d.h"
@@ -50,5 +51,3 @@
 #include "view/s_view.h"
 #include "view/s_view2d.h"
 #include "vital/s_vital.h"
-
-#include "game/prefabs.h"

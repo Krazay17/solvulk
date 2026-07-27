@@ -149,7 +149,7 @@ void main()
         float horizonGlowMask = clamp(N.y + 0.5, 0.0, 1.0); 
         ambientSpecular = texture(textures[SKY_TEXTURE_ID], skyUV).rgb * F0 * horizonGlowMask;
     }
-    vec3 ambientDiffuse = ambientFill * albedo * mix(0.2, 1.0, NdotL);
+    vec3 ambientDiffuse = ambientFill * albedo * mix(0.33, 1.0, NdotL);
     vec3 ambient = mix(ambientDiffuse, ambientSpecular, material.metallic);
 
     // --- Direct Light Assembly (Cleaned up and protected) ---

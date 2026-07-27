@@ -1,7 +1,7 @@
 #pragma once
 #include "sol/types.h"
 
-#include "enet.h"
+#include "enet/include/enet.h"
 
 #define MAX_NET_CLIENTS 12
 

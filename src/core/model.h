@@ -93,23 +93,31 @@ typedef struct SolMesh
     SolMaterial material;
 } SolMesh;
 
+typedef struct ModelPrefab
+{
+    char  name[32];
+    vec3s pos;
+} ModelPrefab;
+
 typedef struct SolModel
 {
-    SolVertex *vertices;
-    SolMesh   *meshes;
-    SolTri    *tris;
-    u32       *indices;
+    SolVertex   *vertices;
+    SolMesh     *meshes;
+    SolTri      *tris;
+    ModelPrefab *prefabs;
+    u32         *indices;
 
     u32 vertex_count;
     u32 mesh_count;
     u32 tri_count;
     u32 indice_count;
+    u32 prefab_count;
 
     SolSkeleton skeleton;
 
     mat4s *jointMatrices;
 
-    SolModelKind modelId;
+    SolModelHandle modelId;
 } SolModel;
 
 typedef struct BoneMask
@@ -151,14 +159,14 @@ extern SolModelMasks model_masks[SOL_MODEL_COUNT];
 extern const char   *model_path[SOL_MODEL_COUNT];
 extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
-int          Sol_Models_Init();
-void         Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skele);
-void         Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
-int          Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
-void         Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
-u32          Sol_Model_GetTriCount(SolModelKind handle);
-void         Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform);
-SolModelKind Sol_Model_GetModelId(World *world, int id);
+int            Sol_Models_Init();
+void           Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skele);
+void           Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
+int            Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
+void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
+u32            Sol_Model_GetTriCount(SolModelHandle handle);
+void           Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform);
+SolModelHandle Sol_Model_GetModelId(World *world, int id);
 
 static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
 {

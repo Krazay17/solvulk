@@ -50,7 +50,7 @@ typedef struct CompMovement
     MoveState state;
     vec3s     updir, dashdir, wallNormal, lastTouch, knockVel, lastMoveDir;
     float     baseHeight, targetHeight;
-    float     speedMod, frictionMod, knockDur;
+    float     speedMod, frictionMod, gravityMod, knockDur;
     float     wallDot, groundDot;
     float     airtime, groundtime;
 

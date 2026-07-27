@@ -1,0 +1,293 @@
+#define WIN32_LEAN_AND_MEAN
+#include <dwmapi.h>
+#include <windows.h>
+
+#include "game.h"
+
+#define TARGET_FRAME_TIME (1.0 / 600.0)
+
+// --- Shared state between threads ---
+static volatile long int g_running = 1;
+static HWND g_hwnd        = NULL;
+static bool isFullscreen;
+
+static bool  isDragging = false;
+static POINT dragStartPos;
+
+// --- Forward declarations ---
+static DWORD WINAPI GameThreadProc(LPVOID lpParam);
+LRESULT CALLBACK    WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Entry point
+// ─────────────────────────────────────────────────────────────────────────────
+int main(int argc, char *argv[])
+{
+    void *platform_handle = NULL;
+
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    int       nShowCmd  = SW_SHOWDEFAULT;
+    HICON     hIcon     = LoadIcon(hInstance, "MAINICON");
+
+    const char CLASS_NAME[] = "SolVulk";
+    WNDCLASS   wc           = {0};
+    wc.lpfnWndProc          = WindowProc;
+    wc.hInstance            = hInstance;
+    wc.lpszClassName        = CLASS_NAME;
+    wc.hCursor              = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon                = hIcon;
+    RegisterClass(&wc);
+
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Solblade", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                            NULL, NULL, hInstance, NULL);
+    if (!g_hwnd)
+    {
+        MessageBoxA(NULL, "Window Creation Failed!", "SolVulk Fatal Error", MB_ICONERROR | MB_OK);
+        return 1;
+    }
+
+    MARGINS margins = {-1}; // -1 extends to the entire window
+    DwmExtendFrameIntoClientArea(g_hwnd, &margins);
+
+    // CLICKTHROUGH
+    // LONG_PTR exStyle = GetWindowLongPtr(g_hwnd, GWL_EXSTYLE);
+    // exStyle |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+    // SetWindowLongPtr(g_hwnd, GWL_EXSTYLE, exStyle);
+
+    ShowWindow(g_hwnd, nShowCmd);
+
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
+
+    // Raw input device for accurate mouse
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage     = 0x02;
+    rid.dwFlags     = 0;
+    rid.hwndTarget  = g_hwnd;
+    if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == false)
+    {
+        printf("Raw input register failed!");
+    }
+
+    //------------------------------------------
+    // Init Sol App
+    //------------------------------------------
+    if (Sol_Init(g_hwnd, hInstance) != 0)
+    {
+        MessageBoxA(NULL, "Vulkan Initialization Failed! Check your graphics drivers.", "SolVulk Fatal Error",
+                    MB_ICONERROR | MB_OK);
+        return 1;
+    }
+    // load hot reload api
+    // load_api("libsolvulk.dll");
+
+    if (!solEngine.isRunning)
+    {
+        MessageBoxA(g_hwnd, "Engine flagged as not running before message loop started.", "Error", MB_OK);
+        return 1;
+    }
+    Create_Sol_Game();
+    
+    MemoryBarrier();
+
+    //------------------------------------------
+
+    // Spin up the game loop on its own thread BEFORE entering the message pump
+    HANDLE hGameThread = CreateThread(NULL, 0, GameThreadProc, NULL, 0, NULL);
+
+    // Main thread is now 100% dedicated to pumping Windows messages.
+    MSG msg = {0};
+    while (GetMessage(&msg, NULL, 0, 0) && solEngine.isRunning) // blocks until a message arrives – zero CPU waste
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    InterlockedExchange(&g_running, 0);
+    WaitForSingleObject(hGameThread, 0x2ff);
+    CloseHandle(hGameThread);
+
+    return (int)msg.wParam;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Game loop – runs on its own thread, completely independent of Windows events
+// ─────────────────────────────────────────────────────────────────────────────
+static DWORD WINAPI GameThreadProc(LPVOID lpParam)
+{
+    LARGE_INTEGER startTime, lastTime, currentTime, endTime, freq;
+    QueryPerformanceCounter(&startTime);
+    lastTime = currentTime = startTime;
+
+    while (InterlockedAdd(&g_running, 0))
+    {
+        QueryPerformanceFrequency(&freq);
+        QueryPerformanceCounter(&currentTime);
+        double dt      = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)freq.QuadPart;
+        double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
+        lastTime       = currentTime;
+        //POINT cursorPos;
+        //GetCursorPos(&cursorPos);
+        dt *= solState.timescale;
+        Sol_Tick(dt, runTime);
+
+        QueryPerformanceFrequency(&freq);
+        QueryPerformanceCounter(&endTime);
+        double elapsed   = (double)(endTime.QuadPart - currentTime.QuadPart) / (double)freq.QuadPart;
+        double remaining = TARGET_FRAME_TIME - elapsed;
+        if (remaining > 0.001)
+            Sleep((DWORD)(remaining * 1000.0));
+        while (1)
+        {
+            QueryPerformanceCounter(&endTime);
+            double e = (double)(endTime.QuadPart - currentTime.QuadPart) / (double)freq.QuadPart;
+            if (e >= TARGET_FRAME_TIME)
+                break;
+        }
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_KILLFOCUS:
+        Sol_Input_SetLocked(false);
+        Sol_Input_Clear();
+        break;
+    case WM_DESTROY:
+        InterlockedExchange(&g_running, 0);
+        PostQuitMessage(0);
+        return 0;
+
+    case WM_INPUT: {
+        UINT        dwSize = sizeof(RAWINPUT);
+        static BYTE lpb[sizeof(RAWINPUT)]; // Static buffer for performance
+
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+
+        RAWINPUT *raw = (RAWINPUT *)lpb;
+
+        if (raw->header.dwType == RIM_TYPEMOUSE)
+        {
+            LONG mouseX = raw->data.mouse.lLastX;
+            LONG mouseY = raw->data.mouse.lLastY;
+            if (!(raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE))
+            {
+                Sol_Input_OnRawMouse(mouseX, mouseY);
+            }
+        }
+        return 0;
+    }
+    case WM_PAINT:
+        ValidateRect(hwnd, NULL);
+        return 0;
+    case WM_SETCURSOR:
+        SolMouse mouse = Sol_Input_GetMouse();
+        if (mouse.locked)
+        {
+            SetCursor(NULL);
+            return true;
+        }
+        break;
+    case WM_SYSKEYDOWN:
+        Sol_Input_OnKey(wParam, true);
+        break;
+    case WM_SYSKEYUP:
+        Sol_Input_OnKey(wParam, false);
+        break;
+    case WM_KEYDOWN:
+        Sol_Input_OnKey((int)wParam, true);
+        return 0;
+    case WM_KEYUP:
+        Sol_Input_OnKey((int)wParam, false);
+        return 0;
+    case WM_MOUSEMOVE:
+        if (isDragging)
+        {
+            POINT currentPos;
+            GetCursorPos(&currentPos);
+            RECT windowRect;
+            GetWindowRect(hwnd, &windowRect);
+            int newX = windowRect.left + (currentPos.x - dragStartPos.x);
+            int newY = windowRect.top + (currentPos.y - dragStartPos.y);
+
+            SetWindowPos(hwnd, NULL, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+            dragStartPos = currentPos;
+        }
+
+        Sol_Input_OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+        return 0;
+    case WM_WINDOWPOSCHANGED:
+        RECT rect;
+        if (GetWindowRect(hwnd, &rect))
+        {
+            Sol_Window_OnResize(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+        }
+        return 0;
+    case WM_LBUTTONDOWN:
+        Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, true);
+        if (isFullscreen)
+            return 0;
+        POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
+        if (pt.y < 30)
+        {
+            isDragging = true;
+            SetCapture(hwnd); // Ensures you get mouse input even if the mouse leaves the window
+            GetCursorPos(&dragStartPos);
+        }
+        return 0;
+    case WM_LBUTTONUP:
+        Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, false);
+        if (isDragging)
+        {
+            isDragging = false;
+            ReleaseCapture();
+        }
+        return 0;
+    case WM_RBUTTONDOWN:
+        Sol_Input_OnMouseButton(SOL_MOUSE_RIGHT, true);
+        return 0;
+    case WM_RBUTTONUP:
+        Sol_Input_OnMouseButton(SOL_MOUSE_RIGHT, false);
+        return 0;
+    case WM_MBUTTONDOWN:
+        Sol_Input_OnMouseButton(SOL_MOUSE_MIDDLE, true);
+        return 0;
+    case WM_MBUTTONUP:
+        Sol_Input_OnMouseButton(SOL_MOUSE_MIDDLE, false);
+        return 0;
+    case WM_MOUSEWHEEL:
+        GET_KEYSTATE_WPARAM(wParam);
+        int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+        Sol_Input_OnMouseWheel(zDelta);
+        return 0;
+    }
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void QuitApp(int flags, void *data)
+{
+    PostMessage(g_hwnd, WM_DESTROY, 0, 0);
+}
+
+void W_Set_Ontop(int flags, void *data)
+{
+    bool toggle = (flags & INTERACT_TOGGLED);
+    HWND top    = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
+    SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
+
+void W_Set_Fullscreen(int flags, void *data)
+{
+    bool toggle = (flags & INTERACT_TOGGLED);
+    u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
+    u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
+
+    SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
+}

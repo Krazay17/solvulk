@@ -227,7 +227,7 @@ void Sol_Model_SetModelId(World *world, int id, int modelId)
 {
     world->models[id].modelId = modelId;
 }
-SolModelKind Sol_Model_GetModelId(World *world, int id)
+SolModelHandle Sol_Model_GetModelId(World *world, int id)
 {
     return world->models[id].modelId;
 }

@@ -175,7 +175,7 @@ float Sol_Physx_Get_Ground_Dot(World *world, int id)
         vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
 
         results[j] = Sol_Raycast(
-            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.3f, .ignoreEnt = id, .mask = 0});
+            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.15f, .ignoreEnt = id, .mask = 0});
     }
     float flattestNorm = -1.0f;
     int   idx          = 0;

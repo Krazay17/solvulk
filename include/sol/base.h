@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cglm/types-struct.h"
+#include "cglm/include/cglm/types-struct.h"
 #include <stdbool.h>
 #include <float.h>
 #include <stdint.h>
@@ -19,17 +19,42 @@
 #define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
 #define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
 
+static inline void _sollog_int(int v)
+{
+    printf("%d\n", v);
+}
+static inline void _sollog_bool(bool v)
+{
+    printf("%s\n", v ? "true" : "false");
+}
+static inline void _sollog_u32(uint32_t v)
+{
+    printf("%u\n", v);
+}
+static inline void _sollog_float(double v)
+{
+    printf("%f\n", v);
+}
+static inline void _sollog_size_t(size_t v)
+{
+    printf("%zu bytes\n", v);
+}
+static inline void _sollog_str(const char *v)
+{
+    printf("%s\n", v ? v : "(null)");
+}
+
 #define sollog(X)                                                                                                      \
     _Generic((X),                                                                                                      \
-        int: printf("%d\n", (int)X),                                                                                   \
-        bool: printf("%s\n", X ? "false" : "true"),                                                                    \
-        u32: printf("%u\n", (unsigned int)(X)),                                                                        \
-        float: printf("%f\n", X),                                                                                      \
-        double: printf("%f\n", X),                                                                                     \
-        size_t: printf("%zu bytes\n", X),                                                                              \
-        long long: printf("%zu bytes\n", X),                                                                           \
-        char *: printf("%s\n", X),                                                                                     \
-        const char *: printf("%s\n", X))
+        int: _sollog_int,                                                                                              \
+        bool: _sollog_bool,                                                                                            \
+        uint32_t: _sollog_u32,                                                                                         \
+        float: _sollog_float,                                                                                          \
+        double: _sollog_float,                                                                                         \
+        size_t: _sollog_size_t,                                                                                        \
+        char: _sollog_str,                                                                                             \
+        char *: _sollog_str,                                                                                           \
+        const char *: _sollog_str)(X)
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -51,3 +76,5 @@ typedef int64_t       i64;
 
 typedef struct World World;
 typedef void (*UpdateFunc)(World *, double, double);
+
+static const float ONE_THIRD = 1.0f / 3.0f;

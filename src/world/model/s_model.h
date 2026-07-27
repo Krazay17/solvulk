@@ -14,7 +14,7 @@ typedef struct AnimDesc
 
 typedef struct
 {
-    SolModelKind id;
+    SolModelHandle id;
     float        yoffset, yawOffset;
 } ModelDesc;
 

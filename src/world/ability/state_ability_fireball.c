@@ -24,6 +24,12 @@
 #define MIN_VELOCITY 20.0f
 #define MAX_VELOCITY 45.0f
 
+void Fireball_Linger(int flags, void *data)
+{
+    HitCallbackData *callbackData = data;
+    Sol_Prefab_DamageZone(callbackData->world, callbackData->pos, callbackData->scale);
+}
+
 void Fireball_State_Update(World *world, int id, float dt)
 {
     CompAbility *ability = &world->abilities[id];
@@ -61,6 +67,8 @@ void Fireball_State_Update(World *world, int id, float dt)
             world->projectiles[ball].explosionHit.buffMask   = data->buffs;
             world->projectiles[ball].explosionHit.effectMask = data->effects;
             world->projectiles[ball].explodeRadius           = 2.0f * power;
+            world->projectiles[ball].callback.callbackFunc   = Fireball_Linger;
+            world->projectiles[ball].callbackFlags           = 1;
         }
 
         data->stage++;

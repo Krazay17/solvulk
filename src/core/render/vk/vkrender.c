@@ -560,7 +560,7 @@ void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fi
     vkCmdDraw(cmd, 6, 1, 0, 0);
 }
 
-void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL);
@@ -578,7 +578,7 @@ void Render_Model(SolModelKind handle, uint32_t instanceCount, uint32_t firstIns
     }
 }
 
-void Render_Model_Skinned(SolModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model_Skinned(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);

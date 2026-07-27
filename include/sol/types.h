@@ -191,8 +191,9 @@ typedef enum
     SOL_MODEL_WORLD1,
     SOL_MODEL_WORLD2,
     SOL_MODEL_WORLD6,
+    SOL_MODEL_WORLD7,
     SOL_MODEL_COUNT,
-} SolModelKind;
+} SolModelHandle;
 
 typedef struct SolVertex
 {

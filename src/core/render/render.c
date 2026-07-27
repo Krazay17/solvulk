@@ -124,7 +124,7 @@ void Flush_Models(void)
 
         for (int i = 0; i < modelQueue.count; i++)
         {
-            SolModelKind h = modelQueue.handles[i];
+            SolModelHandle h = modelQueue.handles[i];
             // Since model_que_offset is 0 here, we map straight to the buffer start
             modelGpu[cursors[h]] = modelQueue.modelSSBO[i];
             cursors[h]++;
@@ -166,7 +166,7 @@ void Flush_Models(void)
 
         for (int i = 0; i < skinningQueue.count; i++)
         {
-            SolModelKind h = skinningQueue.handles[i];
+            SolModelHandle h = skinningQueue.handles[i];
 
             // GLOBAL INDEX = Current Queue Offset + Local Sorted Bucket Index
             uint32_t globalIdx = model_que_offset + cursors[h];

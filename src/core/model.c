@@ -6,7 +6,7 @@
 #include "render/render.h"
 
 #define CGLTF_IMPLEMENTATION
-#include "cgltf.h"
+#include "cgltf/cgltf.h"
 
 SolModel loaded_models[SOL_MODEL_COUNT];
 
@@ -14,8 +14,8 @@ static SolModel   *Parse_Model(SolResource res, u32 id);
 static SolSkeleton ParseSkeleton(cgltf_data *data);
 SolModelMasks      model_masks[SOL_MODEL_COUNT];
 
-static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount,
-                            uint32_t *outIndexCount);
+static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
+                            uint32_t *prefabCount);
 static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
 static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
@@ -30,7 +30,6 @@ void Sol_FreeModel(SolModel *model)
 
 int Sol_Models_Init()
 {
-    sollog(sizeof(SolMaterial));
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
         SolResource res   = Sol_LoadResource(model_path[i]);
@@ -61,7 +60,28 @@ static SolModel *Parse_Model(SolResource res, u32 id)
 
     // Pass 1: count meshes and totals by walking the scene hierarchy
     for (cgltf_size n = 0; n < scene->nodes_count; n++)
-        CountNodeMeshes(scene->nodes[n], &model->mesh_count, &model->vertex_count, &model->indice_count);
+        CountNodeMeshes(scene->nodes[n], &model->mesh_count, &model->vertex_count, &model->indice_count,
+                        &model->prefab_count);
+
+    if (model->prefab_count > 0)
+    {
+        model->prefabs  = calloc(model->prefab_count, sizeof(ModelPrefab));
+        int foundPrefab = 0;
+        for (cgltf_size n = 0; n < scene->nodes_count; n++)
+        {
+            cgltf_node *node = scene->nodes[n];
+            if (strncmp(node->name, "PREFAB", 6) == 0)
+            {
+                ModelPrefab *p = &model->prefabs[foundPrefab];
+                strncpy(p->name, node->name, sizeof(p->name) - 1);
+                p->name[sizeof(p->name) - 1] = '\0';
+                p->pos.x                     = (float)node->translation[0];
+                p->pos.y                     = (float)node->translation[1];
+                p->pos.z                     = (float)node->translation[2];
+                foundPrefab++;
+            }
+        }
+    }
 
     if (model->mesh_count == 0)
     {
@@ -69,12 +89,11 @@ static SolModel *Parse_Model(SolResource res, u32 id)
         return model;
     }
 
-    model->skeleton = ParseSkeleton(data);
-
+    model->skeleton     = ParseSkeleton(data);
     // Allocate
     model->meshes   = calloc(model->mesh_count, sizeof(SolMesh));
     model->vertices = calloc(model->vertex_count, sizeof(SolVertex));
-    model->indices  = malloc(model->indice_count * sizeof(uint32_t));
+    model->indices  = calloc(model->indice_count, sizeof(uint32_t));
 
     // Pass 2: fill, applying world transforms
     uint32_t meshIdx = 0, vOff = 0, iOff = 0;
@@ -83,7 +102,7 @@ static SolModel *Parse_Model(SolResource res, u32 id)
 
     // Build tris from final world-space vertices
     model->tri_count = model->indice_count / 3;
-    model->tris      = malloc(model->tri_count * sizeof(SolTri));
+    model->tris      = calloc(model->tri_count, sizeof(SolTri));
 
     uint32_t triIdx = 0;
     for (int m = 0; m < model->mesh_count; m++)
@@ -188,7 +207,6 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
 
     // Parse animations
     skel.animationCount = (int)data->animations_count;
-    sollog(skel.animationCount);
     if (skel.animationCount > 0)
     {
         skel.animations = calloc(skel.animationCount, sizeof(SolAnimation));
@@ -269,15 +287,19 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
 
 // Count meshes by walking the scene's node hierarchy.
 // We count one SolMesh per (node, primitive) pair that has a mesh attached.
-static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount)
+static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
+                            uint32_t *prefabCount)
 {
-    if (node->mesh)
+    if (node->name && strncmp(node->name, "PREFAB", 6) == 0)
+    {
+        (*prefabCount)++;
+    }
+    else if (node->mesh)
     {
         for (cgltf_size p = 0; p < node->mesh->primitives_count; p++)
         {
-            cgltf_primitive *prim = &node->mesh->primitives[p];
-
-            cgltf_accessor *posAcc = NULL;
+            cgltf_primitive *prim   = &node->mesh->primitives[p];
+            cgltf_accessor  *posAcc = NULL;
             for (cgltf_size a = 0; a < prim->attributes_count; a++)
                 if (prim->attributes[a].type == cgltf_attribute_type_position)
                     posAcc = prim->attributes[a].data;
@@ -292,7 +314,7 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
     }
 
     for (cgltf_size c = 0; c < node->children_count; c++)
-        CountNodeMeshes(node->children[c], outMeshCount, outVertexCount, outIndexCount);
+        CountNodeMeshes(node->children[c], outMeshCount, outVertexCount, outIndexCount, prefabCount);
 }
 
 // Recursively process a node and its children, baking the world transform
@@ -379,7 +401,7 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                         data, view->size, prim->material->normal_texture.texture->image->mime_type);
                     if (normalTextureId)
                     {
-                        dst->material.normalTextureId        = normalTextureId;
+                        dst->material.normalTextureId = normalTextureId;
                     }
                 }
 
@@ -406,7 +428,6 @@ static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, ui
                             size_t             size      = view->size;
                             const char        *mime_type = image->mime_type;
                             int                textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
-                            sollog(image->name);
                             if (textureId)
                             {
                                 dst->material.textureId = textureId;
@@ -699,7 +720,7 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
     }
 }
 
-void Init_Anim_Masks(SolModelKind modelId, SolSkeleton *skel)
+void Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skel)
 {
     SolModelMasks *masks = &model_masks[modelId];
     // SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
@@ -741,7 +762,7 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     return -1;
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind handle, CompXform *xform)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform)
 {
     SolModel *model = &loaded_models[handle];
     mat3s     rot   = glms_quat_mat3(xform->quat);
@@ -762,7 +783,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind
         float len   = glms_vec3_norm(cross);
         dst->normal = len > 0.00001f ? glms_vec3_scale(cross, 1.0f / len) : (vec3s){0, 1, 0};
 
-        dst->center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(dst->a, dst->b), dst->c), 1.0f / 3.0f);
+        dst->center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(dst->a, dst->b), dst->c), ONE_THIRD);
 
         float da    = glms_vec3_norm(glms_vec3_sub(dst->a, dst->center));
         float db    = glms_vec3_norm(glms_vec3_sub(dst->b, dst->center));
@@ -771,7 +792,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelKind
     }
 }
 
-u32 Sol_Model_GetTriCount(SolModelKind handle)
+u32 Sol_Model_GetTriCount(SolModelHandle handle)
 {
     return loaded_models[handle].tri_count;
 }

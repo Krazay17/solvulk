@@ -54,21 +54,6 @@ mat3 quatToMat3(vec4 q) {
     );
 }
 
-// void main() {
-//     ModelData inst = instances[gl_InstanceIndex];
-
-//     mat3 mat = quatToMat3(inst.rotation);
-
-//     vec3 worldPos = mat * (inPos * inst.scale.xyz) + inst.position.xyz;
-//     gl_Position = scene.viewProj * vec4(worldPos, 1.0);
-
-//     fragColor = inst.color;
-//     fragNormal = mat * inNormal;
-//     fragWorldPos = worldPos;
-//     flags = inst.flags;
-//     fragHitTime = inst.hitTime;
-//     instanceIndex = gl_InstanceIndex;
-// }
 void main() {
     ModelData inst = instances[gl_InstanceIndex];
     instanceIndex = gl_InstanceIndex;
@@ -76,23 +61,31 @@ void main() {
     fragHitTime = inst.hitTime;
     fragColor = inst.color;
     fragUV = inUV;
+    mat3 rotMat = quatToMat3(inst.rotation);
 
     // Check if the 2D flag bit is set
     if ((inst.flags & FLAG_2D) != 0u)
-    {
-        // 1. Compute 2D position using local inPos vertices, scale, and translation offset
-        // Typically, UI meshes are flat unit quads on the XY plane (Z=0)
-        vec2 localScaled = inPos.xy * inst.scale.xy;
-        vec2 uiWorldPos  = localScaled + inst.position.xy;
+        {
+        // 1. Scale local vertex positions
+        vec3 scaledPos = inPos * inst.scale.xyz;
+    
+        // 2. Rotate mesh in 2D/3D space
+        vec3 rotatedPos = rotMat * scaledPos;
+        vec3 rotatedNormal = rotMat * inNormal;
 
-        // 2. Project directly using your 2D Orthographic Screen Matrix
-        // We set Z slightly via inst.position.z or use a constant to handle UI layers (0.0 to 1.0)
-        gl_Position = ortho2d * vec4(uiWorldPos, inst.position.z, 1.0);
-
-        // 3. Passthroughs for UI/Text (Normals aren't used for 2D, but don't leave them uninitialized)
-        fragWorldPos = vec3(uiWorldPos, inst.position.z);
-        fragNormal   = vec3(0.0, 0.0, 1.0); 
-    } 
+        // 3. FLIP LOCAL Y (3D models authored Y-up vs. Top-Down Ortho Space)
+        rotatedPos.y    = -rotatedPos.y;
+        rotatedNormal.y = -rotatedNormal.y;
+    
+        // 4. Translate to screen-space pixel position (X, Y) + Z layer
+        vec3 uiWorldPos = rotatedPos + inst.position.xyz;
+    
+        // 5. Transform via orthographic projection & fix Z layer clipping
+        gl_Position = ortho2d * vec4(uiWorldPos.xy, 0.5 + uiWorldPos.z * 0.001, 1.0);
+    
+        fragWorldPos = uiWorldPos;
+        fragNormal   = rotatedNormal;
+    }
     else 
     {
         // --- Standard 3D Render Path ---

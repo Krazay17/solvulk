@@ -44,6 +44,8 @@ layout(set = 2, binding = 0) readonly buffer Models {
     ModelData models[];
 };
 
+layout(set = 3, binding = 0) uniform Ortho {mat4 ortho2d;};
+
 #define MAX_BONES 128
 struct InstanceSkinning {
     mat4 bones[MAX_BONES];
@@ -51,10 +53,6 @@ struct InstanceSkinning {
 
 layout(set = 5, binding = 0) readonly buffer Skinning {
     InstanceSkinning skins[];
-};
-
-layout(set = 4, binding = 0) uniform Ortho {
-    mat4 ortho2d;
 };
 
 // ─── Flag bits (mirror these on the CPU) ────────────────────────────────────

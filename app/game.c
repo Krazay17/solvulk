@@ -2,6 +2,7 @@
 
 static World *gameWorld;
 static World *gameWorld2;
+static World *buildWorld;
 static int    player2d;
 
 static void SpawnPlayer(int flags, void *data)
@@ -48,7 +49,7 @@ int SpawnEnemy(int flags, void *data)
     case ENEMYKIND_ZORGON: {
 
         id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
-        Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+        Sol_Ai_Add(gameWorld, id, AIKIND_WIZARD);
         Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
     }
     break;
@@ -98,7 +99,7 @@ void HostGame(int flags, void *data)
             gameWorld, 0, EKIND_WIZARD,
             (EntDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
         if (id)
-            Sol_Ai_Add(gameWorld, id, AICONTROLLERKIND_WIZARD);
+            Sol_Ai_Add(gameWorld, id, AIKIND_WIZARD);
     }
 }
 
@@ -163,7 +164,7 @@ void WizSpawner(World *world, double dt)
 void Create_Sol_Game()
 {
     gameWorld   = World_Create_Default(WORLDKIND_GAME);
-    
+    buildWorld  = World_Create_Default(WORLDKIND_MENU);
     World *hud  = World_Create_Default(WORLDKIND_MENU);
     World *menu = World_Create_Default(WORLDKIND_MENU);
 
@@ -174,16 +175,10 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
-    // int floorWorld1 = Sol_Create_Ent(gameWorld, 0);
-    // Sol_Xform_Teleport(gameWorld, floorWorld1, (vec3s){0, -7, 0});
-    // Sol_Model_Add(gameWorld, floorWorld1, SOL_MODEL_WORLD7);
-    // Sol_Body_Add(gameWorld, floorWorld1, (BodyDesc){.shape = SHAPE3_MOD});
-    
-    // WAddStep(gameWorld) = WizSpawner;
+    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
+    WAddStep(hud) = RotateGuy;
 
-    // player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 0.0f}, 75.0f);
-    // Sol_Interact_Add(hud, player2d);
-    // WAddStep(hud) = RotateGuy;
+    Sol_Prefab_Wall2d(buildWorld, (vec3s){1000, 200.0f, 1.0f}, 1.0f);
 
     int attackBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);
@@ -274,13 +269,15 @@ void Create_Sol_Game()
     static struct MakeEnemy makeEnemyZorgon   = {0};
     makeEnemyZorgon.world                     = gameWorld;
     makeEnemyZorgon.enemyKind                 = ENEMYKIND_ZORGON;
-    Sol_Interact_Set(menu, spawnZorgonButton, (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &makeEnemyZorgon}});
+    Sol_Interact_Set(menu, spawnZorgonButton,
+                     (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &makeEnemyZorgon}});
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
     Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (SolCallback){SpawnPlayer, gameWorld}});
 
     int button4 = Sol_Prefab_Button(menu, (vec3s){10, 400, 0}, "ONTOP");
-    Sol_Interact_Set(menu, button4, (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (SolCallback){W_Set_Ontop}});
+    Sol_Interact_Set(menu, button4,
+                     (CompInteract){.state = INTERACT_TOGGLEABLE, .onClick = (SolCallback){W_Set_Ontop}});
 
     int buttonClearEnts = Sol_Prefab_Button(menu, (vec3s){10, 450, 0}, "Clear Ents");
     Sol_Interact_Set(menu, buttonClearEnts,
@@ -309,8 +306,9 @@ void Create_Sol_Game()
     Sol_Interact_Set(menu, connectButton, (CompInteract){.onClick = (SolCallback){.callbackFunc = ClientConnect}});
 
     int connectButtonLocal = Sol_Prefab_Button(menu, (vec3s){1130, 250, 0}, "ConnectLocal");
-    Sol_Interact_Set(menu, connectButtonLocal,
-                     (CompInteract){.onClick = (SolCallback){.callbackFunc = ClientConnect, .callbackData = (void *)1}});
+    Sol_Interact_Set(
+        menu, connectButtonLocal,
+        (CompInteract){.onClick = (SolCallback){.callbackFunc = ClientConnect, .callbackData = (void *)1}});
 
     int disconnectButton = Sol_Prefab_Button(menu, (vec3s){1130, 300, 0}, "Disconnect");
     Sol_Interact_Set(menu, disconnectButton, (CompInteract){.onClick = (SolCallback){.callbackFunc = Disconnect}});

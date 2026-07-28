@@ -278,7 +278,7 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
 
     // 1. Convert screen pixel → NDC [-1, 1]
     float ndcX = (2.0f * screenX / winW) - 1.0f;
-    float ndcY = (2.0f * screenY / winH) - 1.0f;
+    float ndcY = -((2.0f * screenY / winH) - 1.0f);
     // Note: your proj has the Y flip baked in (proj[1][1] *= -1),
     // so NDC Y here matches Vulkan's convention. No extra flip needed.
 

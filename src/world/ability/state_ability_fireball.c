@@ -27,7 +27,7 @@
 void Fireball_Linger(int flags, void *data)
 {
     HitCallbackData *callbackData = data;
-    Sol_Prefab_DamageZone(callbackData->world, callbackData->pos, callbackData->scale);
+    int              id           = Sol_Prefab_HealZone(callbackData->world, callbackData->pos, callbackData->scale, callbackData->instigator);
 }
 
 void Fireball_State_Update(World *world, int id, float dt)

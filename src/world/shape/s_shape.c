@@ -28,9 +28,9 @@ void Sol_Shape_Add(World *world, int id, ShapeDesc desc)
     world->spheres[id] = sphere;
 }
 
+static const int required = BITC(HAS_SHAPE);
 void Sol_Shape_Draw(World *world, double dt, double time)
 {
-    int required = BITC(HAS_SHAPE);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -60,7 +60,6 @@ void Sol_Shape_Draw(World *world, double dt, double time)
 
 void Sol_Shape_ColorAll(World *world, vec4s color)
 {
-    int required = BITC(HAS_SHAPE);
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];

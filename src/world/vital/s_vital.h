@@ -26,4 +26,4 @@ float Sol_Vital_GetMaxHealth(World *world, int id);
 bool  Sol_Vital_GetDead(World *world, int id);
 float Sol_Vital_GetLastHitTime(World *world, int id);
 float Sol_Vital_Damage(World *world, int id, int attacker, float damage);
-void  Sol_Vital_Heal(World *world, int id, int healer, u32 heal);
+float Sol_Vital_Heal(World *world, int id, int dealer, float amount);

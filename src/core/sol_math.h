@@ -7,6 +7,8 @@
  */
 #pragma once
 #include "sol/types.h"
+
+#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "cglm/include/cglm/struct.h"
 
 #define vecAdd(a, b) glms_vec3_add(a, b)

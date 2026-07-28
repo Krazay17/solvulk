@@ -130,7 +130,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
                     cdBar->type      = QUADTYPE_FACECAM;
                     cdBar->textureId = SOL_TEXTURE_CLOUD2;
                     cdBar->uv        = (vec4s){0, 0, 1, 1};
-                    cdBar->extra     = (vec4s){ 1.0f - (buff->ttl / buff->duration), 0, 0, 0};
+                    cdBar->extra     = (vec4s){ 1.01f - (buff->ttl / buff->duration), 0, 0, 0};
                     cdBar->flags     = BITC(QUADFLAG_FILL_VERTICAL) | BITC(QUADFLAG_FILL_INVERT);
                 }
             }

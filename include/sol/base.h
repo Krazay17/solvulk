@@ -15,9 +15,10 @@
 
 #define SOL_VERSION 1
 #define FLOATING_EPSILON 1e-7f
-#define BITC(x) (1u << (x))
+#define BITC(x) (1ULL << (x))
 #define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
 #define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
+#define VEC4_RED (vec4s){1.0f, 0.0f, 0.0f, 1.0f}
 
 static inline void _sollog_int(int v)
 {
@@ -45,14 +46,13 @@ static inline void _sollog_str(const char *v)
 }
 
 #define sollog(X)                                                                                                      \
-    _Generic((X),                                                                                                      \
+    _Generic((1 ? (X) : (X)),                                                                                          \
         int: _sollog_int,                                                                                              \
         bool: _sollog_bool,                                                                                            \
         uint32_t: _sollog_u32,                                                                                         \
         float: _sollog_float,                                                                                          \
         double: _sollog_float,                                                                                         \
         size_t: _sollog_size_t,                                                                                        \
-        char: _sollog_str,                                                                                             \
         char *: _sollog_str,                                                                                           \
         const char *: _sollog_str)(X)
 

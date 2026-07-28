@@ -23,4 +23,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label);
 int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale);
 int Sol_Prefab_ItemDrop(World *world, vec3s pos);
 int Sol_Prefab_Player2d(World *world, vec3s pos, float scale);
-int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale);
+int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale, int owner);
+int Sol_Prefab_HealZone(World *world, vec3s pos, float scale, int owner);
+int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale);
+int Sol_Prefab_Wall3d(World *world, vec3s pos, float scale);

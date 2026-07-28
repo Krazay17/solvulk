@@ -26,7 +26,7 @@ typedef struct CompAi
 } CompAi;
 typedef enum
 {
-    AICONTROLLERKIND_WIZARD,
+    AIKIND_WIZARD,
 } AiKind;
 
 extern const StateFunc aistate_func[AISTATE_COUNT];

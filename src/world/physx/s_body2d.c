@@ -5,13 +5,38 @@
 #include "xform/s_xform.h"
 #include "parent/s_parent.h"
 #include "interact/s_interact.h"
+#include "render/render.h"
+#include "sol_core.h"
+
+static int required = BITC(HAS_BODY2);
 
 static void Step(World *world, double dt, double time);
+
+static void Draw(World *world, double dt, double time)
+{
+    if (!solState.debug)
+        return;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+
+        CompXform  *xform = &world->xforms[id];
+        CompBody2d *body  = &world->body2d[id];
+        RectSSBO   *ssbo  = Sol_Render_GetNext_Rect();
+        ssbo->dims        = (vec4s){UISCALE(body->dims.x), UISCALE(body->dims.y), 0.0f, 1.0f};
+        ssbo->color       = VEC4_RED;
+        ssbo->pos         = (vec4s){UISCALE(xform->drawPos.x), UISCALE(xform->drawPos.y), xform->drawPos.z, 1.0f};
+        ssbo->flags       = 1;
+    }
+}
 
 void Sol_Body2d_Init(World *world)
 {
     world->body2d   = calloc(MAX_ENTS, sizeof(CompBody2d));
     WAddStep(world) = Step;
+    WAdd2d(world)   = Draw;
 }
 
 CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask)
@@ -29,15 +54,14 @@ CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, f
     return &world->body2d[id];
 }
 
-static int   step_required = BITC(HAS_BODY2);
 static void Step(World *world, double dt, double time)
 {
-    float fdt      = (float)dt;
+    float fdt = (float)dt;
 
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!WHas(world, id, step_required))
+        if (!WHas(world, id, required))
             continue;
 
         CompXform  *xform = &world->xforms[id];
@@ -66,7 +90,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int idA = world->activeEntities[i];
-        if ((world->masks[idA] & step_required) != step_required)
+        if ((world->masks[idA] & required) != required)
             continue;
         CompBody2d *bodyA  = &world->body2d[idA];
         CompXform  *xformA = &world->xforms[idA];
@@ -74,7 +98,7 @@ static void Step(World *world, double dt, double time)
         for (int j = i + 1; j < world->activeCount; j++)
         {
             int idB = world->activeEntities[j];
-            if ((world->masks[idB] & step_required) != step_required)
+            if ((world->masks[idB] & required) != required)
                 continue;
 
             CompBody2d *bodyB       = &world->body2d[idB];
@@ -96,7 +120,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & step_required) != step_required)
+        if ((world->masks[id] & required) != required)
             continue;
         CompBody2d *body  = &world->body2d[id];
         CompXform  *xform = &world->xforms[id];
@@ -108,7 +132,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & step_required) != step_required)
+        if ((world->masks[id] & required) != required)
             continue;
         CompBody2d *bodyA = &world->body2d[id];
         int         count = 0;
@@ -117,7 +141,7 @@ static void Step(World *world, double dt, double time)
             int idB = world->activeEntities[j];
             if (idB == id)
                 continue;
-            if ((world->masks[idB] & step_required) != step_required)
+            if ((world->masks[idB] & required) != required)
                 continue;
             if (IsOverlappingRect(world, id, idB) && count < 4)
                 bodyA->overlapping[count++] = idB;

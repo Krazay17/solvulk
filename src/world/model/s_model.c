@@ -16,7 +16,7 @@ void Model_Draw(World *world, double dt, double time);
 void Sol_Model_Init(World *world)
 {
     world->models = calloc(MAX_ENTS, sizeof(CompModel));
-    
+
     WAdd3d(world) = Model_Draw;
 }
 
@@ -77,8 +77,10 @@ void       Model_Draw(World *world, double dt, double time)
         if (modelComp->is2d)
         {
             modelSSBO.flags |= (1 << 2);
-            drawPos.y += (modelComp->yOffset * xform->scale.y);
-            modelSSBO.position = (vec4s){UISCALE(drawPos.x + modelComp->xOffset), UISCALE(drawPos.y), drawPos.z, 1.0f};
+            float px           = UISCALE(drawPos.x + (modelComp->xOffset * xform->scale.x));
+            float py           = UISCALE(drawPos.y + (-modelComp->yOffset * xform->scale.y));
+            float pz           = drawPos.z;
+            modelSSBO.position = (vec4s){px, py, pz, 1.0f};
             modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
             modelSSBO.scale =
                 (vec4s){UISCALE(xform->drawScale.x), UISCALE(xform->drawScale.y), UISCALE(xform->drawScale.z), 1.0f};
@@ -104,15 +106,6 @@ void       Model_Draw(World *world, double dt, double time)
             AnimLayer *layer = &modelComp->layers[L];
             if (layer->currentAnim < 0)
                 continue;
-if (!m->skeleton.animations) {
-        printf("CRITICAL: modelId %d has NULL animations array!\n", modelComp->modelId);
-        continue;
-    }
-    if (layer->currentAnim >= m->skeleton.animationCount) {
-        printf("CRITICAL: Out of bounds anim index! Trying to play enum index %d, but model only has %d animations.\n", 
-               layer->currentAnim, m->skeleton.animationCount);
-        continue;
-    }
             float dur     = m->skeleton.animations[layer->currentAnim].duration;
             float speed   = layer->playRate != 0 ? layer->playRate * fdt : fdt;
             float newSeek = layer->currentSeek + speed;

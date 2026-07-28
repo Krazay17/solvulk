@@ -35,6 +35,7 @@ typedef struct World World;
     X(WORLD_SYS_PHYSX, Sol_Physx_Init)                                                                                 \
     X(WORLD_SYS_BODY2, Sol_Body2d_Init)                                                                                \
     X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init)                                                                       \
+    X(WORLD_SYS_ZONE, Sol_Zone_Init)                                                                                   \
     X(WORLD_SYS_COMBAT, Sol_Combat_Init)                                                                               \
     X(WORLD_SYS_VITAL, Sol_Vital_Init)                                                                                 \
     X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init)                                                                             \
@@ -43,6 +44,7 @@ typedef struct World World;
     X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init)                                                               \
     X(WORLD_SYS_EMITTER, Sol_Emitter_Init)                                                                             \
     X(WORLD_SYS_RIBBON, Sol_Ribbon_Init)                                                                               \
+    X(WORLD_SYS_BUILDING, Sol_Building_Init)                                                                           \
     X(WORLD_SYS_AUDIO, Sol_World_Audio_Init)                                                                           \
     X(WORLD_SYS_SHAPE, Sol_Shape_Init)                                                                                 \
     X(WORLD_SYS_SCORE, Sol_Score_Init)                                                                                 \
@@ -96,6 +98,8 @@ typedef enum
     HAS_RIBBON,
     HAS_CHAINHIT,
     HAS_INVENTORY,
+    HAS_ZONE,
+    HAS_BUILDING,
     COMPONENT_COUNT,
 } SolComponents;
 
@@ -136,6 +140,8 @@ typedef struct CompItem        CompItem;
 typedef struct CompInventory   CompInventory;
 typedef struct CompAbilitySlot CompAbilitySlot;
 typedef struct CompTooltip     CompTooltip;
+typedef struct CompZone        CompZone;
+typedef struct CompBuilding    CompBuilding;
 
 typedef struct ChainAttacks ChainAttacks;
 typedef struct Inventory    Inventory;
@@ -204,6 +210,8 @@ struct World
     CompItem        *items;
     CompInventory   *inventories;
     CompAbilitySlot *abilitySlots;
+    CompZone        *zones;
+    CompBuilding    *buildings;
 
     Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;

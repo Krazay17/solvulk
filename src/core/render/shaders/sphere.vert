@@ -33,23 +33,24 @@ layout(location = 4) out vec4 fragParams;
 
 void main() {
     Sphere s = spheres[gl_InstanceIndex];
-    
     vec2 corner = CORNERS[gl_VertexIndex];
     float radius = s.pos.w;
-    
-    // Camera-facing basis from view matrix
-    vec3 right = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
-    vec3 up    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
-    
-    // Quad needs margin so silhouette doesn't clip at glancing angles
     float quadSize = radius * 1.2;
-    vec3 worldPos = s.pos.xyz + right * corner.x * quadSize + up * corner.y * quadSize;
-    
-    fragWorldPos     = worldPos;
-    fragColor        = s.color;
+
+    // 1. Transform sphere center to View Space
+    vec4 viewCenter = scene.view * vec4(s.pos.xyz, 1.0);
+
+    // 2. Expand quad directly in View Space (Screen Aligned!)
+    vec4 viewPos = viewCenter;
+    viewPos.xy += corner * quadSize;
+
+    // 3. Project to Clip Space
+    gl_Position = scene.proj * viewPos;
+
+    // Pass data to fragment shader...
+    fragWorldPos     = (inverse(scene.view) * viewPos).xyz;
     fragSphereCenter = vec4(s.pos.xyz, radius);
     fragRayOrigin    = scene.cameraPos.xyz;
+    fragColor        = s.color;
     fragParams       = s.params;
-    
-    gl_Position = scene.viewProjection * vec4(worldPos, 1.0);
 }

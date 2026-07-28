@@ -36,6 +36,12 @@ typedef enum
 
 typedef enum
 {
+    BUILDINGKIND_WALL,
+    BUILDINGKIND_COUNT,
+} BuildingKind;
+
+typedef enum
+{
     COLLISIONGROUP_NONE,
     COLLISIONGROUP_WORLD      = (1 << 0),
     COLLISIONGROUP_PAWN       = (1 << 1),
@@ -186,12 +192,14 @@ typedef enum
     MODELKIND_DUDE,
     MODELKIND_ZORGON,
     MODELKIND_WEAPONBLADE,
+    MODELKIND_WALL,
     SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
     SOL_MODEL_WORLD2,
     SOL_MODEL_WORLD6,
     SOL_MODEL_WORLD7,
+    SOL_MODEL_WORLD8,
     SOL_MODEL_COUNT,
 } SolModelHandle;
 
@@ -340,3 +348,13 @@ typedef struct
 {
     vec3s pos, vel;
 } SolShoot;
+
+typedef enum
+{
+    BUFFKIND_FIRE,
+    BUFFKIND_STUN,
+    BUFFKIND_SPEED,
+    BUFFKIND_HOT,
+    BUFFKIND_INVULN,
+    BUFFKIND_COUNT,
+} BuffKind;

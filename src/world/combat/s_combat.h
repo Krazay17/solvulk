@@ -49,6 +49,7 @@ void Sol_Chainhit_Init(World *world);
 
 void Sol_Combat_Add(World *world, int id);
 void Sol_Combat_ApplyHit(World *world, int id, SolHit hit);
+void Sol_Combat_ApplyHeal(World *world, int id, SolHit hit);
 bool Sol_Combat_IsReflecting(World *world, int id);
 void Sol_Combat_AddFlags(World *world, int id, u32 flags);
 void Sol_Combat_RemoveFlags(World *world, int id, u32 flags);

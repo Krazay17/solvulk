@@ -23,7 +23,7 @@ typedef void (*BuffTick)(World *world, int id, double dt, double time, Buff *b);
 typedef struct BuffDesc
 {
     u8        inf, kind, add, harmful;
-    float     duration, freq, power, speedMod;
+    float     duration, freq, power, speedMod, amount;
     BuffEvent onApply, onRemove;
     BuffTick  step, draw;
 } BuffDesc;
@@ -34,6 +34,7 @@ static void Buff_Make(World *world, int id, int source, BuffDesc desc);
 static void Apply_Stun(World *world, int id, int source);
 static void Remove_Stun(World *world, int id, int source);
 static void Fire_Step(World *world, int id, double dt, double time, Buff *b);
+static void Hot_Step(World *world, int id, double dt, double time, Buff *b);
 
 const BuffDesc buff_config[BUFFKIND_COUNT] = {
     [BUFFKIND_STUN] =
@@ -51,6 +52,16 @@ const BuffDesc buff_config[BUFFKIND_COUNT] = {
             .add      = BUFFADD_ADD,
             .step     = Fire_Step,
             .harmful  = 1,
+        },
+    [BUFFKIND_HOT] =
+        {
+            .freq     = 0.2f,
+            .duration = 6.0f,
+            .speedMod = 1.1f,
+            .amount   = 1.0f,
+            .add      = BUFFADD_SET,
+            .step     = Hot_Step,
+            .harmful  = 0,
         },
     [BUFFKIND_INVULN] =
         {
@@ -221,6 +232,24 @@ static void Fire_Step(World *world, int id, double dt, double time, Buff *b)
         };
         Sol_Combat_ApplyHit(world, id, hit);
         Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){1, 0, 0, 1}, 1.0f);
+    }
+}
+
+static void Hot_Step(World *world, int id, double dt, double time, Buff *b)
+{
+    Sol_Movement_SetSpeedMod(world, id, buff_config[b->kind].speedMod);
+    float interval = b->freq > 0 ? b->freq : BASE_TICK_INTERVAL;
+    if (b->accum > interval)
+    {
+        b->accum -= interval;
+        SolHit hit = {
+            .entA   = b->source,
+            .damage = buff_config[b->kind].amount,
+            .pos    = Sol_Xform_GetPos(world, id),
+            .entB   = id,
+        };
+        Sol_Combat_ApplyHeal(world, id, hit);
+        Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){0, 1, 0, 1}, 0.25f);
     }
 }
 

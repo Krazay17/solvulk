@@ -20,6 +20,8 @@ typedef struct SolEngine
     void         *g_hwnd;
 
     u32    activeWorldId;
+    World *gameWorld3d;
+    World *gameWorld2d;
     World *activeWorld;
     World *hudWorld;
     World *worlds[MAX_WORLDS];

@@ -134,7 +134,7 @@ static void DrawRect(World *world, int id, double dt, double time, SolView2d *vi
     ssbo->pos      = (vec4s){
         UISCALE(pos.x + view->offset.x),
         UISCALE(pos.y + view->offset.y),
-        (float)view->zindex / (float)UILAYER_COUNT,
+        -((float)view->zindex / (float)UILAYER_COUNT),
         1.0f,
     };
     ssbo->dims      = (vec4s){UISCALE(view->dims.x), UISCALE(view->dims.y), view->dims.z, view->fill};

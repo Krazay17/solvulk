@@ -6,6 +6,7 @@ typedef struct HitCallbackData
     World *world;
     vec3s  pos;
     float  scale;
+    u32    instigator;
 } HitCallbackData;
 typedef enum
 {

@@ -4,8 +4,8 @@
 const CompModel model_kinds[SOL_MODEL_COUNT] = {
     [MODELKIND_DUDE] =
         {
-            .yawOffset = GLM_PI_2f,
-            .yOffset   = -0.825f,
+            // .yawOffset = GLM_PI_2f,
+            .yOffset = -0.825f,
         },
     [MODELKIND_WIZARD] =
         {
@@ -18,10 +18,12 @@ const CompModel model_kinds[SOL_MODEL_COUNT] = {
 };
 
 const char *model_path[SOL_MODEL_COUNT] = {
-    [MODELKIND_WIZARD] = "Wizard.glb",           [MODELKIND_DUDE] = "Dude.glb",     [MODELKIND_ZORGON] = "Zorgon.glb",
-    [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb", [SOL_MODEL_BOX] = "Box.glb",       [SOL_MODEL_WORLD0] = "World0.glb",
-    [SOL_MODEL_WORLD1] = "World1.glb",           [SOL_MODEL_WORLD2] = "World2.glb", [SOL_MODEL_WORLD6] = "World6.glb",
-    [SOL_MODEL_WORLD7] = "World7.glb",
+    [MODELKIND_WIZARD] = "Wizard.glb", [MODELKIND_DUDE] = "Dude.glb",
+    [MODELKIND_ZORGON] = "Zorgon.glb", [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
+    [SOL_MODEL_BOX] = "Box.glb",       [SOL_MODEL_WORLD0] = "World0.glb",
+    [MODELKIND_WALL] = "Wall.glb",     [SOL_MODEL_WORLD1] = "World1.glb",
+    [SOL_MODEL_WORLD2] = "World2.glb", [SOL_MODEL_WORLD6] = "World6.glb",
+    [SOL_MODEL_WORLD7] = "World7.glb", [SOL_MODEL_WORLD8] = "World8.glb",
 };
 
 /*

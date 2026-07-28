@@ -112,7 +112,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
-    Sol_Ai_Add(world, id, AICONTROLLERKIND_WIZARD);
+    Sol_Ai_Add(world, id, AIKIND_WIZARD);
     Sol_Replication_Add(world, id, NETAUTH_AUTH, EKIND_WIZARD);
 
     return id;
@@ -158,7 +158,7 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
                                   }});
 
     Sol_Vital_Add(world, id, VITALKIND_WIZARD);
-
+    Sol_Ai_Add(world, id, AIKIND_WIZARD);
     return id;
 }
 
@@ -455,20 +455,79 @@ int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
-    Sol_Xform_SetScale(world, id, (vec3s){scale, scale, scale});
+    float modelScale = 75.0f * scale;
+    float bodyScale  = 75.0f * scale;
+    Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
 
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 100.0f, 150.0f, 0b01, 0b01);
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 1.0f * bodyScale, 1.6f * bodyScale, 0b01, 0b01);
     body->grav       = (vec2s){0, 9.0f};
 
     CompModel *model = Sol_Model_Add(world, id, MODELKIND_DUDE);
     model->is2d      = true;
-    model->xOffset   = 50.0f;
-    model->yOffset   = -300.0f;
+    model->xOffset   = 0.5f;
+    model->yOffset   = -1.6f;
+
+    Sol_Interact_Add(world, id);
 
     return id;
 }
 
-int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale)
+int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale, int owner)
 {
-    sollog("DamageZone");
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Zone_Add(world, id, ZONEKIND_FIRE);
+    vec4s     color = {1, 0, 0, 1};
+    ShapeDesc shape = {.radius = world->zones[id].radius, .color = color, .kind = SHAPEKIND_FIREBALL};
+    Sol_Shape_Add(world, id, shape);
+    Sol_Owner_Add(world, id, owner);
+    return id;
+}
+
+int Sol_Prefab_HealZone(World *world, vec3s pos, float scale, int owner)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Zone_Add(world, id, ZONEKIND_HEAL);
+    vec4s     color = {0, 1, 0, 1};
+    ShapeDesc shape = {.radius = world->zones[id].radius, .color = color, .kind = SHAPEKIND_FIREBALL};
+    Sol_Shape_Add(world, id, shape);
+    Sol_Owner_Add(world, id, owner);
+    return id;
+}
+
+int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+
+    float modelScale = 25.0f * scale;
+    float bodyScale  = 100.0f * scale;
+
+    Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
+
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale, 0b01, 0b01);
+    body->grav       = (vec2s){0, 9.0f};
+
+    CompModel *model = Sol_Model_Add(world, id, MODELKIND_WALL);
+    model->is2d      = true;
+    model->xOffset   = 2.0f;
+    model->yOffset   = -4.0f;
+
+    Sol_Interact_Add(world, id);
+    Sol_Building_Add(world, id, 0);
+
+    return id;
+}
+
+int Sol_Prefab_Wall3d(World *world, vec3s pos, float scale)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Model_Add(world, id, MODELKIND_WALL);
+    Sol_Body_Add(world, id, (BodyDesc){
+        .mass = 0,
+        .shape = SHAPE3_MOD,
+
+    });
 }

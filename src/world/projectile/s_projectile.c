@@ -121,13 +121,10 @@ static void Projectile_Hit(World *world, int id, SolHit hit)
     hit.entA = aoeHit.entA = Sol_Owner_GetOwner(world, id);
     hit.power = aoeHit.power = projectile->power;
 
-
     if (projectile->callback.callbackFunc)
-        projectile->callback.callbackFunc(projectile->callbackFlags, &(HitCallbackData){
-        .world = world,
-        .pos = hit.pos,
-        .scale = hit.power,
-    });
+        projectile->callback.callbackFunc(
+            projectile->callbackFlags,
+            &(HitCallbackData){.instigator = hit.entA, .world = world, .pos = hit.pos, .scale = hit.power});
 
     Sol_Combat_ApplyHit(world, hit.entB, hit);
     Sol_Event_Add(world, (SolEvent){

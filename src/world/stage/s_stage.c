@@ -67,6 +67,10 @@ bool Sol_Stage_Load(World *world, Stage *stage, const char *path, vec3s offset)
         {
             Sol_Prefab_Wizard(world, 0, model->prefabs[i].pos, 1.0f);
         }
+        if (strncmp(name, "PREFAB_ZORGON", 13) == 0)
+        {
+            Sol_Prefab_Zorgon(world, 0, model->prefabs[i].pos, 1.0f);
+        }
     }
 
     return true;

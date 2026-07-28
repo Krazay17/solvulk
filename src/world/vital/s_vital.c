@@ -55,7 +55,7 @@ static void OnDeath(World *world, int id)
                              .as.fx.kind = FXKIND_DEATH_BLOOD,
                              .as.fx.pos  = Sol_Xform_GetPos(world, id),
                          });
-    world->bodies[id].group           = PHYSXMASK(0, 1);
+    world->bodies[id].group = PHYSXMASK(0, 1);
 }
 
 static void OnRespawn(World *world, int id)
@@ -66,7 +66,7 @@ static void OnRespawn(World *world, int id)
     vital->mana      = vital->maxMana;
     Sol_Xform_Teleport(world, id, vital->respawnPos);
     Sol_Movement_SetState(world, id, MOVE_IDLE);
-    world->bodies[id].group           = world->bodies[id].base_group;
+    world->bodies[id].group = world->bodies[id].base_group;
 }
 
 static int  required_step = BITC(HAS_VITAL);
@@ -136,20 +136,68 @@ float Sol_Vital_Damage(World *world, int id, int attacker, float damage)
     return damageDealt;
 }
 
-void Sol_Vital_Heal(World *world, int id, int healer, u32 heal)
+// pass in amount as percent
+float Sol_Vital_HealPercent(World *world, int id, int dealer, float amount)
 {
     if (!(world->masks[id] & BITC(HAS_VITAL)))
-        return;
-    CompVital *vital = &world->vitals[id];
+        return 0;
+    CompVital *vital       = &world->vitals[id];
+    float      amountDealt = 0.0f;
+    if (vital->health == 0)
+        return 0;
+    float finalAmount = vital->maxHealth * amount;
 
-    if (vital->health + heal >= vital->maxHealth)
+    if (vital->health + finalAmount >= vital->maxHealth)
     {
         vital->health = vital->maxHealth;
+        amountDealt   = vital->maxHealth - vital->health;
     }
     else
     {
-        vital->health += heal;
+        vital->health += finalAmount;
+        amountDealt = finalAmount;
     }
+
+    Sol_Event_Add(world, (SolEvent){
+                             .kind       = EVENTKIND_FX,
+                             .as.fx.entA = dealer,
+                             .as.fx.entB = id,
+                             .as.fx.pos  = Sol_Xform_GetPos(world, id),
+                             .as.fx.kind = FXKIND_TAKEHEALING,
+                         });
+
+    return amountDealt;
+}
+
+float Sol_Vital_Heal(World *world, int id, int dealer, float amount)
+{
+    if (!(world->masks[id] & BITC(HAS_VITAL)))
+        return 0;
+    CompVital *vital       = &world->vitals[id];
+    float      amountDealt = 0.0f;
+    if (vital->health == 0)
+        return 0;
+
+    if (vital->health + amount >= vital->maxHealth)
+    {
+        vital->health = vital->maxHealth;
+        amountDealt   = vital->maxHealth - vital->health;
+    }
+    else
+    {
+        vital->health += amount;
+        amountDealt = amount;
+    }
+
+    Sol_Event_Add(world, (SolEvent){
+                             .kind       = EVENTKIND_FX,
+                             .as.fx.entA = dealer,
+                             .as.fx.entB = id,
+                             .as.fx.pos  = Sol_Xform_GetPos(world, id),
+                             .as.fx.kind = FXKIND_TAKEHEALING,
+                         });
+
+    return amountDealt;
 }
 
 float Sol_Vital_GetHealth(World *world, int id)

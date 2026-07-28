@@ -98,10 +98,10 @@ void Sol_Input_Update()
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {
-        bool menuActive = solEngine.worlds[2]->doesSimulate;
+        bool menuActive = solEngine.worlds[solEngine.worldCount - 1]->doesSimulate;
         menuActive ^= 1;
-        solEngine.worlds[2]->doesSimulate = menuActive;
-        solEngine.worlds[2]->doesRender   = menuActive;
+        solEngine.worlds[solEngine.worldCount- 1]->doesSimulate = menuActive;
+        solEngine.worlds[solEngine.worldCount- 1]->doesRender   = menuActive;
         Sol_Input_SetLocked(!menuActive);
     }
 

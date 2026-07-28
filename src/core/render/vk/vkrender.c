@@ -514,10 +514,9 @@ void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
     boundPipeline = id;
 }
 
-// SSBO REFACTOR
 void Sol_Render_SetOrtho(uint32_t width, uint32_t height)
 {
-    mat4s ortho = glms_ortho(0.0f, (float)width, 0.0f, (float)height, 1.0f, -1.0f);
+    mat4s ortho = glms_ortho(0.0f, (float)width, (float)height, 0.0f, -100.0f, 100.0f);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -690,8 +689,10 @@ void Sol_Begin_Draw()
     vkCmdBeginRendering(currentCmd, &renderingInfo);
 
     VkViewport viewport = {0};
+    viewport.x          = 0.0f;
+    viewport.y          = (float)solvkstate.swapchainExtent.height;
     viewport.width      = (float)solvkstate.swapchainExtent.width;
-    viewport.height     = (float)solvkstate.swapchainExtent.height;
+    viewport.height     = -(float)solvkstate.swapchainExtent.height;
     viewport.minDepth   = 0.0f;
     viewport.maxDepth   = 1.0f;
     vkCmdSetViewport(currentCmd, 0, 1, &viewport);

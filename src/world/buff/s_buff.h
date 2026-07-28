@@ -1,18 +1,9 @@
 #pragma once
-#include "base.h"
+#include "types.h"
 
 #define MAX_BUFFS 64
 
 typedef struct World World;
-
-typedef enum
-{
-    BUFFKIND_FIRE,
-    BUFFKIND_STUN,
-    BUFFKIND_SPEED,
-    BUFFKIND_INVULN,
-    BUFFKIND_COUNT,
-} BuffKind;
 
 typedef enum
 {

@@ -50,6 +50,16 @@ static void Combat_Step(World *world, double dt, double time)
     }
 }
 
+void Sol_Combat_ApplyHeal(World *world, int id, SolHit hit)
+{
+    float heal     = hit.damage;
+    u32   buffMask = hit.buffMask;
+    u32   dealer   = Sol_Owner_GetOwner(world, hit.entA);
+
+    Sol_Buff_AddFromMask(world, id, dealer, buffMask);
+    Sol_Vital_Heal(world, id, dealer, heal);
+}
+
 void Sol_Combat_ApplyHit(World *world, int id, SolHit hit)
 {
     float damage     = hit.damage;

@@ -97,7 +97,7 @@ Emitter *Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos, vec4s colo
 
 Emitter *Sol_Emitter_Add(World *world, int id, EmitterKind kind, vec4s color, float scale)
 {
-    Emitter *e = Sol_Emitter_Spawn(world, kind, Sol_Xform_GetPos(world, id), (vec4s){0}, scale);
+    Emitter *e = Sol_Emitter_Spawn(world, kind, Sol_Xform_GetPos(world, id), color, scale);
     if (!e)
         return NULL;
 

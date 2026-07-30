@@ -6,8 +6,6 @@
 #include "xform/s_xform.h"
 #include "owner/s_owner.h"
 
-#define SPATIAL_STATIC_CELL_SIZE 1.0f
-
 ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
     [SHAPE3_CAP] = Collide_Capsule_Tri,

@@ -37,6 +37,7 @@ typedef struct CompBody
     vec3s  gravity;
     float  mass, invMass, restitution;
     Shape3 shape;
+    u32    spatial_grid_offset, tri_count;
     u32    group, base_group;
     u32    ray_group, ray_base_group;
     bool   ignoreFriendly;
@@ -53,6 +54,7 @@ typedef struct
 } BodyDesc;
 
 void         Sol_Body_Add(World *world, int id, BodyDesc desc);
+void         Sol_Physx_Remove(World *world, int id);
 void         Sol_Physx_Init(World *world);
 void         Sol_Physx_Step(World *world, double dt, double time);
 void         Sol_Physx2d_Step(World *world, double dt, double time);

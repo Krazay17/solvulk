@@ -10,14 +10,6 @@
 #include "replication/s_replication.h"
 #include <omp.h>
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 1.0f
-#define SPATIAL_DYNAMIC_SIZE (1 << 18)
-#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
-
-// Cell 1.5, Size (1<<21) loads slow but plays fast
-#define SPATIAL_STATIC_SIZE (1 << 19)
-#define SPATIAL_STATIC_ENTRIES 0xF
-
 static u32            ents[MAX_ENTS];
 static EntityContacts contacts[MAX_ENTS];
 
@@ -31,8 +23,8 @@ void Sol_Physx_Init(World *world)
     world->bodies  = calloc(MAX_ENTS, sizeof(CompBody));
     world->spatial = calloc(1, sizeof(WorldPhysx));
 
-    // SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
-    //                   SPATIAL_STATIC_CELL_SIZE);
+    SpatialTable_Init(&world->spatial->staticGroup.table, SPATIAL_STATIC_SIZE, SPATIAL_STATIC_ENTRIES,
+                      SPATIAL_STATIC_CELL_SIZE);
     SpatialTable_Init(&world->spatial->dynamicGroup.table, SPATIAL_DYNAMIC_SIZE, SPATIAL_DYNAMIC_ENTRIES,
                       SPATIAL_DYNAMIC_CELL_SIZE);
 
@@ -62,6 +54,20 @@ void Sol_Body_Add(World *world, int id, BodyDesc desc)
     };
     world->bodies[id] = body;
     Spatial_Add(world, id, &world->bodies[id]);
+}
+
+void Sol_Physx_Remove(World *world, int id)
+{
+    PhysxGroup *group = &world->spatial->staticGroup;
+    PhysxEnts  *ents  = &group->ents[id];
+
+    u32 removeStart = ents->triIndexStart;
+    u32 removeCount = ents->triIndexCount;
+    for (int i = ents->triIndexStart; i < ents->triIndexCount; i++)
+    {
+        // memset(&group->tris[i], 0, sizeof(SolTri));
+    }
+    // group->triCount -= ents->triIndexCount;
 }
 
 void Sol_Physx_Step(World *world, double dt, double time)

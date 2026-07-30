@@ -18,6 +18,7 @@
 #include "item/s_item.h"
 #include "ability/s_ability.h"
 #include "buff/s_buff.h"
+#include "physx/s_body.h"
 
 #define MAX_TOOLTIP_ALPHA 0.9f
 #define MAX_TOOLTIP_LINES 10
@@ -72,7 +73,7 @@ void Sol_Interact_Set(World *world, int id, CompInteract desc)
     WAddComp(world, id, HAS_INTERACT);
 }
 
-static int topmost_required = BITC(HAS_INTERACT) | BITC(HAS_BODY2);
+static int topmost_required = BITC(HAS_INTERACT);
 static int FindTopMost(World *world)
 {
     int topZ     = INT_MIN;
@@ -82,20 +83,30 @@ static int FindTopMost(World *world)
         int id = world->activeEntities[i];
         if (!WHas(world, id, topmost_required))
             continue;
-        vec4s bounds = {
-            Sol_Xform_GetPos(world, id).x,
-            Sol_Xform_GetPos(world, id).y,
-            Sol_Body2d_GetDims(world, id).x,
-            Sol_Body2d_GetDims(world, id).y,
-        };
-        if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
+        if (WHas(world, id, BITC(HAS_BODY2)))
         {
-            int z = world->body2d[id].zindex;
-            if (z > topZ)
+            vec4s bounds = {
+                Sol_Xform_GetPos(world, id).x,
+                Sol_Xform_GetPos(world, id).y,
+                Sol_Body2d_GetDims(world, id).x,
+                Sol_Body2d_GetDims(world, id).y,
+            };
+            if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
             {
-                topZ     = z;
-                winnerId = id;
+                int z = world->body2d[id].zindex;
+                if (z > topZ)
+                {
+                    topZ     = z;
+                    winnerId = id;
+                }
             }
+        }
+        if ((world->systemBits & BITC(WORLD_SYS_PHYSX)) && WHas(world, id, BITC(HAS_BODY3)))
+        {
+            SolRayResult result =
+                Sol_ScreenRaycast(world, Sol_Input_GetMouse().x, Sol_Input_GetMouse().y, (SolRay){.dist = 15.0f});
+            if (result.hit)
+                winnerId = result.entId;
         }
     }
     return winnerId;

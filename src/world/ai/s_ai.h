@@ -20,8 +20,8 @@ typedef struct CompAi
 {
     vec3s       dirToTarget;
     AiState     state;
-    u32         target, justHitUs, lastHit;
-    float       distToTarget, dropAggroTimer;
+    u32         target, justHitUs;
+    float       distToTarget, dropAggroTimer, lastHit;
     AiStateData stateData[AISTATE_COUNT];
 } CompAi;
 typedef enum

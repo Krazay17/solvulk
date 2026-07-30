@@ -25,9 +25,10 @@ static bool CheckWall(World *world, int id)
     CompController *controller = &world->controllers[id];
     vec3s           basePos    = vecAdd(Sol_Xform_GetPos(world, id), vecSca(WORLD_UP, body->dims.y * 0.5f));
 
-    bool  mantle  = false;
+    u32 mantleSpace = 0;
     float dist    = 0;
     vec3s goodPos = {0};
+    // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
     {
         float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 1.33f));
@@ -35,13 +36,15 @@ static bool CheckWall(World *world, int id)
         pos.y -= offset;
         SolRay       ray = {.pos = pos, .dist = body->dims.x * 3.0f, .dir = Sol_Vec3_FromYawPitch(controller->yaw, 0)};
         SolRayResult rayResult = Sol_Raycast(world, ray);
+        // No hit indicates there is space above
         if (!rayResult.hit)
         {
             dist    = offset;
             goodPos = rayResult.pos;
-            mantle  = true;
+            mantleSpace++;
         }
-        else if (mantle == true && vecDot(rayResult.norm, WORLD_UP) < 0.4f)
+        // Hit after no hit indicates there is floor to mantle
+        else if (mantleSpace > 3)// && vecDot(rayResult.norm, WORLD_UP) < 0.4f
         {
             data->as.mantle.dist = dist;
             data->as.mantle.pos  = goodPos;

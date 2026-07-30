@@ -142,8 +142,13 @@ u32 AiController_FindTarget(World *world, int id)
         float dist      = glms_vec3_distance(pos, targetPos);
         if (dist < 25.0f && dist < closestDistance)
         {
+            SolRayResult result = Sol_Raycast(
+                world,
+                (SolRay){
+                    .dist = 25.0f, .pos = pos, .dir = vecNorm(vecSub(targetPos, pos)), .ignoreEnt = id, .mask = 0b01});
+            if (result.hit && result.entId > 0)
+                closestTarget = otherId;
             closestDistance = dist;
-            closestTarget   = otherId;
         }
     }
     if (closestTarget > 0)

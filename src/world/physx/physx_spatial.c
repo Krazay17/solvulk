@@ -10,19 +10,57 @@
 #include "sol_core.h"
 #include "world.h"
 #include "profiler.h"
+#include "model/s_model.h"
+#include "model.h"
 #include "xform/s_xform.h"
+
+// #include "sol/sol.h"
+
+void Add_Static_Collision_From_Model(PhysxGroup *group, int id, u32 handle)
+{
+    u32 triCount = Sol_Model_GetTriCount(handle);
+    u32 oldCount = group->triCount;
+    u32 newCount = oldCount + triCount;
+
+    // Ensure capacity grows properly even if starting at 0
+    if (newCount > group->capacity)
+    {
+        u32 newCapacity = group->capacity == 0 ? 64 : group->capacity * 2;
+        while (newCapacity < newCount)
+        {
+            newCapacity *= 2;
+        }
+
+        SolTri *newTris = realloc(group->tris, sizeof(SolTri) * newCapacity);
+        if (newTris)
+        {
+            group->tris     = newTris;
+            group->capacity = newCapacity;
+        }
+        else
+        {
+            // Handle allocation failure appropriately
+            return;
+        }
+    }
+    group->triCount               = newCount;
+    group->ents[id].triIndexStart = oldCount;
+    group->ents[id].triIndexCount = triCount;
+}
 
 void Spatial_Add(World *world, int id, CompBody *body)
 {
     CompXform  *xform = &world->xforms[id];
-    PhysxGroup *group = body->mass == 0 ? &world->spatial->staticGroup : &world->spatial->dynamicGroup;
+    PhysxGroup *group = (body->mass == 0) ? &world->spatial->staticGroup : &world->spatial->dynamicGroup;
 
     group->ents[id].id = id;
     group->entCount++;
 
     if (body->shape == SHAPE3_MOD)
     {
-        Physx_ParseModel(world, id, group);
+        u32 handle = Sol_Model_GetModelId(world, id);
+        Add_Static_Collision_From_Model(group, id, handle);
+        Transform_Tris_LocalToWorld(group->tris, id, group->ents[id].triIndexStart, handle, &world->xforms[id]);
     }
 }
 

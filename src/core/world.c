@@ -11,9 +11,15 @@
 static u32 world_count = 0;
 
 static SystemFunc init_system[WORLD_SYS_COUNT] = {
-#define AS_ARRAY_MAPPING(enum_name, init_func) [enum_name] = init_func,
+#define AS_ARRAY_MAPPING(enum_name, init_func, remove_func) [enum_name] = init_func,
     SOL_SYSTEM_LIST(AS_ARRAY_MAPPING)
 #undef AS_ARRAY_MAPPING
+};
+
+static SystemFuncId remove_component[WORLD_SYS_COUNT] = {
+#define AS_COMPONENT_MAPPING(enum_name, init_func, remove_func) [enum_name] = remove_func,
+    SOL_SYSTEM_LIST(AS_COMPONENT_MAPPING)
+#undef AS_COMPONENT_MAPPING
 };
 
 World *World_Create(WorldKind kind)
@@ -190,6 +196,11 @@ void Sol_Destroy_Ent(World *world, int id)
     world->masks[id]       = 0;
     world->flags[id].flags = 0;
     world->ekinds[id]      = 0;
+    for (int i = 0; i < WORLD_SYS_COUNT; i++)
+    {
+        if (remove_component[i])
+            remove_component[i](world, id);
+    }
     for (int i = 0; i < world->activeCount; i++)
     {
         if (world->activeEntities[i] == id)

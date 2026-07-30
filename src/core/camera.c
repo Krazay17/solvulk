@@ -31,10 +31,10 @@ typedef struct SolCamera
 SolCamera solCamera = {
     .fov       = 60.0f,
     .nearClip  = 0.2f,
-    .farClip   = 1000.0f,
-    .lerpspeed = 10.0f,
-    .distance  = 3.5f,
-    .offset    = 1.0f,
+    .farClip   = 2500.0f,
+    .lerpspeed = 20.0f,
+    .distance  = 2.66f,
+    .offset    = 0.66f,
 };
 
 void Sol_Cam_Update(double dt)

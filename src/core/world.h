@@ -18,49 +18,50 @@ typedef struct World World;
 #define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
 
 #define SOL_SYSTEM_LIST(X)                                                                                             \
-    X(WORLD_SYS_XFORM, Sol_Xform_Init)                                                                                 \
-    X(WORLD_SYS_REPLICATION, Sol_Replication_Init)                                                                     \
-    X(WORLD_SYS_EVENT, Sol_Event_Init)                                                                                 \
-    X(WORLD_SYS_CONTROLLER, Sol_Controller_Init)                                                                       \
-    X(WORLD_SYS_INTERACT, Sol_Interact_Init)                                                                           \
-    X(WORLD_SYS_TIMER, Sol_Timer_Init)                                                                                 \
-    X(WORLD_SYS_PICKUP, Sol_Pickup_Init)                                                                               \
-    X(WORLD_SYS_OWNER, Sol_Owner_Init)                                                                                 \
-    X(WORLD_SYS_PARENT, Sol_Parent_Init)                                                                               \
-    X(WORLD_SYS_BUFF, Sol_Buff_Init)                                                                                   \
-    X(WORLD_SYS_ABILITY, Sol_Ability_Init)                                                                             \
-    X(WORLD_SYS_CHAINHIT, Sol_Chainhit_Init)                                                                           \
-    X(WORLD_SYS_ITEM, Sol_Item_Init)                                                                                   \
-    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init)                                                                           \
-    X(WORLD_SYS_PHYSX, Sol_Physx_Init)                                                                                 \
-    X(WORLD_SYS_BODY2, Sol_Body2d_Init)                                                                                \
-    X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init)                                                                       \
-    X(WORLD_SYS_ZONE, Sol_Zone_Init)                                                                                   \
-    X(WORLD_SYS_COMBAT, Sol_Combat_Init)                                                                               \
-    X(WORLD_SYS_VITAL, Sol_Vital_Init)                                                                                 \
-    X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init)                                                                             \
-    X(WORLD_SYS_MODEL, Sol_Model_Init)                                                                                 \
-    X(WORLD_SYS_LINE, Sol_Line_Init)                                                                                   \
-    X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init)                                                               \
-    X(WORLD_SYS_EMITTER, Sol_Emitter_Init)                                                                             \
-    X(WORLD_SYS_RIBBON, Sol_Ribbon_Init)                                                                               \
-    X(WORLD_SYS_BUILDING, Sol_Building_Init)                                                                           \
-    X(WORLD_SYS_AUDIO, Sol_World_Audio_Init)                                                                           \
-    X(WORLD_SYS_SHAPE, Sol_Shape_Init)                                                                                 \
-    X(WORLD_SYS_SCORE, Sol_Score_Init)                                                                                 \
-    X(WORLD_SYS_STAGE, Sol_Stage_Init)                                                                                 \
-    X(WORLD_SYS_VIEW2D, Sol_View2d_Init)                                                                               \
-    X(WORLD_SYS_VIEW, Sol_View_Init)
+    X(WORLD_SYS_XFORM, Sol_Xform_Init, NULL)                                                                           \
+    X(WORLD_SYS_REPLICATION, Sol_Replication_Init, NULL)                                                               \
+    X(WORLD_SYS_EVENT, Sol_Event_Init, NULL)                                                                           \
+    X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, NULL)                                                                 \
+    X(WORLD_SYS_INTERACT, Sol_Interact_Init, NULL)                                                                     \
+    X(WORLD_SYS_TIMER, Sol_Timer_Init, NULL)                                                                           \
+    X(WORLD_SYS_PICKUP, Sol_Pickup_Init, NULL)                                                                         \
+    X(WORLD_SYS_OWNER, Sol_Owner_Init, NULL)                                                                           \
+    X(WORLD_SYS_PARENT, Sol_Parent_Init, NULL)                                                                         \
+    X(WORLD_SYS_BUFF, Sol_Buff_Init, NULL)                                                                             \
+    X(WORLD_SYS_ABILITY, Sol_Ability_Init, NULL)                                                                       \
+    X(WORLD_SYS_CHAINHIT, Sol_Chainhit_Init, NULL)                                                                     \
+    X(WORLD_SYS_ITEM, Sol_Item_Init, NULL)                                                                             \
+    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, NULL)                                                                     \
+    X(WORLD_SYS_PHYSX, Sol_Physx_Init, Sol_Physx_Remove)                                                               \
+    X(WORLD_SYS_BODY2, Sol_Body2d_Init, NULL)                                                                          \
+    X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init, NULL)                                                                 \
+    X(WORLD_SYS_ZONE, Sol_Zone_Init, NULL)                                                                             \
+    X(WORLD_SYS_COMBAT, Sol_Combat_Init, NULL)                                                                         \
+    X(WORLD_SYS_VITAL, Sol_Vital_Init, NULL)                                                                           \
+    X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init, NULL)                                                                       \
+    X(WORLD_SYS_MODEL, Sol_Model_Init, NULL)                                                                           \
+    X(WORLD_SYS_LINE, Sol_Line_Init, NULL)                                                                             \
+    X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init, NULL)                                                         \
+    X(WORLD_SYS_EMITTER, Sol_Emitter_Init, NULL)                                                                       \
+    X(WORLD_SYS_RIBBON, Sol_Ribbon_Init, NULL)                                                                         \
+    X(WORLD_SYS_BUILDING, Sol_Building_Init, NULL)                                                                     \
+    X(WORLD_SYS_AUDIO, Sol_World_Audio_Init, NULL)                                                                     \
+    X(WORLD_SYS_SHAPE, Sol_Shape_Init, NULL)                                                                           \
+    X(WORLD_SYS_CONTAINER, Sol_Container_Init, NULL)                                                                   \
+    X(WORLD_SYS_SCORE, Sol_Score_Init, NULL)                                                                           \
+    X(WORLD_SYS_STAGE, Sol_Stage_Init, NULL)                                                                           \
+    X(WORLD_SYS_VIEW2D, Sol_View2d_Init, NULL)                                                                         \
+    X(WORLD_SYS_VIEW, Sol_View_Init, NULL)
 
 typedef enum
 {
-#define AS_ENUM(enum_name, init_func) enum_name,
+#define AS_ENUM(enum_name, init_func, remove_func) enum_name,
     SOL_SYSTEM_LIST(AS_ENUM)
 #undef AS_ENUM
     WORLD_SYS_COUNT
 } WorldSystem;
 
-#define AS_FORWARD_DEC(enum_name, init_func) void init_func(World *world);
+#define AS_FORWARD_DEC(enum_name, init_func, remove_func) void init_func(World *world);
 SOL_SYSTEM_LIST(AS_FORWARD_DEC)
 #undef AS_FORWARD_DEC
 
@@ -100,6 +101,7 @@ typedef enum
     HAS_INVENTORY,
     HAS_ZONE,
     HAS_BUILDING,
+    HAS_CONTAINER,
     COMPONENT_COUNT,
 } SolComponents;
 
@@ -110,6 +112,7 @@ typedef enum
 } WorldKind;
 
 typedef void (*SystemFunc)(World *);
+typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemUpdate)(World *, double, double);
 
 typedef uint64_t Mask;
@@ -142,6 +145,7 @@ typedef struct CompAbilitySlot CompAbilitySlot;
 typedef struct CompTooltip     CompTooltip;
 typedef struct CompZone        CompZone;
 typedef struct CompBuilding    CompBuilding;
+typedef struct CompContainer   CompContainer;
 
 typedef struct ChainAttacks ChainAttacks;
 typedef struct Inventory    Inventory;
@@ -212,6 +216,7 @@ struct World
     CompAbilitySlot *abilitySlots;
     CompZone        *zones;
     CompBuilding    *buildings;
+    CompContainer   *containers;
 
     Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;
@@ -223,6 +228,9 @@ struct World
     WorldNet     *worldNet;
     SolScore     *scores;
     Stage        *stage;
+
+    vec3s playerSpawns[4];
+    u32   playerSpawnCount;
 
     bool doesSimulate;
     bool doesRender;

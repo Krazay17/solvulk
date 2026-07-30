@@ -3,6 +3,15 @@
 #include "world.h"
 #include "s_body.h"
 
+#define SPATIAL_DYNAMIC_CELL_SIZE 1.0f
+#define SPATIAL_DYNAMIC_SIZE (1 << 18)
+#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
+
+// Cell 1.5, Size (1<<21) loads slow but plays fast
+#define SPATIAL_STATIC_CELL_SIZE 5.0f
+#define SPATIAL_STATIC_SIZE (1 << 20)
+#define SPATIAL_STATIC_ENTRIES 0xF
+
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SPATIAL_NULL 0xFFFFFFFF
 #define MAX_CONTACTS_PER_ENTITY 8
@@ -193,3 +202,4 @@ void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
                                     vec3s p2, vec3s q2, // segment B: p2 → q2
                                     vec3s *outA, vec3s *outB);
 void Spatial_Table_Dynamic_Single(SpatialTable *table, int id, vec3s pos, float width, float height);
+void Add_Static_Collision_From_Model(World *world, int id, PhysxGroup *group);

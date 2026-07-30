@@ -4,7 +4,6 @@
 #include "world.h"
 #include "profiler.h"
 #include "xform/s_xform.h"
-#include "model/s_model.h"
 
 void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
                                     vec3s p2, vec3s q2, // segment B: p2 → q2
@@ -80,25 +79,4 @@ void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
 
     *outA = glms_vec3_add(p1, glms_vec3_scale(d1, s));
     *outB = glms_vec3_add(p2, glms_vec3_scale(d2, t));
-}
-
-void Physx_ParseModel(World *world, int id, PhysxGroup *group)
-{
-    CompXform *xform         = &world->xforms[id];
-    u32        handle        = Sol_Model_GetModelId(world, id);
-    u32        modelTriCount = Sol_Model_GetTriCount(handle);
-    u32        oldCount      = group->triCount;
-    u32        newCount      = oldCount + modelTriCount;
-
-    if (newCount > group->capacity)
-    {
-        group->capacity = newCount * 2;
-        group->tris     = realloc(group->tris, sizeof(SolTri) * group->capacity);
-    }
-
-    group->triCount = newCount;
-    Transform_Tris_LocalToWorld(group->tris, id, oldCount, handle, xform);
-
-    group->ents[id].triIndexStart = oldCount;
-    group->ents[id].triIndexCount = modelTriCount;
 }

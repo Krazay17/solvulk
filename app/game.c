@@ -10,12 +10,8 @@ static void SpawnPlayer(int flags, void *data)
     Sol_Destroy_Ent(gameWorld, gameWorld->playerID);
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
-                       (EntDesc){.pos = (vec3s){0, 5, 0}, .scale = 1.0f, .authority = NETAUTH_AUTH});
-    //    gameWorld->models[1].modelId = MODELKIND_ZORGON;
+                       (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
-    // RibbonHandle handle = Sol_Ribbon_Add(gameWorld, 1, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
-    // Sol_Ribbon_UpdateTargetPos(gameWorld, handle, (vec3s){0, 25, 25});
-    // Sol_Ribbon_AddBetweenEntities(gameWorld, 1, 2, RIBBONKIND_LIGHTNING, 1.0f, (vec4s){1, 1, 1, 1});
 }
 
 typedef enum
@@ -175,7 +171,7 @@ void Create_Sol_Game()
     SpawnPlayer(0, 0);
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
-    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
+    player2d      = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
     WAddStep(hud) = RotateGuy;
 
     Sol_Prefab_Wall2d(buildWorld, (vec3s){1000, 200.0f, 1.0f}, 1.0f);

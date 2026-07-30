@@ -25,13 +25,12 @@ static void Step(World *world, double dt, double time)
         CompModel    *model    = &world->models[id];
         if ((interact->state & INTERACT_CLICKED))
         {
-            building->placing = true;
-        }
-        if (building->placing)
-        {
-            SolRayResult result = Sol_ScreenRaycast(solEngine.activeWorld, (int)Sol_Input_GetMouseUI().x,
-                                                    (int)Sol_Input_GetMouseUI().y, (SolRay){.dist = 10.0f});
-            building->placePos  = result.pos;
+            if (building->placed)
+            {
+                
+            }
+            else
+                building->placing = true;
         }
     }
 }
@@ -55,6 +54,12 @@ static void Tick(World *world, double dt, double time)
             if (Sol_Input_GetMouse().buttonsPressed[SOL_MOUSE_LEFT])
             {
                 Sol_Prefab_Wall3d(solEngine.activeWorld, building->placePos, 1.0f);
+            }
+            if (building->placing)
+            {
+                SolRayResult result = Sol_ScreenRaycast(solEngine.activeWorld, (int)Sol_Input_GetMouse().x,
+                                                        (int)Sol_Input_GetMouse().y, (SolRay){.dist = 10.0f});
+                building->placePos  = result.pos;
             }
         }
     }
@@ -91,7 +96,10 @@ void Sol_Building_Init(World *world)
     WAdd3d(world)    = Draw;
 }
 
-void Sol_Building_Add(World *world, int id, BuildingKind kind)
+void Sol_Building_Add(World *world, int id, bool placed)
 {
+    CompBuilding *building = &world->buildings[id];
+    building->placed       = placed;
+
     world->masks[id] |= BITC(HAS_BUILDING);
 }

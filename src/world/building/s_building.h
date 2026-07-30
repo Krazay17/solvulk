@@ -9,4 +9,4 @@ typedef struct CompBuilding
 } CompBuilding;
 
 void Sol_Building_Init(World *world);
-void Sol_Building_Add(World *world, int id, BuildingKind kind);
+void Sol_Building_Add(World *world, int id, bool placed);

@@ -520,14 +520,25 @@ int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale)
     return id;
 }
 
-int Sol_Prefab_Wall3d(World *world, vec3s pos, float scale)
+int Sol_Prefab_Wall3d(World *world, vec3s pos, versors rot, float scale)
 {
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
     Sol_Model_Add(world, id, MODELKIND_WALL);
-    Sol_Body_Add(world, id, (BodyDesc){
-        .mass = 0,
-        .shape = SHAPE3_MOD,
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .mass  = 0,
+                     .shape = SHAPE3_MOD,
+                 });
+    Sol_Interact_Add(world, id);
+    Sol_Building_Add(world, id, 1);
+}
 
-    });
+int Sol_Prefab_Buffbar(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 280, 70, 0, 0);
+    Sol_Xform_Set(world, id, 500, 650, 0);
+    Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
+    Sol_Interact_Add(world, id);
 }

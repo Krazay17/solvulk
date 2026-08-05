@@ -69,12 +69,12 @@ static void Sol_Controller_Tick(World *world, double dt, double time)
             continue;
 
         CompController *controller = &world->controllers[id];
+        controller->aimpos         = Sol_Physx_GetHeadPos(world, id);
+
         if (controller->kind == CONTROLLER_REMOTE)
             RemoteTick(world, id, controller, dt, time);
         if (controller->kind == CONTROLLER_LOCAL)
             LocalTick(world, id, dt, time);
-
-        controller->aimpos = Sol_Physx_GetHeadPos(world, id);
 
         if (controller->isStrafing)
             world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
@@ -267,6 +267,7 @@ float Sol_GetPitch(World *world, int id)
 
 vec3s Sol_Controller_GetShootPos(World *world, int id, float offset)
 {
+
     vec3s head = world->controllers[id].aimpos;
     vec3s dir  = world->controllers[id].aimdir;
     return vecAdd(head, vecSca(dir, offset));
@@ -274,7 +275,7 @@ vec3s Sol_Controller_GetShootPos(World *world, int id, float offset)
 
 SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
 {
-    vec3s pos = Sol_Controller_GetShootPos(world, id, 0.5f);
+    vec3s pos = Sol_Controller_GetShootPos(world, id, 1.5f);
     vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
     return (SolShoot){.pos = pos, .vel = vel};
 }

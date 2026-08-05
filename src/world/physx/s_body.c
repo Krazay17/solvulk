@@ -123,10 +123,8 @@ void Sol_Physx_Step(World *world, double dt, double time)
             }
             Sol_Xform_Teleport(world, id, (vec3s){0, 15, 0});
         }
-        if (body->vel.y < -100.0f)
-            body->vel.y = -100.0f;
 
-        vec3s accel   = body->gravity;
+        vec3s accel   = body->vel.y < -100.0f ? GLMS_VEC3_ZERO : body->gravity;
         accel         = glms_vec3_add(accel, body->force);
         accel         = glms_vec3_add(accel, body->impulse);
         body->impulse = (vec3s){0};

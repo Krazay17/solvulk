@@ -32,7 +32,7 @@ void Sol_Stage_Init(World *world)
     world->stage  = stage;
     WAdd3d(world) = Stage_Draw;
 
-    stage->handle = SOL_MODEL_WORLD9;
+    stage->handle = SOL_MODEL_WORLD10;
     stage->scale  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     Sol_Stage_Load(world, stage, "", (vec3s){0, 0, 0});
 }

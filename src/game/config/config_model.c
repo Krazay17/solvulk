@@ -23,7 +23,8 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_BOX] = "Box.glb",       [SOL_MODEL_WORLD0] = "World0.glb",
     [MODELKIND_WALL] = "Wall.glb",     [SOL_MODEL_WORLD1] = "World1.glb",
     [SOL_MODEL_WORLD2] = "World2.glb", [SOL_MODEL_WORLD6] = "World6.glb",
-    [SOL_MODEL_WORLD7] = "World7.glb", [SOL_MODEL_WORLD8] = "World8.glb",[SOL_MODEL_WORLD9] = "World9.glb",
+    [SOL_MODEL_WORLD7] = "World7.glb", [SOL_MODEL_WORLD8] = "World8.glb",
+    [SOL_MODEL_WORLD9] = "World9.glb", [SOL_MODEL_WORLD10] = "World10.glb",
 };
 
 /*

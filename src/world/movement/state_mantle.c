@@ -15,7 +15,7 @@
 #include "ability/s_ability.h"
 
 #define RAY_COUNT 12
-#define MANTLE_TIME 0.5f
+#define MANTLE_TIME 0.6f
 
 static bool CheckWall(World *world, int id)
 {
@@ -23,15 +23,20 @@ static bool CheckWall(World *world, int id)
     MoveStateData  *data       = &move->stateData[MOVE_MANTLE];
     CompBody       *body       = &world->bodies[id];
     CompController *controller = &world->controllers[id];
-    vec3s           basePos    = vecAdd(Sol_Xform_GetPos(world, id), vecSca(WORLD_UP, body->dims.y * 0.5f));
+    float           height     = body->dims.y;
+    float           width      = body->dims.x;
+    vec3s           pos        = Sol_Xform_GetPos(world, id);
+    vec3s           basePos    = vecAdd(pos, vecSca(WORLD_UP, height * 0.7f));
 
-    u32 mantleSpace = 0;
-    float dist    = 0;
-    vec3s goodPos = {0};
+    u32   mantleSpace = 0;
+    float dist        = 0;
+    vec3s goodPos     = {0};
+    if (Sol_Raycast(world, (SolRay){.pos = pos, .dir = WORLD_UP, .dist = height, .ignoreEnt = id}).hit)
+        return false;
     // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
     {
-        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 1.33f));
+        float offset = (float)i * (height / ((float)RAY_COUNT * 0.8f));
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay       ray = {.pos = pos, .dist = body->dims.x * 3.0f, .dir = Sol_Vec3_FromYawPitch(controller->yaw, 0)};
@@ -44,7 +49,7 @@ static bool CheckWall(World *world, int id)
             mantleSpace++;
         }
         // Hit after no hit indicates there is floor to mantle
-        else if (mantleSpace > 3)// && vecDot(rayResult.norm, WORLD_UP) < 0.4f
+        else if (mantleSpace > 1) // && vecDot(rayResult.norm, WORLD_UP) < 0.4f
         {
             data->as.mantle.dist = dist;
             data->as.mantle.pos  = goodPos;
@@ -106,7 +111,7 @@ void Mantle_State_Enter(World *world, int id)
                            (AnimDesc){
                                .anim     = ANIM_MANTLE_ROLL,
                                .playKind = ANIMPLAYKIND_ONESHOT,
-                               .speed    = 1.45f,
+                               .speed    = 1.4f,
                                .layerId  = ANIM_LAYER_OVERRIDE,
                                .blendIn  = 0.1f,
                            });

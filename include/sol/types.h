@@ -201,6 +201,7 @@ typedef enum
     SOL_MODEL_WORLD7,
     SOL_MODEL_WORLD8,
     SOL_MODEL_WORLD9,
+    SOL_MODEL_WORLD10,
     SOL_MODEL_COUNT,
 } SolModelHandle;
 

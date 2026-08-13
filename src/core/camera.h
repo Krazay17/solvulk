@@ -1,5 +1,6 @@
 #pragma once
 #include "base.h"
+#include "sol_math.h"
 
 #define MAX_CAMERA_ZOOM 100.0f
 

@@ -15,6 +15,7 @@
 #include "xform/s_xform.h"
 #include "physx/s_body.h"
 #include "physx/s_body2d.h"
+#include "view/s_view2d.h"
 #include "parent/s_parent.h"
 #include "item/s_item.h"
 #include "ability/s_ability.h"
@@ -211,7 +212,7 @@ int Sol_Interact_GetTopmost(World *world)
             };
             if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
             {
-                int z = world->body2d[id].zindex;
+                int z = world->view2d[id].zindex;
                 if (z > topZ)
                 {
                     topZ     = z;
@@ -242,13 +243,9 @@ void Sol_Interact_DragEntityTo(World *world, int id, vec3s targetPos)
         interact->state |= INTERACT_DRAGGING;
         interact->offset = vecSub(targetPos, Sol_Xform_GetPos(world, id));
 
-        sollog(id);
-        sollog(Sol_Parent_GetParent(world, id));
-
         if (WHas(world, id, BITC(HAS_PARENT)))
         {
             Sol_Parent_SetActive(world, id, false);
-            sollog("HAS PARENT");
         }
     }
 

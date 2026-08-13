@@ -176,7 +176,7 @@ void Create_Sol_Game()
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_FLOOR);
 
     int attackBar = Sol_Create_Ent(hud, 0);
-    Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);
+    Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0);
     Sol_Xform_Set(hud, attackBar, 340, 650, 0);
     Sol_View2d_Add(hud, attackBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 140, 70);
     Sol_Interact_Add(hud, attackBar);
@@ -191,7 +191,7 @@ void Create_Sol_Game()
     Sol_Interact_Add(hud, dashAbility);
 
     int abilityBar = Sol_Create_Ent(hud, 0);
-    Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 280, 70, 0, 0);
+    Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 280, 70, 0);
     Sol_Xform_Set(hud, abilityBar, 500, 650, 0);
     Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(hud, abilityBar);

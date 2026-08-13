@@ -48,15 +48,15 @@ World *World_Create_Default(WorldKind kind)
         switch (kind)
         {
         case WORLDKIND_MENU:
-            World_System_Add(world, WORLD_SYS_EVENT);
             World_System_Add(world, WORLD_SYS_XFORM);
-            World_System_Add(world, WORLD_SYS_BODY2);
-            World_System_Add(world, WORLD_SYS_PARENT);
+            World_System_Add(world, WORLD_SYS_EVENT);
             World_System_Add(world, WORLD_SYS_INTERACT);
+            World_System_Add(world, WORLD_SYS_PARENT);
             World_System_Add(world, WORLD_SYS_ITEM);
-            World_System_Add(world, WORLD_SYS_VIEW2D);
+            World_System_Add(world, WORLD_SYS_BODY2);
             World_System_Add(world, WORLD_SYS_MODEL);
             World_System_Add(world, WORLD_SYS_BUILDING);
+            World_System_Add(world, WORLD_SYS_VIEW2D);
             World_System_Add(world, WORLD_SYS_VIEW);
             break;
 

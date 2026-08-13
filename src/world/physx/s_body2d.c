@@ -40,14 +40,13 @@ void Sol_Body2d_Init(World *world)
     WAdd2d(world)   = Draw;
 }
 
-CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask)
+CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group)
 {
     CompBody2d body = {
         .kind   = kind,
         .dims.x = width,
         .dims.y = height,
         .group  = group,
-        .mask   = mask,
     };
     world->body2d[id] = body;
     world->masks[id] |= BITC(HAS_BODY2);
@@ -91,8 +90,10 @@ static void Step(World *world, double dt, double time)
             if ((world->masks[idB] & required) != required)
                 continue;
 
-            CompBody2d *bodyB       = &world->body2d[idB];
-            bool        layersMatch = (bodyA->mask & bodyB->group) && (bodyB->mask & bodyA->group);
+            CompBody2d *bodyB = &world->body2d[idB];
+
+            bool layersMatch = Sol_Body2d_DoesCollide(world, idA, idB);
+
             if (!layersMatch)
                 continue;
             CompXform *xformB = &world->xforms[idB];
@@ -154,4 +155,9 @@ void Sol_Body2d_SetVel(World *world, int id, vec2s vel)
 {
     CompBody2d *body = &world->body2d[id];
     body->vel        = vel;
+}
+
+bool Sol_Body2d_DoesCollide(World *world, int id, int idB)
+{
+    return world->body2d[id].group << 16 & world->body2d[idB].group;
 }

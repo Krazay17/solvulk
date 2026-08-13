@@ -61,7 +61,7 @@ CompView2d *Sol_View2d_Get(World *world, int id)
     return &world->view2d[id];
 }
 
-static int healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
+static int  healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
 static void PlayerHealthbar(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)
@@ -89,7 +89,7 @@ static void Draw(World *world, double dt, double time)
 {
     int required = BITC(HAS_VIEW2D);
     for (int layer = 0; layer < UILAYER_COUNT; layer++)
-        for (int i = 0; i < world->activeCount; i++)
+        for (int i = world->activeCount - 1; i >= 0; i--)
         {
             int id = world->activeEntities[i];
             if ((world->masks[id] & required) != required)

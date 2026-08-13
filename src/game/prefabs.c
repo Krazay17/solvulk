@@ -276,7 +276,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
 
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
-    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0, 0);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
     Sol_Interact_Add(world, id);
     Sol_World_SetTracker(world, id, entWorld, entId);
     Sol_Flags_Add(world, id, EFLAG_HEALTHBAR);
@@ -313,7 +313,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     int   id          = Sol_Create_Ent(world, 0);
     world->ekinds[id] = EKIND_BUTTON;
     Sol_Xform_Teleport(world, id, pos);
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0b1, 0b1);
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
 
     SolView2d *bg   = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.1f, 0.1f, 0.1f, 1.0f}, dims.x, dims.y);
     bg->hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
@@ -341,7 +341,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, u32 ability, u32 rarity)
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
     Sol_Interact_Add(world, id);
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 1, 1);
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
     body->zindex     = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
@@ -397,7 +397,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     int   id   = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
     Sol_Item_AddAbilitySlot(world, id, slot);
-    CompBody2d *body   = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0, 0);
+    CompBody2d *body   = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
     body->overlapGroup = 0b01;
     body->overlapMask  = 0b10;
 
@@ -512,7 +512,7 @@ int Sol_Prefab_Building_Button(World *world, vec3s pos, float scale, u32 modelId
 
     Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
 
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale, 0b01, 0b01);
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
 
     CompModel *model = Sol_Model_Add(world, id, modelId);
     model->is2d      = true;
@@ -541,7 +541,7 @@ int Sol_Prefab_Building(World *world, vec3s pos, float scale, float yaw, u32 mod
 int Sol_Prefab_Buffbar(World *world, vec3s pos)
 {
     int id = Sol_Create_Ent(world, 0);
-    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 280, 70, 0, 0);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 280, 70, 0);
     Sol_Xform_Set(world, id, 500, 650, 0);
     Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(world, id);

@@ -18,6 +18,7 @@ typedef struct World World;
 #define WAddComp(w, id, comp) (w->masks[id] |= BITC(comp))
 #define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
 #define WHasB(w, id, mask) ((w->masks[id] & (BITC(mask))) == (BITC(mask)))
+#define WHasSys(w, mask) ((w->systemBits & (BITC(mask))) == (BITC(mask)))
 
 #define SOL_SYSTEM_LIST(X)                                                                                             \
     X(WORLD_SYS_XFORM, Sol_Xform_Init, NULL)                                                                           \

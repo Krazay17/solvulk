@@ -19,6 +19,8 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 
+#define PHYSXMASK(g, m) ((g << 16) | m)
+
 // Forwards
 typedef enum
 {

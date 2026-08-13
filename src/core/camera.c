@@ -24,9 +24,12 @@ SolCamera solCamera = {
 
 void Sol_Cam_Update(double dt)
 {
-    float  fdt   = (float)dt;
-    World *world = solEngine.activeWorld;
+    float  fdt    = (float)dt;
+    World *world  = solEngine.activeWorld;
+    int    userId = 1;
 
+    if (!WHasSys(world, WORLD_SYS_PHYSX))
+        return;
 
     vec3s lookdir   = world->controllers[1].lookdir;
     vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
@@ -34,6 +37,7 @@ void Sol_Cam_Update(double dt)
 
     vec3s head = Sol_Xform_GetDrawXform(world, 1).pos;
     head.y += Sol_Physx_GetHeight(world, 1) * 0.5f;
+    
     if (solCamera.distance <= 0)
     {
         solCamera.distance = 0;

@@ -4,6 +4,7 @@
 typedef struct UserSettings
 {
     float look_sens;
+    float volume;
 } UserSettings;
 
 extern UserSettings user_settings;

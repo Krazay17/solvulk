@@ -14,12 +14,13 @@ typedef struct CompBody2d
     vec2s      vel, dims, grav, grabPos;
     u32        overlapping[4];
     u32        overlapCount;
-    u32        group, mask, zindex;
+    u32        group, zindex;
     u32        overlapGroup, overlapMask;
 } CompBody2d;
 
 void        Sol_Body2d_Init(World *world);
-CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask);
+CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group);
+bool        Sol_Body2d_DoesCollide(World *world, int id, int idB);
 vec2s       Sol_Body2d_GetDims(World *world, int id);
 void        Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask);
 void        Sol_Body2d_SetVel(World *world, int id, vec2s vel);

@@ -1,8 +1,6 @@
 #pragma once
 #include "base.h"
 
-#define PHYSXMASK(g, m) ((g << 16) | m)
-
 typedef enum Shape3
 {
     SHAPE3_SPH,
@@ -57,7 +55,6 @@ void         Sol_Body_Add(World *world, int id, BodyDesc desc);
 void         Sol_Physx_Remove(World *world, int id);
 void         Sol_Physx_Init(World *world);
 void         Sol_Physx_Step(World *world, double dt, double time);
-void         Sol_Physx2d_Step(World *world, double dt, double time);
 vec3s        Sol_Physx_GetVel(World *world, int id);
 vec3s        Sol_Physx_GetVelDir(World *world, int id);
 vec3s        Sol_Physx_GetGround(World *world, int id);

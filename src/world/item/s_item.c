@@ -143,15 +143,21 @@ static void AbilitySlots(World *world, double dt, double time)
         float       halfHeight = cardBody->dims.y * 0.5f;
         vec2s       cardCenter = {cardPos.x + (halfWidth), cardPos.y + (halfHeight)};
 
-        float dx = slotCenter.x - cardCenter.x;
-        float dy = slotCenter.y - cardCenter.y;
+        float dx          = slotCenter.x - cardCenter.x;
+        float dy          = slotCenter.y - cardCenter.y;
+        vec2s anchorVel   = world->body2d[Sol_Parent_GetParent(world, id)].vel;
+        float anchorSpeed = glms_vec2_norm2(anchorVel);
 
-        cardBody->vel.x = fmaxf(-5.0f, fminf(5.0f, dx));
-        cardBody->vel.y = fmaxf(-5.0f, fminf(5.0f, dy));
-
-        if (interacts[Sol_Parent_GetParent(world, id)].state & INTERACT_MOVING)
+        // cards arent parented to slots, but slots are parented to draggable section bar
+        if (interacts[Sol_Parent_GetParent(world, id)].state & INTERACT_DRAGGING ||
+            anchorSpeed > glms_vec2_norm2(cardBody->vel))
         {
-            Sol_Xform_SetPos(world, bestCardId, (vec3s){slotCenter.x - halfWidth, slotCenter.y - halfHeight, 0});
+            cardBody->vel = anchorVel;
+        }
+        else if (!(interacts[bestCardId].state & INTERACT_DRAGGING))
+        {
+            cardBody->vel.x = fmaxf(-5.0f, fminf(5.0f, dx));
+            cardBody->vel.y = fmaxf(-5.0f, fminf(5.0f, dy));
         }
 
         CompAbility *ability    = &activeWorld->abilities[1];
@@ -167,16 +173,6 @@ static void AbilitySlots(World *world, double dt, double time)
             float        elapsed          = solState.gameTime - data->lastExited;
             float        cooldownDuration = data->cooldown;
             float        duration         = data->duration;
-
-            if (Sol_Parent_IsActive(world, bestCardId))
-            {
-                CompBody2d *cardBody  = &body2ds[bestCardId];
-                vec2s       offsetPos = glms_vec2_sub(body->dims, cardBody->dims);
-                offsetPos             = glms_vec2_scale(offsetPos, 0.5f);
-                offsetPos             = glms_vec2_add(offsetPos, (vec2s){slotPos.x, slotPos.y});
-
-                Sol_Xform_SetPos(world, bestCardId, (vec3s){offsetPos.x, offsetPos.y});
-            }
 
             if (ability->activeSlot == slot)
             {
@@ -198,7 +194,7 @@ static void AbilitySlots(World *world, double dt, double time)
             else
             {
                 cdView->fill = cdView->targetFill = 0.0f;
-                slotText->color                   = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
+                slotText->color                   = (vec4s){0.0f, 1.0f, 0.1f, 1.0f};
 
                 if (abilitySlot->onCooldown)
                 {
@@ -213,7 +209,7 @@ static void AbilitySlots(World *world, double dt, double time)
             abilitySlot->onCooldown           = false;
         }
 
-        if ((Sol_Controller_GetActionState(activeWorld, 1) & ability->bindings[slot].actionBit) != 0)
+        if ((activeWorld->controllers[1].actionState & ability->bindings[slot].actionBit) != 0)
         {
             pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
         }
@@ -248,7 +244,7 @@ static void Inventory_Update(World *world, double dt, double time)
     // }
 }
 
-static int  inventory_draw_required = BITC(HAS_INVENTORY);
+static u64  inventory_draw_required = BITC(HAS_INVENTORY);
 static void Inventory_Draw(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)

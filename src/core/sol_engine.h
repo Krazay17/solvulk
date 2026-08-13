@@ -8,7 +8,7 @@
 #pragma once
 #include "sol_core.h"
 
-#define MAX_WORLDS 16
+#define MAX_WORLDS 8
 
 typedef struct World World;
 typedef struct SolEngine

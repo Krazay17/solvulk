@@ -2,7 +2,6 @@
 
 static World *gameWorld;
 static World *gameWorld2;
-static World *buildWorld;
 static int    player2d;
 
 static void SpawnPlayer(int flags, void *data)
@@ -11,7 +10,7 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
-    Sol_Controller_Add(gameWorld, 1, CONTROLLER_LOCAL);
+    Sol_Controller_Add(gameWorld, 1);
 }
 
 typedef enum
@@ -159,10 +158,9 @@ void WizSpawner(World *world, double dt)
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
-    gameWorld   = World_Create_Default(WORLDKIND_GAME);
-    buildWorld  = World_Create_Default(WORLDKIND_MENU);
-    World *hud  = World_Create_Default(WORLDKIND_MENU);
     World *menu = World_Create_Default(WORLDKIND_MENU);
+    World *hud  = World_Create_Default(WORLDKIND_MENU);
+    gameWorld   = World_Create_Default(WORLDKIND_GAME);
 
     Sol_World_SetActive(gameWorld);
     Sol_World_SetReplicates(gameWorld, true);
@@ -174,7 +172,8 @@ void Create_Sol_Game()
     player2d      = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
     WAddStep(hud) = RotateGuy;
 
-    Sol_Prefab_Wall2d(buildWorld, (vec3s){1000, 200.0f, 1.0f}, 1.0f);
+    Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_WALL);
+    Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_FLOOR);
 
     int attackBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0, 0);

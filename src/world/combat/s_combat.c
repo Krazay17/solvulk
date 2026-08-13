@@ -93,7 +93,7 @@ void Sol_Combat_ApplyHit(World *world, int id, SolHit hit)
                 }
             }
         }
-        if (world->masks[id] & BITC(HAS_AICONTROLLER))
+        if (world->masks[id] & BITC(HAS_CONTROLLER_AI))
             Sol_AiController_SetLastHit(world, id, attacker, damage);
 
         if (effectMask & EFFECTMASK_HEALONHIT && !targetDead)

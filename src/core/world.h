@@ -5,6 +5,7 @@ typedef struct World World;
 
 #define MAX_ENTS (1 << 14)
 #define MAX_SYSTEMS 64
+#define NULL_ENTITYID -1
 
 #define WAdd2d(w) w->draw2dSystems[w->draw2dCount++]
 #define WAdd3d(w) w->draw3dSystems[w->draw3dCount++]
@@ -16,6 +17,7 @@ typedef struct World World;
 #define WGetComp(w, id, comp, type) (&((type *)w->components[comp])[id])
 #define WAddComp(w, id, comp) (w->masks[id] |= BITC(comp))
 #define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
+#define WHasB(w, id, mask) ((w->masks[id] & (BITC(mask))) == (BITC(mask)))
 
 #define SOL_SYSTEM_LIST(X)                                                                                             \
     X(WORLD_SYS_XFORM, Sol_Xform_Init, NULL)                                                                           \
@@ -44,7 +46,7 @@ typedef struct World World;
     X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init, NULL)                                                         \
     X(WORLD_SYS_EMITTER, Sol_Emitter_Init, NULL)                                                                       \
     X(WORLD_SYS_RIBBON, Sol_Ribbon_Init, NULL)                                                                         \
-    X(WORLD_SYS_BUILDING, Sol_Building_Init, NULL)                                                                     \
+    X(WORLD_SYS_BUILDING, Sol_Builder_Init, NULL)                                                                      \
     X(WORLD_SYS_AUDIO, Sol_World_Audio_Init, NULL)                                                                     \
     X(WORLD_SYS_SHAPE, Sol_Shape_Init, NULL)                                                                           \
     X(WORLD_SYS_CONTAINER, Sol_Container_Init, NULL)                                                                   \
@@ -76,6 +78,9 @@ typedef enum
     HAS_MODEL,
     HAS_MOVEMENT,
     HAS_CONTROLLER,
+    HAS_CONTROLLER_LOCAL,
+    HAS_CONTROLLER_REMOTE,
+    HAS_CONTROLLER_AI,
     HAS_ABILITY,
     HAS_BUFF,
     HAS_VITAL,
@@ -86,7 +91,6 @@ typedef enum
     HAS_PARENT,
     HAS_CONTACT,
     HAS_OWNER,
-    HAS_AICONTROLLER,
     HAS_COMBAT,
     HAS_REPLICATION,
     HAS_EMITTER,
@@ -117,35 +121,38 @@ typedef void (*SystemUpdate)(World *, double, double);
 
 typedef uint64_t Mask;
 
-typedef struct CompAudio       CompAudio;
-typedef struct CompReplication CompReplication;
-typedef struct CompAi          CompAi;
-typedef struct CompParent      CompParent;
-typedef struct CompTimer       CompTimer;
-typedef struct CompXform       CompXform;
-typedef struct CompBody        CompBody;
-typedef struct CompMovement    CompMovement;
-typedef struct CompModel       CompModel;
-typedef struct CompInteract    CompInteract;
-typedef struct CompShape       CompShape;
-typedef struct CompVital       CompVital;
-typedef struct CompController  CompController;
-typedef struct CompBuff        CompBuff;
-typedef struct CompAbility     CompAbility;
-typedef struct CompOwner       CompOwner;
-typedef struct CompContact     CompContact;
-typedef struct CompCombat      CompCombat;
-typedef struct CompEmitter     CompEmitter;
-typedef struct CompBody2d      CompBody2d;
-typedef struct CompView2d      CompView2d;
-typedef struct CompProjectile  CompProjectile;
-typedef struct CompItem        CompItem;
-typedef struct CompInventory   CompInventory;
-typedef struct CompAbilitySlot CompAbilitySlot;
-typedef struct CompTooltip     CompTooltip;
-typedef struct CompZone        CompZone;
-typedef struct CompBuilding    CompBuilding;
-typedef struct CompContainer   CompContainer;
+typedef struct CompAudio            CompAudio;
+typedef struct CompReplication      CompReplication;
+typedef struct CompAi               CompAi;
+typedef struct CompParent           CompParent;
+typedef struct CompTimer            CompTimer;
+typedef struct CompXform            CompXform;
+typedef struct CompBody             CompBody;
+typedef struct CompMovement         CompMovement;
+typedef struct CompModel            CompModel;
+typedef struct CompInteract         CompInteract;
+typedef struct CompShape            CompShape;
+typedef struct CompVital            CompVital;
+typedef struct CompController       CompController;
+typedef struct CompBuff             CompBuff;
+typedef struct CompAbility          CompAbility;
+typedef struct CompOwner            CompOwner;
+typedef struct CompContact          CompContact;
+typedef struct CompCombat           CompCombat;
+typedef struct CompEmitter          CompEmitter;
+typedef struct CompBody2d           CompBody2d;
+typedef struct CompView2d           CompView2d;
+typedef struct CompProjectile       CompProjectile;
+typedef struct CompItem             CompItem;
+typedef struct CompInventory        CompInventory;
+typedef struct CompAbilitySlot      CompAbilitySlot;
+typedef struct CompTooltip          CompTooltip;
+typedef struct CompZone             CompZone;
+typedef struct CompBuilder          CompBuilder;
+typedef struct CompContainer        CompContainer;
+typedef struct CompControllerLocal  CompControllerLocal;
+typedef struct CompControllerRemote CompControllerRemote;
+typedef struct CompControllerAi     CompControllerAi;
 
 typedef struct ChainAttacks ChainAttacks;
 typedef struct Inventory    Inventory;
@@ -189,34 +196,37 @@ struct World
 
     // void *components[COMPONENT_COUNT];
 
-    CompXform       *xforms;
-    CompReplication *replications;
-    CompParent      *parents;
-    CompAudio       *audios;
-    CompTimer       *timers;
-    CompBody        *bodies;
-    CompMovement    *movements;
-    CompModel       *models;
-    CompInteract    *interacts;
-    CompShape       *spheres;
-    CompVital       *vitals;
-    CompController  *controllers;
-    CompBuff        *buffs;
-    CompAbility     *abilities;
-    CompOwner       *owners;
-    CompAi          *aicontrollers;
-    CompCombat      *combats;
-    CompEmitter     *compEmitters;
-    CompBody2d      *body2d;
-    CompView2d      *view2d;
-    CompProjectile  *projectiles;
-    CompTooltip     *tooltips;
-    CompItem        *items;
-    CompInventory   *inventories;
-    CompAbilitySlot *abilitySlots;
-    CompZone        *zones;
-    CompBuilding    *buildings;
-    CompContainer   *containers;
+    CompXform            *xforms;
+    CompReplication      *replications;
+    CompControllerLocal  *controllerLocal;
+    CompControllerRemote *controllerRemote;
+    CompControllerAi     *controllerAi;
+    CompController       *controllers;
+    CompParent           *parents;
+    CompAudio            *audios;
+    CompTimer            *timers;
+    CompBody             *bodies;
+    CompMovement         *movements;
+    CompModel            *models;
+    CompInteract         *interacts;
+    CompShape            *spheres;
+    CompVital            *vitals;
+    CompBuff             *buffs;
+    CompAbility          *abilities;
+    CompOwner            *owners;
+    CompAi               *aicontrollers;
+    CompCombat           *combats;
+    CompEmitter          *compEmitters;
+    CompBody2d           *body2d;
+    CompView2d           *view2d;
+    CompProjectile       *projectiles;
+    CompTooltip          *tooltips;
+    CompItem             *items;
+    CompInventory        *inventories;
+    CompAbilitySlot      *abilitySlots;
+    CompZone             *zones;
+    CompBuilder          *builders;
+    CompContainer        *containers;
 
     Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;
@@ -275,7 +285,7 @@ void Worlds_Draw2d(World **worlds, int count, double dt, double time);
 void Sol_Xform_Snapshot(World **worlds, int count);
 void Sol_Xform_Interpolate(World **worlds, int count, float alpha);
 
-int  Sol_Create_Ent(World *world, u32 id);
+int  Sol_Create_Ent(World *world, int id);
 void Sol_Destroy_Ent(World *world, int id);
 
 void Sol_Flags_Add(World *world, int id, EFlag flags);

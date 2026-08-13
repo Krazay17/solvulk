@@ -1,4 +1,5 @@
 #include "sol/sol.h"
+#include "prefabs.h"
 
 int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
 {
@@ -21,8 +22,7 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     {
     case EKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
-        if (auth == NETAUTH_REMOTE)
-            Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
+        Sol_Controller_Add(world, id);
         break;
     case EKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
@@ -423,7 +423,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     press->zindex    = 3;
 
     // 4
-    SolView2d *text = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 20.0f, 0);
+    SolView2d *text = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 20.0f, 0);
     strcpy(text->text, label);
     text->offset.x = dims.x * 0.5f;
     text->offset.y = dims.y * 0.5f;
@@ -447,6 +447,12 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     cdFlash->clickColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     cdFlash->textureID  = SOL_TEXTURE_SHOCKPARTICLE;
     cdFlash->zindex     = 3;
+    
+    // SolView2d *textHighlight = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 21.0f, 0);
+    // strcpy(textHighlight->text, label);
+    // textHighlight->offset.x = dims.x * 0.5f;
+    // textHighlight->offset.y = dims.y * 0.5f;
+    // textHighlight->zindex   = 2;
 
     return id;
 }
@@ -496,7 +502,7 @@ int Sol_Prefab_HealZone(World *world, vec3s pos, float scale, int owner)
     return id;
 }
 
-int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale)
+int Sol_Prefab_Building_Button(World *world, vec3s pos, float scale, u32 modelId)
 {
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
@@ -507,31 +513,29 @@ int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale)
     Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
 
     CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale, 0b01, 0b01);
-    body->grav       = (vec2s){0, 9.0f};
 
-    CompModel *model = Sol_Model_Add(world, id, MODELKIND_WALL);
+    CompModel *model = Sol_Model_Add(world, id, modelId);
     model->is2d      = true;
     model->xOffset   = 2.0f;
     model->yOffset   = -4.0f;
 
-    Sol_Interact_Add(world, id);
-    Sol_Building_Add(world, id, 0);
+    //Sol_Interact_Set(world, id, (CompInteract){.onClick})
 
     return id;
 }
 
-int Sol_Prefab_Wall3d(World *world, vec3s pos, versors rot, float scale)
+int Sol_Prefab_Building(World *world, vec3s pos, float scale, float yaw, u32 model)
 {
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
-    Sol_Model_Add(world, id, MODELKIND_WALL);
+    Sol_Xform_SetYaw(world, id, yaw);
+    Sol_Model_Add(world, id, model);
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .mass  = 0,
                      .shape = SHAPE3_MOD,
                  });
-    Sol_Interact_Add(world, id);
-    Sol_Building_Add(world, id, 1);
+    // Sol_Interact_Add(world, id);
 }
 
 int Sol_Prefab_Buffbar(World *world, vec3s pos)

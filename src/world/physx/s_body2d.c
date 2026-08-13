@@ -7,6 +7,7 @@
 #include "interact/s_interact.h"
 #include "render/render.h"
 #include "sol_core.h"
+#include "s_body2d.h"
 
 static int required = BITC(HAS_BODY2);
 
@@ -69,17 +70,6 @@ static void Step(World *world, double dt, double time)
 
         // Accumulate velocity
         body->vel = ApplyFriction2((vec2s){0, 0}, body->vel, 1.0f, fdt);
-        if (world->masks[id] & BITC(HAS_INTERACT) && world->interacts[id].state & INTERACT_MOVING)
-        {
-            CompInteract *interact = &world->interacts[id];
-            if (world->masks[id] & BITC(HAS_PARENT))
-                Sol_Parent_SetActive(world, id, false);
-            vec2s       grabPos   = glms_vec2_add((vec2s){xform->pos.x, xform->pos.y}, interact->grabOffset);
-            vec2s       toMouse   = glms_vec2_sub(Sol_Input_GetMouseUI(), grabPos);
-            const float stiffness = 80.0f;
-            float       alpha     = 1.0f - expf(-stiffness * fdt);
-            body->vel             = glms_vec2_scale(toMouse, alpha);
-        }
         body->vel = glms_vec2_add(body->vel, glms_vec2_scale(body->grav, fdt));
 
         // Apply velocity
@@ -159,4 +149,9 @@ void Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask)
 {
     world->body2d[id].overlapGroup = group;
     world->body2d[id].overlapMask  = mask;
+}
+void Sol_Body2d_SetVel(World *world, int id, vec2s vel)
+{
+    CompBody2d *body = &world->body2d[id];
+    body->vel        = vel;
 }

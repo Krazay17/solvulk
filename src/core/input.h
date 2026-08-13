@@ -50,10 +50,6 @@ typedef struct SolMouse
     bool buttonsReleased[SOL_MOUSE_COUNT];
 } SolMouse;
 
-extern float input_yaw;
-extern float input_pitch;
-extern float input_sens;
-
 void     Sol_Input_OnKey(int vkCode, bool down);
 void     Sol_Input_OnMouseMove(int x, int y);
 void     Sol_Input_OnMouseButton(int btn, bool down);
@@ -61,9 +57,8 @@ void     Sol_Input_OnMouseWheel(int delta);
 void     Sol_Input_OnRawMouse(int x, int y);
 void     Sol_Input_Update();
 bool     Sol_Input_KeyDown(SolKey key);
-bool     Sol_Input_KeyPressed(SolKey key); // true only on frame of press
+bool     Sol_Input_KeyPressed(SolKey key);
 SolMouse Sol_Input_GetMouse();
-vec3s    Sol_Input_GetLookDir();
 void     Sol_Input_SetLocked(bool lock);
 void     Sol_Input_Clear();
 vec2s    Sol_Input_GetMouseUI(void);

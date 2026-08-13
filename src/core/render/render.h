@@ -137,7 +137,7 @@ static inline RectSSBO *Sol_Render_GetNext_Rect()
 
 typedef struct
 {
-    vec4s pos, color, uv;
+    vec4s pos, color, uv, outline;
 } FontSSBO;
 typedef struct
 {

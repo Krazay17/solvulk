@@ -1,3 +1,4 @@
+#include "camera.h"
 #include "sol_core.h"
 #include "sol_engine.h"
 #include "types.h"
@@ -6,27 +7,11 @@
 #include "sol_math.h"
 #include "xform/s_xform.h"
 #include "physx/s_body.h"
+#include "controller/s_controller.h"
 #include "movement/s_movement.h"
 #include "render/render.h"
 
 #define CAMERA_LERP_SPEED 10.0f
-
-typedef struct SolCamera
-{
-    mat4s proj;
-    mat4s view;
-    mat4s viewProj;
-    vec3s pos, anchor;
-    vec3s target, dir;
-    vec3s up;
-    float fov;
-    float nearClip;
-    float farClip;
-    float lerpspeed;
-    float roll;
-    float distance, currentDistance;
-    float offset, currentOffset;
-} SolCamera;
 
 SolCamera solCamera = {
     .fov       = 60.0f,
@@ -42,7 +27,8 @@ void Sol_Cam_Update(double dt)
     float  fdt   = (float)dt;
     World *world = solEngine.activeWorld;
 
-    vec3s lookdir   = Sol_Input_GetLookDir();
+
+    vec3s lookdir   = world->controllers[1].lookdir;
     vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
     vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
 
@@ -74,9 +60,9 @@ void Sol_Cam_Update(double dt)
 
     solCamera.pos = glms_vec3_add(solCamera.anchor, glms_vec3_scale(invDir, solCamera.currentDistance));
 
-    float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
-    if (Sol_Input_GetMouse().wheelV)
-        solCamera.distance -= changeDist;
+    // float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
+    // if (Sol_Input_GetMouse().wheelV)
+    //     solCamera.distance -= changeDist;
 
     solCamera.target = vecAdd(solCamera.pos, lookdir);
     solCamera.dir    = glms_vec3_normalize(glms_vec3_sub(solCamera.target, solCamera.pos));

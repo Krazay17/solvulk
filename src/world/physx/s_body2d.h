@@ -22,3 +22,4 @@ void        Sol_Body2d_Init(World *world);
 CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group, u32 mask);
 vec2s       Sol_Body2d_GetDims(World *world, int id);
 void        Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask);
+void        Sol_Body2d_SetVel(World *world, int id, vec2s vel);

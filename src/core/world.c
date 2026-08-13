@@ -129,7 +129,7 @@ void Worlds_Draw3d(World **worlds, int count, double dt, double time)
 
 void Worlds_Draw2d(World **worlds, int count, double dt, double time)
 {
-    for (int w = 0; w < count; w++)
+    for (int w = count - 1; w >= 0; w--)
     {
         World *world = worlds[w];
         if (world->doesRender)
@@ -145,7 +145,7 @@ void World_System_Add(World *world, WorldSystem system)
     world->systemBits |= BITC(system);
 }
 
-int Sol_Create_Ent(World *world, u32 id)
+int Sol_Create_Ent(World *world, int id)
 {
     if (!world)
         return 0;

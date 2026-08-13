@@ -32,14 +32,8 @@ typedef enum
     EKIND_BUTTON,
     EKIND_COUNT,
 } EKind;
+
 // Enums
-
-typedef enum
-{
-    BUILDINGKIND_WALL,
-    BUILDINGKIND_COUNT,
-} BuildingKind;
-
 typedef enum
 {
     COLLISIONGROUP_NONE,
@@ -193,6 +187,7 @@ typedef enum
     MODELKIND_ZORGON,
     MODELKIND_WEAPONBLADE,
     MODELKIND_WALL,
+    MODELKIND_FLOOR,
     SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
@@ -225,12 +220,14 @@ typedef struct SolTri
 
 typedef enum
 {
+    INTERACT_NONE,
     INTERACT_HOVERED    = (1 << 0),
     INTERACT_PRESSED    = (1 << 1),
     INTERACT_CLICKED    = (1 << 2),
-    INTERACT_TOGGLED    = (1 << 3),
-    INTERACT_TOGGLEABLE = (1 << 4),
-    INTERACT_MOVING     = (1 << 5),
+    INTERACT_TOGGLEABLE = (1 << 3),
+    INTERACT_TOGGLED    = (1 << 4),
+    INTERACT_DRAGGABLE  = (1 << 5),
+    INTERACT_DRAGGING   = (1 << 6),
 } InteractState;
 
 typedef enum
@@ -304,6 +301,14 @@ typedef struct SolHit
     u32   effectMask;
 } SolHit;
 
+typedef struct SolUserHit
+{
+    int    hoverId, focusId;
+    World *hoverWorld, *focusWorld;
+    bool   isHoverUi, isFocusUi, isDragging;
+    ivec2s pressPos;
+} SolUserHit;
+
 typedef enum
 {
     EFFECTMASK_KNOCKBACK         = (1 << 0),
@@ -338,12 +343,15 @@ typedef enum
     ACTION_ABILITY9 = (1 << 8),
     ACTION_DASH     = (1 << 10),
 
-    ACTION_FWD    = (1 << 11),
-    ACTION_BWD    = (1 << 12),
-    ACTION_LEFT   = (1 << 13),
-    ACTION_RIGHT  = (1 << 14),
-    ACTION_JUMP   = (1 << 15),
-    ACTION_CROUCH = (1 << 16),
+    ACTION_FWD     = (1 << 11),
+    ACTION_BWD     = (1 << 12),
+    ACTION_LEFT    = (1 << 13),
+    ACTION_RIGHT   = (1 << 14),
+    ACTION_JUMP    = (1 << 15),
+    ACTION_CROUCH  = (1 << 16),
+    ACTION_ZOOMIN  = (1 << 17),
+    ACTION_ZOOMOUT = (1 << 18),
+    ACTION_BUILD   = (1 << 19),
 } SolActions;
 
 typedef struct

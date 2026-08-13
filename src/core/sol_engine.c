@@ -7,6 +7,7 @@
  */
 #include "sol_engine.h"
 #include "sol_core.h"
+#include "sol_user.h"
 #include "world.h"
 #include "network.h"
 #include "audio.h"
@@ -28,8 +29,8 @@ static void   Sol_OnResize();
 int Sol_Init(void *hwnd, void *hInstance)
 {
     solState.timescale = 1.0;
-    
-    solEngine.g_hwnd   = hwnd;
+
+    solEngine.g_hwnd = hwnd;
     int result;
 
     result = Sol_Audio_Init();
@@ -72,6 +73,7 @@ void Sol_Tick(double dt, double time)
     if (solEngine.needsResize)
         Sol_OnResize();
 
+    Sol_User_Tick(dt);
     Sol_Net_Tick(solEngine.worlds, solEngine.worldCount);
     Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
 
@@ -79,7 +81,7 @@ void Sol_Tick(double dt, double time)
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
-        Sol_Interact_Update(solEngine.worlds, solEngine.worldCount);
+        // Sol_Interact_Update(solEngine.worlds, solEngine.worldCount);
         Sol_Xform_Snapshot(solEngine.worlds, solEngine.worldCount);
         Worlds_Step(solEngine.worlds, solEngine.worldCount, SOL_TIMESTEP, time);
         Sol_Net_Step(solEngine.worlds, solEngine.worldCount, time);
@@ -104,7 +106,7 @@ void Sol_Tick(double dt, double time)
     Sol_Render_Flush3D();
 
     Worlds_Draw2d(solEngine.worlds, solEngine.worldCount, dt, time);
-    Sol_Tooltip_Draw();
+    Sol_User_Draw(dt);
     Sol_Render_Flush2D();
 
     Sol_FPS(dt);

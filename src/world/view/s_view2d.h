@@ -1,7 +1,7 @@
 #pragma once
 #include "base.h"
 
-#define MAX_VIEWS 8
+#define MAX_VIEWS 10
 
 typedef struct World World;
 

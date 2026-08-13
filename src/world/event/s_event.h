@@ -87,6 +87,11 @@ typedef struct SolEvent
             u32   entA, entB;
             float damageDealt;
         } score;
+        struct
+        {
+            u32 kind;
+            u32 interactor, interactee;
+        } interact;
     } as;
 } SolEvent;
 

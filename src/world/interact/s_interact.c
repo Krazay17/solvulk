@@ -13,12 +13,12 @@
 #include "render/render.h"
 
 #include "xform/s_xform.h"
+#include "physx/s_body.h"
 #include "physx/s_body2d.h"
 #include "parent/s_parent.h"
 #include "item/s_item.h"
 #include "ability/s_ability.h"
 #include "buff/s_buff.h"
-#include "physx/s_body.h"
 
 #define MAX_TOOLTIP_ALPHA 0.9f
 #define MAX_TOOLTIP_LINES 10
@@ -32,7 +32,6 @@ typedef struct InteractingEnt
 
 typedef void (*TooltipDrawFunc)(World *, int);
 
-static void SetMoving(World *world, CompInteract *interact, int id);
 static void Tooltip_Card_Draw(World *, int);
 
 static const TooltipDrawFunc tooltip_funcs[TOOLTIPKIND_COUNT] = {
@@ -41,11 +40,65 @@ static const TooltipDrawFunc tooltip_funcs[TOOLTIPKIND_COUNT] = {
 
 static float          tooltipAlpha;
 static InteractingEnt interactingEnt;
+static int            topmost_required = BITC(HAS_INTERACT);
+
+static void Interact_Tick(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, BITC(HAS_INTERACT)))
+            continue;
+        CompInteract *interact = &world->interacts[id];
+        if (interact->state & INTERACT_CLICKED)
+        {
+            if (interact->state & INTERACT_TOGGLEABLE)
+                interact->state ^= INTERACT_TOGGLED;
+
+            if (interact->onClick.callbackFunc)
+                interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
+        }
+    }
+}
+
+static void Interact_Step(World *world, double dt, double time)
+{
+    float       fdt       = (float)dt;
+    const float stiffness = 80.0f;
+    float       alpha     = 1.0f - expf(-stiffness * fdt);
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, BITC(HAS_INTERACT)))
+            continue;
+        CompXform    *xform    = &world->xforms[id];
+        CompInteract *interact = &world->interacts[id];
+        if (!(interact->state & INTERACT_DRAGGING))
+            continue;
+        if (WHasB(world, id, HAS_BODY2))
+        {
+            vec2s grabPos =
+                glms_vec2_add((vec2s){xform->pos.x, xform->pos.y}, (vec2s){interact->offset.x, interact->offset.y});
+            vec2s targetPos = glms_vec2_sub((vec2s){interact->targetPos.x, interact->targetPos.y}, grabPos);
+            Sol_Body2d_SetVel(world, id, glms_vec2_scale(targetPos, alpha));
+        }
+        else if (WHasB(world, id, HAS_BODY3))
+        {
+            vec3s grabPos   = vecAdd(xform->pos, interact->offset);
+            vec3s targetPos = vecSub(interact->targetPos, grabPos);
+            Sol_Physx_SetVel(world, id, glms_vec3_scale(targetPos, alpha));
+        }
+    }
+}
 
 void Sol_Interact_Init(World *world)
 {
     world->interacts = calloc(MAX_ENTS, sizeof(CompInteract));
     world->tooltips  = calloc(MAX_ENTS, sizeof(CompTooltip));
+
+    WAddTick(world) = Interact_Tick;
+    WAddStep(world) = Interact_Step;
 }
 
 CompInteract *Sol_Interact_Add(World *world, int id)
@@ -73,194 +126,14 @@ void Sol_Interact_Set(World *world, int id, CompInteract desc)
     WAddComp(world, id, HAS_INTERACT);
 }
 
-static int topmost_required = BITC(HAS_INTERACT);
-static int FindTopMost(World *world)
-{
-    int topZ     = INT_MIN;
-    int winnerId = -1;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, topmost_required))
-            continue;
-        if (WHas(world, id, BITC(HAS_BODY2)))
-        {
-            vec4s bounds = {
-                Sol_Xform_GetPos(world, id).x,
-                Sol_Xform_GetPos(world, id).y,
-                Sol_Body2d_GetDims(world, id).x,
-                Sol_Body2d_GetDims(world, id).y,
-            };
-            if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
-            {
-                int z = world->body2d[id].zindex;
-                if (z > topZ)
-                {
-                    topZ     = z;
-                    winnerId = id;
-                }
-            }
-        }
-        if ((world->systemBits & BITC(WORLD_SYS_PHYSX)) && WHas(world, id, BITC(HAS_BODY3)))
-        {
-            SolRayResult result =
-                Sol_ScreenRaycast(world, Sol_Input_GetMouse().x, Sol_Input_GetMouse().y, (SolRay){.dist = 15.0f});
-            if (result.hit)
-                winnerId = result.entId;
-        }
-    }
-    return winnerId;
-}
-
-void Sol_Interact_Update(World **worlds, int count)
-{
-    SolMouse mouse = Sol_Input_GetMouse();
-    // =========================================================================
-    // STATE 1: ACTIVE DRAGGING LAYER
-    // =========================================================================
-    if (interactingEnt.movingId != 0)
-    {
-        // Continuous Dragging Phase: Exit early and let your move system update transforms
-        if (mouse.buttons[SOL_MOUSE_LEFT])
-        {
-            return;
-        }
-
-        // Drop & Cleanup Phase: Executes the exact frame the mouse button is released
-        World        *mWorld   = interactingEnt.world;
-        int           mId      = interactingEnt.movingId;
-        CompInteract *interact = &mWorld->interacts[mId];
-        CompBody2d   *body     = &mWorld->body2d[mId];
-
-        interact->state &= ~INTERACT_MOVING;
-
-        // MOVING GUARD: Clear the pressed state flag right here!
-        // This ensures State 2 cannot trigger a click event on the drop frame.
-        interact->state &= ~INTERACT_PRESSED;
-
-        if (mWorld->masks[mId] & BITC(HAS_PARENT))
-        {
-            if (body->overlapCount)
-            {
-                Sol_Parent_SetActive(mWorld, mId, true);
-                Sol_Parent_SetWithOffset(mWorld, mId, body->overlapping[0]);
-            }
-        }
-
-        // Terminate dragging identifiers completely
-        interactingEnt.movingId = 0;
-
-        // Let the state fall through to scan whatever is underneath the mouse on drop frame
-    }
-
-    // =========================================================================
-    // STATE 2: PASSIVE SCAN & CLICK EVALUATION LAYER
-    // =========================================================================
-    int    winner      = -1;
-    World *winnerWorld = NULL;
-
-    // 1. Scan worlds backwards from front-most screen projection (UI down to Gameplay)
-    for (int w = count - 1; w >= 0; w--)
-    {
-        World *world = worlds[w];
-        if (!world->doesSimulate)
-            continue;
-
-        int foundId = FindTopMost(world);
-        if (foundId != -1)
-        {
-            winner      = foundId;
-            winnerWorld = world;
-            break;
-        }
-    }
-
-    // 2. Hover Transitions (O(1) State Change Flags)
-    if (winner != interactingEnt.id || winnerWorld != interactingEnt.world)
-    {
-        // Wipe old focus targets cleanly
-        if (interactingEnt.world && interactingEnt.id != -1)
-        {
-            int oldId = interactingEnt.id;
-            if (interactingEnt.world->masks[oldId] & BITC(HAS_INTERACT))
-            {
-                CompInteract *oldInteract = &interactingEnt.world->interacts[oldId];
-                oldInteract->state &= ~INTERACT_HOVERED;
-                oldInteract->state &= ~INTERACT_PRESSED;
-                oldInteract->state &= ~INTERACT_CLICKED;
-            }
-        }
-
-        // Bind global tracker to our current physical layer target
-        interactingEnt.id    = winner;
-        interactingEnt.world = winnerWorld;
-    }
-
-    // 3. Action Selection & Click Processing
-    if (interactingEnt.id != -1 && interactingEnt.world != NULL)
-    {
-        int           id       = interactingEnt.id;
-        World        *world    = interactingEnt.world;
-        CompInteract *interact = &world->interacts[id];
-
-        // This will now correctly read false if the item was just dropped!
-        bool wasPressed = interact->state & INTERACT_PRESSED;
-
-        // Reset single-frame transient execution triggers
-        interact->state &= ~INTERACT_PRESSED;
-        interact->state &= ~INTERACT_CLICKED;
-        interact->state |= INTERACT_HOVERED;
-
-        // Button Down Evaluator Pass
-        if (mouse.buttons[SOL_MOUSE_LEFT])
-        {
-            interact->state |= INTERACT_PRESSED;
-
-            if (wasPressed)
-            {
-                // Break deadzone bounds threshold to turn click state into active move state
-                if (glms_vec2_distance(interact->pressPos, Sol_Input_GetMouseUI()) > 1.0f)
-                {
-                    SetMoving(world, interact, id);
-                }
-            }
-            else
-            {
-                // Frame exact click touchdown snapshot
-                interact->pressPos = Sol_Input_GetMouseUI();
-            }
-
-            if (interact->onHold.callbackFunc)
-                interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
-        }
-        // Button Released Evaluator Pass (Clean standard item clicking)
-        else if (wasPressed)
-        {
-            interact->state |= INTERACT_CLICKED;
-
-            if (interact->state & INTERACT_TOGGLEABLE)
-                interact->state ^= INTERACT_TOGGLED;
-
-            if (interact->onClick.callbackFunc)
-                interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
-        }
-    }
-    else
-    {
-        interactingEnt.id    = 0;
-        interactingEnt.world = NULL;
-    }
-    Sol_Tooltip_Update(SOL_TIMESTEP);
-}
-
-void Sol_Tooltip_Update(double dt)
+void Sol_Tooltip_Update(double dt, SolUserHit user_hit)
 {
     const float stiffness = 5.0f;
     float       alpha     = 1.0f - expf(-stiffness * dt);
-    if (interactingEnt.id && interactingEnt.world)
+    if (user_hit.hoverId && user_hit.hoverWorld)
     {
-        int    id    = interactingEnt.id;
-        World *world = interactingEnt.world;
+        int    id    = user_hit.hoverId;
+        World *world = user_hit.hoverWorld;
         if ((world->masks[id] & BITC(HAS_TOOLTIP)))
         {
             tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
@@ -268,6 +141,16 @@ void Sol_Tooltip_Update(double dt)
         }
     }
     tooltipAlpha = 0;
+}
+
+void Sol_Tooltip_Draw(double dt, SolUserHit user_hit)
+{
+    World *world = user_hit.hoverWorld;
+    int    id    = user_hit.hoverId;
+    if (tooltipAlpha <= 0.0f || !world || id < 1 || user_hit.hoverId == user_hit.focusId)
+        return;
+    CompTooltip *tooltip = &world->tooltips[id];
+    tooltip_funcs[tooltip->kind](world, id);
 }
 
 InteractState Sol_Interact_GetState(World *world, int id)
@@ -288,30 +171,105 @@ InteractState Sol_Interact_GetState(World *world, int id)
     return 0;
 }
 
+void Sol_Interact_AddState(World *world, int id, InteractState state)
+{
+    CompInteract *interact = &world->interacts[id];
+    interact->state |= state;
+}
+
+void Sol_Interact_ClearState(World *world, int id, InteractState state)
+{
+    CompInteract *interact = &world->interacts[id];
+    interact->state &= ~state;
+}
+
 bool Sol_Interact_GetToggle(World *world, int id)
 {
     CompInteract *interact = &world->interacts[id];
     return interact->state & INTERACT_TOGGLED;
 }
 
-static void SetMoving(World *world, CompInteract *interact, int id)
+int Sol_Interact_GetTopmost(World *world)
 {
-    interact->state |= INTERACT_MOVING;
-    interactingEnt.movingId = id;
-    interact->grabOffset =
-        glms_vec2_sub(Sol_Input_GetMouseUI(), (vec2s){world->xforms[id].pos.x, world->xforms[id].pos.y});
-    if (world->masks[id] & BITC(HAS_PARENT))
-        Sol_Parent_SetActive(world, id, false);
+    int topZ     = -1;
+    int winnerId = -1;
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (id == 0)
+            continue;
+        if (!WHas(world, id, topmost_required))
+            continue;
+        if (WHas(world, id, BITC(HAS_BODY2)))
+        {
+            vec4s bounds = {
+                Sol_Xform_GetPos(world, id).x,
+                Sol_Xform_GetPos(world, id).y,
+                Sol_Body2d_GetDims(world, id).x,
+                Sol_Body2d_GetDims(world, id).y,
+            };
+            if (Sol_Check_2d_Collision(Sol_Input_GetMouseUI(), bounds))
+            {
+                int z = world->body2d[id].zindex;
+                if (z > topZ)
+                {
+                    topZ     = z;
+                    winnerId = id;
+                }
+            }
+        }
+    }
+    if (winnerId != -1)
+        return winnerId;
+    if (world->systemBits & BITC(WORLD_SYS_PHYSX))
+    {
+        SolRayResult result =
+            Sol_ScreenRaycast(world, Sol_Input_GetMouse().x, Sol_Input_GetMouse().y, (SolRay){.dist = 15.0f});
+        if (result.hit && WHas(world, result.entId, topmost_required))
+        {
+            return result.entId;
+        }
+    }
+    return -1;
 }
 
-void Sol_Tooltip_Draw()
+void Sol_Interact_DragEntityTo(World *world, int id, vec3s targetPos)
 {
-    World *world = interactingEnt.world;
-    int    id    = interactingEnt.id;
-    if (tooltipAlpha <= 0.0f || !world || id < 1 || interactingEnt.id == interactingEnt.movingId)
-        return;
-    CompTooltip *tooltip = &world->tooltips[id];
-    tooltip_funcs[tooltip->kind](world, id);
+    CompInteract *interact = &world->interacts[id];
+    if (!(interact->state & INTERACT_DRAGGING))
+    {
+        interact->state |= INTERACT_DRAGGING;
+        interact->offset = vecSub(targetPos, Sol_Xform_GetPos(world, id));
+
+        sollog(id);
+        sollog(Sol_Parent_GetParent(world, id));
+
+        if (WHas(world, id, BITC(HAS_PARENT)))
+        {
+            Sol_Parent_SetActive(world, id, false);
+            sollog("HAS PARENT");
+        }
+    }
+
+    interact->targetPos = targetPos;
+}
+
+void Sol_Interact_EndDrag(World *world, int id)
+{
+    CompInteract *interact = &world->interacts[id];
+    interact->state &= ~INTERACT_DRAGGING;
+
+    // Handle parenting / drop logic on release
+    if (WHas(world, id, BITC(HAS_BODY2)) && WHas(world, id, BITC(HAS_PARENT)))
+    {
+        CompBody2d *body = &world->body2d[id];
+        if (body->overlapCount > 0)
+        {
+            Sol_Parent_SetActive(world, id, true);
+            Sol_Parent_SetWithOffset(world, id, body->overlapping[0]);
+        }
+    }
 }
 
 static void Render_Tooltip_Line(const char *str, float centerX, float y, float size)

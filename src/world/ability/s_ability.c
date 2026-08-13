@@ -177,6 +177,8 @@ static void Ability_Step(World *world, double dt, double time)
             bool pressed               = (actions & b->actionBit) != 0;
             ability->stateData[m].held = pressed;
 
+            
+
             if (pressed && ability->activeSlot != m)
             {
                 Sol_Ability_SetState(world, id, b->boundState, m, false);

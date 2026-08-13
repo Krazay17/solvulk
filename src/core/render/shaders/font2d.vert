@@ -4,10 +4,12 @@ struct Glyph {
     vec4 pos;    // xy = top-left in screen space, zw = width/height
     vec4 color;
     vec4 uv;     // xy = UV offset, zw = UV scale
+    vec4 outline;
 };
 
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out vec4 fragColor;
+layout(location = 2) out vec4 fragOutline;
 
 layout(set = 0, binding = 0) uniform Ortho { mat4 ortho2d; };
 layout(set = 1, binding = 0) readonly buffer Glyphs { Glyph glyphs[]; };
@@ -28,6 +30,7 @@ void main() {
     fragUV = g.uv.xy + v * g.uv.zw;
     
     fragColor = g.color;
+    fragOutline = g.outline;
     
     // z=0 for 2D — avoids the depth-clip issue you hit with RectI
     gl_Position = ortho2d * vec4(screenPos, 0.0, 1.0);

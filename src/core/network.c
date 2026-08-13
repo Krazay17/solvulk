@@ -332,8 +332,7 @@ void Net_Recv_Packet(ENetEvent *event)
         }
         int id = Sol_Prefab_Factory(world, 0, EKIND_PLAYER,
                                     (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
-        if (id > 0)
-            Sol_Controller_Add(world, id, CONTROLLER_REMOTE);
+            Sol_Controller_Add(world, id);
 
         int slot = (int)(intptr_t)event->peer->data;
 

@@ -31,12 +31,12 @@ void Sol_Ai_Init(World *world)
 
 void Sol_Ai_Add(World *world, int id, AiKind kind)
 {
-    if (!(world->masks[id] & BITC(HAS_AICONTROLLER)))
+    if (!(world->masks[id] & BITC(HAS_CONTROLLER_AI)))
         memset(&world->aicontrollers[id], 0, sizeof(CompAi));
-    world->masks[id] |= BITC(HAS_AICONTROLLER);
+    world->masks[id] |= BITC(HAS_CONTROLLER_AI);
 }
 
-static int  step_required = BITC(HAS_ACTIVE) | BITC(HAS_AICONTROLLER);
+static int  step_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER_AI);
 static void AiController_Step(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)
@@ -80,7 +80,7 @@ static void AiController_Step(World *world, double dt, double time)
     }
 }
 
-static int  debug_required = BITC(HAS_ACTIVE) | BITC(HAS_AICONTROLLER);
+static int  debug_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER_AI);
 static void AiController_Debug(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)

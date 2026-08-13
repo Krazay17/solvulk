@@ -14,6 +14,7 @@ typedef struct
     vec4s       color;
     SolFontKind kind;
     u32         zindex;
+    vec4s outline;
 } SolFontDesc;
 
 typedef struct

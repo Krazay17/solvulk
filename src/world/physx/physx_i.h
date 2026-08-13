@@ -202,4 +202,4 @@ void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
                                     vec3s p2, vec3s q2, // segment B: p2 → q2
                                     vec3s *outA, vec3s *outB);
 void Spatial_Table_Dynamic_Single(SpatialTable *table, int id, vec3s pos, float width, float height);
-void Add_Static_Collision_From_Model(World *world, int id, PhysxGroup *group);
+void Add_Static_Collision_From_Model(PhysxGroup *group, int id, u32 handle);

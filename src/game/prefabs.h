@@ -25,5 +25,5 @@ int Sol_Prefab_ItemDrop(World *world, vec3s pos);
 int Sol_Prefab_Player2d(World *world, vec3s pos, float scale);
 int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale, int owner);
 int Sol_Prefab_HealZone(World *world, vec3s pos, float scale, int owner);
-int Sol_Prefab_Wall2d(World *world, vec3s pos, float scale);
-int Sol_Prefab_Wall3d(World *world, vec3s pos, versors rot, float scale);
+int Sol_Prefab_Building_Button(World *world, vec3s pos, float scale, u32 model);
+int Sol_Prefab_Building(World *world, vec3s pos, float scale, float yaw, u32 model);

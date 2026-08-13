@@ -542,6 +542,8 @@ void Sol_Render_DrawText2D(SolFontDesc desc)
             g->vh,
         }};
 
+        ssbo->outline = desc.outline;
+
         cursorX += g->yadvance * desc.size;
     }
 }

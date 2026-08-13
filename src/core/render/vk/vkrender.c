@@ -569,7 +569,6 @@ void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstI
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
-        //                      sollog(model->meshes[m].material.textureId);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);

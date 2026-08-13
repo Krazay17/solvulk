@@ -32,10 +32,6 @@ static int  mouseWheelDelta;
 static int  mouseX, mouseY;
 static int  mouseDeltaX, mouseDeltaY;
 
-float       input_sens = 0.001f;
-float       input_yaw;
-float       input_pitch;
-
 void Sol_Input_Init()
 {
 }
@@ -71,6 +67,16 @@ void Sol_Input_OnRawMouse(int x, int y)
     rawMouseDeltaY += y;
 }
 
+static void Input_Topmost(World **worlds, int worldCount)
+{
+    for (int i = worldCount - 1; i >= 0; i--)
+    {
+        World *world = worlds[i];
+
+    }
+    
+}
+
 void Sol_Input_Update()
 {
     Sol_Debug_Add("MouseX", Sol_Input_GetMouseUI().x);
@@ -96,15 +102,6 @@ void Sol_Input_Update()
     mouseWheelDelta    = rawMouseWheelDelta;
     rawMouseWheelDelta = 0;
 
-    if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
-    {
-        bool menuActive = solEngine.worlds[solEngine.worldCount - 1]->doesSimulate;
-        menuActive ^= 1;
-        solEngine.worlds[solEngine.worldCount- 1]->doesSimulate = menuActive;
-        solEngine.worlds[solEngine.worldCount- 1]->doesRender   = menuActive;
-        Sol_Input_SetLocked(!menuActive);
-    }
-
     if (Sol_Input_KeyPressed(SOL_KEY_ALT))
         Sol_Input_SetLocked(!toggleLocked);
 
@@ -113,28 +110,6 @@ void Sol_Input_Update()
     else
         mouseLocked = false;
     Sol_Platform_LockCursor(mouseLocked);
-
-    if (mouseLocked)
-    {
-        input_yaw -= mouseDeltaX * input_sens;
-        input_pitch -= mouseDeltaY * input_sens;
-
-        input_yaw = fmodf(input_yaw, 2.0f * GLM_PIf);
-        if (input_yaw > GLM_PIf)
-            input_yaw -= 2.0f * GLM_PIf;
-        else if (input_yaw < -GLM_PIf)
-            input_yaw += 2.0f * GLM_PIf;
-
-        if (input_pitch > MAX_PITCH)
-            input_pitch = MAX_PITCH;
-        if (input_pitch < -MAX_PITCH)
-            input_pitch = -MAX_PITCH;
-    }
-}
-
-vec3s Sol_Input_GetLookDir()
-{
-    return vecNorm(Sol_Vec3_FromYawPitch(input_yaw, input_pitch));
 }
 
 bool Sol_Input_KeyDown(SolKey key)
@@ -166,14 +141,6 @@ SolMouse Sol_Input_GetMouse()
     m.togglelocked = toggleLocked;
 
     return m;
-}
-
-void Sol_Input_SetYawPitch(float y, float p)
-{
-    if (!isnan(y))
-        input_yaw = y;
-    if (!isnan(p))
-        input_pitch = p;
 }
 
 void Sol_Input_SetLocked(bool lock)

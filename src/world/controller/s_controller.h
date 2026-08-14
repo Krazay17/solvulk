@@ -3,26 +3,10 @@
 
 #define LOCAL_AMNT 1
 
-typedef struct CompControllerLocal
-{
-    int   localIndex;
-    int   hoverId, focusId, draggedId;
-    vec2s dragOffset;
-} CompControllerLocal;
-
-typedef struct CompControllerAi
-{
-    int targetId;
-} CompControllerAi;
-
-typedef struct CompControllerRemote
-{
-    int remoteId, localId;
-} CompControllerRemote;
-
 typedef struct CompController
 {
     vec3s      lookdir, wishdir, aimdir, aimpos, aimHitPos;
+    vec2s      wishdir2d, aimpos2d;
     SolActions actionState;
     float      yaw, pitch;
     float      zoom;
@@ -34,9 +18,6 @@ typedef struct CompController
 
 void                  Sol_Controller_Init(World *world);
 void                  Sol_Controller_Add(World *world, int id);
-CompControllerLocal  *Sol_ControllerLocal_Add(World *world, int id);
-CompControllerRemote *Sol_ControllerRemote_Add(World *world, int id);
-CompControllerAi     *Sol_ControllerAi_Add(World *world, int id);
 vec3s                 Sol_Controller_GetAimPos(World *world, int id);
 SolActions            Sol_GetActions(World *world, int id);
 vec3s                 Sol_GetWishdir(World *world, int id);

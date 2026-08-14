@@ -74,6 +74,7 @@ void Sol_Tick(double dt, double time)
         Sol_OnResize();
 
     Sol_User_Tick(dt);
+    Sol_User_Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Net_Tick(solEngine.worlds, solEngine.worldCount);
     Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
 

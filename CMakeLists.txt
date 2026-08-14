@@ -5,6 +5,8 @@ option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(HOT_RELOAD "Build for hot reload" OFF)
 option(SOL_DEV_MODE "Build dev mode" ON)
 
+set(BUILD_APP2 OFF CACHE BOOL "" FORCE)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -99,37 +101,38 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 # BUILD APP
 #--------------------------------------
-#if(WIN32)
-#    add_executable(solapp 
-#        "${CMAKE_SOURCE_DIR}/app/win_main.c"
-#        "${CMAKE_SOURCE_DIR}/app/game.c"
-#        "${CMAKE_SOURCE_DIR}/assets/res.rc"
-#    )
-#    if(MSVC)
-#        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup")
-#        #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
-#    endif()
-#
-#else()
-#    add_executable(solapp
-#        "${CMAKE_SOURCE_DIR}/app/lin_main.c"
-#        #"${CMAKE_SOURCE_DIR}/src/game/game.c"
-#    )
-#endif()
-#
-#if(HOT_RELOAD)
-#    target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
-#else()
-#    target_link_libraries(solapp PRIVATE solvulk ${PLATFORM_LIBS})
-#endif()
-#
-#set_target_properties(solapp PROPERTIES 
-#    OUTPUT_NAME "SolApp"
-#)
+if(WIN32)
+   add_executable(solapp 
+       "${CMAKE_SOURCE_DIR}/app/win_main.c"
+       "${CMAKE_SOURCE_DIR}/app/game.c"
+       "${CMAKE_SOURCE_DIR}/assets/res.rc"
+   )
+   if(MSVC)
+       target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup")
+       #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
+   endif()
+
+else()
+   add_executable(solapp
+       "${CMAKE_SOURCE_DIR}/app/lin_main.c"
+       #"${CMAKE_SOURCE_DIR}/src/game/game.c"
+   )
+endif()
+
+if(HOT_RELOAD)
+   target_include_directories(solapp PRIVATE ${SOL_PUBLIC_INCLUDE})
+else()
+   target_link_libraries(solapp PRIVATE solvulk ${PLATFORM_LIBS})
+endif()
+
+set_target_properties(solapp PROPERTIES 
+   OUTPUT_NAME "SolApp"
+)
 
 #--------------------------------------
 # Build App2
 #--------------------------------------
+if(BUILD_APP2)
 if(WIN32)
     add_executable(solapp2
         "${CMAKE_SOURCE_DIR}/app/win_main.c"
@@ -143,8 +146,9 @@ endif()
 
 target_link_libraries(solapp2 PRIVATE solvulk ${PLATFORM_LIBS})
 set_target_properties(solapp2 PROPERTIES
-    OUTPUT_NAME "SolApp2"
+OUTPUT_NAME "SolApp2"
 )
+endif()
 #--------------------------------------
 # compile shaders
 #--------------------------------------
@@ -201,6 +205,7 @@ endforeach()
 add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 
 add_dependencies(solvulk shaders)
-#add_dependencies(solapp shaders)
+add_dependencies(solapp shaders)
+if(BUILD_APP2)
 add_dependencies(solapp2 shaders)
-
+endif()

@@ -113,6 +113,7 @@ typedef enum
 typedef enum
 {
     WORLDKIND_GAME,
+    WORLDKIND_GAME2D,
     WORLDKIND_MENU,
 } WorldKind;
 
@@ -256,6 +257,7 @@ struct World
 
     int activeCount;
     int playerID;
+    int userId;
     int skyboxId;
     u32 systemBits;
 

@@ -20,24 +20,6 @@
 #include "building/s_building.h"
 #include "platform/platform.h"
 
-static const SolActions key_binds[SOL_KEY_COUNT] = {
-    [SOL_KEY_Q] = ACTION_ABILITY1, [SOL_KEY_E] = ACTION_ABILITY2,
-
-    [SOL_KEY_1] = ACTION_ABILITY3, [SOL_KEY_2] = ACTION_ABILITY4,
-    [SOL_KEY_3] = ACTION_ABILITY5, [SOL_KEY_4] = ACTION_ABILITY6,
-
-    [SOL_KEY_5] = ACTION_ABILITY7, [SOL_KEY_6] = ACTION_ABILITY8,
-    [SOL_KEY_7] = ACTION_ABILITY9, [SOL_KEY_W] = ACTION_FWD,
-    [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
-    [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
-    [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,
-    [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
-};
-static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
-    [SOL_MOUSE_LEFT]  = ACTION_ABILITY1,
-    [SOL_MOUSE_RIGHT] = ACTION_ABILITY2,
-};
-
 static int  tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 static void Controller_Tick(World *world, double dt, double time)
 {
@@ -50,7 +32,27 @@ static void Controller_Tick(World *world, double dt, double time)
         CompController *controller = &world->controllers[id];
         controller->aimpos         = Sol_Physx_GetHeadPos(world, id);
 
+        SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
+                                                       .pos       = controller->aimpos,
+                                                       .ignoreEnt = id,
+                                                       .mask      = 0b01,
+                                                       .dir       = controller->aimdir,
+                                                       .dist      = 60.f,
+                                                   });
+        aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(controller->aimdir, 0.5f));
+
+        controller->aimHitPos = aimTrace.pos;
+        vec3s dirFromTrace    = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
+        controller->aimdir    = vecDot(dirFromTrace, controller->aimdir) > 0.7f ? dirFromTrace : controller->aimdir;
+        controller->aimHitEnt = aimTrace.entId > -1 ? aimTrace.entId : -1;
+
         controller->aimdir = Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch);
+
+        if (controller->actionState & ACTION_LEFT)
+            controller->wishdir2d = GetWishDir2(ACTION_LEFT);
+        else if (controller->actionState & ACTION_RIGHT)
+            controller->wishdir2d = GetWishDir2(ACTION_RIGHT);
+        controller->aimpos2d = Sol_Input_GetMouseUI();
 
         if (controller->isStrafing)
             world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
@@ -68,107 +70,6 @@ static void Controller_Tick(World *world, double dt, double time)
     }
 }
 
-static void Local_Tick(World *world, double dt, double time)
-{
-    int             localId    = 1;
-    CompController *controller = &world->controllers[localId];
-    SolMouse        mouse      = Sol_Input_GetMouse();
-
-    float *yaw   = &controller->yaw;
-    float *pitch = &controller->pitch;
-
-    if (mouse.locked)
-    {
-        *yaw -= (float)(mouse.dx * user_settings.look_sens);
-        *pitch -= (float)(mouse.dy * user_settings.look_sens);
-
-        *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
-        if (*yaw > GLM_PIf)
-            *yaw -= 2.0f * GLM_PIf;
-        else if (*yaw < -GLM_PIf)
-            *yaw += 2.0f * GLM_PIf;
-
-        *pitch = glm_clamp(*pitch, -MAX_PITCH, MAX_PITCH);
-    }
-
-    vec3s lookdir = vecNorm(Sol_Vec3_FromYawPitch(*yaw, *pitch));
-
-    for (int i = 0; i < SOL_KEY_COUNT; i++)
-    {
-        if (Sol_Input_KeyDown(i))
-            controller->actionState |= key_binds[i];
-        else
-            controller->actionState &= ~key_binds[i];
-    }
-
-    controller->isStrafing = mouse.locked;
-
-    if (WHas(world, 1, BITC(HAS_BUILDING)))
-    {
-        if (mouse.buttons[SOL_MOUSE_LEFT])
-            controller->actionState |= ACTION_BUILD;
-    }
-    else
-    {
-        if (mouse.togglelocked)
-        {
-            if (mouse.buttons[SOL_MOUSE_LEFT])
-                controller->actionState |= mouse_binds[SOL_MOUSE_LEFT];
-
-            if (mouse.buttons[SOL_MOUSE_RIGHT])
-                controller->actionState |= mouse_binds[SOL_MOUSE_RIGHT];
-        }
-        else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
-            controller->actionState |= ACTION_FWD;
-
-        if (mouse.wheelV)
-        {
-            float changeDist = (float)mouse.wheelV * 0.01f;
-            Sol_Camera_AdjustDistance(&solCamera, changeDist);
-        }
-    }
-
-    controller->lookdir = lookdir;
-    controller->wishdir = CalcWishdir3(controller->actionState, lookdir, WORLD_UP);
-
-    controller->aimHitEnt = -1;
-    SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
-                                                   .pos       = Sol_Cam_GetPos(),
-                                                   .ignoreEnt = localId,
-                                                   .mask      = 0b01,
-                                                   .dir       = lookdir,
-                                                   .dist      = 60.f,
-                                               });
-    aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(lookdir, 0.5f));
-    controller->aimHitPos = aimTrace.pos;
-    vec3s dir             = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
-
-    controller->aimdir = vecDot(dir, lookdir) > 0.7f ? dir : lookdir;
-    // controller->yaw       = input_yaw;
-    // controller->pitch     = input_pitch;
-    controller->aimHitEnt = aimTrace.entId;
-
-    // #### DEBUG ACTIONS ####
-    if (Sol_Input_KeyDown(SOL_KEY_F))
-    {
-        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, localId), glms_vec3_scale(lookdir, (float)dt * 60.0f));
-        Sol_Xform_Teleport(world, localId, pos);
-        Sol_Physx_SetVel(world, localId, (vec3s){0, 0, 0});
-    }
-
-    if (Sol_Input_KeyPressed(SOL_KEY_5))
-    {
-        vec3s pos = Sol_Xform_GetPos(world, localId);
-        if (!Sol_Buff_HasBuff(world, localId, BUFFKIND_INVULN))
-            Sol_Buff_AddEx(world, localId, localId, BUFFKIND_INVULN, 99999.9f, 0);
-        else
-            Sol_Buff_Remove(world, localId, BUFFKIND_INVULN);
-    }
-    if (Sol_Input_KeyPressed(SOL_KEY_6))
-    {
-    }
-}
-
 static void Ai_Tick(World *world, double dt, double time)
 {
 }
@@ -179,41 +80,21 @@ static void Remote_Tick(World *world, double dt, double time)
 
 void Sol_Controller_Init(World *world)
 {
-    WAddTick(world) = Local_Tick;
+    world->controllers = calloc(MAX_ENTS, sizeof(CompController));
+
     WAddTick(world) = Ai_Tick;
     WAddTick(world) = Remote_Tick;
     WAddTick(world) = Controller_Tick;
-
-    world->controllers = calloc(MAX_ENTS, sizeof(CompController));
 }
 
 void Sol_Controller_Add(World *world, int id)
 {
+    if (!WHasSys(world, WORLD_SYS_CONTROLLER))
+        return;
     if (world->masks[id] & BITC(HAS_CONTROLLER))
         return;
     world->controllers[id] = (CompController){0};
     world->masks[id] |= BITC(HAS_CONTROLLER);
-}
-
-CompControllerLocal *Sol_ControllerLocal_Add(World *world, int id)
-{
-    CompControllerLocal *controllerLocal = &world->controllerLocal[id];
-    memset(controllerLocal, 0, sizeof(CompControllerLocal));
-    return controllerLocal;
-}
-
-CompControllerRemote *Sol_ControllerRemote_Add(World *world, int id)
-{
-    CompControllerRemote *controllerRemote = &world->controllerRemote[id];
-    memset(controllerRemote, 0, sizeof(CompControllerRemote));
-    return controllerRemote;
-}
-
-CompControllerAi *Sol_ControllerAi_Add(World *world, int id)
-{
-    CompControllerAi *controllerAi = &world->controllerAi[id];
-    memset(controllerAi, 0, sizeof(CompControllerAi));
-    return controllerAi;
 }
 
 bool Sol_Controller_WantsMove(World *world, int id)

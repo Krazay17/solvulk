@@ -313,7 +313,8 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text)
     int   id          = Sol_Create_Ent(world, 0);
     world->ekinds[id] = EKIND_BUTTON;
     Sol_Xform_Teleport(world, id, pos);
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
+    CompBody2d *body =
+        Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
 
     SolView2d *bg   = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.1f, 0.1f, 0.1f, 1.0f}, dims.x, dims.y);
     bg->hoverColor  = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
@@ -341,8 +342,9 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, u32 ability, u32 rarity)
     int id = Sol_Create_Ent(world, 0);
     Sol_Xform_Teleport(world, id, pos);
     Sol_Interact_Add(world, id);
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
-    body->zindex     = 1;
+    CompBody2d *body =
+        Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
+    body->zindex = 1;
     Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
@@ -447,7 +449,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     cdFlash->clickColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     cdFlash->textureID  = SOL_TEXTURE_SHOCKPARTICLE;
     cdFlash->zindex     = 3;
-    
+
     // SolView2d *textHighlight = Sol_View2d_Add(world, id, VIEW2DKIND_TEXT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 21.0f, 0);
     // strcpy(textHighlight->text, label);
     // textHighlight->offset.x = dims.x * 0.5f;
@@ -465,7 +467,8 @@ int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
     float bodyScale  = 75.0f * scale;
     Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
 
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 1.0f * bodyScale, 1.6f * bodyScale, 0b01, 0b01);
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, 1.0f * bodyScale, 1.6f * bodyScale,
+                                      PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
     body->grav       = (vec2s){0, 9.0f};
 
     CompModel *model = Sol_Model_Add(world, id, MODELKIND_DUDE);
@@ -474,6 +477,7 @@ int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
     model->yOffset   = -1.6f;
 
     Sol_Interact_Add(world, id);
+    Sol_Controller_Add(world, id);
 
     return id;
 }
@@ -512,14 +516,15 @@ int Sol_Prefab_Building_Button(World *world, vec3s pos, float scale, u32 modelId
 
     Sol_Xform_SetScale(world, id, (vec3s){modelScale, modelScale, modelScale});
 
-    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
+    CompBody2d *body = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, bodyScale, bodyScale,
+                                      PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
 
     CompModel *model = Sol_Model_Add(world, id, modelId);
     model->is2d      = true;
     model->xOffset   = 2.0f;
     model->yOffset   = -4.0f;
 
-    //Sol_Interact_Set(world, id, (CompInteract){.onClick})
+    // Sol_Interact_Set(world, id, (CompInteract){.onClick})
 
     return id;
 }

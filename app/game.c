@@ -10,7 +10,6 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
-    Sol_Controller_Add(gameWorld, 1);
 }
 
 typedef enum
@@ -178,7 +177,7 @@ void Create_Sol_Game()
     int attackBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0);
     Sol_Xform_Set(hud, attackBar, 340, 650, 0);
-    Sol_View2d_Add(hud, attackBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 140, 70);
+    Sol_View2d_Add(hud, attackBar, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 140, 70);
     Sol_Interact_Add(hud, attackBar);
     for (int i = 0; i < 2; i++)
     {
@@ -193,7 +192,7 @@ void Create_Sol_Game()
     int abilityBar = Sol_Create_Ent(hud, 0);
     Sol_Body2d_Add(hud, abilityBar, BODY2DKIND_RECT, 280, 70, 0);
     Sol_Xform_Set(hud, abilityBar, 500, 650, 0);
-    Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
+    Sol_View2d_Add(hud, abilityBar, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(hud, abilityBar);
 
     for (int i = 0; i < 4; i++)

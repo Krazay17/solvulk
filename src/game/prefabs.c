@@ -22,7 +22,6 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     {
     case EKIND_PLAYER:
         id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
-        Sol_Controller_Add(world, id);
         break;
     case EKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
@@ -52,7 +51,6 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
     world->ekinds[id] = EKIND_PLAYER;
     Sol_Xform_Teleport(world, id, pos);
     CompModel *model = Sol_Model_Add(world, id, MODELKIND_DUDE);
-    // model->yOffset   = dims.y * 0.5f;
     Sol_Body_Add(world, id,
                  (BodyDesc){
                      .height      = dims.y,
@@ -63,8 +61,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                      .group       = PHYSXMASK(0b10, 0b111),
                  });
 
-    Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
-    Sol_Vital_Add(world, id, VITALKIND_PLAYER);
+    Sol_Combat_Add(world, id, COMBATKIND_PLAYER);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.bindings = {
                                       {ACTION_ABILITY1, 0},
@@ -79,7 +76,7 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                                       {ACTION_DASH, 0},
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
-    Sol_Combat_Add(world, id);
+    Sol_Combat_Add(world, id, COMBATKIND_PLAYER);
     return id;
 }
 
@@ -104,16 +101,13 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                      .restitution = 0.1f,
                      .group       = PHYSXMASK(0b10, 0b111),
                  });
-    Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.bindings = {
                                       {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
-    Sol_Vital_Add(world, id, VITALKIND_WIZARD);
-    Sol_Ai_Add(world, id, AIKIND_WIZARD);
-    Sol_Replication_Add(world, id, NETAUTH_AUTH, EKIND_WIZARD);
+    Sol_Combat_Add(world, id, COMBATKIND_WIZARD);
 
     return id;
 }
@@ -151,14 +145,12 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
                      .restitution = 0.1f,
                      .group       = PHYSXMASK(0b10, 0b111),
                  });
-    Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
     Sol_Ability_Add(world, id,
                     (AbilityDesc){.bindings = {
                                       {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
 
-    Sol_Vital_Add(world, id, VITALKIND_WIZARD);
-    Sol_Ai_Add(world, id, AIKIND_WIZARD);
+    Sol_Combat_Add(world, id, COMBATKIND_WIZARD);
     return id;
 }
 
@@ -461,7 +453,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
 
 int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
 {
-    int id = Sol_Create_Ent(world, 0);
+    int id = Sol_Create_Ent(world, 1);
     Sol_Xform_Add(world, id, pos);
     float modelScale = 75.0f * scale;
     float bodyScale  = 75.0f * scale;
@@ -477,8 +469,6 @@ int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
     model->yOffset   = -1.6f;
 
     Sol_Interact_Add(world, id);
-    Sol_Controller_Add(world, id);
-
     return id;
 }
 

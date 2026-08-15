@@ -65,10 +65,6 @@ void Sol_Cam_Update(double dt)
 
     solCamera.pos = glms_vec3_add(solCamera.anchor, glms_vec3_scale(invDir, solCamera.currentDistance));
 
-    // float changeDist = (float)Sol_Input_GetMouse().wheelV * 0.01f;
-    // if (Sol_Input_GetMouse().wheelV)
-    //     solCamera.distance -= changeDist;
-
     solCamera.target = vecAdd(solCamera.pos, lookdir);
     solCamera.dir    = glms_vec3_normalize(glms_vec3_sub(solCamera.target, solCamera.pos));
 

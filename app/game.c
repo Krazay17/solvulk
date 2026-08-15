@@ -10,6 +10,7 @@ static void SpawnPlayer(int flags, void *data)
 
     Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
                        (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
+    Sol_Controller_Add(gameWorld, 1, CONTROLLERKIND_PLAYER);
 }
 
 typedef enum
@@ -38,13 +39,13 @@ int SpawnEnemy(int flags, void *data)
     case ENEMYKIND_WIZARD: {
 
         id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
+        Sol_Controller_Add(gameWorld, id, CONTROLLERKIND_WIZARD);
     }
     break;
     case ENEMYKIND_ZORGON: {
 
         id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
-        Sol_Ai_Add(gameWorld, id, AIKIND_WIZARD);
-        Sol_Replication_Add(gameWorld, id, NETAUTH_AUTH, EKIND_WIZARD);
+        Sol_Controller_Add(gameWorld, id, CONTROLLERKIND_WIZARD);
     }
     break;
     }
@@ -152,13 +153,18 @@ void WizSpawner(World *world, double dt)
     }
 }
 
+void SaveGame(void)
+{
+    Sol_User_SaveUserSettings();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sol Game App
 // ─────────────────────────────────────────────────────────────────────────────
 void Create_Sol_Game()
 {
     World *menu = World_Create_Default(WORLDKIND_MENU);
-    World *hud  = World_Create_Default(WORLDKIND_MENU);
+    World *hud  = World_Create_Default(WORLDKIND_GAME2D);
     gameWorld   = World_Create_Default(WORLDKIND_GAME);
 
     Sol_World_SetActive(gameWorld);
@@ -166,10 +172,13 @@ void Create_Sol_Game()
 
     WAdd2d(gameWorld) = Sol_Crosshair_Draw;
     SpawnPlayer(0, 0);
-    Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
 
-    player2d      = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
-    WAddStep(hud) = RotateGuy;
+    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
+    Sol_Controller_Add(hud, player2d, CONTROLLERKIND_PLAYER);
+    Sol_Movement_Add(hud, player2d, MOVEMENTKIND_PLAYER);
+
+    Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
+    // WAddStep(hud) = RotateGuy;
 
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_WALL);
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_FLOOR);
@@ -265,6 +274,9 @@ void Create_Sol_Game()
     makeEnemyZorgon.enemyKind                 = ENEMYKIND_ZORGON;
     Sol_Interact_Set(menu, spawnZorgonButton,
                      (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &makeEnemyZorgon}});
+
+    int saveButton = Sol_Prefab_Button(menu, (vec3s){200, 350, 0}, "Save");
+    Sol_Interact_Set(menu, saveButton, (CompInteract){.onClick = (SolCallback){Sol_User_SaveUserSettings}});
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
     Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (SolCallback){SpawnPlayer, gameWorld}});

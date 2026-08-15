@@ -3,7 +3,7 @@
 #include "sol_math.h"
 #include "world.h"
 #include "xform/s_xform.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 
 void Aggro_State_Update(World *world, int id, float dt)
 {
@@ -19,7 +19,7 @@ void Aggro_State_Update(World *world, int id, float dt)
         Ai_SetState(world, id, AISTATE_IDLE, 0);
         return;
     }
-    if (Sol_Vital_GetDead(world, aicontroller->target))
+    if (Sol_Combat_GetDead(world, aicontroller->target))
     {
         Ai_SetState(world, id, AISTATE_IDLE, 0);
         return;
@@ -39,6 +39,7 @@ void Aggro_State_Update(World *world, int id, float dt)
     AiStateData *data   = &aicontroller->stateData[aicontroller->state];
     vec3s        dir    = aicontroller->dirToTarget;
     controller->lookdir = dir;
+    // controller->wishdir = dir;
 
 
     // Aim up a bit for lob projectile

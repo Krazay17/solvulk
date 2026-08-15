@@ -19,6 +19,7 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 
+#define MAX_ENTS (1 << 14)
 #define PHYSXMASK(g, m) ((g << 16) | m)
 
 // Forwards
@@ -354,7 +355,45 @@ typedef enum
     ACTION_ZOOMIN  = (1 << 17),
     ACTION_ZOOMOUT = (1 << 18),
     ACTION_BUILD   = (1 << 19),
+
+    ACTION_DEBUGTELE = (1 << 20),
 } SolActions;
+
+typedef enum
+{
+    SOL_KEY_0,
+    SOL_KEY_1,
+    SOL_KEY_2,
+    SOL_KEY_3,
+    SOL_KEY_4,
+    SOL_KEY_5,
+    SOL_KEY_6,
+    SOL_KEY_7,
+    SOL_KEY_8,
+    SOL_KEY_9,
+
+    SOL_KEY_W,
+    SOL_KEY_A,
+    SOL_KEY_S,
+    SOL_KEY_D,
+    SOL_KEY_F,
+    SOL_KEY_Q,
+    SOL_KEY_E,
+    SOL_KEY_SPACE,
+    SOL_KEY_ESCAPE,
+    SOL_KEY_SHIFT,
+    SOL_KEY_ALT,
+    SOL_KEY_CTRL,
+    SOL_KEY_COUNT
+} SolKey;
+
+typedef enum
+{
+    SOL_MOUSE_LEFT,
+    SOL_MOUSE_RIGHT,
+    SOL_MOUSE_MIDDLE,
+    SOL_MOUSE_COUNT
+} SolMouseButton;
 
 typedef struct
 {

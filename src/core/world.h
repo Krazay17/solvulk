@@ -3,7 +3,6 @@
 
 typedef struct World World;
 
-#define MAX_ENTS (1 << 14)
 #define MAX_SYSTEMS 64
 #define NULL_ENTITYID -1
 
@@ -25,6 +24,7 @@ typedef struct World World;
     X(WORLD_SYS_REPLICATION, Sol_Replication_Init, NULL)                                                               \
     X(WORLD_SYS_EVENT, Sol_Event_Init, NULL)                                                                           \
     X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, NULL)                                                                 \
+    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, NULL)                                                                     \
     X(WORLD_SYS_INTERACT, Sol_Interact_Init, NULL)                                                                     \
     X(WORLD_SYS_TIMER, Sol_Timer_Init, NULL)                                                                           \
     X(WORLD_SYS_PICKUP, Sol_Pickup_Init, NULL)                                                                         \
@@ -34,13 +34,11 @@ typedef struct World World;
     X(WORLD_SYS_ABILITY, Sol_Ability_Init, NULL)                                                                       \
     X(WORLD_SYS_CHAINHIT, Sol_Chainhit_Init, NULL)                                                                     \
     X(WORLD_SYS_ITEM, Sol_Item_Init, NULL)                                                                             \
-    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, NULL)                                                                     \
     X(WORLD_SYS_PHYSX, Sol_Physx_Init, Sol_Physx_Remove)                                                               \
     X(WORLD_SYS_BODY2, Sol_Body2d_Init, NULL)                                                                          \
     X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init, NULL)                                                                 \
     X(WORLD_SYS_ZONE, Sol_Zone_Init, NULL)                                                                             \
     X(WORLD_SYS_COMBAT, Sol_Combat_Init, NULL)                                                                         \
-    X(WORLD_SYS_VITAL, Sol_Vital_Init, NULL)                                                                           \
     X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init, NULL)                                                                       \
     X(WORLD_SYS_MODEL, Sol_Model_Init, NULL)                                                                           \
     X(WORLD_SYS_LINE, Sol_Line_Init, NULL)                                                                             \
@@ -84,7 +82,6 @@ typedef enum
     HAS_CONTROLLER_AI,
     HAS_ABILITY,
     HAS_BUFF,
-    HAS_VITAL,
     HAS_SHAPE,
     HAS_TIMER,
     HAS_EVENT,
@@ -123,38 +120,35 @@ typedef void (*SystemUpdate)(World *, double, double);
 
 typedef uint64_t Mask;
 
-typedef struct CompAudio            CompAudio;
-typedef struct CompReplication      CompReplication;
-typedef struct CompAi               CompAi;
-typedef struct CompParent           CompParent;
-typedef struct CompTimer            CompTimer;
-typedef struct CompXform            CompXform;
-typedef struct CompBody             CompBody;
-typedef struct CompMovement         CompMovement;
-typedef struct CompModel            CompModel;
-typedef struct CompInteract         CompInteract;
-typedef struct CompShape            CompShape;
-typedef struct CompVital            CompVital;
-typedef struct CompController       CompController;
-typedef struct CompBuff             CompBuff;
-typedef struct CompAbility          CompAbility;
-typedef struct CompOwner            CompOwner;
-typedef struct CompContact          CompContact;
-typedef struct CompCombat           CompCombat;
-typedef struct CompEmitter          CompEmitter;
-typedef struct CompBody2d           CompBody2d;
-typedef struct CompView2d           CompView2d;
-typedef struct CompProjectile       CompProjectile;
-typedef struct CompItem             CompItem;
-typedef struct CompInventory        CompInventory;
-typedef struct CompAbilitySlot      CompAbilitySlot;
-typedef struct CompTooltip          CompTooltip;
-typedef struct CompZone             CompZone;
-typedef struct CompBuilder          CompBuilder;
-typedef struct CompContainer        CompContainer;
-typedef struct CompControllerLocal  CompControllerLocal;
-typedef struct CompControllerRemote CompControllerRemote;
-typedef struct CompControllerAi     CompControllerAi;
+typedef struct CompAudio       CompAudio;
+typedef struct CompReplication CompReplication;
+typedef struct CompAi          CompAi;
+typedef struct CompMovement    CompMovement;
+typedef struct CompParent      CompParent;
+typedef struct CompTimer       CompTimer;
+typedef struct CompXform       CompXform;
+typedef struct CompBody        CompBody;
+typedef struct CompModel       CompModel;
+typedef struct CompInteract    CompInteract;
+typedef struct CompShape       CompShape;
+typedef struct CompCombat      CompCombat;
+typedef struct CompController  CompController;
+typedef struct CompBuff        CompBuff;
+typedef struct CompAbility     CompAbility;
+typedef struct CompOwner       CompOwner;
+typedef struct CompContact     CompContact;
+typedef struct CompCombat      CompCombat;
+typedef struct CompEmitter     CompEmitter;
+typedef struct CompBody2d      CompBody2d;
+typedef struct CompView2d      CompView2d;
+typedef struct CompProjectile  CompProjectile;
+typedef struct CompItem        CompItem;
+typedef struct CompInventory   CompInventory;
+typedef struct CompAbilitySlot CompAbilitySlot;
+typedef struct CompTooltip     CompTooltip;
+typedef struct CompZone        CompZone;
+typedef struct CompBuilder     CompBuilder;
+typedef struct CompContainer   CompContainer;
 
 typedef struct ChainAttacks ChainAttacks;
 typedef struct Inventory    Inventory;
@@ -168,6 +162,7 @@ typedef struct SolCamera    SolCamera;
 typedef struct WorldNet     WorldNet;
 typedef struct SolScore     SolScore;
 typedef struct Stage        Stage;
+typedef struct HitGen       HitGen;
 
 typedef struct CompFlags
 {
@@ -198,37 +193,33 @@ struct World
 
     // void *components[COMPONENT_COUNT];
 
-    CompXform            *xforms;
-    CompReplication      *replications;
-    CompControllerLocal  *controllerLocal;
-    CompControllerRemote *controllerRemote;
-    CompControllerAi     *controllerAi;
-    CompController       *controllers;
-    CompParent           *parents;
-    CompAudio            *audios;
-    CompTimer            *timers;
-    CompBody             *bodies;
-    CompMovement         *movements;
-    CompModel            *models;
-    CompInteract         *interacts;
-    CompShape            *spheres;
-    CompVital            *vitals;
-    CompBuff             *buffs;
-    CompAbility          *abilities;
-    CompOwner            *owners;
-    CompAi               *aicontrollers;
-    CompCombat           *combats;
-    CompEmitter          *compEmitters;
-    CompBody2d           *body2d;
-    CompView2d           *view2d;
-    CompProjectile       *projectiles;
-    CompTooltip          *tooltips;
-    CompItem             *items;
-    CompInventory        *inventories;
-    CompAbilitySlot      *abilitySlots;
-    CompZone             *zones;
-    CompBuilder          *builders;
-    CompContainer        *containers;
+    CompXform       *xforms;
+    CompReplication *replications;
+    CompController  *controllers;
+    CompMovement    *movements;
+    CompParent      *parents;
+    CompAudio       *audios;
+    CompTimer       *timers;
+    CompBody        *bodies;
+    CompModel       *models;
+    CompInteract    *interacts;
+    CompShape       *spheres;
+    CompBuff        *buffs;
+    CompAbility     *abilities;
+    CompOwner       *owners;
+    CompAi          *aicontrollers;
+    CompCombat      *combats;
+    CompEmitter     *compEmitters;
+    CompBody2d      *body2d;
+    CompView2d      *view2d;
+    CompProjectile  *projectiles;
+    CompTooltip     *tooltips;
+    CompItem        *items;
+    CompInventory   *inventories;
+    CompAbilitySlot *abilitySlots;
+    CompZone        *zones;
+    CompBuilder     *builders;
+    CompContainer   *containers;
 
     Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;
@@ -240,6 +231,7 @@ struct World
     WorldNet     *worldNet;
     SolScore     *scores;
     Stage        *stage;
+    HitGen       *hitGen;
 
     vec3s playerSpawns[4];
     u32   playerSpawnCount;

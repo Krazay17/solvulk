@@ -147,10 +147,10 @@ void Net_Send_Snap(World *world)
             e->ownerId = world->owners[id].ownerId;
             e->team    = world->owners[id].team;
         }
-        if (world->masks[id] & BITC(HAS_VITAL))
+        if (world->masks[id] & BITC(HAS_COMBAT))
         {
-            e->health = world->vitals[id].health;
-            e->energy = world->vitals[id].energy;
+            e->health = world->combats[id].health;
+            e->energy = world->combats[id].energy;
         }
         if (world->masks[id] & BITC(HAS_BUFF))
         {
@@ -295,10 +295,10 @@ void Net_Apply_Snap(World *world)
             world->owners[id].team    = e->team;
         }
 
-        if (world->masks[id] & BITC(HAS_VITAL))
+        if (world->masks[id] & BITC(HAS_COMBAT))
         {
-            world->vitals[id].health = e->health;
-            world->vitals[id].energy = e->energy;
+            world->combats[id].health = e->health;
+            world->combats[id].energy = e->energy;
         }
     }
     // Find entities that were mapped but aren't in this snap → destroy

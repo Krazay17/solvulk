@@ -10,6 +10,12 @@
 #include "interact/s_interact.h"
 #include "controller/s_controller.h"
 
+#include "buff/s_buff.h"
+
+#define USER_SETTINGS_FILENAME "UserSettings"
+
+static SolResource user_settings_file;
+
 static const SolActions key_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_Q] = ACTION_ABILITY1, [SOL_KEY_E] = ACTION_ABILITY2,
 
@@ -134,9 +140,9 @@ void UserControllerUpdate(World *world, double dt, double time)
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (Sol_Input_KeyDown(i))
-            controller->actionState |= key_binds[i];
+            controller->actionState |= user_settings.key_binds[i];
         else
-            controller->actionState &= ~key_binds[i];
+            controller->actionState &= ~user_settings.key_binds[i];
     }
 
     controller->isStrafing = mouse.locked;
@@ -151,10 +157,10 @@ void UserControllerUpdate(World *world, double dt, double time)
         if (mouse.togglelocked)
         {
             if (mouse.buttons[SOL_MOUSE_LEFT])
-                controller->actionState |= mouse_binds[SOL_MOUSE_LEFT];
+                controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_LEFT];
 
             if (mouse.buttons[SOL_MOUSE_RIGHT])
-                controller->actionState |= mouse_binds[SOL_MOUSE_RIGHT];
+                controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_RIGHT];
         }
         else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
             controller->actionState |= ACTION_FWD;
@@ -165,18 +171,19 @@ void UserControllerUpdate(World *world, double dt, double time)
             Sol_Camera_AdjustDistance(&solCamera, changeDist);
         }
     }
-
-    vec3s lookdir       = vecNorm(Sol_Vec3_FromYawPitch(*yaw, *pitch));
-    controller->lookdir = lookdir;
-    controller->wishdir = CalcWishdir3(controller->actionState, lookdir, WORLD_UP);
+    controller->yaw     = *yaw;
+    controller->pitch   = *pitch;
+    controller->lookdir = Sol_Vec3_FromYawPitch(*yaw, *pitch);
+    if (WHasB(world, localId, HAS_BODY3))
+        Sol_Controller_SetParallaxAim(world, localId, Sol_Cam_GetPos(), controller->lookdir, 60.0f, 0.5f);
 
     // #### DEBUG ACTIONS ####
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        vec3s pos = glms_vec3_add(Sol_Xform_GetPos(world, localId), glms_vec3_scale(lookdir, (float)dt * 60.0f));
-        Sol_Xform_Teleport(world, localId, pos);
-        Sol_Physx_SetVel(world, localId, (vec3s){0, 0, 0});
+        controller->actionState |= ACTION_DEBUGTELE;
     }
+    else
+        controller->actionState &= ~ACTION_DEBUGTELE;
 
     if (Sol_Input_KeyPressed(SOL_KEY_5))
     {
@@ -202,8 +209,31 @@ void Sol_User_Worlds_Tick(World **worlds, int count, double dt, double time)
     }
 }
 
-void Sol_User_Init(void)
+static void Sol_User_LoadUserSettings(void)
 {
+    Sol_ReadFile(USER_SETTINGS_FILENAME, &user_settings_file);
+}
+
+static void LoadDefaults(void)
+{
+    user_settings = (UserSettings){
+        .look_sens = 0.001f,
+    };
+    memcpy(user_settings.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
+    memcpy(user_settings.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
+}
+
+int Sol_User_Init(void)
+{
+    Sol_User_LoadUserSettings();
+    if (user_settings_file.data)
+    {
+        memcpy(&user_settings, user_settings_file.data, sizeof(UserSettings));
+    }
+    else
+        LoadDefaults();
+
+    return 0;
 }
 
 void Sol_User_Tick(double dt)
@@ -227,4 +257,11 @@ void Sol_User_Tick(double dt)
 void Sol_User_Draw(double dt)
 {
     Sol_Tooltip_Draw(dt, user_hit);
+}
+
+void Sol_User_SaveUserSettings(void)
+{
+    user_settings_file.data = &user_settings;
+    user_settings_file.size = sizeof(UserSettings);
+    Sol_WriteFile(USER_SETTINGS_FILENAME, &user_settings_file);
 }

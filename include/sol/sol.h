@@ -18,6 +18,7 @@
 #include "image.h"
 #include "network.h"
 #include "profiler.h"
+#include "sol_user.h"
 #include "render/render.h"
 #include "platform/platform.h"
 #include "game/prefabs.h"
@@ -52,4 +53,3 @@
 #include "replication/s_replication.h"
 #include "view/s_view.h"
 #include "view/s_view2d.h"
-#include "vital/s_vital.h"

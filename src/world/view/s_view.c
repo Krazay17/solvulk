@@ -9,7 +9,7 @@
 #include "combat/s_combat.h"
 #include "physx/s_body.h"
 #include "buff/s_buff.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 
 #define HEALTHBAR_HIDE_DURATION 5.0f
 
@@ -75,15 +75,15 @@ static void Nameplate_Draw(World *world, double dt, double time)
         if (id == 1)
             continue;
 
-        if (!WHas(world, id, BITC(HAS_VITAL)) || Sol_Vital_GetDead(world, id))
+        if (!WHas(world, id, BITC(HAS_COMBAT)) || Sol_Combat_GetDead(world, id))
             continue;
 
         SolXform anchor = Sol_Xform_GetDrawXform(world, id);
         anchor.pos.y += Sol_Physx_GetDims(world, id).y * 0.77f;
         vec4s anchor4 = (vec4s){anchor.pos.x, anchor.pos.y, anchor.pos.z, 1.0f};
 
-        float health    = Sol_Vital_GetHealth(world, id);
-        float maxHealth = Sol_Vital_GetMaxHealth(world, id);
+        float health    = Sol_Combat_GetHealth(world, id);
+        float maxHealth = world->combats[id].maxHealth;
         float fill      = maxHealth > 0 ? health / maxHealth : 0.0f;
 
         QuadSSBO *ssbo = Sol_Render_GetNext_Quad(QUADKIND_HEALTH);

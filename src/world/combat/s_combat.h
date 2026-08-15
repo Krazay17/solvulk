@@ -1,13 +1,32 @@
 #pragma once
-#include "base.h"
+#include "types.h"
 
 typedef struct SolHit SolHit;
 
+typedef struct HitGen
+{
+    u32 hitGenMatrix[MAX_ENTS][MAX_ENTS];
+    u32 globalHitGen;
+} HitGen;
+
+typedef enum CombatKind
+{
+    COMBATKIND_PLAYER,
+    COMBATKIND_WIZARD,
+} CombatKind;
+
 typedef struct CompCombat
 {
+    vec3s  respawnPos;
+    float  maxHealth, maxEnergy, maxMana;
+    float  health, energy, mana;
+    bool   doesRespawn;
+    float  respawnTime;
+    double deathTime, lastHitTime;
+
     u16   flags;
-    u32   damage, hitPauseDiminish;
-    bool  hitEnts[65536];
+    u32   hitPauseDiminish;
+    bool  hitEnts[128];
     float hitPause, baseAnimRate;
 } CompCombat;
 
@@ -47,14 +66,23 @@ typedef struct ChainAttacks
 void Sol_Combat_Init(World *world);
 void Sol_Chainhit_Init(World *world);
 
-void Sol_Combat_Add(World *world, int id);
-void Sol_Combat_ApplyHit(World *world, int id, SolHit hit);
-void Sol_Combat_ApplyHeal(World *world, int id, SolHit hit);
-bool Sol_Combat_IsReflecting(World *world, int id);
+void Sol_Combat_Add(World *world, int id, CombatKind kind);
+
+float Sol_Combat_Damage(World *world, int id, int attacker, float damage);
+float Sol_Combat_Heal(World *world, int id, SolHit hit);
+void  Sol_Combat_ApplyHit(World *world, int id, SolHit hit);
+bool  Sol_Combat_IsReflecting(World *world, int id);
+
+bool Sol_Combat_GetDead(World *world, int id);
 void Sol_Combat_AddFlags(World *world, int id, u32 flags);
 void Sol_Combat_RemoveFlags(World *world, int id, u32 flags);
 void Sol_Combat_ClearFlags(World *world, int id, u32 flags);
 void Sol_Combat_ClearHits(World *world, int id);
+// Avoid multihit
+u32  Sol_Combat_StartHitGen(World *world, int id);
+bool Sol_Combat_TryHitGen(World *world, int id, int target, u32 sessionGen);
+
+float Sol_Combat_GetHealth(World *world, int id);
 
 // void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, float damage, int count);
 void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float damage);
@@ -65,4 +93,3 @@ void Sol_Weapon_Equip(World *world, int id, int weapon, int slot);
 
 void Dmgnumbers_Draw(World *world, double dt, double time);
 void Dmgnumbers_Step(World *world, double dt, double time);
-void Weapon_Step(World *world, double dt, double time);

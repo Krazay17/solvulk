@@ -10,7 +10,7 @@
 #include "event/s_event.h"
 #include "physx/s_body.h"
 #include "owner/s_owner.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 
 #include "profiler.h"
 
@@ -95,7 +95,7 @@ void               Chain_Step(World *world, double dt, double time)
                                      });
                 chain->hitEnts[target] = true;
                 chain->last            = target;
-                if (!Sol_Vital_GetDead(world, target))
+                if (!Sol_Combat_GetDead(world, target))
                     chain->count--;
             }
             else

@@ -16,8 +16,8 @@
 #include "item/s_item.h"
 #include "physx/s_body.h"
 
-const CompVital vital_config[] = {
-    [VITALKIND_PLAYER] =
+const CompCombat vital_config[] = {
+    [COMBATKIND_PLAYER] =
         {
             .maxHealth   = 100,
             .health      = 100,
@@ -28,7 +28,7 @@ const CompVital vital_config[] = {
             .doesRespawn = 1,
             .respawnTime = 2.0f,
         },
-    [VITALKIND_WIZARD] =
+    [COMBATKIND_WIZARD] =
         {
             .maxHealth = 100,
             .health    = 100,
@@ -44,7 +44,7 @@ static void OnDeath(World *world, int id)
     Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, -1, true);
     Sol_Movement_ForceState(world, id, MOVE_DEAD);
 
-    CompVital *vital = &world->vitals[id];
+    CompCombat *vital = &world->combats[id];
     vital->deathTime = solState.gameTime;
     world->masks[id] &= ~BITC(HAS_BUFF);
 
@@ -60,7 +60,7 @@ static void OnDeath(World *world, int id)
 
 static void OnRespawn(World *world, int id)
 {
-    CompVital *vital = &world->vitals[id];
+    CompCombat *vital = &world->combats[id];
     vital->health    = vital->maxHealth;
     vital->energy    = vital->maxEnergy;
     vital->mana      = vital->maxMana;
@@ -69,7 +69,7 @@ static void OnRespawn(World *world, int id)
     world->bodies[id].group = world->bodies[id].base_group;
 }
 
-static int  required_step = BITC(HAS_VITAL);
+static int  required_step = BITC(HAS_COMBAT);
 static void Vital_Step(World *world, double dt, double time)
 {
     for (int i = 0; i < world->activeCount; i++)
@@ -77,7 +77,7 @@ static void Vital_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (!WHas(world, id, required_step))
             continue;
-        CompVital *vital = &world->vitals[id];
+        CompCombat *vital = &world->combats[id];
         if (vital->health == 0 && vital->doesRespawn && time > vital->deathTime + vital->respawnTime)
             OnRespawn(world, id);
     }
@@ -85,24 +85,24 @@ static void Vital_Step(World *world, double dt, double time)
 
 void Sol_Vital_Init(World *world)
 {
-    world->vitals   = calloc(MAX_ENTS, sizeof(CompVital));
+    world->combats   = calloc(MAX_ENTS, sizeof(CompCombat));
     WAddStep(world) = Vital_Step;
 }
 
-void Sol_Vital_Add(World *world, int id, VitalKind kind)
+void Sol_Combat_Add(World *world, int id, VitalKind kind)
 {
-    CompVital vital   = vital_config[kind];
+    CompCombat vital   = vital_config[kind];
     vital.lastHitTime = -FLT_MAX;
     vital.respawnPos  = Sol_Xform_GetPos(world, id);
-    world->masks[id] |= BITC(HAS_VITAL);
-    world->vitals[id] = vital;
+    world->masks[id] |= BITC(HAS_COMBAT);
+    world->combats[id] = vital;
 }
 
 float Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 {
-    if (!(world->masks[id] & BITC(HAS_VITAL)))
+    if (!(world->masks[id] & BITC(HAS_COMBAT)))
         return 0;
-    CompVital *vital       = &world->vitals[id];
+    CompCombat *vital       = &world->combats[id];
     float      damageDealt = 0.0f;
     if (vital->health == 0)
         return 0;
@@ -139,9 +139,9 @@ float Sol_Vital_Damage(World *world, int id, int attacker, float damage)
 // pass in amount as percent
 float Sol_Vital_HealPercent(World *world, int id, int dealer, float amount)
 {
-    if (!(world->masks[id] & BITC(HAS_VITAL)))
+    if (!(world->masks[id] & BITC(HAS_COMBAT)))
         return 0;
-    CompVital *vital       = &world->vitals[id];
+    CompCombat *vital       = &world->combats[id];
     float      amountDealt = 0.0f;
     if (vital->health == 0)
         return 0;
@@ -171,9 +171,9 @@ float Sol_Vital_HealPercent(World *world, int id, int dealer, float amount)
 
 float Sol_Vital_Heal(World *world, int id, int dealer, float amount)
 {
-    if (!(world->masks[id] & BITC(HAS_VITAL)))
+    if (!(world->masks[id] & BITC(HAS_COMBAT)))
         return 0;
-    CompVital *vital       = &world->vitals[id];
+    CompCombat *vital       = &world->combats[id];
     float      amountDealt = 0.0f;
     if (vital->health == 0)
         return 0;
@@ -200,21 +200,13 @@ float Sol_Vital_Heal(World *world, int id, int dealer, float amount)
     return amountDealt;
 }
 
-float Sol_Vital_GetHealth(World *world, int id)
+float Sol_Combat_GetHealth(World *world, int id)
 {
-    if (!(world->masks[id] & BITC(HAS_VITAL)))
+    if (!(world->masks[id] & BITC(HAS_COMBAT)))
         return 1;
-    return world->vitals[id].health;
+    return world->combats[id].health;
 }
-float Sol_Vital_GetMaxHealth(World *world, int id)
+bool Sol_Combat_GetDead(World *world, int id)
 {
-    return world->vitals[id].maxHealth;
-}
-bool Sol_Vital_GetDead(World *world, int id)
-{
-    return (world->masks[id] & BITC(HAS_VITAL)) && (world->vitals[id].health == 0);
-}
-float Sol_Vital_GetLastHitTime(World *world, int id)
-{
-    return world->vitals[id].lastHitTime;
+    return (world->masks[id] & BITC(HAS_COMBAT)) && (world->combats[id].health == 0);
 }

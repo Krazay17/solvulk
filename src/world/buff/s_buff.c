@@ -12,7 +12,7 @@
 #include "ability/s_ability.h"
 #include "movement/s_movement.h"
 #include "emitter/s_emitter.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 #include "render/render.h"
 #include "combat/s_combat.h"
 
@@ -151,13 +151,15 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind)
 
 static void Buff_Make(World *world, int id, int source, BuffDesc desc)
 {
+    if (!WHasSys(world, WORLD_SYS_BUFF))
+        return;
     CompBuff *buffs = &world->buffs[id];
     if (!(world->masks[id] & BITC(HAS_BUFF)))
     {
         buffs->count           = 0;
         buffs->activeKindsMask = 0;
     }
-    if (Sol_Vital_GetDead(world, id))
+    if (Sol_Combat_GetDead(world, id))
         return;
 
     world->masks[id] |= BITC(HAS_BUFF);
@@ -248,7 +250,7 @@ static void Hot_Step(World *world, int id, double dt, double time, Buff *b)
             .pos    = Sol_Xform_GetPos(world, id),
             .entB   = id,
         };
-        Sol_Combat_ApplyHeal(world, id, hit);
+        Sol_Combat_Heal(world, id, hit);
         Sol_Emitter_Add(world, id, EMITTERKIND_POP_FIRE, (vec4s){0, 1, 0, 1}, 0.25f);
     }
 }

@@ -19,10 +19,13 @@
 #include "physx/s_body2d.h"
 #include "building/s_building.h"
 #include "platform/platform.h"
+#include "movement/s_movement.h"
+#include "ai/s_ai.h"
 
 static int  tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 static void Controller_Tick(World *world, double dt, double time)
 {
+    float fdt = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -30,29 +33,9 @@ static void Controller_Tick(World *world, double dt, double time)
             continue;
 
         CompController *controller = &world->controllers[id];
-        controller->aimpos         = Sol_Physx_GetHeadPos(world, id);
 
-        SolRayResult aimTrace = Sol_Raycast(world, (SolRay){
-                                                       .pos       = controller->aimpos,
-                                                       .ignoreEnt = id,
-                                                       .mask      = 0b01,
-                                                       .dir       = controller->aimdir,
-                                                       .dist      = 60.f,
-                                                   });
-        aimTrace.pos          = vecAdd(aimTrace.pos, vecSca(controller->aimdir, 0.5f));
-
-        controller->aimHitPos = aimTrace.pos;
-        vec3s dirFromTrace    = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
-        controller->aimdir    = vecDot(dirFromTrace, controller->aimdir) > 0.7f ? dirFromTrace : controller->aimdir;
-        controller->aimHitEnt = aimTrace.entId > -1 ? aimTrace.entId : -1;
-
-        controller->aimdir = Sol_Vec3_FromYawPitch(controller->yaw, controller->pitch);
-
-        if (controller->actionState & ACTION_LEFT)
-            controller->wishdir2d = GetWishDir2(ACTION_LEFT);
-        else if (controller->actionState & ACTION_RIGHT)
-            controller->wishdir2d = GetWishDir2(ACTION_RIGHT);
-        controller->aimpos2d = Sol_Input_GetMouseUI();
+        controller->wishdir   = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP);
+        controller->wishdir2d = CalcWishDir2(controller->actionState);
 
         if (controller->isStrafing)
             world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
@@ -63,31 +46,33 @@ static void Controller_Tick(World *world, double dt, double time)
 
             // Smoothly turn the model toward the movement direction
             float turn_speed = 10.0f; // Higher numbers = faster turns
-            float factor     = 1.0f - expf(-turn_speed * (float)dt);
+            float factor     = 1.0f - expf(-turn_speed * fdt);
 
             world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
         }
+
+        if (WHasB(world, id, HAS_BODY3))
+        {
+            controller->aimpos = Sol_Physx_GetHeadPos(world, id);
+            if (controller->actionState & ACTION_DEBUGTELE)
+            {
+                vec3s pos =
+                    glms_vec3_add(Sol_Xform_GetPos(world, id), glms_vec3_scale(controller->lookdir, fdt * 60.0f));
+                Sol_Xform_Teleport(world, id, pos);
+                Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
+            }
+        }
     }
-}
-
-static void Ai_Tick(World *world, double dt, double time)
-{
-}
-
-static void Remote_Tick(World *world, double dt, double time)
-{
 }
 
 void Sol_Controller_Init(World *world)
 {
     world->controllers = calloc(MAX_ENTS, sizeof(CompController));
 
-    WAddTick(world) = Ai_Tick;
-    WAddTick(world) = Remote_Tick;
     WAddTick(world) = Controller_Tick;
 }
 
-void Sol_Controller_Add(World *world, int id)
+void Sol_Controller_Add(World *world, int id, ControllerKind kind)
 {
     if (!WHasSys(world, WORLD_SYS_CONTROLLER))
         return;
@@ -95,6 +80,37 @@ void Sol_Controller_Add(World *world, int id)
         return;
     world->controllers[id] = (CompController){0};
     world->masks[id] |= BITC(HAS_CONTROLLER);
+
+    switch (kind)
+    {
+    case CONTROLLERKIND_PLAYER:
+        Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
+        world->playerID = id;
+        break;
+    case CONTROLLERKIND_WIZARD:
+        Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
+        Sol_Ai_Add(world, id, AIKIND_WIZARD);
+        break;
+    }
+}
+
+void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lookdir, float range, float hitdepth)
+{
+    CompController *controller = &world->controllers[id];
+    SolRayResult    aimTrace   = Sol_Raycast(world, (SolRay){
+                                                        .pos       = lookpos,
+                                                        .ignoreEnt = id,
+                                                        .mask      = COLLISIONGROUP_PAWN | COLLISIONGROUP_WORLD,
+                                                        .dir       = lookdir,
+                                                        .dist      = range,
+                                                    });
+    aimTrace.pos               = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
+
+    controller->aimpos = aimTrace.pos;
+    vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, Sol_Physx_GetHeadPos(world, id)));
+
+    controller->aimdir    = vecDot(dirFromTrace, controller->aimdir) > 0.7f ? dirFromTrace : lookdir;
+    controller->aimHitEnt = aimTrace.entId > -1 ? aimTrace.entId : -1;
 }
 
 bool Sol_Controller_WantsMove(World *world, int id)
@@ -124,11 +140,6 @@ SolActions Sol_GetActions(World *world, int id)
 }
 
 vec3s Sol_GetWishdir(World *world, int id)
-{
-    return world->controllers[id].wishdir;
-}
-
-vec3s Sol_GetWishdir2(World *world, int id)
 {
     return world->controllers[id].wishdir;
 }

@@ -3,6 +3,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "platform/platform.h"
 
 void Sol_Free_Resource(SolResource *res)
 {
@@ -16,20 +17,36 @@ int Sol_ReadFile(const char *filename, SolResource *outRes)
 {
     FILE *file = fopen(filename, "rb");
 
-    if (file)
-    {
-        fseek(file, 0, SEEK_END);
-        outRes->size = ftell(file);
-        rewind(file);
-
-        outRes->data = malloc(outRes->size);
-        fread(outRes->data, 1, outRes->size, file);
-        fclose(file);
-        outRes->isHeap = 1;
-        return 1;
-    }
-    else
+    if (!file)
         return 0;
+
+    fseek(file, 0, SEEK_END);
+    outRes->size = ftell(file);
+    rewind(file);
+
+    outRes->data = malloc(outRes->size);
+    if(!outRes->data)
+    {
+        fclose(file);
+        return 0;
+    }
+
+    fread(outRes->data, 1, outRes->size, file);
+    fclose(file);
+    outRes->isHeap = 1;
+    return 1;
+}
+
+int Sol_WriteFile(const char *filename, SolResource *res)
+{
+    FILE *file = fopen(filename, "wb");
+    if (!file)
+        return 0;
+
+    size_t written = fwrite(res->data, res->size, 1, file);
+    fclose(file);
+
+    return written == res->size;
 }
 
 SolResource Sol_LoadResource(const char *resourceName)

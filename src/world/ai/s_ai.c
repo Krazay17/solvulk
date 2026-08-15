@@ -13,7 +13,7 @@
 #include "replication/s_replication.h"
 #include "movement/s_movement.h"
 #include "xform/s_xform.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 #include "physx/s_body.h"
 #include "owner/s_owner.h"
 
@@ -26,7 +26,7 @@ void Sol_Ai_Init(World *world)
 {
     world->aicontrollers = calloc(MAX_ENTS, sizeof(CompAi));
     WAddStep(world)      = AiController_Step;
-    // WAdd3d(world)        = AiController_Debug;
+    WAdd3d(world)        = AiController_Debug;
 }
 
 void Sol_Ai_Add(World *world, int id, AiKind kind)
@@ -42,7 +42,7 @@ static void AiController_Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || !WHas(world, id, step_required) ||
+        if (Sol_Combat_GetDead(world, id) || !WHas(world, id, step_required) ||
             world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompController *controller   = &world->controllers[id];
@@ -86,7 +86,7 @@ static void AiController_Debug(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (Sol_Vital_GetDead(world, id) || !WHas(world, id, debug_required) ||
+        if (Sol_Combat_GetDead(world, id) || !WHas(world, id, debug_required) ||
             world->replications[id].auth == NETAUTH_REMOTE)
             continue;
         CompController *controller   = &world->controllers[id];
@@ -134,8 +134,8 @@ u32 AiController_FindTarget(World *world, int id)
     for (int i = 0; i < world->activeCount; i++)
     {
         int otherId = world->activeEntities[i];
-        if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Vital_GetDead(world, otherId) ||
-            !(world->masks[otherId] & BITC(HAS_VITAL)))
+        if (!Sol_Owner_GetHostile(world, id, otherId) || Sol_Combat_GetDead(world, otherId) ||
+            !(world->masks[otherId] & BITC(HAS_COMBAT)))
             continue;
         vec3s pos       = Sol_Xform_GetPos(world, id);
         vec3s targetPos = Sol_Xform_GetPos(world, otherId);

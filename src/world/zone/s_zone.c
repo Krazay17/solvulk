@@ -70,7 +70,7 @@ void Zone_Step(World *world, double dt, double time)
                                         });
                     break;
                 case ZONEKIND_HEAL:
-                    Sol_Combat_ApplyHeal(world, result.entId,
+                    Sol_Combat_Heal(world, result.entId,
                                          (SolHit){
                                              .entA   = id,
                                              .pos    = result.pos,

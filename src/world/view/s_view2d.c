@@ -5,7 +5,7 @@
 #include "interact/s_interact.h"
 #include "xform/s_xform.h"
 #include "render/render.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 
 typedef void (*DrawFunc)(World *, int, double, double, SolView2d *, vec3s);
 
@@ -74,9 +74,9 @@ static void PlayerHealthbar(World *world, double dt, double time)
         CompTracker *tracker = &world->trackers[id];
         if (!tracker->world || !tracker->entId)
             continue;
-        if (!(tracker->world->masks[tracker->entId] & BITC(HAS_VITAL)))
+        if (!(tracker->world->masks[tracker->entId] & BITC(HAS_COMBAT)))
             continue;
-        CompVital  *v    = &tracker->world->vitals[tracker->entId];
+        CompCombat  *v    = &tracker->world->combats[tracker->entId];
         CompView2d *view = &world->view2d[id];
 
         float target              = v->maxHealth > 0 ? v->health / v->maxHealth : 0.0f;

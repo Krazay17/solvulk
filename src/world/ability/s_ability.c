@@ -10,7 +10,7 @@
 #include "controller/s_controller.h"
 #include "buff/s_buff.h"
 #include "replication/s_replication.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 #include "render/render.h"
 
 static void Ability_Step(World *world, double dt, double time);
@@ -145,7 +145,7 @@ static void Ability_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (!WHas(world, id, step_required))
             continue;
-        if (Sol_Vital_GetDead(world, id))
+        if (Sol_Combat_GetDead(world, id))
         {
             Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
             continue;

@@ -38,6 +38,7 @@ typedef struct
     float        damage;
     u32          buffs;
     u32          effects;
+    u32          hitSessionGen;
     union {
         struct
         {

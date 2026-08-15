@@ -271,13 +271,17 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
     return glms_vec3_normalize(wishdir);
 }
 
-static inline vec2s GetWishDir2(uint32_t action)
+static inline vec2s CalcWishDir2(uint32_t action)
 {
     vec2s wishdir = {0, 0};
     if (action & ACTION_RIGHT)
         wishdir.x += 1;
     if (action & ACTION_LEFT)
         wishdir.x -= 1;
+    if (action & ACTION_FWD)
+        wishdir.y += 1;
+    if (action & ACTION_BWD)
+        wishdir.y -= 1;
 
     return glms_vec2_normalize(wishdir);
 }

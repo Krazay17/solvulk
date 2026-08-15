@@ -60,9 +60,11 @@ void Claw_State_Update(World *world, int id, float dt)
                 glms_vec3_dot(controller->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, controller->aimpos)));
             if (dot < 0)
                 continue;
-            if (combat->hitEnts[result.entId])
+            // if (combat->hitEnts[result.entId])
+            //     continue;
+            // combat->hitEnts[result.entId] = true;
+            if (!Sol_Combat_TryHitGen(world, id, result.entId, data->hitSessionGen))
                 continue;
-            combat->hitEnts[result.entId] = true;
 
             SolHit hit;
             hit.damage     = data->damage;
@@ -89,6 +91,7 @@ void Claw_State_Enter(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     CompCombat  *combat  = &world->combats[id];
+    data->hitSessionGen  = Sol_Combat_StartHitGen(world, id);
     data->accum          = HITINTERVAL;
     Sol_Combat_ClearHits(world, id);
     float animRate           = 1.0f;

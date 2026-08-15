@@ -33,6 +33,10 @@ int Sol_Init(void *hwnd, void *hInstance)
     solEngine.g_hwnd = hwnd;
     int result;
 
+    result = Sol_User_Init();
+    if (result != 0)
+        printf("User failed to init, code: %d\n", result);
+
     result = Sol_Audio_Init();
     if (result != 0)
         printf("Audio failed to init, code:%d\n", result);

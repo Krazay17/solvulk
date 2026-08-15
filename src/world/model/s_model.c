@@ -7,7 +7,7 @@
 #include "xform/s_xform.h"
 #include "buff/s_buff.h"
 #include "render/render.h"
-#include "vital/s_vital.h"
+#include "combat/s_combat.h"
 
 #define ONESHOT_FADE_DURATION 0.25f
 
@@ -68,8 +68,8 @@ void       Model_Draw(World *world, double dt, double time)
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
             modelSSBO.flags |= (1 << 1);
 
-        if (world->masks[id] & BITC(HAS_VITAL))
-            modelSSBO.hitTime = Sol_Vital_GetLastHitTime(world, id);
+        if (world->masks[id] & BITC(HAS_COMBAT))
+            modelSSBO.hitTime = world->combats[id].lastHitTime;
         else
             modelSSBO.hitTime = -100.0f;
 

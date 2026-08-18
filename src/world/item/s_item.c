@@ -25,9 +25,6 @@
 static void AbilitySlots(World *world, double dt, double time);
 static void Inventory_Update(World *world, double dt, double time);
 static void Inventory_Draw(World *world, double dt, double time);
-static void Inventory_Deinit(World *world);
-static void Item_Deinit(World *world);
-static void AbilitySlot_Deinit(World *world);
 
 void Sol_Item_Init(World *world)
 {
@@ -38,20 +35,8 @@ void Sol_Item_Init(World *world)
     WAddStep(world)   = AbilitySlots;
     WAddStep(world)   = Inventory_Update;
     WAdd2d(world)     = Inventory_Draw;
-    WAddDeinit(world) = Inventory_Deinit;
-    WAddDeinit(world) = Item_Deinit;
-    WAddDeinit(world) = AbilitySlot_Deinit;
 }
 
-void Inventory_Deinit(World *world)
-{
-}
-void Item_Deinit(World *world)
-{
-}
-void AbilitySlot_Deinit(World *world)
-{
-}
 
 void Sol_Item_AddAbility(World *world, int id, u32 ability)
 {

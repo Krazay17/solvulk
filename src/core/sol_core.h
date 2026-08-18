@@ -26,10 +26,6 @@ extern SolState solState;
 #define UISCALE(v) ((v) * solState.uiScale)
 
 void   Sol_Debug_Add(const char *text, float value);
-vec3s  Sol_Cam_GetRight();
-vec3s  Sol_Cam_GetFwd();
-vec3s  Sol_Cam_GetPos();
-mat4s  Sol_Cam_GetViewProj();
 
 // Doubles capacity if count bigger than cap
 static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size)
@@ -47,4 +43,9 @@ static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size
         *capacity = newCap;
     }
     return 0;
+}
+
+static inline void Sol_ToggleDebug()
+{
+    solState.debug = !solState.debug;
 }

@@ -17,7 +17,6 @@
 
 #define WALKABLE_SLOPE 0.7f
 
-
 static void CheckGround(World *world, int id, float fdt, CompMovement *movement)
 {
     float flattestNorm  = Sol_Physx_Get_Ground_Dot(world, id);
@@ -79,11 +78,12 @@ static void Movement3d_Step(World *world, double dt, double time)
 
             MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
 
-            vec3s vel           = Sol_Physx_GetVel(world, id);
-            vec3s wishdir       = Sol_GetWishdir(world, id);
-            float finalSpeed    = forces->speed * movement->speedMod;
-            float finalFriction = forces->friction * movement->frictionMod;
-            body->gravity.y     = forces->gravity * movement->gravityMod;
+            vec3s vel             = Sol_Physx_GetVel(world, id);
+            vec3s wishdir         = Sol_GetWishdir(world, id);
+            float finalSpeed      = forces->speed * movement->speedMod;
+            float finalFriction   = forces->friction * movement->frictionMod;
+            body->gravity.y       = forces->gravity * movement->gravityMod;
+            movement->lastMoveDir = wishdir;
 
             switch (movement->state)
             {

@@ -279,9 +279,9 @@ static inline vec2s CalcWishDir2(uint32_t action)
     if (action & ACTION_LEFT)
         wishdir.x -= 1;
     if (action & ACTION_FWD)
-        wishdir.y += 1;
-    if (action & ACTION_BWD)
         wishdir.y -= 1;
+    if (action & ACTION_BWD)
+        wishdir.y += 1;
 
     return glms_vec2_normalize(wishdir);
 }

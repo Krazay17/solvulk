@@ -22,14 +22,15 @@
 #include "movement/s_movement.h"
 #include "ai/s_ai.h"
 
-static int  tick_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 static void Controller_Tick(World *world, double dt, double time)
 {
+    static int  required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
+
     float fdt = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!WHas(world, id, tick_required))
+        if (!WHas(world, id, required))
             continue;
 
         CompController *controller = &world->controllers[id];

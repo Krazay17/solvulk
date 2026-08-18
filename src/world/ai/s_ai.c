@@ -83,6 +83,8 @@ static void AiController_Step(World *world, double dt, double time)
 static int  debug_required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER_AI);
 static void AiController_Debug(World *world, double dt, double time)
 {
+    if (!solState.debug)
+        return;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -142,10 +144,10 @@ u32 AiController_FindTarget(World *world, int id)
         float dist      = glms_vec3_distance(pos, targetPos);
         if (dist < 25.0f && dist < closestDistance)
         {
-            SolRayResult result = Sol_Raycast(
+            SolRayResult result = Sol_RaycastD(
                 world,
                 (SolRay){
-                    .dist = 25.0f, .pos = pos, .dir = vecNorm(vecSub(targetPos, pos)), .ignoreEnt = id, .mask = 0b01});
+                    .dist = 25.0f, .pos = pos, .dir = vecNorm(vecSub(targetPos, pos)), .ignoreEnt = id, .mask = 0b01}, 0.2f);
             if (result.hit && result.entId > 0)
                 closestTarget = otherId;
             closestDistance = dist;

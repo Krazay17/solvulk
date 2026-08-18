@@ -108,6 +108,7 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Combat_Add(world, id, COMBATKIND_WIZARD);
+    Sol_Ability_AddDense(world, id, (AbilityDesc){0});
 
     return id;
 }
@@ -288,6 +289,45 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
     bar->textureID  = SOL_TEXTURE_HEALTH;
 
     SolView2d *bar2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 1.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    bar2->zindex     = 2;
+    bar2->hoverColor = (vec4s){1, 1, 0, 0.5f};
+    bar2->textureID  = SOL_TEXTURE_HEALTH;
+
+    SolView2d *border = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    border->zindex    = 2;
+    border->border    = 2.0f;
+
+    return id;
+}
+
+int Sol_Prefab_EnergyBar(World *world, vec3s pos, World *entWorld, u32 entId, vec4s color, float *value,
+                         float *maxvalue)
+{
+    vec2s dims = {250.0f, 30.0f};
+
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Xform_Add(world, id, pos);
+    Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
+    Sol_Interact_Add(world, id);
+    CompTracker *tracker = Sol_World_SetTracker(world, id, entWorld, entId);
+    tracker->values[0]   = value;
+    tracker->values[1]   = maxvalue;
+
+    SolView2d *bg  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    bg->zindex     = 2;
+    bg->hoverColor = (vec4s){1, 1, 1, 0.5f};
+
+    SolView2d *bg2 = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.2f, 0.2f, 0.2f, 1.0f}, dims.x, dims.y);
+    bg2->zindex    = 2;
+    bg2->textureID = SOL_TEXTURE_HEALTH;
+
+    SolView2d *bar  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
+    bar->zindex     = 2;
+    bar->fillSpeed  = 4.0f;
+    bar->hoverColor = (vec4s){1, 1, 0, 0.5f};
+    bar->textureID  = SOL_TEXTURE_HEALTH;
+
+    SolView2d *bar2  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, color, dims.x, dims.y);
     bar2->zindex     = 2;
     bar2->hoverColor = (vec4s){1, 1, 0, 0.5f};
     bar2->textureID  = SOL_TEXTURE_HEALTH;
@@ -531,6 +571,7 @@ int Sol_Prefab_Building(World *world, vec3s pos, float scale, float yaw, u32 mod
                      .shape = SHAPE3_MOD,
                  });
     // Sol_Interact_Add(world, id);
+    return id;
 }
 
 int Sol_Prefab_Buffbar(World *world, vec3s pos)
@@ -540,4 +581,5 @@ int Sol_Prefab_Buffbar(World *world, vec3s pos)
     Sol_Xform_Set(world, id, 500, 650, 0);
     Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, 280, 70);
     Sol_Interact_Add(world, id);
+    return id;
 }

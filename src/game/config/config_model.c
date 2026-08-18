@@ -42,39 +42,46 @@ Anim: 1 fwd
 Anim: 2 attack1
 
 Dude anims:
-Anim: 0 idle
-Anim: 1 WalkFwd
-Anim: 2 WalkLeft
-Anim: 3 WalkBwd
-Anim: 4 WalkRight
-Anim: 5 fall
-Anim: 6 jump
-Anim: 7 frontFlip
-Anim: 8 dash
-Anim: 9 dashLeft
-Anim: 10 dashBwd
-Anim: 11 dashRight
-Anim: 12 fallLeft
-Anim: 13 fallBwd
-Anim: 14 fallRight
-Anim: 15 attackRight
-Anim: 16 attackLeft
-Anim: 17 attackSpell
-Anim: 18 blade
-Anim: 19 bladeAir
-Anim: 20 runStopLeft
-Anim: 21 runStopFwd
-Anim: 22 runStopRight
-Anim: 23 knockback
-Anim: 24 spinSlash
-Anim: 25 LeftCharge
-Anim: 26 CrouchWalkFwd
-Anim: 27 Slide
-Anim: 28 Stunned
-Anim: 29 LeftChannel
-Anim: 30 RightChannel
-Anim: 31 WallJumpLeft
-Anim: 32 WallJumpRight
+Model: Scene, Anim: 0 idle
+Model: Scene, Anim: 1 WalkFwd
+Model: Scene, Anim: 2 WalkLeft
+Model: Scene, Anim: 3 WalkBwd
+Model: Scene, Anim: 4 WalkRight
+Model: Scene, Anim: 5 fall
+Model: Scene, Anim: 6 jump
+Model: Scene, Anim: 7 frontFlip
+Model: Scene, Anim: 8 dash
+Model: Scene, Anim: 9 dashLeft
+Model: Scene, Anim: 10 dashBwd
+Model: Scene, Anim: 11 dashRight
+Model: Scene, Anim: 12 fallLeft
+Model: Scene, Anim: 13 fallBwd
+Model: Scene, Anim: 14 fallRight
+Model: Scene, Anim: 15 attackRight
+Model: Scene, Anim: 16 attackLeft
+Model: Scene, Anim: 17 attackSpell
+Model: Scene, Anim: 18 blade
+Model: Scene, Anim: 19 bladeAir
+Model: Scene, Anim: 20 runStopLeft
+Model: Scene, Anim: 21 runStopFwd
+Model: Scene, Anim: 22 runStopRight
+Model: Scene, Anim: 23 knockback
+Model: Scene, Anim: 24 spinSlash
+Model: Scene, Anim: 25 LeftCharge
+Model: Scene, Anim: 26 CrouchWalkFwd
+Model: Scene, Anim: 27 SlideFwd
+Model: Scene, Anim: 28 Stunned
+Model: Scene, Anim: 29 LeftChannel
+Model: Scene, Anim: 30 RightChannel
+Model: Scene, Anim: 31 WallJumpLeft
+Model: Scene, Anim: 32 WallJumpRight
+Model: Scene, Anim: 33 Mantle
+Model: Scene, Anim: 34 WallClimb
+Model: Scene, Anim: 35 WallrunRight
+Model: Scene, Anim: 36 WallrunLeft
+Model: Scene, Anim: 37 MantleRoll
+Model: Scene, Anim: 38 MantleRollRev
+Model: Scene, Anim: 39 Jump2
 */
 const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
     [MODELKIND_WIZARD] =
@@ -93,7 +100,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_WALK_LEFT]        = 2,
             [ANIM_WALK_BWD]         = 3,
             [ANIM_WALK_RIGHT]       = 4,
-            [ANIM_JUMP]             = 6,
+            [ANIM_JUMP]             = 39,
             [ANIM_FALL]             = 5,
             [ANIM_DASH_FWD]         = 8,
             [ANIM_DASH_LEFT]        = 9,

@@ -19,10 +19,12 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 
-#define MAX_ENTS (1 << 14)
+#define MAX_ENTS (1 << 12)
+#define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
 
-// Forwards
+typedef mat4 SolPose[MAX_BONES];
+
 typedef enum
 {
     EKIND_PLAYER = 1,
@@ -114,13 +116,13 @@ typedef struct SolXform
 } SolXform;
 
 typedef void (*CallbackFunc)(int, void *);
+typedef void (*CallbackFuncVoid)();
 typedef struct
 {
-    CallbackFunc callbackFunc;
-    void        *callbackData;
+    CallbackFunc     callbackFunc;
+    void            *callbackData;
+    CallbackFuncVoid callbackFuncVoid;
 } SolCallback;
-
-// ─── Font data ───────────────────────────────────────────────────
 
 typedef struct SolLine
 {

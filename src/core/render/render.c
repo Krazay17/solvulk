@@ -9,6 +9,7 @@
 #include "sol_math.h"
 #include "render_i.h"
 #include "render/vk/vkrender.h"
+#include "camera.h"
 #include "image.h"
 
 void Sol_Render_Resize(uint32_t width, uint32_t height)
@@ -149,7 +150,7 @@ void Flush_Models(void)
     // ==========================================
     if (skinningQueue.count > 0)
     {
-        BonesSSBO *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
+        SolPose *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
 
         // Count per handle
         uint32_t counts[SOL_MODEL_COUNT] = {0};
@@ -173,7 +174,7 @@ void Flush_Models(void)
 
             // Write both model params and transformations to mirrored index offsets
             modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
-            boneGpu[globalIdx]  = skinningQueue.bones[i];
+            memcpy(boneGpu[globalIdx], skinningQueue.bones[i], sizeof(SolPose));
 
             cursors[h]++;
         }

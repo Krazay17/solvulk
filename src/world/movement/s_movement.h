@@ -1,8 +1,6 @@
 #pragma once
 #include "base.h"
 
-typedef struct World World;
-
 typedef enum
 {
     MOVE_IDLE,
@@ -19,6 +17,7 @@ typedef enum
     MOVE_DEAD,
     MOVE_STATE_COUNT
 } MoveState;
+
 typedef struct
 {
     u8     kind;
@@ -29,12 +28,16 @@ typedef struct
         {
             vec3s pos;
             float dist;
-            u8 closeEnough, doRoll;
+            u8    closeEnough, doRoll;
         } mantle;
         struct
         {
             float boost;
         } slide;
+        struct
+        {
+            vec3s wallNormal;
+        } wallrun;
     } as;
     vec3s enterVel, dir;
 } MoveStateData;
@@ -48,9 +51,11 @@ typedef struct CompMovement
 {
     u8        kind;
     MoveState state;
-    vec3s     updir, dashdir, wallNormal, lastTouch, knockVel, lastMoveDir;
+    vec3s     updir, lastTouch, knockVel, lastMoveDir;
+    
     float     baseHeight, targetHeight;
     float     speedMod, frictionMod, gravityMod, knockDur;
+
     float     wallDot, groundDot;
     float     airtime, groundtime;
 

@@ -33,7 +33,7 @@ static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounce
     CompAbility *ability                = &world->abilities[id];
     AbilityData *data                   = &ability->stateData[ability->activeSlot];
     SolRay       ray                    = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
-    SolRayResult result                 = Sol_Raycast(world, ray);
+    SolRayResult result                 = Sol_RaycastD(world, ray, 0.2f);
     int          idx                    = data->as.laser.laserPointCount;
     data->as.laser.laserPoints[idx]     = pos;
     data->as.laser.laserPoints[idx + 1] = result.pos;

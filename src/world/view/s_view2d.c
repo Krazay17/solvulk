@@ -9,11 +9,52 @@
 
 typedef void (*DrawFunc)(World *, int, double, double, SolView2d *, vec3s);
 
-static void PlayerHealthbar(World *world, double dt, double time);
+static int healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
+
 static void Draw(World *world, double dt, double time);
 static void DrawRect(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void DrawCircle(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void View_DrawText(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
+
+static void PlayerHealthbar(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, healthbar_required))
+            continue;
+        if (!(world->flags[id].flags & EFLAG_HEALTHBAR))
+            continue;
+        CompTracker *tracker = &world->trackers[id];
+        if (!tracker->world || !tracker->entId)
+            continue;
+        if (!(tracker->world->masks[tracker->entId] & BITC(HAS_COMBAT)))
+            continue;
+        CompCombat *v    = &tracker->world->combats[tracker->entId];
+        CompView2d *view = &world->view2d[id];
+
+        float target              = v->maxHealth > 0 ? v->health / v->maxHealth : 0.0f;
+        view->views[2].targetFill = target;
+        view->views[3].fill = view->views[3].targetFill = target;
+    }
+}
+
+static void UICombatBars(World *world, double dt, double time)
+{
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHasB(world, id, HAS_TRACKER))
+            continue;
+        CompTracker *tracker = &world->trackers[id];
+        if (!tracker->values[0] || !tracker->values[1])
+            continue;
+        float       target        = *tracker->values[0] > 0 ? *tracker->values[0] / *tracker->values[1] : 0.0f;
+        CompView2d *view          = &world->view2d[id];
+        view->views[2].targetFill = target;
+        view->views[3].fill = view->views[3].targetFill = target;
+    }
+}
 
 DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
     [VIEW2DKIND_RECT] = DrawRect,
@@ -22,9 +63,11 @@ DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
 
 void Sol_View2d_Init(World *world)
 {
-    world->view2d   = calloc(MAX_ENTS, sizeof(CompView2d));
-    WAdd2d(world)   = Draw;
+    world->view2d = calloc(MAX_ENTS, sizeof(CompView2d));
+
+    WAddStep(world) = UICombatBars;
     WAddStep(world) = PlayerHealthbar;
+    WAdd2d(world)   = Draw;
 }
 
 SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
@@ -59,30 +102,6 @@ void Sol_View2d_Set(World *world, int id, CompView2d view)
 CompView2d *Sol_View2d_Get(World *world, int id)
 {
     return &world->view2d[id];
-}
-
-static int  healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
-static void PlayerHealthbar(World *world, double dt, double time)
-{
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, healthbar_required))
-            continue;
-        if (!(world->flags[id].flags & EFLAG_HEALTHBAR))
-            continue;
-        CompTracker *tracker = &world->trackers[id];
-        if (!tracker->world || !tracker->entId)
-            continue;
-        if (!(tracker->world->masks[tracker->entId] & BITC(HAS_COMBAT)))
-            continue;
-        CompCombat  *v    = &tracker->world->combats[tracker->entId];
-        CompView2d *view = &world->view2d[id];
-
-        float target              = v->maxHealth > 0 ? v->health / v->maxHealth : 0.0f;
-        view->views[2].targetFill = target;
-        view->views[3].fill = view->views[3].targetFill = target;
-    }
 }
 
 static void Draw(World *world, double dt, double time)

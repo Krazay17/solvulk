@@ -6,12 +6,13 @@
 #include "physx/s_body.h"
 #include "controller/s_controller.h"
 #include "ability/s_ability.h"
+#include "combat/s_combat.h"
 
 #define JUMP_BUFFER 0.1f
 
 #define JUMP_VEL 10.0f
-#define JUMP_DURATION 0.4f
-#define DAMPING 4.5f
+#define JUMP_DURATION 0.5f
+#define DAMPING 2.5f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
@@ -46,7 +47,7 @@ void Sol_Movement_Jump_Enter(World *world, int id)
     vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
     Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
 
-    AnimDesc desc = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE};
+    AnimDesc desc = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE, .speed = 0.85f, .force = true, .blendIn = 0.1f};
 
     Sol_Model_PlayAnim(world, id, desc);
 }
@@ -63,8 +64,26 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     CompMovement *movement = &world->movements[id];
-    if (!movement->wantsJump)
+    if (!movement->wantsJump || movement->state == MOVE_JUMP)
+        return false;
+    if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
         return false;
 
-    return movement->airtime < JUMP_BUFFER && (Sol_Ability_GetState(world, id) != ABILITY_STATE_DASH);
+    if (movement->airtime >= JUMP_BUFFER)
+    {
+        if (WHasB(world, id, HAS_COMBAT))
+        {
+            CompCombat *combat = &world->combats[id];
+            sollog(combat->energy);
+            if (combat->energy < 25.0f)
+                return false;
+            else
+            {
+                combat->energy -= 25.0f;
+                return true;
+            }
+        }
+        return false;
+    }
+    return true;
 }

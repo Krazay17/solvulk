@@ -9,55 +9,11 @@
 #include "sol_core.h"
 #include "s_body2d.h"
 
-static int required = BITC(HAS_BODY2);
-
-static void Step(World *world, double dt, double time);
-
-static void Draw(World *world, double dt, double time)
-{
-    if (!solState.debug)
-        return;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, required))
-            continue;
-
-        CompXform  *xform = &world->xforms[id];
-        CompBody2d *body  = &world->body2d[id];
-        RectSSBO   *ssbo  = Sol_Render_GetNext_Rect();
-        ssbo->dims        = (vec4s){UISCALE(body->dims.x), UISCALE(body->dims.y), 0.0f, 1.0f};
-        ssbo->color       = VEC4_RED;
-        ssbo->pos         = (vec4s){UISCALE(xform->drawPos.x), UISCALE(xform->drawPos.y), xform->drawPos.z, 1.0f};
-        ssbo->flags       = 1;
-    }
-}
-
-void Sol_Body2d_Init(World *world)
-{
-    world->body2d   = calloc(MAX_ENTS, sizeof(CompBody2d));
-    WAddStep(world) = Step;
-    WAdd2d(world)   = Draw;
-}
-
-CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group)
-{
-    CompBody2d body = {
-        .kind   = kind,
-        .dims.x = width,
-        .dims.y = height,
-        .group  = group,
-    };
-    world->body2d[id] = body;
-    world->masks[id] |= BITC(HAS_BODY2);
-
-    return &world->body2d[id];
-}
-
 static void Step(World *world, double dt, double time)
 {
-    float fdt = (float)dt;
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_BODY2);
 
+    float fdt = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -139,6 +95,49 @@ static void Step(World *world, double dt, double time)
         }
         bodyA->overlapCount = count;
     }
+}
+
+static void Draw(World *world, double dt, double time)
+{
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_BODY2);
+
+    if (!solState.debug)
+        return;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+
+        CompXform  *xform = &world->xforms[id];
+        CompBody2d *body  = &world->body2d[id];
+        RectSSBO   *ssbo  = Sol_Render_GetNext_Rect();
+        ssbo->dims        = (vec4s){UISCALE(body->dims.x), UISCALE(body->dims.y), 0.0f, 1.0f};
+        ssbo->color       = VEC4_RED;
+        ssbo->pos         = (vec4s){UISCALE(xform->drawPos.x), UISCALE(xform->drawPos.y), xform->drawPos.z, 1.0f};
+        ssbo->flags       = 1;
+    }
+}
+
+void Sol_Body2d_Init(World *world)
+{
+    world->body2d   = calloc(MAX_ENTS, sizeof(CompBody2d));
+    WAddStep(world) = Step;
+    WAdd2d(world)   = Draw;
+}
+
+CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group)
+{
+    CompBody2d body = {
+        .kind   = kind,
+        .dims.x = width,
+        .dims.y = height,
+        .group  = group,
+    };
+    world->body2d[id] = body;
+    world->masks[id] |= BITC(HAS_BODY2);
+
+    return &world->body2d[id];
 }
 
 vec2s Sol_Body2d_GetDims(World *world, int id)

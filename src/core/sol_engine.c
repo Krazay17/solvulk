@@ -16,6 +16,7 @@
 #include "model.h"
 #include "font.h"
 #include "xform/s_xform.h"
+#include "camera.h"
 #include "interact/s_interact.h"
 #include "render/render.h"
 #include "event/s_event.h"
@@ -61,7 +62,7 @@ int Sol_Init(void *hwnd, void *hInstance)
     if (result != 0)
         printf("Models failed to init, code:%d\n", result);
 
-    solState.debug      = true;
+    solState.debug      = false;
     solEngine.isRunning = true;
     return result;
 }
@@ -169,3 +170,4 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
 
     solEngine.needsResize = true; // game thread picks this up in Sol_OnResize
 }
+

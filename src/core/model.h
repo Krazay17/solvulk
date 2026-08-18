@@ -2,8 +2,6 @@
 #include "types.h"
 #include "xform/s_xform.h"
 
-#define MAX_BONES 128
-
 typedef enum
 {
     ANIM_LAYER_BASE,  // full body, always active

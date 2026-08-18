@@ -37,7 +37,7 @@
 #include "owner/s_owner.h"
 #include "model/s_model.h"
 #include "buff/s_buff.h"
-#include "line/s_line.h"
+#include "debug/s_line.h"
 #include "ribbon/s_ribbon.h"
 #include "movement/s_movement.h"
 #include "owner/s_owner.h"

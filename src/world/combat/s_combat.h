@@ -20,6 +20,7 @@ typedef struct CompCombat
     vec3s  respawnPos;
     float  maxHealth, maxEnergy, maxMana;
     float  health, energy, mana;
+    float  energyRegen;
     bool   doesRespawn;
     float  respawnTime;
     double deathTime, lastHitTime;

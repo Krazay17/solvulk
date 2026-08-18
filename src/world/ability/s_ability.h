@@ -98,8 +98,9 @@ typedef struct
 
 extern AbilityConfig ability_config[ABILITY_STATE_COUNT][4];
 
-void Sol_Ability_Init(World *world);
-void Sol_Ability_Add(World *world, int id, AbilityDesc desc);
+void         Sol_Ability_Init(World *world);
+void         Sol_Ability_Add(World *world, int id, AbilityDesc desc);
+CompAbility *Sol_Ability_AddDense(World *world, int id, AbilityDesc desc);
 
 bool         Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
 AbilityState Sol_Ability_GetState(World *world, int id);

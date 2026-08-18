@@ -1,3 +1,11 @@
+/*
+ * File: s_model.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-08-17
+ *
+ */
+
 #include "s_model.h"
 #include "sol_core.h"
 #include "sol_math.h"
@@ -7,103 +15,64 @@
 #include "xform/s_xform.h"
 #include "buff/s_buff.h"
 #include "render/render.h"
+
+#include "physx/s_body.h"
 #include "combat/s_combat.h"
+#include "movement/s_movement.h"
 
 #define ONESHOT_FADE_DURATION 0.25f
 
-void Model_Draw(World *world, double dt, double time);
-
-void Sol_Model_Init(World *world)
+static void Anim_Tick(World *world, double dt, double time)
 {
-    world->models = calloc(MAX_ENTS, sizeof(CompModel));
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL) | BITC(HAS_ANIM);
 
-    WAdd3d(world) = Model_Draw;
-}
-
-CompModel *Sol_Model_Add(World *world, int id, int kind)
-{
-    CompModel model = model_kinds[kind];
-    model.modelId   = kind;
-
-    if (loaded_models[kind].skeleton.animationCount > 0)
-    {
-        model.hasAnim = true;
-        for (int i = 0; i < ANIM_LAYER_COUNT; i++)
-        {
-            model.layers[i].currentAnim = -1;
-            model.layers[i].currentSeek = 0;
-            model.layers[i].blendFactor = 0;
-        }
-    }
-    world->models[id] = model;
-    world->masks[id] |= BITC(HAS_MODEL);
-
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
-
-    return &world->models[id];
-}
-
-static int model_draw_required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
-void       Model_Draw(World *world, double dt, double time)
-{
     float fdt = (float)dt;
-
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!WHas(world, id, model_draw_required))
+        if (!WHas(world, id, required))
             continue;
 
-        CompXform *xform     = &world->xforms[id];
-        CompModel *modelComp = &world->models[id];
-        if (modelComp->modelId < 0)
+        CompModel *model = &world->models[id];
+        if (model->modelId < 0)
             continue;
 
-        ModelSSBO modelSSBO = {0};
-        modelSSBO.color     = modelComp->color;
-        if (world->masks[id] & BITC(HAS_INTERACT))
-            if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
-                modelSSBO.flags |= (1 << 0);
+        CompXform *xform = &world->xforms[id];
+        CompAnim  *anim  = &world->anims[id];
 
-        if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
-            modelSSBO.flags |= (1 << 1);
-
-        if (world->masks[id] & BITC(HAS_COMBAT))
-            modelSSBO.hitTime = world->combats[id].lastHitTime;
-        else
-            modelSSBO.hitTime = -100.0f;
-
-        vec3s drawPos = xform->drawPos;
-        if (modelComp->is2d)
-        {
-            modelSSBO.flags |= (1 << 2);
-            float px           = UISCALE(drawPos.x + (modelComp->xOffset * xform->scale.x));
-            float py           = UISCALE(drawPos.y + (-modelComp->yOffset * xform->scale.y));
-            float pz           = drawPos.z;
-            modelSSBO.position = (vec4s){px, py, pz, 1.0f};
-            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
-            modelSSBO.scale =
-                (vec4s){UISCALE(xform->drawScale.x), UISCALE(xform->drawScale.y), UISCALE(xform->drawScale.z), 1.0f};
-        }
-        else
-        {
-            drawPos.y += (modelComp->yOffset * xform->scale.y);
-            modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
-            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
-            modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
-        }
-
-        if (!modelComp->hasAnim)
-        {
-            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, NULL);
+        if (!WHasB(world, id, HAS_MOVEMENT))
             continue;
-        }
-        BonesSSBO bonesSSBO = {0};
-        SolModel *m         = &loaded_models[modelComp->modelId];
+            CompMovement *movement = &world->movements[id];
+            switch(movement->state)
+            {
+                case MOVE_WALLRUN:
+                break;
+            }
+    }
+}
+
+static void Model_Tick(World *world, double dt, double time)
+{
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL) | BITC(HAS_ANIM);
+
+    float fdt = (float)dt;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+
+        CompModel *model = &world->models[id];
+        if (model->modelId < 0)
+            continue;
+
+        CompXform *xform = &world->xforms[id];
+        CompAnim  *anim  = &world->anims[id];
+        SolModel  *m     = &loaded_models[model->modelId];
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
-            AnimLayer *layer = &modelComp->layers[L];
+            AnimLayer *layer = &anim->layers[L];
             if (layer->currentAnim < 0)
                 continue;
             float dur     = m->skeleton.animations[layer->currentAnim].duration;
@@ -156,30 +125,125 @@ void       Model_Draw(World *world, double dt, double time)
             }
         }
 
-        PoseRequest req = {.outBones = bonesSSBO.bones};
+        PoseRequest req = {.outBones = anim->pose};
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
             req.layers[L] = (AnimBlend){
-                .anim        = modelComp->layers[L].currentAnim,
-                .lastAnim    = modelComp->layers[L].lastAnim,
-                .seek        = modelComp->layers[L].currentSeek,
-                .lastSeek    = modelComp->layers[L].lastSeek,
-                .blendFactor = modelComp->layers[L].blendFactor,
+                .anim        = anim->layers[L].currentAnim,
+                .lastAnim    = anim->layers[L].lastAnim,
+                .seek        = anim->layers[L].currentSeek,
+                .lastSeek    = anim->layers[L].lastSeek,
+                .blendFactor = anim->layers[L].blendFactor,
             };
-            req.masks[L]       = model_masks[modelComp->modelId].layers[L];
-            req.layerWeight[L] = (modelComp->layers[L].fadeOut > 0.0f) ? modelComp->layers[L].fadeOut : 1.0f;
+            req.masks[L]       = model_masks[model->modelId].layers[L];
+            req.layerWeight[L] = (anim->layers[L].fadeOut > 0.0f) ? anim->layers[L].fadeOut : 1.0f;
         }
         Sol_Skeleton_Pose(&m->skeleton, &req);
-        memcpy(modelComp->bones, bonesSSBO.bones, sizeof(modelComp->bones));
-        Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &bonesSSBO);
     }
+}
+
+static void Model_Draw(World *world, double dt, double time)
+{
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
+
+    float fdt = (float)dt;
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+
+        CompXform *xform     = &world->xforms[id];
+        CompModel *modelComp = &world->models[id];
+        if (modelComp->modelId < 0)
+            continue;
+
+        ModelSSBO modelSSBO = {0};
+        modelSSBO.color     = modelComp->color;
+        if (world->masks[id] & BITC(HAS_INTERACT))
+            if (Sol_Interact_GetState(world, id) & INTERACT_HOVERED || world->flags[id].flags & EFLAG_PICKEDUP)
+                modelSSBO.flags |= (1 << 0);
+
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
+            modelSSBO.flags |= (1 << 1);
+
+        if (world->masks[id] & BITC(HAS_COMBAT))
+            modelSSBO.hitTime = world->combats[id].lastHitTime;
+        else
+            modelSSBO.hitTime = -100.0f;
+
+        vec3s drawPos = xform->drawPos;
+        if (modelComp->is2d)
+        {
+            modelSSBO.flags |= (1 << 2);
+            float px           = UISCALE(drawPos.x + (modelComp->xOffset * xform->scale.x));
+            float py           = UISCALE(drawPos.y + (-modelComp->yOffset * xform->scale.y));
+            float pz           = drawPos.z;
+            modelSSBO.position = (vec4s){px, py, pz, 1.0f};
+            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
+            modelSSBO.scale =
+                (vec4s){UISCALE(xform->drawScale.x), UISCALE(xform->drawScale.y), UISCALE(xform->drawScale.z), 1.0f};
+        }
+        else
+        {
+            drawPos.y += (modelComp->yOffset * xform->scale.y);
+            modelSSBO.position = (vec4s){drawPos.x, drawPos.y, drawPos.z, 1.0f};
+            modelSSBO.rotation = (vec4s){xform->drawQuat.x, xform->drawQuat.y, xform->drawQuat.z, xform->drawQuat.w};
+            modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
+        }
+
+        if (WHasB(world, id, HAS_ANIM))
+        {
+            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &world->anims[id].pose);
+        }
+        else
+        {
+            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, NULL);
+        }
+    }
+}
+
+void Sol_Model_Init(World *world)
+{
+    world->models = calloc(MAX_ENTS, sizeof(CompModel));
+    world->anims  = calloc(MAX_ENTS, sizeof(CompAnim));
+
+    WAddTick(world) = Anim_Tick;
+    WAddTick(world) = Model_Tick;
+    WAdd3d(world)   = Model_Draw;
+}
+
+CompModel *Sol_Model_Add(World *world, int id, int kind)
+{
+    CompModel model = model_kinds[kind];
+    model.modelId   = kind;
+
+    if (loaded_models[kind].skeleton.animationCount > 0)
+    {
+        CompAnim anim = {0};
+        // model.hasAnim = true;
+        for (int i = 0; i < ANIM_LAYER_COUNT; i++)
+        {
+            anim.layers[i].currentAnim = -1;
+            anim.layers[i].currentSeek = 0;
+            anim.layers[i].blendFactor = 0;
+        }
+        world->anims[id] = anim;
+        Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
+        world->masks[id] |= BITC(HAS_ANIM);
+    }
+    world->models[id] = model;
+    world->masks[id] |= BITC(HAS_MODEL);
+
+    return &world->models[id];
 }
 
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
     CompModel *modelComp = &world->models[id];
-    AnimLayer *layer     = &modelComp->layers[desc.layerId];
+    CompAnim  *anim      = &world->anims[id];
+    AnimLayer *layer     = &anim->layers[desc.layerId];
 
     AnimId animId   = desc.anim;
     bool   force    = desc.playKind == ANIMPLAYKIND_ONESHOT || desc.force;
@@ -227,13 +291,13 @@ SolModelHandle Sol_Model_GetModelId(World *world, int id)
 
 float Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId)
 {
-    AnimLayer *layer = &world->models[id].layers[layerId];
+    AnimLayer *layer = &world->anims[id].layers[layerId];
     return layer->playRate;
 }
 
 void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate)
 {
-    AnimLayer *layer = &world->models[id].layers[layerId];
+    AnimLayer *layer = &world->anims[id].layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->playRate = rate;
@@ -241,7 +305,7 @@ void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rat
 
 void Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek)
 {
-    AnimLayer *layer = &world->models[id].layers[layerId];
+    AnimLayer *layer = &world->anims[id].layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->currentSeek = seek;
@@ -255,6 +319,7 @@ SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
     SolXform     result   = {0};
     CompModel   *model    = &world->models[id];
+    CompAnim    *anim     = &world->anims[id];
     SolSkeleton *skeleton = &loaded_models[model->modelId].skeleton;
     CompXform   *xform    = &world->xforms[id];
 
@@ -282,7 +347,7 @@ SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
 
     mat4 boneModelSpace;
-    glm_mat4_mul(model->bones[boneIdx], bindPose, boneModelSpace);
+    glm_mat4_mul(anim->pose[boneIdx], bindPose, boneModelSpace);
 
     // 2. Construct the Entity's World Transform Matrix
     mat4 entityWorld;
@@ -325,7 +390,7 @@ void Sol_Model_SetOffsetY(World *world, int id, float offset)
 }
 void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId)
 {
-    world->models[id].layers[layerId].fadeOut      = 1.0f;
-    world->models[id].layers[layerId].fadeOutSpeed = 4.0f;
-    world->models[id].layers[layerId].animId       = 0;
+    world->anims[id].layers[layerId].fadeOut      = 1.0f;
+    world->anims[id].layers[layerId].fadeOutSpeed = 4.0f;
+    world->anims[id].layers[layerId].animId       = 0;
 }

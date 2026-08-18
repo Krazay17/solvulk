@@ -97,8 +97,8 @@ void Crouch_State_Exit(World *world, int id)
 bool Crouch_State_CanExit(World *world, int id, u32 nextState)
 {
     CompMovement *move   = &world->movements[id];
-    SolRayResult  result = Sol_Raycast(
-        world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = move->baseHeight * 0.6f});
+    SolRayResult  result = Sol_RaycastD(
+        world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = move->baseHeight * 0.6f}, 0.2f);
 
     return !result.hit;
 }

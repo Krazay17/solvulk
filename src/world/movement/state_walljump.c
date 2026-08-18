@@ -12,11 +12,11 @@
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
-    CompMovement  *move = &world->movements[id];
-    MoveStateData *data = &move->stateData[MOVE_WALLJUMP];
-    float alpha = 1.0f - (data->elapsed / DASH_DURATION);
+    CompMovement  *move  = &world->movements[id];
+    MoveStateData *walljumpData  = &move->stateData[MOVE_WALLJUMP];
+    float          alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
-    if (data->elapsed >= DASH_DURATION)
+    if (walljumpData->elapsed >= DASH_DURATION)
     {
         Sol_Movement_SetState(world, id, MOVE_IDLE);
         return;
@@ -24,21 +24,21 @@ void Walljump_State_Update(World *world, int id, float dt)
 
     vec3s vel = Sol_Physx_GetVel(world, id);
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
-    // vel       = Sol_Math_DampDir(vel, data->dir, alpha, DAMPING, dt);
+    // vel       = Sol_Math_DampDir(vel, walljumpData->dir, alpha, DAMPING, dt);
     Sol_Physx_SetVel(world, id, vel);
 }
 
 void Walljump_State_Enter(World *world, int id)
 {
     CompMovement  *move     = &world->movements[id];
-    MoveStateData *data     = &move->stateData[MOVE_WALLJUMP];
+    MoveStateData *wallrunData     = &move->stateData[MOVE_WALLRUN];
     vec3s          vel      = Sol_Physx_GetVel(world, id);
     vec3s          up2      = {0.0f, 1.8f, 0.0f};
-    vec3s          finalDir = vecAdd(move->wallNormal, up2);
+    vec3s          finalDir = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
     finalDir                = vecAdd(finalDir, vecNorm(vel));
-    data->dir               = vecNorm(finalDir);
+    wallrunData->dir               = vecNorm(finalDir);
 
-    vec3s finalVel    = vecSca(data->dir, DASH_VEL);
+    vec3s finalVel    = vecSca(wallrunData->dir, DASH_VEL);
     float targetUpVel = finalVel.y;
     if (vel.y < targetUpVel)
         finalVel.y = targetUpVel - vel.y;
@@ -47,12 +47,15 @@ void Walljump_State_Enter(World *world, int id)
 
     Sol_Physx_AddVel(world, id, finalVel);
 
+    sollog(move->lastTouch.x);
     vec3s dirToWall = glms_vec3_sub(Sol_Xform_GetPos(world, id), move->lastTouch);
     dirToWall       = glms_vec3_normalize(dirToWall);
-    float x = dirToWall.x;
-    float z = dirToWall.z;
+    float    x      = dirToWall.x;
+    float    z      = dirToWall.z;
     vec3s    rot    = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc   = {.anim = ANIM_WALLJUMP_LEFT, .layerId = ANIM_LAYER_BASE, .blendIn = 0.05f, .playKind = ANIMPLAYKIND_ONESHOT};
+    AnimDesc desc   = {
+        .anim = ANIM_WALLJUMP_LEFT, .layerId = ANIM_LAYER_BASE, .blendIn = 0.05f, .playKind = ANIMPLAYKIND_ONESHOT};
+
     switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
     {
     case STRAFE_LEFT:
@@ -68,7 +71,7 @@ void Walljump_State_Enter(World *world, int id)
         Sol_Model_PlayAnim(world, id, desc);
         break;
     default:
-        desc.anim = ANIM_BACKFLIP;
+        desc.anim  = ANIM_BACKFLIP;
         desc.speed = 1.1f;
         Sol_Model_PlayAnim(world, id, desc);
         break;

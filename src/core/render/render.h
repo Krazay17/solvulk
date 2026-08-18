@@ -104,11 +104,6 @@ typedef struct
 
 typedef struct
 {
-    mat4 bones[MAX_BONES];
-} BonesSSBO;
-
-typedef struct
-{
     vec4s pos;
     vec4s color;
     vec4s params;
@@ -184,43 +179,44 @@ typedef struct
 typedef struct ModelPushDesc
 {
     SolModelHandle handle;
-    vec4s        position;
-    vec4s        scale;
-    vec4s        rotation;
-    vec4s        color;
-    vec4s        material;
-    u32          flags;
-    bool         hasAnim;
-    mat4        *bones;
+    vec4s          position;
+    vec4s          scale;
+    vec4s          rotation;
+    vec4s          color;
+    vec4s          material;
+    u32            flags;
+    bool           hasAnim;
+    mat4          *bones;
 } ModelPushDesc;
 
 typedef struct
 {
-    u32          count;
-    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
+    u32            count;
+    ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
     SolModelHandle handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
 typedef struct
 {
-    u32          count;
-    ModelSSBO    modelSSBO[MAX_MODEL_INSTANCES];
-    BonesSSBO    bones[MAX_MODEL_INSTANCES];
+    u32            count;
+    ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
+    SolPose        bones[MAX_MODEL_INSTANCES];
     SolModelHandle handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
 extern ModelSubmission        modelQueue;
 extern ModelSkinnedSubmission skinningQueue;
-static inline void            Sol_Render_GetNext_Model(SolModelHandle handle, ModelSSBO *modelSSBO, BonesSSBO *bonesSSBO)
+
+static inline void Sol_Render_GetNext_Model(SolModelHandle handle, ModelSSBO *modelSSBO, SolPose *pose)
 {
     // Bounds checking to prevent buffer overflows!
-    if (bonesSSBO)
+    if (pose)
     {
         if (skinningQueue.count >= MAX_MODEL_INSTANCES)
             return;
         u32 idx                    = skinningQueue.count++;
         skinningQueue.handles[idx] = handle;
-        memcpy(&skinningQueue.bones[idx], bonesSSBO, sizeof(BonesSSBO));
+        memcpy(&skinningQueue.bones[idx], pose, sizeof(SolPose));
         memcpy(&skinningQueue.modelSSBO[idx], modelSSBO, sizeof(ModelSSBO));
     }
     else

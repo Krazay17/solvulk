@@ -167,7 +167,7 @@ void UserControllerUpdate(World *world, double dt, double time)
 
         if (mouse.wheelV)
         {
-            float changeDist = (float)mouse.wheelV * 0.01f;
+            float changeDist = -((float)mouse.wheelV * 0.01f);
             Sol_Camera_AdjustDistance(&solCamera, changeDist);
         }
     }

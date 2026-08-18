@@ -13,19 +13,141 @@
 #include "combat/s_combat.h"
 #include "render/render.h"
 
-static void Ability_Step(World *world, double dt, double time);
-static void Ability_Draw(World *world, double dt, double time);
+typedef struct
+{
+    uint32_t *sparse;
+    uint32_t *dense;
+    int       cnt, cap;
+
+    CompAbility *abilities;
+} WorldAbilities;
+
+static void Dense_Step(World *world, double dt, double time)
+{
+    WorldAbilities *worldAbilities = world->dense_components[WORLD_SYS_ABILITY];
+    for (int i = 0; i < worldAbilities->cnt; i++)
+    {
+        CompAbility *ability = &worldAbilities->abilities[i];
+        int          id      = worldAbilities->dense[i];
+        sollog(id);
+    }
+}
+
+static void Ability_Step(World *world, double dt, double time)
+{
+    static int       required     = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+    CompAbility     *abilities    = world->abilities;
+    CompController  *controllers  = world->controllers;
+    CompReplication *replications = world->replications;
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+        if (Sol_Combat_GetDead(world, id))
+        {
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
+            continue;
+        }
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
+            continue;
+        if (replications[id].auth == NETAUTH_REMOTE)
+            continue;
+
+        CompAbility *ability = &abilities[id];
+
+        SolActions actions = controllers[id].actionState;
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            if (ability->bindings[m].dirtyApply)
+            {
+                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
+                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs,
+                                 ability->bindings[m].pendingBonusEffects);
+                ability->bindings[m].dirtyApply = false;
+            }
+        }
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            SkillBinding *b = &ability->bindings[m];
+            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
+                continue;
+
+            bool pressed               = (actions & b->actionBit) != 0;
+            ability->stateData[m].held = pressed;
+
+            if (pressed && ability->activeSlot != m)
+            {
+                Sol_Ability_SetState(world, id, b->boundState, m, false);
+            }
+        }
+
+        if (ability->state != ABILITY_STATE_IDLE)
+        {
+            ability_state_func[ability->state].update(world, id, dt);
+        }
+    }
+}
+
+static void Ability_Draw(World *world, double dt, double time)
+{
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+
+        CompAbility *ability = &world->abilities[id];
+
+        if (ability_state_func[ability->state].draw)
+            ability_state_func[ability->state].draw(world, id, dt, time);
+    }
+}
 
 void Sol_Ability_Init(World *world)
 {
-    CompAbility *abilities = calloc(MAX_ENTS, sizeof(CompAbility));
-    // world->components[HAS_ABILITY] = abilities;
-    world->abilities = abilities;
+    WorldAbilities *worldAbilities = malloc(sizeof(WorldAbilities));
+    worldAbilities->sparse         = malloc(MAX_ENTS * sizeof(uint32_t));
+    memset(worldAbilities->sparse, INVALID_INDEX, MAX_ENTS * sizeof(uint32_t));
+    world->dense_components[WORLD_SYS_ABILITY] = worldAbilities;
+    worldAbilities->cap                        = 64;
+    worldAbilities->cnt                        = 0;
+    worldAbilities->abilities                  = malloc(worldAbilities->cap * sizeof(CompAbility));
+    worldAbilities->dense                      = malloc(worldAbilities->cap * sizeof(uint32_t));
 
+    CompAbility *abilities = calloc(MAX_ENTS, sizeof(CompAbility));
+    world->abilities       = abilities;
+
+    WAddStep(world) = Dense_Step;
     WAddStep(world) = Ability_Step;
     WAdd3d(world)   = Ability_Draw;
 
     Ability_Scripts_Init();
+}
+
+CompAbility *Sol_Ability_AddDense(World *world, int id, AbilityDesc desc)
+{
+    WorldAbilities *worldAbilities = world->dense_components[WORLD_SYS_ABILITY];
+    int             denseId        = worldAbilities->sparse[id];
+    if (worldAbilities->sparse[id] != INVALID_INDEX)
+        return &worldAbilities->abilities[worldAbilities->sparse[id]];
+    if (worldAbilities->cnt >= worldAbilities->cap)
+    {
+        worldAbilities->cap *= 2;
+        worldAbilities->abilities = realloc(worldAbilities->abilities, worldAbilities->cap * sizeof(CompAbility));
+        worldAbilities->dense     = realloc(worldAbilities->dense, worldAbilities->cap * sizeof(uint32_t));
+    }
+
+    u32 denseIdx                    = worldAbilities->cnt++;
+    worldAbilities->sparse[id]      = denseIdx;
+    worldAbilities->dense[denseIdx] = id;
+
+    CompAbility *ability = &worldAbilities->abilities[denseIdx];
+    memset(ability, 0, sizeof(CompAbility));
+    return ability;
 }
 
 void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
@@ -129,81 +251,4 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
 const char *Sol_Ability_GetNameString(u32 ability)
 {
     return ability_config[ability]->name;
-}
-
-// PRIVATE
-
-static int  step_required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
-static void Ability_Step(World *world, double dt, double time)
-{
-    CompAbility     *abilities    = world->abilities;
-    CompController  *controllers  = world->controllers;
-    CompReplication *replications = world->replications;
-
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, step_required))
-            continue;
-        if (Sol_Combat_GetDead(world, id))
-        {
-            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
-            continue;
-        }
-        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
-            continue;
-        if (replications[id].auth == NETAUTH_REMOTE)
-            continue;
-
-        CompAbility *ability = &abilities[id];
-
-        SolActions actions = controllers[id].actionState;
-        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
-        {
-            if (ability->bindings[m].dirtyApply)
-            {
-                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
-                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs,
-                                 ability->bindings[m].pendingBonusEffects);
-                ability->bindings[m].dirtyApply = false;
-            }
-        }
-        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
-        {
-            SkillBinding *b = &ability->bindings[m];
-            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
-                continue;
-
-            bool pressed               = (actions & b->actionBit) != 0;
-            ability->stateData[m].held = pressed;
-
-            
-
-            if (pressed && ability->activeSlot != m)
-            {
-                Sol_Ability_SetState(world, id, b->boundState, m, false);
-            }
-        }
-
-        if (ability->state != ABILITY_STATE_IDLE)
-        {
-            ability_state_func[ability->state].update(world, id, dt);
-        }
-    }
-}
-
-static int  draw_required = BITC(HAS_ABILITY);
-static void Ability_Draw(World *world, double dt, double time)
-{
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, draw_required))
-            continue;
-
-        CompAbility *ability = &world->abilities[id];
-
-        if (ability_state_func[ability->state].draw)
-            ability_state_func[ability->state].draw(world, id, dt, time);
-    }
 }

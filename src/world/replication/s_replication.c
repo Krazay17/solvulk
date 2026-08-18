@@ -107,15 +107,17 @@ void Net_Send_Snap(World *world)
 
             // e->weapons[1].entId = world->models[id].rightWeaponEnt;
             // e->weapons[1].modelId = Sol_Model_GetModelId(world, world->models[id].rightWeaponEnt);
-
-            for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
+            if (WHasB(world, id, HAS_ANIM))
             {
-                if (world->models[id].layers[layer].fadeOut > 0)
-                    continue;
-                e->animCurrent[layer]  = world->models[id].layers[layer].animId;
-                e->animSeek[layer]     = world->models[id].layers[layer].currentSeek;
-                e->animSpeed[layer]    = world->models[id].layers[layer].playRate;
-                e->animPlayKind[layer] = world->models[id].layers[layer].playKind;
+                for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
+                {
+                    if (world->anims[id].layers[layer].fadeOut > 0)
+                        continue;
+                    e->animCurrent[layer]  = world->anims[id].layers[layer].animId;
+                    e->animSeek[layer]     = world->anims[id].layers[layer].currentSeek;
+                    e->animSpeed[layer]    = world->anims[id].layers[layer].playRate;
+                    e->animPlayKind[layer] = world->anims[id].layers[layer].playKind;
+                }
             }
         }
         if (world->masks[id] & BITC(HAS_ABILITY))
@@ -249,7 +251,7 @@ void Net_Apply_Snap(World *world)
 
             if (world->masks[id] & BITC(HAS_MODEL))
             {
-                world->models[id].modelId = e->modelId;
+                world->models[id].modelId        = e->modelId;
                 world->models[id].leftWeaponEnt  = world->worldNet->hostToLocalMap[e->leftWeaponEnt];
                 world->models[id].rightWeaponEnt = world->worldNet->hostToLocalMap[e->rightWeaponEnt];
 

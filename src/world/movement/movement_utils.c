@@ -117,7 +117,7 @@ void CrouchHeight(World *world, int id, float fdt)
     if (newHeight > currentHeight)
     {
         SolRayResult result =
-            Sol_Raycast(world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = newHeight * 0.6f});
+            Sol_RaycastD(world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = newHeight * 0.6f}, 0.2f);
         if (result.hit)
             return;
     }

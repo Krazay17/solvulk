@@ -58,6 +58,8 @@ static void Interact_Tick(World *world, double dt, double time)
 
             if (interact->onClick.callbackFunc)
                 interact->onClick.callbackFunc(interact->state, interact->onClick.callbackData);
+            if (interact->onClick.callbackFuncVoid)
+                interact->onClick.callbackFuncVoid();
         }
     }
 }

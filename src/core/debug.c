@@ -1,7 +1,6 @@
 #include "sol/sol.h"
 #include "sol_engine.h"
 
-
 #define MAX_DEBUGS 14
 #define MAX_STR_LEN 64
 
@@ -46,7 +45,8 @@ void Sol_Debug_Draw(double dt)
         return;
     float offset  = 48.0f;
     float spacing = 24.0f;
-    Sol_Render_DrawRectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){0.1f, 0.0f, 0.3f, 0.7f}, 0, 1.0f);
+    Sol_Render_DrawRectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){0.1f, 0.0f, 0.3f, 0.7f},
+                             0, 1.0f);
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];
@@ -94,20 +94,23 @@ void Sol_FPS(double dt)
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
 {
     SolRayResult result = Sol_Raycast(world, ray);
-    Sol_Line_Add(world, (LineDesc){
-                            .a      = ray.pos,
-                            .b      = result.pos,
-                            .colorA = (vec4s){1, 0, 0, 1},
-                            .colorB = (vec4s){1, 0, 0, 1},
-                            .ttl    = debugDuration,
-                        });
-    if (result.hit)
-        Sol_Line_Add(world, (LineDesc){
-                                .a      = result.pos,
-                                .b      = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-                                .colorA = (vec4s){0, 1, 0, 1},
-                                .colorB = (vec4s){0, 1, 0, 1},
-                                .ttl    = debugDuration,
-                            });
+    if (solState.debug)
+    {
+        Sol_Line_Push(world, (SolLine){
+                                 .a      = ray.pos,
+                                 .b      = result.pos,
+                                 .aColor = (vec4s){1, 0, 0, 1},
+                                 .bColor = (vec4s){1, 0, 0, 1},
+                                 .ttl    = debugDuration,
+                             });
+        if (result.hit)
+            Sol_Line_Push(world, (SolLine){
+                                     .a = result.pos,
+                                     .b = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+                                     .aColor = (vec4s){0, 1, 0, 1},
+                                     .bColor = (vec4s){0, 1, 0, 1},
+                                     .ttl    = debugDuration,
+                                 });
+    }
     return result;
 }

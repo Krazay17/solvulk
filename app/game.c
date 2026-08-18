@@ -28,12 +28,13 @@ int SpawnEnemy(int flags, void *data)
 {
     if (Net_IsClient())
         return 0;
-    static int        posInc;
-    struct MakeEnemy *enemy    = (struct MakeEnemy *)data;
-    double            time     = solState.gameTime;
-    double            epsilonA = sin(time) * 10.0;
-    double            epsilonB = cos(time) * 10.0 + 25.0;
-    int               id;
+
+    struct MakeEnemy *enemy = (struct MakeEnemy *)data;
+
+    int    id;
+    double time     = solState.gameTime;
+    double epsilonA = 0.0;  // sin(time) * 10.0;
+    double epsilonB = 10.0; // cos(time) * 10.0 + 25.0;
     switch (enemy->enemyKind)
     {
     case ENEMYKIND_WIZARD: {
@@ -49,6 +50,7 @@ int SpawnEnemy(int flags, void *data)
     }
     break;
     }
+
     return id;
 }
 
@@ -167,7 +169,7 @@ void Create_Sol_Game()
     World *hud  = World_Create_Default(WORLDKIND_GAME2D);
     gameWorld   = World_Create_Default(WORLDKIND_GAME);
 
-    Sol_World_SetActive(gameWorld);
+    solEngine.activeWorld = gameWorld;
     Sol_World_SetReplicates(gameWorld, true);
 
     WAdd2d(gameWorld) = Sol_Crosshair_Draw;
@@ -178,8 +180,10 @@ void Create_Sol_Game()
     Sol_Movement_Add(hud, player2d, MOVEMENTKIND_PLAYER);
 
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
-    // WAddStep(hud) = RotateGuy;
+    Sol_Prefab_EnergyBar(hud, (vec3s){515, 620, 0}, gameWorld, 1, (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
+                         &gameWorld->combats[1].energy, &gameWorld->combats[1].maxEnergy);
 
+    // WAddStep(hud) = RotateGuy;
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_WALL);
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_FLOOR);
 
@@ -251,7 +255,7 @@ void Create_Sol_Game()
     // Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
     int invulnEnemy = SpawnEnemy(0, &(struct MakeEnemy){.enemyKind = ENEMYKIND_WIZARD, .world = gameWorld});
-    Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 25.0f, 0);
+    Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 10.0f, 0);
 
     int quitButton = Sol_Prefab_Button(menu, (vec3s){1000, 30, 0}, "QUIT");
     Sol_Interact_Set(menu, quitButton, (CompInteract){.onClick = (SolCallback){QuitApp}});
@@ -260,13 +264,13 @@ void Create_Sol_Game()
     static struct MakeEnemy wizOne       = {0};
     wizOne.world                         = gameWorld;
     wizOne.enemyKind                     = ENEMYKIND_WIZARD;
-    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (SolCallback){SpawnEnemyCallback, &wizOne}});
+    Sol_Interact_Set(menu, wizOneButton, (CompInteract){.onClick = (SolCallback){.callbackFunc= SpawnEnemyCallback,.callbackData= &wizOne}});
 
     int                     wizHundredButton = Sol_Prefab_Button(menu, (vec3s){10, 300, 0}, "Spawn Wizards");
     static struct MakeEnemy wizhundred       = {0};
     wizhundred.world                         = gameWorld;
     wizhundred.enemyKind                     = ENEMYKIND_WIZARD;
-    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &wizhundred}});
+    Sol_Interact_Set(menu, wizHundredButton, (CompInteract){.onHold = (SolCallback){.callbackFunc = SpawnEnemyCallback, .callbackData= &wizhundred}});
 
     int                     spawnZorgonButton = Sol_Prefab_Button(menu, (vec3s){160, 300, 0}, "Spawn Zorgons");
     static struct MakeEnemy makeEnemyZorgon   = {0};
@@ -276,7 +280,7 @@ void Create_Sol_Game()
                      (CompInteract){.onHold = (SolCallback){SpawnEnemyCallback, &makeEnemyZorgon}});
 
     int saveButton = Sol_Prefab_Button(menu, (vec3s){200, 350, 0}, "Save");
-    Sol_Interact_Set(menu, saveButton, (CompInteract){.onClick = (SolCallback){Sol_User_SaveUserSettings}});
+    Sol_Interact_Set(menu, saveButton, (CompInteract){.onClick = (SolCallback){.callbackFuncVoid = Sol_User_SaveUserSettings}});
 
     int button3 = Sol_Prefab_Button(menu, (vec3s){10, 350, 0}, "Spawn Player");
     Sol_Interact_Set(menu, button3, (CompInteract){.onClick = (SolCallback){SpawnPlayer, gameWorld}});
@@ -322,4 +326,7 @@ void Create_Sol_Game()
     int world1Button = Sol_Prefab_Button(menu, (vec3s){1130, 500, 0}, "World1");
     Sol_Interact_Set(menu, world1Button,
                      (CompInteract){.onClick = (SolCallback){.callbackFunc = ChangeWorld, .callbackData = gameWorld}});
+
+    int debugButton = Sol_Prefab_Button(menu, (vec3s){1130, 600, 0}, "Debug");
+    Sol_Interact_Set(menu, debugButton, (CompInteract){.onClick = (SolCallback){.callbackFuncVoid = Sol_ToggleDebug}});
 }

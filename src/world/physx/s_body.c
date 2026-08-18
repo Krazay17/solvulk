@@ -7,6 +7,7 @@
 #include "xform/s_xform.h"
 #include "event/s_event.h"
 #include "owner/s_owner.h"
+#include "camera.h"
 #include "replication/s_replication.h"
 #include <omp.h>
 
@@ -178,8 +179,8 @@ float Sol_Physx_Get_Ground_Dot(World *world, int id)
 
         vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
 
-        results[j] = Sol_Raycast(
-            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.15f, .ignoreEnt = id, .mask = 0});
+        results[j] = Sol_RaycastD(
+            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.15f, .ignoreEnt = id, .mask = 0}, 0.1f);
     }
     float flattestNorm = -1.0f;
     int   idx          = 0;

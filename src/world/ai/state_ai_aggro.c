@@ -39,7 +39,6 @@ void Aggro_State_Update(World *world, int id, float dt)
     AiStateData *data   = &aicontroller->stateData[aicontroller->state];
     vec3s        dir    = aicontroller->dirToTarget;
     controller->lookdir = dir;
-    // controller->wishdir = dir;
 
 
     // Aim up a bit for lob projectile
@@ -55,6 +54,7 @@ void Aggro_State_Update(World *world, int id, float dt)
     {
         controller->wishdir = dir;
         controller->actionState &= ~ACTION_ABILITY1;
+        controller->actionState |= ACTION_FWD;
     }
 }
 

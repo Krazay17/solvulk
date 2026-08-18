@@ -337,7 +337,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(BonesSSBO) * MAX_MODEL_INSTANCES,
+                                    .size = sizeof(SolPose) * MAX_MODEL_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_SPHERE_SSBO]   = {.kind       = DESC_KIND_BUFFER,

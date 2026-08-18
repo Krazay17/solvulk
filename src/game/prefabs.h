@@ -27,3 +27,5 @@ int Sol_Prefab_DamageZone(World *world, vec3s pos, float scale, int owner);
 int Sol_Prefab_HealZone(World *world, vec3s pos, float scale, int owner);
 int Sol_Prefab_Building_Button(World *world, vec3s pos, float scale, u32 model);
 int Sol_Prefab_Building(World *world, vec3s pos, float scale, float yaw, u32 model);
+int Sol_Prefab_EnergyBar(World *world, vec3s pos, World *entWorld, u32 entId, vec4s color, float *value,
+                         float *maxvalue);

@@ -1,8 +1,14 @@
+/*
+ * File: s_model.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-08-17
+ * 
+*/
+
 #pragma once
 #include "types.h"
 #include "model.h"
-
-typedef struct World World;
 
 typedef struct AnimDesc
 {
@@ -15,7 +21,7 @@ typedef struct AnimDesc
 typedef struct
 {
     SolModelHandle id;
-    float        yoffset, yawOffset;
+    float          yoffset, yawOffset;
 } ModelDesc;
 
 typedef struct AnimLayer
@@ -30,15 +36,19 @@ typedef struct AnimLayer
 } AnimLayer;
 typedef struct CompModel
 {
-    mat4      bones[MAX_BONES];
-    vec4s     color;
-    AnimLayer layers[ANIM_LAYER_COUNT];
-    int       modelId;
-    u8        playingId[ANIM_LAYER_COUNT];
-    bool      hasAnim, is2d;
-    float     xOffset, yOffset, yawOffset;
-    u32       leftWeaponEnt, rightWeaponEnt;
+    int   modelId;
+    vec4s color;
+    bool  is2d;
+    float xOffset, yOffset, yawOffset;
+    u32   leftWeaponEnt, rightWeaponEnt;
 } CompModel;
+
+typedef struct CompAnim
+{
+    SolPose   pose;
+    AnimLayer layers[ANIM_LAYER_COUNT];
+    u8        animPlaying[ANIM_LAYER_COUNT];
+} CompAnim;
 
 const extern CompModel model_kinds[SOL_MODEL_COUNT];
 

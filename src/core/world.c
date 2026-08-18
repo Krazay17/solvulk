@@ -5,8 +5,11 @@
  * Created: 2026-05-08
  * World!
  */
-#include "sol/sol.h"
+
+#include "world.h"
+#include "sol_engine.h"
 #include "sol_core.h"
+#include "xform/s_xform.h"
 
 static u32 world_count = 0;
 
@@ -16,7 +19,7 @@ static SystemFunc init_system[WORLD_SYS_COUNT] = {
 #undef AS_ARRAY_MAPPING
 };
 
-static SystemFuncId remove_component[WORLD_SYS_COUNT] = {
+const static SystemFuncId remove_component[WORLD_SYS_COUNT] = {
 #define AS_COMPONENT_MAPPING(enum_name, init_func, remove_func) [enum_name] = remove_func,
     SOL_SYSTEM_LIST(AS_COMPONENT_MAPPING)
 #undef AS_COMPONENT_MAPPING
@@ -82,15 +85,19 @@ World *World_Create_Default(WorldKind kind)
     return world;
 }
 
+void Sol_System_Remove_Noop(World *world, int id)
+{
+}
+
 void World_Destroy(World *world)
 {
     if (world)
     {
-        for (int i = 0; i < world->deinitCount; i++)
-        {
-            if (world->deinitSystems[i])
-                world->deinitSystems[i](world);
-        }
+        // for (int i = 0; i < world->deinitCount; i++)
+        // {
+        //     if (world->deinitSystems[i])
+        //         world->deinitSystems[i](world);
+        // }
         free(world);
         world_count--;
     }
@@ -244,14 +251,11 @@ void Sol_World_SetReplicates(World *world, bool active)
 {
     world->doesReplicate = active;
 }
-void Sol_World_SetActive(World *world)
+CompTracker *Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId)
 {
-    solEngine.activeWorld   = world;
-    solEngine.activeWorldId = world->worldId;
-}
-void Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId)
-{
-    world->trackers[id].world = otherWorld;
-    world->trackers[id].entId = otherId;
+    CompTracker *tracker = &world->trackers[id];
+    tracker->world = otherWorld;
+    tracker->entId = otherId;
     world->masks[id] |= BITC(HAS_TRACKER);
+    return tracker;
 }

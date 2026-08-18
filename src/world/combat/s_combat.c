@@ -22,6 +22,7 @@ const CompCombat combat_config[] = {
             .health      = 100,
             .maxEnergy   = 100,
             .energy      = 100,
+            .energyRegen = 10.0f,
             .maxMana     = 100,
             .mana        = 100,
             .doesRespawn = 1,
@@ -81,6 +82,7 @@ static void Combat_Step(World *world, double dt, double time)
             CompCombat *combat = &world->combats[id];
             if (combat->health == 0 && combat->doesRespawn && time > combat->deathTime + combat->respawnTime)
                 OnRespawn(world, id);
+            combat->energy = fmaxf(fminf(combat->energyRegen * dt + combat->energy, combat->maxEnergy), 0);
         }
     }
 }
@@ -111,7 +113,7 @@ void Sol_Combat_Add(World *world, int id, CombatKind kind)
 
 float Sol_Combat_Damage(World *world, int id, int attacker, float damage)
 {
-    CompCombat *combat       = &world->combats[id];
+    CompCombat *combat      = &world->combats[id];
     float       damageDealt = 0.0f;
     if (combat->health == 0)
         return 0;
@@ -124,14 +126,14 @@ float Sol_Combat_Damage(World *world, int id, int attacker, float damage)
                 OnDeath(world, id);
             combat->deathTime = solState.gameTime;
         }
-        damageDealt   = combat->health;
+        damageDealt    = combat->health;
         combat->health = 0;
     }
     else
     {
         combat->health -= damage;
         combat->lastHitTime = solState.gameTime;
-        damageDealt        = damage;
+        damageDealt         = damage;
     }
 
     Sol_Event_Add(world, (SolEvent){
@@ -150,7 +152,7 @@ float Sol_Combat_HealPercent(World *world, int id, int dealer, float amount)
 {
     if (!(world->masks[id] & BITC(HAS_COMBAT)))
         return 0;
-    CompCombat *combat       = &world->combats[id];
+    CompCombat *combat      = &world->combats[id];
     float       amountDealt = 0.0f;
     if (combat->health == 0)
         return 0;
@@ -159,7 +161,7 @@ float Sol_Combat_HealPercent(World *world, int id, int dealer, float amount)
     if (combat->health + finalAmount >= combat->maxHealth)
     {
         combat->health = combat->maxHealth;
-        amountDealt   = combat->maxHealth - combat->health;
+        amountDealt    = combat->maxHealth - combat->health;
     }
     else
     {
@@ -180,7 +182,7 @@ float Sol_Combat_HealPercent(World *world, int id, int dealer, float amount)
 
 float Sol_Combat_Heal(World *world, int id, SolHit hit)
 {
-    CompCombat *combat       = &world->combats[id];
+    CompCombat *combat      = &world->combats[id];
     float       amountDealt = 0.0f;
     if (combat->health == 0)
         return 0;
@@ -188,7 +190,7 @@ float Sol_Combat_Heal(World *world, int id, SolHit hit)
     if (combat->health + hit.damage >= combat->maxHealth)
     {
         combat->health = combat->maxHealth;
-        amountDealt   = combat->maxHealth - combat->health;
+        amountDealt    = combat->maxHealth - combat->health;
     }
     else
     {

@@ -28,7 +28,8 @@ static inline void Sol_Camera_AdjustDistance(SolCamera *cam, float delta)
     cam->distance = glm_clamp(cam->distance + delta, 0.0f, MAX_CAMERA_ZOOM);
 }
 
-vec3s  Sol_Cam_GetRight();
-vec3s  Sol_Cam_GetFwd();
-vec3s  Sol_Cam_GetPos();
-mat4s  Sol_Cam_GetViewProj();
+SolCamera *Sol_Cam_GetActive(World *world);
+vec3s      Sol_Cam_GetRight();
+vec3s      Sol_Cam_GetFwd();
+vec3s      Sol_Cam_GetPos();
+mat4s      Sol_Cam_GetViewProj();

@@ -1,4 +1,4 @@
-#include "s_combat.h"
+#include "i_combat.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "network.h"
@@ -15,7 +15,7 @@
 #include "owner/s_owner.h"
 #include "item/s_item.h"
 
-const CompCombat combat_config[] = {
+static const CompCombat combat_config[] = {
     [COMBATKIND_PLAYER] =
         {
             .maxHealth   = 100,
@@ -69,15 +69,15 @@ static void OnRespawn(World *world, int id)
     world->bodies[id].group = world->bodies[id].base_group;
 }
 
-static int  step_required = BITC(HAS_COMBAT);
 static void Combat_Step(World *world, double dt, double time)
 {
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_COMBAT);
     if (!Net_IsClient())
     {
         for (int i = 0; i < world->activeCount; i++)
         {
             int id = world->activeEntities[i];
-            if (!WHas(world, id, step_required))
+            if (!WHas(world, id, required))
                 continue;
             CompCombat *combat = &world->combats[id];
             if (combat->health == 0 && combat->doesRespawn && time > combat->deathTime + combat->respawnTime)
@@ -97,17 +97,25 @@ void Sol_Combat_Init(World *world)
     world->dmgNumbers->count     = 0;
     world->dmgNumbers->cap       = 0;
 
+    world->chainhit           = malloc(sizeof(ChainAttacks));
+    world->chainhit->capacity = CHAIN_CAP;
+    world->chainhit->count    = 0;
+    world->chainhit->chains   = calloc(CHAIN_CAP, sizeof(Chain));
+
     WAddStep(world) = Combat_Step;
+    WAddStep(world) = Chain_Step;
     WAddStep(world) = Dmgnumbers_Step;
     WAdd3d(world)   = Dmgnumbers_Draw;
 }
 
 void Sol_Combat_Add(World *world, int id, CombatKind kind)
 {
-    CompCombat combat  = combat_config[kind];
-    combat.lastHitTime = -FLT_MAX;
-    combat.respawnPos  = Sol_Xform_GetPos(world, id);
-    world->combats[id] = combat;
+    CompCombat combat     = combat_config[kind];
+    combat.lastHitTime    = -FLT_MAX;
+    combat.respawnPos     = Sol_Xform_GetPos(world, id);
+    combat.leftWeaponEnt  = -1;
+    combat.rightWeaponEnt = -1;
+    world->combats[id]    = combat;
     world->masks[id] |= BITC(HAS_COMBAT);
 }
 

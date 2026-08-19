@@ -114,7 +114,7 @@ void Find_User_Hit(void)
 void UserControllerUpdate(World *world, double dt, double time)
 {
     float           fdt        = (float)dt;
-    int             localId    = 1;
+    int             localId    = world->userID;
     CompController *controller = &world->controllers[localId];
     if (!WHasB(world, localId, HAS_CONTROLLER))
         return;

@@ -95,7 +95,7 @@ void Spinslash_State_Exit(World *world, int id)
 
     data->lastExited = solState.gameTime;
 
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
 }
 
 bool Spinslash_State_CanExit(World *world, int id, u32 next)

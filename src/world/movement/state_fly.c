@@ -8,9 +8,9 @@
 
 void Sol_Movement_Fly_Update(World *world, int id, float dt)
 {
-    if (!(Sol_GetActions(world, id) & ACTION_JUMP))
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
-            return;
+    // if (!(Sol_GetActions(world, id) & ACTION_JUMP))
+    //     if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+    //         return;
 }
 
 void Sol_Movement_Fly_Enter(World *world, int id)

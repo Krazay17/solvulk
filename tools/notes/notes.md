@@ -15,3 +15,8 @@ void Sol_Physx_Remove(World *world, int id)
     }
     group->triCount -= ents->triIndexCount;
 }
+
+LastState: 3, CurrentState: 4
+LastState: 1, CurrentState: 0
+LastState: 4, CurrentState: 0
+LastState: 0, CurrentState: 3

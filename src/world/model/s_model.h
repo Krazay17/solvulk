@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-08-17
- * 
-*/
+ *
+ */
 
 #pragma once
 #include "types.h"
@@ -15,7 +15,7 @@ typedef struct AnimDesc
     u8          playKind, force;
     float       blendIn, blendOut, seek, speed;
     AnimLayerId layerId;
-    u32         anim;
+    int         anim;
 } AnimDesc;
 
 typedef struct
@@ -27,7 +27,7 @@ typedef struct
 typedef struct AnimLayer
 {
     u8    playKind;
-    i16   currentAnim, lastAnim, animId;
+    int   currentAnim, lastAnim, animId;
     bool  force;
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;

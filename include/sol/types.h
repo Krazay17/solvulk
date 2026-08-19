@@ -150,6 +150,7 @@ typedef enum
     ANIM_SLIDE_LEFT,
     ANIM_SLIDE_RIGHT,
     ANIM_JUMP,
+    ANIM_FLIPJUMP,
     ANIM_FALL,
     ANIM_DASH_FWD,
     ANIM_DASH_BWD,
@@ -296,14 +297,14 @@ typedef struct SolHit
     u32   kind;
     int   entA; // Attacker
     int   entB; // Victim
+    float damage;
     vec3s pos;
     vec3s normal;
     vec3s vel;
     float power;
 
-    float damage;
-    u32   buffMask;
-    u32   effectMask;
+    u32 buffMask;
+    u32 effectMask;
 } SolHit;
 
 typedef struct SolUserHit
@@ -323,11 +324,6 @@ typedef enum
     EFFECTMASK_CHAINLIGHTNING    = (1 << 4),
     EFFECTMASK_HEALONHIT         = (1 << 5),
 } EffectMask;
-
-typedef enum
-{
-    COMBATFLAG_REFLECTING = (1 << 0),
-} CombatFlags;
 
 typedef struct
 {

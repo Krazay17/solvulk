@@ -125,7 +125,7 @@ typedef struct BoneMask
 
 typedef struct
 {
-    i32   currentAnim, lastAnim;
+    int   currentAnim, lastAnim;
     float currentSeek, lastSeek;
     float blendFactor, blendSpeed;
 } AnimGroup;

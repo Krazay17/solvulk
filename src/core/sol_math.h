@@ -246,7 +246,7 @@ static inline vec3s Sol_BounceVec(vec3s a, vec3s b)
     return glms_vec3_sub(a, glms_vec3_scale(b, dot));
 }
 
-static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
+static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bool includeY)
 {
     vec3s wishdir  = {0, 0, 0};
     vec3s flatdir  = lookdir;
@@ -265,8 +265,14 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir)
     if (action & ACTION_LEFT)
         wishdir = glms_vec3_sub(wishdir, rightdir);
 
-    // if (action & ACTION_JUMP)
-    //     wishdir = glms_vec3_add(wishdir, updir);
+    if (includeY)
+    {
+        if (action & ACTION_JUMP)
+            wishdir = glms_vec3_add(wishdir, updir);
+
+        if (action & ACTION_CROUCH)
+            wishdir = glms_vec3_sub(wishdir, updir);
+    }
 
     return glms_vec3_normalize(wishdir);
 }

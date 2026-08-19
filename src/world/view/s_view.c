@@ -38,23 +38,6 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
     ssbo->flags      = 0;
 }
 
-static void Weapon_Draw(World *world, double dt, double time)
-{
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!(world->masks[id] & BITC(HAS_COMBAT)))
-            continue;
-        CompModel *model = &world->models[id];
-
-        SolXform leftXform = Sol_Model_GetBoneXform(world, id, "hand.L.Weapon");
-        Sol_Xform_SetXform(world, model->leftWeaponEnt, leftXform);
-
-        SolXform rightXform = Sol_Model_GetBoneXform(world, id, "hand.R.Weapon");
-        Sol_Xform_SetXform(world, model->rightWeaponEnt, rightXform);
-    }
-}
-
 static void Draw_Player_Buffs(World *world, double dt, double time)
 {
     CompBuff *buffs = &solEngine.gameWorld3d->buffs[1];
@@ -183,6 +166,5 @@ static void Nameplate_Draw(World *world, double dt, double time)
 
 void Sol_View_Init(World *world)
 {
-    WAdd3d(world) = Weapon_Draw;
     WAdd3d(world) = Nameplate_Draw;
 }

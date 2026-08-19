@@ -66,14 +66,15 @@ void Claw_State_Update(World *world, int id, float dt)
             if (!Sol_Combat_TryHitGen(world, id, result.entId, data->hitSessionGen))
                 continue;
 
-            SolHit hit;
-            hit.damage     = data->damage;
-            hit.buffMask   = data->buffs;
-            hit.effectMask = data->effects;
-            hit.entA       = id;
-            hit.entB       = result.entId;
-            hit.pos        = result.pos;
-            hit.vel        = controller->aimdir;
+            SolHit hit = {
+                .damage     = data->damage,
+                .buffMask   = data->buffs,
+                .effectMask = data->effects,
+                .entA       = id,
+                .entB       = result.entId,
+                .pos        = result.pos,
+                .vel        = controller->aimdir,
+            };
             Sol_Combat_ApplyHit(world, result.entId, hit);
 
             Sol_Physx_SetVelY(world, id, fmax(Sol_Physx_GetVel(world, id).y, 1.0f));
@@ -117,7 +118,7 @@ void Claw_State_Exit(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = solState.gameTime;
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)

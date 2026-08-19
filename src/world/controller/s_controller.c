@@ -24,7 +24,7 @@
 
 static void Controller_Tick(World *world, double dt, double time)
 {
-    static int  required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
 
     float fdt = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
@@ -35,7 +35,8 @@ static void Controller_Tick(World *world, double dt, double time)
 
         CompController *controller = &world->controllers[id];
 
-        controller->wishdir   = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP);
+        controller->wishdir   = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, false);
+        controller->wishdirY  = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, true);
         controller->wishdir2d = CalcWishDir2(controller->actionState);
 
         if (controller->isStrafing)
@@ -86,7 +87,12 @@ void Sol_Controller_Add(World *world, int id, ControllerKind kind)
     {
     case CONTROLLERKIND_PLAYER:
         Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
-        world->playerID = id;
+        world->userID = id;
+        break;
+    case CONTROLLERKIND_SPECTATE:
+        Sol_Movement_Add(world, id, MOVEMENTKIND_SPECTATE);
+        Sol_Movement_ForceState(world, id, MOVE_FLY);
+        world->userID = id;
         break;
     case CONTROLLERKIND_WIZARD:
         Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);

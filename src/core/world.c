@@ -10,6 +10,7 @@
 #include "sol_engine.h"
 #include "sol_core.h"
 #include "xform/s_xform.h"
+#include "parent/s_parent.h"
 
 static u32 world_count = 0;
 
@@ -34,7 +35,7 @@ World *World_Create(WorldKind kind)
         world->doesRender                        = true;
         world->doesReplicate                     = false;
         world->systemBits                        = 0;
-        world->playerID                          = -1;
+        world->userID                            = -1;
         world->kind                              = kind;
         world->worldId                           = world_count++;
         solEngine.worlds[solEngine.worldCount++] = world;
@@ -171,7 +172,7 @@ int Sol_Create_Ent(World *world, int id)
     if (!world)
         return 0;
     if (!id)
-        for (int i = 2; i < MAX_ENTS; i++)
+        for (int i = 1; i < MAX_ENTS; i++)
         {
             if (!(world->masks[i] & BITC(HAS_ACTIVE)))
             {
@@ -214,6 +215,14 @@ void Sol_Destroy_Ent(World *world, int id)
         activeEnts [0][1][2]
                    '6''1''3'
     */
+    for (int i = world->activeCount - 1; i >= 0; i--)
+    {
+        int entId = world->activeEntities[i];
+        if (entId == id)
+            continue;
+        if (WHasB(world, entId, HAS_PARENT) && Sol_Parent_GetParent(world, entId) == id)
+            Sol_Destroy_Ent(world, entId);
+    }
     world->masks[id]       = 0;
     world->flags[id].flags = 0;
     world->ekinds[id]      = 0;
@@ -254,8 +263,8 @@ void Sol_World_SetReplicates(World *world, bool active)
 CompTracker *Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId)
 {
     CompTracker *tracker = &world->trackers[id];
-    tracker->world = otherWorld;
-    tracker->entId = otherId;
+    tracker->world       = otherWorld;
+    tracker->entId       = otherId;
     world->masks[id] |= BITC(HAS_TRACKER);
     return tracker;
 }

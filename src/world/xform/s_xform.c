@@ -5,7 +5,7 @@
 void Sol_Xform_Init(World *world)
 {
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
-    //world->components[HAS_XFORM] = world->xforms;
+    // world->components[HAS_XFORM] = world->xforms;
 }
 
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
@@ -58,9 +58,9 @@ void Xform_Snapshot(World *world)
         world->xforms[id].lastQuat  = world->xforms[id].quat;
         world->xforms[id].lastScale = world->xforms[id].scale;
     }
-    if (world->playerID < 0)
+    if (world->userID < 0)
         return;
-    CompXform *playerXform = &world->xforms[world->playerID];
+    CompXform *playerXform = &world->xforms[world->userID];
     // Sol_Debug_Add("X", playerXform->pos.x);
     // Sol_Debug_Add("Y", playerXform->pos.y);
     // Sol_Debug_Add("Z", playerXform->pos.z);
@@ -84,7 +84,7 @@ SolXform Sol_Xform_GetXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
     return (SolXform){
-        .pos = xform->pos,
+        .pos  = xform->pos,
         .quat = xform->quat,
     };
 }
@@ -93,7 +93,7 @@ SolXform Sol_Xform_GetDrawXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];
     return (SolXform){
-        .pos = xform->drawPos,
+        .pos  = xform->drawPos,
         .quat = xform->drawQuat,
     };
 }
@@ -131,6 +131,12 @@ void Sol_Xform_SetXform(World *world, int id, SolXform xform)
 {
     world->xforms[id].pos = world->xforms[id].drawPos = world->xforms[id].lastPos = xform.pos;
     world->xforms[id].quat = world->xforms[id].drawQuat = world->xforms[id].lastQuat = xform.quat;
+}
+
+void Sol_Xform_SetXformSim(World *world, int id, SolXform xform)
+{
+    world->xforms[id].pos  = xform.pos;
+    world->xforms[id].quat = xform.quat;
 }
 
 float Sol_Xform_DistanceTo(World *world, int idA, int idB)

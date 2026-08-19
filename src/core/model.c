@@ -606,8 +606,8 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
     // Pre-pass: when override is fading out, we still need the lower layers underneath
     // for the fade to blend INTO. So we run lower layers first, then the override on top
     // with its weight.
-    bool overrideActive = (req->layers[ANIM_LAYER_OVERRIDE].anim >= 0);
-    bool overrideFading = overrideActive && (req->layerWeight[ANIM_LAYER_OVERRIDE] < 0.999f);
+    bool overrideActive = (req->layers[ANIM_LAYER_OVERRIDE].anim != -1);
+    bool overrideFading = overrideActive && (req->layerWeight[ANIM_LAYER_OVERRIDE] < 1.0f);
 
     int startLayer, endLayer;
     if (overrideActive && !overrideFading)
@@ -629,7 +629,7 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
         BoneMask  *mask   = &req->masks[L];
         float      weight = req->layerWeight[L];
 
-        if (blend->anim < 0 || weight < 0.001f)
+        if (blend->anim == -1 || weight == 0.0f)
             continue;
 
         // Sample current
@@ -639,7 +639,7 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
         Sample_Animation_Pose(skel, blend->anim, blend->seek, layerT, layerR, layerS);
 
         // Cross-fade with previous in same layer
-        if (blend->lastAnim >= 0 && blend->blendFactor < 1.0f)
+        if (blend->lastAnim != -1 && blend->blendFactor < 1.0f)
         {
             vec3   prevT[MAX_BONES];
             versor prevR[MAX_BONES];
@@ -667,7 +667,7 @@ void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
             if (!mask->layerOwns[i])
                 continue;
 
-            if (weight >= 0.999f)
+            if (weight >= 1.0f)
             {
                 memcpy(&poseT[i], &layerT[i], sizeof(vec3));
                 memcpy(&poseR[i], &layerR[i], sizeof(vec4));

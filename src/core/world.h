@@ -28,10 +28,8 @@
     X(WORLD_SYS_TIMER, Sol_Timer_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_PICKUP, Sol_Pickup_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_OWNER, Sol_Owner_Init, Sol_System_Remove_Noop)                                                         \
-    X(WORLD_SYS_PARENT, Sol_Parent_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_BUFF, Sol_Buff_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_ABILITY, Sol_Ability_Init, Sol_System_Remove_Noop)                                                     \
-    X(WORLD_SYS_CHAINHIT, Sol_Chainhit_Init, Sol_System_Remove_Noop)                                                   \
     X(WORLD_SYS_ITEM, Sol_Item_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_PHYSX, Sol_Physx_Init, Sol_Physx_Remove)                                                               \
     X(WORLD_SYS_BODY2, Sol_Body2d_Init, Sol_System_Remove_Noop)                                                        \
@@ -39,6 +37,7 @@
     X(WORLD_SYS_ZONE, Sol_Zone_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_COMBAT, Sol_Combat_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init, Sol_System_Remove_Noop)                                                     \
+    X(WORLD_SYS_PARENT, Sol_Parent_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_MODEL, Sol_Model_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_LINE, Sol_Line_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init, Sol_System_Remove_Noop)                                       \
@@ -195,7 +194,7 @@ struct World
     CompFlags   flags[MAX_ENTS];
     CompTracker trackers[MAX_ENTS];
 
-    // void *components[COMPONENT_COUNT];
+    SolCamera *active_cam;
 
     CompXform       *xforms;
     CompReplication *replications;
@@ -253,8 +252,7 @@ struct World
     int deinitCount;
 
     int activeCount;
-    int playerID;
-    int userId;
+    int userID;
     int skyboxId;
     u32 systemBits;
 

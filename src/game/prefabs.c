@@ -583,3 +583,18 @@ int Sol_Prefab_Buffbar(World *world, vec3s pos)
     Sol_Interact_Add(world, id);
     return id;
 }
+
+int Sol_Prefab_Spectate(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, 0);
+    Sol_Body_Add(world, id,
+                 (BodyDesc){
+                     .gravity = (vec3s){0, 0, 0},
+                     .group   = 0,
+                     .shape   = SHAPE3_SPH,
+                     .mass    = 1.0f,
+                 });
+    Sol_Controller_Add(world, id, CONTROLLERKIND_SPECTATE);
+    Sol_Xform_SetPos(world, id, pos);
+    return id;
+}

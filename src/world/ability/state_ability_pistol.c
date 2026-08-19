@@ -65,7 +65,7 @@ void Pistol_State_Exit(World *world, int id)
     CompAbility *ability = &world->abilities[id];
     AbilityData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = solState.gameTime;
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
 }
 bool Pistol_State_CanExit(World *world, int id, u32 next)
 {

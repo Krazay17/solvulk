@@ -60,7 +60,8 @@ static void Movement3d_Step(World *world, double dt, double time)
         if (world->replications[id].auth == NETAUTH_REMOTE)
             continue;
 
-        CompMovement *movement = &world->movements[id];
+        CompMovement   *movement   = &world->movements[id];
+        CompController *controller = &world->controllers[id];
         movement->stateData[movement->state].elapsed += dt;
 
         if (world->masks[id] & BITC(HAS_BODY3))
@@ -78,12 +79,12 @@ static void Movement3d_Step(World *world, double dt, double time)
 
             MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
 
-            vec3s vel             = Sol_Physx_GetVel(world, id);
-            vec3s wishdir         = Sol_GetWishdir(world, id);
-            float finalSpeed      = forces->speed * movement->speedMod;
-            float finalFriction   = forces->friction * movement->frictionMod;
-            body->gravity.y       = forces->gravity * movement->gravityMod;
-            movement->lastMoveDir = wishdir;
+            vec3s vel           = Sol_Physx_GetVel(world, id);
+            float finalSpeed    = forces->speed * movement->speedMod;
+            float finalFriction = forces->friction * movement->frictionMod;
+            body->gravity.y     = forces->gravity * movement->gravityMod;
+
+            vec3s wishdir = Sol_GetWishdir(world, id);
 
             switch (movement->state)
             {
@@ -99,6 +100,11 @@ static void Movement3d_Step(World *world, double dt, double time)
                 vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
                 Sol_Physx_SetVel(world, id, vel);
                 break;
+            case MOVE_FLY:
+                wishdir = controller->wishdirY;
+                vel     = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+                vel     = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+                Sol_Physx_SetVel(world, id, vel);
             default:
                 if (vel.y < 0)
                     body->gravity.y *= 1.33f;
@@ -107,15 +113,18 @@ static void Movement3d_Step(World *world, double dt, double time)
                 Sol_Physx_SetVellat(world, id, vel);
             }
 
+            movement->lastMoveDir = wishdir;
+
             if (movement->state != MOVE_JUMP)
                 CheckGround(world, id, fdt, movement);
 
             Knockback(world, id, fdt);
             RestoreFriction(world, id, movement, fdt);
         }
+
         CrouchHeight(world, id, fdt);
 
-        if (id == 1)
+        if (id == world->userID)
         {
             float speed = glms_vec3_norm(Sol_Physx_GetVel(world, id));
             Sol_Debug_Add("Velocity", speed);
@@ -170,10 +179,10 @@ void Sol_Movement_Init(World *world)
     WAddStep(world)    = Movement2d_Step;
 }
 
-void Sol_Movement_Add(World *world, int id, MovementKind kind)
+CompMovement *Sol_Movement_Add(World *world, int id, MovementKind kind)
 {
     if (!WHasSys(world, WORLD_SYS_MOVEMENT))
-        return;
+        return NULL;
     CompMovement movement = {
         .kind = kind,
     };
@@ -189,6 +198,7 @@ void Sol_Movement_Add(World *world, int id, MovementKind kind)
     world->movements[id] = movement;
 
     Sol_Movement_SetState(world, id, MOVE_IDLE);
+    return &world->movements[id];
 }
 
 u32 Sol_Movement_GetState(World *world, int id)

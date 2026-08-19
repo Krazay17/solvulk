@@ -35,7 +35,7 @@ void Dead_State_Enter(World *world, int id)
 }
 void Dead_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
     world->movements[id].targetHeight = world->movements[id].baseHeight;
 }
 bool Dead_State_CanExit(World *world, int id, u32 next)

@@ -26,18 +26,20 @@ void Sol_Cam_Update(double dt)
 {
     float  fdt    = (float)dt;
     World *world  = solEngine.activeWorld;
-    int    userId = 1;
+    int    userId = world->userID;
 
     // TODO better way to deactivate 3d camera
     if (!WHasSys(world, WORLD_SYS_PHYSX))
         return;
 
-    vec3s lookdir   = world->controllers[1].lookdir;
+    CompXform *xform = &world->xforms[userId];
+
+    vec3s head = xform->drawPos;
+    head.y += Sol_Physx_GetHeight(world, userId) * 0.5f;
+
+    vec3s lookdir   = world->controllers[userId].lookdir;
     vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
     vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
-
-    vec3s head = Sol_Xform_GetDrawXform(world, 1).pos;
-    head.y += Sol_Physx_GetHeight(world, 1) * 0.5f;
 
     if (solCamera.distance <= 0)
     {
@@ -70,10 +72,9 @@ void Sol_Cam_Update(double dt)
 
     // === Wallrun tilt ===
     float targetRoll = 0.0f;
-    if (world->masks[1] & BITC(HAS_MOVEMENT))
+    if (world->masks[userId] & BITC(HAS_MOVEMENT))
     {
-        CompMovement *m     = &world->movements[1];
-        CompXform    *xform = &world->xforms[1];
+        CompMovement *m = &world->movements[userId];
         if (m->state == MOVE_WALLRUN)
         {
             vec3s dir   = vecSub(m->lastTouch, xform->pos);
@@ -104,6 +105,10 @@ void Sol_Cam_Update(double dt)
     ubo->aspect         = solState.aspectRatio;
 }
 
+SolCamera *Sol_Cam_GetActive(World *world)
+{
+    return solEngine.activeWorld->active_cam;
+}
 vec3s Sol_Cam_GetPos()
 {
     return solCamera.pos;

@@ -47,7 +47,6 @@ void Walljump_State_Enter(World *world, int id)
 
     Sol_Physx_AddVel(world, id, finalVel);
 
-    sollog(move->lastTouch.x);
     vec3s dirToWall = glms_vec3_sub(Sol_Xform_GetPos(world, id), move->lastTouch);
     dirToWall       = glms_vec3_normalize(dirToWall);
     float    x      = dirToWall.x;

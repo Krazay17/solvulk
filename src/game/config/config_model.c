@@ -101,6 +101,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_WALK_BWD]         = 3,
             [ANIM_WALK_RIGHT]       = 4,
             [ANIM_JUMP]             = 39,
+            [ANIM_FLIPJUMP]         = 7,
             [ANIM_FALL]             = 5,
             [ANIM_DASH_FWD]         = 8,
             [ANIM_DASH_LEFT]        = 9,

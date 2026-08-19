@@ -29,7 +29,6 @@ static void Dense_Step(World *world, double dt, double time)
     {
         CompAbility *ability = &worldAbilities->abilities[i];
         int          id      = worldAbilities->dense[i];
-        sollog(id);
     }
 }
 

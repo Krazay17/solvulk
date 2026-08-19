@@ -1,7 +1,15 @@
 #pragma once
 #include "types.h"
 
-typedef struct SolHit SolHit;
+typedef enum
+{
+    COMBATFLAG_REFLECTING = (1 << 0),
+} CombatFlags;
+
+typedef enum
+{
+    CHAINKIND_LIGHTNING,
+} ChainKind;
 
 typedef struct HitGen
 {
@@ -25,44 +33,13 @@ typedef struct CompCombat
     float  respawnTime;
     double deathTime, lastHitTime;
 
+    int leftWeaponEnt, rightWeaponEnt;
+
     u16   flags;
     u32   hitPauseDiminish;
     bool  hitEnts[128];
     float hitPause, baseAnimRate;
 } CompCombat;
-
-typedef struct Dmgnumber
-{
-    int   amnt;
-    float ttl;
-    vec3s pos;
-    vec4s color;
-} Dmgnumber;
-typedef struct Dmgnumbers
-{
-    Dmgnumber *dmgNumber;
-    int        count;
-    int        cap;
-} Dmgnumbers;
-
-typedef enum
-{
-    CHAINKIND_LIGHTNING,
-} ChainKind;
-typedef struct
-{
-    u8    kind;
-    float damage;
-    int   count, dealer, last;
-    int   hitEnts[65536];
-    float accum, delay;
-} Chain;
-typedef struct ChainAttacks
-{
-    Chain *chains;
-    u32    count;
-    u32    capacity;
-} ChainAttacks;
 
 void Sol_Combat_Init(World *world);
 void Sol_Chainhit_Init(World *world);
@@ -85,12 +62,8 @@ bool Sol_Combat_TryHitGen(World *world, int id, int target, u32 sessionGen);
 
 float Sol_Combat_GetHealth(World *world, int id);
 
-// void Chain_Lightning_Recursive(World *world, int dealer, int target, int last, float damage, int count);
-void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float damage);
 
+void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float damage);
 void Sol_Dmgnumbers_Spawn(World *world, int id, int amnt, vec3s pos);
 
 void Sol_Weapon_Equip(World *world, int id, int weapon, int slot);
-
-void Dmgnumbers_Draw(World *world, double dt, double time);
-void Dmgnumbers_Step(World *world, double dt, double time);

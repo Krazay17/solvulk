@@ -5,6 +5,7 @@ typedef enum ControllerKind
 {
     CONTROLLERKIND_NONE,
     CONTROLLERKIND_PLAYER,
+    CONTROLLERKIND_SPECTATE,
     CONTROLLERKIND_REMOTE,
     CONTROLLERKIND_WIZARD,
     CONTROLLERKIND_ZORGON,
@@ -16,7 +17,7 @@ typedef struct CompController
     int        aimHitEnt;
     float      yaw, pitch;
 
-    vec3s wishdir, aimdir, aimpos, lookdir, knockDur;
+    vec3s wishdir, wishdirY, aimdir, aimpos, lookdir, knockDur;
     vec2s wishdir2d, aimpos2d;
 
     bool isStrafing;

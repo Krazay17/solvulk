@@ -99,7 +99,7 @@ void Fireball_State_Exit(World *world, int id)
     data->lastExited  = solState.gameTime;
     data->charge      = 0;
     data->stage       = 0;
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_UPPER});
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)

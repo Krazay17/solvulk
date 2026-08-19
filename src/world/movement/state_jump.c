@@ -10,9 +10,9 @@
 
 #define JUMP_BUFFER 0.1f
 
-#define JUMP_VEL 10.0f
+#define JUMP_VEL 11.0f
 #define JUMP_DURATION 0.5f
-#define DAMPING 2.5f
+#define DAMPING 2.0f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
@@ -37,17 +37,26 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
-    CompMovement *movement = &world->movements[id];
-    movement->wantsJump    = false;
-    movement->groundtime   = 0;
-    movement->airtime      = JUMP_BUFFER;
+    CompMovement  *movement = &world->movements[id];
+    MoveStateData *data     = &movement->stateData[MOVE_JUMP];
+    movement->wantsJump     = false;
+    movement->groundtime    = 0;
+    movement->airtime       = JUMP_BUFFER;
 
     if (Sol_Physx_GetVel(world, id).y < 0)
         Sol_Physx_SetVelY(world, id, 0);
     vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
     Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
 
-    AnimDesc desc = {.anim = ANIM_JUMP, .layerId = ANIM_LAYER_BASE, .speed = 0.85f, .force = true, .blendIn = 0.1f};
+    AnimDesc desc = {
+        .anim     = data->as.jump.airJump ? ANIM_FLIPJUMP : ANIM_JUMP,
+        .seek     = data->as.jump.airJump ? 0.1f : 0.0f,
+        .layerId  = ANIM_LAYER_BASE,
+        .playKind = ANIMPLAYKIND_ONESHOT,
+        .speed    = 1.0f,
+        .force    = true,
+        .blendIn  = 0.1f,
+    };
 
     Sol_Model_PlayAnim(world, id, desc);
 }
@@ -63,7 +72,8 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompMovement *movement = &world->movements[id];
+    CompMovement  *movement = &world->movements[id];
+    MoveStateData *data     = &movement->stateData[MOVE_JUMP];
     if (!movement->wantsJump || movement->state == MOVE_JUMP)
         return false;
     if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
@@ -74,16 +84,17 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int sl
         if (WHasB(world, id, HAS_COMBAT))
         {
             CompCombat *combat = &world->combats[id];
-            sollog(combat->energy);
             if (combat->energy < 25.0f)
                 return false;
             else
             {
                 combat->energy -= 25.0f;
+                data->as.jump.airJump = true;
                 return true;
             }
         }
         return false;
     }
+    data->as.jump.airJump = false;
     return true;
 }

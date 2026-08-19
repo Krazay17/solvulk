@@ -95,7 +95,7 @@ void Script_State_Enter(World *world, int id)
 
 void Script_State_Exit(World *world, int id)
 {
-    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE});
+    Sol_Model_PlayAnim(world, id, (AnimDesc){.layerId = ANIM_LAYER_OVERRIDE, });
 }
 
 bool Script_State_CanExit(World *world, int id, u32 nextState)

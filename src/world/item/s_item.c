@@ -194,7 +194,7 @@ static void AbilitySlots(World *world, double dt, double time)
             abilitySlot->onCooldown           = false;
         }
 
-        if ((activeWorld->controllers[1].actionState & ability->bindings[slot].actionBit) != 0)
+        if (world->playerId != -1 && (Sol_Controller_Get(world, world->playerId)->actionState & ability->bindings[slot].actionBit) != 0)
         {
             pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
         }

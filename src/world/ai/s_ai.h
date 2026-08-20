@@ -1,6 +1,5 @@
 #pragma once
 #include "sol/types.h"
-#include "estate.h"
 
 typedef enum
 {
@@ -11,11 +10,16 @@ typedef enum
     AISTATE_RETREAT,
     AISTATE_COUNT,
 } AiState;
+typedef enum
+{
+    AIKIND_WIZARD,
+} AiKind;
 typedef struct
 {
     float lastEntered, elapsed, duration, accum;
     float attacktimer;
 } AiStateData;
+
 typedef struct CompAi
 {
     vec3s       dirToTarget;
@@ -24,36 +28,9 @@ typedef struct CompAi
     float       distToTarget, dropAggroTimer, lastHit;
     AiStateData stateData[AISTATE_COUNT];
 } CompAi;
-typedef enum
-{
-    AIKIND_WIZARD,
-} AiKind;
-
-extern const StateFunc aistate_func[AISTATE_COUNT];
 
 void Sol_Ai_Init(World *world);
-void Sol_Ai_Add(World *world, int id, AiKind kind);
 
-bool Ai_SetState(World *world, int id, AiState nextState, u32 slot);
-u32  AiController_FindTarget(World *world, int id);
-
-void Sol_AiController_SetLastHit(World *world, int id, int source, float damage);
-void Sol_AiController_TargetDied(World *world, int id, int target);
-
-void Patrol_State_Update(World *world, int id, float dt);
-void Patrol_State_Enter(World *world, int id);
-void Patrol_State_Exit(World *world, int id);
-bool Patrol_State_CanExit(World *world, int id, u32 next);
-bool Patrol_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
-
-void Idle_State_Update(World *world, int id, float dt);
-void Idle_State_Enter(World *world, int id);
-void Idle_State_Exit(World *world, int id);
-bool Idle_State_CanExit(World *world, int id, u32 next);
-bool Idle_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
-
-void Aggro_State_Update(World *world, int id, float dt);
-void Aggro_State_Enter(World *world, int id);
-void Aggro_State_Exit(World *world, int id);
-bool Aggro_State_CanExit(World *world, int id, u32 next);
-bool Aggro_State_CanEnter(World *world, int id, u32 last, u32 next, int slot);
+CompAi *Sol_Ai_Add(World *world, int id);
+CompAi *Sol_Ai_Get(World *world, int id);
+void    Sol_Ai_Remove(World *world, int id);

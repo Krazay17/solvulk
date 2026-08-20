@@ -1,4 +1,4 @@
-#include "combat/i_combat.h"
+#include "combat/si_combat.h"
 
 #include "sol_math.h"
 #include "sol_core.h"

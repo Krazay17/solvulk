@@ -35,7 +35,7 @@ World *World_Create(WorldKind kind)
         world->doesRender                        = true;
         world->doesReplicate                     = false;
         world->systemBits                        = 0;
-        world->userID                            = -1;
+        world->playerId                            = -1;
         world->kind                              = kind;
         world->worldId                           = world_count++;
         solEngine.worlds[solEngine.worldCount++] = world;

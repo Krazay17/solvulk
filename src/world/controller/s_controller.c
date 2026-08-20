@@ -6,10 +6,11 @@
  * Local Tick reads inputs and sets action states.
  * Remote Tick sets action states directly.
  */
-#include "s_controller.h"
+#include "si_controller.h"
+
 #include "sol_core.h"
 #include "sol_math.h"
-#include "camera.h"
+
 #include "input.h"
 #include "world.h"
 #include "xform/s_xform.h"
@@ -20,24 +21,56 @@
 #include "building/s_building.h"
 #include "platform/platform.h"
 #include "movement/s_movement.h"
-#include "ai/s_ai.h"
 
-static void Controller_Tick(World *world, double dt, double time)
+typedef struct
 {
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_CONTROLLER);
+    int             cnt, cap;
+    int            *sparse, *dense;
+    CompController *controllers;
 
+    // int               remote_cnt, remote_cap;
+    // int              *remote_sparse, *remote_dense;
+    // RemoteController *remote_controllers;
+
+    // int           ai_cnt, ai_cap;
+    // int          *ai_sparse, *ai_dense;
+    // AiController *ai_controllers;
+} WorldControllers;
+
+static void SubTick(World *world, double dt, double time)
+{
     float fdt = (float)dt;
-    for (int i = 0; i < world->activeCount; i++)
+
+    WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
+    // for (int i = 0; i < wc->user_cnt; i++)
+    // {
+    //     int             id             = wc->user_dense[i];
+    //     UserController *userController = &wc->user_controllers[i];
+    //     CompController *controller     = &wc->controllers[wc->sparse[id]];
+    //     User_Tick(world, id, controller, userController, dt, time);
+    // }
+    // for (int i = 0; i < wc->remote_cnt; i++)
+    // {
+    //     int               id               = wc->remote_dense[i];
+    //     RemoteController *remoteController = &wc->remote_controllers[i];
+    //     CompController   *controller       = &wc->controllers[wc->sparse[id]];
+    //     Remote_Tick(world, controller, remoteController, dt, time);
+    // }
+    // for (int i = 0; i < wc->ai_cnt; i++)
+    // {
+    //     int             id           = wc->ai_dense[i];
+    //     AiController   *aiController = &wc->ai_controllers[i];
+    //     CompController *controller   = &wc->controllers[wc->sparse[id]];
+    //     Ai_Tick(world, controller, aiController, dt, time);
+    // }
+    for (int i = 0; i < wc->cnt; i++)
     {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, required))
-            continue;
-
-        CompController *controller = &world->controllers[id];
-
-        controller->wishdir   = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, false);
-        controller->wishdirY  = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, true);
-        controller->wishdir2d = CalcWishDir2(controller->actionState);
+        int             id         = wc->dense[i];
+        CompController *controller = &wc->controllers[i];
+        if (WHasB(world, id, HAS_BODY3))
+        {
+            controller->aimpos = Sol_Physx_GetHeadPos(world, id);
+        }
 
         if (controller->isStrafing)
             world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
@@ -52,58 +85,148 @@ static void Controller_Tick(World *world, double dt, double time)
 
             world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
         }
-
-        if (WHasB(world, id, HAS_BODY3))
-        {
-            controller->aimpos = Sol_Physx_GetHeadPos(world, id);
-            if (controller->actionState & ACTION_DEBUGTELE)
-            {
-                vec3s pos =
-                    glms_vec3_add(Sol_Xform_GetPos(world, id), glms_vec3_scale(controller->lookdir, fdt * 60.0f));
-                Sol_Xform_Teleport(world, id, pos);
-                Sol_Physx_SetVel(world, id, (vec3s){0, 0, 0});
-            }
-        }
     }
 }
 
 void Sol_Controller_Init(World *world)
 {
-    world->controllers = calloc(MAX_ENTS, sizeof(CompController));
+    WorldControllers *world_controllers           = malloc(sizeof(WorldControllers));
+    world->dense_components[WORLD_SYS_CONTROLLER] = world_controllers;
 
-    WAddTick(world) = Controller_Tick;
+    world_controllers->cap         = MAX_ENTS;
+    world_controllers->cnt         = 0;
+    world_controllers->controllers = malloc(world_controllers->cap * sizeof(CompController));
+    world_controllers->sparse      = malloc(MAX_ENTS * sizeof(int));
+    world_controllers->dense       = malloc(world_controllers->cap * sizeof(int));
+    memset(world_controllers->sparse, -1, MAX_ENTS * sizeof(int));
+
+    // world_controllers->user_cap         = 1;
+    // world_controllers->user_cnt         = 0;
+    // world_controllers->user_controllers = malloc(world_controllers->user_cap * sizeof(UserController));
+    // world_controllers->user_sparse      = malloc(MAX_ENTS * sizeof(int));
+    // world_controllers->user_dense       = malloc(world_controllers->user_cap * sizeof(int));
+    // memset(world_controllers->user_sparse, -1, MAX_ENTS * sizeof(int));
+
+    // world_controllers->remote_cap         = 8;
+    // world_controllers->remote_cnt         = 0;
+    // world_controllers->remote_controllers = malloc(world_controllers->remote_cap * sizeof(RemoteController));
+    // world_controllers->remote_sparse      = malloc(MAX_ENTS * sizeof(int));
+    // world_controllers->remote_dense       = malloc(world_controllers->remote_cap * sizeof(int));
+    // memset(world_controllers->remote_sparse, -1, MAX_ENTS * sizeof(int));
+
+    // world_controllers->ai_cap         = 64;
+    // world_controllers->ai_cnt         = 0;
+    // world_controllers->ai_controllers = malloc(world_controllers->ai_cap * sizeof(AiController));
+    // world_controllers->ai_sparse      = malloc(MAX_ENTS * sizeof(int));
+    // world_controllers->ai_dense       = malloc(world_controllers->ai_cap * sizeof(int));
+    // memset(world_controllers->ai_sparse, -1, MAX_ENTS * sizeof(int));
+
+    WAddTick(world) = SubTick;
 }
 
-void Sol_Controller_Add(World *world, int id, ControllerKind kind)
-{
-    if (!WHasSys(world, WORLD_SYS_CONTROLLER))
-        return;
-    if (world->masks[id] & BITC(HAS_CONTROLLER))
-        return;
-    world->controllers[id] = (CompController){0};
-    world->masks[id] |= BITC(HAS_CONTROLLER);
+// void Sol_Controller_Add(World *world, int id, ControllerKind kind)
+// {
+//     if (!WHasSys(world, WORLD_SYS_CONTROLLER))
+//         return;
+//     if (world->masks[id] & BITC(HAS_CONTROLLER))
+//         return;
+//     world->controllers[id] = (CompController){0};
+//     world->masks[id] |= BITC(HAS_CONTROLLER);
 
-    switch (kind)
+//     switch (kind)
+//     {
+//     case CONTROLLERKIND_PLAYER:
+//         Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
+//         world->playerId = id;
+//         break;
+//     case CONTROLLERKIND_SPECTATE:
+//         Sol_Movement_Add(world, id, MOVEMENTKIND_SPECTATE);
+//         Sol_Movement_ForceState(world, id, MOVE_FLY);
+//         world->playerId = id;
+//         break;
+//     case CONTROLLERKIND_WIZARD:
+//         Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
+//         Sol_Ai_Add(world, id, AIKIND_WIZARD);
+//         break;
+//     }
+// }
+
+CompController *Sol_Controller_Add(World *world, int id)
+{
+    WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
+    if (wc->sparse[id] != -1)
+        return &wc->controllers[wc->sparse[id]];
+    if (wc->cnt >= wc->cap)
     {
-    case CONTROLLERKIND_PLAYER:
-        Sol_Movement_Add(world, id, MOVEMENTKIND_PLAYER);
-        world->userID = id;
-        break;
-    case CONTROLLERKIND_SPECTATE:
-        Sol_Movement_Add(world, id, MOVEMENTKIND_SPECTATE);
-        Sol_Movement_ForceState(world, id, MOVE_FLY);
-        world->userID = id;
-        break;
-    case CONTROLLERKIND_WIZARD:
-        Sol_Movement_Add(world, id, MOVEMENTKIND_WIZARD);
-        Sol_Ai_Add(world, id, AIKIND_WIZARD);
-        break;
+        wc->cap *= 2;
+        wc->dense       = realloc(wc->dense, wc->cap * sizeof(int));
+        wc->controllers = realloc(wc->controllers, wc->cap * sizeof(CompController));
+    }
+    int denseIdx               = wc->cnt++;
+    wc->sparse[id]             = denseIdx;
+    wc->dense[denseIdx]        = id;
+    CompController *controller = &wc->controllers[denseIdx];
+    memset(controller, 0, sizeof(CompController));
+    WAddComp(world, id, HAS_CONTROLLER);
+    return controller;
+}
+
+// CompController *Sol_Controller_AddUser(World *world, int id, int playerIdx)
+// {
+//     CompController *controller = Sol_Controller_AddBase(world, id);
+//     controller->kind           = CONTROLLERKIND_USER;
+
+//     WorldControllers *world_controllers = world->dense_components[WORLD_SYS_CONTROLLER];
+//     if (world_controllers->user_sparse[id] != -1)
+//         return controller;
+//     if (world_controllers->user_cnt >= world_controllers->user_cap)
+//     {
+//         world_controllers->user_cap *= 2;
+//         world_controllers->user_dense =
+//             realloc(world_controllers->user_dense, world_controllers->user_cap * sizeof(int));
+//         world_controllers->user_controllers =
+//             realloc(world_controllers->user_controllers, world_controllers->user_cap * sizeof(UserController));
+//     }
+//     int denseIdx                            = world_controllers->user_cnt++;
+//     world_controllers->user_sparse[id]      = denseIdx;
+//     world_controllers->user_dense[denseIdx] = id;
+//     UserController *userController          = &world_controllers->user_controllers[denseIdx];
+//     memset(userController, 0, sizeof(UserController));
+//     userController->playerIdx = playerIdx;
+//     return controller;
+// }
+
+void Sol_Controller_Remove(World *world, int id)
+{
+    WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
+    for (int i = 0; i < wc->cnt; i++)
+    {
+        if (wc->dense[i] == id)
+        {
+            wc->sparse[id]     = -1;
+            wc->controllers[i] = wc->controllers[--wc->cnt];
+        }
     }
 }
 
+CompController *Sol_Controller_Get(World *world, int id)
+{
+    WorldControllers *world_controllers = world->dense_components[WORLD_SYS_CONTROLLER];
+    return &world_controllers->controllers[world_controllers->sparse[id]];
+}
+
+// UserController *Sol_Controller_GetUser(World *world, int id)
+// {
+//     WorldControllers *wc  = world->dense_components[WORLD_SYS_CONTROLLER];
+//     int               idx = wc->user_sparse[id];
+//     if (idx == -1)
+//         return NULL;
+//     return &wc->user_controllers[idx];
+// }
+
 void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lookdir, float range, float hitdepth)
 {
-    CompController *controller = &world->controllers[id];
+    CompController *controller = Sol_Controller_Get(world, id);
     SolRayResult    aimTrace   = Sol_Raycast(world, (SolRay){
                                                         .pos       = lookpos,
                                                         .ignoreEnt = id,
@@ -112,80 +235,22 @@ void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lo
                                                         .dist      = range,
                                                     });
     aimTrace.pos               = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
-
-    controller->aimpos = aimTrace.pos;
-    vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, Sol_Physx_GetHeadPos(world, id)));
-
-    controller->aimdir    = vecDot(dirFromTrace, controller->aimdir) > 0.7f ? dirFromTrace : lookdir;
-    controller->aimHitEnt = aimTrace.entId > -1 ? aimTrace.entId : -1;
-}
-
-bool Sol_Controller_WantsMove(World *world, int id)
-{
-    return glms_vec3_norm2(world->controllers[id].wishdir) > 0.0f;
-}
-
-bool Sol_Controller_IsActionState(World *world, int id, SolActions mask)
-{
-    return (world->controllers[id].actionState & mask) != 0;
-}
-
-vec3s Sol_Controller_GetAimPos(World *world, int id)
-{
-    CompController *controller = &world->controllers[id];
-    return vecAdd(controller->aimpos, vecSca(controller->aimdir, 0.5f));
-}
-
-vec3s Sol_Controller_GetWishdir(World *world, int id)
-{
-    return world->controllers[id].wishdir;
-}
-
-SolActions Sol_GetActions(World *world, int id)
-{
-    return world->controllers[id].actionState;
-}
-
-vec3s Sol_GetWishdir(World *world, int id)
-{
-    return world->controllers[id].wishdir;
-}
-
-vec3s Sol_GetLookdir(World *world, int id)
-{
-    return world->controllers[id].lookdir;
-}
-
-vec3s Sol_GetAimpos(World *world, int id)
-{
-    return world->controllers[id].aimpos;
-}
-
-vec3s Sol_Controller_GetAimdir(World *world, int id)
-{
-    return world->controllers[id].aimdir;
-}
-
-float Sol_GetYaw(World *world, int id)
-{
-    return world->controllers[id].yaw;
-}
-float Sol_GetPitch(World *world, int id)
-{
-    return world->controllers[id].pitch;
+    vec3s dirFromTrace         = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, controller->aimpos));
+    controller->aimdir         = vecDot(dirFromTrace, lookdir) > 0.7f ? dirFromTrace : lookdir;
+    controller->aimHitEnt      = aimTrace.entId > -1 ? aimTrace.entId : -1;
 }
 
 vec3s Sol_Controller_GetShootPos(World *world, int id, float offset)
 {
 
-    vec3s head = world->controllers[id].aimpos;
-    vec3s dir  = world->controllers[id].aimdir;
+    vec3s head = Sol_Controller_Get(world, id)->aimpos;
+    vec3s dir  = Sol_Controller_Get(world, id)->aimdir;
     return vecAdd(head, vecSca(dir, offset));
 }
 
-SolShoot Sol_Controller_GetShoot(World *world, int id, float speed)
+SolShoot Sol_Controller_GetShoot(World *world, int id, float offset, float speed)
 {
-    vec3s pos = Sol_Controller_GetShootPos(world, id, 1.5f);
-    vec3s vel = vecSca(Sol_Controller_GetAimdir(world, id), speed);
+    vec3s pos = Sol_Controller_GetShootPos(world, id, offset);
+    vec3s vel = vecSca(Sol_Controller_Get(world, id)->aimdir, speed);
     return (SolShoot){.pos = pos, .vel = vel};
 }

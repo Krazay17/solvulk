@@ -332,7 +332,6 @@ void Net_Recv_Packet(ENetEvent *event)
         }
         int id = Sol_Prefab_Factory(world, 0, EKIND_PLAYER,
                                     (EntDesc){.authority = NETAUTH_AUTH, .pos = helloPacket->startPos, .scale = 1.0f});
-        Sol_Controller_Add(world, id, CONTROLLERKIND_REMOTE);
 
         int slot = (int)(intptr_t)event->peer->data;
 
@@ -382,7 +381,7 @@ void Net_Recv_Packet(ENetEvent *event)
         int             id          = solNet.players[slot].entityId;
         NetInputPacket *inputPacket = (NetInputPacket *)data;
         World          *world       = Sol_GetWorldById(solNet.players[slot].currentWorldId);
-        CompController *c           = &world->controllers[id];
+        CompController *c           = Sol_Controller_Get(world, id);
         c->actionState              = inputPacket->actionMask;
         c->wishdir                  = inputPacket->wishdir;
         c->lookdir                  = inputPacket->lookdir;

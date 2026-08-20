@@ -6,11 +6,14 @@ static int    player2d;
 
 static void SpawnPlayer(int flags, void *data)
 {
-    Sol_Destroy_Ent(gameWorld, gameWorld->userID);
+    Sol_Destroy_Ent(gameWorld, gameWorld->playerId);
 
-    Sol_Prefab_Factory(gameWorld, 1, EKIND_PLAYER,
-                       (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
-    Sol_Controller_Add(gameWorld, 1, CONTROLLERKIND_PLAYER);
+    int id = Sol_Prefab_Factory(gameWorld, 0, EKIND_PLAYER,
+                                (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
+    Sol_Movement_Add(gameWorld, id, MOVEMENTKIND_PLAYER);
+    Sol_Player_Add(gameWorld, id);
+    Sol_Cam_Add(gameWorld, id, CAMKIND_3D, true);
+    gameWorld->playerId = id;
 }
 
 typedef enum
@@ -40,13 +43,11 @@ int SpawnEnemy(int flags, void *data)
     case ENEMYKIND_WIZARD: {
 
         id = Sol_Prefab_Wizard(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 1.0f);
-        Sol_Controller_Add(gameWorld, id, CONTROLLERKIND_WIZARD);
     }
     break;
     case ENEMYKIND_ZORGON: {
 
         id = Sol_Prefab_Zorgon(gameWorld, 0, (vec3s){epsilonA, epsilonB, epsilonA}, 2.0f);
-        Sol_Controller_Add(gameWorld, id, CONTROLLERKIND_WIZARD);
     }
     break;
     }
@@ -62,21 +63,20 @@ void SpawnEnemyCallback(int flags, void *data)
 void MakeABox(int flags, void *data)
 {
     World *world = (World *)data;
-    vec3s  pos   = Sol_Controller_GetAimPos(world, 1);
+    vec3s  pos   = Sol_Controller_GetShootPos(world, world->playerId, 1.0f);
     Sol_Prefab_Box(world, pos);
 }
 
 void ClearEnts(int flags, void *data)
 {
-    return;
     World *world = (World *)data;
     if (world)
-        for (int i = world->activeCount; i > 2; i--)
+        for (int i = world->activeCount - 1; i >= 0; i--)
         {
             int id = world->activeEntities[i];
             if (WHas(world, id, BITC(HAS_REPLICATION)) && world->replications[id].auth == NETAUTH_AUTH)
                 continue;
-            Sol_Destroy_Ent(world, i);
+            Sol_Destroy_Ent(world, id);
         }
 }
 
@@ -95,8 +95,8 @@ void HostGame(int flags, void *data)
         int id = Sol_Prefab_Factory(
             gameWorld, 0, EKIND_WIZARD,
             (EntDesc){.pos = (vec3s){k * 4.0f, 10.0f, 60.0f}, .scale = 1.0f, .authority = NETAUTH_AUTH});
-        if (id)
-            Sol_Ai_Add(gameWorld, id, AIKIND_WIZARD);
+        // if (id)
+        //     Sol_Ai_Add(gameWorld, id, AIKIND_WIZARD);
     }
 }
 
@@ -162,9 +162,9 @@ void SaveGame(void)
 
 void Spectate()
 {
-    vec3s pos = Sol_Xform_GetPos(gameWorld, gameWorld->userID);
-    Sol_Destroy_Ent(gameWorld, gameWorld->userID);
-    Sol_Prefab_Spectate(gameWorld, pos);
+    vec3s pos = Sol_Xform_GetPos(gameWorld, gameWorld->playerId);
+    Sol_Destroy_Ent(gameWorld, gameWorld->playerId);
+    int id = Sol_Prefab_Spectate(gameWorld, pos);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,11 +181,11 @@ void Create_Sol_Game()
 
     WAdd2d(gameWorld) = Sol_Crosshair_Draw;
     // SpawnPlayer(0, 0);
-    Sol_Prefab_Spectate(gameWorld, (vec3s){0, 5.0f, 0});
+    // Sol_Prefab_Spectate(gameWorld, (vec3s){0, 5.0f, 0});
 
-    player2d = Sol_Prefab_Player2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
-    Sol_Controller_Add(hud, player2d, CONTROLLERKIND_PLAYER);
-    Sol_Movement_Add(hud, player2d, MOVEMENTKIND_PLAYER);
+    // player2d = Sol_Prefab_Dude2d(hud, (vec3s){1100.0f, 400.0f, 1.0f}, 1.0f);
+    // Sol_Controller_Add(hud, player2d, CONTROLLERKIND_PLAYER);
+    // Sol_Movement_Add(hud, player2d, MOVEMENTKIND_PLAYER);
 
     Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
     Sol_Prefab_EnergyBar(hud, (vec3s){515, 620, 0}, gameWorld, 1, (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
@@ -260,7 +260,7 @@ void Create_Sol_Game()
         }
     }
 
-     Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
+    Sol_Prefab_Clouds(gameWorld, (vec3s){0, 0, 0});
 
     // int invulnEnemy = SpawnEnemy(0, &(struct MakeEnemy){.enemyKind = ENEMYKIND_WIZARD, .world = gameWorld});
     // Sol_Buff_AddEx(gameWorld, invulnEnemy, 0, BUFFKIND_INVULN, 10.0f, 0);

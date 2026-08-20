@@ -1,4 +1,4 @@
-#include "movement/movement_i.h"
+#include "movement/si_movement.h"
 
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
     {

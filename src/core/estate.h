@@ -48,7 +48,7 @@ typedef struct
 
 // #include "sol_core.h"
 
-// #include "ability_i.h"
+// #include "ability/si_ability.h"
 
 // #define COOLDOWN 2.0f
 // #define DURATION 1.0f

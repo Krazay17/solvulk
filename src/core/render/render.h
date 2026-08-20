@@ -17,7 +17,6 @@
 #define MAX_QUAD_INSTANCES (1 << 20)
 #define MAX_LINE_VERTICES 0xffffff
 
-typedef struct SolCamera SolCamera;
 typedef struct SolModel  SolModel;
 
 typedef enum
@@ -49,6 +48,20 @@ typedef enum
 
     PIPE_COUNT,
 } PipelineId;
+
+typedef struct SolCamera
+{
+    mat4s proj;
+    mat4s view;
+    mat4s viewProj;
+    vec3s pos;
+    vec3s target, dir;
+    vec3s up, right;
+    float fov;
+    float nearClip;
+    float farClip;
+    float roll;
+} SolCamera;
 
 typedef struct
 {
@@ -110,6 +123,8 @@ typedef struct
     u32   type;
     u32   _padding[3];
 } SphereSSBO;
+
+extern SolCamera solCamera;
 
 // pos: x, y, zindex, scale
 // dims: x, y, spin, twist
@@ -384,6 +399,7 @@ int Sol_Render_Init(void *hwnd, void *hInstance);
 void Sol_Begin_Draw();
 void Sol_End_Draw();
 
+void Sol_Render_Camera_Update();
 void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);

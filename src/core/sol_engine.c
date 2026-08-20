@@ -15,10 +15,12 @@
 #include "image.h"
 #include "model.h"
 #include "font.h"
-#include "xform/s_xform.h"
-#include "camera.h"
-#include "interact/s_interact.h"
+
 #include "render/render.h"
+
+#include "xform/s_xform.h"
+#include "interact/s_interact.h"
+#include "camera/s_camera.h"
 #include "event/s_event.h"
 
 SolEngine solEngine;
@@ -79,7 +81,6 @@ void Sol_Tick(double dt, double time)
         Sol_OnResize();
 
     Sol_User_Tick(dt);
-    Sol_User_Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Net_Tick(solEngine.worlds, solEngine.worldCount);
     Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
 
@@ -100,14 +101,12 @@ void Sol_Tick(double dt, double time)
     // ######### END STEP AND INTERP #########
 
     if (solEngine.activeWorld)
-        Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, 1), Sol_Cam_GetFwd());
+        Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, solEngine.activeWorld->playerId), solCamera.dir);
 
     Sol_Render_CheckGpuUploads();
+
     Sol_Begin_Draw();
-
-    Sol_Cam_Update(dt);
     Sol_Render_DrawSkybox();
-
     Worlds_Draw3d(solEngine.worlds, solEngine.worldCount, dt, time);
     Sol_Render_Flush3D();
 
@@ -170,4 +169,3 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
 
     solEngine.needsResize = true; // game thread picks this up in Sol_OnResize
 }
-

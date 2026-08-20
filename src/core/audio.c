@@ -166,13 +166,13 @@ static SolAudioHandle Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u3
         }
 
         // After claiming the slot and before ma_sound_start:
-        
+
         ps->id    = id;
         ps->inUse = true;
         ps->generation++;
         if (ps->generation == 0)
-        ps->generation = 1; // never emit generation 0
-        
+            ps->generation = 1; // never emit generation 0
+
         u32   totalInstances   = activeCount + 1; // includes the one just allocated
         float equalPowerVolume = volume / sqrtf((float)totalInstances);
 
@@ -194,12 +194,14 @@ static SolAudioHandle Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u3
 
 int Sol_Audio_Init(void)
 {
-    ma_engine_config cfg = {.periodSizeInMilliseconds = 20};
+    ma_engine_config cfg = {.periodSizeInMilliseconds = 20, .listenerCount = 1};
     if (ma_engine_init(&cfg, &audio_engine) != MA_SUCCESS)
         return -1;
 
     ma_engine_set_volume(&audio_engine, INIT_VOLUME);
     ma_engine_listener_set_world_up(&audio_engine, 0, 0.0f, 1.0f, 0.0f);
+    ma_spatializer_listener_set_enabled(&audio_engine.listeners[0], true);
+    ma_engine_listener_set_cone(&audio_engine, 0, ma_degrees_to_radians_f(360), ma_degrees_to_radians_f(360), 1.0f);
 
     for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
     {
@@ -287,6 +289,10 @@ SolAudioHandle Sol_Audio_PlayAt(SolAudioId id, vec3s pos, float volume, float se
     ma_sound_set_position(&ps->sound, pos.x, pos.y, pos.z);
     if (seek > 0)
         ma_sound_seek_to_pcm_frame(&ps->sound, SOL_SECONDS_TO_FRAMES(seek));
+
+    ma_sound_set_min_distance(&ps->sound, 2.0f);
+    ma_sound_set_max_distance(&ps->sound, 50.0f);
+    ma_sound_set_attenuation_model(&ps->sound, ma_attenuation_model_linear);
 
     ma_sound_start(&ps->sound);
     return handle;

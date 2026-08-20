@@ -51,6 +51,16 @@ static void Interact_Tick(World *world, double dt, double time)
         if (!WHas(world, id, BITC(HAS_INTERACT)))
             continue;
         CompInteract *interact = &world->interacts[id];
+        if (interact->state & INTERACT_PRESSED)
+        {
+            if (INTERACT_PRESSED)
+                interact->state ^= INTERACT_PRESSED;
+                
+            if (interact->onHold.callbackFunc)
+                interact->onHold.callbackFunc(interact->state, interact->onHold.callbackData);
+            if (interact->onHold.callbackFuncVoid)
+                interact->onHold.callbackFuncVoid();
+        }
         if (interact->state & INTERACT_CLICKED)
         {
             if (interact->state & INTERACT_TOGGLEABLE)

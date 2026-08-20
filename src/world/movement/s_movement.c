@@ -6,7 +6,7 @@
  * Example of how systems operate with forward declared flat component pointers
  */
 
-#include "movement_i.h"
+#include "movement/si_movement.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "replication/s_replication.h"
@@ -14,6 +14,7 @@
 #include "physx/s_body.h"
 #include "physx/s_body2d.h"
 #include "controller/s_controller.h"
+#include "s_movement.h"
 
 #define WALKABLE_SLOPE 0.7f
 
@@ -47,84 +48,81 @@ static void Movement_Prestep(World *world, double dt, double time)
     }
 }
 
-static int  required_3d_step = BITC(HAS_MOVEMENT) | BITC(HAS_BODY3) | BITC(HAS_CONTROLLER);
 static void Movement3d_Step(World *world, double dt, double time)
 {
-    float fdt = (float)dt;
+    static int required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY3);
+    float      fdt      = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required_3d_step) != required_3d_step)
+        if (!WHas(world, id, required))
             continue;
-
-        if (world->replications[id].auth == NETAUTH_REMOTE)
-            continue;
+        // if (world->replications[id].auth == NETAUTH_REMOTE)
+        //     continue;
 
         CompMovement   *movement   = &world->movements[id];
-        CompController *controller = &world->controllers[id];
+        CompController *controller = Sol_Controller_Get(world, id);
         movement->stateData[movement->state].elapsed += dt;
 
-        if (world->masks[id] & BITC(HAS_BODY3))
+        CompBody             *body   = &world->bodies[id];
+        const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->kind][movement->state];
+
+        bool isJumpDown = controller->actionState & ACTION_JUMP;
+
+        if (isJumpDown && !movement->jumpPressedLastFrame)
+            movement->wantsJump = true;
+        else if (!isJumpDown)
+            movement->wantsJump = false;
+        movement->jumpPressedLastFrame = isJumpDown;
+
+        MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
+
+        vec3s vel           = Sol_Physx_GetVel(world, id);
+        float finalSpeed    = forces->speed * movement->speedMod;
+        float finalFriction = forces->friction * movement->frictionMod;
+        body->gravity.y     = forces->gravity * movement->gravityMod;
+
+        vec3s wishdir = controller->wishdir;
+        
+
+        switch (movement->state)
         {
-            CompBody             *body   = &world->bodies[id];
-            const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->kind][movement->state];
-
-            bool isJumpDown = Sol_Controller_IsActionState(world, id, ACTION_JUMP);
-
-            if (isJumpDown && !movement->jumpPressedLastFrame)
-                movement->wantsJump = true;
-            else if (!isJumpDown)
-                movement->wantsJump = false;
-            movement->jumpPressedLastFrame = isJumpDown;
-
-            MOVE_STATE_FUNCS[movement->state].update(world, id, dt);
-
-            vec3s vel           = Sol_Physx_GetVel(world, id);
-            float finalSpeed    = forces->speed * movement->speedMod;
-            float finalFriction = forces->friction * movement->frictionMod;
-            body->gravity.y     = forces->gravity * movement->gravityMod;
-
-            vec3s wishdir = Sol_GetWishdir(world, id);
-
-            switch (movement->state)
-            {
-            case MOVE_STUN:
+        case MOVE_STUN:
+            body->gravity.y *= 1.33f;
+            vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+            Sol_Physx_SetVel(world, id, vel);
+            break;
+        case MOVE_IDLE:
+        case MOVE_WALK:
+            vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
+            vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
+            vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
+            Sol_Physx_SetVel(world, id, vel);
+            break;
+        case MOVE_FLY:
+            wishdir = controller->wishdirY;
+            vel     = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+            vel     = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            Sol_Physx_SetVel(world, id, vel);
+        default:
+            if (vel.y < 0)
                 body->gravity.y *= 1.33f;
-                vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-                Sol_Physx_SetVel(world, id, vel);
-                break;
-            case MOVE_IDLE:
-            case MOVE_WALK:
-                vec3s slopeDir = ProjectOntoGround(world, id, wishdir);
-                vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
-                vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
-                Sol_Physx_SetVel(world, id, vel);
-                break;
-            case MOVE_FLY:
-                wishdir = controller->wishdirY;
-                vel     = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-                vel     = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
-                Sol_Physx_SetVel(world, id, vel);
-            default:
-                if (vel.y < 0)
-                    body->gravity.y *= 1.33f;
-                vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-                vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
-                Sol_Physx_SetVellat(world, id, vel);
-            }
-
-            movement->lastMoveDir = wishdir;
-
-            if (movement->state != MOVE_JUMP)
-                CheckGround(world, id, fdt, movement);
-
-            Knockback(world, id, fdt);
-            RestoreFriction(world, id, movement, fdt);
+            vel = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+            vel = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            Sol_Physx_SetVellat(world, id, vel);
         }
+
+        movement->lastMoveDir = wishdir;
+
+        if (movement->state != MOVE_JUMP)
+            CheckGround(world, id, fdt, movement);
+
+        Knockback(world, id, fdt);
+        RestoreFriction(world, id, movement, fdt);
 
         CrouchHeight(world, id, fdt);
 
-        if (id == world->userID)
+        if (id == world->playerId)
         {
             float speed = glms_vec3_norm(Sol_Physx_GetVel(world, id));
             Sol_Debug_Add("Velocity", speed);
@@ -133,18 +131,18 @@ static void Movement3d_Step(World *world, double dt, double time)
     }
 }
 
-static int  movement2d_step_required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY2) | BITC(HAS_CONTROLLER);
 static void Movement2d_Step(World *world, double dt, double time)
 {
-    float fdt = (float)dt;
+    static int required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY2) | BITC(HAS_CONTROLLER);
+    float      fdt      = (float)dt;
     for (int i = 0; i < world->activeCount; ++i)
     {
         int id = world->activeEntities[i];
-        if (WHas(world, id, movement2d_step_required))
+        if (WHas(world, id, required))
         {
             CompMovement         *movement   = &world->movements[id];
             CompBody2d           *body       = &world->body2d[id];
-            CompController       *controller = &world->controllers[id];
+            CompController       *controller = Sol_Controller_Get(world, id);
             const MoveStateForce *force      = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
             vec2s vel     = body->vel;
@@ -201,6 +199,10 @@ CompMovement *Sol_Movement_Add(World *world, int id, MovementKind kind)
     return &world->movements[id];
 }
 
+CompMovement *Sol_Movement_Get(World *world, int id)
+{
+    return &world->movements[id];
+}
 u32 Sol_Movement_GetState(World *world, int id)
 {
     return world->movements[id].state;

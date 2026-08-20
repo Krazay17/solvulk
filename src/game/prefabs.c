@@ -21,7 +21,7 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     switch (kind)
     {
     case EKIND_PLAYER:
-        id = Sol_Prefab_Player(world, id, desc.pos, desc.scale);
+        id = Sol_Prefab_Dude(world, id, desc.pos, desc.scale);
         break;
     case EKIND_WIZARD:
         id = Sol_Prefab_Wizard(world, id, desc.pos, desc.scale);
@@ -40,7 +40,7 @@ int Sol_Prefab_Factory(World *world, u32 id, u32 kind, EntDesc desc)
     return id;
 }
 
-int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
+int Sol_Prefab_Dude(World *world, u32 id, vec3s pos, float scale)
 {
     vec2s dims = {.x = 0.4f, .y = 1.65f};
 
@@ -76,7 +76,6 @@ int Sol_Prefab_Player(World *world, u32 id, vec3s pos, float scale)
                                       {ACTION_DASH, 0},
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
-    Sol_Combat_Add(world, id, COMBATKIND_PLAYER);
     return id;
 }
 
@@ -491,7 +490,7 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     return id;
 }
 
-int Sol_Prefab_Player2d(World *world, vec3s pos, float scale)
+int Sol_Prefab_Dude2d(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, 1);
     Sol_Xform_Add(world, id, pos);
@@ -594,7 +593,11 @@ int Sol_Prefab_Spectate(World *world, vec3s pos)
                      .shape   = SHAPE3_SPH,
                      .mass    = 1.0f,
                  });
-    Sol_Controller_Add(world, id, CONTROLLERKIND_SPECTATE);
     Sol_Xform_SetPos(world, id, pos);
+    Sol_Movement_Add(world, id, MOVEMENTKIND_SPECTATE);
+    Sol_Movement_ForceState(world, id, MOVE_FLY);
+    Sol_Cam_Add(world, id, CAMKIND_NOARM, true);
+    Sol_Player_Add(world, id);
+
     return id;
 }

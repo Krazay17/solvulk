@@ -16,13 +16,18 @@
 #define WAddComp(w, id, comp) (w->masks[id] |= BITC(comp))
 #define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
 #define WHasB(w, id, mask) ((w->masks[id] & (BITC(mask))) == (BITC(mask)))
+#define WRemB(w, id, mask) (w->masks[id] &= ~BITC(mask))
 #define WHasSys(w, mask) ((w->systemBits & (BITC(mask))) == (BITC(mask)))
 
 #define SOL_SYSTEM_LIST(X)                                                                                             \
     X(WORLD_SYS_XFORM, Sol_Xform_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_REPLICATION, Sol_Replication_Init, Sol_System_Remove_Noop)                                             \
     X(WORLD_SYS_EVENT, Sol_Event_Init, Sol_System_Remove_Noop)                                                         \
-    X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, Sol_System_Remove_Noop)                                               \
+    X(WORLD_SYS_CAM, Sol_Cam_Init, Sol_Cam_Remove)                                                                     \
+    X(WORLD_SYS_PLAYER, Sol_Player_Init, Sol_Player_Remove)                                                                  \
+    X(WORLD_SYS_AI, Sol_Ai_Init, Sol_Ai_Remove)                                                                        \
+    X(WORLD_SYS_REMOTE, Sol_Remote_Init, Sol_Remote_Remove)                                                            \
+    X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, Sol_Controller_Remove)                                                \
     X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, Sol_System_Remove_Noop)                                                   \
     X(WORLD_SYS_INTERACT, Sol_Interact_Init, Sol_System_Remove_Noop)                                                   \
     X(WORLD_SYS_TIMER, Sol_Timer_Init, Sol_System_Remove_Noop)                                                         \
@@ -36,7 +41,6 @@
     X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init, Sol_System_Remove_Noop)                                               \
     X(WORLD_SYS_ZONE, Sol_Zone_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_COMBAT, Sol_Combat_Init, Sol_System_Remove_Noop)                                                       \
-    X(WORLD_SYS_AICONTROLLER, Sol_Ai_Init, Sol_System_Remove_Noop)                                                     \
     X(WORLD_SYS_PARENT, Sol_Parent_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_MODEL, Sol_Model_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_LINE, Sol_Line_Init, Sol_System_Remove_Noop)                                                           \
@@ -74,14 +78,15 @@ typedef enum
     HAS_XFORM,
     HAS_BODY2,
     HAS_BODY3,
+    HAS_CAMERA,
     HAS_INTERACT,
     HAS_MODEL,
     HAS_ANIM,
     HAS_MOVEMENT,
     HAS_CONTROLLER,
-    HAS_CONTROLLER_LOCAL,
-    HAS_CONTROLLER_REMOTE,
-    HAS_CONTROLLER_AI,
+    HAS_PLAYER,
+    HAS_REMOTE,
+    HAS_AI,
     HAS_ABILITY,
     HAS_BUFF,
     HAS_SHAPE,
@@ -123,8 +128,8 @@ typedef void (*SystemUpdate)(World *, double, double);
 typedef uint64_t Mask;
 
 typedef struct CompAudio       CompAudio;
-typedef struct CompReplication CompReplication;
 typedef struct CompAi          CompAi;
+typedef struct CompReplication CompReplication;
 typedef struct CompMovement    CompMovement;
 typedef struct CompParent      CompParent;
 typedef struct CompTimer       CompTimer;
@@ -152,6 +157,7 @@ typedef struct CompZone        CompZone;
 typedef struct CompBuilder     CompBuilder;
 typedef struct CompContainer   CompContainer;
 typedef struct CompAnim        CompAnim;
+typedef struct CompCam         CompCam;
 
 typedef struct ChainAttacks ChainAttacks;
 typedef struct Inventory    Inventory;
@@ -161,7 +167,6 @@ typedef struct SolEvents    SolEvents;
 typedef struct SolEmitters  SolEmitters;
 typedef struct WorldPhysx   WorldPhysx;
 typedef struct WorldLines   WorldLines;
-typedef struct SolCamera    SolCamera;
 typedef struct WorldNet     WorldNet;
 typedef struct SolScore     SolScore;
 typedef struct Stage        Stage;
@@ -194,11 +199,10 @@ struct World
     CompFlags   flags[MAX_ENTS];
     CompTracker trackers[MAX_ENTS];
 
-    SolCamera *active_cam;
+    CompCam *active_cam;
 
     CompXform       *xforms;
     CompReplication *replications;
-    CompController  *controllers;
     CompMovement    *movements;
     CompParent      *parents;
     CompAudio       *audios;
@@ -210,7 +214,6 @@ struct World
     CompBuff        *buffs;
     CompAbility     *abilities;
     CompOwner       *owners;
-    CompAi          *aicontrollers;
     CompCombat      *combats;
     CompEmitter     *compEmitters;
     CompBody2d      *body2d;
@@ -224,6 +227,8 @@ struct World
     CompBuilder     *builders;
     CompContainer   *containers;
     CompAnim        *anims;
+    CompCam         *cams;
+    CompAi          *ais;
 
     Dmgnumbers   *dmgNumbers;
     SolRibbon    *ribbon;
@@ -252,7 +257,7 @@ struct World
     int deinitCount;
 
     int activeCount;
-    int userID;
+    int playerId;
     int skyboxId;
     u32 systemBits;
 

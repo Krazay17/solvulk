@@ -6,11 +6,60 @@
  *
  */
 #include "sol_core.h"
+#include "sol_engine.h"
 #include "sol_math.h"
 #include "render_i.h"
 #include "render/vk/vkrender.h"
-#include "camera.h"
 #include "image.h"
+
+SolCamera solCamera = {
+    .pos      = {0.0f, 25.0f, 0.0f},
+    .dir      = {0.0f, 0.0f, 1.0f},
+    .target   = {0.0f, 0.0f, 1.0f},
+    .up       = {0.0f, 1.0f, 0.0f},
+    .fov      = 60.0f,
+    .nearClip = 0.2f,
+    .farClip  = 2500.0f,
+};
+
+ModelSubmission        modelQueue;
+ModelSkinnedSubmission skinningQueue;
+
+SphereQueue   sphereQueue;
+SphereQueue   sphereFxQueue;
+FireballQueue fireballQueue;
+RibbonQueue   ribbonQueue;
+RibbonQueue   ribbonQueueAdd;
+RibbonQueue   ribbonQueueFront;
+
+QuadQueue healthQueue;
+QuadQueue spriteQueue0;
+QuadQueue spriteQueue1;
+QuadQueue spriteQueueFront;
+QuadQueue text3dQueue;
+QuadQueue text3dFrontQueue;
+
+RectInstance rectQueue;
+FontInstance font2dQueue;
+
+void Sol_Render_Camera_Update()
+{
+    solCamera.view = glms_lookat(solCamera.pos, solCamera.target, solCamera.up);
+
+    solCamera.proj =
+        glms_perspective(glm_rad(solCamera.fov), Sol_Render_GetAspect(), solCamera.nearClip, solCamera.farClip);
+
+    solCamera.viewProj = glms_mat4_mul(solCamera.proj, solCamera.view);
+    solCamera.right    = glms_vec3_cross(solCamera.dir, WORLD_UP);
+
+    SceneUBO *ubo       = Sol_Render_GetNext_Scene();
+    ubo->view           = solCamera.view;
+    ubo->proj           = solCamera.proj;
+    ubo->viewProjection = solCamera.viewProj;
+    ubo->cameraPos      = (vec4s){solCamera.pos.x, solCamera.pos.y, solCamera.pos.z, 1.0f};
+    ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.3f};
+    ubo->aspect         = solState.aspectRatio;
+}
 
 void Sol_Render_Resize(uint32_t width, uint32_t height)
 {
@@ -22,6 +71,7 @@ void Sol_Render_Resize(uint32_t width, uint32_t height)
 
 void Sol_Render_Flush3D(void)
 {
+    Sol_Render_Camera_Update();
     Flush_Models();
     Flush_Spheres();
     Flush_Quads();
@@ -72,26 +122,6 @@ void Sol_Render_DrawLine(SolLine *lines, int count)
 
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
-
-ModelSubmission        modelQueue;
-ModelSkinnedSubmission skinningQueue;
-
-SphereQueue   sphereQueue;
-SphereQueue   sphereFxQueue;
-FireballQueue fireballQueue;
-RibbonQueue   ribbonQueue;
-RibbonQueue   ribbonQueueAdd;
-RibbonQueue   ribbonQueueFront;
-
-QuadQueue healthQueue;
-QuadQueue spriteQueue0;
-QuadQueue spriteQueue1;
-QuadQueue spriteQueueFront;
-QuadQueue text3dQueue;
-QuadQueue text3dFrontQueue;
-
-RectInstance rectQueue;
-FontInstance font2dQueue;
 
 void Flush_Models(void)
 {
@@ -411,7 +441,7 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
     vec3s up    = (vec3s){{0.0f, 1.0f, 0.0f}};
     if (desc.billboard)
     {
-        right = Sol_Cam_GetRight();
+        right = solCamera.right;
         // up stays world-up so text stays vertically aligned with screen
     }
 

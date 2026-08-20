@@ -70,6 +70,7 @@ typedef struct CompMovement
 
 void          Sol_Movement_Init(World *world);
 CompMovement *Sol_Movement_Add(World *world, int id, MovementKind kind);
+CompMovement *Sol_Movement_Get(World *world, int id);
 void          Sol_Movement_SetSpeedMod(World *world, int id, float amnt);
 bool          Sol_Movement_SetState(World *world, int id, MoveState state);
 void          Sol_Movement_ForceState(World *world, int id, MoveState nextState);

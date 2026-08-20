@@ -4,13 +4,8 @@
 #include "world.h"
 #include "input.h"
 #include "platform/platform.h"
-#include "camera.h"
 
-#include "xform/s_xform.h"
 #include "interact/s_interact.h"
-#include "controller/s_controller.h"
-
-#include "buff/s_buff.h"
 
 #define USER_SETTINGS_FILENAME "UserSettings"
 
@@ -94,118 +89,22 @@ void Find_User_Hit(void)
             }
             if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
             {
+                Sol_Interact_ClearState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
                 Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_CLICKED);
                 user_hit.focusId = -1;
             }
+            Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
         }
     }
     else if (user_hit.hoverId != -1)
     {
-        if (mouse.buttonsPressed[SOL_MOUSE_LEFT])
+        if (mouse.buttons[SOL_MOUSE_LEFT])
         {
             user_hit.focusId    = user_hit.hoverId;
             user_hit.focusWorld = user_hit.hoverWorld;
             user_hit.isFocusUi  = user_hit.isHoverUi;
             user_hit.pressPos   = (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y};
         }
-    }
-}
-
-void UserControllerUpdate(World *world, double dt, double time)
-{
-    float           fdt        = (float)dt;
-    int             localId    = world->userID;
-    CompController *controller = &world->controllers[localId];
-    if (!WHasB(world, localId, HAS_CONTROLLER))
-        return;
-    SolMouse mouse = Sol_Input_GetMouse();
-
-    float *yaw   = &controller->yaw;
-    float *pitch = &controller->pitch;
-
-    if (mouse.locked)
-    {
-        *yaw -= (float)(mouse.dx * user_settings.look_sens);
-        *pitch -= (float)(mouse.dy * user_settings.look_sens);
-
-        *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
-        if (*yaw > GLM_PIf)
-            *yaw -= 2.0f * GLM_PIf;
-        else if (*yaw < -GLM_PIf)
-            *yaw += 2.0f * GLM_PIf;
-
-        *pitch = glm_clamp(*pitch, -MAX_PITCH, MAX_PITCH);
-    }
-
-    for (int i = 0; i < SOL_KEY_COUNT; i++)
-    {
-        if (Sol_Input_KeyDown(i))
-            controller->actionState |= user_settings.key_binds[i];
-        else
-            controller->actionState &= ~user_settings.key_binds[i];
-    }
-
-    controller->isStrafing = mouse.locked;
-
-    if (WHas(world, 1, BITC(HAS_BUILDING)))
-    {
-        if (mouse.buttons[SOL_MOUSE_LEFT])
-            controller->actionState |= ACTION_BUILD;
-    }
-    else
-    {
-        if (mouse.togglelocked)
-        {
-            if (mouse.buttons[SOL_MOUSE_LEFT])
-                controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_LEFT];
-
-            if (mouse.buttons[SOL_MOUSE_RIGHT])
-                controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_RIGHT];
-        }
-        else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
-            controller->actionState |= ACTION_FWD;
-
-        if (mouse.wheelV)
-        {
-            float changeDist = -((float)mouse.wheelV * 0.01f);
-            Sol_Camera_AdjustDistance(&solCamera, changeDist);
-        }
-    }
-    controller->yaw     = *yaw;
-    controller->pitch   = *pitch;
-    controller->lookdir = Sol_Vec3_FromYawPitch(*yaw, *pitch);
-    if (WHasB(world, localId, HAS_BODY3))
-        Sol_Controller_SetParallaxAim(world, localId, Sol_Cam_GetPos(), controller->lookdir, 60.0f, 0.5f);
-
-    // #### DEBUG ACTIONS ####
-    if (Sol_Input_KeyDown(SOL_KEY_F))
-    {
-        controller->actionState |= ACTION_DEBUGTELE;
-    }
-    else
-        controller->actionState &= ~ACTION_DEBUGTELE;
-
-    if (Sol_Input_KeyPressed(SOL_KEY_5))
-    {
-        vec3s pos = Sol_Xform_GetPos(world, localId);
-        if (!Sol_Buff_HasBuff(world, localId, BUFFKIND_INVULN))
-            Sol_Buff_AddEx(world, localId, localId, BUFFKIND_INVULN, 99999.9f, 0);
-        else
-            Sol_Buff_Remove(world, localId, BUFFKIND_INVULN);
-    }
-    if (Sol_Input_KeyPressed(SOL_KEY_6))
-    {
-    }
-}
-
-void Sol_User_Worlds_Tick(World **worlds, int count, double dt, double time)
-{
-    for (int i = 0; i < count; i++)
-    {
-        World *world = worlds[i];
-        if (!world || !world->doesSimulate)
-            continue;
-        UserControllerUpdate(world, dt, time);
     }
 }
 

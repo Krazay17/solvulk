@@ -1,11 +1,10 @@
-#include "i_combat.h"
+#include "si_combat.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "network.h"
 #include "world.h"
 #include "audio.h"
 #include "xform/s_xform.h"
-#include "ai/s_ai.h"
 #include "event/s_event.h"
 #include "buff/s_buff.h"
 #include "ability/s_ability.h"
@@ -30,12 +29,15 @@ static const CompCombat combat_config[] = {
         },
     [COMBATKIND_WIZARD] =
         {
-            .maxHealth = 100,
-            .health    = 100,
-            .maxEnergy = 100,
-            .energy    = 100,
-            .maxMana   = 100,
-            .mana      = 100,
+            .maxHealth   = 100,
+            .health      = 100,
+            .maxEnergy   = 100,
+            .energy      = 100,
+            .energyRegen = 10.0f,
+            .maxMana     = 100,
+            .mana        = 100,
+            .doesRespawn = 1,
+            .respawnTime = 2.0f,
         },
 };
 
@@ -252,8 +254,8 @@ void Sol_Combat_ApplyHit(World *world, int id, SolHit hit)
                 }
             }
         }
-        if (world->masks[id] & BITC(HAS_CONTROLLER_AI))
-            Sol_AiController_SetLastHit(world, id, attacker, damage);
+        if (world->masks[id] & BITC(HAS_AI))
+            Sol_Ai_SetLastHit(world, id, attacker, damage);
 
         if (effectMask & EFFECTMASK_HEALONHIT && !targetDead)
         {
@@ -303,7 +305,7 @@ void Sol_Combat_ApplyHit(World *world, int id, SolHit hit)
 
     if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && world->masks[id] & BITC(HAS_PROJECTILE))
     {
-        Sol_Physx_SetRedirectVel(world, id, Sol_Controller_GetAimdir(world, attacker));
+        Sol_Physx_SetRedirectVel(world, id, Sol_Controller_Get(world, attacker)->aimdir);
         Sol_Owner_Add(world, id, attacker);
         Sol_Event_Add(world, (SolEvent){
                                  .kind            = EVENTKIND_SOUND,

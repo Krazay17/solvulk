@@ -94,8 +94,9 @@ void Net_Send_Snap(World *world)
         e->scale          = world->xforms[id].scale.x;
         if (world->masks[id] & BITC(HAS_CONTROLLER))
         {
-            e->yaw   = world->controllers[id].yaw;
-            e->pitch = world->controllers[id].pitch;
+            CompController *controller = Sol_Controller_Get(world, id);
+            e->yaw                     = controller->yaw;
+            e->pitch                   = controller->pitch;
         }
         if (world->masks[id] & BITC(HAS_MODEL))
         {
@@ -240,8 +241,9 @@ void Net_Apply_Snap(World *world)
             world->xforms[id].quat = e->rot;
             if (world->masks[id] & BITC(HAS_CONTROLLER))
             {
-                world->controllers[id].yaw   = e->yaw;
-                world->controllers[id].pitch = e->pitch;
+                CompController *controller = Sol_Controller_Get(world, id);
+                controller->yaw            = e->yaw;
+                controller->pitch          = e->pitch;
             }
             if (world->masks[id] & BITC(HAS_BODY3))
             {
@@ -319,7 +321,7 @@ void Net_Send_Input(World *world)
 {
     if (!(world->masks[1] & BITC(HAS_CONTROLLER)))
         return;
-    CompController *controller = &world->controllers[1];
+    CompController *controller = Sol_Controller_Get(world, world->playerId);
 
     NetInputPacket inputPacket = {
         .type        = NET_PACKET_INPUT,

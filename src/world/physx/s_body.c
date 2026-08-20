@@ -4,11 +4,14 @@
 #include "sol_core.h"
 #include "world.h"
 #include "profiler.h"
+
+
+
 #include "xform/s_xform.h"
 #include "event/s_event.h"
 #include "owner/s_owner.h"
-#include "camera.h"
 #include "replication/s_replication.h"
+#include "camera/s_camera.h"
 #include <omp.h>
 
 static u32            ents[MAX_ENTS];

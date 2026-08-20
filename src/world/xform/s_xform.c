@@ -58,9 +58,9 @@ void Xform_Snapshot(World *world)
         world->xforms[id].lastQuat  = world->xforms[id].quat;
         world->xforms[id].lastScale = world->xforms[id].scale;
     }
-    if (world->userID < 0)
+    if (world->playerId < 0)
         return;
-    CompXform *playerXform = &world->xforms[world->userID];
+    CompXform *playerXform = &world->xforms[world->playerId];
     // Sol_Debug_Add("X", playerXform->pos.x);
     // Sol_Debug_Add("Y", playerXform->pos.y);
     // Sol_Debug_Add("Z", playerXform->pos.z);

@@ -1,4 +1,4 @@
-#include "ability_i.h"
+#include "ability/si_ability.h"
 #include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
@@ -12,6 +12,7 @@
 #include "replication/s_replication.h"
 #include "combat/s_combat.h"
 #include "render/render.h"
+#include "s_ability.h"
 
 typedef struct
 {
@@ -35,9 +36,6 @@ static void Dense_Step(World *world, double dt, double time)
 static void Ability_Step(World *world, double dt, double time)
 {
     static int       required     = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
-    CompAbility     *abilities    = world->abilities;
-    CompController  *controllers  = world->controllers;
-    CompReplication *replications = world->replications;
 
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -51,12 +49,11 @@ static void Ability_Step(World *world, double dt, double time)
         }
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
             continue;
-        if (replications[id].auth == NETAUTH_REMOTE)
-            continue;
 
-        CompAbility *ability = &abilities[id];
+        CompAbility *ability = &world->abilities[id];
+        CompController *controller = Sol_Controller_Get(world, id);
 
-        SolActions actions = controllers[id].actionState;
+        SolActions actions = controller->actionState;
         for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
         {
             if (ability->bindings[m].dirtyApply)
@@ -130,7 +127,6 @@ void Sol_Ability_Init(World *world)
 CompAbility *Sol_Ability_AddDense(World *world, int id, AbilityDesc desc)
 {
     WorldAbilities *worldAbilities = world->dense_components[WORLD_SYS_ABILITY];
-    int             denseId        = worldAbilities->sparse[id];
     if (worldAbilities->sparse[id] != INVALID_INDEX)
         return &worldAbilities->abilities[worldAbilities->sparse[id]];
     if (worldAbilities->cnt >= worldAbilities->cap)
@@ -149,7 +145,15 @@ CompAbility *Sol_Ability_AddDense(World *world, int id, AbilityDesc desc)
     return ability;
 }
 
-void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
+CompAbility *Sol_Ability_Get(World *world, int id)
+{
+    WorldAbilities *worldAbilities = world->dense_components[WORLD_SYS_ABILITY];
+    CompAbility    *ability        = &worldAbilities->abilities[worldAbilities->sparse[id]];
+
+    return ability;
+}
+
+CompAbility *Sol_Ability_Add(World *world, int id, AbilityDesc desc)
 {
     CompAbility a = {0};
     memcpy(a.bindings, desc.bindings, sizeof(a.bindings));
@@ -165,6 +169,7 @@ void Sol_Ability_Add(World *world, int id, AbilityDesc desc)
     // *WGetComp(world, id, HAS_ABILITY, CompAbility) = a;
     world->abilities[id] = a;
     WAddComp(world, id, HAS_ABILITY);
+    return &world->abilities[id];
 }
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force)

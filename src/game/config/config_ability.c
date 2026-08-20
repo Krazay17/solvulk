@@ -1,4 +1,4 @@
-#include "ability/ability_i.h"
+#include "ability/si_ability.h"
 #include "buff/s_buff.h"
 
 AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =

@@ -124,6 +124,11 @@ void Sol_Ai_Init(World *world)
 CompAi *Sol_Ai_Add(World *world, int id)
 {
     WorldAis *wc = world->dense_components[WORLD_SYS_AI];
+    if (!wc)
+        return NULL;
+    if (!WHasB(world, id, HAS_CONTROLLER))
+        Sol_Controller_Add(world, id);
+
     if (wc->sparse[id] != -1)
         return &wc->ais[wc->sparse[id]];
     if (wc->cnt >= wc->cap)
@@ -136,29 +141,33 @@ CompAi *Sol_Ai_Add(World *world, int id)
     wc->sparse[id]   = dense;
     wc->dense[dense] = id;
     wc->ais[dense]   = (CompAi){0};
+    WAddComp(world, id, HAS_AI);
     return &wc->ais[dense];
 }
 
 CompAi *Sol_Ai_Get(World *world, int id)
 {
     WorldAis *wc = world->dense_components[WORLD_SYS_AI];
-    if (wc->sparse[id] == -1)
+    if (wc->sparse[id] < 0)
         return NULL;
     return &wc->ais[wc->sparse[id]];
 }
 
 void Sol_Ai_Remove(World *world, int id)
 {
-    WorldAis *wc = world->dense_components[WORLD_SYS_AI];
-    for (int i = 0; i < wc->cnt; i++)
-    {
-        if (wc->dense[i] == id)
-        {
-            wc->sparse[id] = -1;
-            wc->ais[i]     = wc->ais[--wc->cnt];
-            WRemB(world, id, HAS_AI);
-        }
-    }
+    WorldAis *wc  = world->dense_components[WORLD_SYS_AI];
+    int       idx = wc->sparse[id];
+    if (idx < 0)
+        return;
+
+    int lastIdx        = wc->cnt - 1;
+    int lastId         = wc->dense[lastIdx];
+    wc->ais[idx]       = wc->ais[lastIdx];
+    wc->dense[idx]     = lastId;
+    wc->sparse[lastId] = idx;
+    wc->sparse[id]     = -1;
+    wc->cnt--;
+    WRemB(world, id, HAS_AI);
 }
 
 void Ai_Debug(World *world, double dt, double time)
@@ -184,23 +193,6 @@ void Ai_Debug(World *world, double dt, double time)
         Sol_Render_DrawText3D((Text3DDesc){
             .billboard = true, .color = {0, 1, 0, 1}, .pos = pos, .size = 0.4f, .text = buffer, .font = SOL_FONT_ICE});
     }
-    // for (int i = 0; i < world->activeCount; i++)
-    // {
-    //     int id = world->activeEntities[i];
-    //     if (Sol_Combat_GetDead(world, id) || !WHas(world, id, required) ||
-    //         world->replications[id].auth == NETAUTH_REMOTE)
-    //         continue;
-    //     CompController *controller   = Sol_Controller_Get(world, id);
-    //     CompAi         *aicontroller = &world->aicontrollers[id];
-    //     vec3s           pos          = Sol_Xform_GetDrawXform(world, id).pos;
-    //     pos.y += Sol_Physx_GetDims(world, id).y;
-
-    //     char buffer[12];
-    //     snprintf(buffer, sizeof(buffer), "Target: %d", aicontroller->target);
-    //     Sol_Render_DrawText3D((Text3DDesc){
-    //         .billboard = true, .color = {0, 1, 0, 1}, .pos = pos, .size = 0.4f, .text = buffer, .font =
-    //         SOL_FONT_ICE});
-    // }
 }
 
 bool Sol_Ai_SetState(World *world, int id, AiState nextState, u32 slot)
@@ -226,9 +218,11 @@ bool Sol_Ai_SetState(World *world, int id, AiState nextState, u32 slot)
     return true;
 }
 
-u32 Sol_Ai_FindTarget(World *world, int id)
+int Sol_Ai_FindTarget(World *world, int id)
 {
     CompAi *ai = Sol_Ai_Get(world, id);
+    if (!ai)
+        return -1;
     if (ai->justHitUs > 0)
         return ai->justHitUs;
     float closestDistance = 9999999.0f;

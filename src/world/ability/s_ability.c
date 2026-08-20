@@ -35,7 +35,7 @@ static void Dense_Step(World *world, double dt, double time)
 
 static void Ability_Step(World *world, double dt, double time)
 {
-    static int       required     = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
 
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -50,8 +50,10 @@ static void Ability_Step(World *world, double dt, double time)
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
             continue;
 
-        CompAbility *ability = &world->abilities[id];
+        CompAbility    *ability    = &world->abilities[id];
         CompController *controller = Sol_Controller_Get(world, id);
+        if (!controller)
+            continue;
 
         SolActions actions = controller->actionState;
         for (int m = 0; m < MAX_MAPPED_SKILLS; m++)

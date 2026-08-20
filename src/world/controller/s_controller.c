@@ -27,42 +27,13 @@ typedef struct
     int             cnt, cap;
     int            *sparse, *dense;
     CompController *controllers;
-
-    // int               remote_cnt, remote_cap;
-    // int              *remote_sparse, *remote_dense;
-    // RemoteController *remote_controllers;
-
-    // int           ai_cnt, ai_cap;
-    // int          *ai_sparse, *ai_dense;
-    // AiController *ai_controllers;
 } WorldControllers;
 
-static void SubTick(World *world, double dt, double time)
+static void Tick(World *world, double dt, double time)
 {
     float fdt = (float)dt;
 
     WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
-    // for (int i = 0; i < wc->user_cnt; i++)
-    // {
-    //     int             id             = wc->user_dense[i];
-    //     UserController *userController = &wc->user_controllers[i];
-    //     CompController *controller     = &wc->controllers[wc->sparse[id]];
-    //     User_Tick(world, id, controller, userController, dt, time);
-    // }
-    // for (int i = 0; i < wc->remote_cnt; i++)
-    // {
-    //     int               id               = wc->remote_dense[i];
-    //     RemoteController *remoteController = &wc->remote_controllers[i];
-    //     CompController   *controller       = &wc->controllers[wc->sparse[id]];
-    //     Remote_Tick(world, controller, remoteController, dt, time);
-    // }
-    // for (int i = 0; i < wc->ai_cnt; i++)
-    // {
-    //     int             id           = wc->ai_dense[i];
-    //     AiController   *aiController = &wc->ai_controllers[i];
-    //     CompController *controller   = &wc->controllers[wc->sparse[id]];
-    //     Ai_Tick(world, controller, aiController, dt, time);
-    // }
     for (int i = 0; i < wc->cnt; i++)
     {
         int             id         = wc->dense[i];
@@ -100,28 +71,7 @@ void Sol_Controller_Init(World *world)
     world_controllers->dense       = malloc(world_controllers->cap * sizeof(int));
     memset(world_controllers->sparse, -1, MAX_ENTS * sizeof(int));
 
-    // world_controllers->user_cap         = 1;
-    // world_controllers->user_cnt         = 0;
-    // world_controllers->user_controllers = malloc(world_controllers->user_cap * sizeof(UserController));
-    // world_controllers->user_sparse      = malloc(MAX_ENTS * sizeof(int));
-    // world_controllers->user_dense       = malloc(world_controllers->user_cap * sizeof(int));
-    // memset(world_controllers->user_sparse, -1, MAX_ENTS * sizeof(int));
-
-    // world_controllers->remote_cap         = 8;
-    // world_controllers->remote_cnt         = 0;
-    // world_controllers->remote_controllers = malloc(world_controllers->remote_cap * sizeof(RemoteController));
-    // world_controllers->remote_sparse      = malloc(MAX_ENTS * sizeof(int));
-    // world_controllers->remote_dense       = malloc(world_controllers->remote_cap * sizeof(int));
-    // memset(world_controllers->remote_sparse, -1, MAX_ENTS * sizeof(int));
-
-    // world_controllers->ai_cap         = 64;
-    // world_controllers->ai_cnt         = 0;
-    // world_controllers->ai_controllers = malloc(world_controllers->ai_cap * sizeof(AiController));
-    // world_controllers->ai_sparse      = malloc(MAX_ENTS * sizeof(int));
-    // world_controllers->ai_dense       = malloc(world_controllers->ai_cap * sizeof(int));
-    // memset(world_controllers->ai_sparse, -1, MAX_ENTS * sizeof(int));
-
-    WAddTick(world) = SubTick;
+    WAddTick(world) = Tick;
 }
 
 // void Sol_Controller_Add(World *world, int id, ControllerKind kind)
@@ -162,57 +112,39 @@ CompController *Sol_Controller_Add(World *world, int id)
         wc->dense       = realloc(wc->dense, wc->cap * sizeof(int));
         wc->controllers = realloc(wc->controllers, wc->cap * sizeof(CompController));
     }
-    int denseIdx               = wc->cnt++;
-    wc->sparse[id]             = denseIdx;
-    wc->dense[denseIdx]        = id;
-    CompController *controller = &wc->controllers[denseIdx];
-    memset(controller, 0, sizeof(CompController));
+    int denseIdx              = wc->cnt++;
+    wc->sparse[id]            = denseIdx;
+    wc->dense[denseIdx]       = id;
+    wc->controllers[denseIdx] = (CompController){0};
     WAddComp(world, id, HAS_CONTROLLER);
-    return controller;
+    return &wc->controllers[denseIdx];
 }
-
-// CompController *Sol_Controller_AddUser(World *world, int id, int playerIdx)
-// {
-//     CompController *controller = Sol_Controller_AddBase(world, id);
-//     controller->kind           = CONTROLLERKIND_USER;
-
-//     WorldControllers *world_controllers = world->dense_components[WORLD_SYS_CONTROLLER];
-//     if (world_controllers->user_sparse[id] != -1)
-//         return controller;
-//     if (world_controllers->user_cnt >= world_controllers->user_cap)
-//     {
-//         world_controllers->user_cap *= 2;
-//         world_controllers->user_dense =
-//             realloc(world_controllers->user_dense, world_controllers->user_cap * sizeof(int));
-//         world_controllers->user_controllers =
-//             realloc(world_controllers->user_controllers, world_controllers->user_cap * sizeof(UserController));
-//     }
-//     int denseIdx                            = world_controllers->user_cnt++;
-//     world_controllers->user_sparse[id]      = denseIdx;
-//     world_controllers->user_dense[denseIdx] = id;
-//     UserController *userController          = &world_controllers->user_controllers[denseIdx];
-//     memset(userController, 0, sizeof(UserController));
-//     userController->playerIdx = playerIdx;
-//     return controller;
-// }
 
 void Sol_Controller_Remove(World *world, int id)
 {
-    WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
-    for (int i = 0; i < wc->cnt; i++)
-    {
-        if (wc->dense[i] == id)
-        {
-            wc->sparse[id]     = -1;
-            wc->controllers[i] = wc->controllers[--wc->cnt];
-        }
-    }
+    WorldControllers *wc  = world->dense_components[WORLD_SYS_CONTROLLER];
+    int               idx = wc->sparse[id];
+    if (idx < 0)
+        return;
+
+    int lastIdx          = wc->cnt - 1;
+    int lastId           = wc->dense[lastIdx];
+    wc->controllers[idx] = wc->controllers[lastIdx];
+    wc->dense[idx]       = lastId;
+    wc->sparse[lastId]   = idx;
+    wc->sparse[id]       = -1;
+    wc->cnt--;
+    WRemB(world, id, HAS_CONTROLLER);
 }
 
 CompController *Sol_Controller_Get(World *world, int id)
 {
-    WorldControllers *world_controllers = world->dense_components[WORLD_SYS_CONTROLLER];
-    return &world_controllers->controllers[world_controllers->sparse[id]];
+    if (id < 0)
+        return NULL;
+    WorldControllers *wc = world->dense_components[WORLD_SYS_CONTROLLER];
+    if (wc->sparse[id] < 0)
+        return NULL;
+    return &wc->controllers[wc->sparse[id]];
 }
 
 // UserController *Sol_Controller_GetUser(World *world, int id)

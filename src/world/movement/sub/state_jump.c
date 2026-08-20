@@ -12,7 +12,7 @@
 
 #define JUMP_VEL 11.0f
 #define JUMP_DURATION 0.5f
-#define DAMPING 2.0f
+#define DAMPING 3.0f
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {

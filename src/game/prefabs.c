@@ -299,8 +299,8 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos, World *entWorld, u32 entId)
     return id;
 }
 
-int Sol_Prefab_EnergyBar(World *world, vec3s pos, World *entWorld, u32 entId, vec4s color, float *value,
-                         float *maxvalue)
+int Sol_Prefab_EnergyBar(World *world, vec3s pos, vec4s color, World *eworld, u32 entId, GetterFunc value,
+                         GetterFunc max)
 {
     vec2s dims = {250.0f, 30.0f};
 
@@ -308,9 +308,9 @@ int Sol_Prefab_EnergyBar(World *world, vec3s pos, World *entWorld, u32 entId, ve
     Sol_Xform_Add(world, id, pos);
     Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
     Sol_Interact_Add(world, id);
-    CompTracker *tracker = Sol_World_SetTracker(world, id, entWorld, entId);
-    tracker->values[0]   = value;
-    tracker->values[1]   = maxvalue;
+    CompTracker *tracker = Sol_World_SetTracker(world, id, eworld, entId);
+    tracker->getters[0]  = value;
+    tracker->getters[1]  = max;
 
     SolView2d *bg  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.0f, 0.0f, 0.0f, 1.0f}, dims.x, dims.y);
     bg->zindex     = 2;
@@ -583,7 +583,7 @@ int Sol_Prefab_Buffbar(World *world, vec3s pos)
     return id;
 }
 
-int Sol_Prefab_Spectate(World *world, vec3s pos)
+int Sol_Prefab_Spectate(World *world, vec3s pos, float yaw)
 {
     int id = Sol_Create_Ent(world, 0);
     Sol_Body_Add(world, id,
@@ -594,10 +594,13 @@ int Sol_Prefab_Spectate(World *world, vec3s pos)
                      .mass    = 1.0f,
                  });
     Sol_Xform_SetPos(world, id, pos);
+
     Sol_Movement_Add(world, id, MOVEMENTKIND_SPECTATE);
     Sol_Movement_ForceState(world, id, MOVE_FLY);
     Sol_Cam_Add(world, id, CAMKIND_NOARM, true);
-    Sol_Player_Add(world, id);
+    Sol_Player_Add(world, id, 0);
+    CompController *controller = Sol_Controller_Get(world, id);
+    controller->yaw            = yaw;
 
     return id;
 }

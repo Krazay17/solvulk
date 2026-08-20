@@ -11,6 +11,8 @@
 #include "buff/s_buff.h"
 #include "combat/s_combat.h"
 
+#include "player/s_player.h"
+
 #define HEALTHBAR_HIDE_DURATION 5.0f
 
 struct BuffIconConfig
@@ -55,7 +57,7 @@ static void Nameplate_Draw(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (id == 1)
+        if (id == Sol_Player_GetEnt(world, 0))
             continue;
 
         if (!WHas(world, id, BITC(HAS_COMBAT)) || Sol_Combat_GetDead(world, id))

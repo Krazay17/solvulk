@@ -154,15 +154,18 @@ CompCam *Sol_Cam_Get(World *world, int id)
 
 void Sol_Cam_Remove(World *world, int id)
 {
-    WorldCams *wc = world->dense_components[WORLD_SYS_CAM];
-    for (int i = 0; i < wc->cnt; i++)
-    {
-        if (wc->dense[i] == id)
-        {
-            wc->sparse[id] = -1;
-            wc->cams[i]    = wc->cams[--wc->cnt];
-        }
-    }
+    WorldCams *wc  = world->dense_components[WORLD_SYS_CAM];
+    int        idx = wc->sparse[id];
+    if (idx < 0)
+        return;
+
+    int lastIdx        = wc->cnt- 1;
+    int lastId         = wc->dense[lastIdx];
+    wc->cams[idx]      = wc->cams[lastIdx];
+    wc->dense[idx]     = lastId;
+    wc->sparse[lastId] = idx;
+    wc->sparse[id]     = -1;
+    wc->cnt--;
 }
 
 void Sol_Cam_AdjustDistance(World *world, int id, float delta)

@@ -47,9 +47,13 @@ static void UICombatBars(World *world, double dt, double time)
         if (!WHasB(world, id, HAS_TRACKER))
             continue;
         CompTracker *tracker = &world->trackers[id];
-        if (!tracker->values[0] || !tracker->values[1])
+        if (!tracker->getters[0] || !tracker->getters[1])
             continue;
-        float       target        = *tracker->values[0] > 0 ? *tracker->values[0] / *tracker->values[1] : 0.0f;
+
+        float       target        = tracker->getters[0](tracker->world, tracker->entId) > 0
+                                        ? tracker->getters[0](tracker->world, tracker->entId) /
+                                              tracker->getters[1](tracker->world, tracker->entId)
+                                        : 0.0f;
         CompView2d *view          = &world->view2d[id];
         view->views[2].targetFill = target;
         view->views[3].fill = view->views[3].targetFill = target;

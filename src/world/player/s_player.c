@@ -22,6 +22,7 @@ typedef struct
     int         cnt, cap;
     int        *sparse, *dense;
     CompPlayer *players;
+    int         player_slots[MAX_LOCAL_PLAYERS];
 } WorldPlayers;
 
 static void Tick(World *world, double dt, double time)
@@ -130,52 +131,91 @@ void Sol_Player_Init(World *world)
     wc->dense   = malloc(wc->cap * sizeof(int));
     wc->players = malloc(wc->cap * sizeof(CompPlayer));
     memset(wc->sparse, -1, MAX_ENTS * sizeof(int));
+    memset(wc->player_slots, -1, sizeof(wc->player_slots));
 
     WAddTick(world) = Tick;
 }
 
-CompPlayer *Sol_Player_Add(World *world, int id)
+CompPlayer *Sol_Player_Add(World *world, int id, int localIdx)
 {
-    world->playerId = id;
-    if (!WHasB(world, id, HAS_CONTROLLER))
-        Sol_Controller_Add(world, id);
     WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
     if (wc->sparse[id] != -1)
         return &wc->players[wc->sparse[id]];
+
+    if (!WHasB(world, id, HAS_CONTROLLER))
+        Sol_Controller_Add(world, id);
+
     if (wc->cnt >= wc->cap)
     {
         wc->cap *= 2;
-        wc->dense   = malloc(wc->cap * sizeof(int));
-        wc->players = malloc(wc->cap * sizeof(CompPlayer));
+        wc->dense   = realloc(wc->dense, wc->cap * sizeof(int));
+        wc->players = realloc(wc->players, wc->cap * sizeof(CompPlayer));
     }
-    int dense          = wc->cnt++;
-    wc->sparse[id]     = dense;
-    wc->dense[dense]   = id;
-    wc->players[dense] = (CompPlayer){
-        .localIdx = 0,
+
+    // Standard contiguous insertion
+    int idx        = wc->cnt++;
+    wc->sparse[id] = idx;
+    wc->dense[idx] = id;
+
+    // Component holds the player index data
+    wc->players[idx] = (CompPlayer){
+        .localIdx = localIdx,
     };
+
+    // Maintain slot lookup cache
+    if (localIdx > -1 && localIdx <= MAX_LOCAL_PLAYERS - 1)
+    {
+        wc->player_slots[localIdx] = id;
+    }
+
     WAddComp(world, id, HAS_PLAYER);
-    return &wc->players[dense];
+    return &wc->players[idx];
 }
 
 CompPlayer *Sol_Player_Get(World *world, int id)
 {
     WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
-    if (wc->sparse[id] == -1)
+    if (wc->sparse[id] < 0)
         return NULL;
     return &wc->players[wc->sparse[id]];
 }
 
 void Sol_Player_Remove(World *world, int id)
 {
-    WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
-    for (int i = 0; i < wc->cnt; i++)
+    WorldPlayers *wc  = world->dense_components[WORLD_SYS_PLAYER];
+    int           idx = wc->sparse[id];
+    if (idx < 0)
+        return;
+
+    int slot = wc->players[idx].localIdx;
+    if (slot >= 0 && slot < MAX_LOCAL_PLAYERS && wc->player_slots[slot] == id)
     {
-        if (wc->dense[i] == id)
-        {
-            wc->sparse[id] = -1;
-            wc->players[i] = wc->players[--wc->cnt];
-            WRemB(world, id, HAS_PLAYER);
-        }
+        wc->player_slots[slot] = -1;
     }
+
+    int lastIdx        = wc->cnt - 1;
+    int lastId         = wc->dense[lastIdx];
+    wc->players[idx]   = wc->players[lastIdx];
+    wc->dense[idx]     = lastId;
+    wc->sparse[lastId] = idx;
+    wc->sparse[id]     = -1;
+    wc->cnt--;
+    WRemB(world, id, HAS_PLAYER);
+}
+
+int Sol_Player_GetEnt(World *world, int localIdx)
+{
+    WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
+    if (!wc)
+        return -1;
+    if (localIdx < 0 || localIdx > MAX_LOCAL_PLAYERS - 1)
+        return -1;
+
+    int entId = wc->player_slots[localIdx];
+    // Verify entity is still alive and has component
+    if (entId != -1 && WHasB(world, entId, HAS_PLAYER))
+    {
+        return entId;
+    }
+    return -1;
 }

@@ -3,6 +3,8 @@
 #include "sol_core.h"
 #include "world.h"
 #include "network.h"
+
+#include "player/s_player.h"
 #include "event/s_event.h"
 
 #define CORRECT_NONE 0.1f
@@ -321,7 +323,8 @@ void Net_Send_Input(World *world)
 {
     if (!(world->masks[1] & BITC(HAS_CONTROLLER)))
         return;
-    CompController *controller = Sol_Controller_Get(world, world->playerId);
+        int playerId = Sol_Player_GetEnt(world, 0);
+    CompController *controller = Sol_Controller_Get(world, playerId);
 
     NetInputPacket inputPacket = {
         .type        = NET_PACKET_INPUT,

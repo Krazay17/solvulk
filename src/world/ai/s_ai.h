@@ -34,3 +34,5 @@ void Sol_Ai_Init(World *world);
 CompAi *Sol_Ai_Add(World *world, int id);
 CompAi *Sol_Ai_Get(World *world, int id);
 void    Sol_Ai_Remove(World *world, int id);
+
+int Sol_Ai_FindTarget(World *world, int id);

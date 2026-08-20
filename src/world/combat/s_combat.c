@@ -120,6 +120,10 @@ void Sol_Combat_Add(World *world, int id, CombatKind kind)
     world->combats[id]    = combat;
     world->masks[id] |= BITC(HAS_COMBAT);
 }
+CompCombat *Sol_Combat_Get(World *world, int id)
+{
+    return &world->combats[id];
+}
 
 float Sol_Combat_Damage(World *world, int id, int attacker, float damage)
 {

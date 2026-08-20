@@ -3,7 +3,7 @@
 
 #define MAX_SYSTEMS 64
 #define NULL_ENTITYID -1
-#define MAX_TRACKER_VALUES 2
+#define MAX_TRACKER_GETTERS 2
 #define INVALID_INDEX UINT32_MAX
 
 #define WAdd2d(w) w->draw2dSystems[w->draw2dCount++]
@@ -24,7 +24,7 @@
     X(WORLD_SYS_REPLICATION, Sol_Replication_Init, Sol_System_Remove_Noop)                                             \
     X(WORLD_SYS_EVENT, Sol_Event_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_CAM, Sol_Cam_Init, Sol_Cam_Remove)                                                                     \
-    X(WORLD_SYS_PLAYER, Sol_Player_Init, Sol_Player_Remove)                                                                  \
+    X(WORLD_SYS_PLAYER, Sol_Player_Init, Sol_Player_Remove)                                                            \
     X(WORLD_SYS_AI, Sol_Ai_Init, Sol_Ai_Remove)                                                                        \
     X(WORLD_SYS_REMOTE, Sol_Remote_Init, Sol_Remote_Remove)                                                            \
     X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, Sol_Controller_Remove)                                                \
@@ -176,11 +176,12 @@ typedef struct CompFlags
 {
     EFlag flags;
 } CompFlags;
+typedef float (*GetterFunc)(World *world, int id);
 typedef struct CompTracker
 {
-    World *world;
-    u32    entId;
-    float *values[MAX_TRACKER_VALUES];
+    World      *world;
+    u32         entId;
+    GetterFunc getters[MAX_TRACKER_GETTERS];
 } CompTracker;
 
 struct World
@@ -257,7 +258,7 @@ struct World
     int deinitCount;
 
     int activeCount;
-    int playerId;
+    // int playerId;
     int skyboxId;
     u32 systemBits;
 
@@ -269,6 +270,26 @@ struct World
 
     void *dense_components[WORLD_SYS_COUNT];
 };
+
+#define ENTITY_INDEX_BITS 16
+#define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)
+#define EntIdx(id) (id & ENTITY_INDEX_MASK)
+#define EntGen(id) (id >> ENTITY_INDEX_BITS)
+#define EntIdxGen(id, gen) ((gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK))
+static inline u32 Sol_GetEntIndex(int id)
+{
+    return id & ENTITY_INDEX_MASK;
+}
+
+static inline u32 Sol_GetEntGen(int id)
+{
+    return id >> ENTITY_INDEX_BITS;
+}
+
+static inline u32 Sol_CreateEntGen(int id, int gen)
+{
+    return (gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK);
+}
 
 World *World_Create(WorldKind kind);
 World *World_Create_Default(WorldKind kind);
@@ -294,23 +315,3 @@ void Sol_Destroy_Ent(World *world, int id);
 
 void Sol_Flags_Add(World *world, int id, EFlag flags);
 void Sol_Flags_Remove(World *world, int id, EFlag flags);
-
-#define ENTITY_INDEX_BITS 16
-#define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)
-#define EntIdx(id) (id & ENTITY_INDEX_MASK)
-#define EntGen(id) (id >> ENTITY_INDEX_BITS)
-#define EntIdxGen(id, gen) ((gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK))
-static inline u32 Sol_GetEntIndex(int id)
-{
-    return id & ENTITY_INDEX_MASK;
-}
-
-static inline u32 Sol_GetEntGen(int id)
-{
-    return id >> ENTITY_INDEX_BITS;
-}
-
-static inline u32 Sol_CreateEntGen(int id, int gen)
-{
-    return (gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK);
-}

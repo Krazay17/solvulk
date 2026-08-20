@@ -35,7 +35,8 @@ World *World_Create(WorldKind kind)
         world->doesRender                        = true;
         world->doesReplicate                     = false;
         world->systemBits                        = 0;
-        world->playerId                            = -1;
+        world->activeCount                       = 0;
+        // world->playerId                          = -1;
         world->kind                              = kind;
         world->worldId                           = world_count++;
         solEngine.worlds[solEngine.worldCount++] = world;
@@ -66,6 +67,9 @@ World *World_Create_Default(WorldKind kind)
         case WORLDKIND_GAME2D:
             World_System_Add(world, WORLD_SYS_XFORM);
             World_System_Add(world, WORLD_SYS_EVENT);
+            World_System_Add(world, WORLD_SYS_PLAYER);
+            World_System_Add(world, WORLD_SYS_AI);
+            World_System_Add(world, WORLD_SYS_REMOTE);
             World_System_Add(world, WORLD_SYS_CONTROLLER);
             World_System_Add(world, WORLD_SYS_MOVEMENT);
             World_System_Add(world, WORLD_SYS_INTERACT);
@@ -215,6 +219,8 @@ void Sol_Destroy_Ent(World *world, int id)
         activeEnts [0][1][2]
                    '6''1''3'
     */
+    if (id < 0)
+        return;
     for (int i = world->activeCount - 1; i >= 0; i--)
     {
         int entId = world->activeEntities[i];

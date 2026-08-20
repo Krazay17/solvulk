@@ -44,7 +44,8 @@ typedef struct CompCombat
 void Sol_Combat_Init(World *world);
 void Sol_Chainhit_Init(World *world);
 
-void Sol_Combat_Add(World *world, int id, CombatKind kind);
+void        Sol_Combat_Add(World *world, int id, CombatKind kind);
+CompCombat *Sol_Combat_Get(World *world, int id);
 
 float Sol_Combat_Damage(World *world, int id, int attacker, float damage);
 float Sol_Combat_Heal(World *world, int id, SolHit hit);
@@ -61,7 +62,6 @@ u32  Sol_Combat_StartHitGen(World *world, int id);
 bool Sol_Combat_TryHitGen(World *world, int id, int target, u32 sessionGen);
 
 float Sol_Combat_GetHealth(World *world, int id);
-
 
 void Sol_Chainhit_Trigger(World *world, int dealer, int target, u32 kind, float damage);
 void Sol_Dmgnumbers_Spawn(World *world, int id, int amnt, vec3s pos);

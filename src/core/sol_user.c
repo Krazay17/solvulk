@@ -6,6 +6,9 @@
 #include "platform/platform.h"
 
 #include "interact/s_interact.h"
+#include "xform/s_xform.h"
+#include "physx/s_body.h"
+#include "movement/s_movement.h"
 
 #define USER_SETTINGS_FILENAME "UserSettings"
 
@@ -150,6 +153,19 @@ void Sol_User_Tick(double dt)
         solEngine.worlds[0]->doesSimulate = menuActive;
         solEngine.worlds[0]->doesRender   = menuActive;
         Sol_Input_SetLocked(!menuActive);
+    }
+
+    // ### DEBUG ####
+    World *activeWorld = solEngine.activeWorld;
+    int    playerId    = Sol_Player_GetEnt(activeWorld, 0);
+    if (playerId > -1)
+    {
+        Sol_Debug_Add("X", activeWorld->xforms[playerId].pos.x);
+        Sol_Debug_Add("Y", activeWorld->xforms[playerId].pos.y);
+        Sol_Debug_Add("Z", activeWorld->xforms[playerId].pos.z);
+        float speed = glms_vec3_norm(Sol_Physx_GetVel(activeWorld, playerId));
+        Sol_Debug_Add("Velocity", speed);
+        Sol_Debug_Add("State", activeWorld->movements[playerId].state);
     }
 }
 

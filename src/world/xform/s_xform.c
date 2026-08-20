@@ -2,10 +2,11 @@
 #include "world.h"
 #include "sol_math.h"
 
+#include "player/s_player.h"
+
 void Sol_Xform_Init(World *world)
 {
     world->xforms = calloc(MAX_ENTS, sizeof(CompXform));
-    // world->components[HAS_XFORM] = world->xforms;
 }
 
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos)
@@ -58,12 +59,6 @@ void Xform_Snapshot(World *world)
         world->xforms[id].lastQuat  = world->xforms[id].quat;
         world->xforms[id].lastScale = world->xforms[id].scale;
     }
-    if (world->playerId < 0)
-        return;
-    CompXform *playerXform = &world->xforms[world->playerId];
-    // Sol_Debug_Add("X", playerXform->pos.x);
-    // Sol_Debug_Add("Y", playerXform->pos.y);
-    // Sol_Debug_Add("Z", playerXform->pos.z);
 }
 
 void Xform_Interpolate(World *world, float alpha)

@@ -1,19 +1,20 @@
 #include "game.h"
 
 static World *gameWorld;
+static World *hud;
 static World *gameWorld2;
 static int    player2d;
+static int    hudPlayerHealth, hudPlayerEnergy;
 
 static void SpawnPlayer(int flags, void *data)
 {
-    Sol_Destroy_Ent(gameWorld, gameWorld->playerId);
+    Sol_Destroy_Ent(gameWorld, Sol_Player_GetEnt(gameWorld, 0));
 
     int id = Sol_Prefab_Factory(gameWorld, 0, EKIND_PLAYER,
                                 (EntDesc){.pos = gameWorld->playerSpawns[0], .scale = 1.0f, .authority = NETAUTH_AUTH});
     Sol_Movement_Add(gameWorld, id, MOVEMENTKIND_PLAYER);
-    Sol_Player_Add(gameWorld, id);
     Sol_Cam_Add(gameWorld, id, CAMKIND_3D, true);
-    gameWorld->playerId = id;
+    Sol_Player_Add(gameWorld, id, 0);
 }
 
 typedef enum
@@ -63,7 +64,7 @@ void SpawnEnemyCallback(int flags, void *data)
 void MakeABox(int flags, void *data)
 {
     World *world = (World *)data;
-    vec3s  pos   = Sol_Controller_GetShootPos(world, world->playerId, 1.0f);
+    vec3s  pos   = Sol_Controller_GetShootPos(world, Sol_Player_GetEnt(world, 0), 1.0f);
     Sol_Prefab_Box(world, pos);
 }
 
@@ -162,9 +163,45 @@ void SaveGame(void)
 
 void Spectate()
 {
-    vec3s pos = Sol_Xform_GetPos(gameWorld, gameWorld->playerId);
-    Sol_Destroy_Ent(gameWorld, gameWorld->playerId);
-    int id = Sol_Prefab_Spectate(gameWorld, pos);
+    int             playerId   = Sol_Player_GetEnt(gameWorld, 0);
+    CompController *controller = Sol_Controller_Get(gameWorld, playerId);
+    float           yaw        = 0;
+    vec3s           pos        = Sol_Xform_GetPos(gameWorld, playerId);
+    if (controller)
+        yaw = controller->yaw;
+
+    Sol_Destroy_Ent(gameWorld, Sol_Player_GetEnt(gameWorld, 0));
+    int id = Sol_Prefab_Spectate(gameWorld, pos, yaw);
+}
+
+static float GetPlayerHealth(World *world, int id)
+{
+    int playerId = Sol_Player_GetEnt(world, 0);
+    if (playerId < 0)
+        return 0.0f;
+    return world->combats[playerId].health;
+}
+static float GetPlayerHealthMax(World *world, int id)
+{
+    int playerId = Sol_Player_GetEnt(world, 0);
+
+    if (playerId < 0)
+        return 0.0f;
+    return world->combats[playerId].maxHealth;
+}
+static float GetPlayerEnergy(World *world, int id)
+{
+    int playerId = Sol_Player_GetEnt(world, 0);
+    if (playerId < 0)
+        return 0.0f;
+    return world->combats[playerId].energy;
+}
+static float GetPlayerEnergyMax(World *world, int id)
+{
+    int playerId = Sol_Player_GetEnt(world, 0);
+    if (playerId < 0)
+        return 0.0f;
+    return world->combats[playerId].maxEnergy;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -173,7 +210,7 @@ void Spectate()
 void Create_Sol_Game()
 {
     World *menu = World_Create_Default(WORLDKIND_MENU);
-    World *hud  = World_Create_Default(WORLDKIND_GAME2D);
+    hud         = World_Create_Default(WORLDKIND_GAME2D);
     gameWorld   = World_Create_Default(WORLDKIND_GAME);
 
     solEngine.activeWorld = gameWorld;
@@ -187,9 +224,10 @@ void Create_Sol_Game()
     // Sol_Controller_Add(hud, player2d, CONTROLLERKIND_PLAYER);
     // Sol_Movement_Add(hud, player2d, MOVEMENTKIND_PLAYER);
 
-    Sol_Prefab_Healthbar(hud, (vec3s){515, 600, 0}, gameWorld, 1);
-    Sol_Prefab_EnergyBar(hud, (vec3s){515, 620, 0}, gameWorld, 1, (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
-                         &gameWorld->combats[1].energy, &gameWorld->combats[1].maxEnergy);
+    hudPlayerHealth = Sol_Prefab_EnergyBar(hud, (vec3s){515, 600, 0}, (vec4s){0.0f, 1.0f, 0.0f, 1.0f}, gameWorld,
+                                           Sol_Player_GetEnt(gameWorld, 0), GetPlayerHealth, GetPlayerHealthMax);
+    hudPlayerEnergy = Sol_Prefab_EnergyBar(hud, (vec3s){515, 620, 0}, (vec4s){1.0f, 1.0f, 0.0f, 1.0f}, gameWorld,
+                                           Sol_Player_GetEnt(gameWorld, 0), GetPlayerEnergy, GetPlayerEnergyMax);
 
     // WAddStep(hud) = RotateGuy;
     Sol_Prefab_Building_Button(hud, (vec3s){1000, 200.0f, 1.0f}, 1.0f, MODELKIND_WALL);

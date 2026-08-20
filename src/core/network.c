@@ -357,7 +357,7 @@ void Net_Recv_Packet(ENetEvent *event)
 
         NetWelcomePacket *welcomePacket                          = (NetWelcomePacket *)data;
         World            *world                                  = Sol_GetWorldById(welcomePacket->worldId);
-        world->worldNet->hostToLocalMap[welcomePacket->playerId] = 1;
+        world->worldNet->hostToLocalMap[welcomePacket->playerId] = Sol_Player_GetEnt(world, 0);
         solState.stepCounter                                     = welcomePacket->currentTick;
         if (world->masks[1] & BITC(HAS_ABILITY))
         {

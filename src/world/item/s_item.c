@@ -14,6 +14,8 @@
 #include "xform/s_xform.h"
 #include "physx/s_body2d.h"
 #include "game/prefabs.h"
+
+#include "player/s_player.h"
 #include "controller/s_controller.h"
 #include "ability/s_ability.h"
 #include "parent/s_parent.h"
@@ -193,8 +195,8 @@ static void AbilitySlots(World *world, double dt, double time)
             cdView->fill = cdView->targetFill = 0.0f;
             abilitySlot->onCooldown           = false;
         }
-
-        if (world->playerId != -1 && (Sol_Controller_Get(world, world->playerId)->actionState & ability->bindings[slot].actionBit) != 0)
+        int playerId = Sol_Player_GetEnt(world, 0);
+        if (playerId != -1 && (Sol_Controller_Get(world, playerId)->actionState & ability->bindings[slot].actionBit) != 0)
         {
             pressView->color = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
         }

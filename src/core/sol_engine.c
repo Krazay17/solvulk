@@ -22,6 +22,7 @@
 #include "interact/s_interact.h"
 #include "camera/s_camera.h"
 #include "event/s_event.h"
+#include "player/s_player.h"
 
 SolEngine solEngine;
 SolState  solState;
@@ -101,7 +102,7 @@ void Sol_Tick(double dt, double time)
     // ######### END STEP AND INTERP #########
 
     if (solEngine.activeWorld)
-        Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, solEngine.activeWorld->playerId), solCamera.dir);
+        Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, Sol_Player_GetEnt(solEngine.activeWorld, 0)), solCamera.dir);
 
     Sol_Render_CheckGpuUploads();
 

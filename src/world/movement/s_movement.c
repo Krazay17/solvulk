@@ -121,13 +121,6 @@ static void Movement3d_Step(World *world, double dt, double time)
         RestoreFriction(world, id, movement, fdt);
 
         CrouchHeight(world, id, fdt);
-
-        if (id == world->playerId)
-        {
-            float speed = glms_vec3_norm(Sol_Physx_GetVel(world, id));
-            Sol_Debug_Add("Velocity", speed);
-            Sol_Debug_Add("State", movement->state);
-        }
     }
 }
 

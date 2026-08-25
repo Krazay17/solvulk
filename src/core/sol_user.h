@@ -1,19 +1,24 @@
 #pragma once
 #include "types.h"
 
-typedef struct UserSettings
+#define MAX_USER_ITEMS 512
+
+typedef struct UserData
 {
-    float look_sens;
-    float volume;
+    float      look_sens;
+    float      volume;
     SolActions key_binds[SOL_KEY_COUNT];
     SolActions mouse_binds[SOL_MOUSE_COUNT];
-} UserSettings;
 
-extern UserSettings user_settings;
+    SolItem items[MAX_USER_ITEMS];
+    int     itemCount;
+} UserData;
 
-int Sol_User_Init(void);
+extern UserData user_data;
+
+int  Sol_User_Init(void);
 void Sol_User_Tick(double dt);
 void Sol_User_Draw(double dt);
-void Sol_User_Worlds_Tick(World **worlds, int count, double dt, double time);
-void Sol_User_SaveUserSettings(void);
-void Sol_User_LoadUserSettings(void);
+void Sol_User_SaveUserSettings(int flags);
+void Sol_User_LoadUserSettings(int flags);
+void Sol_User_HydrateUI();

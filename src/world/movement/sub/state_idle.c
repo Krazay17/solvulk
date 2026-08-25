@@ -16,7 +16,7 @@ static bool LeaveState(World *world, int id)
     if (Sol_Movement_GetGroundtime(world, id) < 0.001f)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH))
         if (Sol_Movement_SetState(world, id, MOVE_CROUCH))
             return true;
     if (glms_vec3_norm(controller->wishdir) > 0)
@@ -44,9 +44,6 @@ void Sol_Movement_Idle_Enter(World *world, int id)
         return;
     CompMovement *move = &world->movements[id];
     move->targetHeight = move->baseHeight;
-
-    AnimDesc desc = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Sol_Movement_Idle_Exit(World *world, int id)

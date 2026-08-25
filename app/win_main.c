@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     // load hot reload api
     // load_api("libsolvulk.dll");
 
-    if (!solEngine.isRunning)
+    if (!solState.isRunning)
     {
         MessageBoxA(g_hwnd, "Engine flagged as not running before message loop started.", "Error", MB_OK);
         return 1;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
     // Main thread is now 100% dedicated to pumping Windows messages.
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0) && solEngine.isRunning) // blocks until a message arrives – zero CPU waste
+    while (GetMessage(&msg, NULL, 0, 0) && solState.isRunning) // blocks until a message arrives – zero CPU waste
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -271,19 +271,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void QuitApp(int flags, void *data)
+void QuitApp(int flags)
 {
     PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }
 
-void W_Set_Ontop(int flags, void *data)
+void W_Set_Ontop(int flags)
 {
     bool toggle = (flags & INTERACT_TOGGLED);
     HWND top    = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
     SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
-void W_Set_Fullscreen(int flags, void *data)
+void W_Set_Fullscreen(int flags)
 {
     bool toggle = (flags & INTERACT_TOGGLED);
     u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;

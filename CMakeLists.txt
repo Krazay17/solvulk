@@ -162,8 +162,6 @@ set(SHADERS
     ${SHADER_DIR}/model.frag
     ${SHADER_DIR}/rect.vert
     ${SHADER_DIR}/rect.frag
-    ${SHADER_DIR}/recti.vert
-    ${SHADER_DIR}/recti.frag
     ${SHADER_DIR}/text.vert
     ${SHADER_DIR}/text.frag
     ${SHADER_DIR}/line.vert

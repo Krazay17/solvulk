@@ -14,10 +14,10 @@ static bool LeaveState(World *world, int id)
     if (world->movements[id].groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
-    if (!(Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH))
+    if (!(Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH)))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_JUMP)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP))
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
     // if (Sol_Movement_GetAirtime(world, id) > 0.1f)
@@ -45,40 +45,15 @@ void Slide_State_Update(World *world, int id, float dt)
         Sol_Physx_AddVel(world, id, vecSca(vecNorm(GroundSlope(world, id)), 12.0f * fdt));
     }
 
-    AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
-    switch (Sol_GetStrafedir(vel.x, vel.z, rot.x, rot.z))
-    {
-    case STRAFE_FWD:
-        desc.anim = ANIM_SLIDE_FWD;
-        break;
-    case STRAFE_BWD:
-    case STRAFE_BWD_RIGHT:
-    case STRAFE_BWD_LEFT:
-        desc.anim = ANIM_SLIDE_BWD;
-        break;
-    case STRAFE_LEFT:
-    case STRAFE_FWD_LEFT:
-        desc.anim = ANIM_SLIDE_LEFT;
-        break;
-    case STRAFE_RIGHT:
-    case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_SLIDE_RIGHT;
-        break;
-    default:
-        desc.anim = ANIM_SLIDE_FWD;
-        break;
-    }
-    Sol_Model_PlayAnim(world, id, desc);
-
-    if (move->groundtime > 0)
-    {
-        const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->state];
-        float                 speedDif = (Sol_Physx_GetSpeed(world, id) / forces->speed) * 0.5f;
-        speedDif                       = fminf(speedDif, 3.0f);
-        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
-    }
-    else
-        Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, 0.5f);
+    // if (move->groundtime > 0)
+    // {
+    //     const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->state];
+    //     float                 speedDif = (Sol_Physx_GetSpeed(world, id) / forces->speed) * 0.5f;
+    //     speedDif                       = fminf(speedDif, 3.0f);
+    //     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
+    // }
+    // else
+    //     Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, 0.5f);
 }
 
 void Slide_State_Enter(World *world, int id)

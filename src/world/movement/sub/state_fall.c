@@ -11,15 +11,15 @@ static bool LeaveState(World *world, int id)
     if (Sol_Movement_GetGroundtime(world, id) > 0.001f)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
         return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH))
         if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
             return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_JUMP)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP))
     {
         if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
             return true;
     }
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_JUMP)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP))
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
     // if (Sol_Controller_WantsMove(world, id))
@@ -38,9 +38,6 @@ void Sol_Movement_Fall_Enter(World *world, int id)
 {
     if (LeaveState(world, id))
         return;
-
-    AnimDesc desc = {.anim = ANIM_FALL, .layerId = ANIM_LAYER_BASE};
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Sol_Movement_Fall_Exit(World *world, int id)

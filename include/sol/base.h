@@ -64,6 +64,10 @@
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+struct Rect
+{
+    float x, y, w, h;
+};
 typedef unsigned char byte;
 typedef uint8_t       u8;
 typedef uint16_t      u16;
@@ -73,6 +77,7 @@ typedef int8_t        i8;
 typedef int16_t       i16;
 typedef int32_t       i32;
 typedef int64_t       i64;
+typedef vec4s         Rect;
 
 typedef struct World World;
 typedef void (*UpdateFunc)(World *, double, double);

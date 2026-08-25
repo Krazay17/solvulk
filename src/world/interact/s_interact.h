@@ -1,12 +1,14 @@
 #pragma once
 #include "types.h"
 
-typedef struct World World;
+#define MAX_TOOLTIP_ALPHA 0.9f
 
 typedef struct CompInteract
 {
+    double        hover_start_time;
+    double        unhover_start_time;
+    double        press_start_time;
     InteractState state;
-    float         value;
     double        pressedAccum;
 
     SolCallback onClick;
@@ -27,21 +29,21 @@ typedef struct CompTooltip
     TooltipKind kind;
 } CompTooltip;
 
-CompTooltip *Sol_Tooltip_Add(World *world, int id, TooltipKind kind);
-void         Sol_Tooltip_Update(double dt, SolUserHit user_hit);
-void         Sol_Tooltip_Draw(double dt, SolUserHit user_hit);
+void Sol_Interact_Init(World *world);
 
-void          Sol_Interact_Init(World *world);
-void          Sol_Interact_Set(World *world, int id, CompInteract desc);
+void          Sol_Tooltip_Draw(SolUserHit user_hit, float alpha, double dt, double time);
+CompTooltip  *Sol_Tooltip_Add(World *world, int id, TooltipKind kind);
 CompInteract *Sol_Interact_Add(World *world, int id);
+bool          Sol_Interact_Has(World *world, int id);
+CompInteract *Sol_Interact_Get(World *world, int id);
+
+void          Sol_Interact_Set(World *world, int id, CompInteract desc);
 InteractState Sol_Interact_GetState(World *world, int id);
 bool          Sol_Interact_GetToggle(World *world, int id);
 int           Sol_Interact_GetTopmost(World *world);
 void          Sol_Interact_AddState(World *world, int id, InteractState state);
-void          Sol_Interact_ClearState(World *world, int id, InteractState state);
+void          Sol_Interact_RemState(World *world, int id, InteractState state);
+float         Sol_Interact_GetHoverWeight(const CompInteract *interact, double currentTime, float duration);
 
 void Sol_Interact_DragEntityTo(World *world, int id, vec3s targetPos);
 void Sol_Interact_EndDrag(World *world, int id);
-
-void Sol_Pickup_Init(World *world);
-void Sol_Pickup_Step(World *world, double dt, double time);

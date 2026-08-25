@@ -13,10 +13,11 @@
 #include "game/prefabs.h"
 #include "projectile/s_projectile.h"
 
+
 void Pistol_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     if (!data->held)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
@@ -25,7 +26,7 @@ void Pistol_State_Update(World *world, int id, float dt)
     data->elapsed += dt;
     data->accum += dt;
 
-    if (data->accum > data->cooldown)
+    if (data->accum > ability_base[ABILITY_STATE_PISTOL].cooldown)
     {
         data->accum = 0;
 
@@ -39,16 +40,16 @@ void Pistol_State_Update(World *world, int id, float dt)
         {
             Sol_Physx_SetVel(world, bullet, shoot.vel);
             Sol_Owner_Add(world, bullet, id);
-            world->projectiles[bullet].directHit.damage = data->damage;
-            world->projectiles[bullet].directHit.buffMask = data->buffs;
-            world->projectiles[bullet].directHit.effectMask = data->effects;
+            world->projectiles[bullet].directHit.damage = ability_base[ABILITY_STATE_PISTOL].damage;
+            world->projectiles[bullet].directHit.buffMask = ability_base[ABILITY_STATE_PISTOL].buffMask;
+            world->projectiles[bullet].directHit.effectMask = ability_base[ABILITY_STATE_PISTOL].effectMask;
         }
         Sol_Model_PlayAnim(world, id,
                            (AnimDesc){
                                .anim    = ANIM_ATTACK_RIGHT,
                                .speed   = 3.5f,
                                .playKind = ANIMPLAYKIND_ONESHOT,
-                               .seek    = 0.15,
+                               .seek    = 0.15f,
                                .layerId = ANIM_LAYER_UPPER,
                                .blendIn = 0.01f,
                            });
@@ -56,27 +57,27 @@ void Pistol_State_Update(World *world, int id, float dt)
 }
 void Pistol_State_Enter(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->accum          = data->cooldown;
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    data->accum          = ability_base[ABILITY_STATE_PISTOL].cooldown;
 }
 void Pistol_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = solState.gameTime;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0);
 }
 bool Pistol_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 
-    return data->elapsed >= data->duration;
+    return data->elapsed >= ability_base[ABILITY_STATE_PISTOL].duration;
 }
 bool Pistol_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastExited + ability_base[ABILITY_STATE_PISTOL].cooldown > solState.gameTime);
 }

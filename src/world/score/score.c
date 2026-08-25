@@ -61,7 +61,8 @@ static void Score_Draw(World *world, double dt, double time)
         };
         Sol_Render_DrawText2D(font);
         RectSSBO *rect = Sol_Render_GetNext_Rect();
-        rect->dims     = (vec4s){100.0f, 50.0f, 1.0f, 1.0f};
-        rect->pos      = (vec4s){400.0f, 400.0f, 0, 0};
+        rect->rect     = (vec4s){100.0f, 50.0f, 400.0f, 400.0f};
+        rect->scale    = 1.0f;
+        rect->fill     = 1.0f;
     }
 }

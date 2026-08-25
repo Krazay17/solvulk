@@ -172,9 +172,11 @@ void Sol_Ai_Remove(World *world, int id)
 
 void Ai_Debug(World *world, double dt, double time)
 {
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_AI);
     if (!solState.debug)
         return;
+
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_AI);
+
     WorldAis *wc = world->dense_components[WORLD_SYS_AI];
 
     for (int i = 0; i < wc->cnt; i++)

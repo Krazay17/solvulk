@@ -1,6 +1,6 @@
 #include "network.h"
 #include "sol/sol.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_core.h"
 #include "world.h"
 #include "replication/s_replication.h"
@@ -186,7 +186,7 @@ void Net_Disconnect()
     }
     solNet.connectedPlayerCount = 0;
 
-    Sol_Replication_Disconnect(solEngine.activeWorld);
+    Sol_Replication_Disconnect(Sol_GetActiveGameWorld());
 
     if (solNet.host)
     {
@@ -248,8 +248,8 @@ void Net_Poll()
                 // Client connects to host
                 NetHelloPacket hello = {
                     .type            = NET_PACKET_HELLO,
-                    .worldId         = solEngine.activeWorldId,
-                    .startPos        = Sol_Xform_GetPos(solEngine.activeWorld, 1),
+                    .worldId         = Sol_GetActiveGameWorldId(),
+                    .startPos        = Sol_Xform_GetPos(Sol_GetActiveGameWorld(), 1),
                     .protocolVersion = SOL_VERSION,
                 };
                 // Player Name!
@@ -276,7 +276,7 @@ void Net_Poll()
             }
             else if (solNet.role == NETROLE_CLIENT)
             {
-                Sol_Replication_Disconnect(solEngine.activeWorld);
+                Sol_Replication_Disconnect(Sol_GetActiveGameWorld());
                 solNet.peer   = NULL; // <- Clear this out
                 solNet.status = NETSTATUS_DISCONNECTED;
                 solNet.role   = NETROLE_NONE;
@@ -361,8 +361,8 @@ void Net_Recv_Packet(ENetEvent *event)
         solState.stepCounter                                     = welcomePacket->currentTick;
         if (world->masks[1] & BITC(HAS_ABILITY))
         {
-            for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
-                world->abilities[1].bindings[i].dirtySend = true;
+            // for (int i = 0; i < ABILITY_SLOTS; i++)
+            //     world->abilities[1].bindings[i].dirtySend = true;
         }
 
         solNet.status = NETSTATUS_CONNECTED;
@@ -391,12 +391,12 @@ void Net_Recv_Packet(ENetEvent *event)
         c->isStrafing               = inputPacket->isStrafing;
         if (inputPacket->hasEquipRequest)
         {
-            for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+            for (int slot = 0; slot < ABILITY_SLOTS; slot++)
             {
                 // TODO Validate here
-                Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot],
-                                 inputPacket->addDamage[slot], inputPacket->addBuff[slot],
-                                 inputPacket->addEffect[slot]);
+                // Sol_Ability_Bind(world, id, slot, inputPacket->abilities[slot], inputPacket->rarity[slot],
+                //                  inputPacket->addDamage[slot], inputPacket->addBuff[slot],
+                //                  inputPacket->addEffect[slot]);
             }
         }
     }

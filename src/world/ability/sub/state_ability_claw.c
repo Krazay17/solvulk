@@ -16,8 +16,8 @@
 
 void Claw_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     CompCombat  *combat  = &world->combats[id];
 
     combat->hitPause = fmaxf(0, combat->hitPause - dt * 5.0f);
@@ -29,7 +29,7 @@ void Claw_State_Update(World *world, int id, float dt)
         data->elapsed += dt;
     }
 
-    if (data->elapsed >= data->duration)
+    if (data->elapsed >= ability_base[ABILITY_STATE_CLAW].duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
         return;
@@ -67,9 +67,9 @@ void Claw_State_Update(World *world, int id, float dt)
                 continue;
 
             SolHit hit = {
-                .damage     = data->damage,
-                .buffMask   = data->buffs,
-                .effectMask = data->effects,
+                .damage     = ability_base[ABILITY_STATE_CLAW].damage,
+                .buffMask   = ability_base[ABILITY_STATE_CLAW].buffMask,
+                .effectMask = ability_base[ABILITY_STATE_CLAW].effectMask,
                 .entA       = id,
                 .entB       = result.entId,
                 .pos        = result.pos,
@@ -89,8 +89,8 @@ void Claw_State_Update(World *world, int id, float dt)
 
 void Claw_State_Enter(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     CompCombat  *combat  = &world->combats[id];
     data->hitSessionGen  = Sol_Combat_StartHitGen(world, id);
     data->accum          = HITINTERVAL;
@@ -99,13 +99,7 @@ void Claw_State_Enter(World *world, int id)
     combat->baseAnimRate     = animRate;
     combat->hitPause         = 0;
     combat->hitPauseDiminish = 0;
-    AnimDesc desc            = {.anim     = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
-                                .layerId  = ANIM_LAYER_UPPER,
-                                .speed    = animRate,
-                                .playKind = ANIMPLAYKIND_ONESHOT,
-                                .blendIn  = 0.05f};
-
-    Sol_Model_PlayAnim(world, id, desc);
+    
     Sol_Event_Add(world, (SolEvent){
                              .kind       = EVENTKIND_FX,
                              .as.fx.kind = FXKIND_SWORD_SWING,
@@ -115,22 +109,22 @@ void Claw_State_Enter(World *world, int id)
 
 void Claw_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = solState.gameTime;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0);
 }
 
 bool Claw_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    return data->elapsed >= data->duration * 0.5f;
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    return data->elapsed >= ability_base[ABILITY_STATE_CLAW].duration * 0.5f;
 }
 
 bool Claw_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastExited + ability_base[ABILITY_STATE_CLAW].cooldown > solState.gameTime);
 }

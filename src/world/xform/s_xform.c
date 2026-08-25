@@ -50,31 +50,6 @@ void Sol_Xform_Interpolate(World **worlds, int count, float alpha)
     }
 }
 
-void Xform_Snapshot(World *world)
-{
-    for (int i = 0; i < world->activeCount; ++i)
-    {
-        int id                      = world->activeEntities[i];
-        world->xforms[id].lastPos   = world->xforms[id].pos;
-        world->xforms[id].lastQuat  = world->xforms[id].quat;
-        world->xforms[id].lastScale = world->xforms[id].scale;
-    }
-}
-
-void Xform_Interpolate(World *world, float alpha)
-{
-    int i;
-    int count = world->activeCount;
-    for (i = 0; i < count; ++i)
-    {
-        int        id = world->activeEntities[i];
-        CompXform *xf = &world->xforms[id];
-
-        xf->drawPos   = glms_vec3_lerp(xf->lastPos, xf->pos, alpha);
-        xf->drawQuat  = glms_quat_nlerp(xf->lastQuat, xf->quat, alpha);
-        xf->drawScale = glms_vec3_lerp(xf->lastScale, xf->scale, alpha);
-    }
-}
 SolXform Sol_Xform_GetXform(World *world, int id)
 {
     CompXform *xform = &world->xforms[id];

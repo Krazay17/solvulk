@@ -253,24 +253,24 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bo
     flatdir.y      = 0;
     flatdir        = glms_vec3_normalize(flatdir);
     vec3s rightdir = glms_vec3_normalize(glms_vec3_cross(flatdir, updir));
-    if (action & ACTION_FWD)
+    if (action & BITC(ACTION_FWD))
         wishdir = glms_vec3_add(wishdir, flatdir);
 
-    if (action & ACTION_BWD)
+    if (action & BITC(ACTION_BWD))
         wishdir = glms_vec3_sub(wishdir, flatdir);
 
-    if (action & ACTION_RIGHT)
+    if (action & BITC(ACTION_RIGHT))
         wishdir = glms_vec3_add(wishdir, rightdir);
 
-    if (action & ACTION_LEFT)
+    if (action & BITC(ACTION_LEFT))
         wishdir = glms_vec3_sub(wishdir, rightdir);
 
     if (includeY)
     {
-        if (action & ACTION_JUMP)
+        if (action & BITC(ACTION_JUMP))
             wishdir = glms_vec3_add(wishdir, updir);
 
-        if (action & ACTION_CROUCH)
+        if (action & BITC(ACTION_CROUCH))
             wishdir = glms_vec3_sub(wishdir, updir);
     }
 
@@ -280,13 +280,13 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bo
 static inline vec2s CalcWishDir2(uint32_t action)
 {
     vec2s wishdir = {0, 0};
-    if (action & ACTION_RIGHT)
+    if (action & BITC(ACTION_RIGHT))
         wishdir.x += 1;
-    if (action & ACTION_LEFT)
+    if (action & BITC(ACTION_LEFT))
         wishdir.x -= 1;
-    if (action & ACTION_FWD)
+    if (action & BITC(ACTION_FWD))
         wishdir.y -= 1;
-    if (action & ACTION_BWD)
+    if (action & BITC(ACTION_BWD))
         wishdir.y += 1;
 
     return glms_vec2_normalize(wishdir);

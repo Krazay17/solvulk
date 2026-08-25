@@ -22,8 +22,24 @@
 #define MAX_ENTS (1 << 12)
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
+#define ABILITY_SLOTS 10
 
-typedef mat4 SolPose[MAX_BONES];
+typedef void (*SystemFunc)(World *);
+typedef void (*SystemFuncId)(World *, int id);
+typedef void (*SystemUpdate)(World *, double, double);
+typedef void (*TickEnt)(World *, int, double, double);
+
+typedef struct
+{
+    mat4 bones[MAX_BONES];
+} SolPose;
+
+typedef struct
+{
+    vec3s   poseT[MAX_BONES];
+    vec3s   poseS[MAX_BONES];
+    versors poseR[MAX_BONES];
+} SolPoseE;
 
 typedef enum
 {
@@ -93,6 +109,7 @@ typedef enum
     STRAFE_BWD_RIGHT,
     STRAFE_RIGHT,
     STRAFE_FWD_RIGHT,
+    STRAFE_COUNT,
 } StrafeDir;
 
 typedef enum
@@ -116,12 +133,11 @@ typedef struct SolXform
 } SolXform;
 
 typedef void (*CallbackFunc)(int, void *);
-typedef void (*CallbackFuncVoid)();
 typedef struct
 {
-    CallbackFunc     callbackFunc;
-    void            *callbackData;
-    CallbackFuncVoid callbackFuncVoid;
+    CallbackFunc callbackFunc;
+    void        *callbackData;
+    int          flag;
 } SolCallback;
 
 typedef struct SolLine
@@ -332,29 +348,28 @@ typedef struct
 
 typedef enum
 {
-    ACTION_NONE     = 0,
-    ACTION_ABILITY1 = (1 << 0),
-    ACTION_ABILITY2 = (1 << 1),
-    ACTION_ABILITY3 = (1 << 2),
-    ACTION_ABILITY4 = (1 << 3),
-    ACTION_ABILITY5 = (1 << 4),
-    ACTION_ABILITY6 = (1 << 5),
-    ACTION_ABILITY7 = (1 << 6),
-    ACTION_ABILITY8 = (1 << 7),
-    ACTION_ABILITY9 = (1 << 8),
-    ACTION_DASH     = (1 << 10),
-
-    ACTION_FWD     = (1 << 11),
-    ACTION_BWD     = (1 << 12),
-    ACTION_LEFT    = (1 << 13),
-    ACTION_RIGHT   = (1 << 14),
-    ACTION_JUMP    = (1 << 15),
-    ACTION_CROUCH  = (1 << 16),
-    ACTION_ZOOMIN  = (1 << 17),
-    ACTION_ZOOMOUT = (1 << 18),
-    ACTION_BUILD   = (1 << 19),
-
-    ACTION_DEBUGTELE = (1 << 20),
+    ACTION_NONE,
+    ACTION_ABILITY1,
+    ACTION_ABILITY2,
+    ACTION_ABILITY3,
+    ACTION_ABILITY4,
+    ACTION_ABILITY5,
+    ACTION_ABILITY6,
+    ACTION_ABILITY7,
+    ACTION_ABILITY8,
+    ACTION_ABILITY9,
+    ACTION_DASH,
+    ACTION_FWD,
+    ACTION_BWD,
+    ACTION_LEFT,
+    ACTION_RIGHT,
+    ACTION_JUMP,
+    ACTION_CROUCH,
+    ACTION_ZOOMIN,
+    ACTION_ZOOMOUT,
+    ACTION_BUILD,
+    ACTION_DEBUGTELE,
+    ACTION_COUNT,
 } SolActions;
 
 typedef enum
@@ -407,3 +422,32 @@ typedef enum
     BUFFKIND_INVULN,
     BUFFKIND_COUNT,
 } BuffKind;
+
+typedef enum
+{
+    ABILITY_STATE_IDLE,
+    ABILITY_STATE_DASH,
+    ABILITY_STATE_FIREBALL,
+    ABILITY_STATE_PISTOL,
+    ABILITY_STATE_SPINSLASH,
+    ABILITY_STATE_CLAW,
+    ABILITY_STATE_SHIELD,
+    ABILITY_STATE_LASER,
+    ABILITY_STATE_WHIP,
+    ABILITY_STATE_FIREBALLVOLLEY,
+    ABILITY_STATE_COUNT,
+} AbilityState;
+
+typedef struct
+{
+    float damage, cooldown, duration, maxpower;
+    u32   buffMask;
+    u32   effectMask;
+} AbilityConfig;
+
+typedef struct SolItem
+{
+    u32           abilityState;
+    AbilityConfig ability;
+    u8            rarity;
+} SolItem;

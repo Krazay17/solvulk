@@ -18,7 +18,7 @@ static bool LeaveState(World *world, int id)
 {
     if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
         return true;
-    if (!(Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH))
+    if (!(Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH)))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (world->movements[id].wantsJump)
@@ -41,34 +41,7 @@ void Crouch_State_Update(World *world, int id, float dt)
     float    x    = Sol_Controller_Get(world, id)->wishdir.x;
     float    z    = Sol_Controller_Get(world, id)->wishdir.z;
     vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId = ANIM_LAYER_BASE};
-    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
-    {
-    case STRAFE_FWD:
-        desc.anim = ANIM_CROUCHWALK_FWD;
-        break;
-    case STRAFE_BWD:
-    case STRAFE_BWD_RIGHT:
-    case STRAFE_BWD_LEFT:
-        desc.anim = ANIM_CROUCHWALK_BWD;
-        break;
-    case STRAFE_LEFT:
-    case STRAFE_FWD_LEFT:
-        desc.anim = ANIM_CROUCHWALK_LEFT;
-        break;
-    case STRAFE_RIGHT:
-    case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_CROUCHWALK_RIGHT;
-        break;
-    default:
-        desc.anim = ANIM_CROUCHWALK_FWD;
-        break;
-    }
-
-    Sol_Model_PlayAnim(world, id, desc);
-    const MoveStateForce *forces   = &MOVE_STATE_FORCES[move->kind][move->state];
-    float                 speedDif = Sol_Physx_GetSpeed(world, id) / forces->speed;
-    Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif);
+    data->as.crouch.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
 }
 
 void Crouch_State_Enter(World *world, int id)

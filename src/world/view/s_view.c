@@ -1,9 +1,10 @@
 #include "s_view.h"
 #include "sol_core.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
 #include "render/render.h"
+
 #include "xform/s_xform.h"
 #include "model/s_model.h"
 #include "combat/s_combat.h"
@@ -31,25 +32,17 @@ void Sol_Crosshair_Draw(World *world, double dt, double time)
     float     width  = 11.0f;
     float     height = 11.0f;
     RectSSBO *ssbo   = Sol_Render_GetNext_Rect();
-    ssbo->pos        = (vec4s){UISCALE(x - width * 0.5f), UISCALE(y - height * 0.5f), 1, 1.0f};
-    ssbo->dims       = (vec4s){UISCALE(width), UISCALE(height), 0, 1.0f};
+    ssbo->rect       = (vec4s){UISCALE(x - width * 0.5f), UISCALE(y - height * 0.5f), UISCALE(width), UISCALE(height)};
+    ssbo->scale      = 1.0f;
+    ssbo->fill       = 1.0f;
     ssbo->color      = (vec4s){1, 1, 1, 1};
     ssbo->textureID  = SOL_TEXTURE_CROSSHAIR;
     ssbo->uv         = (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
-    ssbo->type       = 0;
     ssbo->flags      = 0;
 }
 
 static void Draw_Player_Buffs(World *world, double dt, double time)
 {
-    CompBuff *buffs = &solEngine.gameWorld3d->buffs[1];
-    for (int i = 0; i < buffs->count; i++)
-    {
-        Buff buff = buffs->buffs[i];
-
-        RectSSBO *ssbo = Sol_Render_GetNext_Rect();
-        //   ssbo->pos
-    }
 }
 
 static void Nameplate_Draw(World *world, double dt, double time)
@@ -80,8 +73,6 @@ static void Nameplate_Draw(World *world, double dt, double time)
         ssbo->color     = (vec4s){0.1f, 0.85f, 0.2f, 1.0f};
         ssbo->uv        = (vec4s){0, 0, 1, 1};
         ssbo->type      = QUADTYPE_FACECAM;
-        ssbo->flags     = 0;
-        ssbo->textureId = 0;
 
         float hbHalfWidth  = 1.0f;
         float hbHalfHeight = 0.1f;

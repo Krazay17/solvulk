@@ -3,6 +3,7 @@
 #include "world.h"
 #include "sol_math.h"
 #include "audio.h"
+
 #include "xform/s_xform.h"
 #include "controller/s_controller.h"
 #include "combat/s_combat.h"
@@ -11,6 +12,8 @@
 #include "physx/s_body.h"
 #include "movement/s_movement.h"
 #include "buff/s_buff.h"
+#include "item/s_item.h"
+#include "inventory/s_inventory.h"
 
 #define DASH_VEL 20.0f
 #define DASH_ALPHAMOD 1.5f
@@ -19,98 +22,88 @@
 
 void ADash_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility      *ability  = Sol_Ability_Get(world, id);
+    AbilityStateData *data     = &ability->stateData[ability->activeSlot];
+    AbilityConfig     augments = (AbilityConfig){0};
+    SolItem          *item     = Sol_Inventory_GetItemAtSlot(world, id, ability->activeSlot);
+    if (item)
+        augments = item->ability;
     data->elapsed += dt;
     data->accum += dt;
 
-    if (data->elapsed >= data->duration)
+    if (data->elapsed >= ability_base[ABILITY_STATE_DASH].duration + augments.duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
         return;
     }
-    float alpha = DASH_ALPHAMOD - (data->elapsed / data->duration);
 
-    Sol_Physx_SetVel(world, id, glms_vec3_scale(data->enterDir, alpha * DASH_VEL));
+    float alpha = DASH_ALPHAMOD - (data->elapsed / ability_base[ABILITY_STATE_DASH].duration);
+    Sol_Physx_SetVel(world, id, glms_vec3_scale(data->as.dash.enterDir, alpha * DASH_VEL));
 
-    if (!(data->effects & EFFECTMASK_KNOCKBACK))
+    if (!(data->doesHit))
         return;
     if (data->accum > HITINTERVAL)
     {
         data->accum = 0;
-        vec3s pos   = Sol_Xform_GetPos(world, id);
-        pos         = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
+
+        vec3s pos = Sol_Xform_GetPos(world, id);
+        pos       = glms_vec3_add(pos, glms_vec3_scale(Sol_Physx_GetVelDir(world, id), 1.0f));
         SolRayResult results[256];
         int          hits = Sol_SphereCast(world, (SolRay){.pos = pos, .ignoreEnt = id}, HITRADIUS, results, 256);
+
         for (int i = 0; i < hits; i++)
         {
-            CompCombat *combat = &world->combats[id];
-            if (!Sol_Owner_GetHostile(world, id, results[i].entId))
+            SolRayResult result = results[i];
+            CompCombat  *combat = Sol_Combat_Get(world, id);
+            // if (!Sol_Owner_GetHostile(world, id, results[i].entId))
+            //     continue;
+            // if (combat->hitEnts[results[i].entId])
+            //     continue;
+            // combat->hitEnts[results[i].entId] = true;
+
+            if (!Sol_Combat_TryHitGen(world, id, result.entId, data->hitSessionGen))
                 continue;
-            if (combat->hitEnts[results[i].entId])
-                continue;
-            combat->hitEnts[results[i].entId] = true;
-            vec3s hitpos                      = results[i].pos;
 
             Sol_Combat_ApplyHit(world, results[i].entId,
                                 (SolHit){
                                     .entA       = id,
                                     .entB       = results[i].entId,
-                                    .pos        = hitpos,
-                                    .damage     = data->damage,
-                                    .effectMask = data->effects,
-                                    .buffMask   = data->buffs,
-                                    .kind       = HITKIND_SHIELD_PULSE,
-                                    .vel        = vecSub(hitpos, pos),
+                                    .pos        = result.pos,
+                                    .damage     = ability_base[ABILITY_STATE_DASH].damage + augments.damage,
+                                    .effectMask = ability_base[ABILITY_STATE_DASH].effectMask | augments.effectMask,
+                                    .buffMask   = ability_base[ABILITY_STATE_DASH].buffMask | augments.buffMask,
+                                    .vel        = vecSub(result.pos, pos),
                                 });
-            Sol_Event_Add(world, (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_SPINHIT, .as.fx.pos = hitpos});
+            Sol_Event_Add(world,
+                          (SolEvent){.kind = EVENTKIND_FX, .as.fx.kind = FXKIND_SPINHIT, .as.fx.pos = result.pos});
         }
     }
 }
 
 void ADash_State_Enter(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, data->duration * 0.5f, 0);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    AbilityConfig     cfg     = {0};
+    SolItem          *item    = Sol_Inventory_GetItemAtSlot(world, id, ability->activeSlot);
+    if (item)
+        cfg = item->ability;
+    data->duration = ability_base[ABILITY_STATE_DASH].duration + cfg.duration;
+
+    Sol_Buff_AddEx(world, id, id, BUFFKIND_INVULN, ability_base[ABILITY_STATE_DASH].duration * 0.5f, 0);
     Sol_Combat_ClearHits(world, id);
+    data->hitSessionGen = Sol_Combat_StartHitGen(world, id);
 
-    data->enterDir = Sol_Vec3_FromYawPitch(Sol_Controller_Get(world, id)->yaw, 0);
-    if (glms_vec3_norm(Sol_Controller_Get(world, id)->wishdir) > 0 && vecDot(Sol_Controller_Get(world, id)->wishdir, WORLD_UP) < 0.99f)
-        data->enterDir = Sol_Controller_Get(world, id)->wishdir;
-    data->enterDir.y = 0;
-    data->enterDir   = glms_vec3_normalize(data->enterDir);
+    vec3s dir = Sol_Vec3_FromYawPitch(Sol_Controller_Get(world, id)->yaw, 0);
+    if (glms_vec3_norm(Sol_Controller_Get(world, id)->wishdir) > 0 &&
+        vecDot(Sol_Controller_Get(world, id)->wishdir, WORLD_UP) < 0.99f)
+        dir = Sol_Controller_Get(world, id)->wishdir;
+    dir.y                  = 0;
+    dir                    = glms_vec3_normalize(dir);
+    data->as.dash.enterDir = dir;
 
-    vec3s    rot  = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc = {.layerId  = ANIM_LAYER_OVERRIDE,
-                     .seek     = 0.05f,
-                     .speed    = 1.6f - data->duration,
-                     .playKind = ANIMPLAYKIND_ONESHOT,
-                     .blendIn  = 0.05f};
-
-    switch (Sol_GetStrafedir(data->enterDir.x, data->enterDir.z, rot.x, rot.z))
-    {
-    case STRAFE_FWD:
-    case STRAFE_FWD_LEFT:
-    case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_DASH_FWD;
-        break;
-    case STRAFE_BWD:
-    case STRAFE_BWD_LEFT:
-    case STRAFE_BWD_RIGHT:
-        desc.anim = ANIM_DASH_BWD;
-        break;
-    case STRAFE_LEFT:
-        desc.anim = ANIM_DASH_LEFT;
-        break;
-    case STRAFE_RIGHT:
-        desc.anim = ANIM_DASH_RIGHT;
-        break;
-    default:
-        desc.anim = ANIM_DASH_FWD;
-        break;
-    }
-    Sol_Model_PlayAnim(world, id, desc);
+    vec3s rot            = Sol_RotFromQuat(world->xforms[id].quat);
+    data->as.dash.strafe = Sol_GetStrafedir(dir.x, dir.z, rot.x, rot.z);
 
     Sol_Event_Add(world, (SolEvent){.kind          = EVENTKIND_SOUND,
                                     .as.sound.kind = SOL_AUDIO_DASH,
@@ -119,22 +112,22 @@ void ADash_State_Enter(World *world, int id)
 
 void ADash_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->lastExited     = solState.gameTime;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    data->lastExited          = solState.gameTime;
 }
 
 bool ADash_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    return data->elapsed >= data->duration * 0.5f;
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    return data->elapsed >= ability_base[ABILITY_STATE_DASH].duration * 0.5f;
 }
 
 bool ADash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot &&
+           !(data->lastExited + ability_base[ABILITY_STATE_DASH].cooldown > solState.gameTime);
 }

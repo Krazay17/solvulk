@@ -5,7 +5,6 @@
  * Created: 2026-06-19
  *
  */
-#include "sol_engine.h"
 #include "sol_core.h"
 #include "sol_user.h"
 #include "world.h"
@@ -24,8 +23,7 @@
 #include "event/s_event.h"
 #include "player/s_player.h"
 
-SolEngine solEngine;
-SolState  solState;
+SolState solState;
 
 static double accumulator = SOL_TIMESTEP;
 static void   Sol_OnResize();
@@ -34,7 +32,7 @@ int Sol_Init(void *hwnd, void *hInstance)
 {
     solState.timescale = 1.0;
 
-    solEngine.g_hwnd = hwnd;
+    solState.g_hwnd = hwnd;
     int result;
 
     result = Sol_User_Init();
@@ -65,8 +63,8 @@ int Sol_Init(void *hwnd, void *hInstance)
     if (result != 0)
         printf("Models failed to init, code:%d\n", result);
 
-    solState.debug      = false;
-    solEngine.isRunning = true;
+    solState.debug     = false;
+    solState.isRunning = true;
     return result;
 }
 
@@ -78,40 +76,40 @@ void Sol_Tick(double dt, double time)
     solState.tickCounter++;
     Sol_Input_Update();
 
-    if (solEngine.needsResize)
+    if (solState.needsResize)
         Sol_OnResize();
 
     Sol_User_Tick(dt);
-    Sol_Net_Tick(solEngine.worlds, solEngine.worldCount);
-    Worlds_Tick(solEngine.worlds, solEngine.worldCount, dt, time);
+    Sol_Net_Tick(solState.worlds, solState.worldCount);
+    Worlds_Tick(solState.worlds, solState.worldCount, dt, time);
 
     // ######### STEP AND INTERP #########
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
-        // Sol_Interact_Update(solEngine.worlds, solEngine.worldCount);
-        Sol_Xform_Snapshot(solEngine.worlds, solEngine.worldCount);
-        Worlds_Step(solEngine.worlds, solEngine.worldCount, SOL_TIMESTEP, time);
-        Sol_Net_Step(solEngine.worlds, solEngine.worldCount, time);
-        Sol_Events_Clear(solEngine.worlds, solEngine.worldCount);
+        Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
+        Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP, time);
+        Sol_Net_Step(solState.worlds, solState.worldCount, time);
+        Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }
     float alpha = (float)(accumulator / SOL_TIMESTEP);
-    Sol_Xform_Interpolate(solEngine.worlds, solEngine.worldCount, alpha);
+    Sol_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
     // ######### END STEP AND INTERP #########
 
-    if (solEngine.activeWorld)
-        Sol_Audio_Update(Sol_Xform_GetPos(solEngine.activeWorld, Sol_Player_GetEnt(solEngine.activeWorld, 0)), solCamera.dir);
+    if (Sol_GetActiveGameWorld())
+        Sol_Audio_Update(Sol_Xform_GetPos(Sol_GetActiveGameWorld(), Sol_Player_GetEnt(Sol_GetActiveGameWorld(), 0)),
+                         solCamera.dir);
 
     Sol_Render_CheckGpuUploads();
 
     Sol_Begin_Draw();
     Sol_Render_DrawSkybox();
-    Worlds_Draw3d(solEngine.worlds, solEngine.worldCount, dt, time);
+    Worlds_Draw3d(solState.worlds, solState.worldCount, dt, time);
     Sol_Render_Flush3D();
 
-    Worlds_Draw2d(solEngine.worlds, solEngine.worldCount, dt, time);
+    Worlds_Draw2d(solState.worlds, solState.worldCount, dt, time);
     Sol_User_Draw(dt);
     Sol_Render_Flush2D();
 
@@ -120,28 +118,23 @@ void Sol_Tick(double dt, double time)
     Sol_End_Draw();
 }
 
-World *Sol_GetWorldById(u32 id)
-{
-    return solEngine.worlds[id];
-}
-
 void Sol_Destroy()
 {
     Net_DeInit();
 
-    for (int i = 0; i < solEngine.worldCount; i++)
+    for (int i = 0; i < solState.worldCount; i++)
     {
-        free(solEngine.worlds[i]);
+        free(solState.worlds[i]);
     }
-    solEngine.isRunning = false;
+    solState.isRunning = false;
 }
 
 static void Sol_OnResize()
 {
-    solEngine.needsResize = false;
-    if (solEngine.windowWidth != 0 && solEngine.windowHeight != 0)
+    solState.needsResize = false;
+    if (solState.windowWidth != 0 && solState.windowHeight != 0)
     {
-        Sol_Render_Resize(solEngine.windowWidth, solEngine.windowHeight);
+        Sol_Render_Resize(solState.windowWidth, solState.windowHeight);
     }
 }
 
@@ -151,16 +144,16 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
         return; // ignore degenerate (minimize)
 
     // Position (cheap, always update)
-    solEngine.windowX = x;
-    solEngine.windowY = y;
+    solState.windowX = x;
+    solState.windowY = y;
 
     // Size + derived values (skip if unchanged)
-    if (width == solEngine.windowWidth && height == solEngine.windowHeight)
+    if (width == solState.windowWidth && height == solState.windowHeight)
         return;
 
-    solEngine.windowWidth  = width;
-    solEngine.windowHeight = height;
-    solState.aspectRatio   = (float)width / (float)height;
+    solState.windowWidth  = width;
+    solState.windowHeight = height;
+    solState.aspectRatio  = (float)width / (float)height;
 
     // UI scale: fit logical (WINDOW_WIDTH × WINDOW_HEIGHT) inside actual window,
     // preserving aspect. min() = letterbox; max() = crop. Use min() for UI.
@@ -168,5 +161,5 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
     float sy         = (float)height / WINDOW_HEIGHT;
     solState.uiScale = fminf(sx, sy);
 
-    solEngine.needsResize = true; // game thread picks this up in Sol_OnResize
+    solState.needsResize = true; // game thread picks this up in Sol_OnResize
 }

@@ -58,7 +58,7 @@ void Spatial_Add(World *world, int id, CompBody *body)
 
     if (body->shape == SHAPE3_MOD)
     {
-        u32 handle = Sol_Model_GetModelId(world, id);
+        u32 handle = Sol_Model_Get(world, id)->modelId;
         Add_Static_Collision_From_Model(group, id, handle);
         Transform_Tris_LocalToWorld(group->tris, id, group->ents[id].triIndexStart, handle, &world->xforms[id]);
     }

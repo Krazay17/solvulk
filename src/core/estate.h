@@ -55,8 +55,8 @@ typedef struct
 
 // void Spinslash_State_Update(World *world, int id, float dt)
 // {
-//     CompAbility *ability = &world->abilities[id];
-//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+//     CompAbility *ability = Sol_Ability_Get(world, id);
+//     AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 //     data->elapsed += dt;
 
 // }
@@ -74,15 +74,15 @@ typedef struct
 
 // bool Spinslash_State_CanExit(World *world, int id, u32 next)
 // {
-//     CompAbility *ability = &world->abilities[id];
-//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+//     CompAbility *ability = Sol_Ability_Get(world, id);
+//     AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 
 //     return data->elapsed > DURATION;
 // }
 
 // bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, u32 slot)
 // {
-//     CompAbility *ability = &world->abilities[id];
-//     AbilityData *data    = &ability->stateData[slot];
+//     CompAbility *ability = Sol_Ability_Get(world, id);
+//     AbilityStateData *data    = &ability->stateData[slot];
 //     return !(data->lastExited + COOLDOWN > solState.gameTime);
 // }

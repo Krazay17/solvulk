@@ -63,17 +63,11 @@ int Sol_Prefab_Dude(World *world, u32 id, vec3s pos, float scale)
 
     Sol_Combat_Add(world, id, COMBATKIND_PLAYER);
     Sol_Ability_Add(world, id,
-                    (AbilityDesc){.bindings = {
-                                      {ACTION_ABILITY1, 0},
-                                      {ACTION_ABILITY2, 0},
-                                      {ACTION_ABILITY3, 0},
-                                      {ACTION_ABILITY4, 0},
-                                      {ACTION_ABILITY5, 0},
-                                      {ACTION_ABILITY6, 0},
-                                      {ACTION_ABILITY7, 0},
-                                      {ACTION_ABILITY8, 0},
-                                      {ACTION_ABILITY9, 0},
-                                      {ACTION_DASH, 0},
+                    (AbilityDesc){.ability_map = {
+                                      ABILITY_STATE_CLAW,
+                                      ABILITY_STATE_FIREBALL,
+                                      ABILITY_STATE_SPINSLASH,
+                                      [ACTION_DASH - 1] = ABILITY_STATE_DASH,
                                   }});
     Sol_Owner_SetTeam(world, id, 1);
     return id;
@@ -101,13 +95,12 @@ int Sol_Prefab_Wizard(World *world, u32 id, vec3s pos, float scale)
                      .group       = PHYSXMASK(0b10, 0b111),
                  });
     Sol_Ability_Add(world, id,
-                    (AbilityDesc){.bindings = {
-                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
+                    (AbilityDesc){.ability_map = {
+                                      {ABILITY_STATE_FIREBALLVOLLEY},
                                   }});
     Sol_Interact_Set(world, id, (CompInteract){0});
     Sol_Flags_Add(world, id, EFLAG_PICKUPABLE);
     Sol_Combat_Add(world, id, COMBATKIND_WIZARD);
-    Sol_Ability_AddDense(world, id, (AbilityDesc){0});
 
     return id;
 }
@@ -145,10 +138,7 @@ int Sol_Prefab_Zorgon(World *world, u32 id, vec3s pos, float scale)
                      .restitution = 0.1f,
                      .group       = PHYSXMASK(0b10, 0b111),
                  });
-    Sol_Ability_Add(world, id,
-                    (AbilityDesc){.bindings = {
-                                      {ACTION_ABILITY1, ABILITY_STATE_FIREBALLVOLLEY},
-                                  }});
+    Sol_Ability_Add(world, id, (AbilityDesc){.ability_map[0] = ABILITY_STATE_FIREBALLVOLLEY});
 
     Sol_Combat_Add(world, id, COMBATKIND_WIZARD);
     return id;
@@ -376,49 +366,48 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, u32 ability, u32 rarity)
     CompBody2d *body =
         Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN));
     body->zindex = 1;
-    Sol_Body2d_SetOverlapMask(world, id, 0b10, 0b01);
+    Sol_Body2d_SetOverlapMask(world, id, PHYSXMASK(0b10, 0b01));
     CompTooltip *tooltip = Sol_Tooltip_Add(world, id, TOOLTIPKIND_CARD);
 
-    SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
-    image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
-    image->zindex            = 2;
-    world->view2d[id].zindex = 1;
+    // SolView2d *image         = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){1, 1, 1, 1}, dims.x, dims.y);
+    // image->hoverColor        = (vec4s){0.5f, 0.5f, 0.5f, 1.0f};
+    // image->zindex            = 2;
+    // world->view2d[id].zindex = 1;
 
-    switch (ability)
-    {
-    case ABILITY_STATE_FIREBALL:
-        image->textureID = SOL_TEXTURE_FIREBALL_CARD;
-        image->textureUV = (vec2s){1.0f, 0.816f};
-        break;
-    case ABILITY_STATE_PISTOL:
-        image->textureID = SOL_TEXTURE_PISTOL_CARD;
-        image->textureUV = (vec2s){1.0f, 0.816f};
-        break;
-    case ABILITY_STATE_SHIELD:
-        image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
-        image->textureUV = (vec2s){1.0f, 0.816f};
-        break;
-    case ABILITY_STATE_SPINSLASH:
-        image->textureID = SOL_TEXTURE_SPIN_CARD;
-        image->textureUV = (vec2s){1.0f, 0.816f};
-        break;
-    case ABILITY_STATE_DASH:
-        image->textureID = SOL_TEXTURE_DASH_CARD;
-        break;
-    case ABILITY_STATE_CLAW:
-        image->textureID = SOL_TEXTURE_BLADE_CARD;
-        image->textureUV = (vec2s){1.0f, 0.816f};
-        break;
-    case ABILITY_STATE_LASER:
-        image->textureID = SOL_TEXTURE_LASER_CARD;
-        break;
-    }
-    SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
-    border->zindex     = 2;
-    border->border     = 3.0f;
-    border->textureID  = SOL_TEXTURE_BORDER;
-    border->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
-    Sol_Item_AddAbility(world, id, ability);
+    // switch (ability)
+    // {
+    // case ABILITY_STATE_FIREBALL:
+    //     image->textureID = SOL_TEXTURE_FIREBALL_CARD;
+    //     image->textureUV = (vec2s){1.0f, 0.816f};
+    //     break;
+    // case ABILITY_STATE_PISTOL:
+    //     image->textureID = SOL_TEXTURE_PISTOL_CARD;
+    //     image->textureUV = (vec2s){1.0f, 0.816f};
+    //     break;
+    // case ABILITY_STATE_SHIELD:
+    //     image->textureID = SOL_TEXTURE_CRYSTAL_CARD;
+    //     image->textureUV = (vec2s){1.0f, 0.816f};
+    //     break;
+    // case ABILITY_STATE_SPINSLASH:
+    //     image->textureID = SOL_TEXTURE_SPIN_CARD;
+    //     image->textureUV = (vec2s){1.0f, 0.816f};
+    //     break;
+    // case ABILITY_STATE_DASH:
+    //     image->textureID = SOL_TEXTURE_DASH_CARD;
+    //     break;
+    // case ABILITY_STATE_CLAW:
+    //     image->textureID = SOL_TEXTURE_BLADE_CARD;
+    //     image->textureUV = (vec2s){1.0f, 0.816f};
+    //     break;
+    // case ABILITY_STATE_LASER:
+    //     image->textureID = SOL_TEXTURE_LASER_CARD;
+    //     break;
+    // }
+    // SolView2d *border  = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0, 0, 0, 1}, dims.x, dims.y);
+    // border->zindex     = 2;
+    // border->border     = 3.0f;
+    // border->textureID  = SOL_TEXTURE_BORDER;
+    // border->hoverColor = (vec4s){1.0f, 1.0f, 1.0f, 1.0f};
     Sol_Item_SetRarity(world, id, rarity);
 
     return id;
@@ -429,10 +418,8 @@ int Sol_Prefab_AbilitySlot(World *world, vec3s pos, u32 slot, char *label)
     vec2s dims = {70.0f, 70.0f};
     int   id   = Sol_Create_Ent(world, 0);
     Sol_Xform_Add(world, id, pos);
-    Sol_Item_AddAbilitySlot(world, id, slot);
-    CompBody2d *body   = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
-    body->overlapGroup = 0b01;
-    body->overlapMask  = 0b10;
+    CompBody2d *body    = Sol_Body2d_Add(world, id, BODY2DKIND_RECT, dims.x, dims.y, 0);
+    body->overlap_group = PHYSXMASK(0b01, 0b10);
 
     // 0
     SolView2d *view = Sol_View2d_Add(world, id, VIEW2DKIND_RECT, (vec4s){0.5f, 0.5f, 0.5f, 1.0f}, dims.x, dims.y);

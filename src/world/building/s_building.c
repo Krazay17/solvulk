@@ -17,7 +17,7 @@ static void Step(World *world, double dt, double time)
         CompXform    *xform    = &world->xforms[id];
         CompBuilder  *builder  = &world->builders[id];
         CompInteract *interact = &world->interacts[id];
-        CompModel    *model    = &world->models[id];
+        CompModel    *model    = Sol_Model_Get(world, id);
     }
 }
 
@@ -29,7 +29,7 @@ static void Tick(World *world, double dt, double time)
         if (!(world->masks[id] & required))
             continue;
         CompBuilder *builder = &world->builders[id];
-        SolRayResult result  = Sol_ScreenRaycast(solEngine.activeWorld, (int)Sol_Input_GetMouse().x,
+        SolRayResult result  = Sol_ScreenRaycast(Sol_GetActiveGameWorld(), (int)Sol_Input_GetMouse().x,
                                                  (int)Sol_Input_GetMouse().y, (SolRay){.dist = 10.0f});
 
         vec3s gridPos = (vec3s){floorf(result.pos.x), floorf(result.pos.y), floorf(result.pos.z)};

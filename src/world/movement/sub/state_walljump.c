@@ -7,7 +7,7 @@
 #include "controller/s_controller.h"
 
 #define DASH_VEL 13.0f
-#define DASH_DURATION 0.4f
+#define DASH_DURATION 0.45f
 #define DAMPING 4.0f
 
 void Walljump_State_Update(World *world, int id, float dt)
@@ -46,37 +46,11 @@ void Walljump_State_Enter(World *world, int id)
         finalVel.y = 0;
 
     Sol_Physx_AddVel(world, id, finalVel);
-
-    vec3s dirToWall = glms_vec3_sub(Sol_Xform_GetPos(world, id), move->lastTouch);
-    dirToWall       = glms_vec3_normalize(dirToWall);
-    float    x      = dirToWall.x;
-    float    z      = dirToWall.z;
-    vec3s    rot    = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc   = {
-        .anim = ANIM_WALLJUMP_LEFT, .layerId = ANIM_LAYER_BASE, .blendIn = 0.05f, .playKind = ANIMPLAYKIND_ONESHOT};
-
-    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
-    {
-    case STRAFE_LEFT:
-    case STRAFE_FWD_LEFT:
-    case STRAFE_BWD_LEFT:
-        desc.anim = ANIM_WALLJUMP_LEFT;
-        break;
-    case STRAFE_RIGHT:
-    case STRAFE_BWD_RIGHT:
-    case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_WALLJUMP_RIGHT;
-        break;
-    default:
-        desc.anim  = ANIM_BACKFLIP;
-        desc.speed = 1.1f;
-        break;
-    }
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Walljump_State_Exit(World *world, int id)
 {
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_BASE, 0.2f);
 }
 
 bool Walljump_State_CanExit(World *world, int id, u32 nextState)

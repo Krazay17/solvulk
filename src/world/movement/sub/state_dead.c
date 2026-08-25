@@ -28,14 +28,11 @@ void Dead_State_Update(World *world, int id, float dt)
 
 void Dead_State_Enter(World *world, int id)
 {
-    Sol_Model_PlayAnim(
-        world, id,
-        (AnimDesc){.anim = ANIM_DEATH, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .playKind = ANIMPLAYKIND_NOLOOP});
     world->movements[id].targetHeight = world->movements[id].baseHeight * 0.6f;
 }
 void Dead_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0);
     world->movements[id].targetHeight = world->movements[id].baseHeight;
 }
 bool Dead_State_CanExit(World *world, int id, u32 next)

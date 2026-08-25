@@ -9,19 +9,45 @@
 
 typedef void (*DrawFunc)(World *, int, double, double, SolView2d *, vec3s);
 
-static int healthbar_required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
-
-static void Draw(World *world, double dt, double time);
 static void DrawRect(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void DrawCircle(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void View_DrawText(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 
+DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
+    [VIEW2DKIND_RECT] = DrawRect,
+    [VIEW2DKIND_TEXT] = View_DrawText,
+};
+
+static void View2d_Draw(World *world, double dt, double time)
+{
+    int required = BITC(HAS_ACTIVE) | BITC(HAS_VIEW2D);
+    for (int layer = 0; layer < UILAYER_COUNT; layer++)
+        for (int i = world->activeCount - 1; i >= 0; i--)
+        {
+            int id = world->activeEntities[i];
+            if (!WHas(world, id, required))
+                continue;
+            CompView2d *viewComp = &world->view2d[id];
+            for (int j = 0; j < viewComp->count; j++)
+            {
+                SolView2d *view = &viewComp->views[j];
+                if (view->zindex != layer)
+                    continue;
+                vec3s pos;
+                pos = Sol_Xform_GetDrawXform(world, id).pos;
+                draw_funcs[view->kind](world, id, dt, time, view, pos);
+            }
+        }
+}
+
 static void PlayerHealthbar(World *world, double dt, double time)
 {
+    static int required = BITC(HAS_VIEW2D) | BITC(HAS_TRACKER);
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!WHas(world, id, healthbar_required))
+        if (!WHas(world, id, required))
             continue;
         if (!(world->flags[id].flags & EFLAG_HEALTHBAR))
             continue;
@@ -41,11 +67,14 @@ static void PlayerHealthbar(World *world, double dt, double time)
 
 static void UICombatBars(World *world, double dt, double time)
 {
+    static int required = BITC(HAS_TRACKER) | BITC(HAS_VIEW2D);
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if (!WHasB(world, id, HAS_TRACKER))
+        if (!WHas(world, id, required))
             continue;
+
         CompTracker *tracker = &world->trackers[id];
         if (!tracker->getters[0] || !tracker->getters[1])
             continue;
@@ -60,18 +89,13 @@ static void UICombatBars(World *world, double dt, double time)
     }
 }
 
-DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
-    [VIEW2DKIND_RECT] = DrawRect,
-    [VIEW2DKIND_TEXT] = View_DrawText,
-};
-
 void Sol_View2d_Init(World *world)
 {
     world->view2d = calloc(MAX_ENTS, sizeof(CompView2d));
 
     WAddStep(world) = UICombatBars;
     WAddStep(world) = PlayerHealthbar;
-    WAdd2d(world)   = Draw;
+    WAdd2d(world)   = View2d_Draw;
 }
 
 SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
@@ -108,28 +132,6 @@ CompView2d *Sol_View2d_Get(World *world, int id)
     return &world->view2d[id];
 }
 
-static void Draw(World *world, double dt, double time)
-{
-    int required = BITC(HAS_VIEW2D);
-    for (int layer = 0; layer < UILAYER_COUNT; layer++)
-        for (int i = world->activeCount - 1; i >= 0; i--)
-        {
-            int id = world->activeEntities[i];
-            if ((world->masks[id] & required) != required)
-                continue;
-            CompView2d *viewComp = &world->view2d[id];
-            for (int j = 0; j < viewComp->count; j++)
-            {
-                SolView2d *view = &viewComp->views[j];
-                if (view->zindex != layer)
-                    continue;
-                vec3s pos;
-                pos = Sol_Xform_GetDrawXform(world, id).pos;
-                draw_funcs[view->kind](world, id, dt, time, view, pos);
-            }
-        }
-}
-
 static void DrawRect(World *world, int id, double dt, double time, SolView2d *view, vec3s pos)
 {
     float         fdt    = (float)dt;
@@ -154,23 +156,24 @@ static void DrawRect(World *world, int id, double dt, double time, SolView2d *vi
 
     RectSSBO *ssbo = Sol_Render_GetNext_Rect();
     *ssbo          = (RectSSBO){0};
-    ssbo->pos      = (vec4s){
-        UISCALE(pos.x + view->offset.x),
-        UISCALE(pos.y + view->offset.y),
-        -((float)view->zindex / (float)UILAYER_COUNT),
-        1.0f,
-    };
-    ssbo->dims      = (vec4s){UISCALE(view->dims.x), UISCALE(view->dims.y), view->dims.z, view->fill};
+    // ssbo->pos      = (vec4s){
+    //     UISCALE(pos.x + view->offset.x),
+    //     UISCALE(pos.y + view->offset.y),
+    //     -((float)view->zindex / (float)UILAYER_COUNT),
+    //     1.0f,
+    // };
+    // ssbo->dims      = (vec4s){UISCALE(view->dims.x), UISCALE(view->dims.y), view->dims.z, view->fill};
+    ssbo->rect      = (vec4s){UISCALE(pos.x + view->offset.x), UISCALE(pos.y + view->offset.y), UISCALE(view->dims.x),
+                              UISCALE(view->dims.y)};
+    ssbo->scale     = 1.0f;
+    ssbo->fill      = view->fill;
     ssbo->color     = drawCol;
     ssbo->flags     = view->flags;
     ssbo->textureID = view->textureID;
-    ssbo->type      = (u32)(view->border * (1.0f + view->clickAnim)); // border thickness in pixels
+    ssbo->border    = view->border * (1.0f + view->clickAnim); // border thickness in pixels
     ssbo->uv        = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
                           ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
                           : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
-
-    if (view->border > 0.0f)
-        ssbo->flags |= (1u << 0); // UI_FLAG_HOLLOW
 }
 
 // TODO

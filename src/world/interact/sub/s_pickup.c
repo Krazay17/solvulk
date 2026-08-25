@@ -5,7 +5,7 @@
  * Created: 2026-05-08
  * Pickup!
  */
-#include "s_interact.h"
+#include "interact/si_interact.h"
 #include "sol_math.h"
 #include "world.h"
 #include "input.h"
@@ -16,17 +16,16 @@ float stiffness = 5.0f;
 
 void Sol_Pickup_Init(World *world)
 {
-    WAddStep(world) = Sol_Pickup_Step;
 }
 
-static int      step_required = BITC(HAS_INTERACT);
-void Sol_Pickup_Step(World *world, double dt, double time)
+void Pickup_Step(World *world, double dt, double time)
 {
-    SolMouse mouse    = Sol_Input_GetMouse();
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_INTERACT);
+    SolMouse   mouse    = Sol_Input_GetMouse();
     for (int i = 0; i < world->activeCount; i++)
     {
         u32 id = world->activeEntities[i];
-        if (!WHas(world, id, step_required) || !(world->flags[id].flags & EFLAG_PICKUPABLE))
+        if (!WHas(world, id, required) || !(world->flags[id].flags & EFLAG_PICKUPABLE))
             continue;
 
         CompFlags *flags = &world->flags[id];

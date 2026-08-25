@@ -6,7 +6,7 @@
  *
  */
 #include "sol_core.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_math.h"
 #include "render_i.h"
 #include "render/vk/vkrender.h"
@@ -204,7 +204,7 @@ void Flush_Models(void)
 
             // Write both model params and transformations to mirrored index offsets
             modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
-            memcpy(boneGpu[globalIdx], skinningQueue.bones[i], sizeof(SolPose));
+            boneGpu[globalIdx]  = skinningQueue.bones[i];
 
             cursors[h]++;
         }
@@ -352,7 +352,7 @@ void Flush_Rects()
     VkCommandBuffer cmd = Command_Buffer_Get();
 
     memcpy(gpu, rectQueue.instances, sizeof(RectSSBO) * rectQueue.count);
-    Bind_Pipeline(cmd, PIPE_RECTI);
+    Bind_Pipeline(cmd, PIPE_RECT);
     vkCmdDraw(cmd, 6, rectQueue.count, 0, 0);
     rectQueue.count = 0;
 }

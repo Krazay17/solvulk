@@ -7,20 +7,19 @@
  * Remote Tick sets action states directly.
  */
 #include "si_controller.h"
-
 #include "sol_core.h"
 #include "sol_math.h"
-
-#include "input.h"
 #include "world.h"
-#include "xform/s_xform.h"
 #include "sol_user.h"
+
+#include "xform/s_xform.h"
 #include "buff/s_buff.h"
 #include "physx/s_body.h"
 #include "physx/s_body2d.h"
 #include "building/s_building.h"
 #include "platform/platform.h"
 #include "movement/s_movement.h"
+#include "ability/s_ability.h"
 
 typedef struct
 {
@@ -29,7 +28,7 @@ typedef struct
     CompController *controllers;
 } WorldControllers;
 
-static void Tick(World *world, double dt, double time)
+static void Controller_Tick(World *world, double dt, double time)
 {
     float fdt = (float)dt;
 
@@ -38,23 +37,51 @@ static void Tick(World *world, double dt, double time)
     {
         int             id         = wc->dense[i];
         CompController *controller = &wc->controllers[i];
+        CompAbility    *ability    = Sol_Ability_Get(world, id);
+        if (ability)
+        {
+            for (int i = 0; i < ABILITY_SLOTS; i++)
+            {
+                int  ability_mask          = BITC(ACTION_ABILITY1 + i);
+                bool isDown                = controller->actionState & ability_mask;
+                ability->stateData[i].held = isDown;
+
+                if (isDown)
+                {
+                    Sol_Ability_SetState(world, id, ability->action_map[i], i, false);
+                }
+            }
+        }
         if (WHasB(world, id, HAS_BODY3))
         {
             controller->aimpos = Sol_Physx_GetHeadPos(world, id);
+            if (controller->isStrafing)
+                world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
+            else if (glms_vec3_norm(controller->wishdir) > 0.001f)
+            {
+                float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
+                versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
+
+                // Smoothly turn the model toward the movement direction
+                float turn_speed = 10.0f; // Higher numbers = faster turns
+                float factor     = 1.0f - expf(-turn_speed * fdt);
+
+                world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
+            }
         }
-
-        if (controller->isStrafing)
-            world->xforms[id].quat = Sol_Quat_FromYawPitch(controller->yaw, 0);
-        else if (glms_vec3_norm(controller->wishdir) > 0.001f)
+        else if (WHasB(world, id, HAS_BODY2))
         {
-            float   target_entity_yaw = atan2f(controller->wishdir.x, controller->wishdir.z);
-            versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
+            if (glms_vec2_norm(controller->wishdir2d) > 0.001f)
+            {
+                float   target_entity_yaw = atan2f(controller->wishdir2d.x, 0);
+                versors target_quat       = Sol_Quat_FromYawPitch(target_entity_yaw, 0);
 
-            // Smoothly turn the model toward the movement direction
-            float turn_speed = 10.0f; // Higher numbers = faster turns
-            float factor     = 1.0f - expf(-turn_speed * fdt);
+                // Smoothly turn the model toward the movement direction
+                float turn_speed = 10.0f; // Higher numbers = faster turns
+                float factor     = 1.0f - expf(-turn_speed * fdt);
 
-            world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
+                world->xforms[id].quat = glms_quat_slerp(world->xforms[id].quat, target_quat, factor);
+            }
         }
     }
 }
@@ -71,7 +98,7 @@ void Sol_Controller_Init(World *world)
     world_controllers->dense       = malloc(world_controllers->cap * sizeof(int));
     memset(world_controllers->sparse, -1, MAX_ENTS * sizeof(int));
 
-    WAddTick(world) = Tick;
+    WAddTick(world) = Controller_Tick;
 }
 
 // void Sol_Controller_Add(World *world, int id, ControllerKind kind)
@@ -146,15 +173,6 @@ CompController *Sol_Controller_Get(World *world, int id)
         return NULL;
     return &wc->controllers[wc->sparse[id]];
 }
-
-// UserController *Sol_Controller_GetUser(World *world, int id)
-// {
-//     WorldControllers *wc  = world->dense_components[WORLD_SYS_CONTROLLER];
-//     int               idx = wc->user_sparse[id];
-//     if (idx == -1)
-//         return NULL;
-//     return &wc->user_controllers[idx];
-// }
 
 void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lookdir, float range, float hitdepth)
 {

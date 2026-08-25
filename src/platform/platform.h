@@ -1,4 +1,5 @@
 #pragma once
+#include "sol/base.h"
 
 typedef struct SolResource
 {

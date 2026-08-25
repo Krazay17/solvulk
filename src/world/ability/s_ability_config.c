@@ -1,24 +1,118 @@
-#include "ability/si_ability.h"
+#include "si_ability.h"
 #include "buff/s_buff.h"
+#include "combat/s_combat.h"
 
-AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
+const char *ability_names[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE] = "Idle",           [ABILITY_STATE_DASH] = "Dash",
+    [ABILITY_STATE_FIREBALL] = "Fireball",   [ABILITY_STATE_PISTOL] = "Pistol",
+    [ABILITY_STATE_SPINSLASH] = "Spinslash", [ABILITY_STATE_CLAW] = "Claw",
+    [ABILITY_STATE_SHIELD] = "Shield",       [ABILITY_STATE_LASER] = "Laser",
+    [ABILITY_STATE_WHIP] = "Whip",           [ABILITY_STATE_FIREBALLVOLLEY] = "FireballVolley",
+};
+
+const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE] =
+        {
+            0,
+        },
+    [ABILITY_STATE_DASH] =
+        {
+            .duration   = 0.3f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_FIREBALL] =
+        {
+            .duration   = 3.0f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 2.0f,
+        },
+    [ABILITY_STATE_PISTOL] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_SPINSLASH] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_CLAW] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_SHIELD] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_LASER] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_WHIP] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+    [ABILITY_STATE_FIREBALLVOLLEY] =
+        {
+            .duration   = 0.5f,
+            .cooldown   = 0.0f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
+        },
+};
+
+const AbilityConfig ability_rarity_base[ABILITY_STATE_COUNT][4] =
     {
         [ABILITY_STATE_FIREBALL][0] =
             {
-                .name     = "Fireball",
                 .cooldown = 5.0f,
                 .damage   = 10,
             },
         [ABILITY_STATE_FIREBALL][1] =
             {
-                .name     = "Fireball",
                 .cooldown = 4.0f,
                 .damage   = 15,
                 .buffMask = BITC(BUFFKIND_FIRE),
             },
         [ABILITY_STATE_FIREBALL][2] =
             {
-                .name       = "Fireball",
                 .cooldown   = 2.0f,
                 .damage     = 20,
                 .buffMask   = BITC(BUFFKIND_FIRE),
@@ -26,7 +120,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SHIELD][0] =
             {
-                .name       = "Shield",
                 .cooldown   = 12.0f,
                 .damage     = 10,
                 .duration   = 0.25f,
@@ -34,7 +127,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SHIELD][1] =
             {
-                .name       = "Shield",
                 .cooldown   = 10.0f,
                 .damage     = 10,
                 .duration   = 0.25f,
@@ -42,7 +134,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SHIELD][2] =
             {
-                .name       = "Shield",
                 .cooldown   = 8.0f,
                 .damage     = 15,
                 .duration   = 0.5f,
@@ -51,14 +142,12 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SPINSLASH][0] =
             {
-                .name     = "SpinSlash",
                 .cooldown = 12.0f,
                 .duration = 0.5f,
                 .damage   = 20,
             },
         [ABILITY_STATE_SPINSLASH][1] =
             {
-                .name       = "SpinSlash",
                 .cooldown   = 10.0f,
                 .duration   = 0.5f,
                 .damage     = 25,
@@ -66,7 +155,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SPINSLASH][2] =
             {
-                .name       = "SpinSlash",
                 .cooldown   = 8.0f,
                 .duration   = 0.5f,
                 .damage     = 25,
@@ -75,7 +163,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_SPINSLASH][3] =
             {
-                .name       = "SpinSlash",
                 .cooldown   = 2.0f,
                 .duration   = 0.5f,
                 .damage     = 25,
@@ -85,19 +172,16 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_DASH][0] =
             {
-                .name     = "Dash",
                 .cooldown = 2.0f,
                 .duration = 0.2f,
             },
         [ABILITY_STATE_DASH][1] =
             {
-                .name     = "Dash",
                 .cooldown = 1.5f,
                 .duration = 0.3f,
             },
         [ABILITY_STATE_DASH][2] =
             {
-                .name       = "Dash",
                 .cooldown   = 1.0f,
                 .duration   = 0.5f,
                 .damage     = 10,
@@ -106,19 +190,16 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_PISTOL][0] =
             {
-                .name     = "Blaster",
                 .cooldown = 0.3f,
                 .damage   = 5,
             },
         [ABILITY_STATE_PISTOL][1] =
             {
-                .name     = "Blaster",
                 .cooldown = 0.2f,
                 .damage   = 8,
             },
         [ABILITY_STATE_PISTOL][2] =
             {
-                .name       = "Blaster",
                 .cooldown   = 0.1f,
                 .damage     = 8,
                 .buffMask   = BITC(BUFFKIND_FIRE),
@@ -126,14 +207,12 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_CLAW][0] =
             {
-                .name     = "Claw",
                 .cooldown = 1.5f,
                 .duration = 0.5f,
                 .damage   = 25,
             },
         [ABILITY_STATE_CLAW][1] =
             {
-                .name     = "Claw",
                 .cooldown = 1.2f,
                 .duration = 0.5f,
 
@@ -141,7 +220,6 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_CLAW][2] =
             {
-                .name       = "Claw",
                 .cooldown   = 0.8f,
                 .duration   = 0.5f,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING |
@@ -150,19 +228,16 @@ AbilityConfig ability_config[ABILITY_STATE_COUNT][4] =
             },
         [ABILITY_STATE_LASER][0] =
             {
-                .name     = "Laser",
                 .cooldown = 2.0f,
                 .damage   = 20,
             },
         [ABILITY_STATE_LASER][1] =
             {
-                .name     = "Laser",
                 .cooldown = 2.0f,
                 .damage   = 25,
             },
         [ABILITY_STATE_LASER][2] =
             {
-                .name       = "Laser",
                 .cooldown   = 2.0f,
                 .damage     = 30,
                 .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_CHAINLIGHTNING,

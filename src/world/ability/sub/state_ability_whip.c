@@ -14,14 +14,12 @@
 
 #define HITINTERVAL 0.1f
 #define HITDELAY 0.25f
-#define MAX_DURATION 3.5f
-#define MAX_CHARGE 2.0f
 #define MIN_CHARGE 0.2f
 
 // static void Laser(World *world, int id, vec3s pos, vec3s dir)
 // {
-//     CompAbility *ability = &world->abilities[id];
-//     AbilityData *data    = &ability->stateData[ability->activeSlot];
+//     CompAbility *ability = Sol_Ability_Get(world, id);
+//     AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 //     if (data->as.laser.laserPointCount >= MAX_Whip_BOUNCES * 2)
 //         return;
 //     Sol_Combat_ClearHits(world, id);
@@ -30,7 +28,7 @@
 //     vec3s      *pointB = &data->as.laser.laserPoints[data->as.laser.laserPointCount++];
 //     *pointA            = pos;
 
-//     float  finalCharge = data->charge * HITINTERVAL;
+//     float  finalCharge = data->power * HITINTERVAL;
 //     float  finalDamage = data->damage * finalCharge;
 //     SolRay ray1        = {
 //         .pos       = pos,
@@ -50,7 +48,7 @@
 //     };
 
 //     SolRayResult results[256];
-//     int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
+//     int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->power / MAX_CHARGE), results, 256);
 //     for (int i = 0; i < hits; i++)
 //     {
 //         SolRayResult result = results[i];
@@ -86,10 +84,10 @@ static bool Leave_State(World *world, int id, CompAbility *ability)
 
 void Whip_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
+    CompAbility *ability = Sol_Ability_Get(world, id);
     if (Leave_State(world, id, ability))
         return;
-    AbilityData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
 
     CompController *controller = Sol_Controller_Get(world, id);
@@ -113,14 +111,14 @@ void Whip_State_Update(World *world, int id, float dt)
 
     if (data->stage == 1)
     {
-        data->charge += dt * 8.0f;
-        if (data->charge >= MAX_CHARGE)
+        data->power += dt * 8.0f;
+        if (data->power >= ability_base[ABILITY_STATE_LASER].maxpower)
             data->stage = 2;
     }
     else
-        data->charge -= dt * 1.0f;
+        data->power -= dt * 1.0f;
 
-    data->charge = fminf(MAX_CHARGE, fmaxf(MIN_CHARGE, data->charge));
+    data->power = fminf(ability_base[ABILITY_STATE_LASER].maxpower, fmaxf(MIN_CHARGE, data->power));
 
     data->accum += dt;
     if (data->accum < HITINTERVAL)
@@ -133,11 +131,11 @@ void Whip_State_Update(World *world, int id, float dt)
 
 void Whip_State_Enter(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     CompCombat  *combat  = &world->combats[id];
     data->accum          = HITINTERVAL;
-    data->charge         = 0;
+    data->power         = 0;
     data->stage          = 0;
     Sol_Combat_ClearHits(world, id);
 
@@ -159,23 +157,23 @@ void Whip_State_Enter(World *world, int id)
 
 void Whip_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     data->lastExited     = solState.gameTime;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0);
     Sol_World_Audio_Remove(world, id, 0);
 }
 
 bool Whip_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     return true;
 }
 
 bool Whip_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastExited + ability_base[ABILITY_STATE_LASER].cooldown > solState.gameTime);
 }

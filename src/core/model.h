@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "sol/types.h"
 #include "xform/s_xform.h"
 
 typedef enum
@@ -123,48 +123,66 @@ typedef struct BoneMask
     bool layerOwns[MAX_BONES]; // for one layer
 } BoneMask;
 
-typedef struct
-{
-    int   currentAnim, lastAnim;
-    float currentSeek, lastSeek;
-    float blendFactor, blendSpeed;
-} AnimGroup;
-
 // Per model, per layer
 typedef struct SolModelMasks
 {
     BoneMask layers[ANIM_LAYER_COUNT];
 } SolModelMasks;
 
-typedef struct AnimBlend
-{
-    int   anim;     // current animation index, or -1 to skip layer
-    int   lastAnim; // previous, or -1 for no fade
-    float seek, lastSeek;
-    float blendFactor; // current cross-fade within this layer (0..1)
-} AnimBlend;
+// typedef struct
+// {
+//     int   currentAnim, lastAnim;
+//     float currentSeek, lastSeek;
+//     float blendFactor, blendInSpeed;
+// } AnimGroup;
 
-typedef struct PoseRequest
+// typedef struct AnimBlend
+// {
+//     int   anim;     // current animation index, or -1 to skip layer
+//     int   lastAnim; // previous, or -1 for no fade
+//     float seek, lastSeek;
+//     float blendFactor; // current cross-fade within this layer (0..1)
+//     bool  hasSnapshot;
+// } AnimBlend;
+
+// typedef struct PoseRequest
+// {
+//     AnimBlend layers[ANIM_LAYER_COUNT];      // per-layer state
+//     BoneMask  masks[ANIM_LAYER_COUNT];       // which bones each layer owns
+//     float     layerWeight[ANIM_LAYER_COUNT]; // how strongly each layer applies (0..1)
+//     mat4     *outBones;                      // final skinning matrices
+// } PoseRequest;
+
+typedef struct AnimLayer
 {
-    AnimBlend layers[ANIM_LAYER_COUNT];      // per-layer state
-    BoneMask  masks[ANIM_LAYER_COUNT];       // which bones each layer owns
-    float     layerWeight[ANIM_LAYER_COUNT]; // how strongly each layer applies (0..1)
-    mat4     *outBones;                      // final skinning matrices
-} PoseRequest;
+    u8      playKind;
+    int     currentAnim, lastAnim, animId, last_frame_played;
+    vec3s   cachedT[MAX_BONES];
+    vec3s   cachedS[MAX_BONES];
+    versors cachedR[MAX_BONES];
+    float   currentSeek, lastSeek;
+    float   blendFactor, blendInSpeed; // Internal crossfade between lastAnim -> currentAnim
+    float   playRate;
+    float   weight;        // Active layer weight [0.0f - 1.0f]
+    float   blendOutSpeed; // Rate at which weight decays during fade-out
+    bool    isBlendingOut; // Flag indicating layer weight is decaying
+    bool    force, hasSnapshot;
+} AnimLayer;
 
 extern SolModel      loaded_models[SOL_MODEL_COUNT];
 extern SolModelMasks model_masks[SOL_MODEL_COUNT];
 extern const char   *model_path[SOL_MODEL_COUNT];
 extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
-int            Sol_Models_Init();
-void           Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skele);
-void           Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
-int            Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
-void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
-u32            Sol_Model_GetTriCount(SolModelHandle handle);
-void           Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform);
-SolModelHandle Sol_Model_GetModelId(World *world, int id);
+int  Sol_Models_Init();
+void Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skele);
+void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
+int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
+void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose);
+// void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
+// void Sol_Skeleton_Pose(int model_handle, SolPose *pose, AnimLayer *layers);
+u32  Sol_Model_GetTriCount(SolModelHandle handle);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform);
 
 static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
 {

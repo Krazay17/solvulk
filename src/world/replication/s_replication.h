@@ -52,20 +52,20 @@ typedef struct
     u8 movementState;
 
     u8    activeSlot;
-    u32   bindingState[MAX_MAPPED_SKILLS];
-    u32   bindingRarity[MAX_MAPPED_SKILLS];
-    float bindingBonusdamage[MAX_MAPPED_SKILLS];
-    u32   bindingBonusBuffs[MAX_MAPPED_SKILLS];
-    u32   bindingBonusEffects[MAX_MAPPED_SKILLS];
+    u32   bindingState[ABILITY_SLOTS];
+    u32   bindingRarity[ABILITY_SLOTS];
+    float bindingBonusdamage[ABILITY_SLOTS];
+    u32   bindingBonusBuffs[ABILITY_SLOTS];
+    u32   bindingBonusEffects[ABILITY_SLOTS];
 
-    u8    modelId;
-    i16   animCurrent[ANIM_LAYER_COUNT];
-    u8    animPlayKind[ANIM_LAYER_COUNT];
-    float animSpeed[ANIM_LAYER_COUNT];
-    float animSeek[ANIM_LAYER_COUNT];
-    float blendin[ANIM_LAYER_COUNT];
+    u8        modelId;
+    i16       animCurrent[ANIM_LAYER_COUNT];
+    u8        animPlayKind[ANIM_LAYER_COUNT];
+    float     animSpeed[ANIM_LAYER_COUNT];
+    float     animSeek[ANIM_LAYER_COUNT];
+    float     blendin[ANIM_LAYER_COUNT];
     NetWeapon weapons[2];
-    u32   leftWeaponEnt, rightWeaponEnt;
+    u32       leftWeaponEnt, rightWeaponEnt;
 } NetEntityState;
 
 typedef struct

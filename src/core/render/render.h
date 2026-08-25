@@ -17,7 +17,7 @@
 #define MAX_QUAD_INSTANCES (1 << 20)
 #define MAX_LINE_VERTICES 0xffffff
 
-typedef struct SolModel  SolModel;
+typedef struct SolModel SolModel;
 
 typedef enum
 {
@@ -29,7 +29,6 @@ typedef enum
     PIPE_TEXT_3D_FRONT,
     PIPE_TEXT_2D,
     PIPE_RECT,
-    PIPE_RECTI,
     PIPE_LINE,
 
     PIPE_SPHERE,
@@ -126,12 +125,15 @@ typedef struct
 
 extern SolCamera solCamera;
 
-// pos: x, y, zindex, scale
-// dims: x, y, spin, twist
 typedef struct
 {
-    vec4s pos, color, dims, uv;
-    u32   type, flags, textureID, _pad1;
+    Rect  rect;
+    float scale, zindex, spin, fill;
+    vec4s color, uv;
+    float border;
+    // 1 fill vertical, 2 invert fill
+    u32 flags;
+    u32 textureID;
 } RectSSBO;
 typedef struct
 {
@@ -142,7 +144,9 @@ extern RectInstance     rectQueue;
 static inline RectSSBO *Sol_Render_GetNext_Rect()
 {
     assert(rectQueue.count < MAX_RECT_INSTANCES && "rectQueue Full");
-    return &rectQueue.instances[rectQueue.count++];
+    RectSSBO *ssbo = &rectQueue.instances[rectQueue.count++];
+    *ssbo          = (RectSSBO){0};
+    return ssbo;
 }
 
 typedef struct
@@ -224,15 +228,14 @@ extern ModelSkinnedSubmission skinningQueue;
 
 static inline void Sol_Render_GetNext_Model(SolModelHandle handle, ModelSSBO *modelSSBO, SolPose *pose)
 {
-    // Bounds checking to prevent buffer overflows!
     if (pose)
     {
         if (skinningQueue.count >= MAX_MODEL_INSTANCES)
             return;
-        u32 idx                    = skinningQueue.count++;
-        skinningQueue.handles[idx] = handle;
-        memcpy(&skinningQueue.bones[idx], pose, sizeof(SolPose));
-        memcpy(&skinningQueue.modelSSBO[idx], modelSSBO, sizeof(ModelSSBO));
+        u32 idx                      = skinningQueue.count++;
+        skinningQueue.handles[idx]   = handle;
+        skinningQueue.bones[idx]     = *pose;
+        skinningQueue.modelSSBO[idx] = *modelSSBO;
     }
     else
     {
@@ -240,7 +243,7 @@ static inline void Sol_Render_GetNext_Model(SolModelHandle handle, ModelSSBO *mo
             return;
         u32 idx                 = modelQueue.count++;
         modelQueue.handles[idx] = handle;
-        memcpy(&modelQueue.modelSSBO[idx], modelSSBO, sizeof(ModelSSBO));
+        modelQueue.modelSSBO[idx] = *modelSSBO;
     }
 }
 
@@ -384,13 +387,9 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u8 kind)
         q = &spriteQueueFront;
         break;
     }
-
-    if (q->count >= MAX_QUAD_INSTANCES)
-    {
-        return &q->instances[q->count - 1];
-    }
-
-    return &q->instances[q->count++];
+    QuadSSBO *ssbo = &q->instances[q->count++];
+    *ssbo          = (QuadSSBO){0};
+    return ssbo;
 }
 SceneUBO *Sol_Render_GetNext_Scene();
 
@@ -408,9 +407,9 @@ void Sol_Render_CheckGpuUploads();
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);
 void  Sol_Render_DrawLine(SolLine *lines, int count);
-void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
-void  Sol_Render_DrawText(SolFontDesc desc);
-void  Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
-void  Sol_Render_UploadModel(SolModel *model, u32 modelId);
-void  Sol_Render_DrawText2D(SolFontDesc desc);
-void  Sol_Render_DrawText3D(Text3DDesc desc);
+// void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
+void Sol_Render_DrawText(SolFontDesc desc);
+void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
+void Sol_Render_UploadModel(SolModel *model, u32 modelId);
+void Sol_Render_DrawText2D(SolFontDesc desc);
+void Sol_Render_DrawText3D(Text3DDesc desc);

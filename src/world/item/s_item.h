@@ -1,39 +1,24 @@
 #pragma once
-#include "base.h"
-
-typedef struct Item
-{
-    u32  ability;
-    u32  slot;
-    u8   rarity;
-    bool onCooldown;
-
-    float bonusDamage;
-    u32   bonusBuffs;
-    u32   bonusEffects;
-} Item;
+#include "sol/types.h"
 
 typedef struct CompItem
 {
-    Item item;
+    SolItem item;
 } CompItem;
 
 typedef struct CompAbilitySlot
 {
-    int slot;
+    int  slot;
     bool onCooldown;
 } CompAbilitySlot;
 
-typedef struct CompInventory
-{
-    Item *items;
-    int   cnt, cap;
-} CompInventory;
+void      Sol_Item_Init(World *world);
+CompItem *Sol_Item_Add(World *world, int id);
+CompItem *Sol_Item_Get(World *world, int id);
+bool      Sol_Item_Has(World *world, int id);
+void      Sol_Item_Rem(World *world, int id);
 
-void Sol_Item_Init(World *world);
-void Sol_Item_AddAbility(World *world, int id, u32 ability);
-void Sol_Item_AddAbilitySlot(World *world, int id, int slot);
 void Sol_Item_SetRarity(World *world, int id, u32 rarity);
-void Sol_Item_Drop(World *world, int id);
 
-void Sol_Inventory_AddItem(World *world, int id, Item item);
+SolItem *Sol_Item_GetItemAtSlot(World *world, int id, int slot);
+void     Sol_Item_Drop(World *world, int id);

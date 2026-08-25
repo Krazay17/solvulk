@@ -10,6 +10,7 @@
 #include "sol_user.h"
 #include "sol_math.h"
 #include "input.h"
+#include "platform/platform.h"
 
 #include "xform/s_xform.h"
 #include "controller/s_controller.h"
@@ -25,7 +26,7 @@ typedef struct
     int         player_slots[MAX_LOCAL_PLAYERS];
 } WorldPlayers;
 
-static void Tick(World *world, double dt, double time)
+static void Player_Tick(World *world, double dt, double time)
 {
     float fdt = (float)dt;
 
@@ -43,8 +44,8 @@ static void Tick(World *world, double dt, double time)
 
         if (mouse.locked)
         {
-            *yaw -= (float)(mouse.dx * user_settings.look_sens);
-            *pitch -= (float)(mouse.dy * user_settings.look_sens);
+            *yaw -= (float)(mouse.dx * user_data.look_sens);
+            *pitch -= (float)(mouse.dy * user_data.look_sens);
 
             *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
             if (*yaw > GLM_PIf)
@@ -58,7 +59,7 @@ static void Tick(World *world, double dt, double time)
         for (int i = 0; i < SOL_KEY_COUNT; i++)
         {
             if (Sol_Input_KeyDown(i))
-                controller->actionState |= user_settings.key_binds[i];
+                controller->actionState |= BITC(user_data.key_binds[i]);
         }
 
         controller->isStrafing = mouse.locked;
@@ -66,20 +67,20 @@ static void Tick(World *world, double dt, double time)
         if (WHas(world, id, BITC(HAS_BUILDING)))
         {
             if (mouse.buttons[SOL_MOUSE_LEFT])
-                controller->actionState |= ACTION_BUILD;
+                controller->actionState |= BITC(ACTION_BUILD);
         }
         else
         {
             if (mouse.togglelocked)
             {
                 if (mouse.buttons[SOL_MOUSE_LEFT])
-                    controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_LEFT];
+                    controller->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_LEFT]);
 
                 if (mouse.buttons[SOL_MOUSE_RIGHT])
-                    controller->actionState |= user_settings.mouse_binds[SOL_MOUSE_RIGHT];
+                    controller->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_RIGHT]);
             }
             else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
-                controller->actionState |= ACTION_FWD;
+                controller->actionState |= BITC(ACTION_FWD);
 
             if (mouse.wheelV)
             {
@@ -92,6 +93,7 @@ static void Tick(World *world, double dt, double time)
         controller->lookdir  = Sol_Vec3_FromYawPitch(*yaw, *pitch);
         controller->wishdir  = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, false);
         controller->wishdirY = CalcWishdir3(controller->actionState, controller->lookdir, WORLD_UP, true);
+        controller->wishdir2d = CalcWishDir2(controller->actionState);
         if (WHasB(world, id, HAS_BODY3))
             controller->aimpos = Sol_Physx_GetHeadPos(world, id);
         if (WHasB(world, id, HAS_CAMERA))
@@ -101,10 +103,10 @@ static void Tick(World *world, double dt, double time)
         // #### DEBUG ACTIONS ####
         if (Sol_Input_KeyDown(SOL_KEY_F))
         {
-            controller->actionState |= ACTION_DEBUGTELE;
+            controller->actionState |= BITC(ACTION_DEBUGTELE);
         }
         else
-            controller->actionState &= ~ACTION_DEBUGTELE;
+            controller->actionState &= ~BITC(ACTION_DEBUGTELE);
 
         if (Sol_Input_KeyPressed(SOL_KEY_5))
         {
@@ -133,12 +135,19 @@ void Sol_Player_Init(World *world)
     memset(wc->sparse, -1, MAX_ENTS * sizeof(int));
     memset(wc->player_slots, -1, sizeof(wc->player_slots));
 
-    WAddTick(world) = Tick;
+    WAddTick(world) = Player_Tick;
 }
 
 CompPlayer *Sol_Player_Add(World *world, int id, int localIdx)
 {
     WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
+    if (!wc)
+    {
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "WorldPlayers not initialized on world kind:%d", world->kind);
+        Sol_MessageBox(buffer, "Warning");
+        return NULL;
+    }
     if (wc->sparse[id] != -1)
         return &wc->players[wc->sparse[id]];
 
@@ -178,6 +187,12 @@ CompPlayer *Sol_Player_Get(World *world, int id)
     if (wc->sparse[id] < 0)
         return NULL;
     return &wc->players[wc->sparse[id]];
+}
+
+bool Sol_Player_Has(World *world, int id)
+{
+    WorldPlayers *wc = world->dense_components[WORLD_SYS_PLAYER];
+    return wc->sparse[id] > -1;
 }
 
 void Sol_Player_Remove(World *world, int id)

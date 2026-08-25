@@ -100,45 +100,41 @@ void Net_Send_Snap(World *world)
             e->yaw                     = controller->yaw;
             e->pitch                   = controller->pitch;
         }
-        if (world->masks[id] & BITC(HAS_MODEL))
-        {
-            e->modelId        = world->models[id].modelId;
-            e->leftWeaponEnt  = world->models[id].leftWeaponEnt;
-            e->rightWeaponEnt = world->models[id].rightWeaponEnt;
-            // e->weapons[0].entId = world->models[id].leftWeaponEnt;
-            // e->weapons[0].modelId = Sol_Model_GetModelId(world, world->models[id].leftWeaponEnt);
+        // if (world->masks[id] & BITC(HAS_MODEL))
+        // {
+            
+        //     e->modelId        = world->models[id].modelId;
+        //     e->leftWeaponEnt  = world->models[id].leftWeaponEnt;
+        //     e->rightWeaponEnt = world->models[id].rightWeaponEnt;
+        //     // e->weapons[0].entId = world->models[id].leftWeaponEnt;
+        //     // e->weapons[0].modelId = Sol_Model_GetModelId(world, world->models[id].leftWeaponEnt);
 
-            // e->weapons[1].entId = world->models[id].rightWeaponEnt;
-            // e->weapons[1].modelId = Sol_Model_GetModelId(world, world->models[id].rightWeaponEnt);
-            if (WHasB(world, id, HAS_ANIM))
-            {
-                for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
-                {
-                    if (world->anims[id].layers[layer].fadeOut > 0)
-                        continue;
-                    e->animCurrent[layer]  = world->anims[id].layers[layer].animId;
-                    e->animSeek[layer]     = world->anims[id].layers[layer].currentSeek;
-                    e->animSpeed[layer]    = world->anims[id].layers[layer].playRate;
-                    e->animPlayKind[layer] = world->anims[id].layers[layer].playKind;
-                }
-            }
-        }
+        //     // e->weapons[1].entId = world->models[id].rightWeaponEnt;
+        //     // e->weapons[1].modelId = Sol_Model_GetModelId(world, world->models[id].rightWeaponEnt);
+        //     // if (WHasB(world, id, HAS_ANIM))
+        //     // {
+        //     //     for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
+        //     //     {
+        //     //         if (world->anims[id].layers[layer].fadeOut > 0)
+        //     //             continue;
+        //     //         e->animCurrent[layer]  = world->anims[id].layers[layer].animId;
+        //     //         e->animSeek[layer]     = world->anims[id].layers[layer].currentSeek;
+        //     //         e->animSpeed[layer]    = world->anims[id].layers[layer].playRate;
+        //     //         e->animPlayKind[layer] = world->anims[id].layers[layer].playKind;
+        //     //     }
+        //     // }
+        // }
         if (world->masks[id] & BITC(HAS_ABILITY))
         {
-            CompAbility *a    = &world->abilities[id];
-            AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
+            CompAbility *a    = Sol_Ability_Get(world, id);
+            AbilityStateData *data = &a->stateData[a->activeSlot];
 
             e->abilityState  = a->state;
             e->activeSlot    = a->activeSlot;
-            e->abilityCharge = data->charge;
+            e->abilityCharge = data->power;
             e->abilityStage  = data->stage;
-            for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+            for (int slot = 0; slot < ABILITY_SLOTS; slot++)
             {
-                e->bindingState[slot]        = world->abilities[id].bindings[slot].boundState;
-                e->bindingRarity[slot]       = world->abilities[id].bindings[slot].boundRarity;
-                e->bindingBonusdamage[slot]  = world->abilities[id].bindings[slot].boundBonusDamage;
-                e->bindingBonusBuffs[slot]   = world->abilities[id].bindings[slot].boundBonusBuffs;
-                e->bindingBonusEffects[slot] = world->abilities[id].bindings[slot].boundBonusEffects;
             }
         }
 
@@ -253,43 +249,35 @@ void Net_Apply_Snap(World *world)
                 world->bodies[id].dims.y = e->height;
             }
 
-            if (world->masks[id] & BITC(HAS_MODEL))
-            {
-                world->models[id].modelId        = e->modelId;
-                world->models[id].leftWeaponEnt  = world->worldNet->hostToLocalMap[e->leftWeaponEnt];
-                world->models[id].rightWeaponEnt = world->worldNet->hostToLocalMap[e->rightWeaponEnt];
+            // if (world->masks[id] & BITC(HAS_MODEL))
+            // {
+            //     world->models[id].modelId        = e->modelId;
+            //     world->models[id].leftWeaponEnt  = world->worldNet->hostToLocalMap[e->leftWeaponEnt];
+            //     world->models[id].rightWeaponEnt = world->worldNet->hostToLocalMap[e->rightWeaponEnt];
 
-                for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
-                {
-                    Sol_Model_PlayAnim(world, id,
-                                       (AnimDesc){
-                                           .layerId  = layer,
-                                           .anim     = e->animCurrent[layer],
-                                           .seek     = e->animSeek[layer],
-                                           .speed    = e->animSpeed[layer],
-                                           .playKind = e->animPlayKind[layer],
-                                       });
-                    Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
-                }
-            }
+            //     for (int layer = 0; layer < ANIM_LAYER_COUNT; layer++)
+            //     {
+            //         Sol_Model_PlayAnim(world, id,
+            //                            (AnimDesc){
+            //                                .layerId  = layer,
+            //                                .anim     = e->animCurrent[layer],
+            //                                .seek     = e->animSeek[layer],
+            //                                .speed    = e->animSpeed[layer],
+            //                                .playKind = e->animPlayKind[layer],
+            //                            });
+            //         Sol_Model_SetAnimSpeed(world, id, layer, e->animSpeed[layer]);
+            //     }
+            // }
             if (world->masks[id] & BITC(HAS_ABILITY))
             {
-                CompAbility *ability = &world->abilities[id];
-                for (int slot = 0; slot < MAX_MAPPED_SKILLS; slot++)
+                CompAbility *ability = Sol_Ability_Get(world, id);
+                for (int slot = 0; slot < ABILITY_SLOTS; slot++)
                 {
-                    SkillBinding *b      = &ability->bindings[slot];
-                    b->boundState        = e->bindingState[slot];
-                    b->boundRarity       = e->bindingRarity[slot];
-                    b->boundBonusDamage  = e->bindingBonusdamage[slot];
-                    b->boundBonusBuffs   = e->bindingBonusBuffs[slot];
-                    b->boundBonusEffects = e->bindingBonusEffects[slot];
-                    // pendingState/dirty stays as-is — if the client is still trying
-                    // to bind something different, the next Send_Input will send it again
                 }
                 ability->state      = e->abilityState;
                 ability->activeSlot = e->activeSlot;
-                AbilityData *data   = &ability->stateData[ability->activeSlot];
-                data->charge        = e->abilityCharge;
+                AbilityStateData *data   = &ability->stateData[ability->activeSlot];
+                data->power        = e->abilityCharge;
                 data->stage         = e->abilityStage;
             }
         }
@@ -321,8 +309,6 @@ void Net_Apply_Snap(World *world)
 
 void Net_Send_Input(World *world)
 {
-    if (!(world->masks[1] & BITC(HAS_CONTROLLER)))
-        return;
         int playerId = Sol_Player_GetEnt(world, 0);
     CompController *controller = Sol_Controller_Get(world, playerId);
 
@@ -337,26 +323,15 @@ void Net_Send_Input(World *world)
         .isStrafing  = controller->isStrafing,
         .currentTick = world->currentTick,
     };
-    CompAbility *a = &world->abilities[1];
-    for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
+    CompAbility *a = Sol_Ability_Get(world, Sol_Player_GetEnt(world, 0));
+    for (int i = 0; i < ABILITY_SLOTS; i++)
     {
-        if (a->bindings[i].dirtySend)
-        {
-            inputPacket.hasEquipRequest = true;
-            break;
-        }
     }
 
     if (inputPacket.hasEquipRequest)
     {
-        for (int i = 0; i < MAX_MAPPED_SKILLS; i++)
+        for (int i = 0; i < ABILITY_SLOTS; i++)
         {
-            inputPacket.abilities[i] = a->bindings[i].pendingState;
-            inputPacket.rarity[i]    = a->bindings[i].pendingRarity;
-            inputPacket.addDamage[i] = a->bindings[i].pendingBonusDamage;
-            inputPacket.addBuff[i]   = a->bindings[i].pendingBonusBuffs;
-            inputPacket.addEffect[i] = a->bindings[i].pendingBonusEffects;
-            a->bindings[i].dirtySend = false; // ack: we've sent this request
         }
     }
     ENetPacket *packet = enet_packet_create(&inputPacket, sizeof(NetInputPacket), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);

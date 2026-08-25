@@ -1,36 +1,30 @@
 #version 450
 
-layout(location=0)in vec4 fragColor;
-layout(location=1)in vec2 fragPos;
-layout(location=0)out vec4 outColor;
+layout(location = 0) in vec2 fragUV;
+layout(location = 1) in vec4 fragColor;
+layout(location = 2) in vec2 localPos;
+layout(location = 3) in vec2 rectDims;
+layout(location = 4) flat in float fragBorder; // Recieved float border
+layout(location = 5) flat in uint fragTextureId;
+layout(location = 6) flat in uint fragFlags;
 
-layout(push_constant)uniform Push{
-    vec4 rect;
-    vec4 color;
-    vec4 extra;// thickness, fill, 0, 0
-}push;
+layout(set = 2, binding = 0) uniform sampler2D textures[64];
 
-void main()
-{
-    float t = push.extra[0];
-    float progress = push.extra[1];
+layout(location = 0) out vec4 outColor;
 
-    // 1. Calculate the absolute X coordinate where the progress bar ends
-    float progressCutoff = push.rect[2] * progress;
-
-    // 2. Discard the pixel if it's past the progress cutoff from left-to-right
-    if (fragPos.x > progressCutoff) {
-        discard;
+void main() {
+    // Hollow border: discard the interior if border thickness > 0
+    if (fragBorder > 0.0) {
+        if (localPos.x > fragBorder && localPos.x < (rectDims.x - fragBorder) &&
+            localPos.y > fragBorder && localPos.y < (rectDims.y - fragBorder)) 
+        {
+            discard;
+        }
     }
 
-    // 3. Your existing border/thickness hollow-out logic
-    bool inside = fragPos.x > t && fragPos.x < progressCutoff - t &&
-                  fragPos.y > t && fragPos.y < push.rect[3] - t;
+    vec4 tex = (fragTextureId != 0u)
+        ? texture(textures[fragTextureId], fragUV)
+        : vec4(1.0);
     
-    if (push.extra[0] > 0.0 && inside) {
-        discard;
-    }
-
-        outColor = fragColor;
-    
+    outColor = tex * fragColor;
 }

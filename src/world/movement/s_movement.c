@@ -50,7 +50,7 @@ static void Movement_Prestep(World *world, double dt, double time)
 
 static void Movement3d_Step(World *world, double dt, double time)
 {
-    static int required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY3);
+    static int required = BITC(HAS_MOVEMENT) | BITC(HAS_BODY3) | BITC(HAS_CONTROLLER);
     float      fdt      = (float)dt;
     for (int i = 0; i < world->activeCount; i++)
     {
@@ -67,7 +67,7 @@ static void Movement3d_Step(World *world, double dt, double time)
         CompBody             *body   = &world->bodies[id];
         const MoveStateForce *forces = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
-        bool isJumpDown = controller->actionState & ACTION_JUMP;
+        bool isJumpDown = controller->actionState & BITC(ACTION_JUMP);
 
         if (isJumpDown && !movement->jumpPressedLastFrame)
             movement->wantsJump = true;
@@ -83,7 +83,6 @@ static void Movement3d_Step(World *world, double dt, double time)
         body->gravity.y     = forces->gravity * movement->gravityMod;
 
         vec3s wishdir = controller->wishdir;
-        
 
         switch (movement->state)
         {
@@ -133,10 +132,11 @@ static void Movement2d_Step(World *world, double dt, double time)
         int id = world->activeEntities[i];
         if (WHas(world, id, required))
         {
-            CompMovement         *movement   = &world->movements[id];
-            CompBody2d           *body       = &world->body2d[id];
-            CompController       *controller = Sol_Controller_Get(world, id);
-            const MoveStateForce *force      = &MOVE_STATE_FORCES[movement->kind][movement->state];
+            CompMovement   *movement   = &world->movements[id];
+            CompBody2d     *body       = &world->body2d[id];
+            CompController *controller = Sol_Controller_Get(world, id);
+            // CompXform            *xform      = &world->xforms[id];
+            const MoveStateForce *force = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
             vec2s vel     = body->vel;
             vec2s wishdir = controller->wishdir2d;
@@ -194,6 +194,8 @@ CompMovement *Sol_Movement_Add(World *world, int id, MovementKind kind)
 
 CompMovement *Sol_Movement_Get(World *world, int id)
 {
+    if (!WHasB(world, id, HAS_MOVEMENT))
+        return NULL;
     return &world->movements[id];
 }
 u32 Sol_Movement_GetState(World *world, int id)
@@ -228,7 +230,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState nextState)
     if (!nextfunc->canEnter(world, id, movement->state, (u32)nextState, 0))
         return false;
 
-    // printf("LastState: %d, CurrentState: %d\n", movement->state, nextState);
+    printf("LastState: %d, CurrentState: %d\n", movement->state, nextState);
 
     prevfunc->exit(world, id);
     movement->stateData[movement->state].lastExited = solState.gameTime;
@@ -260,4 +262,13 @@ float Sol_Movement_GetGroundtime(World *world, int id)
 float Sol_Movement_GetAirtime(World *world, int id)
 {
     return world->movements[id].airtime;
+}
+
+float Sol_Movement_GetBaseSpeed(World *world, int id)
+{
+    CompMovement *move = Sol_Movement_Get(world, id);
+    if (!move)
+        return 0;
+    float base_speed = MOVE_STATE_FORCES[move->kind][move->state].speed;
+    return base_speed > 0 ? base_speed : 1.0f;
 }

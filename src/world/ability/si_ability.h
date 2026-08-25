@@ -4,6 +4,8 @@
 
 #include "owner/s_owner.h"
 
+extern const AbilityConfig ability_rarity_base[ABILITY_STATE_COUNT][4];
+
 extern const StateFunc ability_state_func[];
 
 void Ability_Scripts_Init(void);

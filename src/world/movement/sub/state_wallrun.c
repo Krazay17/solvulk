@@ -10,6 +10,7 @@
 #include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
+
 #include "xform/s_xform.h"
 #include "model/s_model.h"
 #include "physx/s_body.h"
@@ -70,10 +71,11 @@ static bool LeaveState(World *world, int id)
     CompMovement *move = &world->movements[id];
     if (!CheckEnergy(world, id))
         return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH || Sol_Movement_GetGroundtime(world, id) > COYOTE_TIMER)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH) ||
+        Sol_Movement_GetGroundtime(world, id) > COYOTE_TIMER)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
-    if (!(Sol_Controller_Get(world, id)->actionState & ACTION_JUMP))
+    if (!(Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP)))
         if (Sol_Movement_SetState(world, id, MOVE_WALLJUMP))
             return true;
     if (Sol_Movement_SetState(world, id, MOVE_MANTLE))
@@ -122,9 +124,10 @@ void Wallrun_State_Update(World *world, int id, float dt)
     if (LeaveState(world, id))
         return;
 
-    CompXform     *xform    = &world->xforms[id];
-    CompMovement  *movement = &world->movements[id];
-    MoveStateData *data     = &movement->stateData[MOVE_WALLRUN];
+    CompXform      *xform      = &world->xforms[id];
+    CompController *controller = Sol_Controller_Get(world, id);
+    CompMovement   *movement   = &world->movements[id];
+    MoveStateData  *data       = &movement->stateData[MOVE_WALLRUN];
     data->accum += dt;
     if (WHasB(world, id, HAS_COMBAT))
     {
@@ -151,41 +154,43 @@ void Wallrun_State_Update(World *world, int id, float dt)
     float                 speedDif     = 1.0f;
     const MoveStateForce *forces       = &MOVE_STATE_FORCES[movement->kind][movement->state];
 
-    
+    data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, controller->yaw);
     // ANIMATION
-    float    x        = dirToWall.x;
-    float    z        = dirToWall.z;
-    vec3s    rot      = Sol_RotFromQuat(world->xforms[id].quat);
-    AnimDesc desc     = {.anim = ANIM_WALLRUN_FWD, .layerId = ANIM_LAYER_BASE};
-    float    speedMod = 1.0f;
-    switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
-    {
-    case STRAFE_FWD:
-        desc.anim = ANIM_WALK_FWD;
-        break;
-    case STRAFE_BWD:
-        desc.anim = ANIM_WALLRUN_FWD;
-        speedDif  = Sol_Physx_GetSpeed(world, id) / forces->speed;
-        break;
-    case STRAFE_LEFT:
-    case STRAFE_FWD_LEFT:
-    case STRAFE_BWD_LEFT:
-        desc.anim = ANIM_WALLRUN_RIGHT;
-        speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
-        speedMod  = velToWallDot < 0 ? 1.5f : -1.5f;
-        break;
-    case STRAFE_RIGHT:
-    case STRAFE_BWD_RIGHT:
-    case STRAFE_FWD_RIGHT:
-        desc.anim = ANIM_WALLRUN_LEFT;
-        speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
-        speedMod  = velToWallDot > 0 ? 1.5f : -1.5f;
-        break;
-    }
-    
-    Sol_Model_PlayAnim(world, id, desc);
-    speedDif = speedDif > 0 ? speedDif : 0.01f;
-    Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * speedMod);
+
+    // float    x        = dirToWall.x;
+    // float    z        = dirToWall.z;
+    // vec3s    rot      = Sol_RotFromQuat(world->xforms[id].quat);
+    // AnimDesc desc     = {.anim = ANIM_WALLRUN_FWD, .layerId = ANIM_LAYER_BASE};
+    // float    speedMod = 1.0f;
+
+    // switch (Sol_GetStrafedir(x, z, rot.x, rot.z))
+    // {
+    // case STRAFE_FWD:
+    //     desc.anim = ANIM_WALK_FWD;
+    //     break;
+    // case STRAFE_BWD:
+    //     desc.anim = ANIM_WALLRUN_FWD;
+    //     speedDif  = Sol_Physx_GetSpeed(world, id) / forces->speed;
+    //     break;
+    // case STRAFE_LEFT:
+    // case STRAFE_FWD_LEFT:
+    // case STRAFE_BWD_LEFT:
+    //     desc.anim = ANIM_WALLRUN_RIGHT;
+    //     speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
+    //     speedMod  = velToWallDot < 0 ? 1.5f : -1.5f;
+    //     break;
+    // case STRAFE_RIGHT:
+    // case STRAFE_BWD_RIGHT:
+    // case STRAFE_FWD_RIGHT:
+    //     desc.anim = ANIM_WALLRUN_LEFT;
+    //     speedDif  = Sol_Physx_GetLatSpeed(world, id) / forces->speed;
+    //     speedMod  = velToWallDot > 0 ? 1.5f : -1.5f;
+    //     break;
+    // }
+
+    // Sol_Model_PlayAnim(world, id, desc);
+    // speedDif = speedDif > 0 ? speedDif : 0.01f;
+    // Sol_Model_SetAnimSpeed(world, id, ANIM_LAYER_BASE, speedDif * speedMod);
 }
 
 void Wallrun_State_Enter(World *world, int id)
@@ -216,13 +221,13 @@ bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
 
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH))
         return false;
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);
     if (goodWall)
     {
-        if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
+        if (Sol_Ability_Get(world, id)->state == ABILITY_STATE_DASH)
             Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
     }
 

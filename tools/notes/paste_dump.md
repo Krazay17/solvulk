@@ -743,3 +743,257 @@ add_dependencies(solapp images)
 //         Chain_Lightning(world, dealer, closestId, target, damage, count);
 //     }
 // }
+
+```c
+void Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req)
+{
+    static vec3   poseT[MAX_BONES];
+    static versor poseR[MAX_BONES];
+    static vec3   poseS[MAX_BONES];
+
+    // Rest pose
+    for (int i = 0; i < skel->boneCount; i++)
+    {
+        memcpy(&poseT[i], &skel->bones[i].restTrans, sizeof(vec3));
+        memcpy(&poseR[i], &skel->bones[i].restRot, sizeof(vec4));
+        memcpy(&poseS[i], &skel->bones[i].restScale, sizeof(vec3));
+    }
+
+    // Pre-pass: when override is fading out, we still need the lower layers underneath
+    // for the fade to blend INTO. So we run lower layers first, then the override on top
+    // with its weight.
+    bool overrideActive = (req->layers[ANIM_LAYER_OVERRIDE].anim != -1);
+    bool overrideFading = overrideActive && (req->layerWeight[ANIM_LAYER_OVERRIDE] < 1.0f);
+
+    int startLayer, endLayer;
+    if (overrideActive && !overrideFading)
+    {
+        // Fully overriding — only run override
+        startLayer = ANIM_LAYER_OVERRIDE;
+        endLayer   = ANIM_LAYER_OVERRIDE + 1;
+    }
+    else
+    {
+        // Either not overriding at all, or overriding with partial weight (run all)
+        startLayer = 0;
+        endLayer   = ANIM_LAYER_COUNT;
+    }
+
+    for (int L = startLayer; L < endLayer; L++)
+    {
+        AnimBlend *blend  = &req->layers[L];
+        BoneMask  *mask   = &req->masks[L];
+        float      weight = req->layerWeight[L];
+
+        if (blend->anim == -1 || weight == 0.0f)
+            continue;
+
+        // Sample current
+        vec3   layerT[MAX_BONES];
+        versor layerR[MAX_BONES];
+        vec3   layerS[MAX_BONES];
+        Sample_Animation_Pose(skel, blend->anim, blend->seek, layerT, layerR, layerS);
+
+        // Cross-fade with previous in same layer
+        if (blend->lastAnim != -1 && blend->blendFactor < 1.0f)
+        {
+            vec3   prevT[MAX_BONES];
+            versor prevR[MAX_BONES];
+            vec3   prevS[MAX_BONES];
+            
+            Sample_Animation_Pose(skel, blend->lastAnim, blend->lastSeek, prevT, prevR, prevS);
+
+            for (int i = 0; i < skel->boneCount; i++)
+            {
+                glm_vec3_lerp(prevT[i], layerT[i], blend->blendFactor, layerT[i]);
+                if (glm_quat_dot(layerR[i], prevR[i]) < 0.0f)
+                {
+                    prevR[i][0] = -prevR[i][0];
+                    prevR[i][1] = -prevR[i][1];
+                    prevR[i][2] = -prevR[i][2];
+                    prevR[i][3] = -prevR[i][3];
+                }
+                glm_quat_nlerp(prevR[i], layerR[i], blend->blendFactor, layerR[i]);
+                glm_quat_normalize(layerR[i]);
+                glm_vec3_lerp(prevS[i], layerS[i], blend->blendFactor, layerS[i]);
+            }
+        }
+
+        // Apply to final pose
+        for (int i = 0; i < skel->boneCount; i++)
+        {
+            if (!mask->layerOwns[i])
+                continue;
+
+            if (weight >= 1.0f)
+            {
+                memcpy(&poseT[i], &layerT[i], sizeof(vec3));
+                memcpy(&poseR[i], &layerR[i], sizeof(vec4));
+                memcpy(&poseS[i], &layerS[i], sizeof(vec3));
+            }
+            else
+            {
+                glm_vec3_lerp(poseT[i], layerT[i], weight, poseT[i]);
+                if (glm_quat_dot(poseR[i], layerR[i]) < 0.0f)
+                {
+                    layerR[i][0] = -layerR[i][0];
+                    layerR[i][1] = -layerR[i][1];
+                    layerR[i][2] = -layerR[i][2];
+                    layerR[i][3] = -layerR[i][3];
+                }
+                glm_quat_nlerp(poseR[i], layerR[i], weight, poseR[i]);
+                glm_quat_normalize(layerR[i]);
+                glm_vec3_lerp(poseS[i], layerS[i], weight, poseS[i]);
+            }
+        }
+    }
+
+    // Skinning matrices (same)
+    mat4 world[MAX_BONES];
+    for (int i = 0; i < skel->boneCount; i++)
+    {
+        mat4 local, rotM;
+        glm_mat4_identity(local);
+        glm_translate(local, poseT[i]);
+        glm_quat_mat4(poseR[i], rotM);
+        glm_mat4_mul(local, rotM, local);
+        glm_scale(local, poseS[i]);
+
+        int parent = skel->bones[i].parent;
+        if (parent < 0)
+            glm_mat4_copy(local, world[i]);
+        else
+            glm_mat4_mul(world[parent], local, world[i]);
+
+        glm_mat4_mul(world[i], skel->bones[i].inverseBind, req->outBones[i]);
+    }
+}
+
+for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+{
+    if (ability->bindings[m].dirtyApply)
+    {
+        Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState,
+                         ability->bindings[m].pendingRarity, ability->bindings[m].pendingBonusDamage,
+                         ability->bindings[m].pendingBonusBuffs,
+                         ability->bindings[m].pendingBonusEffects);
+        ability->bindings[m].dirtyApply = false;
+    }
+}
+
+static int required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+for (int i = 0; i < world->activeCount; i++)
+{
+    int id = world->activeEntities[i];
+    if (!WHas(world, id, required))
+        continue;
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    if (ability_state_func[ability->state].draw)
+        ability_state_func[ability->state].draw(world, id, dt, time);
+}
+
+
+static void Ability_Step(World *world, double dt, double time)
+{
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_ABILITY);
+
+    for (int i = 0; i < world->activeCount; i++)
+    {
+        int id = world->activeEntities[i];
+        if (!WHas(world, id, required))
+            continue;
+        if (Sol_Combat_GetDead(world, id))
+        {
+            Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
+            continue;
+        }
+        if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
+            continue;
+
+        CompAbility    *ability    = Sol_Ability_Get(world, id);
+        CompController *controller = Sol_Controller_Get(world, id);
+        if (!controller)
+            continue;
+
+        SolActions actions = controller->actionState;
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            if (ability->bindings[m].dirtyApply)
+            {
+                Sol_Ability_Bind(world, id, m, ability->bindings[m].pendingState, ability->bindings[m].pendingRarity,
+                                 ability->bindings[m].pendingBonusDamage, ability->bindings[m].pendingBonusBuffs,
+                                 ability->bindings[m].pendingBonusEffects);
+                ability->bindings[m].dirtyApply = false;
+            }
+        }
+        for (int m = 0; m < MAX_MAPPED_SKILLS; m++)
+        {
+            SkillBinding *b = &ability->bindings[m];
+            if (b->boundState == ABILITY_STATE_IDLE || b->actionBit == ACTION_NONE)
+                continue;
+
+            bool pressed               = (actions & b->actionBit) != 0;
+            ability->stateData[m].held = pressed;
+
+            if (pressed && ability->activeSlot != m)
+            {
+                Sol_Ability_SetState(world, id, b->boundState, m, false);
+            }
+        }
+
+        if (ability->state != ABILITY_STATE_IDLE)
+        {
+            ability_state_func[ability->state].update(world, id, dt);
+        }
+    }
+}
+
+
+void Sol_Ability_RequestBind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32
+bonusBuffs,
+                             u32 bonusEffects)
+{
+    CompAbility *a = Sol_Ability_Get(world, id);
+    if (slot >= ABILITY_SLOTS)
+        return;
+    SkillBinding *b = &a->bindings[slot];
+    if (b->pendingState == ability && b->pendingRarity == rarity)
+        return;
+    b->pendingState        = ability;
+    b->pendingRarity       = rarity;
+    b->pendingBonusDamage  = bonusDamage;
+    b->pendingBonusBuffs   = bonusBuffs;
+    b->pendingBonusEffects = bonusEffects;
+
+    b->dirtyApply = true;
+    b->dirtySend  = true;
+}
+
+void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, float bonusDamage, u32 bonusBuffs,
+                      u32 bonusEffects)
+{
+    CompAbility *a = Sol_Ability_Get(world, id);
+    if (slot >= ABILITY_SLOTS)
+        return;
+
+    SkillBinding *b      = &a->bindings[slot];
+    b->boundState        = ability;
+    b->boundRarity       = rarity;
+    b->boundBonusDamage  = bonusDamage;
+    b->boundBonusBuffs   = bonusBuffs;
+    b->boundBonusEffects = bonusEffects;
+
+    b->pendingState        = ability;
+    b->pendingRarity       = rarity;
+    b->pendingBonusDamage  = bonusDamage;
+    b->pendingBonusBuffs   = bonusBuffs;
+    b->pendingBonusEffects = bonusEffects;
+
+    AbilityStateData *data = &a->stateData[slot];
+    data->cooldown    = ability_config[ability][rarity].cooldown;
+    data->duration    = ability_config[ability][rarity].duration;
+    data->damage      = ability_config[ability][rarity].damage + bonusDamage;
+    data->buffs       = ability_config[ability][rarity].buffMask | bonusBuffs;
+    data->effects     = ability_config[ability][rarity].effectMask | bonusEffects;
+    Sol_Weapon_Equip(world, id, ability, slot);
+}

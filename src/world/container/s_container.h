@@ -5,7 +5,7 @@
 typedef struct CompContainer
 {
     u32   cnt, cap;
-    Item *items;
+    SolItem *items;
 } CompContainer;
 
 void Sol_Container_Init(World *world);

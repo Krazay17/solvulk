@@ -13,6 +13,12 @@
 #include "movement/s_movement.h"
 #include "render/render.h"
 
+#define BASE_DURATION 1.5f
+#define BASE_COOLDOWN 2.0f
+#define BASE_DAMAGE 10.0f
+#define BASE_EFFECTS EFFECTMASK_KNOCKBACK
+#define BASE_BUFFS BUFFKIND_STUN
+
 #define HITINTERVAL 0.1f
 #define HITDELAY 0.25f
 #define MAX_DURATION 3.5f
@@ -30,11 +36,11 @@ static void Laser_Bounces(World *world, int id, vec3s pos, vec3s dir, int bounce
 {
     if (bounceCount >= MAX_LASER_BOUNCES)
         return;
-    CompAbility *ability                = &world->abilities[id];
-    AbilityData *data                   = &ability->stateData[ability->activeSlot];
-    SolRay       ray                    = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
-    SolRayResult result                 = Sol_RaycastD(world, ray, 0.2f);
-    int          idx                    = data->as.laser.laserPointCount;
+    CompAbility      *ability           = Sol_Ability_Get(world, id);
+    AbilityStateData *data              = &ability->stateData[ability->activeSlot];
+    SolRay            ray               = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
+    SolRayResult      result            = Sol_RaycastD(world, ray, 0.2f);
+    int               idx               = data->as.laser.laserPointCount;
     data->as.laser.laserPoints[idx]     = pos;
     data->as.laser.laserPoints[idx + 1] = result.pos;
     data->as.laser.laserPointCount += 2;
@@ -57,10 +63,10 @@ static bool Leave_State(World *world, int id, CompAbility *ability)
 
 void Laser_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
+    CompAbility *ability = Sol_Ability_Get(world, id);
     if (Leave_State(world, id, ability))
         return;
-    AbilityData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
 
     CompController *controller = Sol_Controller_Get(world, id);
@@ -74,24 +80,18 @@ void Laser_State_Update(World *world, int id, float dt)
     if (data->stage < 1)
     {
         data->stage   = 1;
-        AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_CHANNEL_RIGHT : ANIM_CHANNEL_LEFT,
-                         .layerId  = ANIM_LAYER_UPPER,
-                         .speed    = 1.0f,
-                         .playKind = ANIMPLAYKIND_LOOP,
-                         .blendIn  = 0.1f};
-        Sol_Model_PlayAnim(world, id, desc);
     }
 
     if (data->stage == 1)
     {
-        data->charge += dt * 8.0f;
-        if (data->charge >= MAX_CHARGE)
+        data->power += dt * 8.0f;
+        if (data->power >= MAX_CHARGE)
             data->stage = 2;
     }
     else
-        data->charge -= dt * 1.0f;
+        data->power -= dt * 1.0f;
 
-    data->charge = fminf(MAX_CHARGE, fmaxf(MIN_CHARGE, data->charge));
+    data->power = fminf(MAX_CHARGE, fmaxf(MIN_CHARGE, data->power));
 
     data->accum += dt;
     if (data->accum < HITINTERVAL)
@@ -101,8 +101,8 @@ void Laser_State_Update(World *world, int id, float dt)
     CompCombat *combat = &world->combats[id];
     Sol_Combat_ClearHits(world, id);
 
-    float finalCharge = data->charge * HITINTERVAL;
-    float finalDamage = data->damage * finalCharge;
+    float finalCharge = data->power * HITINTERVAL;
+    float finalDamage = ability_base[ABILITY_STATE_LASER].damage * finalCharge;
 
     data->as.laser.laserPointCount = 0;
     Laser_Bounces(world, id, controller->aimpos, controller->aimdir, 0);
@@ -120,8 +120,7 @@ void Laser_State_Update(World *world, int id, float dt)
         };
 
         SolRayResult results[256];
-        int          hits =
-            Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->charge / MAX_CHARGE), results, 256);
+        int hits = Sol_SphereCast(world, rayDamage, Sol_Math_Lerp(0.1f, 1.25f, data->power / MAX_CHARGE), results, 256);
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -133,8 +132,8 @@ void Laser_State_Update(World *world, int id, float dt)
             SolHit hit = {
                 .damage     = finalDamage,
                 .power      = finalCharge,
-                .buffMask   = data->buffs,
-                .effectMask = data->effects,
+                .buffMask   = ability_base[ABILITY_STATE_LASER].buffMask,
+                .effectMask = ability_base[ABILITY_STATE_LASER].effectMask,
                 .entA       = id,
                 .entB       = result.entId,
                 .pos        = result.pos,
@@ -147,12 +146,12 @@ void Laser_State_Update(World *world, int id, float dt)
 
 void Laser_State_Enter(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    CompCombat  *combat  = &world->combats[id];
-    data->accum          = HITINTERVAL;
-    data->charge         = 0;
-    data->stage          = 0;
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    CompCombat       *combat  = &world->combats[id];
+    data->accum               = HITINTERVAL;
+    data->power               = 0;
+    data->stage               = 0;
     Sol_Combat_ClearHits(world, id);
 
     Sol_World_Audio_Add(world, id, SOL_AUDIO_LASER, 0.3f, 0);
@@ -161,50 +160,42 @@ void Laser_State_Enter(World *world, int id)
     combat->baseAnimRate     = animRate;
     combat->hitPause         = 0;
     combat->hitPauseDiminish = 0;
-
-    AnimDesc desc = {.anim     = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT,
-                     .layerId  = ANIM_LAYER_UPPER,
-                     .speed    = animRate,
-                     .playKind = ANIMPLAYKIND_LOOP,
-                     .blendIn  = 0.05f};
-
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Laser_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    data->lastExited     = solState.gameTime;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    data->lastExited          = solState.gameTime;
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0);
     Sol_World_Audio_Remove(world, id, 0);
 }
 
 bool Laser_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     return true; // data->elapsed >= data->duration * 0.8f;
 }
 
 bool Laser_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot && !(data->lastExited + ability_base[ABILITY_STATE_LASER].cooldown > solState.gameTime);
 }
 
 void Laser_State_Draw(World *world, int id, double dt, double time)
 {
-    CompAbility    *ability    = &world->abilities[id];
-    AbilityData    *data       = &ability->stateData[ability->activeSlot];
-    CompController *controller = Sol_Controller_Get(world, id);
+    CompAbility      *ability    = Sol_Ability_Get(world, id);
+    AbilityStateData *data       = &ability->stateData[ability->activeSlot];
+    CompController   *controller = Sol_Controller_Get(world, id);
     if (data->stage > 0)
     {
         vec4s       color                    = {0.0f, 1.0f, 0.0f, 1.0f};
         const char *hand                     = ability->activeSlot == 1 ? "hand.R" : "hand.L";
         vec3s       handPos                  = Sol_Model_GetBoneXform(world, id, hand).pos;
-        float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->charge / 4.0f);
+        float       widthScale               = Sol_Math_Lerp(0.2f, 2.5f, data->power / 4.0f);
         data->as.laser.laserPointCountVisual = 0;
         Laser_Bounces_Visual(world, id, controller->aimpos, controller->aimdir, 0);
         for (int l = 0; l < data->as.laser.laserPointCountVisual; l += 2)
@@ -227,11 +218,11 @@ static void Laser_Bounces_Visual(World *world, int id, vec3s pos, vec3s dir, int
 {
     if (bounceCount >= MAX_LASER_BOUNCES)
         return;
-    CompAbility *ability                      = &world->abilities[id];
-    AbilityData *data                         = &ability->stateData[ability->activeSlot];
-    SolRay       ray                          = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
-    SolRayResult result                       = Sol_Raycast(world, ray);
-    int          idx                          = data->as.laser.laserPointCountVisual;
+    CompAbility      *ability                 = Sol_Ability_Get(world, id);
+    AbilityStateData *data                    = &ability->stateData[ability->activeSlot];
+    SolRay            ray                     = {.pos = pos, .dir = dir, .dist = LASER_LENGTH, .ignoreEnt = id};
+    SolRayResult      result                  = Sol_Raycast(world, ray);
+    int               idx                     = data->as.laser.laserPointCountVisual;
     data->as.laser.laserPointsVisual[idx]     = pos;
     data->as.laser.laserPointsVisual[idx + 1] = result.pos;
     data->as.laser.laserPointCountVisual += 2;

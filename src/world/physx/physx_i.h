@@ -3,18 +3,20 @@
 #include "world.h"
 #include "s_body.h"
 
-#define SPATIAL_DYNAMIC_CELL_SIZE 1.0f
-#define SPATIAL_DYNAMIC_SIZE (1 << 18)
-#define SPATIAL_DYNAMIC_ENTRIES 0x2FFFF
-
 // Cell 1.5, Size (1<<21) loads slow but plays fast
-#define SPATIAL_STATIC_CELL_SIZE 5.0f
-#define SPATIAL_STATIC_SIZE (1 << 20)
-#define SPATIAL_STATIC_ENTRIES 0xF
+#define SPATIAL_DYNAMIC_CELL_SIZE 2.0f
+#define SPATIAL_DYNAMIC_SIZE (1 << 16)
+#define SPATIAL_DYNAMIC_ENTRIES (1 << 18)
+
+#define SPATIAL_STATIC_CELL_SIZE 2.0f
+#define SPATIAL_STATIC_SIZE (1 << 16)
+#define SPATIAL_STATIC_ENTRIES (1 << 18)
 
 #define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SPATIAL_NULL 0xFFFFFFFF
 #define MAX_CONTACTS_PER_ENTITY 8
+
+#define MAX_TRIS ( 1 << 22)
 
 typedef struct CompBody  CompBody;
 typedef struct CompXform CompXform;

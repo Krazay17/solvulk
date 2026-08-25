@@ -1,15 +1,15 @@
 #include "body2d_i.h"
+#include "sol_core.h"
 #include "world.h"
 #include "sol_math.h"
 #include "input.h"
+
 #include "xform/s_xform.h"
 #include "parent/s_parent.h"
 #include "interact/s_interact.h"
 #include "render/render.h"
-#include "sol_core.h"
-#include "s_body2d.h"
 
-static void Step(World *world, double dt, double time)
+static void Body2_Step(World *world, double dt, double time)
 {
     static int required = BITC(HAS_ACTIVE) | BITC(HAS_BODY2);
 
@@ -35,7 +35,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int idA = world->activeEntities[i];
-        if ((world->masks[idA] & required) != required)
+        if (!WHas(world, idA, required))
             continue;
         CompBody2d *bodyA  = &world->body2d[idA];
         CompXform  *xformA = &world->xforms[idA];
@@ -43,7 +43,7 @@ static void Step(World *world, double dt, double time)
         for (int j = i + 1; j < world->activeCount; j++)
         {
             int idB = world->activeEntities[j];
-            if ((world->masks[idB] & required) != required)
+            if (!WHas(world, idB, required))
                 continue;
 
             CompBody2d *bodyB = &world->body2d[idB];
@@ -67,7 +67,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, required))
             continue;
         CompBody2d *body  = &world->body2d[id];
         CompXform  *xform = &world->xforms[id];
@@ -79,7 +79,7 @@ static void Step(World *world, double dt, double time)
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, required))
             continue;
         CompBody2d *bodyA = &world->body2d[id];
         int         count = 0;
@@ -97,12 +97,13 @@ static void Step(World *world, double dt, double time)
     }
 }
 
-static void Draw(World *world, double dt, double time)
+static void Body2_Draw(World *world, double dt, double time)
 {
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_BODY2);
-
     if (!solState.debug)
         return;
+
+    static int required = BITC(HAS_ACTIVE) | BITC(HAS_BODY2);
+
     for (int i = 0; i < world->activeCount; i++)
     {
         int id = world->activeEntities[i];
@@ -111,19 +112,21 @@ static void Draw(World *world, double dt, double time)
 
         CompXform  *xform = &world->xforms[id];
         CompBody2d *body  = &world->body2d[id];
-        RectSSBO   *ssbo  = Sol_Render_GetNext_Rect();
-        ssbo->dims        = (vec4s){UISCALE(body->dims.x), UISCALE(body->dims.y), 0.0f, 1.0f};
-        ssbo->color       = VEC4_RED;
-        ssbo->pos         = (vec4s){UISCALE(xform->drawPos.x), UISCALE(xform->drawPos.y), xform->drawPos.z, 1.0f};
-        ssbo->flags       = 1;
+
+        RectSSBO *ssbo = Sol_Render_GetNext_Rect();
+        ssbo->rect =
+            (vec4s){UISCALE(xform->drawPos.x), UISCALE(xform->drawPos.y), UISCALE(body->dims.x), UISCALE(body->dims.y)};
+        ssbo->color  = VEC4_RED;
+        ssbo->scale  = 1.0f;
+        ssbo->border = 4.0f;
     }
 }
 
 void Sol_Body2d_Init(World *world)
 {
     world->body2d   = calloc(MAX_ENTS, sizeof(CompBody2d));
-    WAddStep(world) = Step;
-    WAdd2d(world)   = Draw;
+    WAddStep(world) = Body2_Step;
+    WAdd2d(world)   = Body2_Draw;
 }
 
 CompBody2d *Sol_Body2d_Add(World *world, int id, Body2dKind kind, float width, float height, u32 group)
@@ -145,10 +148,9 @@ vec2s Sol_Body2d_GetDims(World *world, int id)
     return world->body2d[id].dims;
 }
 
-void Sol_Body2d_SetOverlapMask(World *world, int id, u32 group, u32 mask)
+void Sol_Body2d_SetOverlapMask(World *world, int id, u32 group)
 {
-    world->body2d[id].overlapGroup = group;
-    world->body2d[id].overlapMask  = mask;
+    world->body2d[id].overlap_group = group;
 }
 void Sol_Body2d_SetVel(World *world, int id, vec2s vel)
 {

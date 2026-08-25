@@ -87,7 +87,7 @@ bool IsOverlappingRect(World *world, int idA, int idB)
 {
     CompBody2d *bodyA       = &world->body2d[idA];
     CompBody2d *bodyB       = &world->body2d[idB];
-    bool        layersMatch = (bodyA->overlapMask & bodyB->overlapGroup) && (bodyB->overlapMask & bodyA->overlapGroup);
+    bool        layersMatch = bodyA->overlap_group << 16 & bodyB->overlap_group;
     if (!layersMatch)
         return 0;
     vec2s  posA = (vec2s){world->xforms[idA].pos.x, world->xforms[idA].pos.y};

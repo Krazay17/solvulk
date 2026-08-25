@@ -6,159 +6,34 @@
  *
  */
 
-#include "s_model.h"
+#include "si_model.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "world.h"
 #include "model.h"
-#include "interact/s_interact.h"
-#include "xform/s_xform.h"
-#include "buff/s_buff.h"
+#include "profiler.h"
 #include "render/render.h"
+#include "platform/platform.h"
 
-#include "physx/s_body.h"
+#include "xform/s_xform.h"
+#include "interact/s_interact.h"
+#include "buff/s_buff.h"
 #include "combat/s_combat.h"
-#include "movement/s_movement.h"
 
-#define ONESHOT_FADE_DURATION 0.25f
-
-static void Anim_Tick(World *world, double dt, double time)
-{
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL) | BITC(HAS_ANIM);
-
-    float fdt = (float)dt;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, required))
-            continue;
-
-        CompModel *model = &world->models[id];
-        if (model->modelId < 0)
-            continue;
-
-        CompXform *xform = &world->xforms[id];
-        CompAnim  *anim  = &world->anims[id];
-
-        if (!WHasB(world, id, HAS_MOVEMENT))
-            continue;
-        CompMovement *movement = &world->movements[id];
-        switch (movement->state)
-        {
-        case MOVE_WALLRUN:
-        
-            break;
-        }
-    }
-}
-
-static void Model_Tick(World *world, double dt, double time)
-{
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL) | BITC(HAS_ANIM);
-
-    float fdt = (float)dt;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, required))
-            continue;
-
-        CompModel *model = &world->models[id];
-        if (model->modelId < 0)
-            continue;
-
-        CompXform *xform = &world->xforms[id];
-        CompAnim  *anim  = &world->anims[id];
-        SolModel  *m     = &loaded_models[model->modelId];
-
-        for (int L = 0; L < ANIM_LAYER_COUNT; L++)
-        {
-            AnimLayer *layer = &anim->layers[L];
-            if (layer->currentAnim == -1)
-                continue;
-            float dur     = m->skeleton.animations[layer->currentAnim].duration;
-            float speed   = layer->playRate != 0 ? layer->playRate * fdt : fdt;
-            float newSeek = layer->currentSeek + speed;
-            switch (layer->playKind)
-            {
-            case ANIMPLAYKIND_NOLOOP:
-                layer->currentSeek = newSeek < dur ? newSeek : dur - 0.001f;
-                break;
-            case ANIMPLAYKIND_ONESHOT:
-                layer->currentSeek = newSeek < dur ? newSeek : dur - 0.001f;
-                if (newSeek >= dur - ONESHOT_FADE_DURATION)
-                {
-                    if (layer->fadeOut <= 0.0f)
-                    {
-                        layer->fadeOut      = 0.001f;
-                        layer->fadeOutSpeed = 1.0f / ONESHOT_FADE_DURATION;
-                    }
-                }
-                break;
-            default:
-                layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
-            }
-
-            if (layer->lastAnim != -1 && layer->blendFactor < 1.0f)
-            {
-                float lastDur   = m->skeleton.animations[layer->lastAnim].duration;
-                layer->lastSeek = fmodf(layer->lastSeek + fdt, lastDur);
-                layer->blendFactor += fdt * layer->blendSpeed;
-                if (layer->blendFactor >= 1.0f)
-                {
-                    layer->lastAnim    = -1;
-                    layer->blendFactor = 1.0f;
-                }
-            }
-
-            // Fade-out countdown
-            if (layer->fadeOut > 0.0f)
-            {
-                layer->fadeOut += fdt * layer->fadeOutSpeed;
-                if (layer->fadeOut >= 1.0f)
-                {
-                    layer->fadeOut     = 0.0f;
-                    layer->lastSeek    = 0;
-                    layer->blendFactor = 0;
-                    layer->currentAnim = -1;
-                    layer->animId      = -1;
-                }
-            }
-        }
-
-        PoseRequest req = {.outBones = anim->pose};
-
-        for (int L = 0; L < ANIM_LAYER_COUNT; L++)
-        {
-            req.layers[L] = (AnimBlend){
-                .anim        = anim->layers[L].currentAnim,
-                .lastAnim    = anim->layers[L].lastAnim,
-                .seek        = anim->layers[L].currentSeek,
-                .lastSeek    = anim->layers[L].lastSeek,
-                .blendFactor = anim->layers[L].blendFactor,
-            };
-            req.masks[L]       = model_masks[model->modelId].layers[L];
-            req.layerWeight[L] = (anim->layers[L].fadeOut > 0.0f) ? 1.0f - anim->layers[L].fadeOut : 1.0f;
-        }
-        Sol_Skeleton_Pose(&m->skeleton, &req);
-    }
-}
+static SolProfiler prof_tick = {.name = "ModelTick"};
+static SolProfiler prof_draw = {.name = "ModelDraw"};
 
 static void Model_Draw(World *world, double dt, double time)
 {
-    static int required = BITC(HAS_ACTIVE) | BITC(HAS_MODEL);
-
     float fdt = (float)dt;
-    for (int i = 0; i < world->activeCount; i++)
-    {
-        int id = world->activeEntities[i];
-        if (!WHas(world, id, required))
-            continue;
 
-        CompXform *xform     = &world->xforms[id];
-        CompModel *modelComp = &world->models[id];
-        if (modelComp->modelId < 0)
-            continue;
+    WorldModels *wc = world->dense_components[WORLD_SYS_MODEL];
+    for (int i = 0; i < wc->cnt; i++)
+    {
+        int        id        = wc->dense[i];
+        CompModel *modelComp = &wc->models[i];
+
+        CompXform *xform = &world->xforms[id];
 
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = modelComp->color;
@@ -194,9 +69,9 @@ static void Model_Draw(World *world, double dt, double time)
             modelSSBO.scale    = (vec4s){xform->drawScale.x, xform->drawScale.y, xform->drawScale.z, 1.0f};
         }
 
-        if (WHasB(world, id, HAS_ANIM))
+        if (Sol_Model_HasAnim(world, id))
         {
-            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &world->anims[id].pose);
+            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &Sol_Model_GetAnim(world, id)->pose);
         }
         else
         {
@@ -207,97 +82,154 @@ static void Model_Draw(World *world, double dt, double time)
 
 void Sol_Model_Init(World *world)
 {
-    world->models = calloc(MAX_ENTS, sizeof(CompModel));
-    world->anims  = calloc(MAX_ENTS, sizeof(CompAnim));
+    WorldModels *wc                          = malloc(sizeof(WorldModels));
+    world->dense_components[WORLD_SYS_MODEL] = wc;
+
+    wc->cap    = 64;
+    wc->cnt    = 0;
+    wc->sparse = malloc(sizeof(int) * MAX_ENTS);
+    wc->dense  = malloc(sizeof(int) * wc->cap);
+    wc->models = malloc(sizeof(CompModel) * wc->cap);
+    memset(wc->sparse, -1, sizeof(int) * MAX_ENTS);
+
+    wc->anim_cap    = 32;
+    wc->anim_cnt    = 0;
+    wc->anim_sparse = malloc(sizeof(int) * MAX_ENTS);
+    wc->anim_dense  = malloc(sizeof(int) * wc->anim_cap);
+    wc->anims       = malloc(sizeof(CompAnim) * wc->anim_cap);
+    memset(wc->anim_sparse, -1, sizeof(int) * MAX_ENTS);
 
     WAddTick(world) = Anim_Tick;
-    WAddTick(world) = Model_Tick;
+    WAddTick(world) = Anim_Solver;
     WAdd3d(world)   = Model_Draw;
 }
 
 CompModel *Sol_Model_Add(World *world, int id, int kind)
 {
-    CompModel model = model_kinds[kind];
-    model.modelId   = kind;
-
-    if (loaded_models[kind].skeleton.animationCount > 0)
+    WorldModels *wc = world->dense_components[WORLD_SYS_MODEL];
+    if (!wc)
     {
-        CompAnim anim = {0};
-        for (int i = 0; i < ANIM_LAYER_COUNT; i++)
-        {
-            anim.layers[i].currentAnim = -1;
-            anim.layers[i].currentSeek = 0;
-            anim.layers[i].blendFactor = 0;
-        }
-        world->anims[id] = anim;
-        Sol_Model_PlayAnim(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
-        world->masks[id] |= BITC(HAS_ANIM);
+        char buffer[64];
+        sprintf(buffer, "WorldModels not initialized at world %d", world->kind);
+        Sol_MessageBox(buffer, "Warning");
+        return NULL;
     }
-    world->models[id] = model;
-    world->masks[id] |= BITC(HAS_MODEL);
+    if (wc->sparse[id] != -1)
+        return &wc->models[wc->sparse[id]];
+    if (wc->cnt >= wc->cap)
+    {
+        wc->cap *= 2;
+        wc->dense  = realloc(wc->dense, sizeof(int) * wc->cap);
+        wc->models = realloc(wc->models, sizeof(CompModel) * wc->cap);
+    }
+    int        denseIdx   = wc->cnt++;
+    CompModel *model_comp = &wc->models[denseIdx];
+    wc->sparse[id]        = denseIdx;
+    wc->dense[denseIdx]   = id;
+    *model_comp           = model_kinds[kind];
+    model_comp->modelId   = kind;
 
-    return &world->models[id];
+    Sol_Model_AddAnim(wc, id, kind);
+
+    return model_comp;
+}
+
+CompModel *Sol_Model_Get(World *world, int id)
+{
+    WorldModels *wc = world->dense_components[WORLD_SYS_MODEL];
+    if (wc->sparse[id] != -1)
+        return &wc->models[wc->sparse[id]];
+    return NULL;
+}
+
+bool Sol_Model_Has(World *world, int id)
+{
+    WorldModels *wc = world->dense_components[WORLD_SYS_MODEL];
+    return wc->sparse[id] != -1;
+}
+
+void Sol_Model_Rem(World *world, int id)
+{
+    WorldModels *wc  = world->dense_components[WORLD_SYS_MODEL];
+    int          idx = wc->sparse[id];
+    if (idx < 0)
+        return;
+
+    int lastIdx        = wc->cnt - 1;
+    int lastId         = wc->dense[lastIdx];
+    wc->models[idx]    = wc->models[lastIdx];
+    wc->dense[idx]     = lastId;
+    wc->sparse[lastId] = idx;
+    wc->sparse[id]     = -1;
+    wc->cnt--;
+    Sol_Model_RemAnim(wc, id);
 }
 
 void Sol_Model_PlayAnim(World *world, int id, AnimDesc desc)
 {
-    CompModel *modelComp = &world->models[id];
-    CompAnim  *anim      = &world->anims[id];
+    CompModel *modelComp = Sol_Model_Get(world, id);
+    CompAnim  *anim      = Sol_Model_GetAnim(world, id);
     AnimLayer *layer     = &anim->layers[desc.layerId];
 
     AnimId animId   = desc.anim;
-    bool   force    = desc.playKind == ANIMPLAYKIND_ONESHOT || desc.force;
-    float  seek     = desc.seek;
-    float  speed    = desc.speed ? desc.speed : 1.0f;
-    float  blendIn  = desc.blendIn ? desc.blendIn : 0.25f;
-    float  blendOut = desc.blendOut ? desc.blendOut : 0.25f;
-    if (layer->animId == animId && !force)
+    float  blendIn  = desc.blendIn > 0.0f ? desc.blendIn : BLEND_SPEED_DEFAULT;
+    float  blendOut = desc.blendOut > 0.0f ? desc.blendOut : BLEND_SPEED_DEFAULT;
+
+    layer->last_frame_played = solState.tickCounter;
+
+    if (layer->animId == animId && !desc.force)
         return;
+
     if (animId < 0)
     {
-        if (layer->animId == animId || layer->fadeOut > 0.0f)
+        if (layer->animId == animId || layer->isBlendingOut)
             return;
-        layer->fadeOut      = 0.001f;
-        layer->fadeOutSpeed = 1.0f / blendOut;
+        layer->isBlendingOut = true;
+        layer->blendOutSpeed = 1.0f / blendOut;
         return;
     }
-    layer->animId = animId;
 
-    i32 mappedAnim = model_anim_map[modelComp->modelId][animId];
-    if (layer->blendFactor > 0.5f)
+    bool wasActive = (layer->currentAnim != -1);
+
+    layer->animId      = animId;
+    layer->currentAnim = model_anim_map[modelComp->modelId][animId];
+    layer->playRate    = desc.speed ? desc.speed : 1.0f;
+    layer->currentSeek = desc.seek;
+    layer->playKind    = desc.playKind;
+
+    layer->blendInSpeed  = 1.0f / blendIn;
+    layer->blendOutSpeed = 1.0f / blendOut;
+    layer->isBlendingOut = false;
+
+    // Snapshot the entire last-composited pose into the layer's transition cache
+    if (anim->hasLastPose)
     {
-        layer->lastAnim    = layer->currentAnim;
-        layer->lastSeek    = layer->currentSeek;
-        layer->blendFactor = 0;
+        for (int i = 0; i < MAX_BONES; i++)
+        {
+            glm_vec3_copy(anim->lastPose.poseT[i].raw, layer->cachedT[i].raw);
+            glm_vec4_copy(anim->lastPose.poseR[i].raw, layer->cachedR[i].raw);
+            glm_vec3_copy(anim->lastPose.poseS[i].raw, layer->cachedS[i].raw);
+        }
+        layer->blendFactor = 0.0f;
     }
-    layer->currentAnim = mappedAnim;
-    layer->playRate    = speed;
-    layer->currentSeek = seek;
+    else
+    {
+        layer->blendFactor = 1.0f;
+    }
 
-    layer->blendSpeed   = 1.0f / blendIn;
-    layer->fadeOutSpeed = 1.0f / blendOut;
-    layer->fadeOut      = 0.0f;
-    layer->playKind     = desc.playKind;
-}
-
-void Sol_Model_SetModelId(World *world, int id, int modelId)
-{
-    world->models[id].modelId = modelId;
-}
-SolModelHandle Sol_Model_GetModelId(World *world, int id)
-{
-    return world->models[id].modelId;
+    if (!wasActive)
+        layer->weight = 0.0f;
 }
 
 float Sol_Model_GetAnimSpeed(World *world, int id, AnimLayerId layerId)
 {
-    AnimLayer *layer = &world->anims[id].layers[layerId];
+    AnimLayer *layer = &Sol_Model_GetAnim(world, id)->layers[layerId];
     return layer->playRate;
 }
 
 void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rate)
 {
-    AnimLayer *layer = &world->anims[id].layers[layerId];
+    AnimLayer *layer = &Sol_Model_GetAnim(world, id)->layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->playRate = rate;
@@ -305,21 +237,17 @@ void Sol_Model_SetAnimSpeed(World *world, int id, AnimLayerId layerId, float rat
 
 void Sol_Model_SetAnimSeek(World *world, int id, AnimLayerId layerId, float seek)
 {
-    AnimLayer *layer = &world->anims[id].layers[layerId];
+    AnimLayer *layer = &Sol_Model_GetAnim(world, id)->layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->currentSeek = seek;
 }
 
-void Sol_Model_SetTint(World *world, int id, vec4s color)
-{
-}
-
 SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
     SolXform     result   = {0};
-    CompModel   *model    = &world->models[id];
-    CompAnim    *anim     = &world->anims[id];
+    CompModel   *model    = Sol_Model_Get(world, id);
+    CompAnim    *anim     = Sol_Model_GetAnim(world, id);
     SolSkeleton *skeleton = &loaded_models[model->modelId].skeleton;
     CompXform   *xform    = &world->xforms[id];
 
@@ -347,7 +275,7 @@ SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
 
     mat4 boneModelSpace;
-    glm_mat4_mul(anim->pose[boneIdx], bindPose, boneModelSpace);
+    glm_mat4_mul(anim->pose.bones[boneIdx], bindPose, boneModelSpace);
 
     // 2. Construct the Entity's World Transform Matrix
     mat4 entityWorld;
@@ -379,18 +307,13 @@ SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     return result;
 }
 
-float Sol_Model_GetOffsetY(World *world, int id)
+void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId, float blendOut)
 {
-    return world->models[id].yawOffset;
-}
-void Sol_Model_SetOffsetY(World *world, int id, float offset)
-{
-    CompModel *model = &world->models[id];
-    model->yOffset   = offset;
-}
-void Sol_Model_StopAnim(World *world, int id, AnimLayerId layerId)
-{
-    world->anims[id].layers[layerId].fadeOut      = 0.001f;
-    world->anims[id].layers[layerId].fadeOutSpeed = 4.0f;
-    world->anims[id].layers[layerId].animId       = -1;
+    AnimLayer *layer = &Sol_Model_GetAnim(world, id)->layers[layerId];
+    if (layer->currentAnim == -1 || layer->isBlendingOut)
+        return;
+
+    float dur = blendOut > 0.0f ? blendOut : 0.25f;
+    layer->isBlendingOut = true;
+    layer->blendOutSpeed = 1.0f / dur;
 }

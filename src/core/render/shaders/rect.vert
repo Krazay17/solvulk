@@ -1,29 +1,74 @@
 #version 450
-layout(set=0, binding=0) uniform Ortho {
-    mat4 ortho2d;
+
+struct Rect {
+    vec4 rect;
+    float scale, zindex, spin, fill;
+    vec4 color;
+    vec4 uv;         // xy = UV offset, zw = UV scale
+    float border;
+    uint flags;
+    uint textureID;
+    uint _pad;
 };
-layout(push_constant)uniform Push{
-    vec4 rect;// x, y, z, w
-    vec4 color;// r, g, b, a
-    vec4 extra;// thickness, 0, 0, 0
-}push;
 
-layout(location=0)out vec4 fragColor;
-layout(location=1)out vec2 fragPos;// pixel position within the quad
+layout(location = 0) out vec2 fragUV;
+layout(location = 1) out vec4 fragColor;
+layout(location = 2) out vec2 localPos;
+layout(location = 3) out vec2 rectDims;
+layout(location = 4) flat out float fragBorder;
+layout(location = 5) flat out uint fragTextureId;
+layout(location = 6) flat out uint fragFlags;
 
-void main()
-{
-    vec2 positions[6]=vec2[](
-        vec2(push.rect[0],push.rect[1]),
-        vec2(push.rect[0]+push.rect[2],push.rect[1]),
-        vec2(push.rect[0]+push.rect[2],push.rect[1]+push.rect[3]),
-        vec2(push.rect[0],push.rect[1]),
-        vec2(push.rect[0]+push.rect[2],push.rect[1]+push.rect[3]),
-        vec2(push.rect[0],push.rect[1]+push.rect[3])
-    );
+layout(set = 0, binding = 0) uniform Ortho { mat4 ortho2d; };
+layout(set = 1, binding = 0) readonly buffer Rects { Rect quads[]; };
+
+const uint UI_FLAG_FILL          = 1u << 0;
+const uint UI_FLAG_FILL_VERTICAL = 1u << 1;
+const uint UI_FLAG_FILL_INVERT   = 1u << 2;
+
+const vec2 corners[6] = vec2[](
+    vec2(0, 0), vec2(0, 1), vec2(1, 1),
+    vec2(0, 0), vec2(1, 1), vec2(1, 0)
+);
+
+void main() {
+    Rect r = quads[gl_InstanceIndex];
+    vec2 v = corners[gl_VertexIndex];
     
-    vec2 pos=positions[gl_VertexIndex];
-    fragPos=pos-vec2(push.rect[0],push.rect[1]);// local position 0..w, 0..h
-    fragColor=vec4(push.color[0],push.color[1],push.color[2],push.color[3]);
-    gl_Position=ortho2d*vec4(pos,0.,1.);
+    rectDims = r.rect.zw;
+    // Pick which axis to fill: x by default, y if UI_FLAG_FILL_VERTICAL.
+    vec2 fillAxis  = ((r.flags & UI_FLAG_FILL_VERTICAL) != 0u) ? vec2(0, 1) : vec2(1, 0);
+    vec2 otherAxis = vec2(1.0) - fillAxis;
+    float fill = clamp(r.fill, 0.0f, 1.0f);
+    
+    // Scale only the fill axis by fill; leave the other axis at full size.
+    vec2 scaledDims = rectDims * (otherAxis + fillAxis * fill);
+    
+    // Anchor: by default v=(0,0) corner stays put. INVERT flips to the v=(1,1) corner.
+    vec2 anchor = ((r.flags & UI_FLAG_FILL_INVERT) != 0u)
+        ? (rectDims - scaledDims) * fillAxis
+        : vec2(0.0);
+    
+    localPos = v * scaledDims + anchor;
+    
+    // Apply scale and rotation about the rect center.
+    vec2 worldPos = localPos * r.scale;
+    float ang = r.spin;
+    if (ang != 0.0) {
+        vec2 c = rectDims * r.scale * 0.5;
+        vec2 d = worldPos - c;
+        float ca = cos(ang), sa = sin(ang);
+        worldPos = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca) + c;
+    }
+    
+    // UV scales the same axis as the fill — texture clips with the bar.
+    vec2 uvScale = otherAxis + fillAxis * fill;
+    fragUV = r.uv.xy + v * r.uv.zw * uvScale;
+    
+    fragColor = r.color;
+    fragBorder = r.border;
+    fragTextureId = r.textureID;
+    fragFlags = r.flags;
+    float correctedDepth = 1.0 - r.zindex;
+    gl_Position = ortho2d * vec4(worldPos + r.rect.xy, correctedDepth, 1.0);
 }

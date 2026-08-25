@@ -49,6 +49,38 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
     return vel;
 }
 
+static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
+{
+    // 1. Vector pointing FROM player TO wall
+    // Since WORLD_FORWARD is {0,0,1}, facing yaw=0 means facing +Z
+    float dx = -wallnorm.x;
+    float dz = -wallnorm.z;
+
+    // 2. Facing vector derived from yaw (matching atan2f(x, z) convention)
+    float fwdX = sinf(yaw);
+    float fwdZ = cosf(yaw);
+
+    // 3. Relative angle between wall direction and facing direction
+    float angle = atan2f(dx, dz) - atan2f(fwdX, fwdZ);
+
+    // 4. Normalize angle to [0, 2PI]
+    if (angle < 0.0f)
+        angle += 2.0f * GLM_PIf;
+
+    // 5. Offset by half a 90-degree wedge (45 degrees / PI_4)
+    // This centers FRONT right in the middle of sector 0 [-45°, +45°]
+    angle += GLM_PI_4f;
+
+    // 6. Handle wrapping after offset
+    if (angle >= 2.0f * GLM_PIf)
+        angle -= 2.0f * GLM_PIf;
+
+    // 7. Divide into 4 quadrants (PI_2 wide) and mask
+    int sector = (int)floorf(angle / GLM_PI_2f);
+
+    return (WallTouch)(sector & 3);
+}
+
 void  CrouchHeight(World *world, int id, float fdt);
 vec3s GroundSlope(World *world, int id);
 vec3s ProjectOntoGround(World *world, int id, vec3s wishdir);

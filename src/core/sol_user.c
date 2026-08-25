@@ -1,5 +1,5 @@
 #include "sol_user.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_math.h"
 #include "world.h"
 #include "input.h"
@@ -10,7 +10,9 @@
 #include "physx/s_body.h"
 #include "movement/s_movement.h"
 
-#define USER_SETTINGS_FILENAME "UserSettings"
+#include "game/prefabs.h"
+
+#define USER_SETTINGS_FILENAME "UserData"
 
 static SolResource user_settings_file;
 
@@ -34,8 +36,10 @@ static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
 
 bool         consume_mouse;
 bool         consume_key;
-UserSettings user_settings = {.look_sens = 0.001f};
-SolUserHit   user_hit      = {
+UserData     user_data = {.look_sens = 0.001f};
+static float tooltipAlpha;
+
+SolUserHit user_hit = {
     .hoverId    = -1,
     .focusId    = -1,
     .focusWorld = NULL,
@@ -49,13 +53,13 @@ void Find_User_Hit(void)
 {
     if (user_hit.hoverId != -1 && user_hit.hoverWorld)
     {
-        Sol_Interact_ClearState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_HOVERED);
-        Sol_Interact_ClearState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_CLICKED);
+        Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_HOVERED);
+        Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_CLICKED);
     }
     user_hit.hoverId = -1;
-    for (int i = 0; i < solEngine.worldCount; i++)
+    for (int i = 0; i < solState.worldCount; i++)
     {
-        World *world = solEngine.worlds[i];
+        World *world = solState.worlds[i];
         if (!world || !world->doesSimulate)
             continue;
         int topmost = Sol_Interact_GetTopmost(world);
@@ -92,7 +96,7 @@ void Find_User_Hit(void)
             }
             if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
             {
-                Sol_Interact_ClearState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
+                Sol_Interact_RemState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
                 Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_CLICKED);
                 user_hit.focusId = -1;
             }
@@ -111,26 +115,40 @@ void Find_User_Hit(void)
     }
 }
 
-static void Sol_User_LoadUserSettings(void)
+static void Sol_User_LoadUserSettings(int flags)
 {
     Sol_ReadFile(USER_SETTINGS_FILENAME, &user_settings_file);
 }
 
+void Sol_User_HydrateUI()
+{
+    World *world = Sol_GetWorldById(WORLDID_HUD);
+    if (!world)
+        return;
+    for (int i = 0; i < user_data.itemCount; i++)
+    {
+        SolItem *item = &user_data.items[i];
+        float    x    = 100.0f + (i % 5) * 64.0f;
+        float    y    = 100.0f + (i / 5) * 64.0f;
+        //       Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item->ability, item->rarity);
+    }
+}
+
 static void LoadDefaults(void)
 {
-    user_settings = (UserSettings){
+    user_data = (UserData){
         .look_sens = 0.001f,
     };
-    memcpy(user_settings.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
-    memcpy(user_settings.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
+    memcpy(user_data.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
+    memcpy(user_data.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
 }
 
 int Sol_User_Init(void)
 {
-    Sol_User_LoadUserSettings();
+    Sol_User_LoadUserSettings(0);
     if (user_settings_file.data)
     {
-        memcpy(&user_settings, user_settings_file.data, sizeof(UserSettings));
+        memcpy(&user_data, user_settings_file.data, sizeof(UserData));
     }
     else
         LoadDefaults();
@@ -138,25 +156,44 @@ int Sol_User_Init(void)
     return 0;
 }
 
-void Sol_User_Tick(double dt)
+void Tooltip_Update(double dt, SolUserHit user_hit)
+{
+    const float stiffness = 5.0f;
+    float       alpha     = 1.0f - expf(-stiffness * dt);
+    if (user_hit.hoverId && user_hit.hoverWorld)
+    {
+        int    id    = user_hit.hoverId;
+        World *world = user_hit.hoverWorld;
+        if ((world->masks[id] & BITC(HAS_TOOLTIP)))
+        {
+            tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
+            return;
+        }
+    }
+    tooltipAlpha = 0;
+}
+
+void Sol_User_Tick(double dt, double time)
 {
     consume_mouse = false;
     consume_key   = false;
 
     Find_User_Hit();
-    Sol_Tooltip_Update(dt, user_hit);
+    Tooltip_Update(dt, user_hit);
+
+    Sol_User_HydrateUI();
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {
-        bool menuActive = solEngine.worlds[0]->doesSimulate;
+        bool menuActive = solState.worlds[0]->doesSimulate;
         menuActive ^= 1;
-        solEngine.worlds[0]->doesSimulate = menuActive;
-        solEngine.worlds[0]->doesRender   = menuActive;
+        solState.worlds[0]->doesSimulate = menuActive;
+        solState.worlds[0]->doesRender   = menuActive;
         Sol_Input_SetLocked(!menuActive);
     }
 
     // ### DEBUG ####
-    World *activeWorld = solEngine.activeWorld;
+    World *activeWorld = Sol_GetActiveGameWorld();
     int    playerId    = Sol_Player_GetEnt(activeWorld, 0);
     if (playerId > -1)
     {
@@ -169,14 +206,14 @@ void Sol_User_Tick(double dt)
     }
 }
 
-void Sol_User_Draw(double dt)
+void Sol_User_Draw(double dt, double time)
 {
-    Sol_Tooltip_Draw(dt, user_hit);
+    Sol_Tooltip_Draw(user_hit, tooltipAlpha, dt, time);
 }
 
-void Sol_User_SaveUserSettings(void)
+void Sol_User_SaveUserSettings(int flags)
 {
-    user_settings_file.data = &user_settings;
-    user_settings_file.size = sizeof(UserSettings);
+    user_settings_file.data = &user_data;
+    user_settings_file.size = sizeof(UserData);
     Sol_WriteFile(USER_SETTINGS_FILENAME, &user_settings_file);
 }

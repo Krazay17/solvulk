@@ -7,7 +7,7 @@
  */
 #pragma once
 #include "sol_core.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "world.h"
 
 #include "audio.h"
@@ -56,3 +56,4 @@
 #include "replication/s_replication.h"
 #include "view/s_view.h"
 #include "view/s_view2d.h"
+#include "slider/s_slider.h"

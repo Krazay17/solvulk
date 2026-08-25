@@ -15,13 +15,10 @@ void Stun_State_Update(World *world, int id, float dt)
 }
 void Stun_State_Enter(World *world, int id)
 {
-    Sol_Model_PlayAnim(
-        world, id,
-        (AnimDesc){.anim = ANIM_STUN, .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .force = 1});
 }
 void Stun_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0);
 }
 bool Stun_State_CanExit(World *world, int id, u32 next)
 {

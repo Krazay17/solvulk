@@ -1,7 +1,7 @@
 #pragma once
+#include "s_body2d.h"
 #include "sol/types.h"
 #include "sol_math.h"
-#include "s_body2d.h"
 
 typedef struct CompBody2d CompBody2d;
 

@@ -1,5 +1,5 @@
 #include "input.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_math.h"
 #include "world.h"
 #include "platform/platform.h"
@@ -147,8 +147,8 @@ void Sol_Input_SetLocked(bool lock)
 {
     if (lock)
     {
-        int width  = (int)((float)(solEngine.windowX + solEngine.windowWidth * 0.5f));
-        int height = (int)((float)(solEngine.windowY + solEngine.windowHeight * 0.5f));
+        int width  = (int)((float)(solState.windowX + solState.windowWidth * 0.5f));
+        int height = (int)((float)(solState.windowY + solState.windowHeight * 0.5f));
         Sol_Platform_SetCursorpos(width, height);
     }
 

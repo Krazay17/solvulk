@@ -17,8 +17,6 @@
 #include "render/render.h"
 
 #define MIN_POWER 0.5f
-#define MAX_POWER 2.5f
-#define MAX_DURATION 4.0f
 
 #define RECOVERYTIME 0.3f
 #define MIN_VELOCITY 20.0f
@@ -32,16 +30,15 @@ void Fireball_Linger(int flags, void *data)
 
 void Fireball_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
-    float       *elapsed = &data->elapsed;
-
-    float oldElapsed = data->elapsed;
+    CompAbility      *ability    = Sol_Ability_Get(world, id);
+    AbilityStateData *data       = &ability->stateData[ability->activeSlot];
+    float            *elapsed    = &data->elapsed;
+    float             oldElapsed = data->elapsed;
     data->elapsed += dt;
 
-    data->charge = fminf(1.0f, data->elapsed / MAX_DURATION);
-
-    float power = Sol_Math_Lerp(MIN_POWER, MAX_POWER, data->charge);
+    data->power = fminf(1.0f, data->elapsed / ability_base[ABILITY_STATE_FIREBALL].duration);
+    sollog(data->power);
+    float power = Sol_Math_Lerp(MIN_POWER, ability_base[ABILITY_STATE_FIREBALL].maxpower, data->power);
 
     switch (data->stage)
     {
@@ -50,22 +47,18 @@ void Fireball_State_Update(World *world, int id, float dt)
             data->stage++;
         break;
     case 1:
-        AnimDesc desc = {
-            .anim = ANIM_ATTACK_LEFT, .layerId = ANIM_LAYER_UPPER, .seek = 0.16f, .playKind = ANIMPLAYKIND_ONESHOT};
-        Sol_Model_PlayAnim(world, id, desc);
-
         SolShoot shoot =
-            Sol_Controller_GetShoot(world, id, 1.5f, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->charge));
+            Sol_Controller_GetShoot(world, id, 1.5f, Sol_Math_Lerp(MAX_VELOCITY, MIN_VELOCITY, data->power));
         int ball = Sol_Prefab_Factory(world, 0, EKIND_FIREBALL,
                                       (EntDesc){.pos = vecAdd(shoot.pos, vecSca(WORLD_UP, power)), .scale = power});
         if (ball > 0)
         {
             Sol_Physx_SetVel(world, ball, shoot.vel);
             Sol_Owner_Add(world, ball, id);
-            world->projectiles[ball].directHit.damage        = data->damage;
-            world->projectiles[ball].explosionHit.damage     = data->damage * power;
-            world->projectiles[ball].explosionHit.buffMask   = data->buffs;
-            world->projectiles[ball].explosionHit.effectMask = data->effects;
+            world->projectiles[ball].directHit.damage        = ability_base[ABILITY_STATE_FIREBALL].damage;
+            world->projectiles[ball].explosionHit.damage     = ability_base[ABILITY_STATE_FIREBALL].damage * power;
+            world->projectiles[ball].explosionHit.buffMask   = ability_base[ABILITY_STATE_FIREBALL].buffMask;
+            world->projectiles[ball].explosionHit.effectMask = ability_base[ABILITY_STATE_FIREBALL].effectMask;
             world->projectiles[ball].explodeRadius           = 2.0f * power;
             world->projectiles[ball].callback.callbackFunc   = Fireball_Linger;
             world->projectiles[ball].callbackFlags           = 1;
@@ -74,56 +67,55 @@ void Fireball_State_Update(World *world, int id, float dt)
         data->stage++;
         break;
     case 2:
-        data->recovery += dt;
-        if (data->recovery >= RECOVERYTIME)
+        data->recover += dt;
+        if (data->recover >= RECOVERYTIME)
             Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, false);
+        break;
     }
 }
 
 void Fireball_State_Enter(World *world, int id)
 {
-    CompXform   *xform  = &world->xforms[id];
-    CompAbility *combat = &world->abilities[id];
-    AbilityData *data   = &world->abilities[id].stateData[combat->activeSlot];
-    data->stage         = 0;
-    data->recovery      = 0.0f;
-
-    AnimDesc desc = {.anim = ANIM_CHARGE_LEFT, .layerId = ANIM_LAYER_UPPER};
-    Sol_Model_PlayAnim(world, id, desc);
+    CompXform        *xform   = &world->xforms[id];
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    data->stage               = 0;
+    data->recover             = 0.0f;
 }
 
 void Fireball_State_Exit(World *world, int id)
 {
-    CompAbility *a    = &world->abilities[id];
-    AbilityData *data = &world->abilities[id].stateData[a->activeSlot];
-    data->lastExited  = solState.gameTime;
-    data->charge      = 0;
-    data->stage       = 0;
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
+    data->lastExited          = solState.gameTime;
+    data->power               = 0;
+    data->stage               = 0;
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_UPPER, 0);
 }
 
 bool Fireball_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &world->abilities[id].stateData[ability->activeSlot];
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     return data->stage > 1;
 }
 
 bool Fireball_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &world->abilities[id].stateData[slot];
-    return slot != ability->activeSlot && !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return slot != ability->activeSlot &&
+           !(data->lastExited + ability_base[ABILITY_STATE_FIREBALL].cooldown > solState.gameTime);
 }
 
 void Fireball_State_Draw(World *world, int id, double dt, double time)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &world->abilities[id].stateData[ability->activeSlot];
+    CompAbility      *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 
     if (data->stage > 0)
         return;
-    float scale = data->charge * 2.0f + 0.5f;
+    float scale = data->power * 2.0f + 0.5f;
     vec3s pos   = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
     pos         = vecAdd(pos, vecSca(Sol_Controller_Get(world, id)->aimdir, scale));
     pos         = vecAdd(pos, vecSca(WORLD_UP, scale));

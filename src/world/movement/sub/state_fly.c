@@ -15,8 +15,6 @@ void Sol_Movement_Fly_Update(World *world, int id, float dt)
 
 void Sol_Movement_Fly_Enter(World *world, int id)
 {
-    AnimDesc desc = {.anim = ANIM_FALL};
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Sol_Movement_Fly_Exit(World *world, int id)

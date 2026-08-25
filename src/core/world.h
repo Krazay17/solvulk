@@ -30,8 +30,9 @@
     X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, Sol_Controller_Remove)                                                \
     X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, Sol_System_Remove_Noop)                                                   \
     X(WORLD_SYS_INTERACT, Sol_Interact_Init, Sol_System_Remove_Noop)                                                   \
+    X(WORLD_SYS_INVENTORY, Sol_Inventory_Init, Sol_Inventory_Rem)                                                   \
+    X(WORLD_SYS_SLIDER, Sol_Slider_Init, Sol_Slider_Rem)                                                               \
     X(WORLD_SYS_TIMER, Sol_Timer_Init, Sol_System_Remove_Noop)                                                         \
-    X(WORLD_SYS_PICKUP, Sol_Pickup_Init, Sol_System_Remove_Noop)                                                       \
     X(WORLD_SYS_OWNER, Sol_Owner_Init, Sol_System_Remove_Noop)                                                         \
     X(WORLD_SYS_BUFF, Sol_Buff_Init, Sol_System_Remove_Noop)                                                           \
     X(WORLD_SYS_ABILITY, Sol_Ability_Init, Sol_System_Remove_Noop)                                                     \
@@ -80,8 +81,6 @@ typedef enum
     HAS_BODY3,
     HAS_CAMERA,
     HAS_INTERACT,
-    HAS_MODEL,
-    HAS_ANIM,
     HAS_MOVEMENT,
     HAS_CONTROLLER,
     HAS_PLAYER,
@@ -107,7 +106,6 @@ typedef enum
     HAS_TOOLTIP,
     HAS_RIBBON,
     HAS_CHAINHIT,
-    HAS_INVENTORY,
     HAS_ZONE,
     HAS_BUILDING,
     HAS_CONTAINER,
@@ -121,10 +119,6 @@ typedef enum
     WORLDKIND_MENU,
 } WorldKind;
 
-typedef void (*SystemFunc)(World *);
-typedef void (*SystemFuncId)(World *, int id);
-typedef void (*SystemUpdate)(World *, double, double);
-
 typedef uint64_t Mask;
 
 typedef struct CompAudio       CompAudio;
@@ -135,13 +129,11 @@ typedef struct CompParent      CompParent;
 typedef struct CompTimer       CompTimer;
 typedef struct CompXform       CompXform;
 typedef struct CompBody        CompBody;
-typedef struct CompModel       CompModel;
 typedef struct CompInteract    CompInteract;
 typedef struct CompShape       CompShape;
 typedef struct CompCombat      CompCombat;
 typedef struct CompController  CompController;
 typedef struct CompBuff        CompBuff;
-typedef struct CompAbility     CompAbility;
 typedef struct CompOwner       CompOwner;
 typedef struct CompContact     CompContact;
 typedef struct CompCombat      CompCombat;
@@ -150,17 +142,15 @@ typedef struct CompBody2d      CompBody2d;
 typedef struct CompView2d      CompView2d;
 typedef struct CompProjectile  CompProjectile;
 typedef struct CompItem        CompItem;
-typedef struct CompInventory   CompInventory;
 typedef struct CompAbilitySlot CompAbilitySlot;
 typedef struct CompTooltip     CompTooltip;
 typedef struct CompZone        CompZone;
 typedef struct CompBuilder     CompBuilder;
 typedef struct CompContainer   CompContainer;
-typedef struct CompAnim        CompAnim;
 typedef struct CompCam         CompCam;
+typedef struct CompSlider      CompSlider;
 
 typedef struct ChainAttacks ChainAttacks;
-typedef struct Inventory    Inventory;
 typedef struct Dmgnumbers   Dmgnumbers;
 typedef struct SolRibbon    SolRibbon;
 typedef struct SolEvents    SolEvents;
@@ -179,8 +169,8 @@ typedef struct CompFlags
 typedef float (*GetterFunc)(World *world, int id);
 typedef struct CompTracker
 {
-    World      *world;
-    u32         entId;
+    World     *world;
+    u32        entId;
     GetterFunc getters[MAX_TRACKER_GETTERS];
 } CompTracker;
 
@@ -209,11 +199,9 @@ struct World
     CompAudio       *audios;
     CompTimer       *timers;
     CompBody        *bodies;
-    CompModel       *models;
     CompInteract    *interacts;
     CompShape       *spheres;
     CompBuff        *buffs;
-    CompAbility     *abilities;
     CompOwner       *owners;
     CompCombat      *combats;
     CompEmitter     *compEmitters;
@@ -222,12 +210,10 @@ struct World
     CompProjectile  *projectiles;
     CompTooltip     *tooltips;
     CompItem        *items;
-    CompInventory   *inventories;
     CompAbilitySlot *abilitySlots;
     CompZone        *zones;
     CompBuilder     *builders;
     CompContainer   *containers;
-    CompAnim        *anims;
     CompCam         *cams;
     CompAi          *ais;
 
@@ -271,6 +257,19 @@ struct World
     void *dense_components[WORLD_SYS_COUNT];
 };
 
+// #define REMOVE_COMP(WORLD, ID, WORLD_SYS_TYPE, SYS_ENUM, COMP_MEMBER)                                                  \
+//     WORLD_SYS_TYPE *wc  = WORLD->dense_components[SYS_ENUM];                                                           \
+//     int             idx = wc->sparse[ID];                                                                              \
+//     if (idx < 0)                                                                                                       \
+//         return;                                                                                                        \
+//     int lastIdx          = wc->cnt - 1;                                                                                \
+//     int lastId           = wc->dense[lastIdx];                                                                         \
+//     wc->COMP_MEMBER[idx] = wc->COMP_MEMBER[lastIdx];                                                                   \
+//     wc->dense[idx]       = lastId;                                                                                     \
+//     wc->sparse[lastId]   = idx;                                                                                        \
+//     wc->sparse[ID]       = -1;                                                                                         \
+//     wc->cnt--
+
 #define ENTITY_INDEX_BITS 16
 #define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)
 #define EntIdx(id) (id & ENTITY_INDEX_MASK)
@@ -293,7 +292,7 @@ static inline u32 Sol_CreateEntGen(int id, int gen)
 
 World *World_Create(WorldKind kind);
 World *World_Create_Default(WorldKind kind);
-World *Sol_GetWorldById(u32 id);
+void   World_Create_All();
 
 void World_Destroy(World *world);
 void World_System_Add(World *world, WorldSystem system);
@@ -301,6 +300,7 @@ void World_System_Add(World *world, WorldSystem system);
 int          Sol_World_GetEntCount(World *world);
 void         Sol_World_SetReplicates(World *world, bool active);
 CompTracker *Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId);
+CompTracker *Sol_Tracker_Add(World *world, int id);
 
 void Worlds_Tick(World **worlds, int count, double dt, double time);
 void Worlds_Step(World **worlds, int count, double dt, double time);

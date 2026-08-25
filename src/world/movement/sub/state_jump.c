@@ -24,7 +24,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
         Sol_Movement_SetState(world, id, MOVE_IDLE);
         return;
     }
-    else if (Sol_Controller_Get(world, id)->actionState & ACTION_JUMP && data->elapsed > JUMP_DURATION * 0.1f)
+    else if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP) && data->elapsed > JUMP_DURATION * 0.1f)
         if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
             return;
 
@@ -47,18 +47,6 @@ void Sol_Movement_Jump_Enter(World *world, int id)
         Sol_Physx_SetVelY(world, id, 0);
     vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
     Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
-
-    AnimDesc desc = {
-        .anim     = data->as.jump.airJump ? ANIM_FLIPJUMP : ANIM_JUMP,
-        .seek     = data->as.jump.airJump ? 0.1f : 0.0f,
-        .layerId  = ANIM_LAYER_BASE,
-        .playKind = ANIMPLAYKIND_ONESHOT,
-        .speed    = 1.0f,
-        .force    = true,
-        .blendIn  = 0.1f,
-    };
-
-    Sol_Model_PlayAnim(world, id, desc);
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)
@@ -76,7 +64,7 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int sl
     MoveStateData *data     = &movement->stateData[MOVE_JUMP];
     if (!movement->wantsJump || movement->state == MOVE_JUMP)
         return false;
-    if (Sol_Ability_GetState(world, id) == ABILITY_STATE_DASH)
+    if (Sol_Ability_Get(world, id)->state == ABILITY_STATE_DASH)
         return false;
 
     if (movement->airtime >= JUMP_BUFFER)

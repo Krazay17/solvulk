@@ -7,7 +7,7 @@
  */
 
 #include "world.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_core.h"
 #include "xform/s_xform.h"
 #include "parent/s_parent.h"
@@ -31,15 +31,14 @@ World *World_Create(WorldKind kind)
     World *world = calloc(1, sizeof(World));
     if (world)
     {
-        world->doesSimulate                      = true;
-        world->doesRender                        = true;
-        world->doesReplicate                     = false;
-        world->systemBits                        = 0;
-        world->activeCount                       = 0;
-        // world->playerId                          = -1;
-        world->kind                              = kind;
-        world->worldId                           = world_count++;
-        solEngine.worlds[solEngine.worldCount++] = world;
+        world->doesSimulate                    = true;
+        world->doesRender                      = true;
+        world->doesReplicate                   = false;
+        world->systemBits                      = 0;
+        world->activeCount                     = 0;
+        world->kind                            = kind;
+        world->worldId                         = world_count++;
+        solState.worlds[solState.worldCount++] = world;
     }
 
     return world;
@@ -56,6 +55,7 @@ World *World_Create_Default(WorldKind kind)
             World_System_Add(world, WORLD_SYS_XFORM);
             World_System_Add(world, WORLD_SYS_EVENT);
             World_System_Add(world, WORLD_SYS_INTERACT);
+            World_System_Add(world, WORLD_SYS_SLIDER);
             World_System_Add(world, WORLD_SYS_PARENT);
             World_System_Add(world, WORLD_SYS_ITEM);
             World_System_Add(world, WORLD_SYS_BODY2);
@@ -73,6 +73,7 @@ World *World_Create_Default(WorldKind kind)
             World_System_Add(world, WORLD_SYS_CONTROLLER);
             World_System_Add(world, WORLD_SYS_MOVEMENT);
             World_System_Add(world, WORLD_SYS_INTERACT);
+            World_System_Add(world, WORLD_SYS_SLIDER);
             World_System_Add(world, WORLD_SYS_PARENT);
             World_System_Add(world, WORLD_SYS_BUFF);
             World_System_Add(world, WORLD_SYS_ITEM);
@@ -88,6 +89,29 @@ World *World_Create_Default(WorldKind kind)
         }
     }
     return world;
+}
+
+void World_Create_All()
+{
+    for (int i = 0; i < WORLDID_COUNT; i++)
+    {
+        u32    kind         = i == WORLDID_SETTINGS   ? WORLDKIND_MENU
+                              : i == WORLDID_HUD      ? WORLDKIND_MENU
+                              : i == WORLDID_GAME2D   ? WORLDKIND_GAME2D
+                              : i == WORLDID_GAME3D_1 ? WORLDKIND_GAME
+                              : i == WORLDID_GAME3D_2 ? WORLDKIND_GAME
+                                                      : WORLDKIND_MENU;
+        bool   startActive  = i == WORLDID_SETTINGS   ? true
+                              : i == WORLDID_HUD      ? true
+                              : i == WORLDID_GAME2D   ? true
+                              : i == WORLDID_GAME3D_1 ? true
+                              : i == WORLDID_GAME3D_2 ? false
+                                                      : false;
+        World *world        = World_Create_Default(kind);
+        world->doesSimulate = startActive;
+        world->doesRender   = startActive;
+        solState.worlds[i]  = world;
+    }
 }
 
 void Sol_System_Remove_Noop(World *world, int id)
@@ -273,4 +297,10 @@ CompTracker *Sol_World_SetTracker(World *world, int id, World *otherWorld, int o
     tracker->entId       = otherId;
     world->masks[id] |= BITC(HAS_TRACKER);
     return tracker;
+}
+
+CompTracker *Sol_Tracker_Add(World *world, int id)
+{
+    WAddComp(world, id, HAS_TRACKER);
+    return &world->trackers[id];
 }

@@ -9,8 +9,6 @@ typedef struct CompXform
 } CompXform;
 
 void Sol_Xform_Init(World *world);
-void Xform_Snapshot(World *world);
-void Xform_Interpolate(World *world, float alpha);
 
 CompXform *Sol_Xform_Add(World *world, int id, vec3s pos);
 void       Sol_Xform_Teleport(World *world, int id, vec3s pos);
@@ -23,5 +21,5 @@ SolXform   Sol_Xform_GetXform(World *world, int id);
 SolXform   Sol_Xform_GetDrawXform(World *world, int id);
 float      Sol_Xform_DistanceTo(World *world, int idA, int idB);
 float      Sol_Xform_DistanceTo2(World *world, int idA, int idB);
-void Sol_Xform_SetXform(World *world, int id, SolXform xform);
-void Sol_Xform_SetXformSim(World *world, int id, SolXform xform);
+void       Sol_Xform_SetXform(World *world, int id, SolXform xform);
+void       Sol_Xform_SetXformSim(World *world, int id, SolXform xform);

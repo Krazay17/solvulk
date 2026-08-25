@@ -98,10 +98,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_ORTHO_UBO, DESC_IMAGES},
             .descCount         = 2,
         },
-    [PIPE_RECTI] =
+    [PIPE_RECT] =
         {
-            .vertResource      = "ID_SHADER_RECTI_V",
-            .fragResource      = "ID_SHADER_RECTI_F",
+            .vertResource      = "ID_SHADER_RECT_V",
+            .fragResource      = "ID_SHADER_RECT_F",
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -141,18 +141,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
             .descId            = {DESC_ORTHO_UBO, DESC_FONT_SSBO, DESC_IMAGES},
             .descCount         = 3,
-        },
-    [PIPE_RECT] =
-        {
-            .vertResource      = "ID_SHADER_RECT_V",
-            .fragResource      = "ID_SHADER_RECT_F",
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(ShaderPushRect),
-            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO},
-            .descCount         = 1,
         },
     [PIPE_SPHERE] =
         {
@@ -337,7 +325,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(SolPose) * MAX_MODEL_INSTANCES,
+                                    .size = sizeof(mat4) * MAX_MODEL_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_SPHERE_SSBO]   = {.kind       = DESC_KIND_BUFFER,
@@ -544,20 +532,20 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill)
-{
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_RECT);
+// void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill)
+// {
+//     VkCommandBuffer cmd = Command_Buffer_Get();
+//     Bind_Pipeline(cmd, PIPE_RECT);
 
-    ShaderPushRect push = {
-        .rec    = {rect.x, rect.y, rect.z, rect.w},
-        .color  = {color.r, color.g, color.b, color.a},
-        .extras = {thickness, fill, 0, 0},
-    };
+//     ShaderPushRect push = {
+//         .rec    = {rect.x, rect.y, rect.z, rect.w},
+//         .color  = {color.r, color.g, color.b, color.a},
+//         .extras = {thickness, fill, 0, 0},
+//     };
 
-    vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
-    vkCmdDraw(cmd, 6, 1, 0, 0);
-}
+//     vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
+//     vkCmdDraw(cmd, 6, 1, 0, 0);
+// }
 
 void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance)
 {

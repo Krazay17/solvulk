@@ -1,5 +1,14 @@
 #pragma once
-#include "base.h"
+#include "sol/types.h"
+
+typedef enum
+{
+    WALLTOUCH_FRONT,
+    WALLTOUCH_LEFT,
+    WALLTOUCH_BACK,
+    WALLTOUCH_RIGHT,
+    WALLTOUCH_COUNT,
+} WallTouch;
 
 typedef enum
 {
@@ -26,11 +35,19 @@ typedef struct
     union {
         struct
         {
+            StrafeDir strafe;
+        } crouch;
+        struct
+        {
+            StrafeDir strafe;
+        } walk;
+        struct
+        {
             bool airJump;
         } jump;
         struct
         {
-            vec3s pos;
+            vec3s pos, ledge_pos;
             float dist;
             u8    closeEnough, doRoll;
         } mantle;
@@ -40,7 +57,8 @@ typedef struct
         } slide;
         struct
         {
-            vec3s wallNormal;
+            vec3s     wallNormal;
+            WallTouch wallTouch;
         } wallrun;
     } as;
     vec3s enterVel, dir;
@@ -78,3 +96,4 @@ void          Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float d
 u32           Sol_Movement_GetState(World *world, int id);
 float         Sol_Movement_GetGroundtime(World *world, int id);
 float         Sol_Movement_GetAirtime(World *world, int id);
+float         Sol_Movement_GetBaseSpeed(World *world, int id);

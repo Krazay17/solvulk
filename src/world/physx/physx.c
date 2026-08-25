@@ -364,6 +364,18 @@ void Resolve_Contact(CompBody *body, CompXform *xform, SolContact *hit)
 
 void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, CompXform *xform, EntityContacts *contacts)
 {
+    // Pre-allocate a visited array sized to your max triangle count
+    // static u32 triVisited[MAX_TRIS];
+    // static u32 currentFrameMark = 1;
+
+    // // Call this once at start of frame in Physx update
+
+    // if (++currentFrameMark == 0)
+    // { // handle u32 wrap-around
+    //     memset(triVisited, 0, sizeof(triVisited));
+    //     currentFrameMark = 1;
+    // }
+
     SpatialGrid *grid      = &group->grid;
     ShapeTriTest shapeTest = shape_tri_test[body->shape];
     int          checks    = 0;
@@ -390,16 +402,50 @@ void Collisions_Static_Grid(World *world, PhysxGroup *group, CompBody *body, Com
                 u32 start = grid->offsets[cell];
                 u32 end   = grid->offsets[cell + 1];
 
+                // for (int e = start; e < end; e++)
+                // {
+                //     if (++checks > 1000)
+                //         return;
+                //     SolTri    *tri     = &group->tris[grid->values[e]];
+                //     SolContact contact = {0};
+                //     if (shapeTest(body, xform, tri, &contact))
+                //     {
+                //         Resolve_Contact(body, xform, &contact);
+
+                //         Add_Contact(contacts, tri->entId, contact.normal, contact.pos);
+                //     }
+                // }
+                u32 testedTris[128];
+                int testedCount = 0;
                 for (int e = start; e < end; e++)
                 {
-                    if (++checks > 1000)
-                        return;
-                    SolTri    *tri     = &group->tris[grid->values[e]];
+                    u32 triIdx = grid->values[e];
+
+                    // Skip if already checked for this body/frame
+                    // if (triVisited[triIdx] == currentFrameMark)
+                    //     continue;
+                    // triVisited[triIdx] = currentFrameMark;
+
+                    bool alreadyTested = false;
+                    for (int k = 0; k < testedCount; k++)
+                    {
+                        if (testedTris[k] == triIdx)
+                        {
+                            alreadyTested = true;
+                            break;
+                        }
+                    }
+                    if (alreadyTested)
+                        continue;
+
+                    if (testedCount < 128)
+                        testedTris[testedCount++] = triIdx;
+
+                    SolTri    *tri     = &group->tris[triIdx];
                     SolContact contact = {0};
                     if (shapeTest(body, xform, tri, &contact))
                     {
                         Resolve_Contact(body, xform, &contact);
-
                         Add_Contact(contacts, tri->entId, contact.normal, contact.pos);
                     }
                 }
@@ -648,114 +694,250 @@ bool Collide_Sphere_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContac
     return true;
 }
 
+static inline vec3s ClosestPoint_SegmentPoint(vec3s p, vec3s s0, vec3s s1)
+{
+    vec3s d     = glms_vec3_sub(s1, s0);
+    float lenSq = glms_vec3_dot(d, d);
+    if (lenSq < 1e-8f)
+        return s0;
+
+    float t = glms_vec3_dot(glms_vec3_sub(p, s0), d) / lenSq;
+    t       = fmaxf(0.0f, fminf(1.0f, t));
+    return glms_vec3_add(s0, glms_vec3_scale(d, t));
+}
+
+static inline void ClosestPoints_SegmentSegment(vec3s a, vec3s b, vec3s c, vec3s d, vec3s *p1, vec3s *p2)
+{
+    vec3s u = glms_vec3_sub(b, a);
+    vec3s v = glms_vec3_sub(d, c);
+    vec3s w = glms_vec3_sub(a, c);
+
+    float a_dot = glms_vec3_dot(u, u);
+    float b_dot = glms_vec3_dot(u, v);
+    float c_dot = glms_vec3_dot(v, v);
+    float d_dot = glms_vec3_dot(u, w);
+    float e_dot = glms_vec3_dot(v, w);
+
+    float denom = a_dot * c_dot - b_dot * b_dot;
+    float s, t;
+
+    if (denom < 1e-8f)
+    {
+        s = 0.0f;
+        t = (b_dot > c_dot) ? d_dot / b_dot : e_dot / c_dot;
+    }
+    else
+    {
+        s = (b_dot * e_dot - c_dot * d_dot) / denom;
+        t = (a_dot * e_dot - b_dot * d_dot) / denom;
+    }
+
+    s = fmaxf(0.0f, fminf(1.0f, s));
+    t = fmaxf(0.0f, fminf(1.0f, t));
+
+    *p1 = glms_vec3_add(a, glms_vec3_scale(u, s));
+    *p2 = glms_vec3_add(c, glms_vec3_scale(v, t));
+}
+
 bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit)
 {
-    vec3s *pos             = &xform->pos;
-    float  halfHeight      = body->dims.y * 0.5f - body->dims.x;
-    float  capsuleMaxReach = halfHeight + body->dims.x;
-    float  maxDist         = tri->bounds + capsuleMaxReach;
-    float  boundsSq        = maxDist * maxDist;
-    float  distSq          = glms_vec3_norm2(glms_vec3_sub(*pos, tri->center));
+    float radius     = body->dims.x;
+    float halfHeight = fmaxf(0.0f, body->dims.y * 0.5f - radius);
 
-    if (distSq > boundsSq)
+    // 1. Broadphase Bounding Sphere Early-Out
+    float maxReach = halfHeight + radius;
+    float maxDist  = tri->bounds + maxReach;
+    if (glms_vec3_norm2(glms_vec3_sub(xform->pos, tri->center)) > (maxDist * maxDist))
         return false;
 
-    vec3s a = *pos;
-    a.y += halfHeight;
-    vec3s b = *pos;
-    b.y -= halfHeight;
+    // Segment end points (capsule center line)
+    vec3s segA = xform->pos;
+    vec3s segB = xform->pos;
+    segA.y += halfHeight;
+    segB.y -= halfHeight;
 
-    // Find closest point on triangle to the capsule's line segment
-    // by testing the segment against the triangle
-    vec3s seg = glms_vec3_sub(b, a);
+    vec3s bestCapPoint = segA;
+    vec3s bestTriPoint = tri->a;
+    float bestDistSq   = 1e30f;
 
-    // Get closest point on triangle to several points along the segment
-    // and find which gives minimum hitDist
-    vec3s bestCapsulePoint = a;
-    vec3s bestTriPoint     = ClosestPointOnTriangle(a, tri->a, tri->b, tri->c);
-    float bestDistSq       = glms_vec3_norm2(glms_vec3_sub(a, bestTriPoint));
+    // 2. Fast-Path: Test capsule segment against triangle plane face
+    vec3s triNorm = tri->normal;
+    float dA      = glms_vec3_dot(glms_vec3_sub(segA, tri->a), triNorm);
+    float dB      = glms_vec3_dot(glms_vec3_sub(segB, tri->a), triNorm);
 
-    // Project triangle vertices onto segment to find the best capsule point
-    vec3s triVerts[3] = {tri->a, tri->b, tri->c};
-    for (int i = 0; i < 3; i++)
+    // Find point on segment closest to plane face
+    float tPlane = 0.5f;
+    if (fabsf(dA - dB) > 1e-6f)
+        tPlane = fmaxf(0.0f, fminf(1.0f, dA / (dA - dB)));
+
+    vec3s planeCapPt  = glms_vec3_add(segA, glms_vec3_scale(glms_vec3_sub(segB, segA), tPlane));
+    float distToPlane = glms_vec3_dot(glms_vec3_sub(planeCapPt, tri->a), triNorm);
+    vec3s planeProjPt = glms_vec3_sub(planeCapPt, glms_vec3_scale(triNorm, distToPlane));
+
+    // Barycentric test to check if planeProjPt is inside triangle boundaries
+    vec3s v0 = glms_vec3_sub(tri->b, tri->a);
+    vec3s v1 = glms_vec3_sub(tri->c, tri->a);
+    vec3s v2 = glms_vec3_sub(planeProjPt, tri->a);
+
+    float d00 = glms_vec3_dot(v0, v0);
+    float d01 = glms_vec3_dot(v0, v1);
+    float d11 = glms_vec3_dot(v1, v1);
+    float d20 = glms_vec3_dot(v2, v0);
+    float d21 = glms_vec3_dot(v2, v1);
+
+    float invDenom = 1.0f / (d00 * d11 - d01 * d01 + 1e-8f);
+    float u        = (d11 * d20 - d01 * d21) * invDenom;
+    float v        = (d00 * d21 - d01 * d20) * invDenom;
+
+    if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
     {
-        vec3s ap = glms_vec3_sub(triVerts[i], a);
-        float t  = glms_vec3_dot(ap, seg) / fmaxf(glms_vec3_dot(seg, seg), 1e-8f);
-        t        = fmaxf(0.0f, fminf(1.0f, t));
-
-        vec3s capsulePoint = glms_vec3_add(a, glms_vec3_scale(seg, t));
-        vec3s triPoint     = ClosestPointOnTriangle(capsulePoint, tri->a, tri->b, tri->c);
-        float distSq       = glms_vec3_norm2(glms_vec3_sub(capsulePoint, triPoint));
-
-        if (distSq < bestDistSq)
+        // Hit flat face directly
+        bestCapPoint = planeCapPt;
+        bestTriPoint = planeProjPt;
+        bestDistSq   = distToPlane * distToPlane;
+    }
+    else
+    {
+        // 3. Fallback Path: Test segment against 3 triangle edges
+        vec3s verts[3] = {tri->a, tri->b, tri->c};
+        for (int i = 0; i < 3; i++)
         {
-            bestDistSq       = distSq;
-            bestCapsulePoint = capsulePoint;
-            bestTriPoint     = triPoint;
+            vec3s cpCap, cpEdge;
+            ClosestPoints_SegmentSegment(segA, segB, verts[i], verts[(i + 1) % 3], &cpCap, &cpEdge);
+            float dSq = glms_vec3_norm2(glms_vec3_sub(cpCap, cpEdge));
+
+            if (dSq < bestDistSq)
+            {
+                bestDistSq   = dSq;
+                bestCapPoint = cpCap;
+                bestTriPoint = cpEdge;
+            }
         }
     }
 
-    // Also check triangle edges against segment
-    vec3s edgeStarts[3] = {tri->a, tri->b, tri->c};
-    vec3s edgeEnds[3]   = {tri->b, tri->c, tri->a};
-    for (int i = 0; i < 3; i++)
-    {
-        // Closest point between two line segments (capsule seg and triangle edge)
-        vec3s d1 = seg;
-        vec3s d2 = glms_vec3_sub(edgeEnds[i], edgeStarts[i]);
-        vec3s r  = glms_vec3_sub(a, edgeStarts[i]);
-
-        float aa = glms_vec3_dot(d1, d1);
-        float bb = glms_vec3_dot(d2, d2);
-        float ab = glms_vec3_dot(d1, d2);
-        float ra = glms_vec3_dot(r, d1);
-        float rb = glms_vec3_dot(r, d2);
-
-        float denom = aa * bb - ab * ab;
-        float s, t;
-
-        if (denom < 1e-8f)
-        {
-            s = 0.0f;
-            t = rb / fmaxf(bb, 1e-8f);
-        }
-        else
-        {
-            s = (ab * rb - bb * ra) / denom;
-            t = (aa * rb - ab * ra) / denom;
-        }
-
-        s = fmaxf(0.0f, fminf(1.0f, s));
-        t = fmaxf(0.0f, fminf(1.0f, t));
-
-        // Recompute closest points after clamping
-        vec3s capsulePoint = glms_vec3_add(a, glms_vec3_scale(d1, s));
-        vec3s edgePoint    = glms_vec3_add(edgeStarts[i], glms_vec3_scale(d2, t));
-        float distSq       = glms_vec3_norm2(glms_vec3_sub(capsulePoint, edgePoint));
-
-        if (distSq < bestDistSq)
-        {
-            bestDistSq       = distSq;
-            bestCapsulePoint = capsulePoint;
-            bestTriPoint     = edgePoint;
-        }
-    }
-
-    // Now resolve as sphere at bestCapsulePoint
-    float radiusSq = body->dims.x * body->dims.x;
+    // 4. Distance threshold check
+    float radiusSq = radius * radius;
     if (bestDistSq >= radiusSq)
         return false;
 
-    float dist = sqrtf(bestDistSq);
+    float dist  = sqrtf(bestDistSq);
+    hit->normal = (dist > 1e-4f) ? glms_vec3_scale(glms_vec3_sub(bestCapPoint, bestTriPoint), 1.0f / dist) : triNorm;
 
-    hit->normal =
-        dist > 0.0001f ? glms_vec3_scale(glms_vec3_sub(bestCapsulePoint, bestTriPoint), 1.0f / dist) : tri->normal;
-    hit->penetration = body->dims.x - dist;
+    hit->penetration = radius - dist;
     hit->didCollide  = true;
     hit->pos         = bestTriPoint;
 
     return true;
 }
+
+// bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolContact *hit)
+// {
+//     vec3s *pos             = &xform->pos;
+//     float  halfHeight      = body->dims.y * 0.5f - body->dims.x;
+//     float  capsuleMaxReach = halfHeight + body->dims.x;
+//     float  maxDist         = tri->bounds + capsuleMaxReach;
+//     float  boundsSq        = maxDist * maxDist;
+//     float  distSq          = glms_vec3_norm2(glms_vec3_sub(*pos, tri->center));
+
+//     if (distSq > boundsSq)
+//         return false;
+
+//     vec3s a = *pos;
+//     a.y += halfHeight;
+//     vec3s b = *pos;
+//     b.y -= halfHeight;
+
+//     // Find closest point on triangle to the capsule's line segment
+//     // by testing the segment against the triangle
+//     vec3s seg = glms_vec3_sub(b, a);
+
+//     // Get closest point on triangle to several points along the segment
+//     // and find which gives minimum hitDist
+//     vec3s bestCapsulePoint = a;
+//     vec3s bestTriPoint     = ClosestPointOnTriangle(a, tri->a, tri->b, tri->c);
+//     float bestDistSq       = glms_vec3_norm2(glms_vec3_sub(a, bestTriPoint));
+
+//     // Project triangle vertices onto segment to find the best capsule point
+//     vec3s triVerts[3] = {tri->a, tri->b, tri->c};
+//     for (int i = 0; i < 3; i++)
+//     {
+//         vec3s ap = glms_vec3_sub(triVerts[i], a);
+//         float t  = glms_vec3_dot(ap, seg) / fmaxf(glms_vec3_dot(seg, seg), 1e-8f);
+//         t        = fmaxf(0.0f, fminf(1.0f, t));
+
+//         vec3s capsulePoint = glms_vec3_add(a, glms_vec3_scale(seg, t));
+//         vec3s triPoint     = ClosestPointOnTriangle(capsulePoint, tri->a, tri->b, tri->c);
+//         float distSq       = glms_vec3_norm2(glms_vec3_sub(capsulePoint, triPoint));
+
+//         if (distSq < bestDistSq)
+//         {
+//             bestDistSq       = distSq;
+//             bestCapsulePoint = capsulePoint;
+//             bestTriPoint     = triPoint;
+//         }
+//     }
+
+//     // Also check triangle edges against segment
+//     vec3s edgeStarts[3] = {tri->a, tri->b, tri->c};
+//     vec3s edgeEnds[3]   = {tri->b, tri->c, tri->a};
+//     for (int i = 0; i < 3; i++)
+//     {
+//         // Closest point between two line segments (capsule seg and triangle edge)
+//         vec3s d1 = seg;
+//         vec3s d2 = glms_vec3_sub(edgeEnds[i], edgeStarts[i]);
+//         vec3s r  = glms_vec3_sub(a, edgeStarts[i]);
+
+//         float aa = glms_vec3_dot(d1, d1);
+//         float bb = glms_vec3_dot(d2, d2);
+//         float ab = glms_vec3_dot(d1, d2);
+//         float ra = glms_vec3_dot(r, d1);
+//         float rb = glms_vec3_dot(r, d2);
+
+//         float denom = aa * bb - ab * ab;
+//         float s, t;
+
+//         if (denom < 1e-8f)
+//         {
+//             s = 0.0f;
+//             t = rb / fmaxf(bb, 1e-8f);
+//         }
+//         else
+//         {
+//             s = (ab * rb - bb * ra) / denom;
+//             t = (aa * rb - ab * ra) / denom;
+//         }
+
+//         s = fmaxf(0.0f, fminf(1.0f, s));
+//         t = fmaxf(0.0f, fminf(1.0f, t));
+
+//         // Recompute closest points after clamping
+//         vec3s capsulePoint = glms_vec3_add(a, glms_vec3_scale(d1, s));
+//         vec3s edgePoint    = glms_vec3_add(edgeStarts[i], glms_vec3_scale(d2, t));
+//         float distSq       = glms_vec3_norm2(glms_vec3_sub(capsulePoint, edgePoint));
+
+//         if (distSq < bestDistSq)
+//         {
+//             bestDistSq       = distSq;
+//             bestCapsulePoint = capsulePoint;
+//             bestTriPoint     = edgePoint;
+//         }
+//     }
+
+//     // Now resolve as sphere at bestCapsulePoint
+//     float radiusSq = body->dims.x * body->dims.x;
+//     if (bestDistSq >= radiusSq)
+//         return false;
+
+//     float dist = sqrtf(bestDistSq);
+
+//     hit->normal =
+//         dist > 0.0001f ? glms_vec3_scale(glms_vec3_sub(bestCapsulePoint, bestTriPoint), 1.0f / dist) : tri->normal;
+//     hit->penetration = body->dims.x - dist;
+//     hit->didCollide  = true;
+//     hit->pos         = bestTriPoint;
+
+//     return true;
+// }
 
 bool Collide_Box_Box(CompBody *aBody, CompXform *aXform, CompBody *bBody, CompXform *bXform, SolContact *hit)
 {

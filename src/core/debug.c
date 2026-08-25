@@ -1,5 +1,5 @@
 #include "sol/sol.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 
 #define MAX_DEBUGS 14
 #define MAX_STR_LEN 64
@@ -43,10 +43,15 @@ void Sol_Debug_Draw(double dt)
 {
     if (!solState.debug)
         return;
-    float offset  = 48.0f;
-    float spacing = 24.0f;
-    Sol_Render_DrawRectangle((vec4s){0, 0, 200.0f, offset + spacing * debuggers.count}, (vec4s){0.1f, 0.0f, 0.3f, 0.7f},
-                             0, 1.0f);
+
+    float     offset  = 48.0f;
+    float     spacing = 24.0f;
+    RectSSBO *rect    = Sol_Render_GetNext_Rect();
+    rect->rect        = (vec4s){0, 0, 200.0f, offset + spacing * debuggers.count};
+    rect->color       = (vec4s){0.1f, 0.0f, 0.3f, 0.7f};
+    rect->scale       = 1.0f;
+    rect->fill        = 1.0f;
+    rect->flags       = 0;
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];

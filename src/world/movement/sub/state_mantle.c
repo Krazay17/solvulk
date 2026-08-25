@@ -51,8 +51,9 @@ static bool CheckWall(World *world, int id)
         // Hit after no hit indicates there is floor to mantle
         else if (mantleSpace > 1) // && vecDot(rayResult.norm, WORLD_UP) < 0.4f
         {
-            data->as.mantle.dist = dist;
-            data->as.mantle.pos  = goodPos;
+            data->as.mantle.ledge_pos = rayResult.pos;
+            data->as.mantle.dist      = dist;
+            data->as.mantle.pos       = goodPos;
             return true;
         }
     }
@@ -63,9 +64,9 @@ static bool LeaveState(World *world, int id, MoveStateData *data)
 {
     if (data->elapsed >= MANTLE_TIME)
         return true;
-    if (!Sol_Controller_Get(world, id)->actionState & ACTION_JUMP)
+    if (!Sol_Controller_Get(world, id)->actionState & BITC(ACTION_JUMP))
         return true;
-    if (Sol_Controller_Get(world, id)->actionState & ACTION_CROUCH)
+    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH))
         return true;
     if (data->as.mantle.closeEnough)
         return true;
@@ -90,8 +91,10 @@ void Mantle_State_Update(World *world, int id, float dt)
     }
     else
     {
-        vec3s dir = vecSub(targetPos, pos);
-        if (glms_vec3_norm(dir) <= 0.15f)
+        vec3s dir            = vecSub(targetPos, pos);
+        float dist           = glms_vec3_norm(dir);
+        data->as.mantle.dist = dist;
+        if (dist <= 0.15f)
             data->as.mantle.closeEnough = 1;
         dir = vecNorm(dir);
         Sol_Physx_SetVel(world, id, vecSca(dir, 8.0f));
@@ -104,30 +107,8 @@ void Mantle_State_Enter(World *world, int id)
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
-    if (Sol_Physx_GetVel(world, id).y > 5.0f)
-    {
-        data->as.mantle.doRoll = 1;
-        Sol_Model_PlayAnim(world, id,
-                           (AnimDesc){
-                               .anim     = ANIM_MANTLE_ROLL,
-                               .playKind = ANIMPLAYKIND_ONESHOT,
-                               .speed    = 1.4f,
-                               .layerId  = ANIM_LAYER_OVERRIDE,
-                               .blendIn  = 0.1f,
-                           });
-    }
-    else
-    {
-        data->as.mantle.doRoll = 0;
-        Sol_Model_PlayAnim(world, id,
-                           (AnimDesc){
-                               .anim     = ANIM_MANTLE,
-                               .playKind = ANIMPLAYKIND_ONESHOT,
-                               .layerId  = ANIM_LAYER_OVERRIDE,
-                               .speed    = 2.3f,
-                               .blendIn  = 0.1f,
-                           });
-    }
+    data->as.mantle.doRoll =
+        (Sol_Physx_GetVel(world, id).y > 5.0f) && (Sol_Xform_GetPos(world, id).y < data->as.mantle.ledge_pos.y);
 }
 
 void Mantle_State_Exit(World *world, int id)
@@ -143,7 +124,7 @@ bool Mantle_State_CanExit(World *world, int id, u32 nextState)
 
 bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
+    CompAbility *ability = Sol_Ability_Get(world, id);
     if (ability->state == ABILITY_STATE_DASH || ability->state == ABILITY_STATE_SPINSLASH)
         return false;
     return CheckWall(world, id);

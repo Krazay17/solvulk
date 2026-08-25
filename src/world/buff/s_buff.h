@@ -37,4 +37,4 @@ void Sol_Buff_AddFromMask(World *world, int id, int source, u32 mask);
 void Sol_Buff_Remove(World *world, int id, BuffKind kind);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
-u32 Sol_Buff_GetMask(World *world, int id);
+u32  Sol_Buff_GetMask(World *world, int id);

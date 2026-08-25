@@ -11,7 +11,6 @@
 #include "movement/s_movement.h"
 #include "physx/s_body.h"
 
-#define DURATION 0.5f
 #define VELOCITY 40.0f
 #define ALPHAMOD 1.3f
 #define DAMAGE_DELAY 0.0f
@@ -19,18 +18,18 @@
 
 void Spinslash_State_Update(World *world, int id, float dt)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
     data->accum += dt;
-    if (data->elapsed >= DURATION)
+    if (data->elapsed >= ability_base[ABILITY_STATE_SPINSLASH].duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, ability->activeSlot, false);
         return;
     }
     CompController *controller       = Sol_Controller_Get(world, id);
     world->movements[id].frictionMod = 0.0f;
-    float alpha                      = ALPHAMOD - (data->elapsed / DURATION);
+    float alpha                      = ALPHAMOD - (data->elapsed / ability_base[ABILITY_STATE_SPINSLASH].duration);
     Sol_Physx_SetVel(world, id, glms_vec3_scale(controller->lookdir, alpha * VELOCITY));
     vec3s vel = Sol_Physx_GetVel(world, id);
 
@@ -56,16 +55,16 @@ void Spinslash_State_Update(World *world, int id, float dt)
                                     (SolHit){
                                         .entA       = id,
                                         .entB       = results[i].entId,
-                                        .damage     = data->damage,
-                                        .effectMask = data->effects,
-                                        .buffMask   = data->buffs,
+                                        .damage     = ability_base[ABILITY_STATE_SPINSLASH].damage,
+                                        .effectMask = ability_base[ABILITY_STATE_SPINSLASH].effectMask,
+                                        .buffMask   = ability_base[ABILITY_STATE_SPINSLASH].buffMask,
                                         .pos        = hitPos,
                                         .vel        = vecSub(hitPos, pos),
                                     });
                 Sol_Event_Add(world, (SolEvent){.kind        = EVENTKIND_FX,
                                                 .as.fx.kind  = FXKIND_SPINHIT,
                                                 .as.fx.pos   = hitPos,
-                                                .as.fx.scale = data->charge});
+                                                .as.fx.scale = data->power});
             }
         }
     }
@@ -73,8 +72,8 @@ void Spinslash_State_Update(World *world, int id, float dt)
 
 void Spinslash_State_Enter(World *world, int id)
 {
-    CompAbility    *ability    = &world->abilities[id];
-    AbilityData    *data       = &ability->stateData[ability->activeSlot];
+    CompAbility    *ability    = Sol_Ability_Get(world, id);
+    AbilityStateData    *data       = &ability->stateData[ability->activeSlot];
     CompController *controller = Sol_Controller_Get(world, id);
 
     data->accum = HITINTERVAL;
@@ -90,25 +89,25 @@ void Spinslash_State_Enter(World *world, int id)
 
 void Spinslash_State_Exit(World *world, int id)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 
     data->lastExited = solState.gameTime;
 
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE);
+    Sol_Model_StopAnim(world, id, ANIM_LAYER_OVERRIDE, 0);
 }
 
 bool Spinslash_State_CanExit(World *world, int id, u32 next)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[ability->activeSlot];
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[ability->activeSlot];
 
-    return data->elapsed > DURATION;
+    return data->elapsed > ability_base[ABILITY_STATE_SPINSLASH].duration;
 }
 
 bool Spinslash_State_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    CompAbility *ability = &world->abilities[id];
-    AbilityData *data    = &ability->stateData[slot];
-    return !(data->lastExited + data->cooldown > solState.gameTime);
+    CompAbility *ability = Sol_Ability_Get(world, id);
+    AbilityStateData *data    = &ability->stateData[slot];
+    return !(data->lastExited + ability_base[ABILITY_STATE_SPINSLASH].cooldown > solState.gameTime);
 }

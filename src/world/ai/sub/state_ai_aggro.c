@@ -48,13 +48,13 @@ void Aggro_State_Update(World *world, int id, float dt)
     if (data->accum > data->attacktimer)
     {
         data->accum = 0;
-        controller->actionState |= ACTION_ABILITY1;
+        controller->actionState |= BITC(ACTION_ABILITY1);
     }
     else
     {
         controller->wishdir = dir;
-        controller->actionState &= ~ACTION_ABILITY1;
-        controller->actionState |= ACTION_FWD;
+        controller->actionState &= ~BITC(ACTION_ABILITY1);
+        controller->actionState |= BITC(ACTION_FWD);
     }
 }
 

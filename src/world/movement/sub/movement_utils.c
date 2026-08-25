@@ -116,20 +116,20 @@ void CrouchHeight(World *world, int id, float fdt)
     float newHeight = Sol_Math_Lerp(currentHeight, move->targetHeight, 5.0f * fdt);
     if (newHeight > currentHeight)
     {
-        SolRayResult result =
-            Sol_RaycastD(world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = newHeight * 0.6f}, 0.2f);
+        SolRayResult result = Sol_RaycastD(
+            world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = newHeight * 0.6f}, 0.2f);
         if (result.hit)
             return;
     }
 
     Sol_Physx_SetHeight(world, id, newHeight);
-    Sol_Model_SetOffsetY(world, id, newHeight * -0.5f);
+    Sol_Model_Get(world, id)->yOffset = newHeight * -0.5f;
 }
 
 void Knockback(World *world, int id, float fdt)
 {
     CompMovement *move = &world->movements[id];
-    if(move->knockDur > 0)
+    if (move->knockDur > 0)
     {
         move->knockDur -= fdt;
         Sol_Physx_LerpVel(world, id, move->knockVel, 0.5f);
@@ -140,7 +140,7 @@ void RestoreFriction(World *world, int id, CompMovement *move, float fdt)
 {
     if (move->frictionMod != 1.0f)
     {
-        move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f *fdt);
+        move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f * fdt);
     }
 }
 

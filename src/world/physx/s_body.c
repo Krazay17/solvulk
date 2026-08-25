@@ -1,11 +1,9 @@
 #include "physx_i.h"
-#include "sol_engine.h"
+#include "sol_core.h"
 #include "sol_math.h"
 #include "sol_core.h"
 #include "world.h"
 #include "profiler.h"
-
-
 
 #include "xform/s_xform.h"
 #include "event/s_event.h"
@@ -14,9 +12,9 @@
 #include "camera/s_camera.h"
 #include <omp.h>
 
-static u32            ents[MAX_ENTS];
 static EntityContacts contacts[MAX_ENTS];
 
+static SolProfiler prof_physx   = {.name = "Physx"};
 static SolProfiler prof_static  = {.name = "Static"};
 static SolProfiler prof_dynamic = {.name = "Dynamic"};
 
@@ -76,10 +74,14 @@ void Sol_Physx_Remove(World *world, int id)
 
 void Sol_Physx_Step(World *world, double dt, double time)
 {
+    static int required       = BITC(HAS_ACTIVE) | BITC(HAS_BODY3);
+    static u32 ents[MAX_ENTS] = {0};
+
+    Prof_Begin(&prof_physx);
     if (solState.fps < 30)
         return;
-    float       fdt      = (float)dt;
-    int         required = BITC(HAS_BODY3);
+
+    float       fdt = (float)dt;
     int         i, j, k, l;
     int         count        = 0;
     int         activeCount  = world->activeCount;
@@ -93,7 +95,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
     for (i = 0; i < activeCount; i++)
     {
         int id = world->activeEntities[i];
-        if ((world->masks[id] & required) != required)
+        if (!WHas(world, id, required))
             continue;
         if (world->bodies[id].mass == 0)
             continue;
@@ -103,9 +105,9 @@ void Sol_Physx_Step(World *world, double dt, double time)
     Physx_Grid_Static_Rebuild(staticGroup);
     Fill_Dynamic_Table(world, count, ents);
 
-    // Prof_Begin(&prof_static);
+    Prof_Begin(&prof_static);
     //  velocity and static collisions
-#pragma omp parallel for if (count > 200) shared(contacts) schedule(dynamic, 16)
+#pragma omp parallel for if (count > 100) schedule(dynamic, 32) shared(contacts)
     for (j = 0; j < count; j++)
     {
         int        id    = ents[j];
@@ -144,7 +146,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         // Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
         Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
     }
-    // Prof_EndEz(&prof_static, true);
+    Prof_EndEz(&prof_static, true);
 
     for (int i = 0; i < count; i++)
     {
@@ -164,6 +166,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
                                  });
         }
     }
+    Prof_EndEz(&prof_physx, true);
 }
 
 float Sol_Physx_Get_Ground_Dot(World *world, int id)
@@ -183,7 +186,8 @@ float Sol_Physx_Get_Ground_Dot(World *world, int id)
         vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
 
         results[j] = Sol_RaycastD(
-            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.15f, .ignoreEnt = id, .mask = 0}, 0.1f);
+            world, (SolRay){.pos = pos, .dir = WORLD_DOWN, .dist = body->dims.y * 0.15f, .ignoreEnt = id, .mask = 0},
+            0.1f);
     }
     float flattestNorm = -1.0f;
     int   idx          = 0;
@@ -281,8 +285,8 @@ int Sol_SphereCast(World *world, SolRay ray, float radius, SolRayResult *results
 // dont fill pos or dir in ray
 SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ray)
 {
-    float winW = (float)solEngine.windowWidth;
-    float winH = (float)solEngine.windowHeight;
+    float winW = (float)solState.windowWidth;
+    float winH = (float)solState.windowHeight;
 
     // 1. Convert screen pixel → NDC [-1, 1]
     float ndcX = (2.0f * screenX / winW) - 1.0f;
@@ -325,6 +329,8 @@ SolRayResult Sol_ScreenRaycast(World *world, int screenX, int screenY, SolRay ra
 
 vec3s Sol_Physx_GetVel(World *world, int id)
 {
+    if (!WHasB(world, id, HAS_BODY3))
+        return GLMS_VEC3_ZERO;
     return world->bodies[id].vel;
 }
 

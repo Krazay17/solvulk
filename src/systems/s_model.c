@@ -3,6 +3,26 @@
 #include "sol_math.h"
 #include "render/render.h"
 
+typedef struct
+{
+    float y_offset;
+} ModelKindData;
+
+const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
+    [MODELKIND_DUDE] =
+        {
+            .y_offset = -0.825f,
+        },
+    [MODELKIND_WIZARD] =
+        {
+            .y_offset = -1.5f,
+        },
+    [MODELKIND_ZORGON] =
+        {
+            .y_offset = -0.8f,
+        },
+};
+
 void Model_Draw(World *world, double dt, double time)
 {
     float               fdt = (float)dt;
@@ -10,10 +30,10 @@ void Model_Draw(World *world, double dt, double time)
     for (int i = 0; i < set->cnt; i++)
     {
         int       id        = set->dense[i];
-        SolModel *modelComp = &set->data[i];
+        SolModel *model     = &set->data[i];
         SolXform *xform     = Sol_Comp_Get(world, id, SolXform);
         ModelSSBO modelSSBO = {0};
-        modelSSBO.color     = modelComp->color;
+        modelSSBO.color     = model->color;
 
         if (Sol_Comp_Has(world, id, SolInteract))
         {
@@ -35,12 +55,16 @@ void Model_Draw(World *world, double dt, double time)
         else
             modelSSBO.hitTime = -100.0f;
 
-        if (modelComp->is2d)
+        vec3s pos = xform->draw_pos;
+        pos.y += model_kinds[model->kind].y_offset;
+        pos.y += model->yOffset;
+
+        if (model->is2d)
         {
             modelSSBO.flags |= (1 << 2);
-            float px           = UISCALE(xform->draw_pos.x + (modelComp->xOffset * xform->draw_sca.x));
-            float py           = UISCALE(xform->draw_pos.y + (-modelComp->yOffset * xform->draw_sca.y));
-            float pz           = xform->draw_pos.z;
+            float px           = UISCALE(pos.x + (model->xOffset * xform->draw_sca.x));
+            float py           = UISCALE(pos.y + (-model->yOffset * xform->draw_sca.y));
+            float pz           = pos.z;
             modelSSBO.position = (vec4s){px, py, pz, 1.0f};
             modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
             modelSSBO.scale =
@@ -48,8 +72,7 @@ void Model_Draw(World *world, double dt, double time)
         }
         else
         {
-            modelSSBO.position =
-                (vec4s){xform->draw_pos.x, xform->draw_pos.y + modelComp->yOffset, xform->draw_pos.z, 1.0f};
+            modelSSBO.position = (vec4s){pos.x, pos.y, pos.z, 1.0f};
             modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
             modelSSBO.scale    = (vec4s){xform->draw_sca.x, xform->draw_sca.y, xform->draw_sca.z, 1.0f};
         }
@@ -57,11 +80,11 @@ void Model_Draw(World *world, double dt, double time)
         if (Sol_Comp_Has(world, id, SolAnim))
         {
             SolAnim *anim = Sol_Comp_Get(world, id, SolAnim);
-            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, &anim->pose);
+            Sol_Render_GetNext_Model(model->modelId, &modelSSBO, &anim->pose);
         }
         else
         {
-            Sol_Render_GetNext_Model(modelComp->modelId, &modelSSBO, NULL);
+            Sol_Render_GetNext_Model(model->modelId, &modelSSBO, NULL);
         }
     }
 }

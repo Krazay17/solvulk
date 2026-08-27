@@ -547,7 +547,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
 //     vkCmdDraw(cmd, 6, 1, 0, 0);
 // }
 
-void Render_Model(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL);
@@ -564,7 +564,7 @@ void Render_Model(SolModelDataHandle handle, uint32_t instanceCount, uint32_t fi
     }
 }
 
-void Render_Model_Skinned(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model_Skinned(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);

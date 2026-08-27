@@ -8,6 +8,24 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf/cgltf.h"
 
+const char *model_path[SOL_MODEL_COUNT] = {
+    [MODELKIND_WIZARD]      = "Wizard.glb",
+    [MODELKIND_DUDE]        = "Dude.glb",
+    [MODELKIND_ZORGON]      = "Zorgon.glb",
+    [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
+    [SOL_MODEL_BOX]         = "Box.glb",
+    [SOL_MODEL_WORLD0]      = "World0.glb",
+    [MODELKIND_WALL]        = "Wall.glb",
+    [SOL_MODEL_WORLD1]      = "World1.glb",
+    [SOL_MODEL_WORLD2]      = "World2.glb",
+    [SOL_MODEL_WORLD6]      = "World6.glb",
+    [SOL_MODEL_WORLD7]      = "World7.glb",
+    [SOL_MODEL_WORLD8]      = "World8.glb",
+    [SOL_MODEL_WORLD9]      = "World9.glb",
+    [SOL_MODEL_WORLD10]     = "World10.glb",
+    [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
+};
+
 SolModelData loaded_models[SOL_MODEL_COUNT];
 
 static SolModelData   *Parse_Model(SolResource res, u32 id);
@@ -722,7 +740,7 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
     }
 }
 
-void Init_Anim_Masks(SolModelDataHandle modelId, SolSkeleton *skel)
+void Init_Anim_Masks(ModelKind modelId, SolSkeleton *skel)
 {
     SolModelDataMasks *masks = &model_masks[modelId];
     // SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
@@ -764,7 +782,7 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     return -1;
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelDataHandle handle, versors quat, vec3s scale, vec3s pos)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale, vec3s pos)
 {
     SolModelData *model = &loaded_models[handle];
     mat3s     rot   = glms_quat_mat3(quat);
@@ -794,7 +812,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelData
     }
 }
 
-u32 Sol_Model_GetTriCount(SolModelDataHandle handle)
+u32 Sol_Model_GetTriCount(ModelKind handle)
 {
     return loaded_models[handle].tri_count;
 }

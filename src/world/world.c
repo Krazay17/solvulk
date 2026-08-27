@@ -25,10 +25,6 @@ World *World_Create()
     return world;
 }
 
-void Sol_System_Remove_Noop(World *world, int id)
-{
-}
-
 void World_Destroy(World *world)
 {
     if (world)
@@ -56,7 +52,7 @@ void Worlds_Step(World **worlds, int count, double dt, double time)
         {
             world->poststepSystems[i](world, dt, time);
         }
-        world->currentTick++;
+        world->currentStep++;
     }
 }
 
@@ -96,19 +92,6 @@ void Worlds_Draw2d(World **worlds, int count, double dt, double time)
     }
 }
 
-int Sol_Create_EntNoXform(World *world)
-{
-    int id = 0;
-    while (id <= world->maxEntities && world->masks[id] != 0)
-        id++;
-
-    SolActive *sol_active      = Sol_Comp_Add(world, id, SolActive);
-    sol_active->active_at_tick = world->currentTick;
-    sol_active->time_activated = solState.gameTime;
-
-    return id;
-}
-
 int Sol_Create_Ent(World *world)
 {
     int id = 0;
@@ -118,14 +101,6 @@ int Sol_Create_Ent(World *world)
     SolActive *sol_active      = Sol_Comp_Add(world, id, SolActive);
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = solState.gameTime;
-
-    SolXform *xform = Sol_Comp_Add(world, id, SolXform);
-    xform->rot      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->last_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->draw_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->sca      = (vec3s){1.0f, 1.0f, 1.0f};
-    xform->last_sca = (vec3s){1.0f, 1.0f, 1.0f};
-    xform->draw_sca = (vec3s){1.0f, 1.0f, 1.0f};
 
     return id;
 }

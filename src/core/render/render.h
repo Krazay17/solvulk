@@ -198,7 +198,7 @@ typedef struct
 
 typedef struct ModelPushDesc
 {
-    SolModelDataHandle handle;
+    ModelKind handle;
     vec4s          position;
     vec4s          scale;
     vec4s          rotation;
@@ -213,7 +213,7 @@ typedef struct
 {
     u32            count;
     ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
-    SolModelDataHandle handles[MAX_MODEL_INSTANCES];
+    ModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
 typedef struct
@@ -221,13 +221,13 @@ typedef struct
     u32            count;
     ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
     SolPose        bones[MAX_MODEL_INSTANCES];
-    SolModelDataHandle handles[MAX_MODEL_INSTANCES];
+    ModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
 extern ModelSubmission        modelQueue;
 extern ModelSkinnedSubmission skinningQueue;
 
-static inline void Sol_Render_GetNext_Model(SolModelDataHandle handle, ModelSSBO *modelSSBO, SolPose *pose)
+static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSSBO, SolPose *pose)
 {
     if (pose)
     {

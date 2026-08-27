@@ -1,22 +1,6 @@
 #include "sol/types.h"
-#include "world.h"
 #include "model.h"
 
-const SolModel model_kinds[SOL_MODEL_COUNT] = {
-    [MODELKIND_DUDE] =
-        {
-            // .yawOffset = GLM_PI_2f,
-            .yOffset = -0.825f,
-        },
-    [MODELKIND_WIZARD] =
-        {
-            .yOffset = -1.5f,
-        },
-    [MODELKIND_ZORGON] =
-        {
-            .yOffset = -0.8f,
-        },
-};
 
 const char *model_path[SOL_MODEL_COUNT] = {
     [MODELKIND_WIZARD]      = "Wizard.glb",
@@ -36,34 +20,6 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
 };
 
-const int strafe_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_WALK_FWD,       [STRAFE_FWD_LEFT] = ANIM_WALK_FWD,  [STRAFE_LEFT] = ANIM_WALK_LEFT,
-    [STRAFE_BWD_LEFT] = ANIM_WALK_LEFT, [STRAFE_BWD] = ANIM_WALK_BWD,       [STRAFE_BWD_RIGHT] = ANIM_WALK_RIGHT,
-    [STRAFE_RIGHT] = ANIM_WALK_RIGHT,   [STRAFE_FWD_RIGHT] = ANIM_WALK_FWD,
-};
-const int wallrun_map[WALLTOUCH_COUNT] = {
-    [WALLTOUCH_FRONT] = ANIM_WALLRUN_FWD,
-    [WALLTOUCH_LEFT]  = ANIM_WALLRUN_LEFT,
-    [WALLTOUCH_BACK]  = ANIM_WALLRUN_LEFT,
-    [WALLTOUCH_RIGHT] = ANIM_WALLRUN_RIGHT,
-};
-const int walljump_map[WALLTOUCH_COUNT] = {
-    [WALLTOUCH_FRONT] = ANIM_BACKFLIP,
-    [WALLTOUCH_LEFT]  = ANIM_WALLJUMP_LEFT,
-    [WALLTOUCH_BACK]  = ANIM_FLIPJUMP,
-    [WALLTOUCH_RIGHT] = ANIM_WALLJUMP_RIGHT,
-};
-const int crouch_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_CROUCHWALK_FWD,     [STRAFE_FWD_LEFT] = ANIM_CROUCHWALK_FWD,
-    [STRAFE_LEFT] = ANIM_CROUCHWALK_LEFT,   [STRAFE_BWD_LEFT] = ANIM_CROUCHWALK_LEFT,
-    [STRAFE_BWD] = ANIM_CROUCHWALK_BWD,     [STRAFE_BWD_RIGHT] = ANIM_CROUCHWALK_RIGHT,
-    [STRAFE_RIGHT] = ANIM_CROUCHWALK_RIGHT, [STRAFE_FWD_RIGHT] = ANIM_CROUCHWALK_FWD,
-};
-const int dash_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_DASH_FWD,       [STRAFE_FWD_LEFT] = ANIM_DASH_LEFT,   [STRAFE_LEFT] = ANIM_DASH_LEFT,
-    [STRAFE_BWD_LEFT] = ANIM_DASH_LEFT, [STRAFE_BWD] = ANIM_DASH_BWD,         [STRAFE_BWD_RIGHT] = ANIM_DASH_RIGHT,
-    [STRAFE_RIGHT] = ANIM_DASH_RIGHT,   [STRAFE_FWD_RIGHT] = ANIM_DASH_RIGHT,
-};
 
 /*
 Wizard anims:

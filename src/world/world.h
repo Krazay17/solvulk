@@ -1,5 +1,13 @@
+/*
+ * File: world.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-08-26
+ *
+ */
+
 #pragma once
-#include "world_components.h"
+#include "components.h"
 
 #define WAdd2d(w) ((w)->draw2dSystems[(w)->draw2dCount++])
 #define WAdd3d(w) ((w)->draw3dSystems[(w)->draw3dCount++])
@@ -64,7 +72,7 @@ struct World
     int draw3dCount;
     int deinitCount;
 
-    u32  currentTick;
+    u32  currentTick, currentStep;
     int  maxEntities;
     bool doesSimulate, doesRender, doesReplicate;
 };
@@ -102,7 +110,7 @@ struct World
         set->dense[denseIdx] = entId;                                                                                  \
         set->data[denseIdx]  = (T){0};                                                                                 \
         w->masks[entId] |= BITC(ENUM_FLAG);                                                                            \
-        return &set->data[denseIdx];                                                                                   \
+        return (T *)&set->data[denseIdx];                                                                              \
     }                                                                                                                  \
                                                                                                                        \
     static inline void Sol_Comp_Rem_##T(World *w, int entId)                                                           \
@@ -213,20 +221,18 @@ void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
 void Model_Draw(World *world, double dt, double time);
 void Anim_Tick(World *world, double dt, double time);
+void Movement3d_Step(World *world, double dt, double time);
+void Body3_Step(World *world, double dt, double time);
 
 // Api
 World *World_Create();
 int    Sol_Create_Ent(World *world);
-int    Sol_Create_EntNoXform(World *world);
-void   Sol_Destroy_Ent(World *world, int id);
 
-SolXform *Sol_Xform_Add(World *world, int id, vec3s pos);
-SolAnim  *Sol_Anim_Add(World *world, int id);
+void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc);
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
 void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
 void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
-void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);

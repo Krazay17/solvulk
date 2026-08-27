@@ -83,10 +83,8 @@ typedef struct SolInteract
 
     vec3s offset, targetPos;
 } SolInteract;
-
 typedef struct
 {
-    u8     kind;
     double lastEntered, lastExited;
     float  elapsed, accum;
     union {
@@ -122,9 +120,9 @@ typedef struct
 } MoveStateData;
 typedef struct SolMovement
 {
-    u8        kind;
-    MoveState state;
-    vec3s     updir, lastTouch, knockVel, lastMoveDir;
+    MovementKind kind;
+    MoveState    state;
+    vec3s        updir, lastTouch, knockVel, lastMoveDir;
 
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
@@ -138,11 +136,12 @@ typedef struct SolMovement
 
 typedef struct SolModel
 {
-    int   modelId;
-    vec4s color;
-    bool  is2d;
-    float xOffset, yOffset, yawOffset;
-    u32   leftWeaponEnt, rightWeaponEnt;
+    ModelKind kind;
+    int       modelId;
+    vec4s     color;
+    bool      is2d;
+    float     xOffset, yOffset, yawOffset;
+    u32       leftWeaponEnt, rightWeaponEnt;
 } SolModel;
 
 typedef struct SolAnim
@@ -482,3 +481,7 @@ typedef enum
 #undef AS_ENUM
     COMPONENT_COUNT
 } WorldComponents;
+
+SolXform *Sol_Xform_Add(World *world, int id, vec3s pos);
+SolAnim  *Sol_Anim_Add(World *world, int id);
+SolBody3 *Sol_Body3_Add(World *world, int id);

@@ -107,7 +107,7 @@ typedef struct SolModelData
 
     mat4s *jointMatrices;
 
-    SolModelDataHandle modelId;
+    ModelKind modelId;
 } SolModelData;
 
 typedef struct BoneMask
@@ -151,21 +151,15 @@ extern SolModelDataMasks model_masks[SOL_MODEL_COUNT];
 extern const char   *model_path[SOL_MODEL_COUNT];
 extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
-extern const int strafe_map[];
-extern const int wallrun_map[];
-extern const int walljump_map[];
-extern const int crouch_map[];
-extern const int dash_map[];
-
 int  Sol_Models_Init();
-void Init_Anim_Masks(SolModelDataHandle modelId, SolSkeleton *skele);
+void Init_Anim_Masks(ModelKind modelId, SolSkeleton *skele);
 void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose);
 // void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 // void Sol_Skeleton_Pose(int model_handle, SolPose *pose, AnimLayer *layers);
-u32  Sol_Model_GetTriCount(SolModelDataHandle handle);
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelDataHandle handle, versors quat, vec3s scale, vec3s pos);
+u32  Sol_Model_GetTriCount(ModelKind handle);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale, vec3s pos);
 
 static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
 {

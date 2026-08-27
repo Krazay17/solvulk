@@ -8,20 +8,12 @@
 #include "sol_core.h"
 #include "sol_user.h"
 #include "world.h"
-#include "network.h"
 #include "audio.h"
 #include "input.h"
 #include "image.h"
 #include "model.h"
 #include "font.h"
-
 #include "render/render.h"
-
-#include "xform/s_xform.h"
-#include "interact/s_interact.h"
-#include "camera/s_camera.h"
-#include "event/s_event.h"
-#include "player/s_player.h"
 
 SolState solState;
 
@@ -80,27 +72,25 @@ void Sol_Tick(double dt, double time)
         Sol_OnResize();
 
     Sol_User_Tick(dt);
-    Sol_Net_Tick(solState.worlds, solState.worldCount);
+    // Sol_Net_Tick(solState.worlds, solState.worldCount);
     Worlds_Tick(solState.worlds, solState.worldCount, dt, time);
 
     // ######### STEP AND INTERP #########
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
-        Sol_Xform_Snapshot(solState.worlds, solState.worldCount);
+        Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
         Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP, time);
-        Sol_Net_Step(solState.worlds, solState.worldCount, time);
-        Sol_Events_Clear(solState.worlds, solState.worldCount);
+        // Sol_Net_Step(solState.worlds, solState.worldCount, time);
+        // Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }
     float alpha = (float)(accumulator / SOL_TIMESTEP);
-    Sol_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
+    Worlds_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
     // ######### END STEP AND INTERP #########
 
-    if (Sol_GetActiveGameWorld())
-        Sol_Audio_Update(Sol_Xform_GetPos(Sol_GetActiveGameWorld(), Sol_Player_GetEnt(Sol_GetActiveGameWorld(), 0)),
-                         solCamera.dir);
+    Sol_Update_Audio_FromView();
 
     Sol_Render_CheckGpuUploads();
 
@@ -120,7 +110,7 @@ void Sol_Tick(double dt, double time)
 
 void Sol_Destroy()
 {
-    Net_DeInit();
+    // Net_DeInit();
 
     for (int i = 0; i < solState.worldCount; i++)
     {

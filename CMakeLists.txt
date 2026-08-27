@@ -7,7 +7,7 @@ option(SOL_DEV_MODE "Build dev mode" ON)
 
 set(BUILD_APP2 OFF CACHE BOOL "" FORCE)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -93,6 +93,7 @@ target_link_libraries(solvulk
         enet::enet_static
     PRIVATE
         webp_lib
+        cglm_headers
         ${PLATFORM_LIBS}
 )
 

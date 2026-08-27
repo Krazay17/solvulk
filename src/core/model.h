@@ -1,15 +1,7 @@
 #pragma once
 #include "sol/types.h"
-#include "xform/s_xform.h"
 
-typedef enum
-{
-    ANIM_LAYER_BASE,  // full body, always active
-    ANIM_LAYER_LOWER, // overrides legs
-    ANIM_LAYER_UPPER, // overrides torso/arms
-    ANIM_LAYER_OVERRIDE,
-    ANIM_LAYER_COUNT
-} AnimLayerId;
+#define BLEND_SPEED_DEFAULT 0.2f
 
 typedef enum
 {
@@ -97,7 +89,7 @@ typedef struct ModelPrefab
     vec3s pos;
 } ModelPrefab;
 
-typedef struct SolModel
+typedef struct SolModelData
 {
     SolVertex   *vertices;
     SolMesh     *meshes;
@@ -115,8 +107,8 @@ typedef struct SolModel
 
     mat4s *jointMatrices;
 
-    SolModelHandle modelId;
-} SolModel;
+    SolModelDataHandle modelId;
+} SolModelData;
 
 typedef struct BoneMask
 {
@@ -124,10 +116,10 @@ typedef struct BoneMask
 } BoneMask;
 
 // Per model, per layer
-typedef struct SolModelMasks
+typedef struct SolModelDataMasks
 {
     BoneMask layers[ANIM_LAYER_COUNT];
-} SolModelMasks;
+} SolModelDataMasks;
 
 // typedef struct
 // {
@@ -153,36 +145,27 @@ typedef struct SolModelMasks
 //     mat4     *outBones;                      // final skinning matrices
 // } PoseRequest;
 
-typedef struct AnimLayer
-{
-    u8      playKind;
-    int     currentAnim, lastAnim, animId, last_frame_played;
-    vec3s   cachedT[MAX_BONES];
-    vec3s   cachedS[MAX_BONES];
-    versors cachedR[MAX_BONES];
-    float   currentSeek, lastSeek;
-    float   blendFactor, blendInSpeed; // Internal crossfade between lastAnim -> currentAnim
-    float   playRate;
-    float   weight;        // Active layer weight [0.0f - 1.0f]
-    float   blendOutSpeed; // Rate at which weight decays during fade-out
-    bool    isBlendingOut; // Flag indicating layer weight is decaying
-    bool    force, hasSnapshot;
-} AnimLayer;
 
-extern SolModel      loaded_models[SOL_MODEL_COUNT];
-extern SolModelMasks model_masks[SOL_MODEL_COUNT];
+extern SolModelData      loaded_models[SOL_MODEL_COUNT];
+extern SolModelDataMasks model_masks[SOL_MODEL_COUNT];
 extern const char   *model_path[SOL_MODEL_COUNT];
 extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
+extern const int strafe_map[];
+extern const int wallrun_map[];
+extern const int walljump_map[];
+extern const int crouch_map[];
+extern const int dash_map[];
+
 int  Sol_Models_Init();
-void Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skele);
+void Init_Anim_Masks(SolModelDataHandle modelId, SolSkeleton *skele);
 void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose);
 // void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 // void Sol_Skeleton_Pose(int model_handle, SolPose *pose, AnimLayer *layers);
-u32  Sol_Model_GetTriCount(SolModelHandle handle);
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform);
+u32  Sol_Model_GetTriCount(SolModelDataHandle handle);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelDataHandle handle, versors quat, vec3s scale, vec3s pos);
 
 static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
 {

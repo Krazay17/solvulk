@@ -1,0 +1,73 @@
+#pragma once
+#include "sol/types.h"
+
+typedef struct
+{
+    u8     kind;
+    double lastEntered, lastExited;
+    float  elapsed, accum;
+    union {
+        struct
+        {
+            StrafeDir strafe;
+        } crouch;
+        struct
+        {
+            StrafeDir strafe;
+        } walk;
+        struct
+        {
+            bool airJump;
+        } jump;
+        struct
+        {
+            vec3s pos, ledge_pos;
+            float dist;
+            u8    closeEnough, doRoll;
+        } mantle;
+        struct
+        {
+            float boost;
+        } slide;
+        struct
+        {
+            vec3s     wallNormal;
+            WallTouch wallTouch;
+        } wallrun;
+    } as;
+    vec3s enterVel, dir;
+} MoveStateData;
+typedef enum
+{
+    MOVEMENTKIND_PLAYER,
+    MOVEMENTKIND_SPECTATE,
+    MOVEMENTKIND_WIZARD,
+    MOVEMENTKIND_COUNT,
+} MovementKind;
+typedef struct CompMovement
+{
+    u8        kind;
+    MoveState state;
+    vec3s     updir, lastTouch, knockVel, lastMoveDir;
+
+    float baseHeight, targetHeight;
+    float speedMod, frictionMod, gravityMod, knockDur;
+
+    float wallDot, groundDot;
+    float airtime, groundtime;
+
+    bool          wantsJump, jumpPressedLastFrame;
+    MoveStateData stateData[MOVE_STATE_COUNT];
+} CompMovement;
+
+void          Sol_Movement_Init(World *world);
+CompMovement *Sol_Movement_Add(World *world, int id, MovementKind kind);
+CompMovement *Sol_Movement_Get(World *world, int id);
+void          Sol_Movement_SetSpeedMod(World *world, int id, float amnt);
+bool          Sol_Movement_SetState(World *world, int id, MoveState state);
+void          Sol_Movement_ForceState(World *world, int id, MoveState nextState);
+void          Sol_Movement_SetKnockback(World *world, int id, vec3s vel, float duration);
+u32           Sol_Movement_GetState(World *world, int id);
+float         Sol_Movement_GetGroundtime(World *world, int id);
+float         Sol_Movement_GetAirtime(World *world, int id);
+float         Sol_Movement_GetBaseSpeed(World *world, int id);

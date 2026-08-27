@@ -15,7 +15,8 @@ int Sol_Audio_LoadAll();
 SolAudioHandle Sol_Audio_Play(SolAudioId id, float volume, float seek, u32 concurrent);
 SolAudioHandle Sol_Audio_PlayAt(SolAudioId id, vec3s pos, float volume, float seekFrame, u32 concurrent);
 void           Sol_Audio_SetVolume(float volume);
-void           Sol_Audio_Update(vec3s listenerPos, vec3s listenerDir);
+void Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir);
+void Sol_Update_Audio_FromView();
 
 void Sol_Audio_SetSlotPosition(SolAudioHandle handle, vec3s pos);
 void Sol_Audio_SetSlotVolume(SolAudioHandle handle, float volume);

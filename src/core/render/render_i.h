@@ -10,7 +10,7 @@
 
 #define RENDER_CLEAR_COLOR {0.0f, 0.0f, 0.0f, 1.0f}
 
-typedef struct SolModel   SolModel;
+typedef struct SolModelData   SolModelData;
 typedef struct SolTexture SolTexture;
 
 typedef enum
@@ -50,7 +50,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id);
-int Sol_UploadModel(SolModel *model, SolModelHandle id);
+int Sol_UploadModel(SolModelData *model, SolModelDataHandle id);
 
 void Flush_Models(void);
 void Flush_Quads(void);
@@ -59,7 +59,7 @@ void Flush_Rects(void);
 void Flush_Fonts2d(void);
 void Flush_Ribbons(void);
 
-void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance);
-void Render_Model_Skinned(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance);
+void Render_Model(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance);
+void Render_Model_Skinned(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance);
 
 ShaderPushTexts Prepare_Text(SolFontDesc desc);

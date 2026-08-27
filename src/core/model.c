@@ -8,24 +8,24 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf/cgltf.h"
 
-SolModel loaded_models[SOL_MODEL_COUNT];
+SolModelData loaded_models[SOL_MODEL_COUNT];
 
-static SolModel   *Parse_Model(SolResource res, u32 id);
+static SolModelData   *Parse_Model(SolResource res, u32 id);
 static SolSkeleton ParseSkeleton(cgltf_data *data);
-SolModelMasks      model_masks[SOL_MODEL_COUNT];
+SolModelDataMasks      model_masks[SOL_MODEL_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
-static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
+static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
 static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
-void Sol_FreeModel(SolModel *model)
+void Sol_FreeModel(SolModelData *model)
 {
     free(model->vertices);
     free(model->indices);
     free(model->meshes);
     free(model->tris);
-    memset(model, 0, sizeof(SolModel));
+    memset(model, 0, sizeof(SolModelData));
 }
 
 int Sol_Models_Init()
@@ -33,15 +33,15 @@ int Sol_Models_Init()
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
         SolResource res   = Sol_LoadResource(model_path[i]);
-        SolModel   *model = Parse_Model(res, i);
+        SolModelData   *model = Parse_Model(res, i);
         Sol_Render_UploadModel(model, i);
     }
     return 0;
 }
 
-static SolModel *Parse_Model(SolResource res, u32 id)
+static SolModelData *Parse_Model(SolResource res, u32 id)
 {
-    SolModel *model = &loaded_models[id];
+    SolModelData *model = &loaded_models[id];
 
     cgltf_options options = {0};
     cgltf_data   *data    = NULL;
@@ -319,7 +319,7 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
 
 // Recursively process a node and its children, baking the world transform
 // into each vertex.
-static void ProcessNode(cgltf_node *node, SolModel *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
+static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
 {
     if (node->mesh)
     {
@@ -599,7 +599,7 @@ static _Thread_local AnimScratchBuffer g_animScratch;
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers,
                        SolPoseE *lastPose, bool *hasLastPose)
 {
-    SolModel    *model = &loaded_models[model_handle];
+    SolModelData    *model = &loaded_models[model_handle];
     SolSkeleton *skel  = &model->skeleton;
 
     AnimScratchBuffer *s = &g_animScratch;
@@ -722,9 +722,9 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
     }
 }
 
-void Init_Anim_Masks(SolModelHandle modelId, SolSkeleton *skel)
+void Init_Anim_Masks(SolModelDataHandle modelId, SolSkeleton *skel)
 {
-    SolModelMasks *masks = &model_masks[modelId];
+    SolModelDataMasks *masks = &model_masks[modelId];
     // SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
 
     // Reset all masks to false
@@ -764,19 +764,19 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     return -1;
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHandle handle, CompXform *xform)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelDataHandle handle, versors quat, vec3s scale, vec3s pos)
 {
-    SolModel *model = &loaded_models[handle];
-    mat3s     rot   = glms_quat_mat3(xform->quat);
+    SolModelData *model = &loaded_models[handle];
+    mat3s     rot   = glms_quat_mat3(quat);
     for (int i = 0; i < model->tri_count; i++)
     {
         SolTri  src = model->tris[i];
         SolTri *dst = &group[offset + i];
         dst->entId  = id;
 
-        dst->a = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.a, xform->scale)), xform->pos);
-        dst->b = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.b, xform->scale)), xform->pos);
-        dst->c = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.c, xform->scale)), xform->pos);
+        dst->a = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.a, scale)), pos);
+        dst->b = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.b, scale)), pos);
+        dst->c = glms_vec3_add(glms_mat3_mulv(rot, glms_vec3_mul(src.c, scale)), pos);
 
         // Recompute derived data in world space
         vec3s e1    = glms_vec3_sub(dst->b, dst->a);
@@ -794,7 +794,7 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, SolModelHand
     }
 }
 
-u32 Sol_Model_GetTriCount(SolModelHandle handle)
+u32 Sol_Model_GetTriCount(SolModelDataHandle handle)
 {
     return loaded_models[handle].tri_count;
 }

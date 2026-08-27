@@ -22,20 +22,21 @@ typedef enum
 
 typedef struct SolState
 {
+    World  *worlds[WORLDID_COUNT];
+    WorldId activeWorldId;
+    u16     worldCount;
+
     volatile bool isRunning;
     volatile bool needsResize;
-    int           windowWidth, windowHeight;
-    int           windowX, windowY;
-    void         *g_hwnd;
-    double        gameTime, timescale, fps;
     bool          debug;
-    u32           tickCounter, stepCounter;
-    double        uiScale, aspectRatio;
 
-    WorldId active_game_world;
-    World  *activeWorld;
-    World  *worlds[WORLDID_COUNT];
-    u16     worldCount;
+    double gameTime, timescale, fps;
+    double uiScale, aspectRatio;
+    u32    tickCounter, stepCounter;
+
+    int   windowWidth, windowHeight;
+    int   windowX, windowY;
+    void *g_hwnd;
 } SolState;
 extern SolState solState;
 
@@ -72,17 +73,17 @@ static inline World *Sol_GetWorldById(WorldId id)
 
 static inline World *Sol_GetActiveGameWorld()
 {
-    return solState.worlds[solState.active_game_world];
+    return solState.worlds[solState.activeWorldId];
 }
 
 static inline WorldId Sol_GetActiveGameWorldId()
 {
-    return solState.active_game_world;
+    return solState.activeWorldId;
 }
 
 static inline void Sol_SetActiveGameWorld(WorldId id)
 {
-    solState.active_game_world = id;
+    solState.activeWorldId = id;
 }
 
 int  Sol_Init(void *hwnd, void *hInstance);

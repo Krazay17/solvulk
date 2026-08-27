@@ -1,5 +1,4 @@
 #include "sol/sol.h"
-#include "sol_core.h"
 
 #define MAX_DEBUGS 14
 #define MAX_STR_LEN 64
@@ -98,24 +97,24 @@ void Sol_FPS(double dt)
 
 SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
 {
-    SolRayResult result = Sol_Raycast(world, ray);
-    if (solState.debug)
-    {
-        Sol_Line_Push(world, (SolLine){
-                                 .a      = ray.pos,
-                                 .b      = result.pos,
-                                 .aColor = (vec4s){1, 0, 0, 1},
-                                 .bColor = (vec4s){1, 0, 0, 1},
-                                 .ttl    = debugDuration,
-                             });
-        if (result.hit)
-            Sol_Line_Push(world, (SolLine){
-                                     .a = result.pos,
-                                     .b = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-                                     .aColor = (vec4s){0, 1, 0, 1},
-                                     .bColor = (vec4s){0, 1, 0, 1},
-                                     .ttl    = debugDuration,
-                                 });
-    }
-    return result;
+    // SolRayResult result = Sol_Raycast(world, ray);
+    // if (solState.debug)
+    // {
+    //     Sol_Line_Push(world, (SolLine){
+    //                              .a      = ray.pos,
+    //                              .b      = result.pos,
+    //                              .aColor = (vec4s){1, 0, 0, 1},
+    //                              .bColor = (vec4s){1, 0, 0, 1},
+    //                              .ttl    = debugDuration,
+    //                          });
+    //     if (result.hit)
+    //         Sol_Line_Push(world, (SolLine){
+    //                                  .a = result.pos,
+    //                                  .b = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+    //                                  .aColor = (vec4s){0, 1, 0, 1},
+    //                                  .bColor = (vec4s){0, 1, 0, 1},
+    //                                  .ttl    = debugDuration,
+    //                              });
+    // }
+    // return result;
 }

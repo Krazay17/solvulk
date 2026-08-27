@@ -1,0 +1,39 @@
+#pragma once
+#include "types.h"
+
+
+// #define MAX_BUFFS 64
+
+typedef enum
+{
+    BUFFADD_SET,
+    BUFFADD_ADD,
+    BUFFADD_MULTIPLY,
+} BuffAdd;
+
+typedef struct
+{
+    u8    kind, inf, harmful;
+    u32   source;
+    float ttl, duration, accum;
+    float freq, power;
+} Buff;
+
+typedef struct CompBuff
+{
+    Buff buffs[32];
+    u32  count;
+    u32  activeKindsMask;
+} CompBuff;
+
+extern const u32 buff_icon_map[BUFFKIND_COUNT];
+
+void Sol_Buff_Init(World *world);
+
+void Sol_Buff_Add(World *world, int id, int source, BuffKind kind);
+void Sol_Buff_AddEx(World *world, int id, int source, BuffKind kind, float duration, float power);
+void Sol_Buff_AddFromMask(World *world, int id, int source, u32 mask);
+void Sol_Buff_Remove(World *world, int id, BuffKind kind);
+
+bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
+u32  Sol_Buff_GetMask(World *world, int id);

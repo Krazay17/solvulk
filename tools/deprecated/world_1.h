@@ -1,0 +1,319 @@
+#pragma once
+#include "types.h"
+
+#define MAX_SYSTEMS 64
+#define NULL_ENTITYID -1
+#define MAX_TRACKER_GETTERS 2
+#define INVALID_INDEX UINT32_MAX
+
+#define WAdd2d(w) w->draw2dSystems[w->draw2dCount++]
+#define WAdd3d(w) w->draw3dSystems[w->draw3dCount++]
+#define WAddPrestep(w) w->prestepSystems[w->prestepCount++]
+#define WAddStep(w) w->stepSystems[w->stepCount++]
+#define WAddPoststep(w) w->poststepSystems[w->poststepCount++]
+#define WAddTick(w) w->tickSystems[w->tickCount++]
+#define WGetComp(w, id, comp, type) (&((type *)w->components[comp])[id])
+#define WAddComp(w, id, comp) (w->masks[id] |= BITC(comp))
+#define WHas(w, id, mask) ((w->masks[id] & (mask)) == (mask))
+#define WHasB(w, id, mask) ((w->masks[id] & (BITC(mask))) == (BITC(mask)))
+#define WRemB(w, id, mask) (w->masks[id] &= ~BITC(mask))
+#define WHasSys(w, mask) ((w->systemBits & (BITC(mask))) == (BITC(mask)))
+
+#define SOL_SYSTEM_LIST(X)                                                                                             \
+    X(WORLD_SYS_XFORM, Sol_Xform_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_REPLICATION, Sol_Replication_Init, Sol_System_Remove_Noop)                                             \
+    X(WORLD_SYS_EVENT, Sol_Event_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_CAM, Sol_Cam_Init, Sol_Cam_Remove)                                                                     \
+    X(WORLD_SYS_PLAYER, Sol_Player_Init, Sol_Player_Remove)                                                            \
+    X(WORLD_SYS_AI, Sol_Ai_Init, Sol_Ai_Remove)                                                                        \
+    X(WORLD_SYS_REMOTE, Sol_Remote_Init, Sol_Remote_Remove)                                                            \
+    X(WORLD_SYS_CONTROLLER, Sol_Controller_Init, Sol_Controller_Remove)                                                \
+    X(WORLD_SYS_MOVEMENT, Sol_Movement_Init, Sol_System_Remove_Noop)                                                   \
+    X(WORLD_SYS_INTERACT, Sol_Interact_Init, Sol_System_Remove_Noop)                                                   \
+    X(WORLD_SYS_INVENTORY, Sol_Inventory_Init, Sol_Inventory_Rem)                                                      \
+    X(WORLD_SYS_SLIDER, Sol_Slider_Init, Sol_Slider_Rem)                                                               \
+    X(WORLD_SYS_TIMER, Sol_Timer_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_OWNER, Sol_Owner_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_BUFF, Sol_Buff_Init, Sol_System_Remove_Noop)                                                           \
+    X(WORLD_SYS_ABILITY, Sol_Ability_Init, Sol_System_Remove_Noop)                                                     \
+    X(WORLD_SYS_ITEM, Sol_Item_Init, Sol_System_Remove_Noop)                                                           \
+    X(WORLD_SYS_PHYSX, Sol_Physx_Init, Sol_Physx_Remove)                                                               \
+    X(WORLD_SYS_BODY2, Sol_Body2d_Init, Sol_System_Remove_Noop)                                                        \
+    X(WORLD_SYS_PROJECTILE, Sol_Projectile_Init, Sol_System_Remove_Noop)                                               \
+    X(WORLD_SYS_ZONE, Sol_Zone_Init, Sol_System_Remove_Noop)                                                           \
+    X(WORLD_SYS_COMBAT, Sol_Combat_Init, Sol_System_Remove_Noop)                                                       \
+    X(WORLD_SYS_PARENT, Sol_Parent_Init, Sol_System_Remove_Noop)                                                       \
+    X(WORLD_SYS_MODEL, Sol_Model_Init, Sol_Model_Rem)                                                                  \
+    X(WORLD_SYS_LINE, Sol_Line_Init, Sol_System_Remove_Noop)                                                           \
+    X(WORLD_SYS_EVENT_HANDLEFX, Sol_Event_HandleFx_Init, Sol_System_Remove_Noop)                                       \
+    X(WORLD_SYS_EMITTER, Sol_Emitter_Init, Sol_System_Remove_Noop)                                                     \
+    X(WORLD_SYS_RIBBON, Sol_Ribbon_Init, Sol_System_Remove_Noop)                                                       \
+    X(WORLD_SYS_BUILDING, Sol_Builder_Init, Sol_System_Remove_Noop)                                                    \
+    X(WORLD_SYS_AUDIO, Sol_World_Audio_Init, Sol_System_Remove_Noop)                                                   \
+    X(WORLD_SYS_SHAPE, Sol_Shape_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_CONTAINER, Sol_Container_Init, Sol_System_Remove_Noop)                                                 \
+    X(WORLD_SYS_SCORE, Sol_Score_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_STAGE, Sol_Stage_Init, Sol_System_Remove_Noop)                                                         \
+    X(WORLD_SYS_VIEW2D, Sol_View2d_Init, Sol_System_Remove_Noop)                                                       \
+    X(WORLD_SYS_HUD, Sol_Hud_Init, Sol_Hud_Rem)                                                                        \
+    X(WORLD_SYS_VIEW, Sol_View_Init, Sol_System_Remove_Noop)
+
+typedef enum
+{
+#define AS_ENUM(enum_name, init_func, remove_func) enum_name,
+    SOL_SYSTEM_LIST(AS_ENUM)
+#undef AS_ENUM
+    WORLD_SYS_COUNT
+} WorldSystem;
+
+#define AS_FORWARD_DEC(enum_name, init_func, remove_func) void init_func(World *world);
+#define AS_FORWARD_DEC_REMOVE(enum_name, init_func, remove_func) void remove_func(World *world, int id);
+SOL_SYSTEM_LIST(AS_FORWARD_DEC)
+SOL_SYSTEM_LIST(AS_FORWARD_DEC_REMOVE)
+#undef AS_FORWARD_DEC
+#undef AS_FORWARD_DEC_REMOVE
+
+typedef enum
+{
+    HAS_NONE,
+    HAS_ACTIVE,
+    HAS_XFORM,
+    HAS_BODY2,
+    HAS_BODY3,
+    HAS_CAMERA,
+    HAS_INTERACT,
+    HAS_MOVEMENT,
+    HAS_CONTROLLER,
+    HAS_PLAYER,
+    HAS_REMOTE,
+    HAS_AI,
+    HAS_ABILITY,
+    HAS_BUFF,
+    HAS_SHAPE,
+    HAS_TIMER,
+    HAS_EVENT,
+    HAS_AUDIO,
+    HAS_PARENT,
+    HAS_CONTACT,
+    HAS_OWNER,
+    HAS_COMBAT,
+    HAS_REPLICATION,
+    HAS_EMITTER,
+    HAS_VIEW2D,
+    HAS_TRACKER,
+    HAS_PROJECTILE,
+    HAS_ABILITYSLOT,
+    HAS_TOOLTIP,
+    HAS_RIBBON,
+    HAS_CHAINHIT,
+    HAS_ZONE,
+    HAS_BUILDING,
+    HAS_CONTAINER,
+    COMPONENT_COUNT,
+} SolComponents;
+
+typedef enum
+{
+    WORLDKIND_GAME,
+    WORLDKIND_GAME2D,
+    WORLDKIND_MENU,
+    WORLDKIND_HUD,
+} WorldKind;
+
+typedef uint64_t Mask;
+
+typedef struct CompAudio       CompAudio;
+typedef struct CompAi          CompAi;
+typedef struct CompReplication CompReplication;
+typedef struct CompMovement    CompMovement;
+typedef struct CompParent      CompParent;
+typedef struct CompTimer       CompTimer;
+typedef struct CompXform       CompXform;
+typedef struct CompBody        CompBody;
+typedef struct CompInteract    CompInteract;
+typedef struct CompShape       CompShape;
+typedef struct CompCombat      CompCombat;
+typedef struct CompController  CompController;
+typedef struct CompBuff        CompBuff;
+typedef struct CompOwner       CompOwner;
+typedef struct CompContact     CompContact;
+typedef struct CompCombat      CompCombat;
+typedef struct CompEmitter     CompEmitter;
+typedef struct CompBody2d      CompBody2d;
+typedef struct CompView2d      CompView2d;
+typedef struct CompProjectile  CompProjectile;
+typedef struct CompAbilitySlot CompAbilitySlot;
+typedef struct CompTooltip     CompTooltip;
+typedef struct CompZone        CompZone;
+typedef struct CompBuilder     CompBuilder;
+typedef struct CompContainer   CompContainer;
+typedef struct CompCam         CompCam;
+typedef struct CompSlider      CompSlider;
+
+typedef struct ChainAttacks ChainAttacks;
+typedef struct Dmgnumbers   Dmgnumbers;
+typedef struct SolRibbon    SolRibbon;
+typedef struct SolEvents    SolEvents;
+typedef struct SolEmitters  SolEmitters;
+typedef struct WorldPhysx   WorldPhysx;
+typedef struct WorldLines   WorldLines;
+typedef struct WorldNet     WorldNet;
+typedef struct SolScore     SolScore;
+typedef struct Stage        Stage;
+typedef struct HitGen       HitGen;
+
+typedef struct CompFlags
+{
+    EFlag flags;
+} CompFlags;
+typedef float (*GetterFunc)(World *world, int id);
+typedef struct CompTracker
+{
+    World     *world;
+    u32        entId;
+    GetterFunc getters[MAX_TRACKER_GETTERS];
+} CompTracker;
+
+struct World
+{
+    void *components[COMPONENT_COUNT];
+
+    SystemUpdate prestepSystems[MAX_SYSTEMS];
+    SystemUpdate stepSystems[MAX_SYSTEMS];
+    SystemUpdate poststepSystems[MAX_SYSTEMS];
+    SystemUpdate tickSystems[MAX_SYSTEMS];
+    SystemUpdate draw3dSystems[MAX_SYSTEMS];
+    SystemUpdate draw2dSystems[MAX_SYSTEMS];
+
+    int         activeEntities[MAX_ENTS];
+    u32         gens[MAX_ENTS];
+    Mask        masks[MAX_ENTS];
+    EKind       ekinds[MAX_ENTS];
+    CompFlags   flags[MAX_ENTS];
+    CompTracker trackers[MAX_ENTS];
+
+    CompCam *active_cam;
+
+    CompXform       *xforms;
+    CompReplication *replications;
+    CompMovement    *movements;
+    CompParent      *parents;
+    CompAudio       *audios;
+    CompTimer       *timers;
+    CompBody        *bodies;
+    CompInteract    *interacts;
+    CompShape       *spheres;
+    CompBuff        *buffs;
+    CompOwner       *owners;
+    CompCombat      *combats;
+    CompEmitter     *compEmitters;
+    CompBody2d      *body2d;
+    CompView2d      *view2d;
+    CompProjectile  *projectiles;
+    CompTooltip     *tooltips;
+    CompAbilitySlot *abilitySlots;
+    CompZone        *zones;
+    CompBuilder     *builders;
+    CompContainer   *containers;
+    CompCam         *cams;
+    CompAi          *ais;
+
+    Dmgnumbers   *dmgNumbers;
+    SolRibbon    *ribbon;
+    ChainAttacks *chainhit;
+    SolEvents    *events;
+    WorldPhysx   *spatial;
+    WorldLines   *lines;
+    SolEmitters  *emitters;
+    WorldNet     *worldNet;
+    SolScore     *scores;
+    Stage        *stage;
+    HitGen       *hitGen;
+
+    vec3s playerSpawns[4];
+    u32   playerSpawnCount;
+
+    bool doesSimulate;
+    bool doesRender;
+
+    int prestepCount;
+    int stepCount;
+    int poststepCount;
+    int tickCount;
+    int draw2dCount;
+    int draw3dCount;
+    int deinitCount;
+
+    int activeCount;
+    // int playerId;
+    int skyboxId;
+    u32 systemBits;
+
+    WorldKind kind;
+
+    bool doesReplicate;
+    u32  worldId;
+    u32  currentTick;
+
+    void *dense_components[WORLD_SYS_COUNT];
+};
+
+// #define REMOVE_COMP(WORLD, ID, WORLD_SYS_TYPE, SYS_ENUM, COMP_MEMBER)                                                  \
+//     WORLD_SYS_TYPE *wc  = WORLD->dense_components[SYS_ENUM];                                                           \
+//     int             idx = wc->sparse[ID];                                                                              \
+//     if (idx < 0)                                                                                                       \
+//         return;                                                                                                        \
+//     int lastIdx          = wc->cnt - 1;                                                                                \
+//     int lastId           = wc->dense[lastIdx];                                                                         \
+//     wc->COMP_MEMBER[idx] = wc->COMP_MEMBER[lastIdx];                                                                   \
+//     wc->dense[idx]       = lastId;                                                                                     \
+//     wc->sparse[lastId]   = idx;                                                                                        \
+//     wc->sparse[ID]       = -1;                                                                                         \
+//     wc->cnt--
+
+#define ENTITY_INDEX_BITS 16
+#define ENTITY_INDEX_MASK ((1U << ENTITY_INDEX_BITS) - 1)
+#define EntIdx(id) (id & ENTITY_INDEX_MASK)
+#define EntGen(id) (id >> ENTITY_INDEX_BITS)
+#define EntIdxGen(id, gen) ((gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK))
+static inline u32 Sol_GetEntIndex(int id)
+{
+    return id & ENTITY_INDEX_MASK;
+}
+
+static inline u32 Sol_GetEntGen(int id)
+{
+    return id >> ENTITY_INDEX_BITS;
+}
+
+static inline u32 Sol_CreateEntGen(int id, int gen)
+{
+    return (gen << ENTITY_INDEX_BITS) | (id & ENTITY_INDEX_MASK);
+}
+
+World *World_Create(WorldKind kind);
+World *World_Create_Base();
+World *World_Create_Default(WorldKind kind);
+void   World_Create_All();
+
+void World_Destroy(World *world);
+void World_System_Add(World *world, WorldSystem system);
+
+int          Sol_World_GetEntCount(World *world);
+void         Sol_World_SetReplicates(World *world, bool active);
+CompTracker *Sol_World_SetTracker(World *world, int id, World *otherWorld, int otherId);
+CompTracker *Sol_Tracker_Add(World *world, int id);
+
+void Worlds_Tick(World **worlds, int count, double dt, double time);
+void Worlds_Step(World **worlds, int count, double dt, double time);
+void Worlds_Draw3d(World **worlds, int count, double dt, double time);
+void Worlds_Draw2d(World **worlds, int count, double dt, double time);
+
+void Worlds_Xform_Snapshot(World **worlds, int count);
+void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
+
+int  Sol_Create_Ent(World *world, int id);
+void Sol_Destroy_Ent(World *world, int id);
+
+void Sol_Flags_Add(World *world, int id, EFlag flags);
+void Sol_Flags_Remove(World *world, int id, EFlag flags);

@@ -1,0 +1,109 @@
+#pragma once
+#include "types.h"
+#include "world.h"
+#include "event/s_event.h"
+#include "ability/s_ability.h"
+#include "model.h"
+
+typedef struct World World;
+
+
+typedef u64 ShotId;
+
+// Construct from player + client tick + per-tick counter:
+// - upper 16 bits: player id  (max ~65k players)
+// - middle 32 bits: client tick
+// - lower 16 bits: counter within tick (handles multiple shots per tick)
+#define MAKE_SHOT_ID(pid, tick, ctr) (((u64)(pid) << 48) | ((u64)(tick) << 16) | ((u64)(ctr)))
+
+typedef struct NetWeapon
+{
+    u16 modelId;
+    u32 entId;
+} NetWeapon;
+
+typedef struct
+{
+    u32     id, ownerId;
+    u64     compMask;
+    u32     buffMask;
+    vec3s   pos, vel;
+    versors rot;
+    float   scale, abilityCharge, height, yaw, pitch;
+
+    float health, energy;
+
+    u8 team, prefabKind;
+    u8 abilityState, abilityStage;
+    u8 movementState;
+
+    u8    activeSlot;
+    u32   bindingState[ABILITY_SLOTS];
+    u32   bindingRarity[ABILITY_SLOTS];
+    float bindingBonusdamage[ABILITY_SLOTS];
+    u32   bindingBonusBuffs[ABILITY_SLOTS];
+    u32   bindingBonusEffects[ABILITY_SLOTS];
+
+    u8        modelId;
+    i16       animCurrent[ANIM_LAYER_COUNT];
+    u8        animPlayKind[ANIM_LAYER_COUNT];
+    float     animSpeed[ANIM_LAYER_COUNT];
+    float     animSeek[ANIM_LAYER_COUNT];
+    float     blendin[ANIM_LAYER_COUNT];
+    NetWeapon weapons[2];
+    u32       leftWeaponEnt, rightWeaponEnt;
+} NetEntityState;
+
+typedef struct
+{
+    u8             type;
+    u32            tickNumber;
+    u32            worldId;
+    u32            eCount;
+    NetEntityState entities[MAX_NET_ENTS];
+} WorldSnap;
+
+typedef struct
+{
+    int  localEntId;
+    bool reconciled;
+    u32  prefabKind;
+    u32  tickSpawned;
+} Prediction;
+typedef struct WorldNet
+{
+    u32       snapHead;
+    WorldSnap snapShots[MAX_SNAPS_BUFFERED];
+
+    int        predictionCount;
+    Prediction predictions[MAX_NET_PREDICTIONS];
+
+    u32  maxHostId;
+    int  hostToLocalMap[MAX_ENTS];
+    bool seenThisSnap[MAX_ENTS];
+} WorldNet;
+
+typedef enum
+{
+    NETAUTH_NONE,
+    NETAUTH_REMOTE,
+    NETAUTH_LOCAL,
+    NETAUTH_AUTH,
+} NetAuth;
+
+typedef struct CompReplication
+{
+    u8  auth;
+    u32 prefabKind;
+} CompReplication;
+
+void Sol_Replication_Init(World *world);
+void Sol_Replication_Add(World *world, int id, NetAuth role, u8 prefabKind);
+
+void Sol_Replication_Disconnect(World *world);
+
+void Net_Send_Snap(World *world);
+void Net_Send_Events(World *world);
+
+void Net_Apply_Snap(World *world);
+void Net_Apply_Events(World *world, EventSnap *snap);

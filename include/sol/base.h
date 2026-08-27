@@ -79,6 +79,12 @@ typedef int32_t       i32;
 typedef int64_t       i64;
 typedef vec4s         Rect;
 
+typedef struct Xform
+{
+    vec3s   pos, sca, rot;
+    versors quat;
+} Xform;
+
 typedef struct World World;
 typedef void (*UpdateFunc)(World *, double, double);
 

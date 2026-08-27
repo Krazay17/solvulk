@@ -547,7 +547,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
 //     vkCmdDraw(cmd, 6, 1, 0, 0);
 // }
 
-void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL);
@@ -564,7 +564,7 @@ void Render_Model(SolModelHandle handle, uint32_t instanceCount, uint32_t firstI
     }
 }
 
-void Render_Model_Skinned(SolModelHandle handle, uint32_t instanceCount, uint32_t firstInstance)
+void Render_Model_Skinned(SolModelDataHandle handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
     Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
@@ -1099,7 +1099,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-void Sol_Render_UploadModel(SolModel *model, u32 modelId)
+void Sol_Render_UploadModel(SolModelData *model, u32 modelId)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[modelId].meshes != NULL)

@@ -7,6 +7,7 @@
 #include "audio.h"
 #include "platform/platform.h"
 #include "sol_core.h"
+#include "render/render.h"
 
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio/miniaudio.h"
@@ -214,10 +215,15 @@ int Sol_Audio_Init(void)
     return 0;
 }
 
-void Sol_Audio_Update(vec3s listenerPos, vec3s listenerDir)
+void Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir)
 {
     ma_engine_listener_set_position(&audio_engine, 0, listenerPos.x, listenerPos.y, listenerPos.z);
     ma_engine_listener_set_direction(&audio_engine, 0, listenerDir.x, listenerDir.y, listenerDir.z);
+}
+
+void Sol_Update_Audio_FromView()
+{
+    Audio_Update_Listener(g_solView.pos, g_solView.dir);
 }
 
 // --- Loading ---

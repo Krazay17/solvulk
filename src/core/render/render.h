@@ -17,7 +17,7 @@
 #define MAX_QUAD_INSTANCES (1 << 20)
 #define MAX_LINE_VERTICES 0xffffff
 
-typedef struct SolModel SolModel;
+typedef struct SolModelData SolModelData;
 
 typedef enum
 {
@@ -48,7 +48,7 @@ typedef enum
     PIPE_COUNT,
 } PipelineId;
 
-typedef struct SolCamera
+typedef struct ViewSSBO
 {
     mat4s proj;
     mat4s view;
@@ -60,7 +60,9 @@ typedef struct SolCamera
     float nearClip;
     float farClip;
     float roll;
-} SolCamera;
+} ViewSSBO;
+
+extern ViewSSBO g_solView;
 
 typedef struct
 {
@@ -123,8 +125,6 @@ typedef struct
     u32   _padding[3];
 } SphereSSBO;
 
-extern SolCamera solCamera;
-
 typedef struct
 {
     Rect  rect;
@@ -134,6 +134,7 @@ typedef struct
     // 1 fill vertical, 2 invert fill
     u32 flags;
     u32 textureID;
+    u32 _pad;
 } RectSSBO;
 typedef struct
 {
@@ -197,7 +198,7 @@ typedef struct
 
 typedef struct ModelPushDesc
 {
-    SolModelHandle handle;
+    SolModelDataHandle handle;
     vec4s          position;
     vec4s          scale;
     vec4s          rotation;
@@ -212,7 +213,7 @@ typedef struct
 {
     u32            count;
     ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
-    SolModelHandle handles[MAX_MODEL_INSTANCES];
+    SolModelDataHandle handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
 typedef struct
@@ -220,13 +221,13 @@ typedef struct
     u32            count;
     ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
     SolPose        bones[MAX_MODEL_INSTANCES];
-    SolModelHandle handles[MAX_MODEL_INSTANCES];
+    SolModelDataHandle handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
 extern ModelSubmission        modelQueue;
 extern ModelSkinnedSubmission skinningQueue;
 
-static inline void Sol_Render_GetNext_Model(SolModelHandle handle, ModelSSBO *modelSSBO, SolPose *pose)
+static inline void Sol_Render_GetNext_Model(SolModelDataHandle handle, ModelSSBO *modelSSBO, SolPose *pose)
 {
     if (pose)
     {
@@ -398,7 +399,6 @@ int Sol_Render_Init(void *hwnd, void *hInstance);
 void Sol_Begin_Draw();
 void Sol_End_Draw();
 
-void Sol_Render_Camera_Update();
 void Sol_Render_Resize(uint32_t width, uint32_t height);
 void Sol_Render_Flush3D(void);
 void Sol_Render_Flush2D(void);
@@ -410,6 +410,6 @@ void  Sol_Render_DrawLine(SolLine *lines, int count);
 // void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
 void Sol_Render_DrawText(SolFontDesc desc);
 void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
-void Sol_Render_UploadModel(SolModel *model, u32 modelId);
+void Sol_Render_UploadModel(SolModelData *model, u32 modelId);
 void Sol_Render_DrawText2D(SolFontDesc desc);
 void Sol_Render_DrawText3D(Text3DDesc desc);

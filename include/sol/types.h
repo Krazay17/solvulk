@@ -28,6 +28,7 @@ typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemUpdate)(World *, double, double);
 typedef void (*TickEnt)(World *, int, double, double);
+typedef float (*GetterFunc)(World *world, int id);
 
 typedef struct
 {
@@ -63,6 +64,57 @@ typedef enum
     COLLISIONGROUP_PROJECTILE = (1 << 2),
 } CollisionGroup;
 
+typedef enum
+{
+    EVENTKIND_COLLISION,
+    EVENTKIND_FX,
+    EVENTKIND_SOUND,
+    EVENTKIND_EQUIP,
+    EVENTKIND_SCORE,
+    EVENTKIND_COUNT,
+} EventKind;
+
+typedef enum
+{
+    ANIM_LAYER_BASE,  // full body, always active
+    ANIM_LAYER_LOWER, // overrides legs
+    ANIM_LAYER_UPPER, // overrides torso/arms
+    ANIM_LAYER_OVERRIDE,
+    ANIM_LAYER_COUNT
+} AnimLayerId;
+
+typedef enum
+{
+    EMITTERKIND_FLASH_BALL,
+    EMITTERKIND_FLASH_FIREBALL,
+    EMITTERKIND_SINGLE_SPARK,
+    EMITTERKIND_BURST_SPARKS,
+    EMITTERKIND_BURST_CLOUDS,
+    EMITTERKIND_BURST_FIRE,
+    EMITTERKIND_POP_FIRE,
+    EMITTERKIND_FOUNTAIN_FIRE,
+    EMITTERKIND_FOUNTAIN_FOG,
+    EMITTERKIND_FOUNTAIN_SPARKS,
+    EMITTERKIND_COUNT,
+} EmitterKind;
+
+typedef enum
+{
+    VIEW2DKIND_RECT,
+    VIEW2DKIND_TEXT,
+    VIEW2DKIND_CIRCLE,
+    VIEW2DKIND_COUNT,
+} View2dKind;
+
+typedef enum Shape3
+{
+    SHAPE3_SPH,
+    SHAPE3_CAP,
+    SHAPE3_BOX,
+    SHAPE3_MOD,
+    SHAPE3_CNT,
+} Shape3;
+
 typedef enum Shape2
 {
     SHAPE2_CIR,
@@ -70,6 +122,46 @@ typedef enum Shape2
     SHAPE2_TRI,
     SHAPE2_CNT,
 } Shape2;
+
+typedef enum
+{
+    WALLTOUCH_FRONT,
+    WALLTOUCH_LEFT,
+    WALLTOUCH_BACK,
+    WALLTOUCH_RIGHT,
+    WALLTOUCH_COUNT,
+} WallTouch;
+
+typedef enum
+{
+    AISTATE_IDLE,
+    AISTATE_PATROL,
+    AISTATE_SEARCH,
+    AISTATE_AGGRO,
+    AISTATE_RETREAT,
+    AISTATE_COUNT,
+} AiState;
+typedef enum
+{
+    AIKIND_WIZARD,
+} AiKind;
+
+typedef enum
+{
+    MOVE_IDLE,
+    MOVE_WALK,
+    MOVE_STUN,
+    MOVE_FALL,
+    MOVE_JUMP,
+    MOVE_CROUCH,
+    MOVE_SLIDE,
+    MOVE_WALLRUN,
+    MOVE_WALLJUMP,
+    MOVE_MANTLE,
+    MOVE_FLY,
+    MOVE_DEAD,
+    MOVE_STATE_COUNT
+} MoveState;
 
 typedef enum
 {
@@ -101,6 +193,33 @@ typedef enum
 
 typedef enum
 {
+    TOOLTIPKIND_CARD,
+    TOOLTIPKIND_PLAYER_INTERACT,
+    TOOLTIPKIND_COUNT,
+} TooltipKind;
+
+typedef enum
+{
+    PARTICLE_ORB,
+    PARTICLE_FIRE,
+    PARTICLE_SHOCK,
+    PARTICLE_SHOCK_ADD,
+    PARTICLE_CLOUD,
+    PARTICLE_BLOOD,
+    PARTICLE_FIREBALL,
+    PARTICLE_SPARKFRONT,
+    PARTICLE_COUNT,
+} ParticleKind;
+
+typedef enum
+{
+    PROJECTILEKIND_BULLET,
+    PROJECTILEKIND_FIREBALL,
+    PROJECTILEKIND_COUNT,
+} ProjectileKind;
+
+typedef enum
+{
     STRAFE_FWD,
     STRAFE_FWD_LEFT,
     STRAFE_LEFT,
@@ -125,12 +244,6 @@ typedef enum
     EFLAG_PROJECTILE = (1 << 2),
     EFLAG_HEALTHBAR  = (1 << 3),
 } EFlag;
-
-typedef struct SolXform
-{
-    vec3s   pos;
-    versors quat;
-} SolXform;
 
 typedef void (*CallbackFunc)(int, void *);
 typedef struct
@@ -220,7 +333,7 @@ typedef enum
     SOL_MODEL_WORLD9,
     SOL_MODEL_WORLD10,
     SOL_MODEL_COUNT,
-} SolModelHandle;
+} SolModelDataHandle;
 
 typedef struct SolVertex
 {
@@ -308,6 +421,14 @@ typedef enum
     UILAYER_COUNT,
 } UiLayer;
 
+typedef struct AnimDesc
+{
+    u8          playKind, force;
+    float       blendIn, blendOut, seek, speed;
+    AnimLayerId layerId;
+    int         anim;
+} AnimDesc;
+
 typedef struct SolHit
 {
     u32   kind;
@@ -322,6 +443,40 @@ typedef struct SolHit
     u32 buffMask;
     u32 effectMask;
 } SolHit;
+
+typedef struct SolRay
+{
+    vec3s pos, dir;
+    float dist;
+    float min;
+    u8    mask;
+    u32   ignoreEnt;
+} SolRay;
+
+typedef struct AnimLayer
+{
+    u8      playKind;
+    int     currentAnim, lastAnim, animId, last_frame_played;
+    vec3s   cachedT[MAX_BONES];
+    vec3s   cachedS[MAX_BONES];
+    versors cachedR[MAX_BONES];
+    float   currentSeek, lastSeek;
+    float   blendFactor, blendInSpeed; // Internal crossfade between lastAnim -> currentAnim
+    float   playRate;
+    float   weight;        // Active layer weight [0.0f - 1.0f]
+    float   blendOutSpeed; // Rate at which weight decays during fade-out
+    bool    isBlendingOut; // Flag indicating layer weight is decaying
+    bool    force, hasSnapshot;
+} AnimLayer;
+
+typedef struct SolRayResult
+{
+    bool  hit;
+    vec3s pos, norm;
+    float dist;
+    u32   triIndex;
+    u32   entId;
+} SolRayResult;
 
 typedef struct SolUserHit
 {
@@ -440,6 +595,7 @@ typedef enum
 
 typedef struct
 {
+    u32   state, rarity;
     float damage, cooldown, duration, maxpower;
     u32   buffMask;
     u32   effectMask;
@@ -447,7 +603,5 @@ typedef struct
 
 typedef struct SolItem
 {
-    u32           abilityState;
     AbilityConfig ability;
-    u8            rarity;
 } SolItem;

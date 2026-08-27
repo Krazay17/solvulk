@@ -1,0 +1,165 @@
+#pragma once
+#include "sol/types.h"
+#include "world.h"
+
+#include "enet/include/enet.h"
+
+#define MAX_NET_CLIENTS 12
+#define MAX_NET_ENTS (1 << 12)
+#define MAX_NET_INTERP_DISTANCE 2.0f
+#define MAX_SNAPS_BUFFERED 128
+#define MAX_NET_PREDICTIONS 128
+#define MAX_NET_EVENTS 24
+
+typedef struct World World;
+
+typedef enum
+{
+    NET_PACKET_HELLO = 1, // client → server: I'm joining
+    NET_PACKET_WELCOME,   // server → client: here's your assignment
+    NET_PACKET_REJECT,    // server → client: can't join (server full, version mismatch, etc.)
+
+    NET_PACKET_SNAPSHOT, // server → client: world state
+    NET_PACKET_INPUT,    // client → server: player input
+    NET_PACKET_HEARTBEAT,
+    NET_PACKET_EVENT,
+} NetPacketType;
+
+typedef struct
+{
+    u8       type;
+    u32      tickNumber;
+    u32      worldId;
+    u32      eventCount;
+    SolEvent events[MAX_NET_EVENTS];
+} EventSnap;
+
+typedef struct
+{
+    u8    type;
+    bool  isStrafing;
+    u32   actionMask, currentTick;
+    vec3s lookdir, wishdir, aimdir;
+    float yaw, pitch;
+    u32   abilities[10];
+    u32   rarity[10];
+    float addDamage[10];
+    u32   addBuff[10];
+    u32   addEffect[10];
+    bool  hasEquipRequest;
+} NetInputPacket;
+
+typedef struct
+{
+    u8 type; // NET_PACKET_HELLO
+
+    u32   worldId;         // which world the client wants to join
+    vec3s startPos;        // where the client wants to spawn
+    char  name[32];        // player display name (optional)
+    u32   protocolVersion; // for compatibility check
+} NetHelloPacket;
+
+typedef struct
+{
+    u8 type; // NET_PACKET_WELCOME
+
+    u32 playerId;    // the entity ID the client is assigned
+    u32 worldId;     // confirmed world ID (may differ from requested)
+    u32 currentTick; // server's current tick for sync
+} NetWelcomePacket;
+// ########################
+typedef enum
+{
+    REJECT_SERVER_FULL,
+    REJECT_VERSION_MISMATCH,
+    REJECT_WORLD_NOT_FOUND,
+    REJECT_BANNED,
+} RejectReason;
+
+typedef struct
+{
+    u8   type;         // NET_PACKET_REJECT
+    u32  reason;       // RejectReason
+    char message[128]; // optional human-readable
+} NetRejectPacket;
+
+typedef enum
+{
+    PLAYER_STATE_AWAITING_HELLO, // ENet connected, no HELLO yet
+    PLAYER_STATE_PLAYING,        // sent WELCOME, full player
+} PlayerState;
+
+typedef struct
+{
+    PlayerState       state;
+    u32               currentWorldId;
+    u32               entityId;
+    double            lastPing;
+    struct _ENetPeer *enetPeerHandle;
+} NetPlayer;
+
+typedef enum
+{
+    NETROLE_NONE,
+    NETROLE_HOST,
+    NETROLE_CLIENT,
+} NetRole;
+
+typedef enum
+{
+    NETSTATUS_DISCONNECTED,
+    NETSTATUS_CONNECTING,
+    NETSTATUS_CONNECTED,
+} NetStatus;
+
+typedef struct SolNet
+{
+    NetRole   role;
+    NetStatus status;
+    u32       connectedPlayerCount;
+    NetPlayer players[MAX_NET_CLIENTS];
+
+    u32 localEntityId;  // client's view of own entity
+    u32 serverEntityId; // server's assigned ID (after WELCOME)
+
+    struct _ENetHost *host;
+    struct _ENetPeer *peer;
+} SolNet;
+
+extern SolNet solNet;
+
+static inline bool Net_IsActive()
+{
+    return solNet.role != NETROLE_NONE && solNet.host != NULL;
+}
+
+static inline bool Net_IsPlaying()
+{
+    return Net_IsActive() && solNet.status == NETSTATUS_CONNECTED;
+}
+
+static inline bool Net_IsHost()
+{
+    return solNet.role == NETROLE_HOST;
+}
+
+static inline bool Net_IsClient()
+{
+    return solNet.role == NETROLE_CLIENT;
+}
+
+// void Sol_Net_Tick(World **worlds, int worldCount);
+// void Sol_Net_Step(World **worlds, int worldCount, double time);
+
+// void Net_Connect(bool host, const char *ip, u16 port);
+// void Net_DeInit();
+// void Net_Disconnect();
+
+// bool Net_ShouldSend_Input();
+// bool Net_ShouldSend_Snap();
+// void Net_Poll();
+// void Net_Recv_Packet(ENetEvent *event);
+
+// void Net_Send_Input(World *world);
+// void Net_Heartbeat(double time);
+// void Net_Remove_Player(int slot);

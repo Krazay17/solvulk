@@ -81,7 +81,9 @@ if(SOL_DEV_MODE)
     PUBLIC 
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/src/core"
+        "${CMAKE_SOURCE_DIR}/src/game"
         "${CMAKE_SOURCE_DIR}/src/world"
+        "${CMAKE_SOURCE_DIR}/src/world/systems"
         "${CMAKE_SOURCE_DIR}/include/sol"
     )
 endif()
@@ -104,8 +106,8 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
 #--------------------------------------
 if(WIN32)
    add_executable(solapp 
-       "${CMAKE_SOURCE_DIR}/app/win_main.c"
-       "${CMAKE_SOURCE_DIR}/app/game.c"
+       "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
+       "${CMAKE_SOURCE_DIR}/src/game/game.c"
        "${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
@@ -115,8 +117,8 @@ if(WIN32)
 
 else()
    add_executable(solapp
-       "${CMAKE_SOURCE_DIR}/app/lin_main.c"
-       #"${CMAKE_SOURCE_DIR}/src/game/game.c"
+       "${CMAKE_SOURCE_DIR}/src/platform/linux/lin_main.c"
+       "${CMAKE_SOURCE_DIR}/src/game/game.c"
    )
 endif()
 

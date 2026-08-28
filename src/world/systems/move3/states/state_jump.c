@@ -1,4 +1,4 @@
-#include "movement/s_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
 
@@ -10,9 +10,10 @@
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
-    MoveStateData *data     = &move->stateData[MOVE_JUMP];
+    SolMove3      *move  = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
+    MoveStateData *data  = &move->stateData[MOVE_JUMP];
 
     if (data->elapsed >= JUMP_DURATION)
     {
@@ -25,20 +26,22 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 
     float alpha = 1.0f - (data->elapsed / JUMP_DURATION);
 
-    vec3s vel = Sol_Physx_GetVel(world, id);
-    vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
-    Sol_Physx_SetVel(world, id, vel);
+    body3->vel = Sol_Math_DampDir(body3->vel, WORLD_UP, alpha, DAMPING, dt);
 }
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
-    MoveStateData *data     = &move->stateData[MOVE_JUMP];
-    move->wantsJump     = false;
-    move->groundtime    = 0;
-    move->airtime       = JUMP_BUFFER;
+    SolMove3      *move  = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
+    MoveStateData *data  = &move->stateData[MOVE_JUMP];
+    move->wantsJump      = false;
+    move->groundtime     = 0;
+    move->airtime        = JUMP_BUFFER;
 
+    if (body3->vel.y < 0)
+        body3->vel.y = 0;
+    body3->vel = vecAdd(body3->vel, vecSca(WORLD_UP, JUMP_VEL));
     // if (Sol_Physx_GetVel(world, id).y < 0)
     //     Sol_Physx_SetVelY(world, id, 0);
     // vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
@@ -56,9 +59,9 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3      *move = Sol_Comp_Get(world, id, SolMove3);
     SolController *cont = Sol_Comp_Get(world, id, SolController);
-    MoveStateData *data     = &move->stateData[MOVE_JUMP];
+    MoveStateData *data = &move->stateData[MOVE_JUMP];
     if (!move->wantsJump || move->state == MOVE_JUMP)
         return false;
     // if (Sol_Ability_Get(world, id)->state == ABILITY_STATE_DASH)

@@ -23,11 +23,14 @@
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define ABILITY_SLOTS 10
+#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
-typedef void (*SystemUpdate)(World *, double, double);
-typedef void (*TickEnt)(World *, int, double, double);
+typedef void (*SystemInit)(World *);
+typedef void (*SystemDeinit)(World *);
+typedef void (*SystemUpdate)(World *, double);
+typedef void (*TickEnt)(World *, int, double);
 typedef float (*GetterFunc)(World *world, int id);
 
 typedef struct
@@ -82,6 +85,14 @@ typedef enum
     ANIM_LAYER_OVERRIDE,
     ANIM_LAYER_COUNT
 } AnimLayerId;
+
+typedef enum
+{
+    MOVEMENTKIND_PLAYER,
+    MOVEMENTKIND_SPECTATE,
+    MOVEMENTKIND_WIZARD,
+    MOVEMENTKIND_COUNT,
+} MovementKind;
 
 typedef enum
 {
@@ -333,7 +344,7 @@ typedef enum
     SOL_MODEL_WORLD9,
     SOL_MODEL_WORLD10,
     SOL_MODEL_COUNT,
-} SolModelDataHandle;
+} ModelKind;
 
 typedef struct SolVertex
 {

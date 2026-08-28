@@ -4,9 +4,11 @@
 #include "world.h"
 #include "input.h"
 #include "platform/platform.h"
+#include "render/render.h"
 
 #define USER_SETTINGS_FILENAME "UserData"
 
+SolUserSession     user_session;
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -114,7 +116,7 @@ static void Sol_User_LoadUserSettings(int flags)
 
 void Sol_User_HydrateUI()
 {
-    World *world = Sol_GetWorldById(WORLDID_HUD);
+    World *world = Sol_GetWorldByIdx(WORLDID_HUD);
     if (!world)
         return;
     for (int i = 0; i < user_data.itemCount; i++)
@@ -165,7 +167,90 @@ void Tooltip_Update(double dt, SolUserHit user_hit)
     tooltipAlpha = 0;
 }
 
-void Sol_User_Tick(double dt, double time)
+void Entity_Actions()
+{
+    World *world = Sol_GetWorldByIdx(user_session.user_world);
+    int    id    = user_session.user_entid;
+    if (!world || id < 0)
+        return;
+    SolController *cont   = Sol_Comp_Get(world, id, SolController);
+    SolCamera     *camera = Sol_Comp_Get(world, id, SolCamera);
+    SolMouse       mouse  = Sol_Input_GetMouse();
+
+    cont->actionState = 0;
+    float *yaw        = &cont->yaw;
+    float *pitch      = &cont->pitch;
+
+    if (mouse.locked)
+    {
+        *yaw -= (float)(mouse.dx * user_data.look_sens);
+        *pitch -= (float)(mouse.dy * user_data.look_sens);
+
+        *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
+        if (*yaw > GLM_PIf)
+            *yaw -= 2.0f * GLM_PIf;
+        else if (*yaw < -GLM_PIf)
+            *yaw += 2.0f * GLM_PIf;
+
+        *pitch = glm_clamp(*pitch, -MAX_PITCH, MAX_PITCH);
+    }
+
+    for (int i = 0; i < SOL_KEY_COUNT; i++)
+    {
+        if (Sol_Input_KeyDown(i))
+            cont->actionState |= BITC(user_data.key_binds[i]);
+    }
+
+    cont->isStrafing = mouse.locked;
+
+    if (Sol_Comp_Has(world, id, SolBuilder))
+    {
+        if (mouse.buttons[SOL_MOUSE_LEFT])
+            cont->actionState |= BITC(ACTION_BUILD);
+    }
+    else
+    {
+        if (mouse.togglelocked)
+        {
+            if (mouse.buttons[SOL_MOUSE_LEFT])
+                cont->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_LEFT]);
+
+            if (mouse.buttons[SOL_MOUSE_RIGHT])
+                cont->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_RIGHT]);
+        }
+        else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
+            cont->actionState |= BITC(ACTION_FWD);
+
+        if (mouse.wheelV)
+        {
+            float changeDist = -((float)mouse.wheelV * 0.01f);
+            camera->target_distance += changeDist;
+        }
+    }
+    if (camera)
+    {
+        Sol_Controller_SetParallaxAim(world, id, camera->pos, camera->dir, 60.0f, 0.5f);
+    }
+
+    // DEBUG FLY
+    if (Sol_Input_KeyDown(SOL_KEY_F))
+    {
+        if (Sol_Comp_Has(world, id, SolXform))
+        {
+            SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+            xform->pos      = vecAdd(xform->pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(cont->yaw, cont->pitch)), 0.1f));
+            xform->last_pos = xform->pos;
+            xform->draw_pos = xform->pos;
+            if (Sol_Comp_Has(world, id, SolBody3))
+            {
+                SolBody3 *body3 = Sol_Comp_Get(world, id, SolBody3);
+                body3->vel      = GLMS_VEC3_ZERO;
+            }
+        }
+    }
+}
+
+void Sol_User_Tick(double dt)
 {
     consume_mouse = false;
     consume_key   = false;
@@ -184,6 +269,8 @@ void Sol_User_Tick(double dt, double time)
         Sol_Input_SetLocked(!menuActive);
     }
 
+    Entity_Actions();
+
     // ### DEBUG ####
     // World *activeWorld = Sol_GetActiveGameWorld();
     // int    playerId    = Sol_Player_GetEnt(activeWorld, 0);
@@ -197,12 +284,30 @@ void Sol_User_Tick(double dt, double time)
     //         Sol_Debug_Add("Z", xform->pos.z);
     //         // float speed = glms_vec3_norm(Sol_Physx_GetVel(activeWorld, playerId));
     //         // Sol_Debug_Add("Velocity", speed);
-    //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, SolMovement)->state);
+    //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, SolMove3)->state);
     //     }
     // }
 }
 
-void Sol_User_Draw(double dt, double time)
+void Sol_User_PostTick(double dt)
+{
+    World *world = Sol_GetWorldByIdx(user_session.user_world);
+    int    id    = user_session.user_entid;
+    if (!world || id < 0)
+        return;
+    SolCamera *cam = Sol_Comp_Get(world, id, SolCamera);
+    if (cam)
+    {
+        g_solView.pos    = cam->pos;
+        g_solView.roll   = cam->roll;
+        g_solView.dir    = cam->dir;
+        g_solView.fov    = cam->fov;
+        g_solView.up     = cam->up;
+        g_solView.target = vecAdd(cam->pos, cam->dir);
+    }
+}
+
+void Sol_User_Draw(double dt)
 {
     // Sol_Tooltip_Draw(user_hit, tooltipAlpha, dt, time);
 }

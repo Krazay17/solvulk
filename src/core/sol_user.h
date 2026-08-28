@@ -3,6 +3,12 @@
 
 #define MAX_USER_ITEMS 512
 
+typedef struct SolUserSession
+{
+    int user_world;
+    int user_entid;
+} SolUserSession;
+
 typedef struct UserData
 {
     float      look_sens;
@@ -14,10 +20,12 @@ typedef struct UserData
     int     itemCount;
 } UserData;
 
-extern UserData user_data;
+extern UserData       user_data;
+extern SolUserSession user_session;
 
 int  Sol_User_Init(void);
 void Sol_User_Tick(double dt);
+void Sol_User_PostTick(double dt);
 void Sol_User_Draw(double dt);
 void Sol_User_SaveUserSettings(int flags);
 void Sol_User_LoadUserSettings(int flags);

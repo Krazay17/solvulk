@@ -9,15 +9,25 @@
 #pragma once
 #include "components.h"
 
-#define WAdd2d(w) ((w)->draw2dSystems[(w)->draw2dCount++])
-#define WAdd3d(w) ((w)->draw3dSystems[(w)->draw3dCount++])
-#define WAddPrestep(w) ((w)->prestepSystems[(w)->prestepCount++])
-#define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
-#define WAddPoststep(w) (w->poststepSystems[w->poststepCount++])
 #define WAddTick(w) ((w)->tickSystems[(w)->tickCount++])
+#define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
+#define WAddPosttick(w) (w->posttickSystems[w->posttickCount++])
+#define WAdd3d(w) ((w)->draw3dSystems[(w)->draw3dCount++])
+#define WAdd2d(w) ((w)->draw2dSystems[(w)->draw2dCount++])
 
 // Forward declaration of World struct
 typedef struct World World;
+
+typedef enum
+{
+    WORLDSYS_CONTROLLER,
+    WORLDSYS_MOVE3,
+    WORLDSYS_BODY3,
+    WORLDSYS_CAMERA,
+    WORLDSYS_ANIM,
+    WORLDSYS_MODEL,
+    WORLDSYS_COUNT,
+} WorldSystems;
 
 // ==========================================
 // 3. GENERIC SPARSE SET STRUCT DECLARATOR
@@ -51,30 +61,31 @@ SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
 
 struct World
 {
-    SystemUpdate prestepSystems[MAX_SYSTEMS];
-    SystemUpdate stepSystems[MAX_SYSTEMS];
-    SystemUpdate poststepSystems[MAX_SYSTEMS];
     SystemUpdate tickSystems[MAX_SYSTEMS];
+    SystemUpdate stepSystems[MAX_SYSTEMS];
+    SystemUpdate posttickSystems[MAX_SYSTEMS];
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
     u64   masks[MAX_ENTITIES];
     void *components[COMPONENT_COUNT];
 
+    u64   system_mask;
+    void *systems[WORLDSYS_COUNT];
+
     u32 hitGenMatrix[MAX_ENTITIES][MAX_ENTITIES];
     u32 globalHitGen;
 
-    int prestepCount;
-    int stepCount;
-    int poststepCount;
     int tickCount;
-    int draw2dCount;
+    int stepCount;
+    int posttickCount;
     int draw3dCount;
-    int deinitCount;
+    int draw2dCount;
 
-    u32  currentTick, currentStep;
-    int  maxEntities;
-    bool doesSimulate, doesRender, doesReplicate;
+    u32    currentTick, currentStep;
+    double tickTime, stepTime;
+    int    maxEntities;
+    bool   doesSimulate, doesRender, doesReplicate;
 };
 
 // ==========================================
@@ -194,6 +205,26 @@ static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
     w->masks[entId] &= ~BITC(compEnum);
 }
 
+// Free all sparse set component arrays and their container memory
+static inline void Sol_World_FreeAllComponents(World *w)
+{
+    for (int i = 0; i < COMPONENT_COUNT; ++i)
+    {
+        BaseSparseSet *set = (BaseSparseSet *)w->components[i];
+        if (set)
+        {
+            if (set->sparse)
+                free(set->sparse);
+            if (set->dense)
+                free(set->dense);
+            if (set->data)
+                free(set->data);
+            free(set);
+            w->components[i] = NULL;
+        }
+    }
+}
+
 static inline void Sol_Destroy_Ent(World *w, int entId)
 {
     u64 mask = w->masks[entId];
@@ -211,22 +242,43 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
 }
 
 // Internal
-void Worlds_Tick(World **worlds, int count, double dt, double time);
-void Worlds_Step(World **worlds, int count, double dt, double time);
-void Worlds_Draw3d(World **worlds, int count, double dt, double time);
-void Worlds_Draw2d(World **worlds, int count, double dt, double time);
+void Worlds_Tick(World **worlds, int count, double dt);
+void Worlds_Step(World **worlds, int count, double dt);
+void Worlds_Draw3d(World **worlds, int count, double dt);
+void Worlds_Draw2d(World **worlds, int count, double dt);
+void Worlds_PostTick(World **worlds, int count, double dt);
 
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
-void Model_Draw(World *world, double dt, double time);
-void Anim_Tick(World *world, double dt, double time);
-void Movement3d_Step(World *world, double dt, double time);
-void Body3_Step(World *world, double dt, double time);
+// Systems
+void Controller_Init(World *world);
+void Controller_Deinit(World *world);
+void Move3_Init(World *world);
+void Move3_Deinit(World *world);
+void Body3_Init(World *world);
+void Body3_Deinit(World *world);
+void Anim_Init(World *world);
+void Anim_Deinit(World *world);
+void Camera_Init(World *world);
+void Camera_Deinit(World *world);
+void Model_Init(World *world);
+void Model_Deinit(World *world);
+
+void Controller_Tick(World *world, double dt);
+void Move3_Step(World *world, double dt);
+void Body3_Step(World *world, double dt);
+void Anim_Tick(World *world, double dt);
+void Camera_Tick(World *world, double dt);
+void Model_Render(World *world, double dt);
+
+void Player_Tick(World *world, double dt);
 
 // Api
 World *World_Create();
 int    Sol_Create_Ent(World *world);
+void   Sol_Sys_Add(World *world, WorldSystems system);
+void   Sol_Sys_Remove(World *world, WorldSystems system);
 
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
@@ -236,3 +288,11 @@ void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
 void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
+
+bool Sol_Movement_SetState(World *world, int id, MoveState state);
+
+vec3s Sol_Body3_GetGround(World *world, int id);
+int   Sol_Body3_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+
+vec3s Sol_Physx_GetVel(World *world, int id);
+float Sol_Physx_GetSpeed(World *world, int id);

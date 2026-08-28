@@ -63,9 +63,12 @@ typedef struct SolBody2
 
 typedef struct SolCamera
 {
-    vec3s pos;
-    vec3s target, dir;
+    vec3s pos, anchor;
+    vec3s dir;
     vec3s up, right;
+    float current_distance, current_offset;
+    float target_distance, target_offset;
+    float lerpspeed;
     float fov;
     float roll;
 } SolCamera;
@@ -118,7 +121,7 @@ typedef struct
     } as;
     vec3s enterVel, dir;
 } MoveStateData;
-typedef struct SolMovement
+typedef struct SolMove3
 {
     MovementKind kind;
     MoveState    state;
@@ -132,7 +135,7 @@ typedef struct SolMovement
 
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
-} SolMovement;
+} SolMove3;
 
 typedef struct SolModel
 {
@@ -450,7 +453,7 @@ typedef struct SolBuilder
     X(SolAnim, HAS_SolAnim)                                                                                            \
     X(SolCamera, HAS_SolCamera)                                                                                        \
     X(SolInteract, HAS_SolInteract)                                                                                    \
-    X(SolMovement, HAS_SolMovement)                                                                                    \
+    X(SolMove3, HAS_SolMove3)                                                                                          \
     X(SolPlayer, HAS_SolPlayer)                                                                                        \
     X(SolRemote, HAS_SolRemote)                                                                                        \
     X(SolAi, HAS_SolAi)                                                                                                \

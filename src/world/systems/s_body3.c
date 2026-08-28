@@ -2,7 +2,9 @@
 #include "physx.h"
 #include "sol_math.h"
 
-void Body3_Step(World *world, double dt, double time)
+#define TERMINAL_VELOCITY -100.0f
+
+void Body3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
 
@@ -14,7 +16,7 @@ void Body3_Step(World *world, double dt, double time)
 
         SolXform *xform = Sol_Comp_Get(world, id, SolXform);
 
-        vec3s accel    = body3->vel.y < -100.0f ? GLMS_VEC3_ZERO : body3->gravity;
+        vec3s accel    = body3->vel.y < TERMINAL_VELOCITY ? GLMS_VEC3_ZERO : body3->gravity;
         accel          = glms_vec3_add(accel, body3->force);
         accel          = glms_vec3_add(accel, body3->impulse);
         body3->impulse = (vec3s){0};
@@ -29,7 +31,26 @@ void Body3_Step(World *world, double dt, double time)
         if (xform->pos.y < 0)
         {
             xform->pos.y = 0;
-            body3->vel.y *= -1;
+            body3->vel.y *= -body3->restitution;
         }
     }
+}
+
+void Body3_Init(World *world)
+{
+}
+
+void Body3_Deinit(World *world)
+{
+
+}
+
+vec3s Sol_Body3_GetGround(World *world, int id)
+{
+    return GLMS_VEC3_ZERO;
+}
+
+int Sol_Body3_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
+{
+    return 0;
 }

@@ -689,7 +689,7 @@ void Sol_Begin_Draw()
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
 
     GameUtilUBO *util = descriptors[DESC_GAME_UBO].mapped[solvkstate.currentFrame];
-    util->gameTime    = solState.gameTime;
+    util->gameTime    = solState.appTime;
 }
 
 void Sol_End_Draw()

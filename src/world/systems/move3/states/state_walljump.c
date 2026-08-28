@@ -1,10 +1,6 @@
-#include "movement/si_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
-#include "xform/s_xform.h"
-#include "model/s_model.h"
-#include "physx/s_body.h"
-#include "controller/s_controller.h"
 
 #define DASH_VEL 13.0f
 #define DASH_DURATION 0.45f
@@ -12,7 +8,8 @@
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
-    CompMovement  *move         = &world->movements[id];
+    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont  = Sol_Comp_Get(world, id, SolController);
     MoveStateData *walljumpData = &move->stateData[MOVE_WALLJUMP];
     float          alpha        = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
@@ -22,17 +19,18 @@ void Walljump_State_Update(World *world, int id, float dt)
         return;
     }
 
-    vec3s vel = Sol_Physx_GetVel(world, id);
+    vec3s vel = {0};//Sol_Physx_GetVel(world, id);
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
     // vel       = Sol_Math_DampDir(vel, walljumpData->dir, alpha, DAMPING, dt);
-    Sol_Physx_SetVel(world, id, vel);
+    Sol_Body3_SetVel(world, id, vel);
 }
 
 void Walljump_State_Enter(World *world, int id)
 {
-    CompMovement  *move        = &world->movements[id];
+    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont  = Sol_Comp_Get(world, id, SolController);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
-    vec3s          vel         = Sol_Physx_GetVel(world, id);
+    vec3s          vel         ={0}; // Sol_Physx_GetVel(world, id);
     vec3s          up2         = {0.0f, 1.8f, 0.0f};
     vec3s          finalDir    = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
     finalDir                   = vecAdd(finalDir, vecNorm(vel));
@@ -45,12 +43,11 @@ void Walljump_State_Enter(World *world, int id)
     else
         finalVel.y = 0;
 
-    Sol_Physx_AddVel(world, id, finalVel);
+    // Sol_Physx_AddVel(world, id, finalVel);
 }
 
 void Walljump_State_Exit(World *world, int id)
 {
-    Sol_Model_StopAnim(world, id, ANIM_LAYER_BASE, 0.2f);
 }
 
 bool Walljump_State_CanExit(World *world, int id, u32 nextState)

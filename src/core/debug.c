@@ -95,8 +95,8 @@ void Sol_FPS(double dt)
     }
 }
 
-SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
-{
+// SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
+// {
     // SolRayResult result = Sol_Raycast(world, ray);
     // if (solState.debug)
     // {
@@ -117,4 +117,4 @@ SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
     //                              });
     // }
     // return result;
-}
+// }

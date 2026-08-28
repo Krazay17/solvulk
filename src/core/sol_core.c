@@ -64,23 +64,23 @@ void Sol_Tick(double dt, double time)
 {
     if (dt < 0.0 || dt > 1.0)
         dt = 0.0166666;
-    solState.gameTime += dt;
+    solState.appTime = time;
     solState.tickCounter++;
     Sol_Input_Update();
 
     if (solState.needsResize)
         Sol_OnResize();
 
-    Sol_User_Tick(dt);
     // Sol_Net_Tick(solState.worlds, solState.worldCount);
-    Worlds_Tick(solState.worlds, solState.worldCount, dt, time);
+    Sol_User_Tick(dt);
+    Worlds_Tick(solState.worlds, solState.worldCount, dt);
 
     // ######### STEP AND INTERP #########
     accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
         Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
-        Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP, time);
+        Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP);
         // Sol_Net_Step(solState.worlds, solState.worldCount, time);
         // Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
@@ -90,16 +90,18 @@ void Sol_Tick(double dt, double time)
     Worlds_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
     // ######### END STEP AND INTERP #########
 
-    Sol_Update_Audio_FromView();
+    Sol_User_PostTick(dt);
+    Worlds_PostTick(solState.worlds, solState.worldCount, dt);
 
+    Sol_Update_Audio_FromView();
     Sol_Render_CheckGpuUploads();
 
     Sol_Begin_Draw();
     Sol_Render_DrawSkybox();
-    Worlds_Draw3d(solState.worlds, solState.worldCount, dt, time);
+    Worlds_Draw3d(solState.worlds, solState.worldCount, dt);
     Sol_Render_Flush3D();
 
-    Worlds_Draw2d(solState.worlds, solState.worldCount, dt, time);
+    Worlds_Draw2d(solState.worlds, solState.worldCount, dt);
     Sol_User_Draw(dt);
     Sol_Render_Flush2D();
 

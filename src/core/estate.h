@@ -4,7 +4,7 @@
 typedef struct World World;
 
 typedef void (*StateUpdate)(World *world, int id, float dt);
-typedef void (*StateDraw)(World *world, int id, double dt, double time);
+typedef void (*StateDraw)(World *world, int id, double dt);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);
 typedef bool (*StateCanExit)(World *world, int id, u32 next);
@@ -25,7 +25,7 @@ typedef struct
 // void State_Exit(World *world, int id);
 // bool State_CanExit(World *world, int id, u32 nextState);
 // bool State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot);
-// void State_Draw(World *world, int id, double dt, double time);
+// void State_Draw(World *world, int id, double dt);
 
 // bool SetState(World *world, int id, u32 nextState)
 // {
@@ -84,5 +84,5 @@ typedef struct
 // {
 //     CompAbility *ability = Sol_Ability_Get(world, id);
 //     AbilityStateData *data    = &ability->stateData[slot];
-//     return !(data->lastExited + COOLDOWN > solState.gameTime);
+//     return !(data->lastExited + COOLDOWN > solState.appTime);
 // }

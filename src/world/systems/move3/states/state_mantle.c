@@ -6,7 +6,7 @@
  *
  */
 
-#include "movement/s_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
 
@@ -15,7 +15,7 @@
 
 static bool CheckWall(World *world, int id)
 {
-    SolMovement   *move  = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
     SolController *cont  = Sol_Comp_Get(world, id, SolController);
     SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
     SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
@@ -58,7 +58,7 @@ static bool CheckWall(World *world, int id)
     return false;
 }
 
-static bool LeaveState(World *world, int id, SolMovement *move, SolController *cont)
+static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
 {
     if (move->stateData[move->state].elapsed >= MANTLE_TIME)
         return true;
@@ -74,7 +74,7 @@ static bool LeaveState(World *world, int id, SolMovement *move, SolController *c
 
 void Mantle_State_Update(World *world, int id, float dt)
 {
-    SolMovement   *move  = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
     SolController *cont  = Sol_Comp_Get(world, id, SolController);
     SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
     SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
@@ -98,13 +98,13 @@ void Mantle_State_Update(World *world, int id, float dt)
         if (dist <= 0.15f)
             data->as.mantle.closeEnough = 1;
         dir = vecNorm(dir);
-        Sol_Physx_SetVel(world, id, vecSca(dir, 8.0f));
+        Sol_Body3_SetVel(world, id, vecSca(dir, 8.0f));
     }
 }
 
 void Mantle_State_Enter(World *world, int id)
 {
-    SolMovement   *move         = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move         = Sol_Comp_Get(world, id, SolMove3);
     SolController *cont         = Sol_Comp_Get(world, id, SolController);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
@@ -119,7 +119,7 @@ void Mantle_State_Exit(World *world, int id)
 
 bool Mantle_State_CanExit(World *world, int id, u32 nextState)
 {
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
     SolController *cont = Sol_Comp_Get(world, id, SolController);
     return LeaveState(world, id, move, cont);
 }
@@ -136,6 +136,6 @@ bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, i
     return CheckWall(world, id);
 }
 
-void Mantle_State_Draw(World *world, int id, double dt, double time)
+void Mantle_State_Draw(World *world, int id, double dt)
 {
 }

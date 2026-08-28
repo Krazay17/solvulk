@@ -8,7 +8,8 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     SolModel *model = Sol_Comp_Add(world, id, SolModel);
     model->modelId  = MODELKIND_DUDE;
     Sol_Anim_Add(world, id);
-    Sol_Body3_Add(world, id);
+    SolBody3 *body3= Sol_Body3_Add(world, id);
+    body3->restitution = 0.01f;
 
     return id;
 }

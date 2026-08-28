@@ -1,12 +1,12 @@
-#include "movement/s_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, SolMovement *move, SolController *controller)
+static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
 {
     if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
         return true;
-    if (!(controller->actionState & BITC(ACTION_CROUCH)))
+    if (!(cont->actionState & BITC(ACTION_CROUCH)))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
             return true;
     if (move->wantsJump)
@@ -20,18 +20,18 @@ static bool LeaveState(World *world, int id, SolMovement *move, SolController *c
 
 void Crouch_State_Update(World *world, int id, float dt)
 {
-    SolMovement   *move       = Sol_Comp_Get(world, id, SolMovement);
-    SolController *controller = Sol_Comp_Get(world, id, SolController);
-    if (LeaveState(world, id, move, controller))
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    if (LeaveState(world, id, move, cont))
         return;
 
     MoveStateData *data  = &move->stateData[move->state];
     SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
 
-    if (controller)
+    if (cont)
     {
-        float x                = controller->wishdir.x;
-        float z                = controller->wishdir.z;
+        float x                = cont->wishdir.x;
+        float z                = cont->wishdir.z;
         vec3s rot              = Sol_RotFromQuat(xform->rot);
         data->as.crouch.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
     }
@@ -39,10 +39,11 @@ void Crouch_State_Update(World *world, int id, float dt)
 
 void Crouch_State_Enter(World *world, int id)
 {
-    if (LeaveState(world, id))
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    if (LeaveState(world, id, move, cont))
         return;
 
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
     MoveStateData *data = &move->stateData[move->state];
     move->targetHeight  = move->baseHeight * 0.7f;
 }
@@ -50,7 +51,7 @@ void Crouch_State_Enter(World *world, int id)
 void Crouch_State_Exit(World *world, int id)
 {
 
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
     MoveStateData *data = &move->stateData[move->state];
 
     move->targetHeight = move->baseHeight;
@@ -58,7 +59,7 @@ void Crouch_State_Exit(World *world, int id)
 
 bool Crouch_State_CanExit(World *world, int id, u32 nextState)
 {
-    SolMovement *move = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3 *move = Sol_Comp_Get(world, id, SolMove3);
     // SolRayResult result = Sol_RaycastD(
     //     world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = move->baseHeight * 0.6f}, 0.2f);
 

@@ -1,4 +1,4 @@
-#include "movement/s_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
 
@@ -7,7 +7,7 @@
 
 void Dead_State_Update(World *world, int id, float dt)
 {
-    SolMovement   *move = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
     MoveStateData *data = &move->stateData[move->state];
 
     if (data->elapsed > DESTROY_TIMER)
@@ -24,12 +24,12 @@ void Dead_State_Update(World *world, int id, float dt)
 
 void Dead_State_Enter(World *world, int id)
 {
-    SolMovement *move  = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3 *move  = Sol_Comp_Get(world, id, SolMove3);
     move->targetHeight = move->baseHeight * 0.6f;
 }
 void Dead_State_Exit(World *world, int id)
 {
-    SolMovement *move  = Sol_Comp_Get(world, id, SolMovement);
+    SolMove3 *move  = Sol_Comp_Get(world, id, SolMove3);
     move->targetHeight = move->baseHeight;
 }
 bool Dead_State_CanExit(World *world, int id, u32 next)

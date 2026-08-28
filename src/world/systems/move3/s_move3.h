@@ -1,19 +1,18 @@
 #pragma once
-#include "s_movement.h"
 #include "sol_math.h"
 
 #include "estate.h"
 
 #define WALKABLE_SLOPE 0.7f
 
-typedef struct SolMovement SolMovement;
+typedef struct SolMove3 SolMove3;
 
 typedef struct
 {
     float speed, accell, friction, gravity;
 } MoveStateForce;
 
-extern const StateFunc      MOVE_STATE_FUNCS[];
+extern const StateFunc MOVE_STATE_FUNCS[];
 
 static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
@@ -52,6 +51,21 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
     return vel;
 }
 
+static inline vec3s ProjectOntoGround(vec3s ground, vec3s wishdir)
+{
+    float dot = glms_vec3_dot(wishdir, ground);
+    // dot = fmaxf(-0.5f, fminf(0.5, dot));
+    return glms_vec3_sub(wishdir, glms_vec3_scale(ground, dot));
+}
+
+static inline vec3s GroundSlope(vec3s normal)
+{
+    float dot        = glms_vec3_dot(WORLD_DOWN, normal);
+    vec3s projection = glms_vec3_scale(normal, dot);
+    vec3s slope      = glms_vec3_sub(WORLD_DOWN, projection);
+    return glms_normalize(slope);
+}
+
 static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 {
     // 1. Vector pointing FROM player TO wall
@@ -84,11 +98,9 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
     return (WallTouch)(sector & 3);
 }
 
-vec3s GroundSlope(World *world, int id);
-vec3s ProjectOntoGround(World *world, int id, vec3s wishdir);
-void  Knockback(World *world, int id, SolMovement *move, float fdt);
-void  CrouchHeight(World *world, int id, SolMovement *move, float fdt);
-void  RestoreFriction(World *world, int id, SolMovement *move, float fdt);
+void  Knockback(World *world, int id, SolMove3 *move, float fdt);
+void  CrouchHeight(World *world, int id, SolMove3 *move, float fdt);
+void  RestoreFriction(World *world, int id, SolMove3 *move, float fdt);
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt);
 void Sol_Movement_Idle_Enter(World *world, int id);
@@ -161,4 +173,4 @@ void Mantle_State_Enter(World *world, int id);
 void Mantle_State_Exit(World *world, int id);
 bool Mantle_State_CanExit(World *world, int id, u32 nextState);
 bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot);
-void Mantle_State_Draw(World *world, int id, double dt, double time);
+void Mantle_State_Draw(World *world, int id, double dt);

@@ -23,7 +23,7 @@ const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
         },
 };
 
-void Model_Draw(World *world, double dt, double time)
+void Model_Render(World *world, double dt)
 {
     float               fdt = (float)dt;
     SparseSet_SolModel *set = Sol_Comp_Set(world, SolModel);
@@ -87,6 +87,10 @@ void Model_Draw(World *world, double dt, double time)
             Sol_Render_GetNext_Model(model->modelId, &modelSSBO, NULL);
         }
     }
+}
+
+void Model_Init(World *world)
+{
 }
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)

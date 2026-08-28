@@ -18,19 +18,18 @@ typedef enum
     WORLDID_GAME3D_1,
     WORLDID_GAME3D_2,
     WORLDID_COUNT,
-} WorldId;
+} WorldIdx;
 
 typedef struct SolState
 {
-    World  *worlds[WORLDID_COUNT];
-    WorldId activeWorldId;
-    u16     worldCount;
+    World *worlds[WORLDID_COUNT];
+    u16    worldCount;
 
     volatile bool isRunning;
     volatile bool needsResize;
     bool          debug;
 
-    double gameTime, timescale, fps;
+    double appTime, timescale, fps;
     double uiScale, aspectRatio;
     u32    tickCounter, stepCounter;
 
@@ -38,6 +37,7 @@ typedef struct SolState
     int   windowX, windowY;
     void *g_hwnd;
 } SolState;
+
 extern SolState solState;
 
 #define UIUNSCALE(v) ((v) / solState.uiScale)
@@ -66,28 +66,13 @@ static inline void Sol_ToggleDebug(int flag)
     solState.debug = !solState.debug;
 }
 
-static inline World *Sol_GetWorldById(WorldId id)
+static inline World *Sol_GetWorldByIdx(WorldIdx idx)
 {
-    return solState.worlds[id];
-}
-
-static inline World *Sol_GetActiveGameWorld()
-{
-    return solState.worlds[solState.activeWorldId];
-}
-
-static inline WorldId Sol_GetActiveGameWorldId()
-{
-    return solState.activeWorldId;
-}
-
-static inline void Sol_SetActiveGameWorld(WorldId id)
-{
-    solState.activeWorldId = id;
+    return solState.worlds[idx];
 }
 
 int  Sol_Init(void *hwnd, void *hInstance);
-void Sol_Tick(double dt, double time);
+void Sol_Tick(double dt);
 void Sol_Destroy();
 
 void Sol_Window_OnResize(int x, int y, int width, int height);

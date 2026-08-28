@@ -12,7 +12,6 @@
 #define SPATIAL_STATIC_SIZE (1 << 16)
 #define SPATIAL_STATIC_ENTRIES (1 << 18)
 
-#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 #define SPATIAL_NULL 0xFFFFFFFF
 #define MAX_CONTACTS_PER_ENTITY 8
 

@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-08-27
- * 
-*/
+ *
+ */
 
 #include "components.h"
 #include "world.h"
@@ -12,8 +12,7 @@
 SolModel *Sol_Model_Add(World *world, int id, ModelKind kind)
 {
     SolModel *model = Sol_Comp_Add(world, id, SolModel);
-    *model          = model_kinds[kind];
-
+    model->kind     = kind;
     return model;
 }
 

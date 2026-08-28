@@ -1,25 +1,19 @@
-#include "movement/si_movement.h"
+#include "move3/s_move3.h"
 #include "world.h"
 #include "sol_math.h"
-#include "xform/s_xform.h"
-#include "model/s_model.h"
-#include "physx/s_body.h"
-#include "controller/s_controller.h"
 
-static bool LeaveState(World *world, int id)
+static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
 {
-    CompMovement   *move       = &world->movements[id];
-    CompController *controller = Sol_Controller_Get(world, id);
     if (move->wantsJump)
         if (Sol_Movement_SetState(world, id, MOVE_JUMP))
             return true;
-    if (Sol_Movement_GetGroundtime(world, id) < 0.001f)
+    if (move->airtime > 0)
         if (Sol_Movement_SetState(world, id, MOVE_FALL))
             return true;
-    if (Sol_Controller_Get(world, id)->actionState & BITC(ACTION_CROUCH))
+    if (cont->actionState & BITC(ACTION_CROUCH))
         if (Sol_Movement_SetState(world, id, MOVE_CROUCH))
             return true;
-    if (glms_vec3_norm(controller->wishdir) > 0)
+    if (glms_vec3_norm(cont->wishdir) > 0)
         if (Sol_Movement_SetState(world, id, MOVE_WALK))
             return true;
     return false;
@@ -27,22 +21,27 @@ static bool LeaveState(World *world, int id)
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt)
 {
-    if (LeaveState(world, id))
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    if (LeaveState(world, id, move, cont))
         return;
-    CompMovement *move = &world->movements[id];
-    move->gravityMod   = 0.0f;
-    if (Sol_Physx_GetSpeed(world, id) < 0.5f)
-    {
-        Sol_Physx_AddVel(
-            world, id, vecSca(Sol_Physx_GetGround(world, id), MOVE_STATE_FORCES[move->kind][move->state].gravity * dt));
-    }
+
+    move->gravityMod = 0.0f;
+    // if (Sol_Physx_GetSpeed(world, id) < 0.5f)
+    // {
+    //     Sol_Physx_AddVel(
+    //         world, id, vecSca(Sol_Physx_GetGround(world, id), MOVE_STATE_FORCES[move->kind][move->state].gravity *
+    //         dt));
+    // }
 }
 
 void Sol_Movement_Idle_Enter(World *world, int id)
 {
-    if (LeaveState(world, id))
+    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    if (LeaveState(world, id, move, cont))
         return;
-    CompMovement *move = &world->movements[id];
+
     move->targetHeight = move->baseHeight;
 }
 

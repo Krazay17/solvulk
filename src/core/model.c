@@ -740,10 +740,10 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
     }
 }
 
-void Init_Anim_Masks(ModelKind modelId, SolSkeleton *skel)
+void Init_Anim_Masks(ModelKind kind, SolSkeleton *skel)
 {
-    SolModelDataMasks *masks = &model_masks[modelId];
-    // SolSkeleton   *skel  = &Sol_Bank_Get()->models[modelId].skeleton;
+    SolModelDataMasks *masks = &model_masks[kind];
+    // SolSkeleton   *skel  = &Sol_Bank_Get()->models[kind].skeleton;
 
     // Reset all masks to false
     memset(masks, 0, sizeof(*masks));

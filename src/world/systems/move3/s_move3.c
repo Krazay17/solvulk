@@ -68,7 +68,7 @@ void Move3_Step(World *world, double dt)
             MOVE_STATE_FUNCS[move->state].update(world, id, dt);
 
         float finalSpeed    = forces->speed;    // * move->speedMod;
-        float finalFriction = forces->friction; // * move->frictionMod;
+        float finalFriction = forces->friction * move->frictionMod;
         body3->gravity.y    = forces->gravity;  // * move->gravityMod;
 
         switch (move->state)
@@ -166,7 +166,7 @@ bool Sol_Movement_SetState(World *world, int id, MoveState state)
     if (!nextfunc->canEnter(world, id, (u32)move->state, (u32)state, 0))
         return false;
 
-    printf("LastState: %d, CurrentState: %d\n", move->state, state);
+    // printf("LastState: %d, CurrentState: %d\n", move->state, state);
 
     prevfunc->exit(world, id);
     move->stateData[move->state].lastExited = solState.appTime;

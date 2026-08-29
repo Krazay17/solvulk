@@ -8,8 +8,8 @@
 
 // --- Shared state between threads ---
 static volatile long int g_running = 1;
-static HWND g_hwnd        = NULL;
-static bool isFullscreen;
+static HWND              g_hwnd    = NULL;
+static bool              isFullscreen;
 
 static bool  isDragging = false;
 static POINT dragStartPos;
@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
     wc.hIcon                = hIcon;
     RegisterClass(&wc);
 
-    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Solblade", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                            NULL, NULL, hInstance, NULL);
+    g_hwnd = CreateWindowEx(0, CLASS_NAME, "Solblade", WS_POPUP | WS_VISIBLE, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL,
+                            NULL, hInstance, NULL);
     if (!g_hwnd)
     {
         MessageBoxA(NULL, "Window Creation Failed!", "SolVulk Fatal Error", MB_ICONERROR | MB_OK);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     Create_Sol_Game();
-    
+
     MemoryBarrier();
 
     //------------------------------------------
@@ -127,8 +127,6 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
         double dt      = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)freq.QuadPart;
         double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
         lastTime       = currentTime;
-        //POINT cursorPos;
-        //GetCursorPos(&cursorPos);
         dt *= solState.timescale;
         Sol_Tick(dt, runTime);
 

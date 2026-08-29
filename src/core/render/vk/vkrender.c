@@ -1099,11 +1099,11 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-void Sol_Render_UploadModel(SolModelData *model, u32 modelId)
+void Sol_Render_UploadModel(SolModelData *model, u32 kind)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
-    if (gpuModels[modelId].meshes != NULL)
-        free(gpuModels[modelId].meshes);
+    if (gpuModels[kind].meshes != NULL)
+        free(gpuModels[kind].meshes);
 
     // if (!model || model->mesh_count < 1)
     //     return;
@@ -1188,8 +1188,8 @@ void Sol_Render_UploadModel(SolModelData *model, u32 modelId)
     vkDestroyBuffer(solvkstate.device, stagingBuffer, NULL);
     vkFreeMemory(solvkstate.device, stagingMemory, NULL);
 
-    gpuModels[modelId] = gpuModel;
-    printf("SolVk: Uploaded Model %d (%d meshes)\n", modelId, gpuModel.mesh_count);
+    gpuModels[kind] = gpuModel;
+    printf("SolVk: Uploaded Model %d (%d meshes)\n", kind, gpuModel.mesh_count);
 
     return;
 }

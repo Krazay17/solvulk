@@ -91,6 +91,7 @@ typedef struct ModelPrefab
 
 typedef struct SolModelData
 {
+    ModelKind    kind;
     SolVertex   *vertices;
     SolMesh     *meshes;
     SolTri      *tris;
@@ -107,7 +108,6 @@ typedef struct SolModelData
 
     mat4s *jointMatrices;
 
-    ModelKind modelId;
 } SolModelData;
 
 typedef struct BoneMask
@@ -145,21 +145,21 @@ typedef struct SolModelDataMasks
 //     mat4     *outBones;                      // final skinning matrices
 // } PoseRequest;
 
-
 extern SolModelData      loaded_models[SOL_MODEL_COUNT];
 extern SolModelDataMasks model_masks[SOL_MODEL_COUNT];
-extern const char   *model_path[SOL_MODEL_COUNT];
-extern const i32     model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+extern const char       *model_path[SOL_MODEL_COUNT];
+extern const i32         model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 
 int  Sol_Models_Init();
-void Init_Anim_Masks(ModelKind modelId, SolSkeleton *skele);
+void Init_Anim_Masks(ModelKind kind, SolSkeleton *skele);
 void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose);
 // void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 // void Sol_Skeleton_Pose(int model_handle, SolPose *pose, AnimLayer *layers);
 u32  Sol_Model_GetTriCount(ModelKind handle);
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale, vec3s pos);
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale,
+                                 vec3s pos);
 
 static inline float Sol_GetExtrasFloat(const char *json_string, const char *key, float default_value)
 {

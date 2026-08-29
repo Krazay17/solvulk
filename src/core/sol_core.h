@@ -72,13 +72,11 @@ static inline World *Sol_GetWorldByIdx(WorldIdx idx)
 }
 
 int  Sol_Init(void *hwnd, void *hInstance);
-void Sol_Tick(double dt);
+void Sol_Tick(double dt, double time);
 void Sol_Destroy();
 
 void Sol_Window_OnResize(int x, int y, int width, int height);
-void Sol_FPS(double dt);
-void Sol_Debug_Draw(double dt);
-void Sol_Interact_Update(World **world, int worldCount);
-void Sol_Cam_Update(double dt);
 
 void Sol_Debug_Add(const char *text, float value);
+void Sol_Debug_Draw(double dt);
+void Sol_FPS(double dt);

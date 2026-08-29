@@ -35,5 +35,26 @@ void Create_Sol_Game()
     camera->target_offset = 1.0f;
     move->kind            = MOVEMENTKIND_PLAYER;
 
+    int level1 = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
+    SolModel *levelModel = Sol_Comp_Add(world, level1, SolModel);
+    levelModel->kind     = SOL_MODEL_WORLD6;
+    SolBody3 *levelBody  = Sol_Body3_Add(world, level1);
+    levelBody->shape     = SHAPE3_MOD;
+    levelBody->mass      = 0;
+    levelBody->invMass   = 0;
+    levelBody->dims.x    = 100.0f;
+
+    while (world->entCount < 100)
+    {
+        int id = Sol_Create_Ent(world);
+        Sol_Xform_Add(world, id, (vec3s){0, (float)id, 0});
+        SolBody3 *body3 = Sol_Body3_Add(world, id);
+        body3->shape = SHAPE3_SPH;
+        body3->group = PHYSXMASK(1, 1);
+        body3->dims.x = 0.5f;
+        Sol_Comp_Add(world, id, SolModel)->kind = MODELKIND_WIZARD;
+    }
+
     Sol_Prefab_Dude(world, (vec3s){2.0f, 1, 0}, 1.0f);
 }

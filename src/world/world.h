@@ -82,6 +82,9 @@ struct World
     int draw3dCount;
     int draw2dCount;
 
+    int activeEnts[MAX_ENTITIES];
+    int entCount;
+
     u32    currentTick, currentStep;
     double tickTime, stepTime;
     int    maxEntities;
@@ -239,6 +242,8 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
         Sol_Comp_RemE(w, entId, compEnum);
         mask &= mask - 1; // Clear lowest bit
     }
+    w->entCount--;
+    w->activeEnts[entId] = false;
 }
 
 // Internal
@@ -291,6 +296,7 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
 
+bool  Sol_Body3_DoesCollide(SolBody3 *body, SolBody3 *other_body);
 vec3s Sol_Body3_GetGround(World *world, int id);
 int   Sol_Body3_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 

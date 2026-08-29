@@ -80,11 +80,11 @@ void Model_Render(World *world, double dt)
         if (Sol_Comp_Has(world, id, SolAnim))
         {
             SolAnim *anim = Sol_Comp_Get(world, id, SolAnim);
-            Sol_Render_GetNext_Model(model->modelId, &modelSSBO, &anim->pose);
+            Sol_Render_GetNext_Model(model->kind, &modelSSBO, &anim->pose);
         }
         else
         {
-            Sol_Render_GetNext_Model(model->modelId, &modelSSBO, NULL);
+            Sol_Render_GetNext_Model(model->kind, &modelSSBO, NULL);
         }
     }
 }
@@ -99,7 +99,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     SolModel    *model    = Sol_Comp_Get(world, id, SolModel);
     SolAnim     *anim     = Sol_Comp_Get(world, id, SolAnim);
     SolXform    *xform    = Sol_Comp_Get(world, id, SolXform);
-    SolSkeleton *skeleton = &loaded_models[model->modelId].skeleton;
+    SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
 
     int boneIdx = -1;
     for (int i = 0; i < skeleton->boneCount; i++)

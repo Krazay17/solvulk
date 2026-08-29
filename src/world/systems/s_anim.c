@@ -143,10 +143,10 @@ static void Anim_Solver(SparseSet_SolAnim *set, World *world, double dt)
         SolAnim *anim = &set->data[i];
 
         SolModel *model = Sol_Comp_Get(world, id, SolModel);
-        if (!model || model->modelId < 0)
+        if (!model || model->kind < 0)
             continue;
 
-        SolModelData *m = &loaded_models[model->modelId];
+        SolModelData *m = &loaded_models[model->kind];
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -216,7 +216,7 @@ static void Anim_Solver(SparseSet_SolAnim *set, World *world, double dt)
             }
         }
 
-        Sol_Skeleton_Pose(model->modelId, &anim->pose, anim->layers, &anim->lastPose, &anim->hasLastPose);
+        Sol_Skeleton_Pose(model->kind, &anim->pose, anim->layers, &anim->lastPose, &anim->hasLastPose);
     }
 }
 
@@ -390,7 +390,7 @@ void Sol_Anim_Play(World *world, int id, AnimDesc desc)
     bool wasActive = (layer->currentAnim != -1);
 
     layer->animId      = animId;
-    layer->currentAnim = model_anim_map[modelComp->modelId][animId];
+    layer->currentAnim = model_anim_map[modelComp->kind][animId];
     layer->playRate    = desc.speed ? desc.speed : 1.0f;
     layer->currentSeek = desc.seek;
     layer->playKind    = desc.playKind;

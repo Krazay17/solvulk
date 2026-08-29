@@ -55,7 +55,7 @@ int Sol_Init(void *hwnd, void *hInstance)
     if (result != 0)
         printf("Models failed to init, code:%d\n", result);
 
-    solState.debug     = false;
+    solState.debug     = true;
     solState.isRunning = true;
     return result;
 }

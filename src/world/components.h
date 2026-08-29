@@ -8,9 +8,8 @@
 #define MAX_VIEWS 10
 #define MAX_TRACKER_GETTERS 2
 #define MAX_EMITTERS 8
-
 #define INITIAL_SPARSE_SET_CAP 0
-#define BITC(x) (1ULL << (x))
+
 
 // ==========================================
 // 1. COMPONENT DATA STRUCTS
@@ -21,7 +20,7 @@ typedef struct SolActive
     double time_activated;
 } SolActive;
 
-typedef struct
+typedef struct SolXform
 {
     vec3s   last_pos, pos, draw_pos;
     vec3s   last_sca, sca, draw_sca;
@@ -51,6 +50,7 @@ typedef struct SolBody3
     u32    group, base_group;
     u32    ray_group, ray_base_group;
     bool   ignoreFriendly;
+    bool putInTable;
 } SolBody3;
 
 typedef struct SolBody2
@@ -140,7 +140,6 @@ typedef struct SolMove3
 typedef struct SolModel
 {
     ModelKind kind;
-    int       modelId;
     vec4s     color;
     bool      is2d;
     float     xOffset, yOffset, yawOffset;
@@ -422,7 +421,7 @@ typedef struct SolZone
     float accum;
 } SolZone;
 
-typedef struct
+typedef struct SolSlider
 {
     float min_val;
     float max_val;

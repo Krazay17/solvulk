@@ -39,6 +39,7 @@ versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
 
 // INLINES-------------------
+
 static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 {
     // 1. Get the relative angle between velocity and facing direction
@@ -234,11 +235,13 @@ static inline int get_index_from_mask(unsigned int mask)
     }
     return index;
 }
+
 static inline vec3s Sol_ProjectVec(vec3s a, vec3s b)
 {
     float dot = glms_vec3_dot(a, b);
     return glms_vec3_sub(a, glms_vec3_scale(b, dot));
 }
+
 static inline vec3s Sol_BounceVec(vec3s a, vec3s b)
 {
     float dot = glms_vec3_dot(a, b);
@@ -290,4 +293,142 @@ static inline vec2s CalcWishDir2(uint32_t action)
         wishdir.y += 1;
 
     return glms_vec2_normalize(wishdir);
+}
+
+static inline void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
+                                                  vec3s p2, vec3s q2, // segment B: p2 → q2
+                                                  vec3s *outA, vec3s *outB)
+{
+    vec3s d1 = glms_vec3_sub(q1, p1); // segment A direction
+    vec3s d2 = glms_vec3_sub(q2, p2); // segment B direction
+    vec3s r  = glms_vec3_sub(p1, p2);
+
+    float a = glms_vec3_dot(d1, d1); // squared length of segment A
+    float e = glms_vec3_dot(d2, d2); // squared length of segment B
+    float f = glms_vec3_dot(d2, r);
+
+    float s, t;
+    // Both segments degenerate to points?
+    if (a <= FLOATING_EPSILON && e <= FLOATING_EPSILON)
+    {
+        *outA = p1;
+        *outB = p2;
+        return;
+    }
+
+    if (a <= FLOATING_EPSILON)
+    {
+        // Segment A is a point
+        s = 0.0f;
+        t = f / e;
+        t = fmaxf(0.0f, fminf(1.0f, t));
+    }
+    else
+    {
+        float c = glms_vec3_dot(d1, r);
+
+        if (e <= FLOATING_EPSILON)
+        {
+            // Segment B is a point
+            t = 0.0f;
+            s = fmaxf(0.0f, fminf(1.0f, -c / a));
+        }
+        else
+        {
+            // General case
+            float b     = glms_vec3_dot(d1, d2);
+            float denom = a * e - b * b;
+
+            // Segments not parallel
+            if (denom != 0.0f)
+            {
+                s = (b * f - c * e) / denom;
+                s = fmaxf(0.0f, fminf(1.0f, s));
+            }
+            else
+            {
+                // Parallel — pick s = 0 arbitrarily
+                s = 0.0f;
+            }
+
+            t = (b * s + f) / e;
+
+            // Clamp t and recompute s if needed
+            if (t < 0.0f)
+            {
+                t = 0.0f;
+                s = fmaxf(0.0f, fminf(1.0f, -c / a));
+            }
+            else if (t > 1.0f)
+            {
+                t = 1.0f;
+                s = fmaxf(0.0f, fminf(1.0f, (b - c) / a));
+            }
+        }
+    }
+
+    *outA = glms_vec3_add(p1, glms_vec3_scale(d1, s));
+    *outB = glms_vec3_add(p2, glms_vec3_scale(d2, t));
+}
+
+static inline void compose_trs(vec3 pos, versor quat, vec3 scale, mat4 dest)
+{
+    // 1. Initialize dest as an identity matrix
+    glm_mat4_identity(dest);
+
+    // 2. Apply Translation (T)
+    glm_translate(dest, pos);
+
+    // 3. Convert Quaternion to a mat4 and apply Rotation (R)
+    mat4 rot;
+    glm_quat_mat4(quat, rot);
+    glm_mat4_mul(dest, rot, dest);
+
+    // 4. Apply Scale (S)
+    glm_scale(dest, scale);
+}
+
+static inline mat4s Sol_Transform(vec3s pos, versors quat, vec3s scale)
+{
+    // 1. Build 4x4 rotation matrix directly from quaternion
+    mat4s m = glms_quat_mat4(quat);
+
+    // 2. Scale basis column vectors directly (S * R)
+    m.col[0] = glms_vec4_scale(m.col[0], scale.x);
+    m.col[1] = glms_vec4_scale(m.col[1], scale.y);
+    m.col[2] = glms_vec4_scale(m.col[2], scale.z);
+
+    // 3. Set translation column directly
+    m.col[3] = (vec4s){{pos.x, pos.y, pos.z, 1.0f}};
+
+    return m;
+}
+
+static inline SolTri SolTri_GetWorldSpace(const SolTri *localTri, const versors quat, const vec3s pos, vec3s scale)
+{
+    SolTri worldTri    = *localTri;
+    mat4s  modelMatrix = Sol_Transform(pos, quat, scale);
+
+    worldTri.a = glms_mat4_mulv3(modelMatrix, localTri->a, 1.0f);
+    worldTri.b = glms_mat4_mulv3(modelMatrix, localTri->b, 1.0f);
+    worldTri.c = glms_mat4_mulv3(modelMatrix, localTri->c, 1.0f);
+
+    // Recalculate normal if non-uniform scale was applied
+    vec3s edge1     = glms_vec3_sub(worldTri.b, worldTri.a);
+    vec3s edge2     = glms_vec3_sub(worldTri.c, worldTri.a);
+    worldTri.normal = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
+
+    return worldTri;
+}
+
+static inline int fast_floor(float x) 
+{
+    int i = (int)x;
+    return i - (x < i);
+}
+
+static inline u32 fast_mod_u32(u32 hash, u32 size)
+{
+    // Evaluates (hash % size) using 64-bit fixed-point multiplication
+    return (u32)(((u64)hash * (u64)size) >> 32);
 }

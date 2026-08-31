@@ -111,20 +111,20 @@ void Move3_Step(World *world, double dt)
             move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f * fdt);
 
         // TEMP
-        if (Sol_Comp_Has(world, id, SolXform))
-        {
-            SolXform *xform = Sol_Comp_Get(world, id, SolXform);
-            if (xform->pos.y <= 0)
-            {
-                move->airtime = 0;
-                move->groundtime += fdt;
-            }
-            else
-            {
-                move->groundtime = 0;
-                move->airtime += fdt;
-            }
-        }
+        // if (Sol_Comp_Has(world, id, SolXform))
+        // {
+        //     SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+        //     if (xform->pos.y <= 0)
+        //     {
+        //         move->airtime = 0;
+        //         move->groundtime += fdt;
+        //     }
+        //     else
+        //     {
+        //         move->groundtime = 0;
+        //         move->airtime += fdt;
+        //     }
+        // }
     }
 }
 

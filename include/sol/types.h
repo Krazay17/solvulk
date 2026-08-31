@@ -122,7 +122,6 @@ typedef enum Shape3
     SHAPE3_SPH,
     SHAPE3_CAP,
     SHAPE3_BOX,
-    SHAPE3_MOD,
     SHAPE3_CNT,
 } Shape3;
 

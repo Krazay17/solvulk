@@ -93,10 +93,10 @@ typedef struct SolModelData
 {
     ModelKind    kind;
     SolVertex   *vertices;
+    u32         *indices;
     SolMesh     *meshes;
     SolTri      *tris;
     ModelPrefab *prefabs;
-    u32         *indices;
 
     u32 vertex_count;
     u32 mesh_count;

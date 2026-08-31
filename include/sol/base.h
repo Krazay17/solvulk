@@ -19,6 +19,7 @@
 #define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
 #define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
 #define VEC4_RED (vec4s){1.0f, 0.0f, 0.0f, 1.0f}
+#define clamp(v, lo, hi) (((v) < (lo)) ? (lo) : (((v) > (hi)) ? (hi) : (v)))
 
 // static inline void _sollog_int(int v)
 // {

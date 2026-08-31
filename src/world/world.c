@@ -29,7 +29,7 @@ typedef struct
 const SystemDef system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_CONTROLLER] = {.update = Controller_Tick, .phase = UPDATEPHASE_TICK},
     [WORLDSYS_MOVE3]      = {.update = Move3_Step, .phase = UPDATEPHASE_STEP},
-    [WORLDSYS_BODY3]      = {.init = Body3_Init, .update = Body3_Step, .phase = UPDATEPHASE_STEP},
+    [WORLDSYS_PHYSX]      = {.init = Physx_Init, .update = Physx_Step, .phase = UPDATEPHASE_STEP},
     [WORLDSYS_CAMERA]     = {.update = Camera_Tick, .phase = UPDATEPHASE_POSTTICK},
     [WORLDSYS_ANIM]       = {.update = Anim_Tick, .phase = UPDATEPHASE_POSTTICK},
     [WORLDSYS_MODEL]      = {.update = Model_Render, .phase = UPDATEPHASE_RENDER3},
@@ -228,7 +228,7 @@ int Sol_Create_Ent(World *world)
     if (id >= world->maxEntities)
         return -1;
 
-    world->activeEnts[id]      = true;
+    world->activeEnts[id] = true;
     world->entCount++;
     SolActive *sol_active      = Sol_Comp_Add(world, id, SolActive);
     sol_active->active_at_tick = world->currentTick;
@@ -236,4 +236,3 @@ int Sol_Create_Ent(World *world)
 
     return id;
 }
-

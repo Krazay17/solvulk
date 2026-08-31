@@ -85,7 +85,7 @@ void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lo
     SolController *cont = Sol_Comp_Get(world, id, SolController);
 
     SolRayResult aimTrace;
-    int          hits = Sol_Body3_Raycast(world,
+    int          hits = Sol_Physx_Raycast(world,
                                           (SolRay){
                                               .pos       = lookpos,
                                               .ignoreEnt = id,

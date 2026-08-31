@@ -44,13 +44,13 @@ FontInstance font2dQueue;
 static void Flush_View()
 {
     g_solView.view = glms_lookat(g_solView.pos, g_solView.target, g_solView.up);
-    
+
     g_solView.proj =
-    glms_perspective(glm_rad(g_solView.fov), Sol_Render_GetAspect(), g_solView.nearClip, g_solView.farClip);
-    
+        glms_perspective(glm_rad(g_solView.fov), Sol_Render_GetAspect(), g_solView.nearClip, g_solView.farClip);
+
     g_solView.viewProj = glms_mat4_mul(g_solView.proj, g_solView.view);
     g_solView.right    = glms_vec3_cross(g_solView.dir, WORLD_UP);
-    
+
     SceneUBO *ubo       = Sol_Render_GetNext_Scene();
     ubo->view           = g_solView.view;
     ubo->proj           = g_solView.proj;
@@ -203,7 +203,8 @@ void Flush_Models(void)
 
             // Write both model params and transformations to mirrored index offsets
             modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
-            boneGpu[globalIdx]  = skinningQueue.bones[i];
+            if (skinningQueue.bones[i])
+                boneGpu[globalIdx] = *skinningQueue.bones[i];
 
             cursors[h]++;
         }

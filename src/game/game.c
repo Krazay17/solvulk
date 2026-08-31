@@ -17,14 +17,15 @@ void Create_Sol_Game()
 
     Sol_Sys_Add(world, WORLDSYS_CONTROLLER);
     Sol_Sys_Add(world, WORLDSYS_MOVE3);
-    Sol_Sys_Add(world, WORLDSYS_BODY3);
+    Sol_Sys_Add(world, WORLDSYS_PHYSX);
     Sol_Sys_Add(world, WORLDSYS_CAMERA);
     Sol_Sys_Add(world, WORLDSYS_ANIM);
     Sol_Sys_Add(world, WORLDSYS_MODEL);
     WAddTick(world) = Debug;
 
-    dude                    = Sol_Prefab_Dude(world, (vec3s){0, 2, 0}, 1.0f);
+    dude                    = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
     user_session.user_entid = dude;
+    Sol_Debug_Add("Player Ent", dude);
     Sol_Comp_Add(world, dude, SolController);
     Sol_Comp_Add(world, dude, SolPlayer);
     SolCamera *camera     = Sol_Comp_Add(world, dude, SolCamera);
@@ -37,24 +38,21 @@ void Create_Sol_Game()
 
     int level1 = Sol_Create_Ent(world);
     Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
-    SolModel *levelModel = Sol_Comp_Add(world, level1, SolModel);
-    levelModel->kind     = SOL_MODEL_WORLD6;
-    SolBody3 *levelBody  = Sol_Body3_Add(world, level1);
-    levelBody->shape     = SHAPE3_MOD;
-    levelBody->mass      = 0;
-    levelBody->invMass   = 0;
-    levelBody->dims.x    = 100.0f;
+    SolModel *levelModel         = Sol_Comp_Add(world, level1, SolModel);
+    levelModel->kind             = SOL_MODEL_WORLD10;
+    SolStage *level1MeshCollider = Sol_Comp_Add(world, level1, SolStage);
+    level1MeshCollider->isDirty  = true;
 
-    while (world->entCount < 100)
+    while (world->entCount < 1000)
     {
         int id = Sol_Create_Ent(world);
-        Sol_Xform_Add(world, id, (vec3s){0, (float)id, 0});
+        Sol_Xform_Add(world, id, (vec3s){0, (float)id + 10.0f, 0});
         SolBody3 *body3 = Sol_Body3_Add(world, id);
         body3->shape = SHAPE3_SPH;
         body3->group = PHYSXMASK(1, 1);
         body3->dims.x = 0.5f;
-        Sol_Comp_Add(world, id, SolModel)->kind = MODELKIND_WIZARD;
+        body3->dims.y = 0.5f;
+        SolModel *model = Sol_Comp_Add(world, id, SolModel);
+        model->kind = MODELKIND_WIZARD;
     }
-
-    Sol_Prefab_Dude(world, (vec3s){2.0f, 1, 0}, 1.0f);
 }

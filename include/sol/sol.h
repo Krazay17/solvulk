@@ -19,3 +19,4 @@
 #include "sol_user.h"
 #include "render/render.h"
 #include "platform/platform.h"
+#include "spatial_grid.h"

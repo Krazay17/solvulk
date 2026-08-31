@@ -132,7 +132,6 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
         },
 };
 
-
 static void Anim_Solver(SparseSet_SolAnim *set, World *world, double dt)
 {
     float fdt = (float)dt;
@@ -284,7 +283,7 @@ void Anim_Tick(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, SolMove3))
         {
-            SolMove3   *movement     = Sol_Comp_Get(world, id, SolMove3);
+            SolMove3      *movement     = Sol_Comp_Get(world, id, SolMove3);
             MoveStateData *data         = &movement->stateData[movement->state];
             bool           modify_speed = false;
             AnimDesc       move_anim    = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};

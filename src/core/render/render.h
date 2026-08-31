@@ -199,20 +199,20 @@ typedef struct
 typedef struct ModelPushDesc
 {
     ModelKind handle;
-    vec4s          position;
-    vec4s          scale;
-    vec4s          rotation;
-    vec4s          color;
-    vec4s          material;
-    u32            flags;
-    bool           hasAnim;
-    mat4          *bones;
+    vec4s     position;
+    vec4s     scale;
+    vec4s     rotation;
+    vec4s     color;
+    vec4s     material;
+    u32       flags;
+    bool      hasAnim;
+    mat4     *bones;
 } ModelPushDesc;
 
 typedef struct
 {
-    u32            count;
-    ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
+    u32       count;
+    ModelSSBO modelSSBO[MAX_MODEL_INSTANCES];
     ModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
@@ -220,8 +220,8 @@ typedef struct
 {
     u32            count;
     ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
-    SolPose        bones[MAX_MODEL_INSTANCES];
-    ModelKind handles[MAX_MODEL_INSTANCES];
+    const SolPose *bones[MAX_MODEL_INSTANCES];
+    ModelKind      handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
 extern ModelSubmission        modelQueue;
@@ -235,15 +235,15 @@ static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSS
             return;
         u32 idx                      = skinningQueue.count++;
         skinningQueue.handles[idx]   = handle;
-        skinningQueue.bones[idx]     = *pose;
+        skinningQueue.bones[idx]     = pose;
         skinningQueue.modelSSBO[idx] = *modelSSBO;
     }
     else
     {
         if (modelQueue.count >= MAX_MODEL_INSTANCES)
             return;
-        u32 idx                 = modelQueue.count++;
-        modelQueue.handles[idx] = handle;
+        u32 idx                   = modelQueue.count++;
+        modelQueue.handles[idx]   = handle;
         modelQueue.modelSSBO[idx] = *modelSSBO;
     }
 }

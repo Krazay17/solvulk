@@ -18,6 +18,7 @@ typedef struct
     double      totalMs;
     int         count;
     int         limiter;
+    double      accumulator;
 } SolProfiler;
 
 static LONGINT _profFreq;
@@ -49,7 +50,7 @@ static inline void Prof_End(SolProfiler *p)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     long long end = (long long)ts.tv_sec * 1000000000LL + ts.tv_nsec;
-    double ms = (double)(end - p->start) / 1000000.0;
+    double    ms  = (double)(end - p->start) / 1000000.0;
 #endif
 
     p->totalMs += ms;
@@ -60,8 +61,7 @@ static inline void Prof_Print(SolProfiler *p)
 {
     if (p->count > 0)
     {
-        printf("%-24s avg=%.3fms total=%.1fms calls=%d\n", 
-               p->name, p->totalMs / p->count, p->totalMs, p->count);
+        printf("%-24s avg=%.3fms total=%.1fms calls=%d\n", p->name, p->totalMs / p->count, p->totalMs, p->count);
     }
 }
 
@@ -71,13 +71,13 @@ static inline void Prof_Reset(SolProfiler *p)
     p->count   = 0;
 }
 
-static inline void Prof_EndEz(SolProfiler *p, bool onTick)
+static inline void Prof_EndEz(SolProfiler *p, bool onTick, double dt)
 {
     Prof_End(p);
-
-    p->limiter++;
-    if (onTick && (p->limiter % 100 != 0))
+    p->accumulator += dt;
+    if (onTick && p->accumulator < 2.0f)
         return;
+    p->accumulator = 0;
 
     Prof_Print(p);
     Prof_Reset(p);

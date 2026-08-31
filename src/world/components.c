@@ -39,6 +39,8 @@ SolBody3 *Sol_Body3_Add(World *world, int id)
     body3->invMass     = 1.0f;
     body3->restitution = 0.5f;
     body3->gravity     = SOL_PHYS_GRAV;
+
+    return body3;
 }
 
 SolAnim *Sol_Anim_Add(World *world, int id)

@@ -10,7 +10,6 @@
 #define MAX_EMITTERS 8
 #define INITIAL_SPARSE_SET_CAP 0
 
-
 // ==========================================
 // 1. COMPONENT DATA STRUCTS
 // ==========================================
@@ -46,11 +45,9 @@ typedef struct SolBody3
     vec3s  vel, impulse, force, groundNormal, dims;
     vec3s  gravity;
     float  mass, invMass, restitution;
-    u32    spatial_grid_offset, tri_count;
     u32    group, base_group;
     u32    ray_group, ray_base_group;
     bool   ignoreFriendly;
-    bool putInTable;
 } SolBody3;
 
 typedef struct SolBody2
@@ -437,6 +434,16 @@ typedef struct SolBuilder
     u32     model;
 } SolBuilder;
 
+typedef struct SolMeshCollider
+{
+    bool isDirty;
+} SolMeshCollider;
+
+typedef struct SolStage
+{
+    bool isDirty;
+} SolStage;
+
 // ==========================================
 // 2. X-MACRO COMPONENT LIST
 // X(Type, EnumFlag)
@@ -448,6 +455,8 @@ typedef struct SolBuilder
     X(SolController, HAS_SolController)                                                                                \
     X(SolBody2, HAS_SolBody2)                                                                                          \
     X(SolBody3, HAS_SolBody3)                                                                                          \
+    X(SolMeshCollider, HAS_SolMeshCollider)                                                                            \
+    X(SolStage, HAS_SolStage)                                                                                          \
     X(SolModel, HAS_SolModel)                                                                                          \
     X(SolAnim, HAS_SolAnim)                                                                                            \
     X(SolCamera, HAS_SolCamera)                                                                                        \

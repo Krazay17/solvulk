@@ -997,3 +997,25 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
     data->effects     = ability_config[ability][rarity].effectMask | bonusEffects;
     Sol_Weapon_Equip(world, id, ability, slot);
 }
+
+        // SolSweptHit ccdHit;
+        // if (Collisions_Swept_Static_Tris(world, id, ws, xform, body3, fdt, &ccdHit))
+        // {
+        //     // 1. Advance position right up to the impact point (leaving 0.001f skin distance)
+        //     float safeT = fmaxf(0.0f, ccdHit.t - 0.001f);
+        //     xform->pos  = glms_vec3_add(xform->pos, glms_vec3_scale(body3->vel, fdt * safeT));
+
+        //     // 2. Reflect velocity along surface normal (Slide or Bounce)
+        //     float velDotN = glms_vec3_dot(body3->vel, ccdHit.normal);
+        //     if (velDotN < 0.0f)
+        //     {
+        //         // Zero out normal velocity (sliding response)
+        //         body3->vel =
+        //             glms_vec3_sub(body3->vel, glms_vec3_scale(ccdHit.normal, velDotN * (1.0f + body3->restitution)));
+        //     }
+        // }
+        // else
+        // {
+        //     // No sweep collision; step full fdt position
+        //     xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body3->vel, fdt));
+        // }

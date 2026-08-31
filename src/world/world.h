@@ -22,7 +22,7 @@ typedef enum
 {
     WORLDSYS_CONTROLLER,
     WORLDSYS_MOVE3,
-    WORLDSYS_BODY3,
+    WORLDSYS_PHYSX,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
@@ -151,12 +151,14 @@ SOL_COMPONENT_LIST(GENERATE_SPARSE_FUNCS)
 // ==========================================
 
 // Bitmask check: O(1), cache-friendly
-#define Sol_Comp_Has(w, entId, Type) (((w)->masks[entId] & BITC(HAS_##Type)) != 0)
+#define Sol_Comp_Has(w, entId, Type) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(HAS_##Type)) != 0))
 
 // Direct lookup via sparse index
 #define Sol_Comp_Get(w, entId, Type)                                                                                   \
-    (&((SparseSet_##Type *)(w)->components[HAS_##Type])                                                                \
-          ->data[((SparseSet_##Type *)(w)->components[HAS_##Type])->sparse[entId]])
+    (Sol_Comp_Has((w), (entId), Type)                                                                                  \
+         ? (&((SparseSet_##Type *)(w)->components[HAS_##Type])                                                         \
+                 ->data[((SparseSet_##Type *)(w)->components[HAS_##Type])->sparse[(entId)]])                           \
+         : NULL)
 
 // Add component to entity (grows dense arrays dynamically if full)
 #define Sol_Comp_Add(w, entId, Type) Sol_Comp_Add_##Type(w, entId)
@@ -261,8 +263,8 @@ void Controller_Init(World *world);
 void Controller_Deinit(World *world);
 void Move3_Init(World *world);
 void Move3_Deinit(World *world);
-void Body3_Init(World *world);
-void Body3_Deinit(World *world);
+void Physx_Init(World *world);
+void Physx_Deinit(World *world);
 void Anim_Init(World *world);
 void Anim_Deinit(World *world);
 void Camera_Init(World *world);
@@ -270,14 +272,13 @@ void Camera_Deinit(World *world);
 void Model_Init(World *world);
 void Model_Deinit(World *world);
 
-void Controller_Tick(World *world, double dt);
 void Move3_Step(World *world, double dt);
-void Body3_Step(World *world, double dt);
+void Physx_Step(World *world, double dt);
 void Anim_Tick(World *world, double dt);
+void Controller_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
-void Model_Render(World *world, double dt);
-
 void Player_Tick(World *world, double dt);
+void Model_Render(World *world, double dt);
 
 // Api
 World *World_Create();
@@ -296,9 +297,9 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
 
-bool  Sol_Body3_DoesCollide(SolBody3 *body, SolBody3 *other_body);
-vec3s Sol_Body3_GetGround(World *world, int id);
-int   Sol_Body3_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+bool  Sol_Physx_DoesCollide(SolBody3 *body, SolBody3 *other_body);
+vec3s Sol_Physx_GetGround(World *world, int id);
+int   Sol_Physx_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 
 vec3s Sol_Physx_GetVel(World *world, int id);
 float Sol_Physx_GetSpeed(World *world, int id);

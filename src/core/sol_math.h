@@ -390,45 +390,64 @@ static inline void compose_trs(vec3 pos, versor quat, vec3 scale, mat4 dest)
 
 static inline mat4s Sol_Transform(vec3s pos, versors quat, vec3s scale)
 {
-    // 1. Build 4x4 rotation matrix directly from quaternion
-    mat4s m = glms_quat_mat4(quat);
-
-    // 2. Scale basis column vectors directly (S * R)
-    m.col[0] = glms_vec4_scale(m.col[0], scale.x);
-    m.col[1] = glms_vec4_scale(m.col[1], scale.y);
-    m.col[2] = glms_vec4_scale(m.col[2], scale.z);
-
-    // 3. Set translation column directly
-    m.col[3] = (vec4s){{pos.x, pos.y, pos.z, 1.0f}};
-
+    mat4s m = glms_mat4_identity();
+    m       = glms_translate(m, pos);
+    m       = glms_quat_rotate(m, quat);
+    m       = glms_scale(m, scale);
     return m;
 }
 
 static inline SolTri SolTri_GetWorldSpace(const SolTri *localTri, const versors quat, const vec3s pos, vec3s scale)
 {
-    SolTri worldTri    = *localTri;
-    mat4s  modelMatrix = Sol_Transform(pos, quat, scale);
+    // SolTri worldTri    = *localTri;
+    // mat4s  modelMatrix = Sol_Transform(pos, quat, scale);
 
-    worldTri.a = glms_mat4_mulv3(modelMatrix, localTri->a, 1.0f);
-    worldTri.b = glms_mat4_mulv3(modelMatrix, localTri->b, 1.0f);
-    worldTri.c = glms_mat4_mulv3(modelMatrix, localTri->c, 1.0f);
+    // worldTri.a = glms_mat4_mulv3(modelMatrix, localTri->a, 1.0f);
+    // worldTri.b = glms_mat4_mulv3(modelMatrix, localTri->b, 1.0f);
+    // worldTri.c = glms_mat4_mulv3(modelMatrix, localTri->c, 1.0f);
 
-    // Recalculate normal if non-uniform scale was applied
-    vec3s edge1     = glms_vec3_sub(worldTri.b, worldTri.a);
-    vec3s edge2     = glms_vec3_sub(worldTri.c, worldTri.a);
-    worldTri.normal = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
+    // // Recalculate normal if non-uniform scale was applied
+    // vec3s edge1     = glms_vec3_sub(worldTri.b, worldTri.a);
+    // vec3s edge2     = glms_vec3_sub(worldTri.c, worldTri.a);
+    // worldTri.normal = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
 
-    return worldTri;
+    // return worldTri;
+
+    SolTri w;
+
+    // 1. Scale
+    vec3s sa = glms_vec3_mul(localTri->a, scale);
+    vec3s sb = glms_vec3_mul(localTri->b, scale);
+    vec3s sc = glms_vec3_mul(localTri->c, scale);
+
+    // 2. Rotate via Quaternion
+    sa = glms_quat_rotatev(quat, sa);
+    sb = glms_quat_rotatev(quat, sb);
+    sc = glms_quat_rotatev(quat, sc);
+
+    // 3. Translate
+    w.a = glms_vec3_add(sa, pos);
+    w.b = glms_vec3_add(sb, pos);
+    w.c = glms_vec3_add(sc, pos);
+
+    // 4. Recalculate World Normal
+    vec3s e1 = glms_vec3_sub(w.b, w.a);
+    vec3s e2 = glms_vec3_sub(w.c, w.a);
+    w.normal = glms_vec3_normalize(glms_vec3_cross(e1, e2));
+
+    // 5. Recalculate Center and Bounds Radius
+    w.center = glms_vec3_scale(glms_vec3_add(glms_vec3_add(w.a, w.b), w.c), 1.0f / 3.0f);
+
+    float da = glms_vec3_norm(glms_vec3_sub(w.a, w.center));
+    float db = glms_vec3_norm(glms_vec3_sub(w.b, w.center));
+    float dc = glms_vec3_norm(glms_vec3_sub(w.c, w.center));
+    w.bounds = fmaxf(da, fmaxf(db, dc));
+
+    return w;
 }
 
-static inline int fast_floor(float x) 
+static inline int fast_floor(float x)
 {
     int i = (int)x;
     return i - (x < i);
-}
-
-static inline u32 fast_mod_u32(u32 hash, u32 size)
-{
-    // Evaluates (hash % size) using 64-bit fixed-point multiplication
-    return (u32)(((u64)hash * (u64)size) >> 32);
 }

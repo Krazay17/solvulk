@@ -29,9 +29,11 @@ void Model_Render(World *world, double dt)
     SparseSet_SolModel *set = Sol_Comp_Set(world, SolModel);
     for (int i = 0; i < set->cnt; i++)
     {
-        int       id        = set->dense[i];
-        SolModel *model     = &set->data[i];
-        SolXform *xform     = Sol_Comp_Get(world, id, SolXform);
+        int       id    = set->dense[i];
+        SolModel *model = &set->data[i];
+        SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+        if (!xform)
+            continue;
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = model->color;
 
@@ -76,7 +78,6 @@ void Model_Render(World *world, double dt)
             modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
             modelSSBO.scale    = (vec4s){xform->draw_sca.x, xform->draw_sca.y, xform->draw_sca.z, 1.0f};
         }
-
         if (Sol_Comp_Has(world, id, SolAnim))
         {
             SolAnim *anim = Sol_Comp_Get(world, id, SolAnim);

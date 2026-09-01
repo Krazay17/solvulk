@@ -75,7 +75,7 @@ static inline void Prof_EndEz(SolProfiler *p, bool onTick, double dt)
 {
     Prof_End(p);
     p->accumulator += dt;
-    if (onTick && p->accumulator < 2.0f)
+    if (onTick && p->accumulator < 4.0f)
         return;
     p->accumulator = 0;
 

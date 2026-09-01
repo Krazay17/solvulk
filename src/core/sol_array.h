@@ -15,7 +15,7 @@
     {                                                                                                                  \
         (arr)->count    = 0;                                                                                           \
         (arr)->capacity = (initial_cap);                                                                               \
-        (arr)->data     = malloc(sizeof(*(arr)->data) * (initial_cap));                                                \
+        (arr)->data     = (arr)->capacity > 0 ? malloc(sizeof(*(arr)->data) * (arr)->capacity) : NULL;                 \
     } while (0)
 
 #define SolArray_Push(arr, value)                                                                                      \
@@ -32,8 +32,11 @@
 #define SolArray_Free(arr)                                                                                             \
     do                                                                                                                 \
     {                                                                                                                  \
-        free((arr)->data);                                                                                             \
-        (arr)->data     = NULL;                                                                                        \
+        if ((arr)->data)                                                                                               \
+        {                                                                                                              \
+            free((arr)->data);                                                                                         \
+            (arr)->data = NULL;                                                                                        \
+        }                                                                                                              \
         (arr)->count    = 0;                                                                                           \
         (arr)->capacity = 0;                                                                                           \
     } while (0)

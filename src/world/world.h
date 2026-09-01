@@ -67,13 +67,13 @@ struct World
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
-    u64   masks[MAX_ENTITIES];
+    u64   masks[MAX_ENTS];
     void *components[COMPONENT_COUNT];
 
     u64   system_mask;
     void *systems[WORLDSYS_COUNT];
 
-    u32 hitGenMatrix[MAX_ENTITIES][MAX_ENTITIES];
+    u32 hitGenMatrix[MAX_ENTS][MAX_ENTS];
     u32 globalHitGen;
 
     int tickCount;
@@ -82,7 +82,7 @@ struct World
     int draw3dCount;
     int draw2dCount;
 
-    int activeEnts[MAX_ENTITIES];
+    int activeEnts[MAX_ENTS];
     int entCount;
 
     u32    currentTick, currentStep;

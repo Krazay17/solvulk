@@ -28,9 +28,9 @@ const char *model_path[SOL_MODEL_COUNT] = {
 
 SolModelData loaded_models[SOL_MODEL_COUNT];
 
-static SolModelData   *Parse_Model(SolResource res, u32 id);
-static SolSkeleton ParseSkeleton(cgltf_data *data);
-SolModelDataMasks      model_masks[SOL_MODEL_COUNT];
+static SolModelData *Parse_Model(SolResource res, u32 id);
+static SolSkeleton   ParseSkeleton(cgltf_data *data);
+SolModelDataMasks    model_masks[SOL_MODEL_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
@@ -50,8 +50,8 @@ int Sol_Models_Init()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
-        SolResource res   = Sol_LoadResource(model_path[i]);
-        SolModelData   *model = Parse_Model(res, i);
+        SolResource   res   = Sol_LoadResource(model_path[i]);
+        SolModelData *model = Parse_Model(res, i);
         Sol_Render_UploadModel(model, i);
     }
     return 0;
@@ -602,7 +602,8 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
 }
 
 // Thread-local scratch storage moves ~23KB off the stack entirely
-typedef struct {
+typedef struct
+{
     vec3   poseT[MAX_BONES];
     versor poseR[MAX_BONES];
     vec3   poseS[MAX_BONES];
@@ -614,11 +615,10 @@ typedef struct {
 
 static _Thread_local AnimScratchBuffer g_animScratch;
 
-void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers,
-                       SolPoseE *lastPose, bool *hasLastPose)
+void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose)
 {
-    SolModelData    *model = &loaded_models[model_handle];
-    SolSkeleton *skel  = &model->skeleton;
+    SolModelData *model = &loaded_models[model_handle];
+    SolSkeleton  *skel  = &model->skeleton;
 
     AnimScratchBuffer *s = &g_animScratch;
 
@@ -643,7 +643,7 @@ void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers,
             glm_vec4_copy(skel->bones[i].restRot.raw, s->currR[i]);
             glm_vec3_copy(skel->bones[i].restScale.raw, s->currS[i]);
         }
-        
+
         Sample_Animation_Pose(skel, layer->currentAnim, layer->currentSeek, s->currT, s->currR, s->currS);
 
         // Blend directly into currT/R/S if the layer is transitioning
@@ -652,15 +652,7 @@ void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers,
             for (int i = 0; i < skel->boneCount; i++)
             {
                 glm_vec3_lerp(layer->cachedT[i].raw, s->currT[i], layer->blendFactor, s->currT[i]);
-
-                versor targetR;
-                glm_vec4_copy(s->currR[i], targetR);
-                if (glm_quat_dot(layer->cachedR[i].raw, targetR) < 0.0f)
-                    glm_vec4_negate(targetR);
-
-                glm_quat_nlerp(layer->cachedR[i].raw, targetR, layer->blendFactor, s->currR[i]);
-                glm_quat_normalize(s->currR[i]);
-
+                glm_quat_nlerp(layer->cachedR[i].raw, s->currR[i], layer->blendFactor, s->currR[i]);
                 glm_vec3_lerp(layer->cachedS[i].raw, s->currS[i], layer->blendFactor, s->currS[i]);
             }
         }
@@ -682,15 +674,7 @@ void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers,
             else
             {
                 glm_vec3_lerp(s->poseT[i], s->currT[i], weight, s->poseT[i]);
-
-                versor targetR;
-                glm_vec4_copy(s->currR[i], targetR);
-                if (glm_quat_dot(s->poseR[i], targetR) < 0.0f)
-                    glm_vec4_negate(targetR);
-
-                glm_quat_nlerp(s->poseR[i], targetR, weight, s->poseR[i]);
-                glm_quat_normalize(s->poseR[i]);
-
+                glm_quat_nlerp(s->poseR[i], s->currR[i], weight, s->poseR[i]);
                 glm_vec3_lerp(s->poseS[i], s->currS[i], weight, s->poseS[i]);
             }
         }
@@ -782,10 +766,11 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
     return -1;
 }
 
-void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale, vec3s pos)
+void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale,
+                                 vec3s pos)
 {
     SolModelData *model = &loaded_models[handle];
-    mat3s     rot   = glms_quat_mat3(quat);
+    mat3s         rot   = glms_quat_mat3(quat);
     for (int i = 0; i < model->tri_count; i++)
     {
         SolTri  src = model->tris[i];

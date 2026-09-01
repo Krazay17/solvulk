@@ -40,7 +40,7 @@ World *World_Create()
     World *world = calloc(1, sizeof(World));
     if (world)
     {
-        world->maxEntities                     = MAX_ENTITIES;
+        world->maxEntities                     = MAX_ENTS;
         world->doesSimulate                    = true;
         world->doesRender                      = true;
         solState.worlds[solState.worldCount++] = world;
@@ -233,6 +233,7 @@ int Sol_Create_Ent(World *world)
     SolActive *sol_active      = Sol_Comp_Add(world, id, SolActive);
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = world->tickTime;
+    Sol_Debug_Add("Entities", world->entCount);
 
     return id;
 }

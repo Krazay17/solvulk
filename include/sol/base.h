@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sol_buffer.h"
+
 #define SOL_VERSION 1
 #define FLOATING_EPSILON 1e-7f
 #define BITC(x) (1ULL << (x))

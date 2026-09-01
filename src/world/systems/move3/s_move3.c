@@ -67,9 +67,9 @@ void Move3_Step(World *world, double dt)
         if (MOVE_STATE_FUNCS[move->state].update)
             MOVE_STATE_FUNCS[move->state].update(world, id, dt);
 
-        float finalSpeed    = forces->speed;    // * move->speedMod;
+        float finalSpeed    = forces->speed; // * move->speedMod;
         float finalFriction = forces->friction * move->frictionMod;
-        body3->gravity.y    = forces->gravity;  // * move->gravityMod;
+        body3->gravity.y    = forces->gravity; // * move->gravityMod;
 
         switch (move->state)
         {
@@ -102,13 +102,19 @@ void Move3_Step(World *world, double dt)
         // if (move->state != MOVE_JUMP)
         //     CheckGround(world, id, fdt, move);
 
-        if (move->knockDur > 0)
+        if (move->knockDur > 0.0f)
         {
             move->knockDur -= fdt;
-            body3->vel = glms_vec3_lerp(body3->vel, move->knockVel, 0.5f);
+            const float knockFactor = 1.0f - expf(-10.0f * fdt); // Decays smoothly over time
+            body3->vel              = glms_vec3_lerp(body3->vel, move->knockVel, knockFactor);
         }
+
+        // Framerate-independent friction modifier recovery
         if (move->frictionMod != 1.0f)
-            move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, 5.0f * fdt);
+        {
+            const float fricFactor = 1.0f - expf(-5.0f * fdt);
+            move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
+        }
 
         // TEMP
         // if (Sol_Comp_Has(world, id, SolXform))

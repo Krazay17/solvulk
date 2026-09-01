@@ -19,7 +19,7 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 
-#define MAX_ENTS (1 << 12)
+#define MAX_ENTS 0x1fff
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define ABILITY_SLOTS 10
@@ -438,6 +438,13 @@ typedef struct AnimDesc
     AnimLayerId layerId;
     int         anim;
 } AnimDesc;
+
+typedef struct SolContact
+{
+    u32   id, idB;
+    vec3s pos, normal;
+    float penetration;
+} SolContact;
 
 typedef struct SolHit
 {

@@ -26,6 +26,7 @@ void Worlds_Xform_Interpolate(World **worlds, int count, float alpha)
         World *world = worlds[w];
         if (!world->doesSimulate)
             continue;
+            
         SparseSet_SolXform *xform_set = Sol_Comp_Set(world, SolXform);
         for (int i = 0; i < xform_set->cnt; i++)
         {

@@ -11,7 +11,7 @@
 #include "font.h"
 #include "model.h"
 
-#define MAX_MODEL_INSTANCES (1 << 14)
+#define MAX_MODEL_INSTANCES 0x4fff
 #define MAX_RECT_INSTANCES (1 << 14)
 #define MAX_FONT_INSTANCES (1 << 16)
 #define MAX_QUAD_INSTANCES (1 << 20)

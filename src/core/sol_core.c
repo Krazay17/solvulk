@@ -60,6 +60,7 @@ int Sol_Init(void *hwnd, void *hInstance)
     return result;
 }
 
+#define MAX_ACCUMULATOR (SOL_TIMESTEP * 5.0)
 void Sol_Tick(double dt, double time)
 {
     if (dt < 0.0 || dt > 1.0)
@@ -76,7 +77,7 @@ void Sol_Tick(double dt, double time)
     Worlds_Tick(solState.worlds, solState.worldCount, dt);
 
     // ######### STEP AND INTERP #########
-    accumulator = accumulator > SOL_TIMESTEP * 10.0 ? SOL_TIMESTEP * 10.0 : accumulator + dt;
+    accumulator = accumulator > MAX_ACCUMULATOR ? MAX_ACCUMULATOR : accumulator + dt;
     while (accumulator >= SOL_TIMESTEP)
     {
         Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
@@ -90,8 +91,8 @@ void Sol_Tick(double dt, double time)
     Worlds_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
     // ######### END STEP AND INTERP #########
 
-    Sol_User_PostTick(dt);
     Worlds_PostTick(solState.worlds, solState.worldCount, dt);
+    Sol_User_PostTick(dt);
 
     Sol_Update_Audio_FromView();
     Sol_Render_CheckGpuUploads();

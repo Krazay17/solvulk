@@ -2,7 +2,6 @@
 
 #include "sol/types.h"
 
-#define MAX_ENTITIES 4096
 #define MAX_SYSTEMS 64
 #define MAX_BUFFS 64
 #define MAX_VIEWS 10
@@ -41,13 +40,13 @@ typedef struct SolController
 
 typedef struct SolBody3
 {
-    Shape3 shape;
-    vec3s  vel, impulse, force, groundNormal, dims;
-    vec3s  gravity;
-    float  mass, invMass, restitution;
-    u32    group, base_group;
-    u32    ray_group, ray_base_group;
-    bool   ignoreFriendly;
+    Shape3     shape;
+    vec3s      vel, impulse, force, groundNormal, dims;
+    vec3s      gravity;
+    float      mass, invMass, restitution;
+    u32        group, base_group;
+    u32        ray_group, ray_base_group;
+    bool       ignoreFriendly;
 } SolBody3;
 
 typedef struct SolBody2

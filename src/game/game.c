@@ -27,7 +27,6 @@ void Create_Sol_Game()
     user_session.user_entid = dude;
     Sol_Debug_Add("Player Ent", dude);
     Sol_Comp_Add(world, dude, SolController);
-    Sol_Comp_Add(world, dude, SolPlayer);
     SolCamera *camera     = Sol_Comp_Add(world, dude, SolCamera);
     SolMove3  *move       = Sol_Comp_Add(world, dude, SolMove3);
     camera->fov           = 80.0f;
@@ -43,10 +42,10 @@ void Create_Sol_Game()
     SolStage *level1MeshCollider = Sol_Comp_Add(world, level1, SolStage);
     level1MeshCollider->isDirty  = true;
 
-    while (world->entCount < 1000)
+    while (world->entCount < 6000)
     {
         int id = Sol_Create_Ent(world);
-        Sol_Xform_Add(world, id, (vec3s){0, (float)id + 10.0f, 0});
+        Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
         SolBody3 *body3 = Sol_Body3_Add(world, id);
         body3->shape = SHAPE3_SPH;
         body3->group = PHYSXMASK(1, 1);

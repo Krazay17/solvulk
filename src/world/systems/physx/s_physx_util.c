@@ -3,6 +3,8 @@
 #include "sol_math.h"
 #include "world.h"
 
+#include <omp.h>
+
 typedef bool (*ShapePairTest)(World *world, int idA, int idB, SolContact *contact);
 const ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
@@ -15,8 +17,6 @@ const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
 };
 
-static SolTri worldTris_temp[0xfffff];
-
 static inline BodyData Get_Body_Data(const SolBody3 *body)
 {
     // Static fallback: invMass = 0, vel = 0, restitution = 0
@@ -28,9 +28,10 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
 {
     SpatialTable_Clear(&sys->dynamic_table);
     SpatialTable_Clear(&sys->dynamic_tri_table);
+    int i;
 
     SparseSet_SolBody3 *bodySet = Sol_Comp_Set(world, SolBody3);
-    for (int i = 0; i < bodySet->cnt; i++)
+    for (i = 0; i < bodySet->cnt; i++)
     {
         int       id      = bodySet->dense[i];
         SolBody3 *body    = &bodySet->data[i];
@@ -43,7 +44,7 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
     }
 
     SparseSet_SolMeshCollider *meshSet = Sol_Comp_Set(world, SolMeshCollider);
-    for (int i = 0; i < meshSet->cnt; i++)
+    for (i = 0; i < meshSet->cnt; i++)
     {
         int              id    = meshSet->dense[i];
         SolMeshCollider *mesh  = &meshSet->data[i];
@@ -74,7 +75,7 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
     }
 
     SparseSet_SolStage *stageSet = Sol_Comp_Set(world, SolStage);
-    for (int i = 0; i < stageSet->cnt; i++)
+    for (i = 0; i < stageSet->cnt; i++)
     {
         int       id    = stageSet->dense[i];
         SolStage *stage = &stageSet->data[i];
@@ -86,8 +87,9 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
         SolTri *tris     = loaded_models[model->kind].tris;
         for (int t = 0; t < tricount; t++)
         {
-            sys->worldTris[t] = SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca);
+            solb_push(sys->worldTris, SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca));
         }
+        sollog("WorldTri count:", solb_count(sys->worldTris));
         SpatialGrid_BuildFromTris(&sys->static_tri_grid, sys->worldTris, tricount, id);
         stage->isDirty = false;
     }
@@ -107,7 +109,7 @@ void Resolve_Contact(SolBody3 *bodyA, SolXform *xformA, SolBody3 *bodyB, SolXfor
     vec3s velB = bodyB ? bodyB->vel : GLMS_VEC3_ZERO;
 
     // --- Positional Correction ---
-    const float slack   = 0.01f;
+    const float slack   = 0.001f;
     const float percent = 0.2f;
 
     float corrMag    = (fmaxf(contact->penetration - slack, 0.0f) / totalInvMass) * percent;
@@ -179,12 +181,83 @@ void Collisions_Static_Stage(World *world, int idA, SysPhysx *sys, SolXform *xfo
                     SolContact contact;
                     if (shape_tri_test[body->shape](world, idA, entityId, tri, &contact))
                     {
-                        if (sys->contacts.contact_cnt < MAX_CONTACTS - 1)
+                        if (solb_count(sys->contacts) < MAX_CONTACTS)
                         {
-                            int idx                        = sys->contacts.contact_cnt++;
-                            sys->contacts.contact[idx]     = contact;
-                            sys->contacts.contact[idx].id  = idA;
-                            sys->contacts.contact[idx].idB = entityId;
+                            contact.id  = idA;
+                            contact.idB = entityId;
+                            solb_push(sys->contacts, contact);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Collisions_Static_Stage_Local(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body, float fdt,
+                                   ThreadContactBuffer *contacts)
+{
+    if (sys->static_tri_grid.item_count == 0)
+        return;
+
+    vec3s prevPos = xform->pos;
+    vec3s nextPos = vecAdd(prevPos, vecSca(body->vel, fdt));
+
+    vec3s min = vecSub(glms_vec3_minv(prevPos, nextPos), body->dims);
+    vec3s max = vecAdd(glms_vec3_maxv(prevPos, nextPos), body->dims);
+
+    ivec3s minCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, min);
+    ivec3s maxCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, max);
+
+// Fixed thread-local visited tracking buffer
+#define MAX_VISITED_TRIS 256
+    uint32_t visited_tris[MAX_VISITED_TRIS];
+    int      visited_count = 0;
+
+    for (int z = minCell.z; z <= maxCell.z; z++)
+    {
+        for (int y = minCell.y; y <= maxCell.y; y++)
+        {
+            for (int x = minCell.x; x <= maxCell.x; x++)
+            {
+                uint32_t cellIdx = SpatialGrid_GetCellIndex(&sys->static_tri_grid, x, y, z);
+                GridCell cell    = sys->static_tri_grid.cells[cellIdx];
+
+                for (uint32_t i = 0; i < cell.count; i++)
+                {
+                    uint32_t packedData = sys->static_tri_grid.index_buffer[cell.offset + i];
+
+                    uint32_t entityId, triIndex;
+                    Unpack_StageTri(packedData, &entityId, &triIndex);
+
+                    // Check if we've already tested this triangle in a previous cell
+                    bool already_tested = false;
+                    for (int v = 0; v < visited_count; v++)
+                    {
+                        if (visited_tris[v] == triIndex)
+                        {
+                            already_tested = true;
+                            break;
+                        }
+                    }
+                    if (already_tested)
+                        continue;
+
+                    // Mark as tested
+                    if (visited_count < MAX_VISITED_TRIS)
+                        visited_tris[visited_count++] = triIndex;
+
+                    const SolTri *tri = &sys->worldTris[triIndex];
+
+                    SolContact contact;
+                    if (shape_tri_test[body->shape](world, idA, entityId, tri, &contact))
+                    {
+                        if (contacts->count < MAX_THREAD_CONTACTS)
+                        {
+                            contact.id  = idA;
+                            contact.idB = entityId;
+
+                            contacts->contacts[contacts->count++] = contact;
                         }
                     }
                 }
@@ -211,18 +284,57 @@ void Collisions_Dynamic_Bodies(World *world, int idA, SysPhysx *sys, SolXform *x
                 SolBody3 *other_body = Sol_Comp_Get(world, idB, SolBody3);
 
                 // Don't collide two immovable bodies
-                if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body))
+                if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
+                    shape_pair_test[body->shape][other_body->shape])
                 {
                     SolContact contact;
-                    if (shape_pair_test[body->shape][other_body->shape] &&
-                        shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
+                    if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
                     {
-                        if (sys->contacts.contact_cnt < MAX_CONTACTS - 1)
+                        if (solb_count(sys->contacts) < MAX_CONTACTS)
                         {
-                            int idx                        = sys->contacts.contact_cnt++;
-                            sys->contacts.contact[idx]     = contact;
-                            sys->contacts.contact[idx].id  = idA;
-                            sys->contacts.contact[idx].idB = idB;
+                            contact.id  = idA;
+                            contact.idB = idB;
+                            solb_push(sys->contacts, contact);
+                        }
+                    }
+                }
+            }
+            entry = sys->dynamic_table.next[entry];
+        }
+    }
+}
+
+void Collisions_Dynamic_Bodies_Local(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body,
+                                     ThreadContactBuffer *contacts)
+{
+    SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_table.cellSize);
+
+    for (int n = 0; n < 27; n++)
+    {
+        u32 cellHash = cell.neighborHashes[n];
+        u32 entry    = SpatialTable_GetEntry(&sys->dynamic_table, cellHash);
+
+        while (entry != SPATIAL_NULL)
+        {
+            int idB = (int)sys->dynamic_table.value[entry];
+
+            if (idA < idB) // Deduplicate pairs
+            {
+                SolBody3 *other_body = Sol_Comp_Get(world, idB, SolBody3);
+
+                // Don't collide two immovable bodies
+                if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
+                    shape_pair_test[body->shape][other_body->shape])
+                {
+                    SolContact contact;
+                    if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
+                    {
+                        if (contacts->count < MAX_THREAD_CONTACTS)
+                        {
+                            contact.id  = idA;
+                            contact.idB = idB;
+
+                            contacts->contacts[contacts->count++] = contact;
                         }
                     }
                 }
@@ -258,73 +370,16 @@ void Collisions_Dynamic_Tris(World *world, int idA, SysPhysx *sys, SolXform *xfo
                     SolContact contact;
                     if (shape_tri_test[body->shape](world, idA, modelEntID, &worldTri, &contact))
                     {
-                        if (sys->contacts.contact_cnt < MAX_CONTACTS - 1)
+                        if (solb_count(sys->contacts) < MAX_CONTACTS)
                         {
-                            int idx                        = sys->contacts.contact_cnt++;
-                            sys->contacts.contact[idx]     = contact;
-                            sys->contacts.contact[idx].id  = idA;
-                            sys->contacts.contact[idx].idB = modelEntID;
+                            contact.id  = idA;
+                            contact.idB = modelEntID;
+                            solb_push(sys->contacts, contact);
                         }
                     }
                 }
             }
             entry = sys->dynamic_tri_table.next[entry];
-        }
-    }
-}
-
-void Collisions_Static_Tris(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body)
-{
-    SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->static_tri_table.cellSize);
-#define MAX_TESTED_TRIS 128
-    int testedTris[MAX_TESTED_TRIS];
-    int testedCount = 0;
-    for (int n = 0; n < 27; n++)
-    {
-        u32 cellHash = cell.neighborHashes[n];
-        u32 entry    = SpatialTable_GetEntry(&sys->static_tri_table, cellHash);
-
-        while (entry != SPATIAL_NULL)
-        {
-            u32 val        = sys->static_tri_table.value[entry];
-            int modelEntID = GET_TRI_ENTITY(val);
-
-            if (idA != modelEntID && shape_tri_test[body->shape])
-            {
-                int  triIdx        = GET_TRI_INDEX(val);
-                bool alreadyTested = false;
-                for (int t = 0; t < testedCount; t++)
-                {
-                    if (testedTris[t] == triIdx)
-                    {
-                        alreadyTested = true;
-                        break;
-                    }
-                }
-                if (!alreadyTested)
-                {
-                    SolModel *model  = Sol_Comp_Get(world, modelEntID, SolModel);
-                    SolXform *xformB = Sol_Comp_Get(world, modelEntID, SolXform);
-                    if (model && xformB)
-                    {
-                        SolTri localTri = loaded_models[model->kind].tris[triIdx];
-                        SolTri worldTri = SolTri_GetWorldSpace(&localTri, xformB->rot, xformB->pos, xformB->sca);
-
-                        SolContact contact;
-                        if (shape_tri_test[body->shape](world, idA, modelEntID, &worldTri, &contact))
-                        {
-                            if (sys->contacts.contact_cnt < MAX_CONTACTS - 1)
-                            {
-                                int idx                        = sys->contacts.contact_cnt++;
-                                sys->contacts.contact[idx]     = contact;
-                                sys->contacts.contact[idx].id  = idA;
-                                sys->contacts.contact[idx].idB = modelEntID;
-                            }
-                        }
-                    }
-                }
-            }
-            entry = sys->static_tri_table.next[entry];
         }
     }
 }
@@ -524,97 +579,4 @@ static inline bool SweptSphere_Tri_Test(vec3s start, vec3s dir, float radius, co
     }
 
     return false;
-}
-
-bool Collisions_Swept_Static_Tris(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body, float dt,
-                                  SolSweptHit *earliestHit)
-{
-    vec3s moveDir = glms_vec3_scale(body->vel, dt);
-    float moveLen = glms_vec3_norm(moveDir);
-
-    // Fast-path: Skip swept test if object is stationary or moving very slowly
-    if (moveLen < 0.001f)
-        return false;
-
-    float radius = fmaxf(body->dims.x, fmaxf(body->dims.y, body->dims.z)) * 0.5f;
-
-    // 1. Calculate Swept AABB
-    vec3s startPos = xform->pos;
-    vec3s endPos   = glms_vec3_add(startPos, moveDir);
-
-    vec3s minBounds = glms_vec3_sub(glms_vec3_minv(startPos, endPos), (vec3s){radius, radius, radius});
-    vec3s maxBounds = glms_vec3_add(glms_vec3_maxv(startPos, endPos), (vec3s){radius, radius, radius});
-
-    // 2. Query spatial hash cells across the swept bounds
-    float invCell = sys->static_tri_table.invCellSize;
-    int   mask    = sys->static_tri_table.size - 1;
-    int   x0      = (int)floorf(minBounds.x * invCell);
-    int   x1      = (int)floorf(maxBounds.x * invCell);
-    int   y0      = (int)floorf(minBounds.y * invCell);
-    int   y1      = (int)floorf(maxBounds.y * invCell);
-    int   z0      = (int)floorf(minBounds.z * invCell);
-    int   z1      = (int)floorf(maxBounds.z * invCell);
-
-    earliestHit->hit = false;
-    earliestHit->t   = 1.0f;
-
-#define MAX_SWEPT_TRIS 256
-    int testedTris[MAX_SWEPT_TRIS];
-    int testedCount = 0;
-
-    for (int x = x0; x <= x1; x++)
-    {
-        for (int y = y0; y <= y1; y++)
-        {
-            for (int z = z0; z <= z1; z++)
-            {
-                u32 bucket = hash_coords(x, y, z) & mask;
-                u32 entry  = sys->static_tri_table.head[bucket];
-
-                while (entry != SPATIAL_NULL)
-                {
-                    u32 val        = sys->static_tri_table.value[entry];
-                    int modelEntID = GET_TRI_ENTITY(val);
-                    int triIdx     = GET_TRI_INDEX(val);
-
-                    // Deduplicate tested triangles
-                    bool tested = false;
-                    for (int t = 0; t < testedCount; t++)
-                    {
-                        if (testedTris[t] == triIdx)
-                        {
-                            tested = true;
-                            break;
-                        }
-                    }
-
-                    if (!tested && testedCount < MAX_SWEPT_TRIS)
-                    {
-                        testedTris[testedCount++] = triIdx;
-
-                        SolModel *model  = Sol_Comp_Get(world, modelEntID, SolModel);
-                        SolXform *xformB = Sol_Comp_Get(world, modelEntID, SolXform);
-
-                        if (model && xformB)
-                        {
-                            SolTri localTri = loaded_models[model->kind].tris[triIdx];
-                            SolTri worldTri = SolTri_GetWorldSpace(&localTri, xformB->rot, xformB->pos, xformB->sca);
-
-                            SolSweptHit hit;
-                            if (SweptSphere_Tri_Test(startPos, moveDir, radius, &worldTri, &hit))
-                            {
-                                if (hit.t < earliestHit->t)
-                                {
-                                    *earliestHit = hit;
-                                }
-                            }
-                        }
-                    }
-                    entry = sys->static_tri_table.next[entry];
-                }
-            }
-        }
-    }
-
-    return earliestHit->hit;
 }

@@ -26,13 +26,12 @@ void Create_Sol_Game()
     user_session.user_entid = dude;
     Sol_Debug_Add("Player Ent", dude);
     Sol_Comp_Add(world, dude, ScController);
-    ScCamera *camera      = Sol_Comp_Add(world, dude, ScCamera);
-    ScMove3  *move        = Sol_Comp_Add(world, dude, ScMove3);
-    camera->fov           = 80.0f;
-    camera->up.y          = 1.0f;
-    camera->lerpspeed     = 20.0f;
-    camera->target_offset = 1.0f;
-    move->kind            = MOVEMENTKIND_PLAYER;
+    ScCamera *camera        = Sol_Comp_Add(world, dude, ScCamera);
+    camera->fov             = 80.0f;
+    camera->up.y            = 1.0f;
+    camera->lerpspeed       = 10.0f;
+    camera->desired_offset   = 1.0f;
+    camera->desired_distance = 2.0f;
 
     int level1 = Sol_Create_Ent(world);
     Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
@@ -49,17 +48,17 @@ void Create_Sol_Game()
         ScBody3 *body3 = Sol_Body3_Add(world, id);
         body3->shape   = SHAPE3_CAP;
         body3->mask    = PHYSXMASK(1, 1);
-        body3->dims    = (vec3s){0.5f, 1.0f, 0.5f};
+        body3->dims    = (vec3s){0.5f, 3.0f, 0.5f};
         model->kind    = MODELKIND_WIZARD;
         Sol_Anim_Add(world, id);
-        SolLine *line  = Sol_Line_New(world);
+        SolLine *line = Sol_Line_New(world);
         if (line)
         {
-            line->a   = (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f};
-            line->b   = (vec3s){0, 0, 0};
+            line->a      = (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f};
+            line->b      = (vec3s){0, 0, 0};
             line->aColor = VEC4_RED;
             line->bColor = VEC4_WHITE;
-            line->ttl = 25.0f;
+            line->ttl    = 25.0f;
         }
     }
 }

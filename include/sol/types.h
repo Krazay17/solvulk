@@ -483,6 +483,7 @@ typedef struct SolRay
     float dist;
     u16   mask;
     int   ignoreEnt;
+    bool debug;
 } SolRay;
 
 typedef struct SolRayResult

@@ -308,6 +308,7 @@ bool  Sol_Physx_DoesCollide(ScBody3 *body, ScBody3 *other_body);
 vec3s Sol_Physx_GetGround(World *world, int id);
 
 vec3s Sol_Physx_GetVel(World *world, int id);
+vec3s Sol_Physx_GetDir(World *world, int id);
 float Sol_Physx_GetSpeed(World *world, int id);
 
 int  Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);

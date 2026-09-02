@@ -33,30 +33,30 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Sol_Movement_Jump_CanExit,
             Sol_Movement_Jump_CanEnter,
         },
-    // [MOVE_FLY] =
-    //     {
-    //         Sol_Movement_Fly_Update,
-    //         Sol_Movement_Fly_Enter,
-    //         Sol_Movement_Fly_Exit,
-    //         Sol_Movement_Fly_CanExit,
-    //         Sol_Movement_Fly_CanEnter,
-    //     },
-    // [MOVE_CROUCH] =
-    //     {
-    //         Crouch_State_Update,
-    //         Crouch_State_Enter,
-    //         Crouch_State_Exit,
-    //         Crouch_State_CanExit,
-    //         Crouch_State_CanEnter,
-    //     },
-    // [MOVE_SLIDE] =
-    //     {
-    //         Slide_State_Update,
-    //         Slide_State_Enter,
-    //         Slide_State_Exit,
-    //         Slide_State_CanExit,
-    //         Slide_State_CanEnter,
-    //     },
+    [MOVE_FLY] =
+        {
+            Sol_Movement_Fly_Update,
+            Sol_Movement_Fly_Enter,
+            Sol_Movement_Fly_Exit,
+            Sol_Movement_Fly_CanExit,
+            Sol_Movement_Fly_CanEnter,
+        },
+    [MOVE_CROUCH] =
+        {
+            Crouch_State_Update,
+            Crouch_State_Enter,
+            Crouch_State_Exit,
+            Crouch_State_CanExit,
+            Crouch_State_CanEnter,
+        },
+    [MOVE_SLIDE] =
+        {
+            Slide_State_Update,
+            Slide_State_Enter,
+            Slide_State_Exit,
+            Slide_State_CanExit,
+            Slide_State_CanEnter,
+        },
     [MOVE_WALLRUN] =
         {
             Wallrun_State_Update,
@@ -65,30 +65,30 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Wallrun_State_CanExit,
             Wallrun_State_CanEnter,
         },
-    // [MOVE_WALLJUMP] =
-    //     {
-    //         Walljump_State_Update,
-    //         Walljump_State_Enter,
-    //         Walljump_State_Exit,
-    //         Walljump_State_CanExit,
-    //         Walljump_State_CanEnter,
-    //     },
-    // [MOVE_DEAD] =
-    //     {
-    //         Dead_State_Update,
-    //         Dead_State_Enter,
-    //         Dead_State_Exit,
-    //         Dead_State_CanExit,
-    //         Dead_State_CanEnter,
-    //     },
-    // [MOVE_STUN] =
-    //     {
-    //         Stun_State_Update,
-    //         Stun_State_Enter,
-    //         Stun_State_Exit,
-    //         Stun_State_CanExit,
-    //         Stun_State_CanEnter,
-    //     },
+    [MOVE_WALLJUMP] =
+        {
+            Walljump_State_Update,
+            Walljump_State_Enter,
+            Walljump_State_Exit,
+            Walljump_State_CanExit,
+            Walljump_State_CanEnter,
+        },
+    [MOVE_DEAD] =
+        {
+            Dead_State_Update,
+            Dead_State_Enter,
+            Dead_State_Exit,
+            Dead_State_CanExit,
+            Dead_State_CanEnter,
+        },
+    [MOVE_STUN] =
+        {
+            Stun_State_Update,
+            Stun_State_Enter,
+            Stun_State_Exit,
+            Stun_State_CanExit,
+            Stun_State_CanEnter,
+        },
     [MOVE_MANTLE] =
         {
             Mantle_State_Update,

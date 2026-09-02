@@ -8,10 +8,8 @@
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move         = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *walljumpData = &move->stateData[MOVE_WALLJUMP];
-    float          alpha        = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
     if (walljumpData->elapsed >= DASH_DURATION)
     {
@@ -19,23 +17,28 @@ void Walljump_State_Update(World *world, int id, float dt)
         return;
     }
 
-    vec3s vel = {0};//Sol_Physx_GetVel(world, id);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3      *body  = Sol_Comp_Get(world, id, ScBody3);
+    float         alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
+
+    vec3s vel = body->vel;
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
     // vel       = Sol_Math_DampDir(vel, walljumpData->dir, alpha, DAMPING, dt);
-    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
     body->vel = vel;
 }
 
 void Walljump_State_Enter(World *world, int id)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move        = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
-    vec3s          vel         ={0}; // Sol_Physx_GetVel(world, id);
-    vec3s          up2         = {0.0f, 1.8f, 0.0f};
-    vec3s          finalDir    = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
-    finalDir                   = vecAdd(finalDir, vecNorm(vel));
-    wallrunData->dir           = vecNorm(finalDir);
+    ScController  *cont        = Sol_Comp_Get(world, id, ScController);
+    ScBody3       *body        = Sol_Comp_Get(world, id, ScBody3);
+
+    vec3s vel        = body->vel;
+    vec3s up2        = {0.0f, 1.8f, 0.0f};
+    vec3s finalDir   = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
+    finalDir         = vecAdd(finalDir, vecNorm(vel));
+    wallrunData->dir = vecNorm(finalDir);
 
     vec3s finalVel    = vecSca(wallrunData->dir, DASH_VEL);
     float targetUpVel = finalVel.y;
@@ -44,7 +47,7 @@ void Walljump_State_Enter(World *world, int id)
     else
         finalVel.y = 0;
 
-    // Sol_Physx_AddVel(world, id, finalVel);
+    body->vel = vecAdd(body->vel, finalVel);
 }
 
 void Walljump_State_Exit(World *world, int id)

@@ -23,30 +23,34 @@ static bool CheckEnergy(World *world, int id)
     if (!Sol_Comp_Has(world, id, ScCombat))
         return true;
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-       if (combat->energy < 5.0f)
+    if (combat->energy < 5.0f)
         return false;
     return true;
 }
 
 static bool CheckWall(World *world, int id, SolRayResult *result, float addRadius)
 {
-    ScXform      *xform  = Sol_Comp_Get(world, id, ScXform);
-    ScController *cont   = Sol_Comp_Get(world, id, ScController);
-    ScMove3      *move   = Sol_Comp_Get(world, id, ScMove3);
-    vec3s         dims   = {1, 1, 1}; // Sol_Physx_GetDims(world, id);
-    float         radius = dims.x + addRadius;
+    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
+    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
+    MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
+
+    vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
+    float radius = dims.x + addRadius;
+
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
         {
             vec3s finalPos = xform->pos;
             finalPos.y += (float)i * (dims.y * 0.4f);
-            vec3s rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
-            bool  hit =
-                Sol_Raycast1(world, (SolRay){.start = finalPos, .dist = radius, .dir = rotated_offset}, result);
-            float dot     = glms_vec3_dot(result->norm, WORLD_UP);
-            float lookDot = vecDot(cont->lookdir, result->norm);
-            if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE && lookDot < 0.6f)
+            vec3s  rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
+            SolRay ray            = {
+                .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true};
+            bool  hit = Sol_Raycast1(world, ray, result);
+            float dot = glms_vec3_dot(result->norm, WORLD_UP);
+            // float lookDot = vecDot(cont->lookdir, result->norm);
+            if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
             {
                 MoveStateData *data         = &move->stateData[MOVE_WALLRUN];
                 move->lastTouch             = result->pos;
@@ -61,8 +65,6 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
 
 static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
-    if (!CheckEnergy(world, id))
-        return true;
     if (cont->actionState & BITC(ACTION_CROUCH) || move->groundtime > COYOTE_TIMER)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
@@ -137,12 +139,8 @@ void Wallrun_State_Update(World *world, int id, float dt)
 
     RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT), move, cont);
 
-    vec3s dirToWall = glms_vec3_sub(xform->pos, move->lastTouch);
-    dirToWall       = glms_vec3_normalize(dirToWall);
-    // float                 velToWallDot = -vecDot(Sol_Physx_GetVel(world, id), vecCrs(dirToWall, WORLD_UP));
-    // float                 speedDif     = 1.0f;
-    // const MoveStateForce *forces       = &MOVE_STATE_FORCES[move->kind][move->state];
-
+    vec3s dirToWall            = glms_vec3_sub(xform->pos, move->lastTouch);
+    dirToWall                  = glms_vec3_normalize(dirToWall);
     data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, cont->yaw);
 }
 
@@ -151,7 +149,7 @@ void Wallrun_State_Enter(World *world, int id)
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
     ScController  *cont  = Sol_Comp_Get(world, id, ScController);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
-    ScBody3       *body = Sol_Comp_Get(world, id, ScBody3);
+    ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
     if (LeaveState(world, id, move, cont))

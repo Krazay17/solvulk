@@ -12,6 +12,7 @@
 
 #define RAY_COUNT 12
 #define MANTLE_TIME 0.7f
+#define MANTLE_SPEED 6.5f
 
 static bool CheckWall(World *world, int id)
 {
@@ -36,9 +37,9 @@ static bool CheckWall(World *world, int id)
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay ray = {
-            .start = pos, .dist = body->dims.x * 2.0f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cont->yaw, 0)};
+            .start = pos, .dist = body->dims.x * 1.5f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cont->yaw, 0)};
         SolRayResult rayResult;
-        bool         hit = Sol_Raycast1D(world, ray, &rayResult, 0.1f);
+        bool         hit = Sol_Raycast1(world, ray, &rayResult);
         // No hit indicates there is space above
         if (!hit)
         {
@@ -83,9 +84,15 @@ void Mantle_State_Update(World *world, int id, float dt)
             return;
     vec3s pos       = xform->pos;
     vec3s targetPos = data->as.mantle.pos;
+    float speed     = MANTLE_SPEED;
+    if (data->as.mantle.doRoll)
+    {
+        targetPos = vecAdd(targetPos, vecSca(Sol_Vec3_FromYawPitch(cont->yaw, 0), 1.0f));
+        speed += 2.0f;
+    }
     if (pos.y < targetPos.y)
     {
-        body->vel.y = 8.0f;
+        body->vel.y = speed;
     }
     else
     {
@@ -95,21 +102,7 @@ void Mantle_State_Update(World *world, int id, float dt)
         if (dist <= 0.15f && !CheckWall(world, id))
             data->as.mantle.closeEnough = 1;
         dir       = vecNorm(dir);
-        body->vel = vecSca(dir, 8.0f);
-
-        SolLine *line = Sol_Line_New(world);
-        line->a       = targetPos;
-        line->b       = vecAdd(targetPos, vecSca(WORLD_UP, 10.0f));
-        line->aColor  = VEC4_GREEN;
-        line->bColor  = VEC4_GREEN;
-        line->ttl     = 2.0f;
-
-        SolLine *lineVel = Sol_Line_New(world);
-        lineVel->a       = xform->pos;
-        lineVel->b       = vecAdd(xform->pos, body->vel);
-        lineVel->aColor  = VEC4_GREEN;
-        lineVel->bColor  = VEC4_GREEN;
-        lineVel->ttl     = 2.0f;
+        body->vel = vecSca(dir, speed);
     }
 }
 

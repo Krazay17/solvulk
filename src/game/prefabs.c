@@ -8,12 +8,15 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     ScModel *model = Sol_Comp_Add(world, id, ScModel);
     model->kind    = MODELKIND_DUDE;
     Sol_Anim_Add(world, id);
-    ScBody3 *body     = Sol_Body3_Add(world, id);
-    body->restitution = 0.1f;
-    body->invMass = 0.01f;
-    body->shape       = SHAPE3_CAP;
-    body->dims        = (vec3s){0.5f, 1.7f, 0.5f};
-    body->mask        = PHYSXMASK(1, 1);
+    ScBody3 *body      = Sol_Body3_Add(world, id);
+    body->restitution  = 0.01f;
+    body->shape        = SHAPE3_CAP;
+    body->dims         = (vec3s){0.5f, 1.7f, 0.5f};
+    body->mask         = PHYSXMASK(1, 1);
+    ScMove3 *move      = Sol_Comp_Add(world, id, ScMove3);
+    move->kind         = MOVEMENTKIND_PLAYER;
+    move->baseHeight   = body->dims.y;
+    move->targetHeight = move->baseHeight;
 
     return id;
 }

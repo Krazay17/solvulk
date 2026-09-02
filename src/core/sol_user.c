@@ -224,7 +224,7 @@ void Entity_Actions()
         if (mouse.wheelV)
         {
             float changeDist = -((float)mouse.wheelV * 0.01f);
-            camera->target_distance += changeDist;
+            camera->desired_distance += changeDist;
         }
     }
     if (camera)
@@ -251,9 +251,9 @@ void Entity_Actions()
     if (mouse.buttons[SOL_MOUSE_LEFT])
     {
         ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        Sol_RaycastD(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f}, &(SolRayResult){0},
-                           1, 5.0f);
-        
+        bool     hit   = Sol_Raycast1D(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f},
+                                       &(SolRayResult){0}, 5.0f);
+        sollog(hit);
     }
 }
 

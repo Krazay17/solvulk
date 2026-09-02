@@ -12,7 +12,7 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
     if (move->wantsJump)
         if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
-    if (Sol_Movement_GetAirtime(world, id) > 0)
+    if (move->airtime > 0)
         if (Sol_Move3_SetState(world, id, MOVE_FALL))
             return true;
     return false;
@@ -59,14 +59,21 @@ void Crouch_State_Exit(World *world, int id)
 
 bool Crouch_State_CanExit(World *world, int id, u32 nextState)
 {
-    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
-    return !Sol_Raycast1D(
-        world,
-        (SolRay){.start = Sol_Comp_Get(world, id, ScXform)->pos, .dir = WORLD_UP, .dist = move->baseHeight * 0.6f},
-        NULL, 0.2f);
+    ScMove3 *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+    if (nextState == MOVE_SLIDE)
+        return true;
+    bool hit = Sol_Raycast1D(
+        world, (SolRay){.start = xform->pos, .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id}, NULL,
+        0.2f);
+
+    if (hit)
+        return false;
+
+    return true;
 }
 
 bool Crouch_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    return true;
+    return lastState != nextState;
 }

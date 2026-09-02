@@ -2,7 +2,7 @@
 #include "world.h"
 #include "sol_core.h"
 
-#define MAX_WALK_ANGLE 0.5f
+#define MAX_WALK_ANGLE 0.7f
 
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
     {
@@ -58,6 +58,8 @@ void Move3_Step(World *world, double dt)
         vec3s                 vel        = body3->vel;
         vec3s                 wishdir    = controller->wishdir;
 
+        GroundCheck(world, id, move, fdt);
+
         if (isJumpDown && !move->jumpPressedLastFrame)
             move->wantsJump = true;
         else if (!isJumpDown)
@@ -75,7 +77,7 @@ void Move3_Step(World *world, double dt)
 
         switch (move->state)
         {
-            case MOVE_MANTLE:
+        case MOVE_MANTLE:
             break;
         case MOVE_STUN:
             body3->gravity.y *= 1.33f;
@@ -84,7 +86,8 @@ void Move3_Step(World *world, double dt)
             break;
         case MOVE_IDLE:
         case MOVE_WALK:
-            vec3s slopeDir = ProjectOntoGround(body3->groundNormal, wishdir);
+        case MOVE_CROUCH:
+            vec3s slopeDir = ProjectOntoGround(move->groundNorm, wishdir);
             vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
             vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
             body3->vel     = vel;
@@ -94,17 +97,21 @@ void Move3_Step(World *world, double dt)
             vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
             vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             body3->vel = vel;
-        default:
+        case MOVE_FALL:
             if (vel.y < 0)
                 body3->gravity.y *= 1.33f;
             vel          = ApplyFriction3(wishdir, vel, finalFriction, fdt);
             vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
+            break;
+        // default:
+            // if (vel.y < 0)
+            //     body3->gravity.y *= 1.33f;
+            // vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+            // vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            // body3->vel = vel;
         }
-
-        // if (move->state != MOVE_JUMP)
-        //     CheckGround(world, id, fdt, move);
 
         if (move->knockDur > 0.0f)
         {
@@ -118,16 +125,6 @@ void Move3_Step(World *world, double dt)
         {
             const float fricFactor = 1.0f - expf(-5.0f * fdt);
             move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
-        }
-        if (GroundDot(world, id) > MAX_WALK_ANGLE)
-        {
-            move->airtime = 0;
-            move->groundtime += dt;
-        }
-        else
-        {
-            move->groundtime = 0;
-            move->airtime += fdt;
         }
     }
 }
@@ -156,7 +153,7 @@ void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
     Sol_Comp_Get(world, id, ScModel)->yOffset = newHeight * -0.5f;
 }
 
-float GroundDot(World *world, int id)
+void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 {
     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
@@ -164,7 +161,7 @@ float GroundDot(World *world, int id)
     // Start from center-bottom of the body
     vec3s origin = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
 
-    body->groundNormal      = (vec3s){0, 0, 0};
+    move->groundNorm        = (vec3s){0, 0, 0};
     SolRayResult results[9] = {0};
     for (int j = 0; j < 9; j++)
     {
@@ -193,8 +190,20 @@ float GroundDot(World *world, int id)
             idx          = j;
         }
     }
-    body->groundNormal = results[idx].norm;
-    return flattestNorm;
+    
+    move->groundNorm = results[idx].norm;
+    move->groundDot  = flattestNorm;
+
+    if (move->groundDot > MAX_WALK_ANGLE)
+    {
+        move->airtime = 0;
+        move->groundtime += fdt;
+    }
+    else
+    {
+        move->groundtime = 0;
+        move->airtime += fdt;
+    }
 }
 
 bool Sol_Move3_SetState(World *world, int id, MoveState state)

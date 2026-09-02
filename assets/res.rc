@@ -49,9 +49,6 @@ Evan.glb              RCDATA          "models/Evan.glb"
 EvanRigged.glb              RCDATA          "models/EvanRigged.glb"
 
 
-
-
-
 Beep1.wav               RCDATA          "sounds/Beep1.wav"
 Beep2.wav               RCDATA          "sounds/Beep2.wav"
 DigiLoad.mp3            RCDATA          "sounds/DigiLoad.mp3"

@@ -23,13 +23,15 @@ void Slide_State_Update(World *world, int id, float dt)
 {
     float fdt = (float)dt;
 
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
+    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, cont))
         return;
+
+    ScXform       *xform  = Sol_Comp_Get(world, id, ScXform);
+    ScBody3       *body   = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data   = &move->stateData[move->state];
-    vec3s          vel    = {0};//Sol_Physx_GetVel(world, id);
+    vec3s          vel    = body->vel;
     vec3s          rot    = Sol_RotFromQuat(xform->rot);
     vec3s          latvel = vel;
     latvel.y              = 0;
@@ -38,37 +40,35 @@ void Slide_State_Update(World *world, int id, float dt)
 
     if (move->groundDot > 0.01f && move->groundDot < 0.99f)
     {
-        if(Sol_Comp_Has(world, id, ScBody3))
-        {
-            ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-            body3->vel = vecAdd(body3->vel, vecSca(vecNorm(GroundSlope(WORLD_UP)), 12.0f * fdt));
-        }
+        body->vel = vecAdd(body->vel, vecSca(vecNorm(GroundSlope(move->groundNorm)), 12.0f * fdt));
     }
 }
 
 void Slide_State_Enter(World *world, int id)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, cont))
         return;
 
+    ScBody3       *body = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data = &move->stateData[move->state];
-    move->targetHeight  = move->baseHeight * 0.65f;
+
+    move->targetHeight = move->baseHeight * 0.65f;
     if (move->groundtime > 0)
     {
         data->as.slide.boost = fminf(data->as.slide.boost + (solState.appTime - data->lastExited), BOOST_CD);
-        // Sol_Physx_Impulse(world, id,
-        //                   vecSca(vecNorm(ProjectOntoGround(world, id, Sol_Physx_GetVelDir(world, id))),
-        //                          Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost)));
+        body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Physx_GetDir(world, id))),
+                                      Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost));
+
         data->as.slide.boost /= 2.0f;
     }
 }
 
 void Slide_State_Exit(World *world, int id)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController  *cont = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data = &move->stateData[MOVE_SLIDE];
     move->targetHeight  = move->baseHeight;
 }
@@ -80,6 +80,5 @@ bool Slide_State_CanExit(World *world, int id, u32 nextState)
 
 bool Slide_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    return true;
-    // return Sol_Physx_GetSpeed(world, id) > 5.5f;
+    return Sol_Physx_GetSpeed(world, id) > 5.5f;
 }

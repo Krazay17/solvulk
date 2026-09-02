@@ -327,7 +327,8 @@ void Anim_Tick(World *world, double dt)
             case MOVE_MANTLE: {
                 move_anim.playKind = ANIMPLAYKIND_NOLOOP;
                 move_anim.anim     = data->as.mantle.doRoll ? ANIM_MANTLE_ROLL : ANIM_MANTLE;
-                 Sol_Anim_SetSpeed(world, id, move_anim.layerId, 2.0f - data->as.mantle.dist);
+                move_anim.speed = 1.4f;
+                //Sol_Anim_SetSpeed(world, id, move_anim.layerId, 1.75f - data->as.mantle.dist);
             }
             break;
             case MOVE_FLY: {

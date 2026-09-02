@@ -20,11 +20,11 @@ const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
 };
 
 static SolProfiler prof1 = {.name = "Tables"};
-void               Build_Tables(World *world, SysPhysx *sys, float fdt)
+
+void Build_Tables(World *world, SysPhysx *sys, float fdt)
 {
     int i;
     Prof_Begin(&prof1);
-    SpatialGrid_Clear(&sys->dynamic_group.spatial);
     solb_zero(sys->dynamic_group.aabb_scratch);
     SparseSet_ScBody3 *bodySet = Sol_Comp_Set(world, ScBody3);
     for (i = 0; i < bodySet->cnt; i++)
@@ -42,29 +42,45 @@ void               Build_Tables(World *world, SysPhysx *sys, float fdt)
                                solb_count(sys->dynamic_group.aabb_scratch));
     Prof_EndEz(&prof1, true, fdt);
 
-    SparseSet_ScStage *stageSet = Sol_Comp_Set(world, ScStage);
+    SparseSet_ScStage *stageSet   = Sol_Comp_Set(world, ScStage);
+    bool               stageDirty = false;
     for (i = 0; i < stageSet->cnt; i++)
     {
-        int      id    = stageSet->dense[i];
-        ScStage *stage = &stageSet->data[i];
-        ScModel *model = Sol_Comp_Get(world, id, ScModel);
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        if (!stage->isDirty || !model || !xform)
-            continue;
-        int     tricount = loaded_models[model->kind].tri_count;
-        SolTri *tris     = loaded_models[model->kind].tris;
-        for (int t = 0; t < tricount; t++)
+        if (stageSet->data[i].isDirty)
         {
-            SolTri tri = SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca);
-            tri.entId  = id;
-            solb_push(sys->static_group.tris, tri);
+            stageDirty = true;
+            break;
+        }
+    }
+    if (stageDirty)
+    {
+        solb_set_count(sys->static_group.tris, 0);
+        for (i = 0; i < stageSet->cnt; i++)
+        {
+            int      id    = stageSet->dense[i];
+            ScStage *stage = &stageSet->data[i];
+            ScModel *model = Sol_Comp_Get(world, id, ScModel);
+            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+            if (!model || !xform)
+                continue;
+            int     tricount = loaded_models[model->kind].tri_count;
+            SolTri *tris     = loaded_models[model->kind].tris;
+            for (int t = 0; t < tricount; t++)
+            {
+                // SolTri tri = SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca);
+                SolTri tri = tris[t];
+                tri.entId  = id;
+                solb_push(sys->static_group.tris, tri);
+            }
+            stage->isDirty = false;
         }
         sollog("WorldTri count:", solb_count(sys->static_group.tris));
         SpatialGrid_BuildFromTris(&sys->static_group.spatial, sys->static_group.tris,
                                   solb_count(sys->static_group.tris));
-        stage->isDirty = false;
+        sollog(sys->static_group.spatial.min, sys->static_group.spatial.max);
     }
 }
+
 void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *xformB, SolContact *contact)
 {
     float invMassA = bodyA ? bodyA->invMass : 0.0f;
@@ -83,8 +99,8 @@ void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *x
     // --- 1. Softened Positional Correction ---
     // Lower percentage (0.10f - 0.12f) prevents the "repel/bounce" feeling while
     // still resolving overlap over 3-5 frames.
-    const float slack   = 0.015f; 
-    const float percent = 0.12f; 
+    const float slack   = 0.015f;
+    const float percent = 0.12f;
 
     float pen = fmaxf(contact->penetration - slack, 0.0f);
     if (pen > 0.0f)

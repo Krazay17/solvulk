@@ -92,7 +92,10 @@ static inline void _sollog_vec3(vec3s v)
 {
     printf("(%.2f, %.2f, %.2f) ", v.x, v.y, v.z);
 }
-
+static inline void _sollog_vec4(vec4s v)
+{
+    printf("(%.2f, %.2f, %.2f, %.2f) ", v.x, v.y, v.z, v.w);
+}
 // Type dispatch selector
 #define _SOLLOG_DISPATCH(X)                                                                                            \
     _Generic((1 ? (X) : (X)),                                                                                          \
@@ -104,6 +107,7 @@ static inline void _sollog_vec3(vec3s v)
         size_t: _sollog_size_t,                                                                                        \
         char *: _sollog_str,                                                                                           \
         vec3s: _sollog_vec3,                                                                                           \
+        vec4s: _sollog_vec4,                                                                                           \
         const char *: _sollog_str)(X)
 
 // Macro expansion loop (Supports up to 8 arguments)

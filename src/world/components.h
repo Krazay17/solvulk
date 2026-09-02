@@ -40,12 +40,11 @@ typedef struct ScController
 typedef struct ScBody3
 {
     Shape3 shape;
-    vec3s  vel, impulse, force, groundNormal, dims;
-    vec3s  gravity;
+    bool   ignoreFriendly;
+    vec3s  vel, impulse, force, dims, gravity;
     float  mass, invMass, restitution;
     u32    mask, base_mask;
     u32    ray_mask, ray_base_mask;
-    bool   ignoreFriendly;
 } ScBody3;
 
 typedef struct ScBody2
@@ -62,7 +61,7 @@ typedef struct ScCamera
     vec3s dir;
     vec3s up, right;
     float current_distance, current_offset;
-    float target_distance, target_offset;
+    float desired_distance, desired_offset;
     float lerpspeed;
     float fov;
     float roll;
@@ -120,7 +119,7 @@ typedef struct ScMove3
 {
     MovementKind kind;
     MoveState    state;
-    vec3s        updir, lastTouch, knockVel, lastMoveDir;
+    vec3s        updir, lastTouch, knockVel, lastMoveDir, groundNorm;
 
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
@@ -432,7 +431,6 @@ typedef struct ScBuilder
     u32     model;
 } ScBuilder;
 
-
 typedef struct ScStage
 {
     bool isDirty;
@@ -444,38 +442,38 @@ typedef struct ScStage
 // ==========================================
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
-    X(ScActive, HAS_ScActive)                                                                                        \
-    X(ScXform, HAS_ScXform)                                                                                          \
-    X(ScController, HAS_ScController)                                                                                \
-    X(ScBody2, HAS_ScBody2)                                                                                          \
-    X(ScBody3, HAS_ScBody3)                                                                                          \
-    X(ScStage, HAS_ScStage)                                                                                          \
-    X(ScModel, HAS_ScModel)                                                                                          \
-    X(ScAnim, HAS_ScAnim)                                                                                            \
-    X(ScCamera, HAS_ScCamera)                                                                                        \
-    X(ScInteract, HAS_ScInteract)                                                                                    \
-    X(ScMove3, HAS_ScMove3)                                                                                          \
-    X(ScPlayer, HAS_ScPlayer)                                                                                        \
-    X(ScRemote, HAS_ScRemote)                                                                                        \
-    X(ScAi, HAS_ScAi)                                                                                                \
-    X(ScAbility, HAS_ScAbility)                                                                                      \
-    X(ScBuff, HAS_ScBuff)                                                                                            \
-    X(ScTimer, HAS_ScTimer)                                                                                          \
-    X(ScEvent, HAS_ScEvent)                                                                                          \
-    X(ScAudio, HAS_ScAudio)                                                                                          \
-    X(ScParent, HAS_ScParent)                                                                                        \
-    X(ScOwner, HAS_ScOwner)                                                                                          \
-    X(ScCombat, HAS_ScCombat)                                                                                        \
-    X(ScReplication, HAS_ScReplication)                                                                              \
-    X(ScEmitter, HAS_ScEmitter)                                                                                      \
-    X(ScSlider, HAS_ScSlider)                                                                                        \
-    X(ScView2, HAS_ScView2)                                                                                          \
-    X(ScTracker, HAS_ScTracker)                                                                                      \
-    X(ScProjectile, HAS_ScProjectile)                                                                                \
-    X(ScHudslot, HAS_ScHudslot)                                                                                      \
-    X(ScHuditem, HAS_ScHuditem)                                                                                      \
-    X(ScTooltip, HAS_ScTooltip)                                                                                      \
-    X(ScZone, HAS_ScZone)                                                                                            \
+    X(ScActive, HAS_ScActive)                                                                                          \
+    X(ScXform, HAS_ScXform)                                                                                            \
+    X(ScController, HAS_ScController)                                                                                  \
+    X(ScBody2, HAS_ScBody2)                                                                                            \
+    X(ScBody3, HAS_ScBody3)                                                                                            \
+    X(ScStage, HAS_ScStage)                                                                                            \
+    X(ScModel, HAS_ScModel)                                                                                            \
+    X(ScAnim, HAS_ScAnim)                                                                                              \
+    X(ScCamera, HAS_ScCamera)                                                                                          \
+    X(ScInteract, HAS_ScInteract)                                                                                      \
+    X(ScMove3, HAS_ScMove3)                                                                                            \
+    X(ScPlayer, HAS_ScPlayer)                                                                                          \
+    X(ScRemote, HAS_ScRemote)                                                                                          \
+    X(ScAi, HAS_ScAi)                                                                                                  \
+    X(ScAbility, HAS_ScAbility)                                                                                        \
+    X(ScBuff, HAS_ScBuff)                                                                                              \
+    X(ScTimer, HAS_ScTimer)                                                                                            \
+    X(ScEvent, HAS_ScEvent)                                                                                            \
+    X(ScAudio, HAS_ScAudio)                                                                                            \
+    X(ScParent, HAS_ScParent)                                                                                          \
+    X(ScOwner, HAS_ScOwner)                                                                                            \
+    X(ScCombat, HAS_ScCombat)                                                                                          \
+    X(ScReplication, HAS_ScReplication)                                                                                \
+    X(ScEmitter, HAS_ScEmitter)                                                                                        \
+    X(ScSlider, HAS_ScSlider)                                                                                          \
+    X(ScView2, HAS_ScView2)                                                                                            \
+    X(ScTracker, HAS_ScTracker)                                                                                        \
+    X(ScProjectile, HAS_ScProjectile)                                                                                  \
+    X(ScHudslot, HAS_ScHudslot)                                                                                        \
+    X(ScHuditem, HAS_ScHuditem)                                                                                        \
+    X(ScTooltip, HAS_ScTooltip)                                                                                        \
+    X(ScZone, HAS_ScZone)                                                                                              \
     X(ScBuilder, HAS_ScBuilder)
 
 typedef enum

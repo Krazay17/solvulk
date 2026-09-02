@@ -41,7 +41,7 @@ void Sol_Movement_Jump_Enter(World *world, int id)
 
     if (body3->vel.y < 0)
         body3->vel.y = 0;
-    vec3s dir  = glms_vec3_normalize(glms_vec3_lerp(body3->groundNormal, WORLD_UP, 0.9f));
+    vec3s dir  = glms_vec3_normalize(glms_vec3_lerp(move->groundNorm, WORLD_UP, 0.9f));
     body3->vel = vecAdd(body3->vel, vecSca(dir, JUMP_VEL));
 }
 

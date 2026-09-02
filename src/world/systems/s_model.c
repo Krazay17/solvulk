@@ -65,9 +65,6 @@ void Model_Render(World *world, double dt)
         vec3s pos = xform->draw_pos;
         pos.y += model_kinds[model->kind].y_offset;
         pos.y += model->yOffset;
-        // versors rot = xform->draw_rot;
-        
-        //Sol_YawFromQuat(rot.raw)
 
         if (model->is2d)
         {

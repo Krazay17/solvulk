@@ -2,6 +2,8 @@
 #include "world.h"
 #include "sol_core.h"
 
+#define MAX_WALK_ANGLE 0.5f
+
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
     {
         [MOVEMENTKIND_PLAYER] =
@@ -46,7 +48,7 @@ void Move3_Step(World *world, double dt)
     SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);
     for (int i = 0; i < set->cnt; i++)
     {
-        int            id         = set->dense[i];
+        int           id         = set->dense[i];
         ScMove3      *move       = &set->data[i];
         ScController *controller = Sol_Comp_Get(world, id, ScController);
         ScBody3      *body3      = Sol_Comp_Get(world, id, ScBody3);
@@ -73,6 +75,8 @@ void Move3_Step(World *world, double dt)
 
         switch (move->state)
         {
+            case MOVE_MANTLE:
+            break;
         case MOVE_STUN:
             body3->gravity.y *= 1.33f;
             vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
@@ -80,7 +84,7 @@ void Move3_Step(World *world, double dt)
             break;
         case MOVE_IDLE:
         case MOVE_WALK:
-            vec3s slopeDir = ProjectOntoGround(WORLD_UP, wishdir);
+            vec3s slopeDir = ProjectOntoGround(body3->groundNormal, wishdir);
             vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
             vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
             body3->vel     = vel;
@@ -115,22 +119,16 @@ void Move3_Step(World *world, double dt)
             const float fricFactor = 1.0f - expf(-5.0f * fdt);
             move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
         }
-
-        // TEMP
-        // if (Sol_Comp_Has(world, id, ScXform))
-        // {
-        //     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        //     if (xform->pos.y <= 0)
-        //     {
-        //         move->airtime = 0;
-        //         move->groundtime += fdt;
-        //     }
-        //     else
-        //     {
-        //         move->groundtime = 0;
-        //         move->airtime += fdt;
-        //     }
-        // }
+        if (GroundDot(world, id) > MAX_WALK_ANGLE)
+        {
+            move->airtime = 0;
+            move->groundtime += dt;
+        }
+        else
+        {
+            move->groundtime = 0;
+            move->airtime += fdt;
+        }
     }
 }
 
@@ -140,26 +138,68 @@ void Move3_Init(World *world)
 
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
 {
-    // float currentHeight = Sol_Physx_GetHeight(world, id);
-    // float difference    = fabs(currentHeight - move->targetHeight);
-    // if (difference < 0.001f)
-    //     return;
-    // float newHeight = Sol_Math_Lerp(currentHeight, move->targetHeight, 5.0f * fdt);
-    // if (newHeight > currentHeight)
-    // {
-    //     SolRayResult result = Sol_RaycastD(
-    //         world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = newHeight * 0.6f}, 0.2f);
-    //     if (result.hit)
-    //         return;
-    // }
-
-    // Sol_Physx_SetHeight(world, id, newHeight);
-    // Sol_Model_Get(world, id)->yOffset = newHeight * -0.5f;
+    ScBody3 *body          = Sol_Comp_Get(world, id, ScBody3);
+    float    currentHeight = body->dims.y;
+    float    difference    = fabs(currentHeight - move->targetHeight);
+    if (difference < 0.001f)
+        return;
+    float newHeight = Sol_Math_Lerp(currentHeight, move->targetHeight, 5.0f * fdt);
+    if (newHeight > currentHeight)
+    {
+        if (Sol_Raycast1D(
+                world,
+                (SolRay){.start = Sol_Comp_Get(world, id, ScXform)->pos, .dir = WORLD_UP, .dist = newHeight * 0.6f},
+                NULL, 0.2f))
+            return;
+    }
+    body->dims.y                              = newHeight;
+    Sol_Comp_Get(world, id, ScModel)->yOffset = newHeight * -0.5f;
 }
 
-bool Sol_Movement_SetState(World *world, int id, MoveState state)
+float GroundDot(World *world, int id)
 {
-    ScMove3        *move     = Sol_Comp_Get(world, id, ScMove3);
+    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+    ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
+
+    // Start from center-bottom of the body
+    vec3s origin = vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
+
+    body->groundNormal      = (vec3s){0, 0, 0};
+    SolRayResult results[9] = {0};
+    for (int j = 0; j < 9; j++)
+    {
+        // Rotate the local offset by the entity's rotation
+        vec3s rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
+
+        vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
+
+        Sol_Raycast1(world,
+                     (SolRay){
+                         .start     = pos,
+                         .dir       = WORLD_DOWN,
+                         .dist      = body->dims.y * 0.2f,
+                         .ignoreEnt = id,
+                         .mask      = 0,
+                     },
+                     &results[j]);
+    }
+    float flattestNorm = -1.0f;
+    int   idx          = 0;
+    for (int j = 0; j < 9; j++)
+    {
+        if (results[j].norm.y > flattestNorm)
+        {
+            flattestNorm = results[j].norm.y;
+            idx          = j;
+        }
+    }
+    body->groundNormal = results[idx].norm;
+    return flattestNorm;
+}
+
+bool Sol_Move3_SetState(World *world, int id, MoveState state)
+{
+    ScMove3         *move     = Sol_Comp_Get(world, id, ScMove3);
     const StateFunc *prevfunc = &MOVE_STATE_FUNCS[move->state];
     const StateFunc *nextfunc = &MOVE_STATE_FUNCS[state];
 
@@ -185,4 +225,10 @@ bool Sol_Movement_SetState(World *world, int id, MoveState state)
     // Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[move->kind][move->state].gravity, 0});
 
     return true;
+}
+
+float Sol_Move3_GetBaseSpeed(World *world, int id)
+{
+    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
+    return MOVE_STATE_FORCES[move->kind][move->state].speed;
 }

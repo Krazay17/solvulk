@@ -482,6 +482,7 @@ typedef struct SolRay
     vec3s start, dir;
     float dist;
     u16   mask;
+    int   ignoreEnt;
 } SolRay;
 
 typedef struct SolRayResult

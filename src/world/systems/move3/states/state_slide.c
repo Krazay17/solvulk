@@ -8,13 +8,13 @@
 static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (move->groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     if (!(cont->actionState & BITC(ACTION_CROUCH)))
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     if (cont->actionState & BITC(ACTION_JUMP))
-        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+        if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
     return false;
 }

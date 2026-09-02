@@ -37,11 +37,11 @@ void Create_Sol_Game()
     int level1 = Sol_Create_Ent(world);
     Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
     ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
-    levelModel->kind    = SOL_MODEL_WORLD0;
+    levelModel->kind    = SOL_MODEL_WORLD10;
     ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
     stage->isDirty      = true;
 
-    while (world->entCount < 1600)
+    while (world->entCount < 100)
     {
         int id = Sol_Create_Ent(world);
         Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
@@ -50,7 +50,7 @@ void Create_Sol_Game()
         body3->shape   = SHAPE3_CAP;
         body3->mask    = PHYSXMASK(1, 1);
         body3->dims    = (vec3s){0.5f, 1.0f, 0.5f};
-        model->kind    = MODELKIND_EVANRIGGED;
+        model->kind    = MODELKIND_WIZARD;
         Sol_Anim_Add(world, id);
         SolLine *line  = Sol_Line_New(world);
         if (line)

@@ -10,18 +10,18 @@
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
-    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
+    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
 
     if (data->elapsed >= JUMP_DURATION)
     {
-        Sol_Movement_SetState(world, id, MOVE_IDLE);
+        Sol_Move3_SetState(world, id, MOVE_IDLE);
         return;
     }
     else if (cont->actionState & BITC(ACTION_JUMP) && data->elapsed > JUMP_DURATION * 0.1f)
-        if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
+        if (Sol_Move3_SetState(world, id, MOVE_WALLRUN))
             return;
 
     float alpha = 1.0f - (data->elapsed / JUMP_DURATION);
@@ -31,9 +31,9 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
-    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
+    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
     move->wantsJump      = false;
     move->groundtime     = 0;
@@ -41,11 +41,8 @@ void Sol_Movement_Jump_Enter(World *world, int id)
 
     if (body3->vel.y < 0)
         body3->vel.y = 0;
-    body3->vel = vecAdd(body3->vel, vecSca(WORLD_UP, JUMP_VEL));
-    // if (Sol_Physx_GetVel(world, id).y < 0)
-    //     Sol_Physx_SetVelY(world, id, 0);
-    // vec3s dir = glms_vec3_normalize(glms_vec3_lerp(Sol_Physx_GetGround(world, id), WORLD_UP, 0.9f));
-    // Sol_Physx_AddVel(world, id, vecSca(dir, JUMP_VEL));
+    vec3s dir  = glms_vec3_normalize(glms_vec3_lerp(body3->groundNormal, WORLD_UP, 0.9f));
+    body3->vel = vecAdd(body3->vel, vecSca(dir, JUMP_VEL));
 }
 
 void Sol_Movement_Jump_Exit(World *world, int id)
@@ -59,8 +56,8 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController  *cont = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data = &move->stateData[MOVE_JUMP];
     if (!move->wantsJump || move->state == MOVE_JUMP)
         return false;

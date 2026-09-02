@@ -301,17 +301,18 @@ void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
-bool Sol_Movement_SetState(World *world, int id, MoveState state);
+bool  Sol_Move3_SetState(World *world, int id, MoveState state);
+float Sol_Move3_GetBaseSpeed(World *world, int id);
 
 bool  Sol_Physx_DoesCollide(ScBody3 *body, ScBody3 *other_body);
 vec3s Sol_Physx_GetGround(World *world, int id);
-int   Sol_Physx_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 
 vec3s Sol_Physx_GetVel(World *world, int id);
 float Sol_Physx_GetSpeed(World *world, int id);
-int   Sol_Physx_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
-int   Sol_Physx_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
-bool  Sol_Physx_RaycastFirst(World *world, SolRay ray, SolRayResult *outResult);
-bool  Sol_Physx_RaycastFirstD(World *world, SolRay ray, SolRayResult *result, float time);
+
+int  Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int  Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
+bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
 
 SolLine *Sol_Line_New(World *world);

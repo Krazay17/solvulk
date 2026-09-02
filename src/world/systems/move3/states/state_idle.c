@@ -5,16 +5,16 @@
 static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (move->wantsJump)
-        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+        if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
     if (move->airtime > 0)
-        if (Sol_Movement_SetState(world, id, MOVE_FALL))
+        if (Sol_Move3_SetState(world, id, MOVE_FALL))
             return true;
     if (cont->actionState & BITC(ACTION_CROUCH))
-        if (Sol_Movement_SetState(world, id, MOVE_CROUCH))
+        if (Sol_Move3_SetState(world, id, MOVE_CROUCH))
             return true;
     if (glms_vec3_norm(cont->wishdir) > 0)
-        if (Sol_Movement_SetState(world, id, MOVE_WALK))
+        if (Sol_Move3_SetState(world, id, MOVE_WALK))
             return true;
     return false;
 }

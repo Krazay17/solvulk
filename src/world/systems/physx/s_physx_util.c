@@ -65,44 +65,51 @@ void               Build_Tables(World *world, SysPhysx *sys, float fdt)
         stage->isDirty = false;
     }
 }
-
 void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *xformB, SolContact *contact)
 {
-    // Default static fallback values if body component is missing
     float invMassA = bodyA ? bodyA->invMass : 0.0f;
     float invMassB = bodyB ? bodyB->invMass : 0.0f;
 
     float totalInvMass = invMassA + invMassB;
     if (totalInvMass <= 0.0f)
-        return; // Two static/kinematic objects, no resolution needed
+        return;
 
     vec3s velA = bodyA ? bodyA->vel : GLMS_VEC3_ZERO;
     vec3s velB = bodyB ? bodyB->vel : GLMS_VEC3_ZERO;
 
-    // --- Positional Correction ---
-    const float slack   = 0.01f;
-    const float percent = 0.33f;
-
-    float corrMag    = (fmaxf(contact->penetration - slack, 0.0f) / totalInvMass) * percent;
-    vec3s correction = glms_vec3_scale(contact->normal, corrMag);
-
-    if (xformA && invMassA > 0.0f)
-        xformA->pos = glms_vec3_add(xformA->pos, glms_vec3_scale(correction, invMassA));
-
-    if (xformB && invMassB > 0.0f)
-        xformB->pos = glms_vec3_sub(xformB->pos, glms_vec3_scale(correction, invMassB));
-
-    // --- Velocity Impulse ---
     vec3s relativeVel    = glms_vec3_sub(velA, velB);
     float velAlongNormal = glms_vec3_dot(relativeVel, contact->normal);
 
-    if (velAlongNormal > 0.0f)
+    // --- 1. Softened Positional Correction ---
+    // Lower percentage (0.10f - 0.12f) prevents the "repel/bounce" feeling while
+    // still resolving overlap over 3-5 frames.
+    const float slack   = 0.015f; 
+    const float percent = 0.12f; 
+
+    float pen = fmaxf(contact->penetration - slack, 0.0f);
+    if (pen > 0.0f)
+    {
+        float corrMag    = (pen / totalInvMass) * percent;
+        vec3s correction = glms_vec3_scale(contact->normal, corrMag);
+
+        if (xformA && invMassA > 0.0f)
+            xformA->pos = glms_vec3_add(xformA->pos, glms_vec3_scale(correction, invMassA));
+
+        if (xformB && invMassB > 0.0f)
+            xformB->pos = glms_vec3_sub(xformB->pos, glms_vec3_scale(correction, invMassB));
+    }
+
+    // --- 2. Velocity Projection (Pure Sliding) ---
+    // Only resolve if moving INTO the surface
+    if (velAlongNormal >= 0.0f)
         return;
 
     float restA = bodyA ? bodyA->restitution : 0.0f;
     float restB = bodyB ? bodyB->restitution : 0.0f;
     float e     = fminf(restA, restB);
 
+    // When e == 0, j cancels ONLY the velocity heading directly into the normal,
+    // leaving 100% of tangential speed so the body slides along the wall.
     float j       = -(1.0f + e) * velAlongNormal / totalInvMass;
     vec3s impulse = glms_vec3_scale(contact->normal, j);
 
@@ -112,7 +119,6 @@ void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *x
     if (bodyB && invMassB > 0.0f)
         bodyB->vel = glms_vec3_sub(bodyB->vel, glms_vec3_scale(impulse, invMassB));
 }
-
 void Collisions_Static_Stage(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body, float fdt)
 {
     // if (sys->static_grid.item_count == 0)

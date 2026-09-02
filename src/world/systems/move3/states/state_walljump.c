@@ -15,14 +15,15 @@ void Walljump_State_Update(World *world, int id, float dt)
 
     if (walljumpData->elapsed >= DASH_DURATION)
     {
-        Sol_Movement_SetState(world, id, MOVE_IDLE);
+        Sol_Move3_SetState(world, id, MOVE_IDLE);
         return;
     }
 
     vec3s vel = {0};//Sol_Physx_GetVel(world, id);
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
     // vel       = Sol_Math_DampDir(vel, walljumpData->dir, alpha, DAMPING, dt);
-    Sol_Body3_SetVel(world, id, vel);
+    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+    body->vel = vel;
 }
 
 void Walljump_State_Enter(World *world, int id)

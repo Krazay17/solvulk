@@ -5,16 +5,16 @@
 static bool LeaveState(World *world, int id, ScMove3 *move, ScController *controller)
 {
     if (move->groundtime > 0)
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     if (controller->actionState & BITC(ACTION_CROUCH))
-        if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
+        if (Sol_Move3_SetState(world, id, MOVE_SLIDE))
             return true;
     if (controller->actionState & BITC(ACTION_JUMP))
-        if (Sol_Movement_SetState(world, id, MOVE_WALLRUN))
+        if (Sol_Move3_SetState(world, id, MOVE_WALLRUN))
             return true;
     if (controller->actionState & BITC(ACTION_JUMP))
-        if (Sol_Movement_SetState(world, id, MOVE_JUMP))
+        if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
     return false;
 }

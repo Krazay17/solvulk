@@ -57,14 +57,14 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
     //         Slide_State_CanExit,
     //         Slide_State_CanEnter,
     //     },
-    // [MOVE_WALLRUN] =
-    //     {
-    //         Wallrun_State_Update,
-    //         Wallrun_State_Enter,
-    //         Wallrun_State_Exit,
-    //         Wallrun_State_CanExit,
-    //         Wallrun_State_CanEnter,
-    //     },
+    [MOVE_WALLRUN] =
+        {
+            Wallrun_State_Update,
+            Wallrun_State_Enter,
+            Wallrun_State_Exit,
+            Wallrun_State_CanExit,
+            Wallrun_State_CanEnter,
+        },
     // [MOVE_WALLJUMP] =
     //     {
     //         Walljump_State_Update,
@@ -89,13 +89,13 @@ const StateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
     //         Stun_State_CanExit,
     //         Stun_State_CanEnter,
     //     },
-    // [MOVE_MANTLE] =
-    //     {
-    //         Mantle_State_Update,
-    //         Mantle_State_Enter,
-    //         Mantle_State_Exit,
-    //         Mantle_State_CanExit,
-    //         Mantle_State_CanEnter,
-    //         Mantle_State_Draw,
-    //     },
+    [MOVE_MANTLE] =
+        {
+            Mantle_State_Update,
+            Mantle_State_Enter,
+            Mantle_State_Exit,
+            Mantle_State_CanExit,
+            Mantle_State_CanEnter,
+            Mantle_State_Draw,
+        },
 };

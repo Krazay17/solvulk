@@ -146,7 +146,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
         // Spatial_Table_Dynamic_Single(&dynamicGroup->table, id, xform->pos, body->dims.x, body->dims.y);
         Collisions_Dynamic_Hashed(world, id, body, xform, &contacts[j]);
     }
-    Prof_EndEz(&prof_static, true);
+    Prof_EndEz(&prof_static, true, dt);
 
     for (int i = 0; i < count; i++)
     {
@@ -166,7 +166,7 @@ void Sol_Physx_Step(World *world, double dt, double time)
                                  });
         }
     }
-    Prof_EndEz(&prof_physx, true);
+    Prof_EndEz(&prof_physx, true, dt);
 }
 
 float Sol_Physx_Get_Ground_Dot(World *world, int id)

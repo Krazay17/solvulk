@@ -138,7 +138,7 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int     id   = set->dense[i];
         ScAnim *anim = &set->data[i];
 
         ScModel *model = Sol_Comp_Get(world, id, ScModel);
@@ -226,12 +226,12 @@ void Anim_Tick(World *world, double dt)
     SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int     id   = set->dense[i];
         ScAnim *anim = &set->data[i];
 
         if (Sol_Comp_Has(world, id, ScAbility))
         {
-            ScAbility       *ability      = Sol_Comp_Get(world, id, ScAbility);
+            ScAbility        *ability      = Sol_Comp_Get(world, id, ScAbility);
             AbilityStateData *data         = &ability->stateData[ability->activeSlot];
             AnimDesc          ability_anim = {.layerId = ANIM_LAYER_OVERRIDE};
             switch (ability->state)
@@ -283,7 +283,7 @@ void Anim_Tick(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, ScMove3))
         {
-            ScMove3      *movement     = Sol_Comp_Get(world, id, ScMove3);
+            ScMove3       *movement     = Sol_Comp_Get(world, id, ScMove3);
             MoveStateData *data         = &movement->stateData[movement->state];
             bool           modify_speed = false;
             AnimDesc       move_anim    = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
@@ -327,7 +327,7 @@ void Anim_Tick(World *world, double dt)
             case MOVE_MANTLE: {
                 move_anim.playKind = ANIMPLAYKIND_NOLOOP;
                 move_anim.anim     = data->as.mantle.doRoll ? ANIM_MANTLE_ROLL : ANIM_MANTLE;
-                Sol_Anim_SetSpeed(world, id, move_anim.layerId, 2.5f - data->as.mantle.dist);
+                 Sol_Anim_SetSpeed(world, id, move_anim.layerId, 2.0f - data->as.mantle.dist);
             }
             break;
             case MOVE_FLY: {
@@ -340,9 +340,9 @@ void Anim_Tick(World *world, double dt)
             break;
             }
             Sol_Anim_Play(world, id, move_anim);
-            // if (modify_speed)
-            //     Sol_Anim_SetSpeed(world, id, move_anim.layerId,
-            //                            Sol_Physx_GetSpeed(world, id) / Sol_Movement_GetBaseSpeed(world, id));
+            if (modify_speed)
+                Sol_Anim_SetSpeed(world, id, move_anim.layerId,
+                                  Sol_Physx_GetSpeed(world, id) / Sol_Move3_GetBaseSpeed(world, id));
         }
         else
         {
@@ -364,8 +364,8 @@ void Anim_Init(World *world)
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc)
 {
-    ScModel  *modelComp = Sol_Comp_Get(world, id, ScModel);
-    ScAnim   *anim      = Sol_Comp_Get(world, id, ScAnim);
+    ScModel   *modelComp = Sol_Comp_Get(world, id, ScModel);
+    ScAnim    *anim      = Sol_Comp_Get(world, id, ScAnim);
     AnimLayer *layer     = &anim->layers[desc.layerId];
 
     AnimId animId   = desc.anim;

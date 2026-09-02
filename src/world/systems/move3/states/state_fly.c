@@ -5,7 +5,7 @@
 void Sol_Movement_Fly_Update(World *world, int id, float dt)
 {
     // if (!(Sol_Controller_Get(world, id)->actionState(world, id) & ACTION_JUMP))
-    //     if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+    //     if (Sol_Move3_SetState(world, id, MOVE_IDLE))
     //         return;
 }
 

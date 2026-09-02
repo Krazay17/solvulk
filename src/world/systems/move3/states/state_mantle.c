@@ -11,49 +11,48 @@
 #include "sol_math.h"
 
 #define RAY_COUNT 12
-#define MANTLE_TIME 0.6f
+#define MANTLE_TIME 0.7f
 
 static bool CheckWall(World *world, int id)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
     ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
+    ScBody3      *body  = Sol_Comp_Get(world, id, ScBody3);
     ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
 
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
-    float          height  = body3->dims.y;
-    float          width   = body3->dims.x;
-    vec3s          pos     = xform->pos;
-    vec3s          basePos = vecAdd(pos, vecSca(WORLD_UP, height * 0.7f));
+    vec3s          basePos = vecAdd(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
 
-    u32   mantleSpace = 0;
-    float dist        = 0;
+    if (Sol_Raycast1(world, (SolRay){.start = xform->pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id},
+                     NULL))
+        return false;
+
     vec3s goodPos     = {0};
-    // if (Sol_Raycast(world, (SolRay){.pos = pos, .dir = WORLD_UP, .dist = height, .ignoreEnt = id}).hit)
-    //     return false;
+    u32   mantleSpace = 0;
     // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
     {
-        // float offset = (float)i * (height / ((float)RAY_COUNT * 0.8f));
-        // vec3s pos    = basePos;
-        // pos.y -= offset;
-        // SolRay       ray = {.pos = pos, .dist = body3->dims.x * 3.0f, .dir = Sol_Vec3_FromYawPitch(controller->yaw,
-        // 0)}; SolRayResult rayResult = Sol_RaycastD(world, ray, 0.1f);
-        // // No hit indicates there is space above
-        // if (!rayResult.hit)
-        // {
-        //     dist    = offset;
-        //     goodPos = rayResult.pos;
-        //     mantleSpace++;
-        // }
-        // // Hit after no hit indicates there is floor to mantle
-        // else if (mantleSpace > 1) // && vecDot(rayResult.norm, WORLD_UP) < 0.4f
-        // {
-        //     data->as.mantle.ledge_pos = rayResult.pos;
-        //     data->as.mantle.dist      = dist;
-        //     data->as.mantle.pos       = goodPos;
-        //     return true;
-        // }
+        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 0.8f));
+        vec3s pos    = basePos;
+        pos.y -= offset;
+        SolRay ray = {
+            .start = pos, .dist = body->dims.x * 2.0f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cont->yaw, 0)};
+        SolRayResult rayResult;
+        bool         hit = Sol_Raycast1D(world, ray, &rayResult, 0.1f);
+        // No hit indicates there is space above
+        if (!hit)
+        {
+            goodPos = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
+            goodPos.y += body->dims.y * 0.5f;
+            mantleSpace++;
+        }
+        // Hit after no hit indicates there is floor to mantle
+        else if (mantleSpace > 2)
+        {
+            data->as.mantle.ledge_pos = rayResult.pos;
+            data->as.mantle.pos       = goodPos;
+            return true;
+        }
     }
     return false;
 }
@@ -62,7 +61,7 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (move->stateData[move->state].elapsed >= MANTLE_TIME)
         return true;
-    if (!cont->actionState & BITC(ACTION_JUMP))
+    if (!(cont->actionState & BITC(ACTION_JUMP)))
         return true;
     if (cont->actionState & BITC(ACTION_CROUCH))
         return true;
@@ -74,43 +73,56 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 
 void Mantle_State_Update(World *world, int id, float dt)
 {
-    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
-    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
+    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
+    ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_MANTLE];
     if (LeaveState(world, id, move, cont))
-        if (Sol_Movement_SetState(world, id, MOVE_IDLE))
+        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return;
-
     vec3s pos       = xform->pos;
     vec3s targetPos = data->as.mantle.pos;
-    targetPos.y += body3->dims.y * 0.5f;
-    if (pos.y < targetPos.y && CheckWall(world, id))
+    if (pos.y < targetPos.y)
     {
-        Sol_Physx_SetVelY(world, id, 8.0f);
+        body->vel.y = 8.0f;
     }
     else
     {
         vec3s dir            = vecSub(targetPos, pos);
         float dist           = glms_vec3_norm(dir);
         data->as.mantle.dist = dist;
-        if (dist <= 0.15f)
+        if (dist <= 0.15f && !CheckWall(world, id))
             data->as.mantle.closeEnough = 1;
-        dir = vecNorm(dir);
-        Sol_Body3_SetVel(world, id, vecSca(dir, 8.0f));
+        dir       = vecNorm(dir);
+        body->vel = vecSca(dir, 8.0f);
+
+        SolLine *line = Sol_Line_New(world);
+        line->a       = targetPos;
+        line->b       = vecAdd(targetPos, vecSca(WORLD_UP, 10.0f));
+        line->aColor  = VEC4_GREEN;
+        line->bColor  = VEC4_GREEN;
+        line->ttl     = 2.0f;
+
+        SolLine *lineVel = Sol_Line_New(world);
+        lineVel->a       = xform->pos;
+        lineVel->b       = vecAdd(xform->pos, body->vel);
+        lineVel->aColor  = VEC4_GREEN;
+        lineVel->bColor  = VEC4_GREEN;
+        lineVel->ttl     = 2.0f;
     }
 }
 
 void Mantle_State_Enter(World *world, int id)
 {
-    ScMove3   *move         = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont         = Sol_Comp_Get(world, id, ScController);
+    ScMove3       *move         = Sol_Comp_Get(world, id, ScMove3);
+    ScBody3       *body         = Sol_Comp_Get(world, id, ScBody3);
+    ScXform       *xform        = Sol_Comp_Add(world, id, ScXform);
+    ScController  *cont         = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
-    // data->as.mantle.doRoll =
-    //     (Sol_Physx_GetVel(world, id).y > 5.0f) && (Sol_Xform_GetPos(world, id).y < data->as.mantle.ledge_pos.y);
+    data->as.mantle.doRoll      = (body->vel.y > 5.0f) && (xform->pos.y < data->as.mantle.ledge_pos.y);
 }
 
 void Mantle_State_Exit(World *world, int id)
@@ -119,7 +131,7 @@ void Mantle_State_Exit(World *world, int id)
 
 bool Mantle_State_CanExit(World *world, int id, u32 nextState)
 {
-    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
+    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
     ScController *cont = Sol_Comp_Get(world, id, ScController);
     return LeaveState(world, id, move, cont);
 }

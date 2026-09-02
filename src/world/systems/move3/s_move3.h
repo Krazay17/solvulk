@@ -101,6 +101,7 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 void  Knockback(World *world, int id, ScMove3 *move, float fdt);
 void  CrouchHeight(World *world, int id, ScMove3 *move, float fdt);
 void  RestoreFriction(World *world, int id, ScMove3 *move, float fdt);
+float GroundDot(World *world, int id);
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt);
 void Sol_Movement_Idle_Enter(World *world, int id);

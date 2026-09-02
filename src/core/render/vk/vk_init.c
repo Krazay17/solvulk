@@ -452,7 +452,7 @@ int Sol_CreateFrameBuffer(SolVkState *vkstate, VkDeviceSize size, VkBufferUsageF
 }
 
 int Sol_CreateDescriptorImage(SolVkState *vkstate, VkImageView imageView, VkSampler sampler,
-                              VkShaderStageFlags stageFlags, SolBufferDescriptor *out)
+                              VkShaderStageFlags stageFlags, ScBufferDescriptor *out)
 {
     VkDescriptorSetLayoutBinding binding = {
         .binding         = 0,
@@ -513,7 +513,7 @@ int Sol_CreateDescriptorImage(SolVkState *vkstate, VkImageView imageView, VkSamp
     return 0;
 }
 
-int Sol_CreateDescriptorImageArray(SolVkState *vkstate, SolGpuImage *images, int imageCount, SolBufferDescriptor *out)
+int Sol_CreateDescriptorImageArray(SolVkState *vkstate, SolGpuImage *images, int imageCount, ScBufferDescriptor *out)
 {
     VkDescriptorSetLayoutBinding binding = {
         .binding         = 0,

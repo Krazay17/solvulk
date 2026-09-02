@@ -1019,3 +1019,40 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
         //     // No sweep collision; step full fdt position
         //     xform->pos = glms_vec3_add(xform->pos, glms_vec3_scale(body3->vel, fdt));
         // }
+
+
+    // SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_table.cellSize);
+
+    // for (int n = 0; n < 27; n++)
+    // {
+    //     u32 cellHash = cell.neighborHashes[n];
+    //     u32 entry    = SpatialTable_GetEntry(&sys->dynamic_table, cellHash);
+
+    //     while (entry != SPATIAL_NULL)
+    //     {
+    //         int idB = (int)sys->dynamic_table.value[entry];
+
+    //         if (idA < idB) // Deduplicate pairs
+    //         {
+    //             SolBody3 *other_body = Sol_Comp_Get(world, idB, SolBody3);
+
+    //             // Don't collide two immovable bodies
+    //             if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
+    //                 shape_pair_test[body->shape][other_body->shape])
+    //             {
+    //                 SolContact contact;
+    //                 if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
+    //                 {
+    //                     if (contacts->count < MAX_THREAD_CONTACTS)
+    //                     {
+    //                         contact.id  = idA;
+    //                         contact.idB = idB;
+
+    //                         contacts->contacts[contacts->count++] = contact;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         entry = sys->dynamic_table.next[entry];
+    //     }
+    // }

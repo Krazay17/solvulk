@@ -7,10 +7,10 @@ void Player_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_SolPlayer *set = Sol_Comp_Set(world, SolPlayer);
+    SparseSet_ScPlayer *set = Sol_Comp_Set(world, ScPlayer);
     for (int i = 0; i < set->cnt; i++)
     {
         int            id     = set->dense[i];
-        SolPlayer     *player = &set->data[i];
+        ScPlayer     *player = &set->data[i];
     }
 }

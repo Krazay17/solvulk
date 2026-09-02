@@ -7,7 +7,7 @@
 
 void Dead_State_Update(World *world, int id, float dt)
 {
-    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *data = &move->stateData[move->state];
 
     if (data->elapsed > DESTROY_TIMER)
@@ -17,19 +17,19 @@ void Dead_State_Update(World *world, int id, float dt)
     }
     if (data->elapsed > REMOVE_PHYSX_TIMER)
     {
-        world->masks[id] &= ~BITC(HAS_SolBody3);
-        world->masks[id] &= ~BITC(HAS_SolBody2);
+        world->masks[id] &= ~BITC(HAS_ScBody3);
+        world->masks[id] &= ~BITC(HAS_ScBody2);
     }
 }
 
 void Dead_State_Enter(World *world, int id)
 {
-    SolMove3 *move  = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3 *move  = Sol_Comp_Get(world, id, ScMove3);
     move->targetHeight = move->baseHeight * 0.6f;
 }
 void Dead_State_Exit(World *world, int id)
 {
-    SolMove3 *move  = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3 *move  = Sol_Comp_Get(world, id, ScMove3);
     move->targetHeight = move->baseHeight;
 }
 bool Dead_State_CanExit(World *world, int id, u32 next)

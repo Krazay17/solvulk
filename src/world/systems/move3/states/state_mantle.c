@@ -15,10 +15,10 @@
 
 static bool CheckWall(World *world, int id)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
-    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
-    SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
+    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
 
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
     float          height  = body3->dims.y;
@@ -58,7 +58,7 @@ static bool CheckWall(World *world, int id)
     return false;
 }
 
-static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (move->stateData[move->state].elapsed >= MANTLE_TIME)
         return true;
@@ -74,10 +74,10 @@ static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont
 
 void Mantle_State_Update(World *world, int id, float dt)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
-    SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
-    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
+    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_MANTLE];
     if (LeaveState(world, id, move, cont))
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
@@ -104,8 +104,8 @@ void Mantle_State_Update(World *world, int id, float dt)
 
 void Mantle_State_Enter(World *world, int id)
 {
-    SolMove3   *move         = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont         = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move         = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont         = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
@@ -119,16 +119,16 @@ void Mantle_State_Exit(World *world, int id)
 
 bool Mantle_State_CanExit(World *world, int id, u32 nextState)
 {
-    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     return LeaveState(world, id, move, cont);
 }
 
 bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    if (Sol_Comp_Has(world, id, SolAbility))
+    if (Sol_Comp_Has(world, id, ScAbility))
     {
-        SolAbility *ability = Sol_Comp_Get(world, id, SolAbility);
+        ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
 
         if (ability->state == ABILITY_STATE_DASH || ability->state == ABILITY_STATE_SPINSLASH)
             return false;

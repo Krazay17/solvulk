@@ -2,6 +2,7 @@
 #include "model.h"
 #include "sol_math.h"
 #include "world.h"
+#include "profiler.h"
 
 #include <omp.h>
 
@@ -15,87 +16,57 @@ const ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
 typedef bool (*ShapeTriTest)(World *world, int idA, int idB, const SolTri *tri, SolContact *contact);
 const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_SPH] = Collide_Sphere_Tri,
+    [SHAPE3_CAP] = Collide_Capsule_Tri,
 };
 
-static inline BodyData Get_Body_Data(const SolBody3 *body)
+static SolProfiler prof1 = {.name = "Tables"};
+void               Build_Tables(World *world, SysPhysx *sys, float fdt)
 {
-    // Static fallback: invMass = 0, vel = 0, restitution = 0
-    static const BodyData static_body = {0.0f, 0.0f, {{0.0f, 0.0f, 0.0f}}};
-    return body ? (BodyData){body->invMass, body->restitution, body->vel} : static_body;
-}
-
-void Build_Tables(World *world, SysPhysx *sys, float fdt)
-{
-    SpatialTable_Clear(&sys->dynamic_table);
-    SpatialTable_Clear(&sys->dynamic_tri_table);
     int i;
-
-    SparseSet_SolBody3 *bodySet = Sol_Comp_Set(world, SolBody3);
+    Prof_Begin(&prof1);
+    SpatialGrid_Clear(&sys->dynamic_group.spatial);
+    solb_zero(sys->dynamic_group.aabb_scratch);
+    SparseSet_ScBody3 *bodySet = Sol_Comp_Set(world, ScBody3);
     for (i = 0; i < bodySet->cnt; i++)
     {
-        int       id      = bodySet->dense[i];
-        SolBody3 *body    = &bodySet->data[i];
-        SolXform *xform   = Sol_Comp_Get(world, id, SolXform);
-        vec3s     prevPos = xform->pos;
-        vec3s     nextPos = vecAdd(prevPos, (vecSca(body->vel, fdt)));
-        vec3s     min     = vecSub(glms_vec3_minv(prevPos, nextPos), body->dims);
-        vec3s     max     = vecAdd(glms_vec3_maxv(prevPos, nextPos), body->dims);
-        Spatial_FloorHashInsert(&sys->dynamic_table, min, max, id);
+        int         id    = bodySet->dense[i];
+        ScBody3    *body  = &bodySet->data[i];
+        ScXform    *xform = Sol_Comp_Get(world, id, ScXform);
+        SpatialAABB aabb;
+        aabb.id  = id;
+        aabb.min = vecSub(xform->pos, body->dims);
+        aabb.max = vecAdd(xform->pos, body->dims);
+        solb_push(sys->dynamic_group.aabb_scratch, aabb);
     }
+    SpatialGrid_BuildFromAABBs(&sys->dynamic_group.spatial, sys->dynamic_group.aabb_scratch,
+                               solb_count(sys->dynamic_group.aabb_scratch));
+    Prof_EndEz(&prof1, true, fdt);
 
-    SparseSet_SolMeshCollider *meshSet = Sol_Comp_Set(world, SolMeshCollider);
-    for (i = 0; i < meshSet->cnt; i++)
-    {
-        int              id    = meshSet->dense[i];
-        SolMeshCollider *mesh  = &meshSet->data[i];
-        SolXform        *xform = Sol_Comp_Get(world, id, SolXform);
-        SolModel        *model = Sol_Comp_Get(world, id, SolModel);
-        if (!mesh->isDirty || !model || !xform)
-            continue;
-        int     tricount = loaded_models[model->kind].tri_count;
-        SolTri *tris     = loaded_models[model->kind].tris;
-        for (int t = 0; t < tricount; t++)
-        {
-            SolTri worldTri = SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca);
-
-            vec3s min = {
-                .x = fminf(worldTri.a.x, fminf(worldTri.b.x, worldTri.c.x)),
-                .y = fminf(worldTri.a.y, fminf(worldTri.b.y, worldTri.c.y)),
-                .z = fminf(worldTri.a.z, fminf(worldTri.b.z, worldTri.c.z)),
-            };
-            vec3s max = {
-                .x = fmaxf(worldTri.a.x, fmaxf(worldTri.b.x, worldTri.c.x)),
-                .y = fmaxf(worldTri.a.y, fmaxf(worldTri.b.y, worldTri.c.y)),
-                .z = fmaxf(worldTri.a.z, fmaxf(worldTri.b.z, worldTri.c.z)),
-            };
-
-            Spatial_FloorHashInsert(&sys->dynamic_tri_table, min, max, MAKE_TRI_VALUE(id, t));
-        }
-        mesh->isDirty = false;
-    }
-
-    SparseSet_SolStage *stageSet = Sol_Comp_Set(world, SolStage);
+    SparseSet_ScStage *stageSet = Sol_Comp_Set(world, ScStage);
     for (i = 0; i < stageSet->cnt; i++)
     {
-        int       id    = stageSet->dense[i];
-        SolStage *stage = &stageSet->data[i];
-        SolModel *model = Sol_Comp_Get(world, id, SolModel);
-        SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+        int      id    = stageSet->dense[i];
+        ScStage *stage = &stageSet->data[i];
+        ScModel *model = Sol_Comp_Get(world, id, ScModel);
+        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         if (!stage->isDirty || !model || !xform)
             continue;
         int     tricount = loaded_models[model->kind].tri_count;
         SolTri *tris     = loaded_models[model->kind].tris;
         for (int t = 0; t < tricount; t++)
         {
-            solb_push(sys->worldTris, SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca));
+            SolTri tri = SolTri_GetWorldSpace(&tris[t], xform->rot, xform->pos, xform->sca);
+            tri.entId  = id;
+            solb_push(sys->static_group.tris, tri);
         }
-        sollog("WorldTri count:", solb_count(sys->worldTris));
-        SpatialGrid_BuildFromTris(&sys->static_tri_grid, sys->worldTris, tricount, id);
+        sollog("WorldTri count:", solb_count(sys->static_group.tris));
+        SpatialGrid_BuildFromTris(&sys->static_group.spatial, sys->static_group.tris,
+                                  solb_count(sys->static_group.tris));
         stage->isDirty = false;
     }
 }
 
-void Resolve_Contact(SolBody3 *bodyA, SolXform *xformA, SolBody3 *bodyB, SolXform *xformB, SolContact *contact)
+void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *xformB, SolContact *contact)
 {
     // Default static fallback values if body component is missing
     float invMassA = bodyA ? bodyA->invMass : 0.0f;
@@ -109,8 +80,8 @@ void Resolve_Contact(SolBody3 *bodyA, SolXform *xformA, SolBody3 *bodyB, SolXfor
     vec3s velB = bodyB ? bodyB->vel : GLMS_VEC3_ZERO;
 
     // --- Positional Correction ---
-    const float slack   = 0.001f;
-    const float percent = 0.2f;
+    const float slack   = 0.01f;
+    const float percent = 0.33f;
 
     float corrMag    = (fmaxf(contact->penetration - slack, 0.0f) / totalInvMass) * percent;
     vec3s correction = glms_vec3_scale(contact->normal, corrMag);
@@ -142,120 +113,114 @@ void Resolve_Contact(SolBody3 *bodyA, SolXform *xformA, SolBody3 *bodyB, SolXfor
         bodyB->vel = glms_vec3_sub(bodyB->vel, glms_vec3_scale(impulse, invMassB));
 }
 
-void Collisions_Static_Stage(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body, float fdt)
+void Collisions_Static_Stage(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body, float fdt)
 {
-    if (sys->static_tri_grid.item_count == 0)
-        return;
-    vec3s prevPos = xform->pos;
-    vec3s nextPos = vecAdd(prevPos, vecSca(body->vel, fdt));
+    // if (sys->static_grid.item_count == 0)
+    //     return;
+    // vec3s prevPos = xform->pos;
+    // vec3s nextPos = vecAdd(prevPos, vecSca(body->vel, fdt));
 
-    // Calculate swept AABB bounds using body dimensions
-    vec3s min = vecSub(glms_vec3_minv(prevPos, nextPos), body->dims);
-    vec3s max = vecAdd(glms_vec3_maxv(prevPos, nextPos), body->dims);
+    // // Calculate swept AABB bounds using body dimensions
+    // vec3s min = vecSub(glms_vec3_minv(prevPos, nextPos), body->dims);
+    // vec3s max = vecAdd(glms_vec3_maxv(prevPos, nextPos), body->dims);
 
-    // Convert world bounds to grid cell ranges
-    ivec3s minCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, min);
-    ivec3s maxCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, max);
+    // // Convert world bounds to grid cell ranges
+    // ivec3s minCell = SpatialGrid_WorldToCell(&sys->static_grid, min);
+    // ivec3s maxCell = SpatialGrid_WorldToCell(&sys->static_grid, max);
 
-    // Iterate over all cells overlapping the entity's swept volume
-    for (int z = minCell.z; z <= maxCell.z; z++)
-    {
-        for (int y = minCell.y; y <= maxCell.y; y++)
-        {
-            for (int x = minCell.x; x <= maxCell.x; x++)
-            {
-                uint32_t cellIdx = SpatialGrid_GetCellIndex(&sys->static_tri_grid, x, y, z);
-                GridCell cell    = sys->static_tri_grid.cells[cellIdx];
+    // // Iterate over all cells overlapping the entity's swept volume
+    // for (int z = minCell.z; z <= maxCell.z; z++)
+    // {
+    //     for (int y = minCell.y; y <= maxCell.y; y++)
+    //     {
+    //         for (int x = minCell.x; x <= maxCell.x; x++)
+    //         {
+    //             uint32_t cellIdx = SpatialGrid_GetCellIndex(&sys->static_grid, x, y, z);
+    //             GridCell cell    = sys->static_grid.cells[cellIdx];
 
-                // Check all triangles residing in this cell
-                for (uint32_t i = 0; i < cell.count; i++)
-                {
-                    uint32_t packedData = sys->static_tri_grid.index_buffer[cell.offset + i];
+    //             // Check all triangles residing in this cell
+    //             for (uint32_t i = 0; i < cell.count; i++)
+    //             {
+    //                 uint32_t packedData = sys->static_grid.index_buffer[cell.offset + i];
 
-                    // Unpack entity ID and triangle index from bit-packed u32
-                    uint32_t entityId, triIndex;
-                    Unpack_StageTri(packedData, &entityId, &triIndex);
+    //                 // Unpack entity ID and triangle index from bit-packed u32
+    //                 uint32_t entityId, triIndex;
+    //                 Unpack_StageTri(packedData, &entityId, &triIndex);
 
-                    const SolTri *tri = &sys->worldTris[triIndex];
+    //                 const SolTri *tri = &sys->worldTris[triIndex];
 
-                    SolContact contact;
-                    if (shape_tri_test[body->shape](world, idA, entityId, tri, &contact))
-                    {
-                        if (solb_count(sys->contacts) < MAX_CONTACTS)
-                        {
-                            contact.id  = idA;
-                            contact.idB = entityId;
-                            solb_push(sys->contacts, contact);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //                 SolContact contact;
+    //                 if (shape_tri_test[body->shape](world, idA, entityId, tri, &contact))
+    //                 {
+    //                     if (solb_count(sys->contacts) < MAX_CONTACTS)
+    //                     {
+    //                         contact.id  = idA;
+    //                         contact.idB = entityId;
+    //                         solb_push(sys->contacts, contact);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
-
-void Collisions_Static_Stage_Local(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body, float fdt,
+void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, StaticGroup *group,
                                    ThreadContactBuffer *contacts)
 {
-    if (sys->static_tri_grid.item_count == 0)
-        return;
+    ivec3s minCellA = SpatialGrid_WorldToCell(&group->spatial, min);
+    ivec3s maxCellA = SpatialGrid_WorldToCell(&group->spatial, max);
 
-    vec3s prevPos = xform->pos;
-    vec3s nextPos = vecAdd(prevPos, vecSca(body->vel, fdt));
+    int gridDimX = group->spatial.dims.x;
+    int gridDimY = group->spatial.dims.y;
+    int gridDimZ = group->spatial.dims.z;
 
-    vec3s min = vecSub(glms_vec3_minv(prevPos, nextPos), body->dims);
-    vec3s max = vecAdd(glms_vec3_maxv(prevPos, nextPos), body->dims);
+    minCellA.x = clampi(minCellA.x, 0, gridDimX - 1);
+    maxCellA.x = clampi(maxCellA.x, 0, gridDimX - 1);
+    minCellA.y = clampi(minCellA.y, 0, gridDimY - 1);
+    maxCellA.y = clampi(maxCellA.y, 0, gridDimY - 1);
+    minCellA.z = clampi(minCellA.z, 0, gridDimZ - 1);
+    maxCellA.z = clampi(maxCellA.z, 0, gridDimZ - 1);
 
-    ivec3s minCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, min);
-    ivec3s maxCell = SpatialGrid_WorldToCell(&sys->static_tri_grid, max);
-
-// Fixed thread-local visited tracking buffer
-#define MAX_VISITED_TRIS 256
-    uint32_t visited_tris[MAX_VISITED_TRIS];
-    int      visited_count = 0;
-
-    for (int z = minCell.z; z <= maxCell.z; z++)
+    for (int z = minCellA.z; z <= maxCellA.z; z++)
     {
-        for (int y = minCell.y; y <= maxCell.y; y++)
+        for (int y = minCellA.y; y <= maxCellA.y; y++)
         {
-            for (int x = minCell.x; x <= maxCell.x; x++)
+            for (int x = minCellA.x; x <= maxCellA.x; x++)
             {
-                uint32_t cellIdx = SpatialGrid_GetCellIndex(&sys->static_tri_grid, x, y, z);
-                GridCell cell    = sys->static_tri_grid.cells[cellIdx];
+                uint32_t cellIdx = SpatialGrid_GetCellIndex(&group->spatial, x, y, z);
+                GridCell cell    = group->spatial.cells[cellIdx];
 
                 for (uint32_t i = 0; i < cell.count; i++)
                 {
-                    uint32_t packedData = sys->static_tri_grid.index_buffer[cell.offset + i];
+                    uint32_t      idx = group->spatial.index_buffer[cell.offset + i];
+                    const SolTri *tri = &group->tris[idx];
 
-                    uint32_t entityId, triIndex;
-                    Unpack_StageTri(packedData, &entityId, &triIndex);
+                    // --- Coordinate-Based Deduplication ---
+                    // Compute triangle minimum bound (or use tri->min if precalculated)
+                    vec3s  triMin     = glms_vec3_minv(glms_vec3_minv(tri->a, tri->b), tri->c);
+                    ivec3s minCellTri = SpatialGrid_WorldToCell(&group->spatial, triMin);
 
-                    // Check if we've already tested this triangle in a previous cell
-                    bool already_tested = false;
-                    for (int v = 0; v < visited_count; v++)
-                    {
-                        if (visited_tris[v] == triIndex)
-                        {
-                            already_tested = true;
-                            break;
-                        }
-                    }
-                    if (already_tested)
+                    // Find the primary shared cell between Body A and the Triangle
+                    int startX = minCellA.x > minCellTri.x ? minCellA.x : minCellTri.x;
+                    int startY = minCellA.y > minCellTri.y ? minCellA.y : minCellTri.y;
+                    int startZ = minCellA.z > minCellTri.z ? minCellA.z : minCellTri.z;
+
+                    startX = clampi(startX, 0, gridDimX - 1);
+                    startY = clampi(startY, 0, gridDimY - 1);
+                    startZ = clampi(startZ, 0, gridDimZ - 1);
+
+                    // Execute collision test ONLY when visiting the primary overlapping cell
+                    if (x != startX || y != startY || z != startZ)
                         continue;
 
-                    // Mark as tested
-                    if (visited_count < MAX_VISITED_TRIS)
-                        visited_tris[visited_count++] = triIndex;
-
-                    const SolTri *tri = &sys->worldTris[triIndex];
-
+                    int        idB = tri->entId;
                     SolContact contact;
-                    if (shape_tri_test[body->shape](world, idA, entityId, tri, &contact))
+                    if (shape_tri_test[shape] && shape_tri_test[shape](world, idA, idB, tri, &contact))
                     {
                         if (contacts->count < MAX_THREAD_CONTACTS)
                         {
                             contact.id  = idA;
-                            contact.idB = entityId;
+                            contact.idB = idB;
 
                             contacts->contacts[contacts->count++] = contact;
                         }
@@ -266,150 +231,193 @@ void Collisions_Static_Stage_Local(World *world, int idA, SysPhysx *sys, SolXfor
     }
 }
 
-void Collisions_Dynamic_Bodies(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body)
+void Collisions_Dynamic_Bodies(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body)
 {
-    SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_table.cellSize);
+    // SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_table.cellSize);
 
-    for (int n = 0; n < 27; n++)
-    {
-        u32 cellHash = cell.neighborHashes[n];
-        u32 entry    = SpatialTable_GetEntry(&sys->dynamic_table, cellHash);
+    // for (int n = 0; n < 27; n++)
+    // {
+    //     u32 cellHash = cell.neighborHashes[n];
+    //     u32 entry    = SpatialTable_GetEntry(&sys->dynamic_table, cellHash);
 
-        while (entry != SPATIAL_NULL)
-        {
-            int idB = (int)sys->dynamic_table.value[entry];
+    //     while (entry != SPATIAL_NULL)
+    //     {
+    //         int idB = (int)sys->dynamic_table.value[entry];
 
-            if (idA < idB) // Deduplicate pairs
-            {
-                SolBody3 *other_body = Sol_Comp_Get(world, idB, SolBody3);
+    //         if (idA < idB) // Deduplicate pairs
+    //         {
+    //             ScBody3 *other_body = Sol_Comp_Get(world, idB, ScBody3);
 
-                // Don't collide two immovable bodies
-                if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
-                    shape_pair_test[body->shape][other_body->shape])
-                {
-                    SolContact contact;
-                    if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
-                    {
-                        if (solb_count(sys->contacts) < MAX_CONTACTS)
-                        {
-                            contact.id  = idA;
-                            contact.idB = idB;
-                            solb_push(sys->contacts, contact);
-                        }
-                    }
-                }
-            }
-            entry = sys->dynamic_table.next[entry];
-        }
-    }
+    //             // Don't collide two immovable bodies
+    //             if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
+    //                 shape_pair_test[body->shape][other_body->shape])
+    //             {
+    //                 SolContact contact;
+    //                 if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
+    //                 {
+    //                     if (solb_count(sys->contacts) < MAX_CONTACTS)
+    //                     {
+    //                         contact.id  = idA;
+    //                         contact.idB = idB;
+    //                         solb_push(sys->contacts, contact);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         entry = sys->dynamic_table.next[entry];
+    //     }
+    // }
 }
 
-void Collisions_Dynamic_Bodies_Local(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body,
+void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, DynamicGroup *group,
                                      ThreadContactBuffer *contacts)
 {
-    SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_table.cellSize);
+    ivec3s minCellA = SpatialGrid_WorldToCell(&group->spatial, min);
+    ivec3s maxCellA = SpatialGrid_WorldToCell(&group->spatial, max);
 
-    for (int n = 0; n < 27; n++)
+    int gridDimX = group->spatial.dims.x;
+    int gridDimY = group->spatial.dims.y;
+    int gridDimZ = group->spatial.dims.z;
+
+    minCellA.x = clampi(minCellA.x, 0, gridDimX - 1);
+    maxCellA.x = clampi(maxCellA.x, 0, gridDimX - 1);
+    minCellA.y = clampi(minCellA.y, 0, gridDimY - 1);
+    maxCellA.y = clampi(maxCellA.y, 0, gridDimY - 1);
+    minCellA.z = clampi(minCellA.z, 0, gridDimZ - 1);
+    maxCellA.z = clampi(maxCellA.z, 0, gridDimZ - 1);
+
+    for (int z = minCellA.z; z <= maxCellA.z; z++)
     {
-        u32 cellHash = cell.neighborHashes[n];
-        u32 entry    = SpatialTable_GetEntry(&sys->dynamic_table, cellHash);
-
-        while (entry != SPATIAL_NULL)
+        for (int y = minCellA.y; y <= maxCellA.y; y++)
         {
-            int idB = (int)sys->dynamic_table.value[entry];
-
-            if (idA < idB) // Deduplicate pairs
+            for (int x = minCellA.x; x <= maxCellA.x; x++)
             {
-                SolBody3 *other_body = Sol_Comp_Get(world, idB, SolBody3);
+                uint32_t cellIdx = SpatialGrid_GetCellIndex(&group->spatial, x, y, z);
+                GridCell cell    = group->spatial.cells[cellIdx];
 
-                // Don't collide two immovable bodies
-                if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
-                    shape_pair_test[body->shape][other_body->shape])
+                for (uint32_t i = 0; i < cell.count; i++)
                 {
+                    uint32_t idB = group->spatial.index_buffer[cell.offset + i];
+                    if (idA >= idB)
+                        continue;
+
+                    ScBody3 *other_body  = Sol_Comp_Get(world, idB, ScBody3);
+                    ScXform *other_xform = Sol_Comp_Get(world, idB, ScXform);
+                    if (!other_body || !other_xform)
+                        continue;
+
+                    // Compute minimum shared overlapping cell between A and B
+                    vec3s  minB     = glms_vec3_sub(other_xform->pos, other_body->dims);
+                    ivec3s minCellB = SpatialGrid_WorldToCell(&group->spatial, minB);
+
+                    int startX = minCellA.x > minCellB.x ? minCellA.x : minCellB.x;
+                    int startY = minCellA.y > minCellB.y ? minCellA.y : minCellB.y;
+                    int startZ = minCellA.z > minCellB.z ? minCellA.z : minCellB.z;
+
+                    startX = clampi(startX, 0, gridDimX - 1);
+                    startY = clampi(startY, 0, gridDimY - 1);
+                    startZ = clampi(startZ, 0, gridDimZ - 1);
+
+                    // Skip duplicate pairs across adjacent cells
+                    if (x != startX || y != startY || z != startZ)
+                        continue;
+
                     SolContact contact;
-                    if (shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
+                    if (shape_pair_test[shape][other_body->shape] &&
+                        shape_pair_test[shape][other_body->shape](world, idA, idB, &contact))
                     {
                         if (contacts->count < MAX_THREAD_CONTACTS)
                         {
-                            contact.id  = idA;
-                            contact.idB = idB;
-
+                            contact.id                            = idA;
+                            contact.idB                           = idB;
                             contacts->contacts[contacts->count++] = contact;
                         }
                     }
                 }
             }
-            entry = sys->dynamic_table.next[entry];
-        }
-    }
-}
-
-void Collisions_Dynamic_Tris(World *world, int idA, SysPhysx *sys, SolXform *xform, SolBody3 *body)
-{
-    SpatialCell cell = Spatial_Cell_GetNeighbors(xform->pos, sys->dynamic_tri_table.cellSize);
-    for (int n = 0; n < 27; n++)
-    {
-        u32 cellHash = cell.neighborHashes[n];
-        u32 entry    = SpatialTable_GetEntry(&sys->dynamic_tri_table, cellHash);
-
-        while (entry != SPATIAL_NULL)
-        {
-            u32 val        = sys->dynamic_tri_table.value[entry];
-            int modelEntID = GET_TRI_ENTITY(val);
-
-            if (idA != modelEntID && shape_tri_test[body->shape])
-            {
-                int       triIdx = GET_TRI_INDEX(val);
-                SolModel *model  = Sol_Comp_Get(world, modelEntID, SolModel);
-                SolXform *xformB = Sol_Comp_Get(world, modelEntID, SolXform);
-                if (model && xformB)
-                {
-                    SolTri localTri = loaded_models[model->kind].tris[triIdx];
-                    SolTri worldTri = SolTri_GetWorldSpace(&localTri, xformB->rot, xformB->pos, xformB->sca);
-
-                    SolContact contact;
-                    if (shape_tri_test[body->shape](world, idA, modelEntID, &worldTri, &contact))
-                    {
-                        if (solb_count(sys->contacts) < MAX_CONTACTS)
-                        {
-                            contact.id  = idA;
-                            contact.idB = modelEntID;
-                            solb_push(sys->contacts, contact);
-                        }
-                    }
-                }
-            }
-            entry = sys->dynamic_tri_table.next[entry];
         }
     }
 }
 
 bool Collide_Sphere_Sphere(World *world, int idA, int idB, SolContact *contact)
 {
-    SolXform *xform  = Sol_Comp_Get(world, idA, SolXform);
-    SolXform *xformB = Sol_Comp_Get(world, idB, SolXform);
-    SolBody3 *body3  = Sol_Comp_Get(world, idA, SolBody3);
-    SolBody3 *body3B = Sol_Comp_Get(world, idB, SolBody3);
+    ScXform *xformA = Sol_Comp_Get(world, idA, ScXform);
+    ScXform *xformB = Sol_Comp_Get(world, idB, ScXform);
+    ScBody3 *bodyA  = Sol_Comp_Get(world, idA, ScBody3);
+    ScBody3 *bodyB  = Sol_Comp_Get(world, idB, ScBody3);
 
-    vec3s delta     = glms_vec3_sub(xform->pos, xformB->pos);
+    if (!xformA || !xformB || !bodyA || !bodyB)
+        return false;
+
+    vec3s delta     = glms_vec3_sub(xformA->pos, xformB->pos);
     float distSq    = glms_vec3_dot(delta, delta);
-    float radiusSum = body3->dims.x + body3B->dims.x;
+    float radiusSum = bodyA->dims.x + bodyB->dims.x;
 
-    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+    if (distSq >= (radiusSum * radiusSum))
         return false;
 
     float distance = sqrtf(distSq);
 
-    contact->normal      = glms_vec3_scale(delta, 1.0f / distance);
-    contact->penetration = radiusSum - distance;
-    contact->pos         = glms_vec3_add(xformB->pos, glms_vec3_scale(contact->normal, contact->penetration));
+    if (distance < 0.0001f)
+    {
+        // Safe default normal when spheres are centered at identical coordinates
+        contact->normal      = (vec3s){0.0f, 1.0f, 0.0f};
+        contact->penetration = radiusSum;
+        contact->pos         = xformB->pos;
+    }
+    else
+    {
+        contact->normal      = glms_vec3_scale(delta, 1.0f / distance);
+        contact->penetration = radiusSum - distance;
+        contact->pos =
+            glms_vec3_add(xformB->pos, glms_vec3_scale(contact->normal, radiusSum - 0.5f * contact->penetration));
+    }
 
     return true;
 }
 
 bool Collide_Capsule_Capsule(World *world, int idA, int idB, SolContact *hit)
 {
-    return false;
+    ScXform *xformA = Sol_Comp_Get(world, idA, ScXform);
+    ScXform *xformB = Sol_Comp_Get(world, idB, ScXform);
+    ScBody3 *bodyA  = Sol_Comp_Get(world, idA, ScBody3);
+    ScBody3 *bodyB  = Sol_Comp_Get(world, idB, ScBody3);
+
+    float aRadius   = bodyA->dims.x;
+    float aHalfSpan = (bodyA->dims.y * 0.5f) - aRadius;
+    if (aHalfSpan < 0.0f)
+        aHalfSpan = 0.0f;
+
+    float bRadius   = bodyB->dims.x;
+    float bHalfSpan = (bodyB->dims.y * 0.5f) - bRadius;
+    if (bHalfSpan < 0.0f)
+        bHalfSpan = 0.0f;
+
+    vec3s aTop    = {{xformA->pos.x, xformA->pos.y + aHalfSpan, xformA->pos.z}};
+    vec3s aBottom = {{xformA->pos.x, xformA->pos.y - aHalfSpan, xformA->pos.z}};
+
+    vec3s bTop    = {{xformB->pos.x, xformB->pos.y + bHalfSpan, xformB->pos.z}};
+    vec3s bBottom = {{xformB->pos.x, xformB->pos.y - bHalfSpan, xformB->pos.z}};
+
+    // Find closest points between the two spine segments
+    vec3s closestA, closestB;
+    Closest_Points_Segment_Segment(aBottom, aTop, bBottom, bTop, &closestA, &closestB);
+
+    // Sphere-sphere from these closest points
+    vec3s delta     = glms_vec3_sub(closestA, closestB);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aRadius + bRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    hit->normal      = glms_vec3_scale(delta, 1.0f / distance);
+    hit->penetration = radiusSum - distance;
+    hit->pos         = glms_vec3_add(closestB, glms_vec3_scale(hit->normal, bRadius));
+
+    return true;
 }
 bool Collide_Sphere_Capsule(World *world, int idA, int idB, SolContact *hit)
 {
@@ -434,8 +442,8 @@ bool Collide_Sphere_Box(World *world, int idA, int idB, SolContact *hit)
 
 bool Collide_Sphere_Tri(World *world, int idA, int idB, const SolTri *tri, SolContact *contact)
 {
-    SolXform *xform = Sol_Comp_Get(world, idA, SolXform);
-    SolBody3 *body3 = Sol_Comp_Get(world, idA, SolBody3);
+    ScXform *xform = Sol_Comp_Get(world, idA, ScXform);
+    ScBody3 *body3 = Sol_Comp_Get(world, idA, ScBody3);
 
     vec3s closestP = ClosestPointOnTriangle(xform->pos, tri->a, tri->b, tri->c);
     vec3s delta    = glms_vec3_sub(xform->pos, closestP);
@@ -455,9 +463,97 @@ bool Collide_Sphere_Tri(World *world, int idA, int idB, const SolTri *tri, SolCo
     return true;
 }
 
-bool Collide_Capsule_Tri(World *world, int idA, int idB, SolContact *hit)
+bool Collide_Capsule_Tri(World *world, int idA, int idB, const SolTri *tri, SolContact *hit)
 {
-    return false;
+    ScXform *xform = Sol_Comp_Get(world, idA, ScXform);
+    ScBody3 *body  = Sol_Comp_Get(world, idA, ScBody3);
+
+    float radius     = body->dims.x;
+    float halfHeight = fmaxf(0.0f, body->dims.y * 0.5f - radius);
+
+    // 1. Broadphase Bounding Sphere Early-Out
+    float maxReach = halfHeight + radius;
+    float maxDist  = tri->bounds + maxReach;
+    if (glms_vec3_norm2(glms_vec3_sub(xform->pos, tri->center)) > (maxDist * maxDist))
+        return false;
+
+    // Segment end points (capsule center line)
+    vec3s segA = xform->pos;
+    vec3s segB = xform->pos;
+    segA.y += halfHeight;
+    segB.y -= halfHeight;
+
+    vec3s bestCapPoint = segA;
+    vec3s bestTriPoint = tri->a;
+    float bestDistSq   = 1e30f;
+
+    // 2. Fast-Path: Test capsule segment against triangle plane face
+    vec3s triNorm = tri->normal;
+    float dA      = glms_vec3_dot(glms_vec3_sub(segA, tri->a), triNorm);
+    float dB      = glms_vec3_dot(glms_vec3_sub(segB, tri->a), triNorm);
+
+    // Find point on segment closest to plane face
+    float tPlane = 0.5f;
+    if (fabsf(dA - dB) > 1e-6f)
+        tPlane = fmaxf(0.0f, fminf(1.0f, dA / (dA - dB)));
+
+    vec3s planeCapPt  = glms_vec3_add(segA, glms_vec3_scale(glms_vec3_sub(segB, segA), tPlane));
+    float distToPlane = glms_vec3_dot(glms_vec3_sub(planeCapPt, tri->a), triNorm);
+    vec3s planeProjPt = glms_vec3_sub(planeCapPt, glms_vec3_scale(triNorm, distToPlane));
+
+    // Barycentric test to check if planeProjPt is inside triangle boundaries
+    vec3s v0 = glms_vec3_sub(tri->b, tri->a);
+    vec3s v1 = glms_vec3_sub(tri->c, tri->a);
+    vec3s v2 = glms_vec3_sub(planeProjPt, tri->a);
+
+    float d00 = glms_vec3_dot(v0, v0);
+    float d01 = glms_vec3_dot(v0, v1);
+    float d11 = glms_vec3_dot(v1, v1);
+    float d20 = glms_vec3_dot(v2, v0);
+    float d21 = glms_vec3_dot(v2, v1);
+
+    float invDenom = 1.0f / (d00 * d11 - d01 * d01 + 1e-8f);
+    float u        = (d11 * d20 - d01 * d21) * invDenom;
+    float v        = (d00 * d21 - d01 * d20) * invDenom;
+
+    if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
+    {
+        // Hit flat face directly
+        bestCapPoint = planeCapPt;
+        bestTriPoint = planeProjPt;
+        bestDistSq   = distToPlane * distToPlane;
+    }
+    else
+    {
+        // 3. Fallback Path: Test segment against 3 triangle edges
+        vec3s verts[3] = {tri->a, tri->b, tri->c};
+        for (int i = 0; i < 3; i++)
+        {
+            vec3s cpCap, cpEdge;
+            Closest_Points_Segment_Segment(segA, segB, verts[i], verts[(i + 1) % 3], &cpCap, &cpEdge);
+            float dSq = glms_vec3_norm2(glms_vec3_sub(cpCap, cpEdge));
+
+            if (dSq < bestDistSq)
+            {
+                bestDistSq   = dSq;
+                bestCapPoint = cpCap;
+                bestTriPoint = cpEdge;
+            }
+        }
+    }
+
+    // 4. Distance threshold check
+    float radiusSq = radius * radius;
+    if (bestDistSq >= radiusSq)
+        return false;
+
+    float dist  = sqrtf(bestDistSq);
+    hit->normal = (dist > 1e-4f) ? glms_vec3_scale(glms_vec3_sub(bestCapPoint, bestTriPoint), 1.0f / dist) : triNorm;
+
+    hit->penetration = radius - dist;
+    hit->pos         = bestTriPoint;
+
+    return true;
 }
 
 bool SphereCast_VsSphere(vec3s rayPos, vec3s rayDir, float rayLen, float castRadius, vec3s spherePos,
@@ -529,54 +625,124 @@ bool SphereCast_VsCapsule(vec3s rayPos, vec3s rayDir, float rayLen, float castRa
     return true;
 }
 
-static inline bool SweptSphere_Tri_Test(vec3s start, vec3s dir, float radius, const SolTri *tri, SolSweptHit *outHit)
+// static inline bool SweptSphere_Tri_Test(vec3s start, vec3s dir, float radius, const SolTri *tri, SolSweptHit *outHit)
+// {
+//     vec3s edge1 = glms_vec3_sub(tri->b, tri->a);
+//     vec3s edge2 = glms_vec3_sub(tri->c, tri->a);
+//     vec3s N     = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
+
+//     // Distance from sphere start center to plane
+//     float distToPlane = glms_vec3_dot(glms_vec3_sub(start, tri->a), N);
+//     float denom       = glms_vec3_dot(dir, N);
+
+//     // Moving parallel to or away from the front face
+//     if (denom >= -1e-6f)
+//         return false;
+
+//     // Time when sphere surface contacts plane: (dist - radius) / -denom
+//     float t_plane = (distToPlane - radius) / -denom;
+
+//     if (t_plane < 0.0f || t_plane > 1.0f)
+//         return false;
+
+//     // Projected impact point on plane
+//     vec3s planeHit = glms_vec3_add(start, glms_vec3_scale(dir, t_plane));
+//     vec3s contactP = glms_vec3_sub(planeHit, glms_vec3_scale(N, radius));
+
+//     // --- Barycentric Test on Plane Contact Point ---
+//     vec3s v0 = glms_vec3_sub(tri->c, tri->a);
+//     vec3s v1 = glms_vec3_sub(tri->b, tri->a);
+//     vec3s v2 = glms_vec3_sub(contactP, tri->a);
+
+//     float dot00 = glms_vec3_dot(v0, v0);
+//     float dot01 = glms_vec3_dot(v0, v1);
+//     float dot02 = glms_vec3_dot(v0, v2);
+//     float dot11 = glms_vec3_dot(v1, v1);
+//     float dot12 = glms_vec3_dot(v1, v2);
+
+//     float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+//     float u        = (dot11 * dot02 - dot01 * dot12) * invDenom;
+//     float v        = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+//     // Hit inside triangle face
+//     if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
+//     {
+//         outHit->hit    = true;
+//         outHit->t      = t_plane;
+//         outHit->point  = contactP;
+//         outHit->normal = N;
+//         return true;
+//     }
+
+//     return false;
+// }
+
+bool Is_Already_Hit(const SolRayResult *results, int hitCount, int entId)
 {
-    vec3s edge1 = glms_vec3_sub(tri->b, tri->a);
-    vec3s edge2 = glms_vec3_sub(tri->c, tri->a);
-    vec3s N     = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
-
-    // Distance from sphere start center to plane
-    float distToPlane = glms_vec3_dot(glms_vec3_sub(start, tri->a), N);
-    float denom       = glms_vec3_dot(dir, N);
-
-    // Moving parallel to or away from the front face
-    if (denom >= -1e-6f)
-        return false;
-
-    // Time when sphere surface contacts plane: (dist - radius) / -denom
-    float t_plane = (distToPlane - radius) / -denom;
-
-    if (t_plane < 0.0f || t_plane > 1.0f)
-        return false;
-
-    // Projected impact point on plane
-    vec3s planeHit = glms_vec3_add(start, glms_vec3_scale(dir, t_plane));
-    vec3s contactP = glms_vec3_sub(planeHit, glms_vec3_scale(N, radius));
-
-    // --- Barycentric Test on Plane Contact Point ---
-    vec3s v0 = glms_vec3_sub(tri->c, tri->a);
-    vec3s v1 = glms_vec3_sub(tri->b, tri->a);
-    vec3s v2 = glms_vec3_sub(contactP, tri->a);
-
-    float dot00 = glms_vec3_dot(v0, v0);
-    float dot01 = glms_vec3_dot(v0, v1);
-    float dot02 = glms_vec3_dot(v0, v2);
-    float dot11 = glms_vec3_dot(v1, v1);
-    float dot12 = glms_vec3_dot(v1, v2);
-
-    float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
-    float u        = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    float v        = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-    // Hit inside triangle face
-    if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
+    for (int i = 0; i < hitCount; i++)
     {
-        outHit->hit    = true;
-        outHit->t      = t_plane;
-        outHit->point  = contactP;
-        outHit->normal = N;
+        if (results[i].entId == entId)
+            return true;
+    }
+    return false;
+}
+// Ray vs Triangle Intersection (Möller–Trumbore)
+bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm)
+{
+    const float EPS = 0.000001f;
+    vec3s       e1  = glms_vec3_sub(tri->v1, tri->v0);
+    vec3s       e2  = glms_vec3_sub(tri->v2, tri->v0);
+    vec3s       h   = glms_vec3_cross(dir, e2);
+    float       a   = glms_vec3_dot(e1, h);
+
+    if (a > -EPS && a < EPS)
+        return false;
+
+    float f = 1.0f / a;
+    vec3s s = glms_vec3_sub(origin, tri->v0);
+    float u = f * glms_vec3_dot(s, h);
+    if (u < 0.0f || u > 1.0f)
+        return false;
+
+    vec3s q = glms_vec3_cross(s, e1);
+    float v = f * glms_vec3_dot(dir, q);
+    if (v < 0.0f || u + v > 1.0f)
+        return false;
+
+    float t = f * glms_vec3_dot(e2, q);
+    if (t > EPS && t <= maxDist)
+    {
+        *outT    = t;
+        *outNorm = glms_vec3_normalize(glms_vec3_cross(e1, e2));
         return true;
     }
+    return false;
+}
+// Ray vs Sphere Intersection
+bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, float radius, float *outT,
+                          vec3s *outNorm)
+{
+    vec3s oc = glms_vec3_sub(origin, center);
+    float b  = glms_vec3_dot(oc, dir);
+    float c  = glms_vec3_dot(oc, oc) - (radius * radius);
 
+    if (c > 0.0f && b > 0.0f)
+        return false;
+
+    float discr = b * b - c;
+    if (discr < 0.0f)
+        return false;
+
+    float t = -b - sqrtf(discr);
+    if (t < 0.0f)
+        t = -b + sqrtf(discr);
+
+    if (t > 0.0001f && t <= maxDist)
+    {
+        *outT        = t;
+        vec3s hitPos = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+        *outNorm     = glms_vec3_normalize(glms_vec3_sub(hitPos, center));
+        return true;
+    }
     return false;
 }

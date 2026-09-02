@@ -41,7 +41,7 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_LASER]          = "Laser.mp3",
 };
 
-const SolAudioHandle INVALID_AUDIO_HANDLE = {.index = 0, .generation = 0};
+const ScAudioHandle INVALID_AUDIO_HANDLE = {.index = 0, .generation = 0};
 
 typedef struct
 {
@@ -49,24 +49,24 @@ typedef struct
     ma_uint64 frameCount;
     bool      loaded;
     float     duration;
-} SolAudio;
+} ScAudio;
 
 typedef struct
 {
     ma_audio_buffer_ref bufferRef; // per-instance view into shared pcmData
     ma_sound            sound;
-    SolAudioId          id;
+    ScAudioId          id;
     u32                 generation;
     bool                inUse;
 } PlayingSound;
 
-static SolAudio     loaded_audio[SOL_AUDIO_COUNT];
+static ScAudio     loaded_audio[SOL_AUDIO_COUNT];
 static ma_engine    audio_engine;
 static PlayingSound playing_pool[MAX_PLAYING_SOUNDS];
 
 // --- Handle validation ---
 
-static bool Sol_Audio_IsHandleValid(SolAudioHandle handle)
+static bool Sol_Audio_IsHandleValid(ScAudioHandle handle)
 {
     if (handle.generation == 0)
         return false;
@@ -96,12 +96,12 @@ static void Slot_Uninit(PlayingSound *ps)
 
 // --- Core allocator ---
 
-static SolAudioHandle Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u32 maxConcurrent)
+static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 maxConcurrent)
 {
     if (id >= SOL_AUDIO_COUNT || !loaded_audio[id].loaded)
         return INVALID_AUDIO_HANDLE;
 
-    SolAudio *audio = &loaded_audio[id];
+    ScAudio *audio = &loaded_audio[id];
     if (maxConcurrent == 0)
         maxConcurrent = MAX_PLAYING_SOUNDS;
 
@@ -185,7 +185,7 @@ static SolAudioHandle Sol_Audio_Alloc(SolAudioId id, bool is3d, float volume, u3
                 ma_sound_set_volume(&other->sound, equalPowerVolume);
         }
 
-        return (SolAudioHandle){.index = i, .generation = ps->generation};
+        return (ScAudioHandle){.index = i, .generation = ps->generation};
     }
 
     return INVALID_AUDIO_HANDLE;
@@ -228,9 +228,9 @@ void Sol_Update_Audio_FromView()
 
 // --- Loading ---
 
-static SolAudio *Parse_Audio(SolResource res, u32 id)
+static ScAudio *Parse_Audio(SolResource res, u32 id)
 {
-    SolAudio *audio = &loaded_audio[id];
+    ScAudio *audio = &loaded_audio[id];
 
     ma_decoder        decoder;
     ma_decoder_config decCfg = ma_decoder_config_init(DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE);
@@ -271,9 +271,9 @@ int Sol_Audio_LoadAll(void)
 
 // --- Playback ---
 
-SolAudioHandle Sol_Audio_Play(SolAudioId id, float volume, float seek, u32 concurrent)
+ScAudioHandle Sol_Audio_Play(ScAudioId id, float volume, float seek, u32 concurrent)
 {
-    SolAudioHandle handle = Sol_Audio_Alloc(id, false, volume, concurrent);
+    ScAudioHandle handle = Sol_Audio_Alloc(id, false, volume, concurrent);
     if (!Sol_Audio_IsHandleValid(handle))
         return INVALID_AUDIO_HANDLE;
 
@@ -285,9 +285,9 @@ SolAudioHandle Sol_Audio_Play(SolAudioId id, float volume, float seek, u32 concu
     return handle;
 }
 
-SolAudioHandle Sol_Audio_PlayAt(SolAudioId id, vec3s pos, float volume, float seek, u32 concurrent)
+ScAudioHandle Sol_Audio_PlayAt(ScAudioId id, vec3s pos, float volume, float seek, u32 concurrent)
 {
-    SolAudioHandle handle = Sol_Audio_Alloc(id, true, volume, concurrent);
+    ScAudioHandle handle = Sol_Audio_Alloc(id, true, volume, concurrent);
     if (!Sol_Audio_IsHandleValid(handle))
         return INVALID_AUDIO_HANDLE;
 
@@ -311,35 +311,35 @@ void Sol_Audio_SetVolume(float volume)
     ma_engine_set_volume(&audio_engine, volume);
 }
 
-void Sol_Audio_SetSlotPosition(SolAudioHandle handle, vec3s pos)
+void Sol_Audio_SetSlotPosition(ScAudioHandle handle, vec3s pos)
 {
     if (!Sol_Audio_IsHandleValid(handle))
         return;
     ma_sound_set_position(&playing_pool[handle.index].sound, pos.x, pos.y, pos.z);
 }
 
-void Sol_Audio_SetSlotVolume(SolAudioHandle handle, float volume)
+void Sol_Audio_SetSlotVolume(ScAudioHandle handle, float volume)
 {
     if (!Sol_Audio_IsHandleValid(handle))
         return;
     ma_sound_set_volume(&playing_pool[handle.index].sound, volume);
 }
 
-void Sol_Audio_SetSlotPitch(SolAudioHandle handle, float pitch)
+void Sol_Audio_SetSlotPitch(ScAudioHandle handle, float pitch)
 {
     if (!Sol_Audio_IsHandleValid(handle))
         return;
     ma_sound_set_pitch(&playing_pool[handle.index].sound, pitch);
 }
 
-void Sol_Audio_SetSlotLooping(SolAudioHandle handle, bool loop)
+void Sol_Audio_SetSlotLooping(ScAudioHandle handle, bool loop)
 {
     if (!Sol_Audio_IsHandleValid(handle))
         return;
     ma_sound_set_looping(&playing_pool[handle.index].sound, loop ? MA_TRUE : MA_FALSE);
 }
 
-void Sol_Audio_StopSlot(SolAudioHandle handle)
+void Sol_Audio_StopSlot(ScAudioHandle handle)
 {
     if (!Sol_Audio_IsHandleValid(handle))
         return;

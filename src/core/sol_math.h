@@ -451,3 +451,8 @@ static inline int fast_floor(float x)
     int i = (int)x;
     return i - (x < i);
 }
+
+static inline int clampi(int v, int a, int b)
+{
+    return v < a ? a : (v > b ? b : v);
+}

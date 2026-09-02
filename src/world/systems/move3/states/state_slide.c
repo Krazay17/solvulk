@@ -5,7 +5,7 @@
 
 #define BOOST_CD 2.5f
 
-static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (move->groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
@@ -23,9 +23,9 @@ void Slide_State_Update(World *world, int id, float dt)
 {
     float fdt = (float)dt;
 
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
-    SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
     if (LeaveState(world, id, move, cont))
         return;
     MoveStateData *data   = &move->stateData[move->state];
@@ -38,9 +38,9 @@ void Slide_State_Update(World *world, int id, float dt)
 
     if (move->groundDot > 0.01f && move->groundDot < 0.99f)
     {
-        if(Sol_Comp_Has(world, id, SolBody3))
+        if(Sol_Comp_Has(world, id, ScBody3))
         {
-            SolBody3 *body3 = Sol_Comp_Get(world, id, SolBody3);
+            ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
             body3->vel = vecAdd(body3->vel, vecSca(vecNorm(GroundSlope(WORLD_UP)), 12.0f * fdt));
         }
     }
@@ -48,8 +48,8 @@ void Slide_State_Update(World *world, int id, float dt)
 
 void Slide_State_Enter(World *world, int id)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, cont))
         return;
 
@@ -67,8 +67,8 @@ void Slide_State_Enter(World *world, int id)
 
 void Slide_State_Exit(World *world, int id)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data = &move->stateData[MOVE_SLIDE];
     move->targetHeight  = move->baseHeight;
 }

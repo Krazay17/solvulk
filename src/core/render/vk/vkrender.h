@@ -38,7 +38,7 @@ typedef struct
     void     *mapped;
 } SolFrameBufferRef;
 
-typedef struct SolBufferDescriptor
+typedef struct ScBufferDescriptor
 {
     DescriptorKind        kind;
     VkDescriptorSetLayout layout;
@@ -51,7 +51,7 @@ typedef struct SolBufferDescriptor
 
     // Image-backed (texture)
     SolGpuImage image;
-} SolBufferDescriptor;
+} ScBufferDescriptor;
 
 typedef struct SolImageDescriptor
 {
@@ -170,10 +170,10 @@ int SolCreateBuffer(SolVkState *vk, VkDeviceSize size, VkBufferUsageFlags usage,
                     VkBuffer *outBuffer, VkDeviceMemory *outMemory);
 
 int Sol_CreateDescriptorImage(SolVkState *vk, VkImageView imageView, VkSampler sampler, VkShaderStageFlags stageFlags,
-                              SolBufferDescriptor *out);
+                              ScBufferDescriptor *out);
 
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *pipe);
-int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, SolBufferDescriptor *out);
+int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, ScBufferDescriptor *out);
 int Sol_ImageDescriptor_Build(SolVkState *vkstate, SolGpuImage *images, SolImageDescriptor *out);
 int Sol_CreateFrameBuffer(SolVkState *vkstate, VkDeviceSize size, VkBufferUsageFlags usage, SolFrameBuffer *out);
 

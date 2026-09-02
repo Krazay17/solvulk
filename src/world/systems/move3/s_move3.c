@@ -43,13 +43,13 @@ void Move3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_SolMove3 *set = Sol_Comp_Set(world, SolMove3);
+    SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);
     for (int i = 0; i < set->cnt; i++)
     {
         int            id         = set->dense[i];
-        SolMove3      *move       = &set->data[i];
-        SolController *controller = Sol_Comp_Get(world, id, SolController);
-        SolBody3      *body3      = Sol_Comp_Get(world, id, SolBody3);
+        ScMove3      *move       = &set->data[i];
+        ScController *controller = Sol_Comp_Get(world, id, ScController);
+        ScBody3      *body3      = Sol_Comp_Get(world, id, ScBody3);
 
         const MoveStateForce *forces     = &MOVE_STATE_FORCES[move->kind][move->state];
         bool                  isJumpDown = controller->actionState & BITC(ACTION_JUMP);
@@ -117,9 +117,9 @@ void Move3_Step(World *world, double dt)
         }
 
         // TEMP
-        // if (Sol_Comp_Has(world, id, SolXform))
+        // if (Sol_Comp_Has(world, id, ScXform))
         // {
-        //     SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+        //     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         //     if (xform->pos.y <= 0)
         //     {
         //         move->airtime = 0;
@@ -138,7 +138,7 @@ void Move3_Init(World *world)
 {
 }
 
-void CrouchHeight(World *world, int id, SolMove3 *move, float fdt)
+void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
 {
     // float currentHeight = Sol_Physx_GetHeight(world, id);
     // float difference    = fabs(currentHeight - move->targetHeight);
@@ -159,7 +159,7 @@ void CrouchHeight(World *world, int id, SolMove3 *move, float fdt)
 
 bool Sol_Movement_SetState(World *world, int id, MoveState state)
 {
-    SolMove3        *move     = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3        *move     = Sol_Comp_Get(world, id, ScMove3);
     const StateFunc *prevfunc = &MOVE_STATE_FUNCS[move->state];
     const StateFunc *nextfunc = &MOVE_STATE_FUNCS[state];
 

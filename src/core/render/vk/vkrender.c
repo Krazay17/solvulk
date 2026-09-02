@@ -39,7 +39,7 @@ static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 
 static SolPipe pipes[PIPE_COUNT];
 
-static SolBufferDescriptor descriptors[DESC_COUNT];
+static ScBufferDescriptor descriptors[DESC_COUNT];
 static SolImageDescriptor  image_array_descriptor;
 
 static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
@@ -1027,7 +1027,7 @@ int Sol_ImageDescriptor_Build(SolVkState *vkstate, SolGpuImage *images, SolImage
     return 0;
 }
 
-int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, SolBufferDescriptor *out)
+int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *config, ScBufferDescriptor *out)
 {
     VkDeviceSize       size       = config->as.buffer.size;
     VkDescriptorType   type       = config->as.buffer.type;
@@ -1099,7 +1099,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-void Sol_Render_UploadModel(SolModelData *model, u32 kind)
+void Sol_Render_UploadModel(ScModelData *model, u32 kind)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[kind].meshes != NULL)

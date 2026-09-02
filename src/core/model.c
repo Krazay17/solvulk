@@ -16,6 +16,7 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_BOX]         = "Box.glb",
     [SOL_MODEL_WORLD0]      = "World0.glb",
     [MODELKIND_WALL]        = "Wall.glb",
+    [MODELKIND_WORLD4] = "World4.glb",
     [SOL_MODEL_WORLD1]      = "World1.glb",
     [SOL_MODEL_WORLD2]      = "World2.glb",
     [SOL_MODEL_WORLD6]      = "World6.glb",
@@ -24,42 +25,46 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_WORLD9]      = "World9.glb",
     [SOL_MODEL_WORLD10]     = "World10.glb",
     [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
+    [MODELKIND_SHIELD]      = "FireShield.glb",
+    [MODELKIND_FROSTSWORD] = "FrostSword.glb",
+    [MODELKIND_EVAN] = "Evan.glb",
+    [MODELKIND_EVANRIGGED] = "EvanRigged.glb",
 };
 
-SolModelData loaded_models[SOL_MODEL_COUNT];
+ScModelData loaded_models[SOL_MODEL_COUNT];
 
-static SolModelData *Parse_Model(SolResource res, u32 id);
-static SolSkeleton   ParseSkeleton(cgltf_data *data);
-SolModelDataMasks    model_masks[SOL_MODEL_COUNT];
+static ScModelData *Parse_Model(SolResource res, u32 id);
+static SolSkeleton  ParseSkeleton(cgltf_data *data);
+ScModelDataMasks    model_masks[SOL_MODEL_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
-static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
-static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
+static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
+static void Sample_Channel(ScAnimChannel *ch, float t, float *out);
 
-void Sol_FreeModel(SolModelData *model)
+void Sol_FreeModel(ScModelData *model)
 {
     free(model->vertices);
     free(model->indices);
     free(model->meshes);
     free(model->tris);
-    memset(model, 0, sizeof(SolModelData));
+    memset(model, 0, sizeof(ScModelData));
 }
 
 int Sol_Models_Init()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
-        SolResource   res   = Sol_LoadResource(model_path[i]);
-        SolModelData *model = Parse_Model(res, i);
+        SolResource  res   = Sol_LoadResource(model_path[i]);
+        ScModelData *model = Parse_Model(res, i);
         Sol_Render_UploadModel(model, i);
     }
     return 0;
 }
 
-static SolModelData *Parse_Model(SolResource res, u32 id)
+static ScModelData *Parse_Model(SolResource res, u32 id)
 {
-    SolModelData *model = &loaded_models[id];
+    ScModelData *model = &loaded_models[id];
 
     cgltf_options options = {0};
     cgltf_data   *data    = NULL;
@@ -227,12 +232,12 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
     skel.animationCount = (int)data->animations_count;
     if (skel.animationCount > 0)
     {
-        skel.animations = calloc(skel.animationCount, sizeof(SolAnimation));
+        skel.animations = calloc(skel.animationCount, sizeof(ScAnimation));
 
         for (int a = 0; a < skel.animationCount; a++)
         {
             cgltf_animation *src  = &data->animations[a];
-            SolAnimation    *anim = &skel.animations[a];
+            ScAnimation     *anim = &skel.animations[a];
 
             if (src->name)
             {
@@ -241,13 +246,13 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             }
 
             anim->channelCount = (int)src->channels_count;
-            anim->channels     = calloc(anim->channelCount, sizeof(SolAnimChannel));
+            anim->channels     = calloc(anim->channelCount, sizeof(ScAnimChannel));
 
             float maxTime = 0;
             for (int c = 0; c < anim->channelCount; c++)
             {
                 cgltf_animation_channel *srcCh = &src->channels[c];
-                SolAnimChannel          *dstCh = &anim->channels[c];
+                ScAnimChannel           *dstCh = &anim->channels[c];
 
                 // Map target node → bone index
                 dstCh->boneIndex = -1;
@@ -337,7 +342,7 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
 
 // Recursively process a node and its children, baking the world transform
 // into each vertex.
-static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
+static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
 {
     if (node->mesh)
     {
@@ -513,7 +518,7 @@ static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx
 }
 
 // Sample one channel at a given time, returning interpolated value
-static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
+static void Sample_Channel(ScAnimChannel *ch, float t, float *out)
 {
     if (ch->keyCount == 0)
         return;
@@ -574,12 +579,12 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
     if (animIndex < 0 || animIndex >= skel->animationCount)
         return;
 
-    SolAnimation *anim = &skel->animations[animIndex];
-    float         t    = fmodf(time, anim->duration);
+    ScAnimation *anim = &skel->animations[animIndex];
+    float        t    = fmodf(time, anim->duration);
 
     for (int c = 0; c < anim->channelCount; c++)
     {
-        SolAnimChannel *ch = &anim->channels[c];
+        ScAnimChannel *ch = &anim->channels[c];
         if (ch->boneIndex < 0)
             continue;
 
@@ -617,8 +622,8 @@ static _Thread_local AnimScratchBuffer g_animScratch;
 
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose)
 {
-    SolModelData *model = &loaded_models[model_handle];
-    SolSkeleton  *skel  = &model->skeleton;
+    ScModelData *model = &loaded_models[model_handle];
+    SolSkeleton *skel  = &model->skeleton;
 
     AnimScratchBuffer *s = &g_animScratch;
 
@@ -726,7 +731,7 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
 
 void Init_Anim_Masks(ModelKind kind, SolSkeleton *skel)
 {
-    SolModelDataMasks *masks = &model_masks[kind];
+    ScModelDataMasks *masks = &model_masks[kind];
     // SolSkeleton   *skel  = &Sol_Bank_Get()->models[kind].skeleton;
 
     // Reset all masks to false
@@ -769,8 +774,8 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale,
                                  vec3s pos)
 {
-    SolModelData *model = &loaded_models[handle];
-    mat3s         rot   = glms_quat_mat3(quat);
+    ScModelData *model = &loaded_models[handle];
+    mat3s        rot   = glms_quat_mat3(quat);
     for (int i = 0; i < model->tri_count; i++)
     {
         SolTri  src = model->tris[i];

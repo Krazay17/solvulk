@@ -2,7 +2,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 {
     if (Sol_Movement_SetState(world, id, MOVE_SLIDE))
         return true;
@@ -20,13 +20,13 @@ static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont
 
 void Crouch_State_Update(World *world, int id, float dt)
 {
-    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, cont))
         return;
 
     MoveStateData *data  = &move->stateData[move->state];
-    SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
+    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
 
     if (cont)
     {
@@ -39,8 +39,8 @@ void Crouch_State_Update(World *world, int id, float dt)
 
 void Crouch_State_Enter(World *world, int id)
 {
-    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, cont))
         return;
 
@@ -51,7 +51,7 @@ void Crouch_State_Enter(World *world, int id)
 void Crouch_State_Exit(World *world, int id)
 {
 
-    SolMove3   *move = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3   *move = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *data = &move->stateData[move->state];
 
     move->targetHeight = move->baseHeight;
@@ -59,7 +59,7 @@ void Crouch_State_Exit(World *world, int id)
 
 bool Crouch_State_CanExit(World *world, int id, u32 nextState)
 {
-    SolMove3 *move = Sol_Comp_Get(world, id, SolMove3);
+    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
     // SolRayResult result = Sol_RaycastD(
     //     world, (SolRay){.pos = Sol_Xform_GetPos(world, id), .dir = WORLD_UP, .dist = move->baseHeight * 0.6f}, 0.2f);
 

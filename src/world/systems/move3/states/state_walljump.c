@@ -8,8 +8,8 @@
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
     MoveStateData *walljumpData = &move->stateData[MOVE_WALLJUMP];
     float          alpha        = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
@@ -27,8 +27,8 @@ void Walljump_State_Update(World *world, int id, float dt)
 
 void Walljump_State_Enter(World *world, int id)
 {
-    SolMove3   *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
+    ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
     vec3s          vel         ={0}; // Sol_Physx_GetVel(world, id);
     vec3s          up2         = {0.0f, 1.8f, 0.0f};

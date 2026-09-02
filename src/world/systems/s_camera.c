@@ -5,22 +5,22 @@ void Camera_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_SolCamera *set = Sol_Comp_Set(world, SolCamera);
+    SparseSet_ScCamera *set = Sol_Comp_Set(world, ScCamera);
     for (int i = 0; i < set->cnt; i++)
     {
         int        id     = set->dense[i];
-        SolCamera *camera = &set->data[i];
+        ScCamera *camera = &set->data[i];
 
-        SolXform *xform = Sol_Comp_Get(world, id, SolXform);
-        SolBody3 *body3 = Sol_Comp_Get(world, id, SolBody3);
+        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
 
         vec3s head = xform->draw_pos;
         head.y += body3->dims.y * 0.8f;
         vec3s lookdir = (vec3s){0, 0, 1.0f};
 
-        if (Sol_Comp_Has(world, id, SolController))
+        if (Sol_Comp_Has(world, id, ScController))
         {
-            SolController *cont = Sol_Comp_Get(world, id, SolController);
+            ScController *cont = Sol_Comp_Get(world, id, ScController);
             lookdir             = cont->lookdir;
         }
 

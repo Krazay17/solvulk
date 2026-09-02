@@ -824,7 +824,6 @@ bool Collide_Capsule_Tri(CompBody *body, CompXform *xform, SolTri *tri, SolConta
     hit->normal = (dist > 1e-4f) ? glms_vec3_scale(glms_vec3_sub(bestCapPoint, bestTriPoint), 1.0f / dist) : triNorm;
 
     hit->penetration = radius - dist;
-    hit->didCollide  = true;
     hit->pos         = bestTriPoint;
 
     return true;
@@ -1401,7 +1400,7 @@ SolRayResult Raycast_Static_Grid_Walk(World *world, SolRay ray)
         }
 
         // Early out: if we have a hit within this cell's span, no closer hit possible
-        if (result.hit && result.dist <= cell.tExit)
+        if (result.hitt && result.dist <= cell.tExit)
             break;
     }
 

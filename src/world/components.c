@@ -9,16 +9,16 @@
 #include "components.h"
 #include "world.h"
 
-SolModel *Sol_Model_Add(World *world, int id, ModelKind kind)
+ScModel *Sol_Model_Add(World *world, int id, ModelKind kind)
 {
-    SolModel *model = Sol_Comp_Add(world, id, SolModel);
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
     model->kind     = kind;
     return model;
 }
 
-SolXform *Sol_Xform_Add(World *world, int id, vec3s pos)
+ScXform *Sol_Xform_Add(World *world, int id, vec3s pos)
 {
-    SolXform *xform = Sol_Comp_Add(world, id, SolXform);
+    ScXform *xform = Sol_Comp_Add(world, id, ScXform);
     xform->rot      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
     xform->last_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
     xform->draw_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
@@ -32,9 +32,9 @@ SolXform *Sol_Xform_Add(World *world, int id, vec3s pos)
     return xform;
 }
 
-SolBody3 *Sol_Body3_Add(World *world, int id)
+ScBody3 *Sol_Body3_Add(World *world, int id)
 {
-    SolBody3 *body3    = Sol_Comp_Add(world, id, SolBody3);
+    ScBody3 *body3    = Sol_Comp_Add(world, id, ScBody3);
     body3->mass        = 1.0f;
     body3->invMass     = 1.0f;
     body3->restitution = 0.5f;
@@ -43,9 +43,9 @@ SolBody3 *Sol_Body3_Add(World *world, int id)
     return body3;
 }
 
-SolAnim *Sol_Anim_Add(World *world, int id)
+ScAnim *Sol_Anim_Add(World *world, int id)
 {
-    SolAnim *anim_comp = Sol_Comp_Add(world, id, SolAnim);
+    ScAnim *anim_comp = Sol_Comp_Add(world, id, ScAnim);
     for (int i = 0; i < ANIM_LAYER_COUNT; i++)
     {
         anim_comp->layers[i].currentAnim = -1;

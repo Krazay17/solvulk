@@ -7,7 +7,6 @@ static int dude;
 
 static void Debug(World *world, double dt)
 {
-    // Sol_Anim_Play(solState.worlds[0], dude, (AnimDesc){.anim = ANIM_MANTLE_ROLL, .layerId = ANIM_LAYER_OVERRIDE});
 }
 
 void Create_Sol_Game()
@@ -21,14 +20,14 @@ void Create_Sol_Game()
     Sol_Sys_Add(world, WORLDSYS_CAMERA);
     Sol_Sys_Add(world, WORLDSYS_ANIM);
     Sol_Sys_Add(world, WORLDSYS_MODEL);
-    WAddTick(world) = Debug;
+    Sol_Sys_Add(world, WORLDSYS_DEBUG);
 
     dude                    = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
     user_session.user_entid = dude;
     Sol_Debug_Add("Player Ent", dude);
-    Sol_Comp_Add(world, dude, SolController);
-    SolCamera *camera     = Sol_Comp_Add(world, dude, SolCamera);
-    SolMove3  *move       = Sol_Comp_Add(world, dude, SolMove3);
+    Sol_Comp_Add(world, dude, ScController);
+    ScCamera *camera      = Sol_Comp_Add(world, dude, ScCamera);
+    ScMove3  *move        = Sol_Comp_Add(world, dude, ScMove3);
     camera->fov           = 80.0f;
     camera->up.y          = 1.0f;
     camera->lerpspeed     = 20.0f;
@@ -37,21 +36,30 @@ void Create_Sol_Game()
 
     int level1 = Sol_Create_Ent(world);
     Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
-    SolModel *levelModel         = Sol_Comp_Add(world, level1, SolModel);
-    levelModel->kind             = SOL_MODEL_WORLD10;
-    SolStage *level1MeshCollider = Sol_Comp_Add(world, level1, SolStage);
-    level1MeshCollider->isDirty  = true;
+    ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
+    levelModel->kind    = SOL_MODEL_WORLD0;
+    ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
+    stage->isDirty      = true;
 
-    while (world->entCount < 6000)
+    while (world->entCount < 1600)
     {
         int id = Sol_Create_Ent(world);
         Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
-        SolBody3 *body3 = Sol_Body3_Add(world, id);
-        body3->shape = SHAPE3_SPH;
-        body3->group = PHYSXMASK(1, 1);
-        body3->dims.x = 0.5f;
-        body3->dims.y = 0.5f;
-        SolModel *model = Sol_Comp_Add(world, id, SolModel);
-        model->kind = MODELKIND_WIZARD;
+        ScModel *model = Sol_Comp_Add(world, id, ScModel);
+        ScBody3 *body3 = Sol_Body3_Add(world, id);
+        body3->shape   = SHAPE3_CAP;
+        body3->mask    = PHYSXMASK(1, 1);
+        body3->dims    = (vec3s){0.5f, 1.0f, 0.5f};
+        model->kind    = MODELKIND_EVANRIGGED;
+        Sol_Anim_Add(world, id);
+        SolLine *line  = Sol_Line_New(world);
+        if (line)
+        {
+            line->a   = (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f};
+            line->b   = (vec3s){0, 0, 0};
+            line->aColor = VEC4_RED;
+            line->bColor = VEC4_WHITE;
+            line->ttl = 25.0f;
+        }
     }
 }

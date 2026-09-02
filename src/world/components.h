@@ -7,25 +7,24 @@
 #define MAX_VIEWS 10
 #define MAX_TRACKER_GETTERS 2
 #define MAX_EMITTERS 8
-#define INITIAL_SPARSE_SET_CAP 0
 
 // ==========================================
 // 1. COMPONENT DATA STRUCTS
 // ==========================================
-typedef struct SolActive
+typedef struct ScActive
 {
     int    active_at_tick;
     double time_activated;
-} SolActive;
+} ScActive;
 
-typedef struct SolXform
+typedef struct ScXform
 {
     vec3s   last_pos, pos, draw_pos;
     vec3s   last_sca, sca, draw_sca;
     versors last_rot, rot, draw_rot;
-} SolXform;
+} ScXform;
 
-typedef struct SolController
+typedef struct ScController
 {
     u8         kind;
     SolActions actionState;
@@ -36,28 +35,28 @@ typedef struct SolController
     vec2s wishdir2d, aimpos2d;
 
     bool isStrafing;
-} SolController;
+} ScController;
 
-typedef struct SolBody3
+typedef struct ScBody3
 {
-    Shape3     shape;
-    vec3s      vel, impulse, force, groundNormal, dims;
-    vec3s      gravity;
-    float      mass, invMass, restitution;
-    u32        group, base_group;
-    u32        ray_group, ray_base_group;
-    bool       ignoreFriendly;
-} SolBody3;
+    Shape3 shape;
+    vec3s  vel, impulse, force, groundNormal, dims;
+    vec3s  gravity;
+    float  mass, invMass, restitution;
+    u32    mask, base_mask;
+    u32    ray_mask, ray_base_mask;
+    bool   ignoreFriendly;
+} ScBody3;
 
-typedef struct SolBody2
+typedef struct ScBody2
 {
     Shape2 shape;
     vec2s  vel, dims, grav, grabPos;
     u32    group, zindex;
     u32    overlap_group;
-} SolBody2;
+} ScBody2;
 
-typedef struct SolCamera
+typedef struct ScCamera
 {
     vec3s pos, anchor;
     vec3s dir;
@@ -67,9 +66,9 @@ typedef struct SolCamera
     float lerpspeed;
     float fov;
     float roll;
-} SolCamera;
+} ScCamera;
 
-typedef struct SolInteract
+typedef struct ScInteract
 {
     double        hover_start_time;
     double        unhover_start_time;
@@ -81,7 +80,7 @@ typedef struct SolInteract
     SolCallback onHold;
 
     vec3s offset, targetPos;
-} SolInteract;
+} ScInteract;
 typedef struct
 {
     double lastEntered, lastExited;
@@ -117,7 +116,7 @@ typedef struct
     } as;
     vec3s enterVel, dir;
 } MoveStateData;
-typedef struct SolMove3
+typedef struct ScMove3
 {
     MovementKind kind;
     MoveState    state;
@@ -131,50 +130,50 @@ typedef struct SolMove3
 
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
-} SolMove3;
+} ScMove3;
 
-typedef struct SolModel
+typedef struct ScModel
 {
     ModelKind kind;
     vec4s     color;
     bool      is2d;
     float     xOffset, yOffset, yawOffset;
     u32       leftWeaponEnt, rightWeaponEnt;
-} SolModel;
+} ScModel;
 
-typedef struct SolAnim
+typedef struct ScAnim
 {
     SolPose   pose;
     SolPoseE  lastPose;
     AnimLayer layers[ANIM_LAYER_COUNT];
     bool      hasLastPose;
-} SolAnim;
+} ScAnim;
 
-typedef struct SolPlayer
+typedef struct ScPlayer
 {
     int localIdx;
-} SolPlayer;
+} ScPlayer;
 
-typedef struct SolRemote
+typedef struct ScRemote
 {
     int remoteId;
-} SolRemote;
+} ScRemote;
 
 typedef struct
 {
     float lastEntered, elapsed, duration, accum;
     float attacktimer;
 } AiStateData;
-typedef struct SolAi
+typedef struct ScAi
 {
     vec3s       dirToTarget;
     AiState     state;
     u32         target, justHitUs;
     float       distToTarget, dropAggroTimer, lastHit;
     AiStateData stateData[AISTATE_COUNT];
-} SolAi;
+} ScAi;
 
-typedef struct SolEvent
+typedef struct ScEvent
 {
     EventKind kind;
     u32       entA, entB;
@@ -225,7 +224,7 @@ typedef struct SolEvent
             u32 interactor, interactee;
         } interact;
     } as;
-} SolEvent;
+} ScEvent;
 
 typedef struct
 {
@@ -257,12 +256,12 @@ typedef struct
     u32          hitSessionGen;
     bool         held, doesHit;
 } AbilityStateData;
-typedef struct SolAbility
+typedef struct ScAbility
 {
     int              state, activeSlot;
     int              action_map[ABILITY_SLOTS];
     AbilityStateData stateData[ABILITY_SLOTS];
-} SolAbility;
+} ScAbility;
 
 typedef struct
 {
@@ -271,38 +270,38 @@ typedef struct
     float ttl, duration, accum;
     float freq, power;
 } Buff;
-typedef struct SolBuff
+typedef struct ScBuff
 {
     Buff buffs[MAX_BUFFS];
     u32  count;
     u32  activeKindsMask;
-} SolBuff;
+} ScBuff;
 
-typedef struct SolTimer
+typedef struct ScTimer
 {
     float elapsed, duration;
-} SolTimer;
+} ScTimer;
 
-typedef struct SolAudio
+typedef struct ScAudio
 {
     int count, handle;
-} SolAudio;
+} ScAudio;
 
-typedef struct SolParent
+typedef struct ScParent
 {
     u32     parentId, active;
     vec3s   localOffset;
     versors localQuat;
     char    boneFollow[16];
-} SolParent;
+} ScParent;
 
-typedef struct SolOwner
+typedef struct ScOwner
 {
     u32 ownerId;
     u32 team;
-} SolOwner;
+} ScOwner;
 
-typedef struct SolCombat
+typedef struct ScCombat
 {
     vec3s  respawnPos;
     float  maxHealth, maxEnergy, maxMana;
@@ -318,13 +317,13 @@ typedef struct SolCombat
     u32   hitPauseDiminish;
     bool  hitEnts[128];
     float hitPause, baseAnimRate;
-} SolCombat;
+} ScCombat;
 
-typedef struct SolReplication
+typedef struct ScReplication
 {
     u8  auth;
     u32 prefabKind;
-} SolReplication;
+} ScReplication;
 
 typedef struct
 {
@@ -346,11 +345,11 @@ typedef struct
     u32         followIdGen;
 } Emitter;
 
-typedef struct SolEmitter
+typedef struct ScEmitter
 {
     Emitter emitters[MAX_EMITTERS];
     u32     emitterCount;
-} SolEmitter;
+} ScEmitter;
 
 typedef struct
 {
@@ -366,21 +365,21 @@ typedef struct
     vec2s      textureUV;
     char       text[64];
 } View2;
-typedef struct SolView2
+typedef struct ScView2
 {
     View2 views[MAX_VIEWS];
     u8    count;
     u8    zindex;
-} SolView2;
+} ScView2;
 
-typedef struct SolTracker
+typedef struct ScTracker
 {
     World     *world;
     u32        entId;
     GetterFunc getters[MAX_TRACKER_GETTERS];
-} SolTracker;
+} ScTracker;
 
-typedef struct SolProjectile
+typedef struct ScProjectile
 {
     ProjectileKind kind;
     u32            bounces;
@@ -392,56 +391,52 @@ typedef struct SolProjectile
     u32         callbackFlags;
     SolHit      directHit;
     SolHit      explosionHit;
-} SolProjectile;
+} ScProjectile;
 
-typedef struct SolHudItem
+typedef struct ScHuditem
 {
     int idx;
-} SolHudItem;
+} ScHuditem;
 
-typedef struct SolHudSlot
+typedef struct ScHudslot
 {
     int  slot;
     bool onCooldown;
-} SolHudSlot;
+} ScHudslot;
 
-typedef struct SolTooltip
+typedef struct ScTooltip
 {
     TooltipKind kind;
-} SolTooltip;
+} ScTooltip;
 
-typedef struct SolZone
+typedef struct ScZone
 {
     u32   kind;
     float duration, rate, value, radius;
     float accum;
-} SolZone;
+} ScZone;
 
-typedef struct SolSlider
+typedef struct ScSlider
 {
     float min_val;
     float max_val;
     float current_val;
-} SolSlider;
+} ScSlider;
 
-typedef struct SolBuilder
+typedef struct ScBuilder
 {
     bool    placing, doesSnap;
     float   scale;
     vec3s   placePos;
     versors placeRot;
     u32     model;
-} SolBuilder;
+} ScBuilder;
 
-typedef struct SolMeshCollider
+
+typedef struct ScStage
 {
     bool isDirty;
-} SolMeshCollider;
-
-typedef struct SolStage
-{
-    bool isDirty;
-} SolStage;
+} ScStage;
 
 // ==========================================
 // 2. X-MACRO COMPONENT LIST
@@ -449,40 +444,39 @@ typedef struct SolStage
 // ==========================================
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
-    X(SolActive, HAS_SolActive)                                                                                        \
-    X(SolXform, HAS_SolXform)                                                                                          \
-    X(SolController, HAS_SolController)                                                                                \
-    X(SolBody2, HAS_SolBody2)                                                                                          \
-    X(SolBody3, HAS_SolBody3)                                                                                          \
-    X(SolMeshCollider, HAS_SolMeshCollider)                                                                            \
-    X(SolStage, HAS_SolStage)                                                                                          \
-    X(SolModel, HAS_SolModel)                                                                                          \
-    X(SolAnim, HAS_SolAnim)                                                                                            \
-    X(SolCamera, HAS_SolCamera)                                                                                        \
-    X(SolInteract, HAS_SolInteract)                                                                                    \
-    X(SolMove3, HAS_SolMove3)                                                                                          \
-    X(SolPlayer, HAS_SolPlayer)                                                                                        \
-    X(SolRemote, HAS_SolRemote)                                                                                        \
-    X(SolAi, HAS_SolAi)                                                                                                \
-    X(SolAbility, HAS_SolAbility)                                                                                      \
-    X(SolBuff, HAS_SolBuff)                                                                                            \
-    X(SolTimer, HAS_SolTimer)                                                                                          \
-    X(SolEvent, HAS_SolEvent)                                                                                          \
-    X(SolAudio, HAS_SolAudio)                                                                                          \
-    X(SolParent, HAS_SolParent)                                                                                        \
-    X(SolOwner, HAS_SolOwner)                                                                                          \
-    X(SolCombat, HAS_SolCombat)                                                                                        \
-    X(SolReplication, HAS_SolReplication)                                                                              \
-    X(SolEmitter, HAS_SolEmitter)                                                                                      \
-    X(SolSlider, HAS_SolSlider)                                                                                        \
-    X(SolView2, HAS_SolView2)                                                                                          \
-    X(SolTracker, HAS_SolTracker)                                                                                      \
-    X(SolProjectile, HAS_SolProjectile)                                                                                \
-    X(SolHudSlot, HAS_SolHudSlot)                                                                                      \
-    X(SolHudItem, HAS_SolHudItem)                                                                                      \
-    X(SolTooltip, HAS_SolTooltip)                                                                                      \
-    X(SolZone, HAS_SolZone)                                                                                            \
-    X(SolBuilder, HAS_SolBuilder)
+    X(ScActive, HAS_ScActive)                                                                                        \
+    X(ScXform, HAS_ScXform)                                                                                          \
+    X(ScController, HAS_ScController)                                                                                \
+    X(ScBody2, HAS_ScBody2)                                                                                          \
+    X(ScBody3, HAS_ScBody3)                                                                                          \
+    X(ScStage, HAS_ScStage)                                                                                          \
+    X(ScModel, HAS_ScModel)                                                                                          \
+    X(ScAnim, HAS_ScAnim)                                                                                            \
+    X(ScCamera, HAS_ScCamera)                                                                                        \
+    X(ScInteract, HAS_ScInteract)                                                                                    \
+    X(ScMove3, HAS_ScMove3)                                                                                          \
+    X(ScPlayer, HAS_ScPlayer)                                                                                        \
+    X(ScRemote, HAS_ScRemote)                                                                                        \
+    X(ScAi, HAS_ScAi)                                                                                                \
+    X(ScAbility, HAS_ScAbility)                                                                                      \
+    X(ScBuff, HAS_ScBuff)                                                                                            \
+    X(ScTimer, HAS_ScTimer)                                                                                          \
+    X(ScEvent, HAS_ScEvent)                                                                                          \
+    X(ScAudio, HAS_ScAudio)                                                                                          \
+    X(ScParent, HAS_ScParent)                                                                                        \
+    X(ScOwner, HAS_ScOwner)                                                                                          \
+    X(ScCombat, HAS_ScCombat)                                                                                        \
+    X(ScReplication, HAS_ScReplication)                                                                              \
+    X(ScEmitter, HAS_ScEmitter)                                                                                      \
+    X(ScSlider, HAS_ScSlider)                                                                                        \
+    X(ScView2, HAS_ScView2)                                                                                          \
+    X(ScTracker, HAS_ScTracker)                                                                                      \
+    X(ScProjectile, HAS_ScProjectile)                                                                                \
+    X(ScHudslot, HAS_ScHudslot)                                                                                      \
+    X(ScHuditem, HAS_ScHuditem)                                                                                      \
+    X(ScTooltip, HAS_ScTooltip)                                                                                      \
+    X(ScZone, HAS_ScZone)                                                                                            \
+    X(ScBuilder, HAS_ScBuilder)
 
 typedef enum
 {
@@ -492,6 +486,6 @@ typedef enum
     COMPONENT_COUNT
 } WorldComponents;
 
-SolXform *Sol_Xform_Add(World *world, int id, vec3s pos);
-SolAnim  *Sol_Anim_Add(World *world, int id);
-SolBody3 *Sol_Body3_Add(World *world, int id);
+ScXform *Sol_Xform_Add(World *world, int id, vec3s pos);
+ScAnim  *Sol_Anim_Add(World *world, int id);
+ScBody3 *Sol_Body3_Add(World *world, int id);

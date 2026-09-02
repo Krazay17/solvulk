@@ -31,6 +31,7 @@ Wizard.glb              RCDATA          "models/Wizard.glb"
 World0.glb              RCDATA          "models/World0.glb"
 World1.glb              RCDATA          "models/World1.glb"
 World2.glb              RCDATA          "models/World2.glb"
+World4.glb              RCDATA          "models/World4.glb"
 World6.glb              RCDATA          "models/World6.glb"
 World7.glb              RCDATA          "models/World7.glb"
 World8.glb              RCDATA          "models/World8.glb"
@@ -42,6 +43,12 @@ Wall.glb                 RCDATA          "models/Wall.glb"
 Dude.glb                RCDATA          "models/Dude.glb"
 Zorgon.glb              RCDATA          "models/Zorgon.glb"
 WeaponBlade.glb              RCDATA          "models/WeaponBlade.glb"
+FireShield.glb              RCDATA          "models/FireShield.glb"
+FrostSword.glb              RCDATA          "models/FrostSword.glb"
+Evan.glb              RCDATA          "models/Evan.glb"
+EvanRigged.glb              RCDATA          "models/EvanRigged.glb"
+
+
 
 
 

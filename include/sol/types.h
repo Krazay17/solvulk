@@ -19,7 +19,8 @@
 #define WINDOW_HEIGHT 720
 #define TARGET_ASPECT 16.0f / 9.0f
 
-#define MAX_ENTS 0x1fff
+#define SOL_TIMESTEP (1.0 / 60.0)
+#define MAX_ENTS 0x4fff
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define ABILITY_SLOTS 10
@@ -199,7 +200,7 @@ typedef enum
     SOL_AUDIO_DASH,
     SOL_AUDIO_FIREBALLIMPACT,
     SOL_AUDIO_COUNT,
-} SolAudioId;
+} ScAudioId;
 
 typedef enum
 {
@@ -333,6 +334,11 @@ typedef enum
     MODELKIND_WEAPONBLADE,
     MODELKIND_WALL,
     MODELKIND_FLOOR,
+    MODELKIND_SHIELD,
+    MODELKIND_FROSTSWORD,
+    MODELKIND_EVAN,
+    MODELKIND_EVANRIGGED,
+    MODELKIND_WORLD4,
     SOL_MODEL_BOX,
     SOL_MODEL_WORLD0,
     SOL_MODEL_WORLD1,
@@ -357,8 +363,18 @@ typedef struct SolVertex
 
 typedef struct SolTri
 {
+    union {
+        struct
+        {
+            vec3s a, b, c;
+        };
+        struct
+        {
+            vec3s v0, v1, v2;
+        };
+        vec3s v[3];
+    };
     int   entId;
-    vec3s a, b, c;
     vec3s normal, center;
     float bounds;
 } SolTri;
@@ -463,12 +479,18 @@ typedef struct SolHit
 
 typedef struct SolRay
 {
-    vec3s pos, dir;
+    vec3s start, dir;
     float dist;
-    float min;
-    u8    mask;
-    u32   ignoreEnt;
+    u16   mask;
 } SolRay;
+
+typedef struct SolRayResult
+{
+    bool  hit;
+    vec3s pos, norm;
+    float dist;
+    int   entId;
+} SolRayResult;
 
 typedef struct AnimLayer
 {
@@ -485,15 +507,6 @@ typedef struct AnimLayer
     bool    isBlendingOut; // Flag indicating layer weight is decaying
     bool    force, hasSnapshot;
 } AnimLayer;
-
-typedef struct SolRayResult
-{
-    bool  hit;
-    vec3s pos, norm;
-    float dist;
-    u32   triIndex;
-    u32   entId;
-} SolRayResult;
 
 typedef struct SolUserHit
 {

@@ -8,8 +8,6 @@
 #pragma once
 #include "sol/types.h"
 
-#define SOL_TIMESTEP (1.0 / 60.0)
-
 typedef enum
 {
     WORLDID_SETTINGS,

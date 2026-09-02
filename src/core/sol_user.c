@@ -158,7 +158,7 @@ void Tooltip_Update(double dt, SolUserHit user_hit)
     {
         int    id    = user_hit.hoverId;
         World *world = user_hit.hoverWorld;
-        if (Sol_Comp_Has(world, id, SolTooltip))
+        if (Sol_Comp_Has(world, id, ScTooltip))
         {
             //            tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
             return;
@@ -173,9 +173,9 @@ void Entity_Actions()
     int    id    = user_session.user_entid;
     if (!world || id < 0)
         return;
-    SolController *cont   = Sol_Comp_Get(world, id, SolController);
-    SolCamera     *camera = Sol_Comp_Get(world, id, SolCamera);
-    SolMouse       mouse  = Sol_Input_GetMouse();
+    ScController *cont   = Sol_Comp_Get(world, id, ScController);
+    ScCamera     *camera = Sol_Comp_Get(world, id, ScCamera);
+    SolMouse      mouse  = Sol_Input_GetMouse();
 
     cont->actionState = 0;
     float *yaw        = &cont->yaw;
@@ -203,7 +203,7 @@ void Entity_Actions()
 
     cont->isStrafing = mouse.locked;
 
-    if (Sol_Comp_Has(world, id, SolBuilder))
+    if (Sol_Comp_Has(world, id, ScBuilder))
     {
         if (mouse.buttons[SOL_MOUSE_LEFT])
             cont->actionState |= BITC(ACTION_BUILD);
@@ -235,18 +235,25 @@ void Entity_Actions()
     // DEBUG FLY
     if (Sol_Input_KeyDown(SOL_KEY_F))
     {
-        if (Sol_Comp_Has(world, id, SolXform))
+        if (Sol_Comp_Has(world, id, ScXform))
         {
-            SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+            ScXform *xform  = Sol_Comp_Get(world, id, ScXform);
             xform->pos      = vecAdd(xform->pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(cont->yaw, cont->pitch)), 0.1f));
             xform->last_pos = xform->pos;
             xform->draw_pos = xform->pos;
-            if (Sol_Comp_Has(world, id, SolBody3))
+            if (Sol_Comp_Has(world, id, ScBody3))
             {
-                SolBody3 *body3 = Sol_Comp_Get(world, id, SolBody3);
-                body3->vel      = GLMS_VEC3_ZERO;
+                ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+                body3->vel     = GLMS_VEC3_ZERO;
             }
         }
+    }
+    if (mouse.buttons[SOL_MOUSE_LEFT])
+    {
+        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+        Sol_Physx_RaycastD(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f}, &(SolRayResult){0},
+                           1, 5.0f);
+        
     }
 }
 
@@ -276,7 +283,7 @@ void Sol_User_Tick(double dt)
     // int    playerId    = Sol_Player_GetEnt(activeWorld, 0);
     // if (playerId > -1)
     // {
-    //     SolXform *xform = Sol_Comp_Get(activeWorld, playerId, SolXform);
+    //     ScXform *xform = Sol_Comp_Get(activeWorld, playerId, ScXform);
     //     if (xform)
     //     {
     //         Sol_Debug_Add("X", xform->pos.x);
@@ -284,7 +291,7 @@ void Sol_User_Tick(double dt)
     //         Sol_Debug_Add("Z", xform->pos.z);
     //         // float speed = glms_vec3_norm(Sol_Physx_GetVel(activeWorld, playerId));
     //         // Sol_Debug_Add("Velocity", speed);
-    //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, SolMove3)->state);
+    //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, ScMove3)->state);
     //     }
     // }
 }
@@ -295,7 +302,7 @@ void Sol_User_PostTick(double dt)
     int    id    = user_session.user_entid;
     if (!world || id < 0)
         return;
-    SolCamera *cam = Sol_Comp_Get(world, id, SolCamera);
+    ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);
     if (cam)
     {
         g_solView.pos    = cam->pos;

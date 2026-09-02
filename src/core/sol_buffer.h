@@ -9,10 +9,11 @@ Functions pushing data	Caller loses updated array address	Pass T** or pass the p
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdalign.h>
 
 typedef struct
 {
-    uint32_t capacity;
+    alignas(16) uint32_t capacity;
     uint32_t count;
 } SolBufHeader;
 
@@ -29,7 +30,8 @@ typedef struct
 #define solb_reserve(b, n) (solb__grow(b, (n)))
 #define solb_free(b) ((b) ? (free(solb__hdr(b)), (b) = NULL) : 0)
 #define solb_zero(b) ((b) ? solb__hdr(b)->count = 0 : 0)
-#define solb_set_count(b, n) ((b) ? (sb__hdr(b)->count = (n)) : 0)
+#define solb_next(b) (solb__grow(b, 1), &(b)[solb__hdr(b)->count++])
+#define solb_set_count(b, n) ((b) ? (solb__hdr(b)->count = (n)) : 0)
 
 // Grow macro that performs type-safe pointer re-assignment
 #define solb__grow(b, n)                                                                                               \
@@ -41,11 +43,11 @@ typedef struct
     {                                                                                                                  \
         if ((num_items) > 0)                                                                                           \
         {                                                                                                              \
-            u32 _cur = solb_count(b);                                                                                  \
-            u32 _req = _cur + (num_items);                                                                             \
+            uint32_t _cur = solb_count(b);                                                                             \
+            uint32_t _req = _cur + (num_items);                                                                        \
             solb_reserve((b), _req);                                                                                   \
             memcpy(&(b)[_cur], (src_ptr), sizeof(*(b)) * (num_items));                                                 \
-            solb__hdr(b)->count = _req;                                                                                  \
+            solb__hdr(b)->count = _req;                                                                                \
         }                                                                                                              \
     } while (0)
 

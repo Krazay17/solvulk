@@ -30,28 +30,28 @@ typedef enum
     ANIM_PATH_SCALE,
 } AnimPath;
 
-typedef struct SolAnimChannel
+typedef struct ScAnimChannel
 {
     int      boneIndex; // which bone this affects
     AnimPath path;      // T, R, or S
     float   *times;     // keyframe timestamps, length = keyCount
     float   *values;    // packed values: vec3 for T/S, vec4 (quat) for R
     int      keyCount;
-} SolAnimChannel;
+} ScAnimChannel;
 
-typedef struct SolAnimation
+typedef struct ScAnimation
 {
     char            name[64];
     float           duration; // longest keyframe time across all channels
-    SolAnimChannel *channels;
+    ScAnimChannel *channels;
     int             channelCount;
-} SolAnimation;
+} ScAnimation;
 
 typedef struct SolSkeleton
 {
     SolBone      *bones;
     int           boneCount;
-    SolAnimation *animations;
+    ScAnimation *animations;
     int           animationCount;
 } SolSkeleton;
 
@@ -89,7 +89,7 @@ typedef struct ModelPrefab
     vec3s pos;
 } ModelPrefab;
 
-typedef struct SolModelData
+typedef struct ScModelData
 {
     ModelKind    kind;
     SolVertex   *vertices;
@@ -108,7 +108,7 @@ typedef struct SolModelData
 
     mat4s *jointMatrices;
 
-} SolModelData;
+} ScModelData;
 
 typedef struct BoneMask
 {
@@ -116,10 +116,10 @@ typedef struct BoneMask
 } BoneMask;
 
 // Per model, per layer
-typedef struct SolModelDataMasks
+typedef struct ScModelDataMasks
 {
     BoneMask layers[ANIM_LAYER_COUNT];
-} SolModelDataMasks;
+} ScModelDataMasks;
 
 // typedef struct
 // {
@@ -145,8 +145,8 @@ typedef struct SolModelDataMasks
 //     mat4     *outBones;                      // final skinning matrices
 // } PoseRequest;
 
-extern SolModelData      loaded_models[SOL_MODEL_COUNT];
-extern SolModelDataMasks model_masks[SOL_MODEL_COUNT];
+extern ScModelData      loaded_models[SOL_MODEL_COUNT];
+extern ScModelDataMasks model_masks[SOL_MODEL_COUNT];
 extern const char       *model_path[SOL_MODEL_COUNT];
 extern const i32         model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
 

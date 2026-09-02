@@ -6,6 +6,7 @@
 typedef struct
 {
     float y_offset;
+    float yaw_offset;
 } ModelKindData;
 
 const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
@@ -21,37 +22,41 @@ const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
         {
             .y_offset = -0.8f,
         },
+        [MODELKIND_EVAN] = 
+        {
+            .yaw_offset = GLM_PI_2f,
+        }
 };
 
 void Model_Render(World *world, double dt)
 {
     float               fdt = (float)dt;
-    SparseSet_SolModel *set = Sol_Comp_Set(world, SolModel);
+    SparseSet_ScModel *set = Sol_Comp_Set(world, ScModel);
     for (int i = 0; i < set->cnt; i++)
     {
         int       id    = set->dense[i];
-        SolModel *model = &set->data[i];
-        SolXform *xform = Sol_Comp_Get(world, id, SolXform);
+        ScModel *model = &set->data[i];
+        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         if (!xform)
             continue;
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = model->color;
 
-        if (Sol_Comp_Has(world, id, SolInteract))
+        if (Sol_Comp_Has(world, id, ScInteract))
         {
-            SolInteract *interact = Sol_Comp_Get(world, id, SolInteract);
+            ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
             if (interact->state & (INTERACT_HOVERED | INTERACT_DRAGGING))
                 modelSSBO.flags |= (1 << 0);
         }
-        if (Sol_Comp_Has(world, id, SolBuff))
+        if (Sol_Comp_Has(world, id, ScBuff))
         {
             if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
                 modelSSBO.flags |= (1 << 1);
         }
 
-        if (Sol_Comp_Has(world, id, SolCombat))
+        if (Sol_Comp_Has(world, id, ScCombat))
         {
-            SolCombat *combat = Sol_Comp_Get(world, id, SolCombat);
+            ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
             modelSSBO.hitTime = combat->lastHitTime;
         }
         else
@@ -60,6 +65,9 @@ void Model_Render(World *world, double dt)
         vec3s pos = xform->draw_pos;
         pos.y += model_kinds[model->kind].y_offset;
         pos.y += model->yOffset;
+        // versors rot = xform->draw_rot;
+        
+        //Sol_YawFromQuat(rot.raw)
 
         if (model->is2d)
         {
@@ -78,9 +86,9 @@ void Model_Render(World *world, double dt)
             modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
             modelSSBO.scale    = (vec4s){xform->draw_sca.x, xform->draw_sca.y, xform->draw_sca.z, 1.0f};
         }
-        if (Sol_Comp_Has(world, id, SolAnim))
+        if (Sol_Comp_Has(world, id, ScAnim))
         {
-            SolAnim *anim = Sol_Comp_Get(world, id, SolAnim);
+            ScAnim *anim = Sol_Comp_Get(world, id, ScAnim);
             Sol_Render_GetNext_Model(model->kind, &modelSSBO, &anim->pose);
         }
         else
@@ -97,9 +105,9 @@ void Model_Init(World *world)
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
     Xform        result   = {0};
-    SolModel    *model    = Sol_Comp_Get(world, id, SolModel);
-    SolAnim     *anim     = Sol_Comp_Get(world, id, SolAnim);
-    SolXform    *xform    = Sol_Comp_Get(world, id, SolXform);
+    ScModel    *model    = Sol_Comp_Get(world, id, ScModel);
+    ScAnim     *anim     = Sol_Comp_Get(world, id, ScAnim);
+    ScXform    *xform    = Sol_Comp_Get(world, id, ScXform);
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
 
     int boneIdx = -1;

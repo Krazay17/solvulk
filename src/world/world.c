@@ -20,19 +20,31 @@ typedef enum
 
 typedef struct
 {
-    SystemInit   init;
-    SystemDeinit deinit;
     SystemUpdate update;
     UpdatePhase  phase;
+} SystemUpdateDef;
+#define SYSTEMUPDATEDEF_COUNT 3
+typedef struct
+{
+    SystemInit      init;
+    SystemDeinit    deinit;
+    SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } SystemDef;
 
 const SystemDef system_inits[WORLDSYS_COUNT] = {
-    [WORLDSYS_CONTROLLER] = {.update = Controller_Tick, .phase = UPDATEPHASE_TICK},
-    [WORLDSYS_MOVE3]      = {.update = Move3_Step, .phase = UPDATEPHASE_STEP},
-    [WORLDSYS_PHYSX]      = {.init = Physx_Init, .update = Physx_Step, .phase = UPDATEPHASE_STEP},
-    [WORLDSYS_CAMERA]     = {.update = Camera_Tick, .phase = UPDATEPHASE_POSTTICK},
-    [WORLDSYS_ANIM]       = {.update = Anim_Tick, .phase = UPDATEPHASE_POSTTICK},
-    [WORLDSYS_MODEL]      = {.update = Model_Render, .phase = UPDATEPHASE_RENDER3},
+    [WORLDSYS_CONTROLLER] = {.update = {Controller_Tick, UPDATEPHASE_TICK}},
+    [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_PHYSX]      = {.init = Physx_Init, .update = {Physx_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_CAMERA]     = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_ANIM]       = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_MODEL]      = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
+    [WORLDSYS_DEBUG] =
+        {
+            .init      = Debug_Init,
+            .update[0] = {Debug_Tick, UPDATEPHASE_TICK},
+            .update[1] = {Debug_Draw3, UPDATEPHASE_RENDER3},
+            .update[2] = {Debug_Draw2, UPDATEPHASE_RENDER2},
+        },
 };
 
 World *World_Create()
@@ -83,23 +95,28 @@ void Sol_Sys_Add(World *world, WorldSystems system)
     if (system_inits[system].init)
         system_inits[system].init(world);
     if (system_inits[system].update)
-        switch (system_inits[system].phase)
+        for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
         {
-        case UPDATEPHASE_TICK:
-            WAddTick(world) = system_inits[system].update;
-            break;
-        case UPDATEPHASE_STEP:
-            WAddStep(world) = system_inits[system].update;
-            break;
-        case UPDATEPHASE_POSTTICK:
-            WAddPosttick(world) = system_inits[system].update;
-            break;
-        case UPDATEPHASE_RENDER3:
-            WAdd3d(world) = system_inits[system].update;
-            break;
-        case UPDATEPHASE_RENDER2:
-            WAdd2d(world) = system_inits[system].update;
-            break;
+            if (!system_inits[system].update[i].update)
+                continue;
+            switch (system_inits[system].update[i].phase)
+            {
+            case UPDATEPHASE_TICK:
+                WAddTick(world) = system_inits[system].update[i].update;
+                break;
+            case UPDATEPHASE_STEP:
+                WAddStep(world) = system_inits[system].update[i].update;
+                break;
+            case UPDATEPHASE_POSTTICK:
+                WAddPosttick(world) = system_inits[system].update[i].update;
+                break;
+            case UPDATEPHASE_RENDER3:
+                WAdd3d(world) = system_inits[system].update[i].update;
+                break;
+            case UPDATEPHASE_RENDER2:
+                WAdd2d(world) = system_inits[system].update[i].update;
+                break;
+            }
         }
     world->system_mask |= BITC(system);
 }
@@ -127,26 +144,29 @@ void Sol_Sys_Remove(World *world, WorldSystems system)
     if (system_inits[system].deinit)
         system_inits[system].deinit(world);
 
-    SystemUpdate update_fn = system_inits[system].update;
-    if (update_fn)
+    for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
     {
-        switch (system_inits[system].phase)
+        SystemUpdate update_fn = system_inits[system].update[i].update;
+        if (update_fn)
         {
-        case UPDATEPHASE_TICK:
-            RemoveSystemFromList(world->tickSystems, &world->tickCount, update_fn);
-            break;
-        case UPDATEPHASE_STEP:
-            RemoveSystemFromList(world->stepSystems, &world->stepCount, update_fn);
-            break;
-        case UPDATEPHASE_POSTTICK:
-            RemoveSystemFromList(world->posttickSystems, &world->posttickCount, update_fn);
-            break;
-        case UPDATEPHASE_RENDER3:
-            RemoveSystemFromList(world->draw3dSystems, &world->draw3dCount, update_fn);
-            break;
-        case UPDATEPHASE_RENDER2:
-            RemoveSystemFromList(world->draw2dSystems, &world->draw2dCount, update_fn);
-            break;
+            switch (system_inits[system].update[i].phase)
+            {
+            case UPDATEPHASE_TICK:
+                RemoveSystemFromList(world->tickSystems, &world->tickCount, update_fn);
+                break;
+            case UPDATEPHASE_STEP:
+                RemoveSystemFromList(world->stepSystems, &world->stepCount, update_fn);
+                break;
+            case UPDATEPHASE_POSTTICK:
+                RemoveSystemFromList(world->posttickSystems, &world->posttickCount, update_fn);
+                break;
+            case UPDATEPHASE_RENDER3:
+                RemoveSystemFromList(world->draw3dSystems, &world->draw3dCount, update_fn);
+                break;
+            case UPDATEPHASE_RENDER2:
+                RemoveSystemFromList(world->draw2dSystems, &world->draw2dCount, update_fn);
+                break;
+            }
         }
     }
 
@@ -230,7 +250,7 @@ int Sol_Create_Ent(World *world)
 
     world->activeEnts[id] = true;
     world->entCount++;
-    SolActive *sol_active      = Sol_Comp_Add(world, id, SolActive);
+    ScActive *sol_active       = Sol_Comp_Add(world, id, ScActive);
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = world->tickTime;
     Sol_Debug_Add("Entities", world->entCount);

@@ -5,7 +5,7 @@
 
 #define WALKABLE_SLOPE 0.7f
 
-typedef struct SolMove3 SolMove3;
+typedef struct ScMove3 ScMove3;
 
 typedef struct
 {
@@ -98,9 +98,9 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
     return (WallTouch)(sector & 3);
 }
 
-void  Knockback(World *world, int id, SolMove3 *move, float fdt);
-void  CrouchHeight(World *world, int id, SolMove3 *move, float fdt);
-void  RestoreFriction(World *world, int id, SolMove3 *move, float fdt);
+void  Knockback(World *world, int id, ScMove3 *move, float fdt);
+void  CrouchHeight(World *world, int id, ScMove3 *move, float fdt);
+void  RestoreFriction(World *world, int id, ScMove3 *move, float fdt);
 
 void Sol_Movement_Idle_Update(World *world, int id, float dt);
 void Sol_Movement_Idle_Enter(World *world, int id);

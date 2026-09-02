@@ -26,6 +26,7 @@ typedef enum
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
+    WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
 } WorldSystems;
 
@@ -100,7 +101,7 @@ struct World
     static inline SparseSet_##T *Sol_SparseSet_Alloc_##T(int maxEnts)                                                  \
     {                                                                                                                  \
         SparseSet_##T *set = calloc(1, sizeof(SparseSet_##T));                                                         \
-        set->cap           = INITIAL_SPARSE_SET_CAP;                                                                   \
+        set->cap           = 0;                                                                                        \
         set->cnt           = 0;                                                                                        \
         set->sparse        = malloc(maxEnts * sizeof(int));                                                            \
         return (SparseSet_##T *)set;                                                                                   \
@@ -271,7 +272,12 @@ void Camera_Init(World *world);
 void Camera_Deinit(World *world);
 void Model_Init(World *world);
 void Model_Deinit(World *world);
+void Debug_Init(World *world);
+void Debug_Deinit(World *world);
 
+void Debug_Tick(World *world, double dt);
+void Debug_Draw3(World *world, double dt);
+void Debug_Draw2(World *world, double dt);
 void Move3_Step(World *world, double dt);
 void Physx_Step(World *world, double dt);
 void Anim_Tick(World *world, double dt);
@@ -297,9 +303,15 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
 bool Sol_Movement_SetState(World *world, int id, MoveState state);
 
-bool  Sol_Physx_DoesCollide(SolBody3 *body, SolBody3 *other_body);
+bool  Sol_Physx_DoesCollide(ScBody3 *body, ScBody3 *other_body);
 vec3s Sol_Physx_GetGround(World *world, int id);
 int   Sol_Physx_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 
 vec3s Sol_Physx_GetVel(World *world, int id);
 float Sol_Physx_GetSpeed(World *world, int id);
+int   Sol_Physx_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int   Sol_Physx_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+bool  Sol_Physx_RaycastFirst(World *world, SolRay ray, SolRayResult *outResult);
+bool  Sol_Physx_RaycastFirstD(World *world, SolRay ray, SolRayResult *result, float time);
+
+SolLine *Sol_Line_New(World *world);

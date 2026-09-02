@@ -10,9 +10,9 @@
 
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
-    SolMove3      *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
-    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
+    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
 
     if (data->elapsed >= JUMP_DURATION)
@@ -31,9 +31,9 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
-    SolMove3      *move  = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont  = Sol_Comp_Get(world, id, SolController);
-    SolBody3      *body3 = Sol_Comp_Get(world, id, SolBody3);
+    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScBody3      *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
     move->wantsJump      = false;
     move->groundtime     = 0;
@@ -59,8 +59,8 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
-    SolMove3      *move = Sol_Comp_Get(world, id, SolMove3);
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
     MoveStateData *data = &move->stateData[MOVE_JUMP];
     if (!move->wantsJump || move->state == MOVE_JUMP)
         return false;
@@ -69,9 +69,9 @@ bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int sl
 
     if (move->airtime >= JUMP_BUFFER)
     {
-        if (Sol_Comp_Has(world, id, SolCombat))
+        if (Sol_Comp_Has(world, id, ScCombat))
         {
-            SolCombat *combat = Sol_Comp_Get(world, id, SolCombat);
+            ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
             if (combat->energy < 25.0f)
                 return false;
             else

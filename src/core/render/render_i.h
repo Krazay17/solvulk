@@ -10,7 +10,7 @@
 
 #define RENDER_CLEAR_COLOR {0.0f, 0.0f, 0.0f, 1.0f}
 
-typedef struct SolModelData   SolModelData;
+typedef struct ScModelData   ScModelData;
 typedef struct SolTexture SolTexture;
 
 typedef enum
@@ -50,7 +50,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height);
 void *Sol_GetDescriptorMapping(DescriptorId id);
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id);
-int Sol_UploadModel(SolModelData *model, ModelKind id);
+int Sol_UploadModel(ScModelData *model, ModelKind id);
 
 void Flush_Models(void);
 void Flush_Quads(void);

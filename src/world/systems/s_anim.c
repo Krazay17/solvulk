@@ -132,20 +132,20 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
         },
 };
 
-static void Anim_Solver(SparseSet_SolAnim *set, World *world, double dt)
+static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 {
     float fdt = (float)dt;
 
     for (int i = 0; i < set->cnt; i++)
     {
         int      id   = set->dense[i];
-        SolAnim *anim = &set->data[i];
+        ScAnim *anim = &set->data[i];
 
-        SolModel *model = Sol_Comp_Get(world, id, SolModel);
+        ScModel *model = Sol_Comp_Get(world, id, ScModel);
         if (!model || model->kind < 0)
             continue;
 
-        SolModelData *m = &loaded_models[model->kind];
+        ScModelData *m = &loaded_models[model->kind];
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -223,15 +223,15 @@ void Anim_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_SolAnim *set = Sol_Comp_Set(world, SolAnim);
+    SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);
     for (int i = 0; i < set->cnt; i++)
     {
         int      id   = set->dense[i];
-        SolAnim *anim = &set->data[i];
+        ScAnim *anim = &set->data[i];
 
-        if (Sol_Comp_Has(world, id, SolAbility))
+        if (Sol_Comp_Has(world, id, ScAbility))
         {
-            SolAbility       *ability      = Sol_Comp_Get(world, id, SolAbility);
+            ScAbility       *ability      = Sol_Comp_Get(world, id, ScAbility);
             AbilityStateData *data         = &ability->stateData[ability->activeSlot];
             AnimDesc          ability_anim = {.layerId = ANIM_LAYER_OVERRIDE};
             switch (ability->state)
@@ -281,9 +281,9 @@ void Anim_Tick(World *world, double dt)
                 Sol_Anim_Play(world, id, ability_anim);
         }
 
-        if (Sol_Comp_Has(world, id, SolMove3))
+        if (Sol_Comp_Has(world, id, ScMove3))
         {
-            SolMove3      *movement     = Sol_Comp_Get(world, id, SolMove3);
+            ScMove3      *movement     = Sol_Comp_Get(world, id, ScMove3);
             MoveStateData *data         = &movement->stateData[movement->state];
             bool           modify_speed = false;
             AnimDesc       move_anim    = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
@@ -364,8 +364,8 @@ void Anim_Init(World *world)
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc)
 {
-    SolModel  *modelComp = Sol_Comp_Get(world, id, SolModel);
-    SolAnim   *anim      = Sol_Comp_Get(world, id, SolAnim);
+    ScModel  *modelComp = Sol_Comp_Get(world, id, ScModel);
+    ScAnim   *anim      = Sol_Comp_Get(world, id, ScAnim);
     AnimLayer *layer     = &anim->layers[desc.layerId];
 
     AnimId animId   = desc.anim;
@@ -420,7 +420,7 @@ void Sol_Anim_Play(World *world, int id, AnimDesc desc)
 
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut)
 {
-    AnimLayer *layer = &Sol_Comp_Get(world, id, SolAnim)->layers[layerId];
+    AnimLayer *layer = &Sol_Comp_Get(world, id, ScAnim)->layers[layerId];
     if (layer->currentAnim == -1 || layer->isBlendingOut)
         return;
 
@@ -431,7 +431,7 @@ void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut)
 
 void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate)
 {
-    AnimLayer *layer = &Sol_Comp_Get(world, id, SolAnim)->layers[layerId];
+    AnimLayer *layer = &Sol_Comp_Get(world, id, ScAnim)->layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->playRate = rate;
@@ -439,7 +439,7 @@ void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate)
 
 void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek)
 {
-    AnimLayer *layer = &Sol_Comp_Get(world, id, SolAnim)->layers[layerId];
+    AnimLayer *layer = &Sol_Comp_Get(world, id, ScAnim)->layers[layerId];
     if (layer->currentAnim < 0)
         return;
     layer->currentSeek = seek;

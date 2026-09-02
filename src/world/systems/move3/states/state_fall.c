@@ -2,7 +2,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, SolMove3 *move, SolController *controller)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScController *controller)
 {
     if (move->groundtime > 0)
         if (Sol_Movement_SetState(world, id, MOVE_IDLE))
@@ -21,16 +21,16 @@ static bool LeaveState(World *world, int id, SolMove3 *move, SolController *cont
 
 void Sol_Movement_Fall_Update(World *world, int id, float dt)
 {
-    SolMove3      *move       = Sol_Comp_Get(world, id, SolMove3);
-    SolController *controller = Sol_Comp_Get(world, id, SolController);
+    ScMove3      *move       = Sol_Comp_Get(world, id, ScMove3);
+    ScController *controller = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, controller))
         return;
 }
 
 void Sol_Movement_Fall_Enter(World *world, int id)
 {
-    SolMove3      *move       = Sol_Comp_Get(world, id, SolMove3);
-    SolController *controller = Sol_Comp_Get(world, id, SolController);
+    ScMove3      *move       = Sol_Comp_Get(world, id, ScMove3);
+    ScController *controller = Sol_Comp_Get(world, id, ScController);
     if (LeaveState(world, id, move, controller))
         return;
 }

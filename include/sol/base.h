@@ -21,43 +21,8 @@
 #define VEC4_WHITE (vec4s){1.0f, 1.0f, 1.0f, 1.0f}
 #define VEC4_BLACK (vec4s){0.0f, 0.0f, 0.0f, 1.0f}
 #define VEC4_RED (vec4s){1.0f, 0.0f, 0.0f, 1.0f}
+#define VEC4_GREEN (vec4s){0.0f, 1.0f, 0.0f, 1.0f}
 #define clamp(v, lo, hi) (((v) < (lo)) ? (lo) : (((v) > (hi)) ? (hi) : (v)))
-
-// static inline void _sollog_int(int v)
-// {
-//     printf("%d\n", v);
-// }
-// static inline void _sollog_bool(bool v)
-// {
-//     printf("%s\n", v ? "true" : "false");
-// }
-// static inline void _sollog_u32(uint32_t v)
-// {
-//     printf("%u\n", v);
-// }
-// static inline void _sollog_float(double v)
-// {
-//     printf("%f\n", v);
-// }
-// static inline void _sollog_size_t(size_t v)
-// {
-//     printf("%zu bytes\n", v);
-// }
-// static inline void _sollog_str(const char *v)
-// {
-//     printf("%s\n", v ? v : "(null)");
-// }
-
-// #define sollog(X)                                                                                                      \
-//     _Generic((1 ? (X) : (X)),                                                                                          \
-//         int: _sollog_int,                                                                                              \
-//         bool: _sollog_bool,                                                                                            \
-//         uint32_t: _sollog_u32,                                                                                         \
-//         float: _sollog_float,                                                                                          \
-//         double: _sollog_float,                                                                                         \
-//         size_t: _sollog_size_t,                                                                                        \
-//         char *: _sollog_str,                                                                                           \
-//         const char *: _sollog_str)(X)
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))

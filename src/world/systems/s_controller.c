@@ -5,21 +5,21 @@ void Controller_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_SolController *set = Sol_Comp_Set(world, SolController);
+    SparseSet_ScController *set = Sol_Comp_Set(world, ScController);
     for (int i = 0; i < set->cnt; i++)
     {
         int            id    = set->dense[i];
-        SolController *cont  = &set->data[i];
-        SolXform      *xform = Sol_Comp_Get(world, id, SolXform);
+        ScController *cont  = &set->data[i];
+        ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
 
         vec3s lookdir   = vecNorm(Sol_Vec3_FromYawPitch(cont->yaw, cont->pitch));
         cont->lookdir   = lookdir;
         cont->wishdir   = CalcWishdir3(cont->actionState, cont->lookdir, WORLD_UP, false);
         cont->wishdirY  = CalcWishdir3(cont->actionState, cont->lookdir, WORLD_UP, true);
         cont->wishdir2d = CalcWishDir2(cont->actionState);
-        if (Sol_Comp_Has(world, id, SolAbility))
+        if (Sol_Comp_Has(world, id, ScAbility))
         {
-            SolAbility *ability = Sol_Comp_Get(world, id, SolAbility);
+            ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
             // for (int i = 0; i < ABILITY_SLOTS; i++)
             // {
             //     int  ability_mask          = BITC(ACTION_ABILITY1 + i);
@@ -32,9 +32,9 @@ void Controller_Tick(World *world, double dt)
             //     }
             // }
         }
-        if (Sol_Comp_Has(world, id, SolBody3))
+        if (Sol_Comp_Has(world, id, ScBody3))
         {
-            SolBody3 *body3  = Sol_Comp_Get(world, id, SolBody3);
+            ScBody3 *body3  = Sol_Comp_Get(world, id, ScBody3);
             vec3s     aimpos = xform->pos;
             aimpos.y += body3->dims.y;
             cont->aimpos = aimpos;
@@ -53,9 +53,9 @@ void Controller_Tick(World *world, double dt)
                 xform->rot = glms_quat_slerp(xform->rot, target_quat, factor);
             }
         }
-        else if (Sol_Comp_Has(world, id, SolBody2))
+        else if (Sol_Comp_Has(world, id, ScBody2))
         {
-            SolBody2 *body2 = Sol_Comp_Get(world, id, SolBody2);
+            ScBody2 *body2 = Sol_Comp_Get(world, id, ScBody2);
 
             if (glms_vec2_norm(cont->wishdir2d) > 0.001f)
             {
@@ -82,13 +82,12 @@ void Controller_Deinit(World *world)
 
 void Sol_Controller_SetParallaxAim(World *world, int id, vec3s lookpos, vec3s lookdir, float range, float hitdepth)
 {
-    SolController *cont = Sol_Comp_Get(world, id, SolController);
+    ScController *cont = Sol_Comp_Get(world, id, ScController);
 
     SolRayResult aimTrace;
     int          hits = Sol_Physx_Raycast(world,
                                           (SolRay){
-                                              .pos       = lookpos,
-                                              .ignoreEnt = id,
+                                              .start       = lookpos,
                                               .mask      = COLLISIONGROUP_PAWN | COLLISIONGROUP_WORLD,
                                               .dir       = lookdir,
                                               .dist      = range,

@@ -9,7 +9,7 @@
 #include "sol/types.h"
 
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "cglm/include/cglm/struct.h"
+#include "cglm/struct.h"
 
 #define vecAdd(a, b) glms_vec3_add(a, b)
 #define vecSub(a, b) glms_vec3_sub(a, b)
@@ -280,9 +280,9 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bo
     return glms_vec3_normalize(wishdir);
 }
 
-static inline vec2s CalcWishDir2(uint32_t action)
+static inline vec3s CalcWishDir2(uint32_t action)
 {
-    vec2s wishdir = {0, 0};
+    vec3s wishdir = {0};
     if (action & BITC(ACTION_RIGHT))
         wishdir.x += 1;
     if (action & BITC(ACTION_LEFT))
@@ -291,8 +291,12 @@ static inline vec2s CalcWishDir2(uint32_t action)
         wishdir.y -= 1;
     if (action & BITC(ACTION_BWD))
         wishdir.y += 1;
+    if (action & BITC(ACTION_JUMP))
+        wishdir.z += 1;
+    if (action & BITC(ACTION_CROUCH))
+        wishdir.z -= 1;
 
-    return glms_vec2_normalize(wishdir);
+    return glms_vec3_normalize(wishdir);
 }
 
 static inline void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1

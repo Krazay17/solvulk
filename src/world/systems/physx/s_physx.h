@@ -3,8 +3,8 @@
 #include "spatial_hashmap.h"
 #include "spatial_grid.h"
 
-#define DYNAMIC_CELL_SIZE 2.0f
-#define STATIC_CELL_SIZE 4.0f
+#define DYNAMIC_CELL_SIZE 3.0f
+#define STATIC_CELL_SIZE 3.0f
 
 #define MAX_CONTACTS (1 << 16)
 #define TERMINAL_VELOCITY -100.0f

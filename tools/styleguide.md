@@ -2,7 +2,7 @@
 
 thisIsALocalVariable
 
-this_is_a_global_variable
+g_this_is_a_global_variable
 
 ThisIsAStruct
 

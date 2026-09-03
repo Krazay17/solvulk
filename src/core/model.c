@@ -16,7 +16,7 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_BOX]         = "Box.glb",
     [SOL_MODEL_WORLD0]      = "World0.glb",
     [MODELKIND_WALL]        = "Wall.glb",
-    [MODELKIND_WORLD4] = "World4.glb",
+    [MODELKIND_WORLD4]      = "World4.glb",
     [SOL_MODEL_WORLD1]      = "World1.glb",
     [SOL_MODEL_WORLD2]      = "World2.glb",
     [SOL_MODEL_WORLD6]      = "World6.glb",
@@ -26,9 +26,9 @@ const char *model_path[SOL_MODEL_COUNT] = {
     [SOL_MODEL_WORLD10]     = "World10.glb",
     [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
     [MODELKIND_SHIELD]      = "FireShield.glb",
-    [MODELKIND_FROSTSWORD] = "FrostSword.glb",
-    [MODELKIND_EVAN] = "Evan.glb",
-    [MODELKIND_EVANRIGGED] = "EvanRigged.glb",
+    [MODELKIND_FROSTSWORD]  = "FrostSword.glb",
+    [MODELKIND_EVAN]        = "Evan.glb",
+    [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
 };
 
 ScModelData loaded_models[SOL_MODEL_COUNT];

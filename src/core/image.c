@@ -13,7 +13,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-#include "webp/src/webp/decode.h"
+#include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_ICEFONT]          = "atlas.raw",

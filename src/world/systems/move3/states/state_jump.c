@@ -11,7 +11,7 @@
 void Sol_Movement_Jump_Update(World *world, int id, float dt)
 {
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
 
@@ -20,7 +20,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
         Sol_Move3_SetState(world, id, MOVE_IDLE);
         return;
     }
-    else if (cont->actionState & BITC(ACTION_JUMP) && data->elapsed > JUMP_DURATION * 0.1f)
+    else if (cmd->actionState & BITC(ACTION_JUMP) && data->elapsed > JUMP_DURATION * 0.1f)
         if (Sol_Move3_SetState(world, id, MOVE_WALLRUN))
             return;
 
@@ -32,7 +32,7 @@ void Sol_Movement_Jump_Update(World *world, int id, float dt)
 void Sol_Movement_Jump_Enter(World *world, int id)
 {
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_JUMP];
     move->wantsJump      = false;
@@ -57,7 +57,7 @@ bool Sol_Movement_Jump_CanExit(World *world, int id, u32 next)
 bool Sol_Movement_Jump_CanEnter(World *world, int id, u32 last, u32 next, int slot)
 {
     ScMove3       *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd = Sol_Comp_Get(world, id, ScCmd);
     MoveStateData *data = &move->stateData[MOVE_JUMP];
     if (!move->wantsJump || move->state == MOVE_JUMP)
         return false;

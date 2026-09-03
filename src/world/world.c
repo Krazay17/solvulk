@@ -32,12 +32,13 @@ typedef struct
 } SystemDef;
 
 const SystemDef system_inits[WORLDSYS_COUNT] = {
-    [WORLDSYS_CONTROLLER] = {.update = {Controller_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_PHYSX]      = {.init = Physx_Init, .update = {Physx_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_CAMERA]     = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_ANIM]       = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_MODEL]      = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
+    [WORLDSYS_PLAYER] = {.update = {Player_Tick, UPDATEPHASE_TICK}},
+    [WORLDSYS_MOVE3]  = {.update = {Move3_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_PHYSX]  = {.init = Physx_Init, .update = {Physx_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_FACING] = {.update[0].update = Facing_Tick, UPDATEPHASE_POSTTICK},
+    [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_MODEL]  = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
     [WORLDSYS_DEBUG] =
         {
             .init      = Debug_Init,

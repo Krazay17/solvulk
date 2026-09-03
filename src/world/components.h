@@ -24,18 +24,38 @@ typedef struct ScXform
     versors last_rot, rot, draw_rot;
 } ScXform;
 
-typedef struct ScController
+typedef struct ScCmd
 {
-    u8         kind;
     SolActions actionState;
-    int        aimHitEnt;
+    bool       isStrafing;
+    int        target;
     float      yaw, pitch;
+    vec3s      wishdir, wishdir2, aimdir, aimpos, lookdir;
+} ScCmd;
 
-    vec3s wishdir, wishdirY, aimdir, aimpos, lookdir, knockDur;
-    vec2s wishdir2d, aimpos2d;
+typedef struct ScPlayer
+{
+    float yaw, pitch;
+} ScPlayer;
 
-    bool isStrafing;
-} ScController;
+typedef struct ScRemote
+{
+    int remoteId;
+} ScRemote;
+
+typedef struct
+{
+    float lastEntered, elapsed, duration, accum;
+    float attacktimer;
+} AiStateData;
+typedef struct ScAi
+{
+    vec3s       dirToTarget;
+    AiState     state;
+    u32         target, justHitUs;
+    float       distToTarget, dropAggroTimer, lastHit;
+    AiStateData stateData[AISTATE_COUNT];
+} ScAi;
 
 typedef struct ScBody3
 {
@@ -60,8 +80,8 @@ typedef struct ScCamera
     vec3s pos, anchor;
     vec3s dir;
     vec3s up, right;
-    float current_distance, current_offset;
-    float desired_distance, desired_offset;
+    float current_distance, desired_distance;
+    float current_offset, desired_offset;
     float lerpspeed;
     float fov;
     float roll;
@@ -147,30 +167,6 @@ typedef struct ScAnim
     AnimLayer layers[ANIM_LAYER_COUNT];
     bool      hasLastPose;
 } ScAnim;
-
-typedef struct ScPlayer
-{
-    int localIdx;
-} ScPlayer;
-
-typedef struct ScRemote
-{
-    int remoteId;
-} ScRemote;
-
-typedef struct
-{
-    float lastEntered, elapsed, duration, accum;
-    float attacktimer;
-} AiStateData;
-typedef struct ScAi
-{
-    vec3s       dirToTarget;
-    AiState     state;
-    u32         target, justHitUs;
-    float       distToTarget, dropAggroTimer, lastHit;
-    AiStateData stateData[AISTATE_COUNT];
-} ScAi;
 
 typedef struct ScEvent
 {
@@ -444,7 +440,10 @@ typedef struct ScStage
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScXform, HAS_ScXform)                                                                                            \
-    X(ScController, HAS_ScController)                                                                                  \
+    X(ScCmd, HAS_ScCmd)                                                                                                \
+    X(ScPlayer, HAS_ScPlayer)                                                                                          \
+    X(ScRemote, HAS_ScRemote)                                                                                          \
+    X(ScAi, HAS_ScAi)                                                                                                  \
     X(ScBody2, HAS_ScBody2)                                                                                            \
     X(ScBody3, HAS_ScBody3)                                                                                            \
     X(ScStage, HAS_ScStage)                                                                                            \
@@ -453,9 +452,6 @@ typedef struct ScStage
     X(ScCamera, HAS_ScCamera)                                                                                          \
     X(ScInteract, HAS_ScInteract)                                                                                      \
     X(ScMove3, HAS_ScMove3)                                                                                            \
-    X(ScPlayer, HAS_ScPlayer)                                                                                          \
-    X(ScRemote, HAS_ScRemote)                                                                                          \
-    X(ScAi, HAS_ScAi)                                                                                                  \
     X(ScAbility, HAS_ScAbility)                                                                                        \
     X(ScBuff, HAS_ScBuff)                                                                                              \
     X(ScTimer, HAS_ScTimer)                                                                                            \

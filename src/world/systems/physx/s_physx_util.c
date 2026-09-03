@@ -77,7 +77,6 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
         sollog("WorldTri count:", solb_count(sys->static_group.tris));
         SpatialGrid_BuildFromTris(&sys->static_group.spatial, sys->static_group.tris,
                                   solb_count(sys->static_group.tris));
-        sollog(sys->static_group.spatial.min, sys->static_group.spatial.max);
     }
 }
 

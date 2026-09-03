@@ -17,7 +17,7 @@ void Walljump_State_Update(World *world, int id, float dt)
         return;
     }
 
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScBody3      *body  = Sol_Comp_Get(world, id, ScBody3);
     float         alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
@@ -31,7 +31,7 @@ void Walljump_State_Enter(World *world, int id)
 {
     ScMove3       *move        = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
-    ScController  *cont        = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd        = Sol_Comp_Get(world, id, ScCmd);
     ScBody3       *body        = Sol_Comp_Get(world, id, ScBody3);
 
     vec3s vel        = body->vel;

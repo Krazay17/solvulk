@@ -20,9 +20,10 @@ typedef struct World World;
 
 typedef enum
 {
-    WORLDSYS_CONTROLLER,
+    WORLDSYS_PLAYER,
     WORLDSYS_MOVE3,
     WORLDSYS_PHYSX,
+    WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
@@ -260,8 +261,8 @@ void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
 // Systems
-void Controller_Init(World *world);
-void Controller_Deinit(World *world);
+void Player_Init(World *world);
+void Player_Deinit(World *world);
 void Move3_Init(World *world);
 void Move3_Deinit(World *world);
 void Physx_Init(World *world);
@@ -275,15 +276,15 @@ void Model_Deinit(World *world);
 void Debug_Init(World *world);
 void Debug_Deinit(World *world);
 
+void Facing_Tick(World *world, double dt);
+void Player_Tick(World *world, double dt);
 void Debug_Tick(World *world, double dt);
 void Debug_Draw3(World *world, double dt);
 void Debug_Draw2(World *world, double dt);
 void Move3_Step(World *world, double dt);
 void Physx_Step(World *world, double dt);
 void Anim_Tick(World *world, double dt);
-void Controller_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
-void Player_Tick(World *world, double dt);
 void Model_Render(World *world, double dt);
 
 // Api

@@ -2,6 +2,8 @@
 #include "world.h"
 #include "sol_core.h"
 
+#include <omp.h>
+
 #define MAX_WALK_ANGLE 0.7f
 
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
@@ -44,19 +46,21 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
 void Move3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
+    int i;
 
     SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);
-    for (int i = 0; i < set->cnt; i++)
+#pragma omp parallel for schedule(dynamic)
+    for ( i = 0; i < set->cnt; i++)
     {
-        int           id         = set->dense[i];
-        ScMove3      *move       = &set->data[i];
-        ScController *controller = Sol_Comp_Get(world, id, ScController);
-        ScBody3      *body3      = Sol_Comp_Get(world, id, ScBody3);
+        int      id    = set->dense[i];
+        ScMove3 *move  = &set->data[i];
+        ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
 
         const MoveStateForce *forces     = &MOVE_STATE_FORCES[move->kind][move->state];
-        bool                  isJumpDown = controller->actionState & BITC(ACTION_JUMP);
+        bool                  isJumpDown = cmd->actionState & BITC(ACTION_JUMP);
         vec3s                 vel        = body3->vel;
-        vec3s                 wishdir    = controller->wishdir;
+        vec3s                 wishdir    = cmd->wishdir;
 
         GroundCheck(world, id, move, fdt);
 
@@ -93,7 +97,7 @@ void Move3_Step(World *world, double dt)
             body3->vel     = vel;
             break;
         case MOVE_FLY:
-            wishdir    = controller->wishdirY;
+            wishdir    = cmd->wishdir;
             vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
             vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             body3->vel = vel;
@@ -105,7 +109,7 @@ void Move3_Step(World *world, double dt)
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
             break;
-        // default:
+            // default:
             // if (vel.y < 0)
             //     body3->gravity.y *= 1.33f;
             // vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
@@ -190,7 +194,7 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
             idx          = j;
         }
     }
-    
+
     move->groundNorm = results[idx].norm;
     move->groundDot  = flattestNorm;
 

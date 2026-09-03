@@ -3,7 +3,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     if (move->wantsJump)
         if (Sol_Move3_SetState(world, id, MOVE_JUMP))
@@ -11,10 +11,10 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
     if (move->airtime > 0)
         if (Sol_Move3_SetState(world, id, MOVE_FALL))
             return true;
-    if (cont->actionState & BITC(ACTION_CROUCH))
+    if (cmd->actionState & BITC(ACTION_CROUCH))
         if (Sol_Move3_SetState(world, id, MOVE_CROUCH))
             return true;
-    if (glms_vec3_norm(cont->wishdir) == 0)
+    if (glms_vec3_norm(cmd->wishdir) == 0)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     return false;
@@ -23,13 +23,13 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 void Sol_Movement_Walk_Update(World *world, int id, float dt)
 {
     ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
-    if (LeaveState(world, id, move, cont))
+    if (LeaveState(world, id, move, cmd))
         return;
 
-    float x                                   = cont->wishdir.x;
-    float z                                   = cont->wishdir.z;
+    float x                                   = cmd->wishdir.x;
+    float z                                   = cmd->wishdir.z;
     vec3s rot                                 = Sol_RotFromQuat(xform->rot);
     move->stateData[MOVE_WALK].as.walk.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
 }
@@ -37,8 +37,8 @@ void Sol_Movement_Walk_Update(World *world, int id, float dt)
 void Sol_Movement_Walk_Enter(World *world, int id)
 {
     ScMove3   *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont  = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, cont))
+    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 }
 

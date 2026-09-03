@@ -2,18 +2,18 @@
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScController *controller)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     if (move->groundtime > 0)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
-    if (controller->actionState & BITC(ACTION_CROUCH))
+    if (cmd->actionState & BITC(ACTION_CROUCH))
         if (Sol_Move3_SetState(world, id, MOVE_SLIDE))
             return true;
-    if (controller->actionState & BITC(ACTION_JUMP))
+    if (cmd->actionState & BITC(ACTION_JUMP))
         if (Sol_Move3_SetState(world, id, MOVE_WALLRUN))
             return true;
-    if (controller->actionState & BITC(ACTION_JUMP))
+    if (cmd->actionState & BITC(ACTION_JUMP))
         if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
     return false;
@@ -22,16 +22,16 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *contro
 void Sol_Movement_Fall_Update(World *world, int id, float dt)
 {
     ScMove3      *move       = Sol_Comp_Get(world, id, ScMove3);
-    ScController *controller = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, controller))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 }
 
 void Sol_Movement_Fall_Enter(World *world, int id)
 {
     ScMove3      *move       = Sol_Comp_Get(world, id, ScMove3);
-    ScController *controller = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, controller))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 }
 

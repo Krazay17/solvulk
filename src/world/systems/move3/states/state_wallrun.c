@@ -31,7 +31,7 @@ static bool CheckEnergy(World *world, int id)
 static bool CheckWall(World *world, int id, SolRayResult *result, float addRadius)
 {
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
-    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
@@ -49,7 +49,7 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
                 .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true};
             bool  hit = Sol_Raycast1(world, ray, result);
             float dot = glms_vec3_dot(result->norm, WORLD_UP);
-            // float lookDot = vecDot(cont->lookdir, result->norm);
+            // float lookDot = vecDot(cmd->lookdir, result->norm);
             if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
             {
                 MoveStateData *data         = &move->stateData[MOVE_WALLRUN];
@@ -63,12 +63,12 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
     return false;
 }
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    if (cont->actionState & BITC(ACTION_CROUCH) || move->groundtime > COYOTE_TIMER)
+    if (cmd->actionState & BITC(ACTION_CROUCH) || move->groundtime > COYOTE_TIMER)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
-    if (!(cont->actionState & BITC(ACTION_JUMP)))
+    if (!(cmd->actionState & BITC(ACTION_JUMP)))
         if (Sol_Move3_SetState(world, id, MOVE_WALLJUMP))
             return true;
     if (Sol_Move3_SetState(world, id, MOVE_MANTLE))
@@ -76,7 +76,7 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
     return false;
 }
 
-void RunVel(World *world, int id, float boost, ScMove3 *move, ScController *cont)
+void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
 
@@ -88,8 +88,8 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScController *cont
 
     vec3s project;
     vec3s targetVel;
-    vec3s lookdir      = cont->lookdir;
-    vec3s wishdir      = cont->wishdir;
+    vec3s lookdir      = cmd->lookdir;
+    vec3s wishdir      = cmd->wishdir;
     lookdir.y          = 0;
     lookdir            = vecNorm(lookdir);
     float lookIntoWall = -glms_vec3_dot(lookdir, data->as.wallrun.wallNormal);
@@ -116,11 +116,11 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScController *cont
 void Wallrun_State_Update(World *world, int id, float dt)
 {
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
-    if (LeaveState(world, id, move, cont))
+    if (LeaveState(world, id, move, cmd))
         return;
 
     data->accum += dt;
@@ -137,26 +137,26 @@ void Wallrun_State_Update(World *world, int id, float dt)
         return;
     }
 
-    RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT), move, cont);
+    RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT), move, cmd);
 
     vec3s dirToWall            = glms_vec3_sub(xform->pos, move->lastTouch);
     dirToWall                  = glms_vec3_normalize(dirToWall);
-    data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, cont->yaw);
+    data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, cmd->yaw);
 }
 
 void Wallrun_State_Enter(World *world, int id)
 {
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont  = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
-    if (LeaveState(world, id, move, cont))
+    if (LeaveState(world, id, move, cmd))
         return;
     if (body->vel.y < 0.0f)
         body->vel.y = 0.0f;
-    RunVel(world, id, BOOST_AMOUNT, move, cont);
+    RunVel(world, id, BOOST_AMOUNT, move, cmd);
     data->accum = 0;
 }
 
@@ -175,8 +175,8 @@ bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
 bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
     ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
-    if (cont->actionState & BITC(ACTION_CROUCH))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (cmd->actionState & BITC(ACTION_CROUCH))
         return false;
     SolRayResult result   = {0};
     bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);

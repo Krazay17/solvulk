@@ -2,11 +2,11 @@
 #include "world.h"
 #include "sol_math.h"
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     if (Sol_Move3_SetState(world, id, MOVE_SLIDE))
         return true;
-    if (!(cont->actionState & BITC(ACTION_CROUCH)))
+    if (!(cmd->actionState & BITC(ACTION_CROUCH)))
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     if (move->wantsJump)
@@ -21,17 +21,17 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
 void Crouch_State_Update(World *world, int id, float dt)
 {
     ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, cont))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 
     MoveStateData *data  = &move->stateData[move->state];
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
 
-    if (cont)
+    if (cmd)
     {
-        float x                = cont->wishdir.x;
-        float z                = cont->wishdir.z;
+        float x                = cmd->wishdir.x;
+        float z                = cmd->wishdir.z;
         vec3s rot              = Sol_RotFromQuat(xform->rot);
         data->as.crouch.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
     }
@@ -40,8 +40,8 @@ void Crouch_State_Update(World *world, int id, float dt)
 void Crouch_State_Enter(World *world, int id)
 {
     ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, cont))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 
     MoveStateData *data = &move->stateData[move->state];
@@ -63,9 +63,8 @@ bool Crouch_State_CanExit(World *world, int id, u32 nextState)
     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
     if (nextState == MOVE_SLIDE)
         return true;
-    bool hit = Sol_Raycast1D(
-        world, (SolRay){.start = xform->pos, .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id}, NULL,
-        0.2f);
+    bool hit = Sol_Raycast1(
+        world, (SolRay){.start = xform->pos, .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id}, NULL);
 
     if (hit)
         return false;

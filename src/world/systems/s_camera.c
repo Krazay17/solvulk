@@ -18,10 +18,10 @@ void Camera_Tick(World *world, double dt)
         head.y += body3->dims.y * 0.5f;
         vec3s lookdir = (vec3s){0, 0, 1.0f};
 
-        if (Sol_Comp_Has(world, id, ScController))
+        if (Sol_Comp_Has(world, id, ScCmd))
         {
-            ScController *cont = Sol_Comp_Get(world, id, ScController);
-            lookdir            = cont->lookdir;
+            ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+            lookdir    = cmd->lookdir;
         }
 
         vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);

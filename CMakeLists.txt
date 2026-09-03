@@ -3,7 +3,6 @@ project(solvulk C)
 # --- Options & Global Settings ---
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(HOT_RELOAD "Build for hot reload" OFF)
-option(SOL_DEV_MODE "Build dev mode" ON)
 
 set(BUILD_APP2 OFF CACHE BOOL "" FORCE)
 
@@ -12,29 +11,44 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(ENET_TEST OFF CACHE BOOL "" FORCE)
-set(CGLM_SHARED OFF CACHE BOOL "" FORCE)
-set(CGLM_STATIC ON CACHE BOOL "" FORCE)
+set(EXTERN_DIR "${CMAKE_SOURCE_DIR}/extern")
+
+# --- Include Extern Subdirectory ---
+#add_subdirectory(extern)
+
 # --- Dependencies ---
 find_package(Vulkan REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
-add_subdirectory(extern/cglm)
-add_subdirectory(extern/enet)
-# --- WebP Lib ---
-file(GLOB_RECURSE WEBP_SOURCES
-    "extern/webp/src/dec/*.c"
-    "extern/webp/src/dsp/*.c"
-    "extern/webp/src/utils/*.c"
+
+add_library(enet STATIC IMPORTED)
+set_target_properties(enet PROPERTIES
+    IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/enet.lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/enet/include"
 )
-add_library(webp_lib STATIC ${WEBP_SOURCES})
-target_include_directories(webp_lib PRIVATE "${CMAKE_SOURCE_DIR}/extern/webp")
+if(WIN32)
+    # ENet relies on Winsock2 and Windows Multimedia timer APIs
+    set_target_properties(enet PROPERTIES
+        INTERFACE_LINK_LIBRARIES "ws2_32;winmm"
+    )
+endif()
+
+add_library(webp_lib STATIC IMPORTED)
+set_target_properties(webp_lib PROPERTIES
+    IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/webp_lib.lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/webp"
+)
+add_library(cglm_headers INTERFACE)
+target_include_directories(cglm_headers INTERFACE "${EXTERN_DIR}/cglm/include")
+
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
+
 # --- Core Sources ---
-file(GLOB_RECURSE SOURCES "src/*.c")
+file(GLOB_RECURSE SOURCES CMAKE_CONFIGURE_DEPENDS "src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
 target_sources(solvulk PRIVATE ${SOURCES})
+
 # Platform Logic
 if(WIN32)
     file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
@@ -49,7 +63,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c11 /W2)
+    target_compile_options(solvulk PRIVATE /std:c17 /W2)
     #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -57,49 +71,35 @@ if(BUILD_SHARED_LIBS)
     target_compile_definitions(solvulk PUBLIC SOL_VULK_SHARED PRIVATE SOL_BUILD_DLL)
 endif()
 
-if(SOL_DEV_MODE)
-    target_compile_definitions(solvulk PUBLIC SOL_DEV_MODE)
-    target_include_directories(solvulk PUBLIC "${CMAKE_SOURCE_DIR}/src/_internal")
-endif()
 
-target_include_directories(solvulk
-    PUBLIC
-        "${CMAKE_SOURCE_DIR}/include"
-        "${CMAKE_SOURCE_DIR}/extern"
-    PRIVATE
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/core"
-        "${CMAKE_SOURCE_DIR}/src/world"
-        "${CMAKE_SOURCE_DIR}/include/sol"
-        ${Vulkan_INCLUDE_DIRS}
+target_include_directories(solvulk 
+PUBLIC 
+    ${Vulkan_INCLUDE_DIRS}
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/include/sol"
+    "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/src/core"
+    "${CMAKE_SOURCE_DIR}/src/game"
+    "${CMAKE_SOURCE_DIR}/src/world"
+    "${CMAKE_SOURCE_DIR}/src/world/systems"
+    "${CMAKE_SOURCE_DIR}/include/sol"
+    "${EXTERN_DIR}"
+    "${EXTERN_DIR}/cglm/include"
+    "${EXTERN_DIR}/enet/include"
+    "${EXTERN_DIR}/webp/src"
 )
-
-if(SOL_DEV_MODE)
-    # This pushes the internal headers to anything linking against the engine
-    target_compile_definitions(solvulk PUBLIC SOL_DEV_MODE)
-    target_include_directories(solvulk 
-    PUBLIC 
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src/core"
-        "${CMAKE_SOURCE_DIR}/src/game"
-        "${CMAKE_SOURCE_DIR}/src/world"
-        "${CMAKE_SOURCE_DIR}/src/world/systems"
-        "${CMAKE_SOURCE_DIR}/include/sol"
-    )
-endif()
 
 target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
         OpenMP::OpenMP_C
-        enet::enet_static
-    PRIVATE
+        enet
         webp_lib
         cglm_headers
         ${PLATFORM_LIBS}
 )
 
-set_target_properties(solvulk PROPERTIES C_STANDARD 11 OUTPUT_NAME "solvulk")
+set_target_properties(solvulk PROPERTIES C_STANDARD 17 OUTPUT_NAME "solvulk")
 
 #--------------------------------------
 # BUILD APP

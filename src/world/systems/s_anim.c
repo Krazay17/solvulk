@@ -2,6 +2,8 @@
 #include "model.h"
 #include "sol_core.h"
 
+#include <omp.h>
+
 const int strafe_map[STRAFE_COUNT] = {
     [STRAFE_FWD] = ANIM_WALK_FWD,       [STRAFE_FWD_LEFT] = ANIM_WALK_FWD,  [STRAFE_LEFT] = ANIM_WALK_LEFT,
     [STRAFE_BWD_LEFT] = ANIM_WALK_LEFT, [STRAFE_BWD] = ANIM_WALK_BWD,       [STRAFE_BWD_RIGHT] = ANIM_WALK_RIGHT,
@@ -135,8 +137,10 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
 static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 {
     float fdt = (float)dt;
+    int   i;
 
-    for (int i = 0; i < set->cnt; i++)
+#pragma omp parallel for schedule(dynamic)
+    for (i = 0; i < set->cnt; i++)
     {
         int     id   = set->dense[i];
         ScAnim *anim = &set->data[i];
@@ -222,9 +226,11 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 void Anim_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
+    int   i;
 
     SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);
-    for (int i = 0; i < set->cnt; i++)
+#pragma omp parallel for schedule(dynamic)
+    for (i = 0; i < set->cnt; i++)
     {
         int     id   = set->dense[i];
         ScAnim *anim = &set->data[i];
@@ -327,8 +333,8 @@ void Anim_Tick(World *world, double dt)
             case MOVE_MANTLE: {
                 move_anim.playKind = ANIMPLAYKIND_NOLOOP;
                 move_anim.anim     = data->as.mantle.doRoll ? ANIM_MANTLE_ROLL : ANIM_MANTLE;
-                move_anim.speed = 1.4f;
-                //Sol_Anim_SetSpeed(world, id, move_anim.layerId, 1.75f - data->as.mantle.dist);
+                move_anim.speed    = 1.4f;
+                // Sol_Anim_SetSpeed(world, id, move_anim.layerId, 1.75f - data->as.mantle.dist);
             }
             break;
             case MOVE_FLY: {

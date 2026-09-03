@@ -8,7 +8,7 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUserSession     user_session;
+SolUser            sol_user;
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -169,17 +169,16 @@ void Tooltip_Update(double dt, SolUserHit user_hit)
 
 void Entity_Actions()
 {
-    World *world = Sol_GetWorldByIdx(user_session.user_world);
-    int    id    = user_session.user_entid;
+    World *world = Sol_GetWorldByIdx(sol_user.user_world);
+    int    id    = sol_user.user_entid;
     if (!world || id < 0)
         return;
-    ScController *cont   = Sol_Comp_Get(world, id, ScController);
-    ScCamera     *camera = Sol_Comp_Get(world, id, ScCamera);
-    SolMouse      mouse  = Sol_Input_GetMouse();
+    ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
+    SolMouse  mouse  = Sol_Input_GetMouse();
 
-    cont->actionState = 0;
-    float *yaw        = &cont->yaw;
-    float *pitch      = &cont->pitch;
+    sol_user.actions = 0;
+    float *yaw       = &sol_user.yaw;
+    float *pitch     = &sol_user.pitch;
 
     if (mouse.locked)
     {
@@ -198,28 +197,28 @@ void Entity_Actions()
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (Sol_Input_KeyDown(i))
-            cont->actionState |= BITC(user_data.key_binds[i]);
+            sol_user.actions |= BITC(user_data.key_binds[i]);
     }
 
-    cont->isStrafing = mouse.locked;
+    sol_user.isStrafing = mouse.locked;
 
     if (Sol_Comp_Has(world, id, ScBuilder))
     {
         if (mouse.buttons[SOL_MOUSE_LEFT])
-            cont->actionState |= BITC(ACTION_BUILD);
+            sol_user.actions |= BITC(ACTION_BUILD);
     }
     else
     {
         if (mouse.togglelocked)
         {
             if (mouse.buttons[SOL_MOUSE_LEFT])
-                cont->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_LEFT]);
+                sol_user.actions |= BITC(user_data.mouse_binds[SOL_MOUSE_LEFT]);
 
             if (mouse.buttons[SOL_MOUSE_RIGHT])
-                cont->actionState |= BITC(user_data.mouse_binds[SOL_MOUSE_RIGHT]);
+                sol_user.actions |= BITC(user_data.mouse_binds[SOL_MOUSE_RIGHT]);
         }
         else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
-            cont->actionState |= BITC(ACTION_FWD);
+            sol_user.actions |= BITC(ACTION_FWD);
 
         if (mouse.wheelV)
         {
@@ -229,7 +228,7 @@ void Entity_Actions()
     }
     if (camera)
     {
-        Sol_Controller_SetParallaxAim(world, id, camera->pos, camera->dir, 60.0f, 0.5f);
+        Sol_Player_SetParallaxAim(world, id, camera->pos, camera->dir, 60.0f, 0.5f);
     }
 
     // DEBUG FLY
@@ -237,8 +236,8 @@ void Entity_Actions()
     {
         if (Sol_Comp_Has(world, id, ScXform))
         {
-            ScXform *xform  = Sol_Comp_Get(world, id, ScXform);
-            xform->pos      = vecAdd(xform->pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(cont->yaw, cont->pitch)), 0.1f));
+            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+            xform->pos = vecAdd(xform->pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
             xform->last_pos = xform->pos;
             xform->draw_pos = xform->pos;
             if (Sol_Comp_Has(world, id, ScBody3))
@@ -253,7 +252,6 @@ void Entity_Actions()
         ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         bool     hit   = Sol_Raycast1D(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f},
                                        &(SolRayResult){0}, 5.0f);
-        sollog(hit);
     }
 }
 
@@ -298,8 +296,8 @@ void Sol_User_Tick(double dt)
 
 void Sol_User_PostTick(double dt)
 {
-    World *world = Sol_GetWorldByIdx(user_session.user_world);
-    int    id    = user_session.user_entid;
+    World *world = Sol_GetWorldByIdx(sol_user.user_world);
+    int    id    = sol_user.user_entid;
     if (!world || id < 0)
         return;
     ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);

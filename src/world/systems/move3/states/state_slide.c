@@ -5,15 +5,15 @@
 
 #define BOOST_CD 2.5f
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScController *cont)
+static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     if (move->groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
-    if (!(cont->actionState & BITC(ACTION_CROUCH)))
+    if (!(cmd->actionState & BITC(ACTION_CROUCH)))
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
-    if (cont->actionState & BITC(ACTION_JUMP))
+    if (cmd->actionState & BITC(ACTION_JUMP))
         if (Sol_Move3_SetState(world, id, MOVE_JUMP))
             return true;
     return false;
@@ -24,8 +24,8 @@ void Slide_State_Update(World *world, int id, float dt)
     float fdt = (float)dt;
 
     ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, cont))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 
     ScXform       *xform  = Sol_Comp_Get(world, id, ScXform);
@@ -47,8 +47,8 @@ void Slide_State_Update(World *world, int id, float dt)
 void Slide_State_Enter(World *world, int id)
 {
     ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController *cont = Sol_Comp_Get(world, id, ScController);
-    if (LeaveState(world, id, move, cont))
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (LeaveState(world, id, move, cmd))
         return;
 
     ScBody3       *body = Sol_Comp_Get(world, id, ScBody3);
@@ -68,7 +68,7 @@ void Slide_State_Enter(World *world, int id)
 void Slide_State_Exit(World *world, int id)
 {
     ScMove3       *move = Sol_Comp_Get(world, id, ScMove3);
-    ScController  *cont = Sol_Comp_Get(world, id, ScController);
+    ScCmd  *cmd = Sol_Comp_Get(world, id, ScCmd);
     MoveStateData *data = &move->stateData[MOVE_SLIDE];
     move->targetHeight  = move->baseHeight;
 }

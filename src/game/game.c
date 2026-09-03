@@ -9,11 +9,19 @@
 #include "game.h"
 #include "game/prefabs.h"
 
-static int dude;
+static void PressTest(World *world, double dt, int id, void *data)
+{
+    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+    if (body)
+        body->vel.y += 50.0f;
+}
 
 static void Debug(World *world, double dt)
 {
-    World              *game_world = solState.worlds[1];
+    World *game_world = Sol_User_GetGameWorld();
+    if (!game_world)
+        return;
+
     SparseSet_ScPlayer *player_set = Sol_Comp_Set(game_world, ScPlayer);
     for (int i = 0; i < player_set->cnt; i++)
     {
@@ -23,9 +31,9 @@ static void Debug(World *world, double dt)
     }
 }
 
-static void Healthbar_Interface(World *w, double dt, int id)
+static void Healthbar_Hook(World *w, double dt, int id, void *data)
 {
-    World   *game_world = Sol_GetWorldByIdx(sol_user.game_world);
+    World   *game_world = Sol_User_GetGameWorld();
     ScView2 *view2      = Sol_Comp_Get(w, id, ScView2);
     if (!game_world || !view2)
         return;
@@ -43,74 +51,103 @@ static void Healthbar_Interface(World *w, double dt, int id)
         totalHealth += combat->health;
         totalMaxHealth += combat->maxHealth;
     }
-    totalHealth /= (float)player_set->cnt;
-    totalMaxHealth /= (float)player_set->cnt;
-    view2->views[0].targetFill = totalHealth / totalMaxHealth;
+    if (totalMaxHealth > 0.0f)
+        view2->views[0].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);
+    else
+        view2->views[0].targetFill = 0.0f;
 }
 
 void Create_Sol_Game()
 {
-    World *menu         = World_Create();
-    sol_user.menu_world = menu->index;
-    Sol_Sys_Add(menu, WORLDSYS_HOOK);
-    Sol_Sys_Add(menu, WORLDSYS_VIEW2);
-    Sol_Prefab_Crosshair(menu);
+    Create_Menu();
+    Create_Hud();
+    Create_Game();
+}
 
-    int healthbar = Sol_Create_Ent(menu);
-    Sol_Xform_Add(menu, healthbar, (vec3s){400, 400, 0});
-    ScHook *interf      = Sol_Comp_Add(menu, healthbar, ScHook);
-    interf->update           = Healthbar_Interface;
-    ScView2 *healthbarView2  = Sol_Comp_Add(menu, healthbar, ScView2);
-    healthbarView2->count    = 1;
-    healthbarView2->views[0] = (View2){
-        .kind       = VIEW2DKIND_RECT,
-        .dims       = {100.0f, 100.0f},
-        .color      = {1, 0, 0, 1},
-        .scale      = 1.0f,
-        .fill       = 1.0f,
-        .targetFill = 1.0f,
-        .hoverColor = {1, 1, 1, 1},
-    };
-
+void Create_Menu()
+{
     World *world        = World_Create();
-    sol_user.game_world = world->index;
-    Sol_Sys_Add(world, WORLDSYS_PLAYER);
-    Sol_Sys_Add(world, WORLDSYS_MOVE3);
-    Sol_Sys_Add(world, WORLDSYS_PHYSX);
-    Sol_Sys_Add(world, WORLDSYS_FACING);
-    Sol_Sys_Add(world, WORLDSYS_CAMERA);
-    Sol_Sys_Add(world, WORLDSYS_ANIM);
-    Sol_Sys_Add(world, WORLDSYS_MODEL);
+    sol_user.menu_world = world->index;
+    Sol_Sys_Add(world, WORLDSYS_BODY2);
+    Sol_Sys_Add(world, WORLDSYS_HOOK);
     Sol_Sys_Add(world, WORLDSYS_VIEW2);
-    Sol_Sys_Add(world, WORLDSYS_DEBUG);
+
+    {
+        int id = Sol_Create_Ent(world);
+        Sol_Xform_Add(world, id, (vec3s){400, 400, 0});
+        ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
+        hook->update  = Healthbar_Hook;
+        ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
+        *body         = (ScBody2){
+            .shape       = SHAPE2_REC,
+            .restitution = 1.0f,
+            .dims        = {100.0f, 100.0f, 0},
+            .gravity     = {0, 98.1f, 0},
+        };
+        ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
+        view->count    = 1;
+        view->views[0] = (View2){
+            .kind       = VIEW2DKIND_RECT,
+            .dims       = {100.0f, 100.0f},
+            .color      = {1, 0, 0, 1},
+            .scale      = 1.0f,
+            .fill       = 1.0f,
+            .targetFill = 1.0f,
+            .hoverColor = {1, 1, 1, 1},
+        };
+    }
+}
+
+void Create_Hud()
+{
+    World *world       = World_Create();
+    sol_user.hud_world = world->index;
+    Sol_Sys_Add(world, WORLDSYS_BODY2);
+    Sol_Sys_Add(world, WORLDSYS_HOOK);
+    Sol_Sys_Add(world, WORLDSYS_VIEW2);
+
+    Sol_Prefab_Crosshair(world);
+}
+
+void Create_Game()
+{
+    World *world        = World_Create_AllSys();
+    sol_user.game_world = world->index;
     WAddPosttick(world) = Debug;
 
-    dude = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
-    Sol_Debug_Add("Player Ent", dude);
-    Sol_Comp_Add(world, dude, ScCmd);
-    Sol_Comp_Add(world, dude, ScPlayer);
-    Sol_Comp_Add(world, dude, ScCombat)->maxHealth = 100.0f;
-    ScCamera *camera                               = Sol_Comp_Add(world, dude, ScCamera);
-    camera->fov                                    = 80.0f;
-    camera->up.y                                   = 1.0f;
-    camera->lerpspeed                              = 10.0f;
-    camera->desired_offset                         = 1.0f;
-    camera->desired_distance                       = 2.0f;
-    sol_user.view_ent                              = dude;
+    {
+        int id = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
+        Sol_Debug_Add("Player Ent", id);
+        Sol_Comp_Add(world, id, ScCmd);
+        Sol_Comp_Add(world, id, ScPlayer);
+        Sol_Comp_Add(world, id, ScCombat)->maxHealth = 100.0f;
+        ScCamera *camera                             = Sol_Comp_Add(world, id, ScCamera);
+        camera->fov                                  = 80.0f;
+        camera->up.y                                 = 1.0f;
+        camera->lerpspeed                            = 10.0f;
+        camera->desired_offset                       = 1.0f;
+        camera->desired_distance                     = 2.0f;
+        sol_user.view_ent                            = id;
+    }
 
-    int level1 = Sol_Create_Ent(world);
-    Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
-    ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
-    levelModel->kind    = MODELKIND_WORLD10;
-    ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
-    stage->isDirty      = true;
+    {
+        int level1 = Sol_Create_Ent(world);
+        Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
+        ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
+        levelModel->kind    = MODELKIND_WORLD10;
+        ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
+        stage->isDirty      = true;
+    }
 
-    while (world->entCount < 100)
+    while (world->entCount < 10)
     {
         int id = Sol_Create_Ent(world);
         Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
-        Sol_Comp_Add(world, id, ScCmd);
-        Sol_Comp_Add(world, id, ScPlayer);
+        // Sol_Comp_Add(world, id, ScCmd);
+        // Sol_Comp_Add(world, id, ScPlayer);
+        ScInteract *interact                         = Sol_Comp_Add(world, id, ScInteract);
+        interact->range                              = 5.0f;
+        Sol_Comp_Add(world, id, ScHook)->pressed     = PressTest;
         Sol_Comp_Add(world, id, ScCombat)->maxHealth = 100.0f;
         Sol_Comp_Add(world, id, ScMove3);
         ScModel *model = Sol_Comp_Add(world, id, ScModel);

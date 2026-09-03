@@ -70,9 +70,10 @@ typedef struct ScBody3
 typedef struct ScBody2
 {
     Shape2 shape;
-    vec2s  vel, dims, grav, grabPos;
-    u32    group, zindex;
-    u32    overlap_group;
+    vec3s  vel, dims, gravity, force, impulse;
+    u32    mask;
+    bool   collide_window;
+    float  restitution;
 } ScBody2;
 
 typedef struct ScCamera
@@ -89,19 +90,14 @@ typedef struct ScCamera
 
 typedef struct ScInteract
 {
+    InteractState state;
     double        hover_start_time;
     double        unhover_start_time;
     double        press_start_time;
-    InteractState state;
     double        pressedAccum;
-
-    SolCallback onClick;
-    SolCallback onHold;
-
-    vec3s offset, targetPos;
-
-    float range;
+    float         range;
 } ScInteract;
+
 typedef struct
 {
     double lastEntered, lastExited;
@@ -152,6 +148,20 @@ typedef struct ScMove3
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
 } ScMove3;
+
+typedef struct ScMove2
+{
+    MovementKind kind;
+    MoveState    state;
+
+    float baseHeight, targetHeight;
+    float speedMod, frictionMod, gravityMod, knockDur;
+
+    float wallDot, groundDot;
+    float airtime, groundtime;
+
+    bool wantsJump, jumpPressedLastFrame;
+} ScMove2;
 
 typedef struct ScModel
 {
@@ -451,7 +461,7 @@ typedef struct ScHook
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScXform, HAS_ScXform)                                                                                            \
-    X(ScHook, HAS_ScHook)                                                                                    \
+    X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \
@@ -464,6 +474,7 @@ typedef struct ScHook
     X(ScCamera, HAS_ScCamera)                                                                                          \
     X(ScInteract, HAS_ScInteract)                                                                                      \
     X(ScMove3, HAS_ScMove3)                                                                                            \
+    X(ScMove2, HAS_ScMove2)                                                                                            \
     X(ScAbility, HAS_ScAbility)                                                                                        \
     X(ScBuff, HAS_ScBuff)                                                                                              \
     X(ScTimer, HAS_ScTimer)                                                                                            \

@@ -14,15 +14,13 @@ static SolResource user_settings_file;
 static const SolActions key_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_Q] = ACTION_ABILITY1, [SOL_KEY_E] = ACTION_ABILITY2,
 
-    [SOL_KEY_1] = ACTION_ABILITY3, [SOL_KEY_2] = ACTION_ABILITY4,
-    [SOL_KEY_3] = ACTION_ABILITY5, [SOL_KEY_4] = ACTION_ABILITY6,
+    [SOL_KEY_1] = ACTION_ABILITY3, [SOL_KEY_2] = ACTION_ABILITY4, [SOL_KEY_3] = ACTION_ABILITY5,
+    [SOL_KEY_4] = ACTION_ABILITY6,
 
-    [SOL_KEY_5] = ACTION_ABILITY7, [SOL_KEY_6] = ACTION_ABILITY8,
-    [SOL_KEY_7] = ACTION_ABILITY9, [SOL_KEY_W] = ACTION_FWD,
-    [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
-    [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = 0,
-    [SOL_KEY_SPACE] = ACTION_JUMP, [SOL_KEY_ESCAPE] = 0,
-    [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
+    [SOL_KEY_5] = ACTION_ABILITY7, [SOL_KEY_6] = ACTION_ABILITY8, [SOL_KEY_7] = ACTION_ABILITY9,
+    [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
+    [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = ACTION_INTERACT, [SOL_KEY_SPACE] = ACTION_JUMP,
+    [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
 };
 static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
     [SOL_MOUSE_LEFT]  = ACTION_ABILITY1,
@@ -197,7 +195,11 @@ void Entity_Actions()
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (Sol_Input_KeyDown(i))
-            sol_user.actions |= BITC(user_data.key_binds[i]);
+        {
+            SolActions action = user_data.key_binds[i];
+            if (action != ACTION_NONE)
+                sol_user.actions |= BITC(action);
+        }
     }
 
     sol_user.isStrafing = mouse.locked;
@@ -232,7 +234,7 @@ void Entity_Actions()
     }
 
     // DEBUG FLY
-    if (Sol_Input_KeyDown(SOL_KEY_F))
+    if (Sol_Input_KeyDown(SOL_KEY_G))
     {
         if (Sol_Comp_Has(world, id, ScXform))
         {

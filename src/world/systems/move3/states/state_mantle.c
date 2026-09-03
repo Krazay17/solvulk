@@ -11,15 +11,15 @@
 #include "sol_math.h"
 
 #define RAY_COUNT 12
-#define MANTLE_TIME 0.7f
-#define MANTLE_SPEED 6.5f
+#define MANTLE_TIME 0.5f
+#define MANTLE_SPEED 5.0f
 
 static bool CheckWall(World *world, int id)
 {
-    ScMove3      *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
-    ScBody3      *body  = Sol_Comp_Get(world, id, ScBody3);
-    ScXform      *xform = Sol_Comp_Get(world, id, ScXform);
+    ScMove3 *move  = Sol_Comp_Get(world, id, ScMove3);
+    ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
+    ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
+    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
 
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
     vec3s          basePos = vecAdd(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
@@ -75,7 +75,7 @@ static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 void Mantle_State_Update(World *world, int id, float dt)
 {
     ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
+    ScCmd         *cmd   = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_MANTLE];
@@ -99,7 +99,7 @@ void Mantle_State_Update(World *world, int id, float dt)
         vec3s dir            = vecSub(targetPos, pos);
         float dist           = glms_vec3_norm(dir);
         data->as.mantle.dist = dist;
-        if (dist <= 0.15f && !CheckWall(world, id))
+        if (dist <= 0.2f && !CheckWall(world, id))
             data->as.mantle.closeEnough = 1;
         dir       = vecNorm(dir);
         body->vel = vecSca(dir, speed);
@@ -111,7 +111,7 @@ void Mantle_State_Enter(World *world, int id)
     ScMove3       *move         = Sol_Comp_Get(world, id, ScMove3);
     ScBody3       *body         = Sol_Comp_Get(world, id, ScBody3);
     ScXform       *xform        = Sol_Comp_Add(world, id, ScXform);
-    ScCmd  *cmd         = Sol_Comp_Get(world, id, ScCmd);
+    ScCmd         *cmd          = Sol_Comp_Get(world, id, ScCmd);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
@@ -124,8 +124,8 @@ void Mantle_State_Exit(World *world, int id)
 
 bool Mantle_State_CanExit(World *world, int id, u32 nextState)
 {
-    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
+    ScCmd   *cmd  = Sol_Comp_Get(world, id, ScCmd);
     return LeaveState(world, id, move, cmd);
 }
 

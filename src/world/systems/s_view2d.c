@@ -101,7 +101,7 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos)
             view->hoverAnim = fminf(view->hoverAnim + fdt * 12.0f, 1.0f);
         else
             view->hoverAnim = fmaxf(view->hoverAnim - fdt * 8.0f, 0.0f);
-        if (interact->state & INTERACT_CLICKED)
+        if (interact->state & INTERACT_PRESSED)
             view->clickAnim = 1.0f;
         view->clickAnim = fmaxf(view->clickAnim - fdt * 5.0f, 0.0f);
 

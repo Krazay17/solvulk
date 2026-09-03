@@ -1,4 +1,4 @@
-#include "s_physx.h"
+#include "s_body3.h"
 #include "model.h"
 #include "sol_math.h"
 #include "world.h"
@@ -19,7 +19,8 @@ const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
     [SHAPE3_CAP] = Collide_Capsule_Tri,
 };
 
-static SolProfiler prof1 = {.name = "Tables"};
+static SolProfiler prof1 = {.name = "DynamicTables"};
+static SolProfiler prof2 = {.name = "StaticTables"};
 
 void Build_Tables(World *world, SysPhysx *sys, float fdt)
 {

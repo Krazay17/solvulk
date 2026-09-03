@@ -5,7 +5,7 @@
  * Created: 2026-08-28
  *
  */
-#include "s_physx.h"
+#include "s_body3.h"
 #include "sol/types.h"
 #include "world.h"
 #include "model.h"
@@ -22,11 +22,11 @@ static SolProfiler prof2  = {.name = "Dynamic"};
 static SolProfiler prof3  = {.name = "Static"};
 const static float sub_dt = (float)SOL_TIMESTEP * (1.0f / (float)SOLVER_ITERATIONS);
 
-void Physx_Step(World *world, double dt)
+void Body3_Step(World *world, double dt)
 {
     float     fdt = (float)dt;
     int       i, j, k, l, m, iter;
-    SysPhysx *ws = world->systems[WORLDSYS_PHYSX];
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
 
     SparseSet_ScBody3 *set   = Sol_Comp_Set(world, ScBody3);
     int                count = set->cnt;
@@ -38,7 +38,7 @@ void Physx_Step(World *world, double dt)
         if (!xform || body3->mass == 0.0f)
             continue;
 
-        body3->vel     = glms_vec3_scale(body3->vel, 0.99f);
+        body3->vel     = glms_vec3_scale(body3->vel, 0.999f);
         vec3s accel    = body3->vel.y < TERMINAL_VELOCITY ? GLMS_VEC3_ZERO : body3->gravity;
         accel          = glms_vec3_add(accel, body3->force);
         accel          = glms_vec3_add(accel, body3->impulse);
@@ -131,7 +131,7 @@ void Physx_Step(World *world, double dt)
 void Physx_Init(World *world)
 {
     SysPhysx *ws                   = malloc(sizeof(SysPhysx));
-    world->systems[WORLDSYS_PHYSX] = ws;
+    world->systems[WORLDSYS_BODY3] = ws;
     SpatialGrid_Init(&ws->dynamic_group.spatial, DYNAMIC_CELL_SIZE);
     SpatialGrid_Init(&ws->static_group.spatial, STATIC_CELL_SIZE);
     solb_init(ws->dynamic_group.aabb_scratch, 16);
@@ -141,13 +141,13 @@ void Physx_Init(World *world)
 
 void Physx_Deinit(World *world)
 {
-    SysPhysx *ws = world->systems[WORLDSYS_PHYSX];
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
     if (ws)
     {
         SpatialGrid_Destroy(&ws->dynamic_group.spatial);
         SpatialGrid_Destroy(&ws->static_group.spatial);
         free(ws);
-        world->systems[WORLDSYS_PHYSX] = NULL;
+        world->systems[WORLDSYS_BODY3] = NULL;
     }
 }
 
@@ -212,7 +212,7 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
         return false; // degenerate direction
     ray.dir = glms_vec3_normalize(ray.dir);
 
-    SysPhysx *ws = world->systems[WORLDSYS_PHYSX];
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
     if (!ws)
         return false;
 
@@ -312,7 +312,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
         return 0;
     ray.dir = glms_vec3_normalize(ray.dir);
 
-    SysPhysx *ws   = world->systems[WORLDSYS_PHYSX];
+    SysPhysx *ws   = world->systems[WORLDSYS_BODY3];
     int       hits = 0;
 
     SpatialGrid *grids[2]    = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
@@ -532,7 +532,7 @@ int Sol_Physx_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
         return 0;
     ray.dir = glms_vec3_normalize(ray.dir);
 
-    SysPhysx *ws   = world->systems[WORLDSYS_PHYSX];
+    SysPhysx *ws   = world->systems[WORLDSYS_BODY3];
     int       hits = 0;
 
     vec3s rayEnd = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, ray.dist));

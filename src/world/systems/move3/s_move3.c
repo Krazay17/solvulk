@@ -13,9 +13,9 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
                 [MOVE_IDLE]     = {.speed = 0, .accell = 0, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_WALK]     = {.speed = 7.0f, .accell = 12.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_CROUCH]   = {.speed = 4.0f, .accell = 20.0f, .friction = 10.0f, .gravity = -13.0f},
-                [MOVE_FALL]     = {.speed = 6.0f, .accell = 2.0f, .friction = 0.1f, .gravity = -13.0f},
-                [MOVE_JUMP]     = {.speed = 6.0f, .accell = 3.0f, .friction = 0.1f, .gravity = -13.0f},
-                [MOVE_WALLJUMP] = {.speed = 6.0f, .accell = 2.0f, .friction = 0.5f, .gravity = -13.0f},
+                [MOVE_FALL]     = {.speed = 5.0f, .accell = 3.0f, .friction = 0.1f, .gravity = -13.0f},
+                [MOVE_JUMP]     = {.speed = 5.0f, .accell = 4.0f, .friction = 0.1f, .gravity = -13.0f},
+                [MOVE_WALLJUMP] = {.speed = 5.0f, .accell = 2.0f, .friction = 0.5f, .gravity = -13.0f},
                 [MOVE_WALLRUN]  = {.speed = 12.0f, .accell = 1.0f, .friction = 1.0f, .gravity = -2.0f},
                 [MOVE_MANTLE]   = {.speed = 6.0f, .accell = 1.0f, .friction = 0.0f, .gravity = 0.0f},
                 [MOVE_SLIDE]    = {.speed = 2.5f, .accell = 1.0f, .friction = 0.66f, .gravity = -13.0f},
@@ -46,14 +46,16 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
 void Move3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
-    int i;
+    int   i;
 
     SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);
 #pragma omp parallel for schedule(dynamic)
-    for ( i = 0; i < set->cnt; i++)
+    for (i = 0; i < set->cnt; i++)
     {
-        int      id    = set->dense[i];
-        ScMove3 *move  = &set->data[i];
+        int      id   = set->dense[i];
+        ScMove3 *move = &set->data[i];
+        if (!Sol_Comp_Has(world, id, ScCmd))
+            continue;
         ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
 

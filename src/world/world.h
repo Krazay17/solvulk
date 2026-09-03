@@ -21,11 +21,15 @@ typedef struct World World;
 typedef enum
 {
     WORLDSYS_PLAYER,
+    WORLDSYS_INTERACT,
+    
     WORLDSYS_MOVE3,
-    WORLDSYS_PHYSX,
-
+    WORLDSYS_MOVE2,
+    WORLDSYS_BODY3,
+    WORLDSYS_BODY2,
+    
     WORLDSYS_HOOK,
-
+    
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
@@ -282,23 +286,30 @@ void Model_Deinit(World *world);
 void Debug_Init(World *world);
 void Debug_Deinit(World *world);
 
-void Facing_Tick(World *world, double dt);
 void Player_Tick(World *world, double dt);
-void Debug_Tick(World *world, double dt);
-void Debug_Draw3(World *world, double dt);
-void Debug_Draw2(World *world, double dt);
+void Interact_Tick(World *world, double dt);
+
 void Move3_Step(World *world, double dt);
-void Physx_Step(World *world, double dt);
+void Move2_Step(World *world, double dt);
+void Body3_Step(World *world, double dt);
+void Body2_Step(World *world, double dt);
+
+void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
+void Facing_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
+
 void Model_Render(World *world, double dt);
 void View2_Draw(World *world, double dt);
 void View2_Healthbar(World *world, double dt);
 void View2_Abilitybar(World *world, double dt);
-void Hook_Tick(World *world, double dt);
+void Debug_Tick(World *world, double dt);
+void Debug_Draw3(World *world, double dt);
+void Debug_Draw2(World *world, double dt);
 
 // Api
 World *World_Create();
+World *World_Create_AllSys();
 int    Sol_Create_Ent(World *world);
 void   Sol_Sys_Add(World *world, WorldSystems system);
 void   Sol_Sys_Remove(World *world, WorldSystems system);

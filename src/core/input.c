@@ -7,13 +7,14 @@
 #define SOL_KEYCODE_SPACE 32
 #define SOL_KEYCODE_ESCAPE 27
 #define SOL_KEYCODE_SHIFT 16
+#define SOL_KEYCODE_LALT 18
 
 static int keyMap[256] = {
     [48] = SOL_KEY_0,     [49] = SOL_KEY_1,      [50] = SOL_KEY_2,     [51] = SOL_KEY_3,    [52] = SOL_KEY_4,
     [53] = SOL_KEY_5,     [54] = SOL_KEY_6,      [55] = SOL_KEY_7,     [56] = SOL_KEY_8,    [57] = SOL_KEY_9,
-    ['W'] = SOL_KEY_W,    ['A'] = SOL_KEY_A,     ['S'] = SOL_KEY_S,    ['D'] = SOL_KEY_D,   ['F'] = SOL_KEY_F,
+    ['W'] = SOL_KEY_W,    ['A'] = SOL_KEY_A,     ['S'] = SOL_KEY_S,    ['D'] = SOL_KEY_D,   [70] = SOL_KEY_F,
     [32] = SOL_KEY_SPACE, [27] = SOL_KEY_ESCAPE, [16] = SOL_KEY_SHIFT, [17] = SOL_KEY_CTRL, [18] = SOL_KEY_ALT,
-    [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,
+    [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,      [71] = SOL_KEY_G,
 };
 
 static bool         rawKeys[SOL_KEY_COUNT];
@@ -72,9 +73,7 @@ static void Input_Topmost(World **worlds, int worldCount)
     for (int i = worldCount - 1; i >= 0; i--)
     {
         World *world = worlds[i];
-
     }
-    
 }
 
 void Sol_Input_Update()

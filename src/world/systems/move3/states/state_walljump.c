@@ -2,9 +2,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-#define DASH_VEL 13.0f
-#define DASH_DURATION 0.45f
-#define DAMPING 4.0f
+#define DASH_VEL 12.0f
+#define DASH_DURATION 0.5f
+#define DAMPING 5.0f
 
 void Walljump_State_Update(World *world, int id, float dt)
 {
@@ -17,9 +17,9 @@ void Walljump_State_Update(World *world, int id, float dt)
         return;
     }
 
-    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
-    ScBody3      *body  = Sol_Comp_Get(world, id, ScBody3);
-    float         alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
+    ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
+    ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
+    float    alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
     vec3s vel = body->vel;
     vel       = Sol_Math_DampDir(vel, WORLD_UP, alpha, DAMPING, dt);
@@ -31,7 +31,7 @@ void Walljump_State_Enter(World *world, int id)
 {
     ScMove3       *move        = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
-    ScCmd  *cmd        = Sol_Comp_Get(world, id, ScCmd);
+    ScCmd         *cmd         = Sol_Comp_Get(world, id, ScCmd);
     ScBody3       *body        = Sol_Comp_Get(world, id, ScBody3);
 
     vec3s vel        = body->vel;

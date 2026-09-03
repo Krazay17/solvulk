@@ -382,16 +382,13 @@ typedef struct SolTri
 typedef enum
 {
     INTERACT_NONE,
-    INTERACT_TOGGLEABLE     = (1 << 1),
-    INTERACT_TOGGLED        = (1 << 2),
-    INTERACT_HOVERED        = (1 << 3),
-    INTERACT_HELD           = (1 << 4),
-    INTERACT_PRESSED        = (1 << 5),
-    INTERACT_MOUSEHOVERED   = (1 << 6),
-    INTERACT_MOUSEHELD      = (1 << 7),
-    INTERACT_MOUSEPRESSED   = (1 << 8),
-    INTERACT_MOUSEDRAGGABLE = (1 << 9),
-    INTERACT_MOUSEDRAGGING  = (1 << 10),
+    INTERACT_TOGGLEABLE = (1 << 1),
+    INTERACT_TOGGLED    = (1 << 2),
+    INTERACT_HOVERED    = (1 << 3),
+    INTERACT_HELD       = (1 << 4),
+    INTERACT_PRESSED    = (1 << 5),
+    INTERACT_RAGGABLE   = (1 << 6),
+    INTERACT_DRAGGING   = (1 << 7),
 } InteractState;
 
 typedef enum
@@ -581,6 +578,7 @@ typedef enum
     SOL_KEY_S,
     SOL_KEY_D,
     SOL_KEY_F,
+    SOL_KEY_G,
     SOL_KEY_Q,
     SOL_KEY_E,
     SOL_KEY_SPACE,

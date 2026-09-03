@@ -347,7 +347,7 @@ typedef enum
     SOL_MODEL_WORLD7,
     SOL_MODEL_WORLD8,
     SOL_MODEL_WORLD9,
-    SOL_MODEL_WORLD10,
+    MODELKIND_WORLD10,
     SOL_MODEL_COUNT,
 } ModelKind;
 
@@ -382,18 +382,22 @@ typedef struct SolTri
 typedef enum
 {
     INTERACT_NONE,
-    INTERACT_HOVERED    = (1 << 0),
-    INTERACT_PRESSED    = (1 << 1),
-    INTERACT_CLICKED    = (1 << 2),
-    INTERACT_TOGGLEABLE = (1 << 3),
-    INTERACT_TOGGLED    = (1 << 4),
-    INTERACT_DRAGGABLE  = (1 << 5),
-    INTERACT_DRAGGING   = (1 << 6),
+    INTERACT_TOGGLEABLE     = (1 << 1),
+    INTERACT_TOGGLED        = (1 << 2),
+    INTERACT_HOVERED        = (1 << 3),
+    INTERACT_HELD           = (1 << 4),
+    INTERACT_PRESSED        = (1 << 5),
+    INTERACT_MOUSEHOVERED   = (1 << 6),
+    INTERACT_MOUSEHELD      = (1 << 7),
+    INTERACT_MOUSEPRESSED   = (1 << 8),
+    INTERACT_MOUSEDRAGGABLE = (1 << 9),
+    INTERACT_MOUSEDRAGGING  = (1 << 10),
 } InteractState;
 
 typedef enum
 {
     SOL_TEXTURE_ICEFONT,
+    SOL_TEXTURE_CROSSHAIR,
     SOL_TEXTURE_FIREPARTICLE,
     SOL_TEXTURE_SHOCKPARTICLE,
     SOL_TEXTURE_CLOUDPARTICLE,
@@ -415,7 +419,6 @@ typedef enum
     SOL_TEXTURE_BEAM,
     SOL_TEXTURE_IMPACT,
     SOL_TEXTURE_LASER_CARD,
-    SOL_TEXTURE_CROSSHAIR,
     SOL_TEXTURE_FOGSTRIP,
     SOL_TEXTURE_SHIELD,
     SOL_TEXTURE_GRID,
@@ -483,7 +486,7 @@ typedef struct SolRay
     float dist;
     u16   mask;
     int   ignoreEnt;
-    bool debug;
+    bool  debug;
 } SolRay;
 
 typedef struct SolRayResult
@@ -552,6 +555,7 @@ typedef enum
     ACTION_RIGHT,
     ACTION_JUMP,
     ACTION_CROUCH,
+    ACTION_INTERACT,
     ACTION_ZOOMIN,
     ACTION_ZOOMOUT,
     ACTION_BUILD,

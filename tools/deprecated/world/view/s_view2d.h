@@ -4,13 +4,6 @@
 
 typedef struct World World;
 
-typedef enum
-{
-    VIEW2DKIND_RECT,
-    VIEW2DKIND_TEXT,
-    VIEW2DKIND_CIRCLE,
-    VIEW2DKIND_COUNT,
-} View2dKind;
 typedef struct
 {
     View2dKind kind;

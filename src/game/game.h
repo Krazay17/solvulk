@@ -1,10 +1,6 @@
 #pragma once
 
-#ifdef SOL_DEV_MODE
 #include "sol/sol.h"
-#else
-#include "sol/sol.h"
-#endif
 
 void Create_Sol_Game();
 

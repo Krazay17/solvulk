@@ -22,3 +22,4 @@ int Sol_Textures_Init();
 SolTexture *Sol_GetImage(u32 id);
 uint32_t    Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_extension);
 u32         Sol_Texture_RegisterUnormTexture(void *data, size_t size, const char *hint_extension);
+ SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id);

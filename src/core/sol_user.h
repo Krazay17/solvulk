@@ -5,8 +5,8 @@
 
 typedef struct SolUser
 {
-    int        user_world;
-    int        user_entid;
+    int        menu_world, game_world, hud_world;
+    int        view_ent;
     float      yaw, pitch;
     SolActions actions;
     bool       isStrafing;
@@ -26,10 +26,11 @@ typedef struct UserData
 extern UserData user_data;
 extern SolUser  sol_user;
 
-int  Sol_User_Init(void);
-void Sol_User_Tick(double dt);
-void Sol_User_PostTick(double dt);
-void Sol_User_Draw(double dt);
-void Sol_User_SaveUserSettings(int flags);
-void Sol_User_LoadUserSettings(int flags);
-void Sol_User_HydrateUI();
+int    Sol_User_Init(void);
+void   Sol_User_Tick(double dt);
+void   Sol_User_PostTick(double dt);
+void   Sol_User_Draw(double dt);
+void   Sol_User_SaveUserSettings(int flags);
+void   Sol_User_LoadUserSettings(int flags);
+void   Sol_User_HydrateUI();
+World *Sol_User_GetGameWorld();

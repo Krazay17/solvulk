@@ -23,10 +23,15 @@ typedef enum
     WORLDSYS_PLAYER,
     WORLDSYS_MOVE3,
     WORLDSYS_PHYSX,
+
+    WORLDSYS_HOOK,
+
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
+    WORLDSYS_VIEW2,
+
     WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
 } WorldSystems;
@@ -90,6 +95,7 @@ struct World
     u32    currentTick, currentStep;
     double tickTime, stepTime;
     int    maxEntities;
+    int    index;
     bool   doesSimulate, doesRender, doesReplicate;
 };
 
@@ -286,6 +292,10 @@ void Physx_Step(World *world, double dt);
 void Anim_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
 void Model_Render(World *world, double dt);
+void View2_Draw(World *world, double dt);
+void View2_Healthbar(World *world, double dt);
+void View2_Abilitybar(World *world, double dt);
+void Hook_Tick(World *world, double dt);
 
 // Api
 World *World_Create();

@@ -16,38 +16,56 @@
 #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
-    [SOL_TEXTURE_FIREPARTICLE]     = "FireParticle.png",
-    [SOL_TEXTURE_SHOCKPARTICLE]    = "ShockParticle.png",
-    [SOL_TEXTURE_CLOUDPARTICLE]    = "CloudParticle.png",
-    [SOL_TEXTURE_BLOODPARTICLE]    = "BloodParticle.png",
-    [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
-    [SOL_TEXTURE_FIREBALL_CARD]    = "Fireball.png",
-    [SOL_TEXTURE_PISTOL_CARD]      = "Pistol.png",
-    [SOL_TEXTURE_BLADE_CARD]       = "Blade.png",
-    [SOL_TEXTURE_CRYSTAL_CARD]     = "CardCrystal.png",
-    [SOL_TEXTURE_CLOUD1]           = "Cloud1.webp",
-    [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
-    [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
-    [SOL_TEXTURE_SWIRLFRAME]       = "SwirlFrame.webp",
-    [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
-    [SOL_TEXTURE_BORDER]           = "Border.webp",
-    [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
-    [SOL_TEXTURE_SPIN_CARD]        = "TornadoCard.png",
-    [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
-    [SOL_TEXTURE_BEAM]             = "Beam.webp",
-    [SOL_TEXTURE_IMPACT]           = "Impact.webp",
-    [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
-    [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
-    [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
-    [SOL_TEXTURE_SHIELD]           = "Shield.png",
-    [SOL_TEXTURE_GRID]             = "Grid.png",
+    [SOL_TEXTURE_ICEFONT]   = "atlas.raw",
+    [SOL_TEXTURE_CROSSHAIR] = "Crosshair.png",
+    // [SOL_TEXTURE_FIREPARTICLE]     = "FireParticle.png",
+    // [SOL_TEXTURE_SHOCKPARTICLE]    = "ShockParticle.png",
+    // [SOL_TEXTURE_CLOUDPARTICLE]    = "CloudParticle.png",
+    // [SOL_TEXTURE_BLOODPARTICLE]    = "BloodParticle.png",
+    // [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
+    // [SOL_TEXTURE_FIREBALL_CARD]    = "Fireball.png",
+    // [SOL_TEXTURE_PISTOL_CARD]      = "Pistol.png",
+    // [SOL_TEXTURE_BLADE_CARD]       = "Blade.png",
+    // [SOL_TEXTURE_CRYSTAL_CARD]     = "CardCrystal.png",
+    // [SOL_TEXTURE_CLOUD1]           = "Cloud1.webp",
+    // [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
+    // [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
+    // [SOL_TEXTURE_SWIRLFRAME]       = "SwirlFrame.webp",
+    // [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
+    // [SOL_TEXTURE_BORDER]           = "Border.webp",
+    // [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
+    // [SOL_TEXTURE_SPIN_CARD]        = "TornadoCard.png",
+    // [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
+    // [SOL_TEXTURE_BEAM]             = "Beam.webp",
+    // [SOL_TEXTURE_IMPACT]           = "Impact.webp",
+    // [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
+    // [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
+    // [SOL_TEXTURE_SHIELD]           = "Shield.png",
+    // [SOL_TEXTURE_GRID]             = "Grid.png",
 };
 
 SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
 uint32_t   next_free_texture_idx = SOL_TEXTURE_COUNT;
 
-static SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id)
+int Sol_Textures_Init()
+{
+    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
+    {
+        if (!image_path[i])
+            continue;
+
+        SolResource res   = Sol_LoadResource(image_path[i]);
+        const char *ext   = strrchr(image_path[i], '.');
+        SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
+
+        // FIX: Ensure size property is explicitly set for static assets!
+        image->size           = res.size;
+        image->needsGpuUpload = true;
+    }
+    return 0;
+}
+
+SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id)
 {
     SolTexture *image = &loaded_images[id];
     image->data       = data;
@@ -97,22 +115,6 @@ static SolTexture *Parse_Texture(void *data, size_t size, const char *extension,
 SolTexture *Sol_GetImage(u32 id)
 {
     return &loaded_images[id];
-}
-
-int Sol_Textures_Init()
-{
-    for (int i = 0; i < SOL_TEXTURE_COUNT; i++)
-    {
-        SolResource res   = Sol_LoadResource(image_path[i]);
-        const char *ext   = strrchr(image_path[i], '.');
-        SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
-
-        // FIX: Ensure size property is explicitly set for static assets!
-        image->size           = res.size;
-        image->needsGpuUpload = true;
-        // Sol_Render_UploadImage(image->width, image->height, image->pixels, i);
-    }
-    return 0;
 }
 
 u32 Sol_Texture_RegisterUnormTexture(void *data, size_t size, const char *hint_extension)

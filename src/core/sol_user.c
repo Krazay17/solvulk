@@ -8,7 +8,7 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUser            sol_user;
+SolUser            sol_user = {.menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -169,8 +169,8 @@ void Tooltip_Update(double dt, SolUserHit user_hit)
 
 void Entity_Actions()
 {
-    World *world = Sol_GetWorldByIdx(sol_user.user_world);
-    int    id    = sol_user.user_entid;
+    World *world = Sol_User_GetGameWorld();
+    int    id    = sol_user.view_ent;
     if (!world || id < 0)
         return;
     ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
@@ -220,7 +220,7 @@ void Entity_Actions()
         else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
             sol_user.actions |= BITC(ACTION_FWD);
 
-        if (mouse.wheelV)
+        if (mouse.wheelV && camera)
         {
             float changeDist = -((float)mouse.wheelV * 0.01f);
             camera->desired_distance += changeDist;
@@ -296,8 +296,8 @@ void Sol_User_Tick(double dt)
 
 void Sol_User_PostTick(double dt)
 {
-    World *world = Sol_GetWorldByIdx(sol_user.user_world);
-    int    id    = sol_user.user_entid;
+    World *world = Sol_User_GetGameWorld();
+    int    id    = sol_user.view_ent;
     if (!world || id < 0)
         return;
     ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);
@@ -322,4 +322,11 @@ void Sol_User_SaveUserSettings(int flags)
     user_settings_file.data = &user_data;
     user_settings_file.size = sizeof(UserData);
     Sol_WriteFile(USER_SETTINGS_FILENAME, &user_settings_file);
+}
+
+World *Sol_User_GetGameWorld()
+{
+    if (sol_user.game_world < 0)
+        return NULL;
+    return solState.worlds[sol_user.game_world];
 }

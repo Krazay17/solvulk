@@ -15,7 +15,9 @@
 
 #define WORLD_TRI_INIT 0xfff
 #define MAX_THREAD_CONTACTS (1<<12)
-#define SOLVER_ITERATIONS 1
+#define SOLVER_ITERATIONS 2
+#define SOLVER_PERCENT 0.33f
+#define SOLVER_SLACK 0.01f
 
 typedef struct ScXform ScXform;
 typedef struct ScBody3 ScBody3;

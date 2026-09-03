@@ -39,10 +39,6 @@ int Sol_Init(void *hwnd, void *hInstance)
     if (result != 0)
         printf("Render failed to init, code:%d\n", result);
 
-    result = Sol_Audio_LoadAll();
-    if (result != 0)
-        printf("Audio failed to load, code:%d\n", result);
-
     result = Sol_Textures_Init();
     if (result != 0)
         printf("Texturesult failed to init, code:%d\n", result);

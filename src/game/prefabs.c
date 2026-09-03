@@ -20,3 +20,21 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     return id;
 }
+
+int Sol_Prefab_Crosshair(World *world)
+{
+    int button = Sol_Create_Ent(world);
+    Sol_Xform_Add(world, button, (vec3s){(float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0});
+    ScView2 *buttonView2  = Sol_Comp_Add(world, button, ScView2);
+    buttonView2->count    = 1;
+    buttonView2->views[0] = (View2){
+        .kind       = VIEW2DKIND_RECT,
+        .textureID  = SOL_TEXTURE_CROSSHAIR,
+        .offset     = {-9.0f, -9.0f},
+        .dims       = {18.0f, 18.0f},
+        .color      = {1, 1, 1, 1},
+        .scale      = 1.0f,
+        .targetFill = 1.0f,
+        .hoverColor = {1, 1, 1, 1},
+    };
+}

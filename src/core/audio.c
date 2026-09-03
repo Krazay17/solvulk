@@ -5,7 +5,6 @@
  * Created: 2026-05-08
  */
 #include "audio.h"
-#include "platform/platform.h"
 #include "sol_core.h"
 #include "render/render.h"
 
@@ -21,49 +20,80 @@
 
 #define MAX_PLAYING_SOUNDS 512
 
-static const char *audio_path[SOL_AUDIO_COUNT] = {
-    [SOL_AUDIO_BEEP1]          = "Beep1.wav",
-    [SOL_AUDIO_BEEP2]          = "Beep2.wav",
-    [SOL_AUDIO_DIGILOAD]       = "DigiLoad.mp3",
-    [SOL_AUDIO_HIT]            = "Hit.wav",
-    [SOL_AUDIO_MENUMUSIC]      = "MenuMusic.mp3",
-    [SOL_AUDIO_SPACEGUN]       = "SpaceGun.mp3",
-    [SOL_AUDIO_WOONG]          = "Woong1.wav",
-    [SOL_AUDIO_FIREBALL]       = "fireballUse.mp3",
-    [SOL_AUDIO_DASH]           = "dash.mp3",
-    [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
-    [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
-    [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
-    [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
-    [SOL_AUDIO_PARRY]          = "Parry.mp3",
-    [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
-    [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
-    [SOL_AUDIO_LASER]          = "Laser.mp3",
-};
-
-const ScAudioHandle INVALID_AUDIO_HANDLE = {.index = 0, .generation = 0};
-
-typedef struct
+typedef struct SolAudio
 {
     void     *pcmData;
     ma_uint64 frameCount;
     bool      loaded;
     float     duration;
-} ScAudio;
+} SolAudio;
 
 typedef struct
 {
     ma_audio_buffer_ref bufferRef; // per-instance view into shared pcmData
     ma_sound            sound;
-    ScAudioId          id;
+    ScAudioId           id;
     u32                 generation;
     bool                inUse;
 } PlayingSound;
 
-static ScAudio     loaded_audio[SOL_AUDIO_COUNT];
+static SolAudio     loaded_audio[SOL_AUDIO_COUNT];
 static ma_engine    audio_engine;
 static PlayingSound playing_pool[MAX_PLAYING_SOUNDS];
+const ScAudioHandle INVALID_AUDIO_HANDLE = {.index = 0, .generation = 0};
 
+static const char *audio_path[SOL_AUDIO_COUNT] = {
+    [SOL_AUDIO_BEEP1] = "Beep1.wav",
+    [SOL_AUDIO_BEEP2] = "Beep2.wav",
+    // [SOL_AUDIO_DIGILOAD]       = "DigiLoad.mp3",
+    // [SOL_AUDIO_HIT]            = "Hit.wav",
+    // [SOL_AUDIO_MENUMUSIC]      = "MenuMusic.mp3",
+    // [SOL_AUDIO_SPACEGUN]       = "SpaceGun.mp3",
+    // [SOL_AUDIO_WOONG]          = "Woong1.wav",
+    // [SOL_AUDIO_FIREBALL]       = "fireballUse.mp3",
+    // [SOL_AUDIO_DASH]           = "dash.mp3",
+    // [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
+    // [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
+    // [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
+    // [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
+    // [SOL_AUDIO_PARRY]          = "Parry.mp3",
+    // [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
+    // [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
+    // [SOL_AUDIO_LASER]          = "Laser.mp3",
+};
+
+int Sol_Audio_Init(void)
+{
+    ma_engine_config cfg = {.periodSizeInMilliseconds = 20, .listenerCount = 1};
+    if (ma_engine_init(&cfg, &audio_engine) != MA_SUCCESS)
+        return -1;
+
+    ma_engine_set_volume(&audio_engine, INIT_VOLUME);
+    ma_engine_listener_set_world_up(&audio_engine, 0, 0.0f, 1.0f, 0.0f);
+    ma_spatializer_listener_set_enabled(&audio_engine.listeners[0], true);
+    ma_engine_listener_set_cone(&audio_engine, 0, ma_degrees_to_radians_f(360), ma_degrees_to_radians_f(360), 1.0f);
+
+    for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
+    {
+        playing_pool[i].inUse      = false;
+        playing_pool[i].generation = 1; // start at 1 so 0 is always invalid
+        playing_pool[i].id         = 0;
+    }
+
+    for (int i = 0; i < SOL_AUDIO_COUNT; i++)
+    {
+        if (!audio_path[i])
+            continue;
+
+        SolResource res = Sol_LoadResource(audio_path[i]);
+        if (!res.data)
+            continue;
+        Parse_Audio(res, i);
+        if (res.isHeap)
+            free(res.data);
+    }
+    return 0;
+}
 // --- Handle validation ---
 
 static bool Sol_Audio_IsHandleValid(ScAudioHandle handle)
@@ -101,7 +131,7 @@ static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 
     if (id >= SOL_AUDIO_COUNT || !loaded_audio[id].loaded)
         return INVALID_AUDIO_HANDLE;
 
-    ScAudio *audio = &loaded_audio[id];
+    SolAudio *audio = &loaded_audio[id];
     if (maxConcurrent == 0)
         maxConcurrent = MAX_PLAYING_SOUNDS;
 
@@ -191,30 +221,6 @@ static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 
     return INVALID_AUDIO_HANDLE;
 }
 
-// --- Init ---
-
-int Sol_Audio_Init(void)
-{
-    ma_engine_config cfg = {.periodSizeInMilliseconds = 20, .listenerCount = 1};
-    if (ma_engine_init(&cfg, &audio_engine) != MA_SUCCESS)
-        return -1;
-
-    ma_engine_set_volume(&audio_engine, INIT_VOLUME);
-    ma_engine_listener_set_world_up(&audio_engine, 0, 0.0f, 1.0f, 0.0f);
-    ma_spatializer_listener_set_enabled(&audio_engine.listeners[0], true);
-    ma_engine_listener_set_cone(&audio_engine, 0, ma_degrees_to_radians_f(360), ma_degrees_to_radians_f(360), 1.0f);
-
-    for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
-    {
-        playing_pool[i].inUse      = false;
-        playing_pool[i].generation = 1; // start at 1 so 0 is always invalid
-        playing_pool[i].id         = 0;
-    }
-
-    Sol_Audio_LoadAll();
-    return 0;
-}
-
 void Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir)
 {
     ma_engine_listener_set_position(&audio_engine, 0, listenerPos.x, listenerPos.y, listenerPos.z);
@@ -228,9 +234,9 @@ void Sol_Update_Audio_FromView()
 
 // --- Loading ---
 
-static ScAudio *Parse_Audio(SolResource res, u32 id)
+SolAudio *Parse_Audio(SolResource res, u32 id)
 {
-    ScAudio *audio = &loaded_audio[id];
+    SolAudio *audio = &loaded_audio[id];
 
     ma_decoder        decoder;
     ma_decoder_config decCfg = ma_decoder_config_init(DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE);
@@ -253,20 +259,6 @@ static ScAudio *Parse_Audio(SolResource res, u32 id)
     audio->loaded     = true;
     audio->duration   = (float)frameCount / DEVICE_SAMPLE_RATE_F;
     return audio;
-}
-
-int Sol_Audio_LoadAll(void)
-{
-    for (int i = 0; i < SOL_AUDIO_COUNT; i++)
-    {
-        SolResource res = Sol_LoadResource(audio_path[i]);
-        if (!res.data)
-            continue;
-        Parse_Audio(res, i);
-        if (res.isHeap)
-            free(res.data);
-    }
-    return 0;
 }
 
 // --- Playback ---

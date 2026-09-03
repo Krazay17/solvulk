@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
+#include "platform/platform.h"
 
+typedef struct SolAudio SolAudio;
 typedef struct ma_sound ma_sound;
 
 typedef struct
@@ -9,14 +11,14 @@ typedef struct
     u32 generation;
 } ScAudioHandle;
 
-int Sol_Audio_Init();
-int Sol_Audio_LoadAll();
+int       Sol_Audio_Init();
+SolAudio *Parse_Audio(SolResource res, u32 id);
 
 ScAudioHandle Sol_Audio_Play(ScAudioId id, float volume, float seek, u32 concurrent);
 ScAudioHandle Sol_Audio_PlayAt(ScAudioId id, vec3s pos, float volume, float seekFrame, u32 concurrent);
-void           Sol_Audio_SetVolume(float volume);
-void Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir);
-void Sol_Update_Audio_FromView();
+void          Sol_Audio_SetVolume(float volume);
+void          Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir);
+void          Sol_Update_Audio_FromView();
 
 void Sol_Audio_SetSlotPosition(ScAudioHandle handle, vec3s pos);
 void Sol_Audio_SetSlotVolume(ScAudioHandle handle, float volume);

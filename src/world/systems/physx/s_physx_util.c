@@ -98,8 +98,8 @@ void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *x
     // --- 1. Softened Positional Correction ---
     // Lower percentage (0.10f - 0.12f) prevents the "repel/bounce" feeling while
     // still resolving overlap over 3-5 frames.
-    const float slack   = 0.015f;
-    const float percent = 0.12f;
+    const float slack   = SOLVER_SLACK;
+    const float percent = SOLVER_PERCENT;
 
     float pen = fmaxf(contact->penetration - slack, 0.0f);
     if (pen > 0.0f)

@@ -9,26 +9,26 @@
 #include "cgltf/cgltf.h"
 
 const char *model_path[SOL_MODEL_COUNT] = {
-    [MODELKIND_WIZARD]      = "Wizard.glb",
-    [MODELKIND_DUDE]        = "Dude.glb",
-    [MODELKIND_ZORGON]      = "Zorgon.glb",
-    [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
-    [SOL_MODEL_BOX]         = "Box.glb",
-    [SOL_MODEL_WORLD0]      = "World0.glb",
-    [MODELKIND_WALL]        = "Wall.glb",
-    [MODELKIND_WORLD4]      = "World4.glb",
-    [SOL_MODEL_WORLD1]      = "World1.glb",
-    [SOL_MODEL_WORLD2]      = "World2.glb",
-    [SOL_MODEL_WORLD6]      = "World6.glb",
-    [SOL_MODEL_WORLD7]      = "World7.glb",
-    [SOL_MODEL_WORLD8]      = "World8.glb",
-    [SOL_MODEL_WORLD9]      = "World9.glb",
-    [SOL_MODEL_WORLD10]     = "World10.glb",
-    [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
-    [MODELKIND_SHIELD]      = "FireShield.glb",
-    [MODELKIND_FROSTSWORD]  = "FrostSword.glb",
-    [MODELKIND_EVAN]        = "Evan.glb",
-    [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
+    [MODELKIND_DUDE]    = "Dude.glb",
+    [MODELKIND_WIZARD]  = "Wizard.glb",
+    [MODELKIND_WORLD10] = "World10.glb",
+    // [MODELKIND_ZORGON]      = "Zorgon.glb",
+    // [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
+    // [SOL_MODEL_BOX]         = "Box.glb",
+    // [SOL_MODEL_WORLD0]      = "World0.glb",
+    // [MODELKIND_WALL]        = "Wall.glb",
+    // [MODELKIND_WORLD4]      = "World4.glb",
+    // [SOL_MODEL_WORLD1]      = "World1.glb",
+    // [SOL_MODEL_WORLD2]      = "World2.glb",
+    // [SOL_MODEL_WORLD6]      = "World6.glb",
+    // [SOL_MODEL_WORLD7]      = "World7.glb",
+    // [SOL_MODEL_WORLD8]      = "World8.glb",
+    // [SOL_MODEL_WORLD9]      = "World9.glb",
+    // [MODELKIND_FLOOR]       = "BlackRockFloor.glb",
+    // [MODELKIND_SHIELD]      = "FireShield.glb",
+    // [MODELKIND_FROSTSWORD]  = "FrostSword.glb",
+    // [MODELKIND_EVAN]        = "Evan.glb",
+    // [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
 };
 
 ScModelData loaded_models[SOL_MODEL_COUNT];
@@ -55,6 +55,8 @@ int Sol_Models_Init()
 {
     for (int i = 0; i < SOL_MODEL_COUNT; i++)
     {
+        if (!model_path[i])
+            continue;
         SolResource  res   = Sol_LoadResource(model_path[i]);
         ScModelData *model = Parse_Model(res, i);
         Sol_Render_UploadModel(model, i);

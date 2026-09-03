@@ -99,6 +99,8 @@ typedef struct ScInteract
     SolCallback onHold;
 
     vec3s offset, targetPos;
+
+    float range;
 } ScInteract;
 typedef struct
 {
@@ -432,6 +434,15 @@ typedef struct ScStage
     bool isDirty;
 } ScStage;
 
+typedef void (*Hook)(World *, double, int, void *);
+typedef struct ScHook
+{
+    Hook  held;
+    Hook  pressed;
+    Hook  update;
+    void *data;
+} ScHook;
+
 // ==========================================
 // 2. X-MACRO COMPONENT LIST
 // X(Type, EnumFlag)
@@ -440,6 +451,7 @@ typedef struct ScStage
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScXform, HAS_ScXform)                                                                                            \
+    X(ScHook, HAS_ScHook)                                                                                    \
     X(ScCmd, HAS_ScCmd)                                                                                                \
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \

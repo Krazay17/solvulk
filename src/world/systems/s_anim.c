@@ -349,7 +349,7 @@ void Anim_Tick(World *world, double dt)
             Sol_Anim_Play(world, id, move_anim);
             if (modify_speed)
                 Sol_Anim_SetSpeed(world, id, move_anim.layerId,
-                                  Sol_Physx_GetSpeed(world, id) / Sol_Move3_GetBaseSpeed(world, id));
+                                  Sol_Body3_GetSpeed(world, id) / Sol_Move3_GetBaseSpeed(world, id));
         }
         else
         {

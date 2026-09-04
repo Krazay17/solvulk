@@ -28,7 +28,7 @@ const char *model_path[SOL_MODEL_COUNT] = {
     // [MODELKIND_SHIELD]      = "FireShield.glb",
     // [MODELKIND_FROSTSWORD]  = "FrostSword.glb",
     // [MODELKIND_EVAN]        = "Evan.glb",
-    // [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
+     [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
 };
 
 ScModelData loaded_models[SOL_MODEL_COUNT];

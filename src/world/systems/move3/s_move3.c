@@ -237,7 +237,7 @@ bool Sol_Move3_SetState(World *world, int id, MoveState state)
     move->stateData[move->state].elapsed     = 0.0f;
     nextfunc->enter(world, id);
 
-    // Sol_Physx_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[move->kind][move->state].gravity, 0});
+    // Sol_Body3_SetGrav(world, id, (vec3s){0, -MOVE_STATE_FORCES[move->kind][move->state].gravity, 0});
 
     return true;
 }

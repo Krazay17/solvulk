@@ -1056,3 +1056,65 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
     //         entry = sys->dynamic_table.next[entry];
     //     }
     // }
+    
+    // if (user_hit.hoverId != -1 && user_hit.hoverWorld)
+    // {
+    //     Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_HOVERED);
+    //     Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_CLICKED);
+    // }
+    // user_hit.hoverId = -1;
+    // for (int i = 0; i < solState.worldCount; i++)
+    // {
+    //     World *world = solState.worlds[i];
+    //     if (!world || !world->doesSimulate)
+    //         continue;
+    //     int topmost = Sol_Interact_GetTopmost(world);
+    //     if (topmost != -1)
+    //     {
+    //         user_hit.hoverId    = topmost;
+    //         user_hit.hoverWorld = world;
+    //         Sol_Interact_AddState(world, user_hit.hoverId, INTERACT_HOVERED);
+    //         break;
+    //     }
+    // }
+
+    // SolMouse mouse = Sol_Input_GetMouse();
+    // if (user_hit.focusId != -1)
+    // {
+    //     if (user_hit.isDragging)
+    //     {
+    //         Sol_Interact_DragEntityTo(user_hit.focusWorld, user_hit.focusId,
+    //                                   (vec3s){Sol_Input_GetMouseUI().x, Sol_Input_GetMouseUI().y});
+    //         if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
+    //         {
+    //             Sol_Interact_EndDrag(user_hit.focusWorld, user_hit.focusId);
+    //             user_hit.focusId    = -1;
+    //             user_hit.isDragging = false;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         if (glms_ivec2_distance2(user_hit.pressPos, (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y}) >
+    //             1.0f)
+    //         {
+    //             user_hit.isDragging = true;
+    //         }
+    //         if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
+    //         {
+    //             Sol_Interact_RemState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
+    //             Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_CLICKED);
+    //             user_hit.focusId = -1;
+    //         }
+    //         Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
+    //     }
+    // }
+    // else if (user_hit.hoverId != -1)
+    // {
+    //     if (mouse.buttons[SOL_MOUSE_LEFT])
+    //     {
+    //         user_hit.focusId    = user_hit.hoverId;
+    //         user_hit.focusWorld = user_hit.hoverWorld;
+    //         user_hit.isFocusUi  = user_hit.isHoverUi;
+    //         user_hit.pressPos   = (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y};
+    //     }
+    // }

@@ -72,8 +72,9 @@ typedef struct ScBody2
     Shape2 shape;
     vec3s  vel, dims, gravity, force, impulse;
     u32    mask;
-    bool   collide_window;
     float  restitution;
+    bool   ignoreWindow;
+    int    zindex;
 } ScBody2;
 
 typedef struct ScCamera

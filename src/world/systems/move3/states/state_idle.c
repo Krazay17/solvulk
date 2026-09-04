@@ -27,10 +27,10 @@ void Sol_Movement_Idle_Update(World *world, int id, float dt)
         return;
 
     move->gravityMod = 0.0f;
-    // if (Sol_Physx_GetSpeed(world, id) < 0.5f)
+    // if (Sol_Body3_GetSpeed(world, id) < 0.5f)
     // {
-    //     Sol_Physx_AddVel(
-    //         world, id, vecSca(Sol_Physx_GetGround(world, id), MOVE_STATE_FORCES[move->kind][move->state].gravity *
+    //     Sol_Body3_AddVel(
+    //         world, id, vecSca(Sol_Body3_GetGround(world, id), MOVE_STATE_FORCES[move->kind][move->state].gravity *
     //         dt));
     // }
 }

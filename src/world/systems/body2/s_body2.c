@@ -71,7 +71,7 @@ void Body2_Step(World *world, double dt)
     {
         int      id   = set->dense[i];
         ScBody2 *body = &set->data[i];
-        if (!Sol_Comp_Has(world, id, ScXform))
+        if (body->ignoreWindow || !Sol_Comp_Has(world, id, ScXform))
             continue;
         ScXform *xform   = Sol_Comp_Get(world, id, ScXform);
         vec3s    old_pos = xform->pos;
@@ -103,6 +103,31 @@ vec3s Sol_Body2_AABBPen(ScBody2 *body, ScXform *xform, ScBody2 *bodyB, ScXform *
     vec3s b = vecSub(ab, bb);
 
     return vecSub(a, b);
+}
+
+int Sol_Body2_GetEntAtPoint(World *world, vec2s point)
+{
+    int best   = -1;
+    int zindex = -1;
+
+    SparseSet_ScBody2 *set = Sol_Comp_Set(world, ScBody2);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int      id   = set->dense[i];
+        ScBody2 *body = &set->data[i];
+        if (!Sol_Comp_Has(world, id, ScXform))
+            continue;
+        ScXform *xform    = Sol_Comp_Get(world, id, ScXform);
+        bool     overlapX = (point.x > xform->pos.x) && point.x < (xform->pos.x + body->dims.x);
+        bool     overlapY = (point.y > xform->pos.y) && point.y < (xform->pos.y + body->dims.y);
+        if (overlapX && overlapY && body->zindex > zindex)
+        {
+            best   = id;
+            zindex = body->zindex;
+        }
+    }
+
+    return best;
 }
 
 bool Sol_Body2_DoesCollide(ScBody2 *body, ScBody2 *bodyB)

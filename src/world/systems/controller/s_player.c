@@ -16,7 +16,7 @@ void Player_Tick(World *world, double dt)
             continue;
         cmd->yaw         = sol_user.yaw;
         cmd->pitch       = sol_user.pitch;
-        cmd->isStrafing  = sol_user.isStrafing;
+        cmd->isStrafing  = sol_user.mouse_locked;
         cmd->actionState = sol_user.actions;
         cmd->lookdir     = vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch));
         cmd->wishdir     = CalcWishdir3(sol_user.actions, cmd->lookdir, WORLD_UP, false);

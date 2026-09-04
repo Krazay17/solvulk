@@ -44,67 +44,27 @@ SolUserHit user_hit = {
 
 void Find_User_Hit(void)
 {
-    // if (user_hit.hoverId != -1 && user_hit.hoverWorld)
-    // {
-    //     Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_HOVERED);
-    //     Sol_Interact_RemState(user_hit.hoverWorld, user_hit.hoverId, INTERACT_CLICKED);
-    // }
-    // user_hit.hoverId = -1;
-    // for (int i = 0; i < solState.worldCount; i++)
-    // {
-    //     World *world = solState.worlds[i];
-    //     if (!world || !world->doesSimulate)
-    //         continue;
-    //     int topmost = Sol_Interact_GetTopmost(world);
-    //     if (topmost != -1)
-    //     {
-    //         user_hit.hoverId    = topmost;
-    //         user_hit.hoverWorld = world;
-    //         Sol_Interact_AddState(world, user_hit.hoverId, INTERACT_HOVERED);
-    //         break;
-    //     }
-    // }
+    SolMouse mouse           = Sol_Input_GetMouse();
+    World   *hover_world     = NULL;
+    sol_user.mouse_hover_ent = -1;
 
-    // SolMouse mouse = Sol_Input_GetMouse();
-    // if (user_hit.focusId != -1)
-    // {
-    //     if (user_hit.isDragging)
-    //     {
-    //         Sol_Interact_DragEntityTo(user_hit.focusWorld, user_hit.focusId,
-    //                                   (vec3s){Sol_Input_GetMouseUI().x, Sol_Input_GetMouseUI().y});
-    //         if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
-    //         {
-    //             Sol_Interact_EndDrag(user_hit.focusWorld, user_hit.focusId);
-    //             user_hit.focusId    = -1;
-    //             user_hit.isDragging = false;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         if (glms_ivec2_distance2(user_hit.pressPos, (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y}) >
-    //             1.0f)
-    //         {
-    //             user_hit.isDragging = true;
-    //         }
-    //         if (mouse.buttonsReleased[SOL_MOUSE_LEFT])
-    //         {
-    //             Sol_Interact_RemState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
-    //             Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_CLICKED);
-    //             user_hit.focusId = -1;
-    //         }
-    //         Sol_Interact_AddState(user_hit.focusWorld, user_hit.focusId, INTERACT_PRESSED);
-    //     }
-    // }
-    // else if (user_hit.hoverId != -1)
-    // {
-    //     if (mouse.buttons[SOL_MOUSE_LEFT])
-    //     {
-    //         user_hit.focusId    = user_hit.hoverId;
-    //         user_hit.focusWorld = user_hit.hoverWorld;
-    //         user_hit.isFocusUi  = user_hit.isHoverUi;
-    //         user_hit.pressPos   = (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y};
-    //     }
-    // }
+    for (int i = 0; i < solState.worldCount; i++)
+    {
+        World *world = solState.worlds[i];
+        if (world->doesSimulate)
+        {
+            sol_user.mouse_hover_ent = Sol_Body2_GetEntAtPoint(world, (vec2s){mouse.x, mouse.y});
+            if (sol_user.mouse_hover_ent >= 0)
+            {
+                hover_world = world;
+                break;
+            }
+        }
+    }
+    if (sol_user.mouse_hover_ent >= 0 && hover_world)
+    {
+        
+    }
 }
 
 static void Sol_User_LoadUserSettings(int flags)
@@ -174,9 +134,10 @@ void Entity_Actions()
     ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
     SolMouse  mouse  = Sol_Input_GetMouse();
 
-    sol_user.actions = 0;
-    float *yaw       = &sol_user.yaw;
-    float *pitch     = &sol_user.pitch;
+    sol_user.mouse_locked = mouse.locked;
+    sol_user.actions      = 0;
+    float *yaw            = &sol_user.yaw;
+    float *pitch          = &sol_user.pitch;
 
     if (mouse.locked)
     {
@@ -201,8 +162,6 @@ void Entity_Actions()
                 sol_user.actions |= BITC(action);
         }
     }
-
-    sol_user.isStrafing = mouse.locked;
 
     if (Sol_Comp_Has(world, id, ScBuilder))
     {
@@ -289,7 +248,7 @@ void Sol_User_Tick(double dt)
     //         Sol_Debug_Add("X", xform->pos.x);
     //         Sol_Debug_Add("Y", xform->pos.y);
     //         Sol_Debug_Add("Z", xform->pos.z);
-    //         // float speed = glms_vec3_norm(Sol_Physx_GetVel(activeWorld, playerId));
+    //         // float speed = glms_vec3_norm(Sol_Body3_GetVel(activeWorld, playerId));
     //         // Sol_Debug_Add("Velocity", speed);
     //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, ScMove3)->state);
     //     }
@@ -321,9 +280,7 @@ void Sol_User_Draw(double dt)
 
 void Sol_User_SaveUserSettings(int flags)
 {
-    user_settings_file.data = &user_data;
-    user_settings_file.size = sizeof(UserData);
-    Sol_WriteFile(USER_SETTINGS_FILENAME, &user_settings_file);
+    Sol_WriteFile(USER_SETTINGS_FILENAME, &user_data, sizeof(UserData));
 }
 
 World *Sol_User_GetGameWorld()

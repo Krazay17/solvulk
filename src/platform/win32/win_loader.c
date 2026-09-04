@@ -37,16 +37,16 @@ int Sol_ReadFile(const char *filename, SolResource *outRes)
     return 1;
 }
 
-int Sol_WriteFile(const char *filename, SolResource *res)
+int Sol_WriteFile(const char *filename, const void *buffer, const size_t size)
 {
     FILE *file = fopen(filename, "wb");
     if (!file)
         return 0;
 
-    size_t written = fwrite(res->data, res->size, 1, file);
+    size_t written = fwrite(buffer, size, 1, file);
     fclose(file);
 
-    return written == res->size;
+    return written == size;
 }
 
 SolResource Sol_LoadResource(const char *resourceName)

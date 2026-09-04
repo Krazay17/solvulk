@@ -66,3 +66,8 @@ void Interact_Tick(World *world, double dt)
     }
     Prof_EndEz(&profile, true, dt);
 }
+
+void Sol_Interact_FindTopmost(World *world, vec2s point)
+{
+    
+}

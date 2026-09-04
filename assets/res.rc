@@ -48,7 +48,7 @@ World10.glb              RCDATA          "models/World10.glb"
 // FireShield.glb              RCDATA          "models/FireShield.glb"
 // FrostSword.glb              RCDATA          "models/FrostSword.glb"
 // Evan.glb              RCDATA          "models/Evan.glb"
-// EvanRigged.glb              RCDATA          "models/EvanRigged.glb"
+ EvanRigged.glb              RCDATA          "models/EvanRigged.glb"
 
 
 Beep1.wav               RCDATA          "sounds/Beep1.wav"

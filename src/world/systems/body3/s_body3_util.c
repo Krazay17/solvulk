@@ -271,7 +271,7 @@ void Collisions_Dynamic_Bodies(World *world, int idA, SysPhysx *sys, ScXform *xf
     //             ScBody3 *other_body = Sol_Comp_Get(world, idB, ScBody3);
 
     //             // Don't collide two immovable bodies
-    //             if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Physx_DoesCollide(body, other_body) &&
+    //             if ((body->mass > 0.0f || other_body->mass > 0.0f) && Sol_Body3_DoesCollide(body, other_body) &&
     //                 shape_pair_test[body->shape][other_body->shape])
     //             {
     //                 SolContact contact;

@@ -151,12 +151,12 @@ void Physx_Deinit(World *world)
     }
 }
 
-bool Sol_Physx_DoesCollide(ScBody3 *body, ScBody3 *other_body)
+bool Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body)
 {
     return (body->mask << 16) & (other_body->mask);
 }
 
-vec3s Sol_Physx_GetGround(World *world, int id)
+vec3s Sol_Body3_GetGround(World *world, int id)
 {
     return GLMS_VEC3_ZERO;
 }
@@ -524,7 +524,7 @@ bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri,
     }
     return found;
 }
-int Sol_Physx_Spherecast(World *world, SolRay ray, float radius, SolRayResult *result, int max)
+int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *result, int max)
 {
     if (!result || max <= 0 || ray.dist <= 0.0f)
         return 0;
@@ -629,11 +629,11 @@ int Sol_Physx_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
     return hits;
 }
 
-float Sol_Physx_GetSpeed(World *world, int id)
+float Sol_Body3_GetSpeed(World *world, int id)
 {
     return glms_vec3_norm(Sol_Comp_Get(world, id, ScBody3)->vel);
 }
-vec3s Sol_Physx_GetDir(World *world, int id)
+vec3s Sol_Body3_GetDir(World *world, int id)
 {
     return vecNorm(Sol_Comp_Get(world, id, ScBody3)->vel);
 }

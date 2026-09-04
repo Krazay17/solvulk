@@ -9,7 +9,8 @@ typedef struct SolUser
     int        view_ent;
     float      yaw, pitch;
     SolActions actions;
-    bool       isStrafing;
+    int        mouse_hover_ent, mouse_drag_ent;
+    bool       mouse_locked;
 } SolUser;
 
 typedef struct UserData

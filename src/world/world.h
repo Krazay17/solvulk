@@ -22,14 +22,14 @@ typedef enum
 {
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
-    
+
     WORLDSYS_MOVE3,
     WORLDSYS_MOVE2,
     WORLDSYS_BODY3,
     WORLDSYS_BODY2,
-    
+
     WORLDSYS_HOOK,
-    
+
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
@@ -326,12 +326,13 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 bool  Sol_Move3_SetState(World *world, int id, MoveState state);
 float Sol_Move3_GetBaseSpeed(World *world, int id);
 
-bool  Sol_Physx_DoesCollide(ScBody3 *body, ScBody3 *other_body);
-vec3s Sol_Physx_GetGround(World *world, int id);
+bool  Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body);
+vec3s Sol_Body3_GetGround(World *world, int id);
+vec3s Sol_Body3_GetVel(World *world, int id);
+vec3s Sol_Body3_GetDir(World *world, int id);
+float Sol_Body3_GetSpeed(World *world, int id);
 
-vec3s Sol_Physx_GetVel(World *world, int id);
-vec3s Sol_Physx_GetDir(World *world, int id);
-float Sol_Physx_GetSpeed(World *world, int id);
+int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 
 int  Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 int  Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);

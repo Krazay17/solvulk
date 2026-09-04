@@ -139,12 +139,14 @@ void Create_Game()
         stage->isDirty      = true;
     }
 
-    while (world->entCount < 10)
+    while (world->entCount < 500)
     {
         int id = Sol_Create_Ent(world);
         Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
-        // Sol_Comp_Add(world, id, ScCmd);
-        // Sol_Comp_Add(world, id, ScPlayer);
+        Sol_Comp_Add(world, id, ScCmd);
+        Sol_Comp_Add(world, id, ScPlayer);
+        // Sol_Comp_Add(world, id, ScCombat);
+
         ScInteract *interact                         = Sol_Comp_Add(world, id, ScInteract);
         interact->range                              = 5.0f;
         Sol_Comp_Add(world, id, ScHook)->pressed     = PressTest;
@@ -155,7 +157,7 @@ void Create_Game()
         body3->shape   = SHAPE3_CAP;
         body3->mask    = PHYSXMASK(1, 1);
         body3->dims    = (vec3s){0.5f, 3.0f, 0.5f};
-        model->kind    = MODELKIND_WIZARD;
+        model->kind    = MODELKIND_EVANRIGGED;
         Sol_Anim_Add(world, id);
     }
 }

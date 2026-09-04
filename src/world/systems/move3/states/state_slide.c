@@ -7,7 +7,7 @@
 
 static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    if (move->groundtime > 0 && Sol_Physx_GetSpeed(world, id) < 5.5f)
+    if (move->groundtime > 0 && Sol_Body3_GetSpeed(world, id) < 5.5f)
         if (Sol_Move3_SetState(world, id, MOVE_IDLE))
             return true;
     if (!(cmd->actionState & BITC(ACTION_CROUCH)))
@@ -58,7 +58,7 @@ void Slide_State_Enter(World *world, int id)
     if (move->groundtime > 0)
     {
         data->as.slide.boost = fminf(data->as.slide.boost + (solState.appTime - data->lastExited), BOOST_CD);
-        body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Physx_GetDir(world, id))),
+        body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Body3_GetDir(world, id))),
                                       Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost));
 
         data->as.slide.boost /= 2.0f;
@@ -80,5 +80,5 @@ bool Slide_State_CanExit(World *world, int id, u32 nextState)
 
 bool Slide_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
 {
-    return Sol_Physx_GetSpeed(world, id) > 5.5f;
+    return Sol_Body3_GetSpeed(world, id) > 5.5f;
 }

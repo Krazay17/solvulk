@@ -1,14 +1,23 @@
 #pragma once
 #include "sol/base.h"
 
-typedef struct World World;
+typedef struct World   World;
+typedef struct ScMove3 ScMove3;
+typedef struct ScCmd   ScCmd;
 
 typedef void (*StateUpdate)(World *world, int id, float dt);
-typedef void (*StateDraw)(World *world, int id, double dt);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);
 typedef bool (*StateCanExit)(World *world, int id, u32 next);
 typedef bool (*StateCanEnter)(World *world, int id, u32 last, u32 next, int slot);
+typedef void (*StateDraw)(World *world, int id);
+
+typedef void (*MoveStateUpdate)(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+typedef void (*MoveStateEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd);
+typedef void (*MoveStateExit)(World *world, int id, ScMove3 *move, ScCmd *cmd);
+typedef bool (*MoveStateCanExit)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+typedef bool (*MoveStateCanEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+typedef void (*MoveStateDraw)(World *world, int id, ScMove3 *move, ScCmd *cmd);
 
 typedef struct
 {
@@ -19,6 +28,16 @@ typedef struct
     StateCanEnter canEnter;
     StateDraw     draw;
 } StateFunc;
+
+typedef struct
+{
+    MoveStateUpdate   update;
+    MoveStateEnter    enter;
+    MoveStateExit     exit;
+    MoveStateCanExit  canExit;
+    MoveStateCanEnter canEnter;
+    MoveStateDraw     draw;
+} MoveStateFunc;
 
 // void State_Update(World *world, int id, float dt);
 // void State_Enter(World *world, int id);

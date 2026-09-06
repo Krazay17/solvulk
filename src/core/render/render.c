@@ -10,6 +10,7 @@
 #include "render_i.h"
 #include "render/vk/vkrender.h"
 #include "image.h"
+#include "string.h"
 
 ViewSSBO g_solView = {
     .pos      = {0.0f, 0.0f, -5.0f},
@@ -38,8 +39,8 @@ QuadQueue spriteQueueFront;
 QuadQueue text3dQueue;
 QuadQueue text3dFrontQueue;
 
-RectInstance rectQueue;
-FontInstance font2dQueue;
+RectInstance rectQueue[UILAYER_COUNT];
+FontInstance font2dQueue[UILAYER_COUNT];
 
 static void Flush_View()
 {
@@ -79,8 +80,43 @@ void Sol_Render_Flush3D(void)
 
 void Sol_Render_Flush2D(void)
 {
-    Flush_Rects();
-    Flush_Fonts2d();
+    u32 rect_offset = 0;
+    u32 font_offset = 0;
+
+    RectSSBO *rect_gpu  = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
+    FontSSBO *font_gpu  = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+
+    for (int layer = 0; layer < UILAYER_COUNT; layer++)
+    {
+        // Rect Pass
+        u32 r_count = rectQueue[layer].count;
+        if (r_count > 0)
+        {
+            // Pointer arithmetic advances destination by (rect_offset * sizeof(RectSSBO)) bytes
+            memcpy(rect_gpu + rect_offset, rectQueue[layer].instances, sizeof(RectSSBO) * r_count);
+
+            Bind_Pipeline(cmd, PIPE_RECT);
+            vkCmdDraw(cmd, 6, r_count, 0, rect_offset);
+
+            rect_offset += r_count;
+            rectQueue[layer].count = 0;
+        }
+
+        // Font Pass
+        u32 f_count = font2dQueue[layer].count;
+        if (f_count > 0)
+        {
+            // Pointer arithmetic advances destination by (font_offset * sizeof(FontSSBO)) bytes
+            memcpy(font_gpu + font_offset, font2dQueue[layer].instances, sizeof(FontSSBO) * f_count);
+
+            Bind_Pipeline(cmd, PIPE_TEXT_2D);
+            vkCmdDraw(cmd, 6, f_count, 0, font_offset);
+
+            font_offset += f_count;
+            font2dQueue[layer].count = 0;
+        }
+    }
 }
 
 void Sol_Render_DrawSkybox()
@@ -346,28 +382,28 @@ void Flush_Quads()
 
 void Flush_Rects()
 {
-    if (rectQueue.count == 0)
-        return;
-    RectSSBO       *gpu = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
+    // if (rectQueue.count == 0)
+    //     return;
+    // RectSSBO       *gpu = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
+    // VkCommandBuffer cmd = Command_Buffer_Get();
 
-    memcpy(gpu, rectQueue.instances, sizeof(RectSSBO) * rectQueue.count);
-    Bind_Pipeline(cmd, PIPE_RECT);
-    vkCmdDraw(cmd, 6, rectQueue.count, 0, 0);
-    rectQueue.count = 0;
+    // memcpy(gpu, rectQueue.instances, sizeof(RectSSBO) * rectQueue.count);
+    // Bind_Pipeline(cmd, PIPE_RECT);
+    // vkCmdDraw(cmd, 6, rectQueue.count, 0, 0);
+    // rectQueue.count = 0;
 }
 
 void Flush_Fonts2d()
 {
-    if (font2dQueue.count == 0)
-        return;
-    FontSSBO       *gpu = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
+    // if (font2dQueue.count == 0)
+    //     return;
+    // FontSSBO       *gpu = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
+    // VkCommandBuffer cmd = Command_Buffer_Get();
 
-    memcpy(gpu, font2dQueue.instances, sizeof(FontSSBO) * font2dQueue.count);
-    Bind_Pipeline(cmd, PIPE_TEXT_2D);
-    vkCmdDraw(cmd, 6, font2dQueue.count, 0, 0);
-    font2dQueue.count = 0;
+    // memcpy(gpu, font2dQueue.instances, sizeof(FontSSBO) * font2dQueue.count);
+    // Bind_Pipeline(cmd, PIPE_TEXT_2D);
+    // vkCmdDraw(cmd, 6, font2dQueue.count, 0, 0);
+    // font2dQueue.count = 0;
 }
 
 void Flush_Ribbons()
@@ -555,7 +591,7 @@ void Sol_Render_DrawText2D(SolFontDesc desc)
         if (g->uw == 0.0f)
             continue;
 
-        FontSSBO *ssbo = Sol_Render_GetNext_Font();
+        FontSSBO *ssbo = Sol_Render_GetNext_Font(desc.layer);
         if (!ssbo)
             break;
 

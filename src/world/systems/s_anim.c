@@ -91,6 +91,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_WALLRUN_LEFT]     = 35,
             [ANIM_WALLRUN_RIGHT]    = 36,
             [ANIM_BACKFLIP]         = 38,
+            [ANIM_HARDLAND]         = 40,
         },
     [MODELKIND_ZORGON] =
         {
@@ -295,6 +296,10 @@ void Anim_Tick(World *world, double dt)
             AnimDesc       move_anim    = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
             switch (movement->state)
             {
+            case MOVE_LANDING: {
+                move_anim.anim = ANIM_HARDLAND;
+            }
+            break;
             case MOVE_WALLRUN: {
                 modify_speed   = true;
                 move_anim.anim = wallrun_map[data->as.wallrun.wallTouch];

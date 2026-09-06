@@ -9,8 +9,14 @@ typedef struct SolUser
     int        view_ent;
     float      yaw, pitch;
     SolActions actions;
-    int        mouse_hover_ent, mouse_drag_ent;
-    bool       mouse_locked;
+
+    vec2s mouse_pos;
+    int   mouse_hover_worldidx;
+    int   mouse_hover_ent;
+    int   mouse_focus_worldidx;
+    int   mouse_focus_ent;
+    bool  mouse_interact;
+    bool  mouse_locked;
 } SolUser;
 
 typedef struct UserData

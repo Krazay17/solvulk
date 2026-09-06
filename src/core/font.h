@@ -14,7 +14,8 @@ typedef struct
     vec4s       color;
     SolFontKind kind;
     u32         zindex;
-    vec4s outline;
+    vec4s       outline;
+    u32         layer;
 } SolFontDesc;
 
 typedef struct
@@ -25,7 +26,7 @@ typedef struct
     vec4s       color;
     SolFontKind font;
     bool        billboard, inFront, outline; // face camera or use rotation
-    versors     rotation;  // if not billboard
+    versors     rotation;                    // if not billboard
 } Text3DDesc;
 
 typedef struct

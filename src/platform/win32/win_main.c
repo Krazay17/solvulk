@@ -283,7 +283,7 @@ void W_Set_Ontop(int flags)
 
 void W_Set_Fullscreen(int flags)
 {
-    bool toggle = (flags & INTERACT_TOGGLED);
+    bool toggle = flags;
     u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
     u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
 

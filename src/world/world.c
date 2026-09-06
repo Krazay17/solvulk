@@ -38,6 +38,7 @@ const SystemDef system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_MOVE2]    = {.update = {Move2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY3]    = {.init = Physx_Init, .update = {Body3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY2]    = {.update = {Body2_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_ABILITY]  = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_HOOK]     = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FACING]   = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_CAMERA]   = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
@@ -59,16 +60,16 @@ const SystemDef system_inits[WORLDSYS_COUNT] = {
 World *World_Create()
 {
     World *world = calloc(1, sizeof(World));
-    if (world)
-    {
-        int index              = solState.worldCount++;
-        world->maxEntities     = MAX_ENTS;
-        world->doesSimulate    = true;
-        world->doesRender      = true;
-        world->index           = index;
-        solState.worlds[index] = world;
-        Sol_World_InitAllComponents(world, world->maxEntities);
-    }
+    if (!world)
+        return NULL;
+    int index              = solState.worldCount++;
+    world->maxEntities     = MAX_ENTS;
+    world->doesSimulate    = true;
+    world->doesRender      = true;
+    world->index           = index;
+    solState.worlds[index] = world;
+
+    Sol_World_InitAllComponents(world, world->maxEntities);
 
     return world;
 }
@@ -76,9 +77,11 @@ World *World_Create()
 World *World_Create_AllSys()
 {
     World *world = World_Create();
+    if (!world)
+        return NULL;
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
     {
-        Sol_Sys_Add(world, sys);
+        Sol_Sys_Add(world, (WorldSystems)sys);
     }
     return world;
 }

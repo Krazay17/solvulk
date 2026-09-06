@@ -8,6 +8,7 @@ typedef struct Debuggers
     int   characterCount[MAX_DEBUGS];
     char  text[MAX_DEBUGS][MAX_STR_LEN];
     float value[MAX_DEBUGS];
+    char  textValue[MAX_STR_LEN];
     int   count;
 } Debuggers;
 
@@ -38,6 +39,27 @@ void Sol_Debug_Add(const char *text, float value)
     debuggers.count++;
 }
 
+void Sol_Debug_AddText(const char *label, const char *value)
+{
+    for (int i = 0; i < debuggers.count; ++i)
+    {
+        if (strncmp(label, debuggers.text[i], MAX_STR_LEN) == 0)
+        {
+            strncpy(debuggers.textValue[debuggers.count], value, MAX_STR_LEN - 1);
+            return;
+        }
+    }
+
+    if (debuggers.count > MAX_DEBUGS)
+        return;
+    strncpy(debuggers.text[debuggers.count], label, MAX_STR_LEN - 1);
+    debuggers.text[debuggers.count][MAX_STR_LEN - 1] = '\0';
+
+    strncpy(debuggers.textValue[debuggers.count], value, MAX_STR_LEN - 1);
+
+    debuggers.count++;
+}
+
 void Sol_Debug_Draw(double dt)
 {
     if (!solState.debug)
@@ -45,33 +67,40 @@ void Sol_Debug_Draw(double dt)
 
     float     offset  = 48.0f;
     float     spacing = 24.0f;
-    RectSSBO *rect    = Sol_Render_GetNext_Rect();
-    rect->rect        = (vec4s){0, 0, 200.0f, offset + spacing * debuggers.count};
-    rect->color       = (vec4s){0.1f, 0.0f, 0.3f, 0.7f};
+    RectSSBO *rect    = Sol_Render_GetNext_Rect(UILAYER_2);
+    rect->rect        = (vec4s){ 0, 0, 200.0f, offset + spacing * debuggers.count };
+    rect->color       = (vec4s){ 0.1f, 0.0f, 0.3f, 0.7f };
     rect->scale       = 1.0f;
     rect->fill        = 1.0f;
     rect->flags       = 0;
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN];
-        sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
+        if (debuggers.textValue[i])
+        {
+            sprintf(buffer, "%s: %s", debuggers.text[i], debuggers.textValue[i]);
+        }
+        else
+            sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
         SolFontDesc fontDesc = {
+            .layer = UILAYER_2,
             .str   = buffer,
             .x     = 6.0f,
             .y     = i * spacing + offset,
             .size  = 16.0f,
-            .color = (vec4s){255, 0, 122, 255},
+            .color = (vec4s){ 255, 0, 122, 255 },
             .kind  = SOL_FONT_ICE,
         };
         Sol_Render_DrawText(fontDesc);
     }
 
     SolFontDesc fontDesc = {
+        .layer = UILAYER_2,
         .str   = fpsbuffer,
         .x     = 6.0f,
         .y     = 24.0f,
         .size  = 24.0f,
-        .color = (vec4s){0, 1, 0, 1},
+        .color = (vec4s){ 0, 1, 0, 1 },
         .kind  = SOL_FONT_ICE,
     };
     Sol_Render_DrawText(fontDesc);
@@ -97,24 +126,24 @@ void Sol_FPS(double dt)
 
 // SolRayResult Sol_RaycastD(World *world, SolRay ray, float debugDuration)
 // {
-    // SolRayResult result = Sol_Raycast(world, ray);
-    // if (solState.debug)
-    // {
-    //     Sol_Line_Push(world, (SolLine){
-    //                              .a      = ray.pos,
-    //                              .b      = result.pos,
-    //                              .aColor = (vec4s){1, 0, 0, 1},
-    //                              .bColor = (vec4s){1, 0, 0, 1},
-    //                              .ttl    = debugDuration,
-    //                          });
-    //     if (result.hit)
-    //         Sol_Line_Push(world, (SolLine){
-    //                                  .a = result.pos,
-    //                                  .b = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
-    //                                  .aColor = (vec4s){0, 1, 0, 1},
-    //                                  .bColor = (vec4s){0, 1, 0, 1},
-    //                                  .ttl    = debugDuration,
-    //                              });
-    // }
-    // return result;
+// SolRayResult result = Sol_Raycast(world, ray);
+// if (solState.debug)
+// {
+//     Sol_Line_Push(world, (SolLine){
+//                              .a      = ray.pos,
+//                              .b      = result.pos,
+//                              .aColor = (vec4s){1, 0, 0, 1},
+//                              .bColor = (vec4s){1, 0, 0, 1},
+//                              .ttl    = debugDuration,
+//                          });
+//     if (result.hit)
+//         Sol_Line_Push(world, (SolLine){
+//                                  .a = result.pos,
+//                                  .b = glms_vec3_add(result.pos, glms_vec3_scale(ray.dir, ray.dist - result.dist)),
+//                                  .aColor = (vec4s){0, 1, 0, 1},
+//                                  .bColor = (vec4s){0, 1, 0, 1},
+//                                  .ttl    = debugDuration,
+//                              });
+// }
+// return result;
 // }

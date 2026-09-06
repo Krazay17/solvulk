@@ -97,12 +97,11 @@ typedef struct ScInteract
     double        press_start_time;
     double        pressedAccum;
     float         range;
+    vec2s         press_pos, drag_offset, drag_target;
 } ScInteract;
 
 typedef struct
 {
-    double lastEntered, lastExited;
-    float  elapsed, accum;
     union {
         struct
         {
@@ -131,20 +130,27 @@ typedef struct
             vec3s     wallNormal;
             WallTouch wallTouch;
         } wallrun;
+        struct
+        {
+            vec3s velocity;
+        } fall;
     } as;
-    vec3s enterVel, dir;
+    double lastEntered, lastExited;
+    float  elapsed, accum;
+    vec3s  vel;
 } MoveStateData;
 typedef struct ScMove3
 {
     MovementKind kind;
     MoveState    state;
-    vec3s        updir, lastTouch, knockVel, lastMoveDir, groundNorm;
+    vec3s        updir, lastTouch, knockVel, lastMoveDir, groundNorm, vel;
 
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
 
-    float wallDot, groundDot;
+    float wallDot;
     float airtime, groundtime;
+    float groundDist;
 
     bool          wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
@@ -158,7 +164,7 @@ typedef struct ScMove2
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
 
-    float wallDot, groundDot;
+    float wallDot;
     float airtime, groundtime;
 
     bool wantsJump, jumpPressedLastFrame;
@@ -266,7 +272,7 @@ typedef struct
 } AbilityStateData;
 typedef struct ScAbility
 {
-    int              state, activeSlot;
+    int              state, activeSlot, slots;
     int              action_map[ABILITY_SLOTS];
     AbilityStateData stateData[ABILITY_SLOTS];
 } ScAbility;
@@ -368,7 +374,6 @@ typedef struct
     float      fill, scale, textWidth, border;
     float      hoverAnim, clickAnim;
     float      targetFill, fillSpeed;
-    u32        zindex;
     u8         textureID, flags;
     vec2s      textureUV;
     char       text[64];
@@ -377,7 +382,7 @@ typedef struct ScView2
 {
     View2 views[MAX_VIEWS];
     u8    count;
-    u8    zindex;
+    u32   layer;
 } ScView2;
 
 typedef struct ScTracker

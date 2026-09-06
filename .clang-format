@@ -1,0 +1,6 @@
+BasedOnStyle: Microsoft
+AlignArrayOfStructures: Left
+Cpp11BracedListStyle: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+SortIncludes: Never

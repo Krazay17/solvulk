@@ -1,3 +1,10 @@
+/*
+ * File: sol_user.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-04
+ *
+ */
 #include "sol_user.h"
 #include "sol_core.h"
 #include "sol_math.h"
@@ -8,7 +15,7 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUser            sol_user = {.menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
+SolUser            sol_user = { .menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1 };
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -29,41 +36,58 @@ static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
 
 bool         consume_mouse;
 bool         consume_key;
-UserData     user_data = {.look_sens = 0.001f};
+UserData     user_data = { .look_sens = 0.001f };
 static float tooltipAlpha;
-
-SolUserHit user_hit = {
-    .hoverId    = -1,
-    .focusId    = -1,
-    .focusWorld = NULL,
-    .hoverWorld = NULL,
-    .isFocusUi  = false,
-    .isHoverUi  = false,
-    .isDragging = false,
-};
 
 void Find_User_Hit(void)
 {
-    SolMouse mouse           = Sol_Input_GetMouse();
-    World   *hover_world     = NULL;
-    sol_user.mouse_hover_ent = -1;
+    SolMouse mouse          = Sol_Input_GetMouse();
+    vec2s    mouse_pos      = Sol_Input_GetMouseUI();
+    sol_user.mouse_interact = mouse.buttons[SOL_MOUSE_LEFT];
+    sol_user.mouse_pos      = mouse_pos;
+
+    if (sol_user.mouse_focus_ent >= 0)
+    {
+        if (!sol_user.mouse_interact)
+        {
+            sol_user.mouse_hover_ent      = sol_user.mouse_focus_ent;
+            sol_user.mouse_hover_worldidx = sol_user.mouse_focus_worldidx;
+            sol_user.mouse_focus_ent      = -1;
+            sol_user.mouse_focus_worldidx = -1;
+        }
+        else
+        {
+            ScInteract *interact =
+                Sol_Comp_Get(Sol_GetWorldByIdx(sol_user.mouse_focus_worldidx), sol_user.mouse_focus_ent, ScInteract);
+            if (interact)
+            {
+                interact->drag_target = sol_user.mouse_pos;
+            }
+            return;
+        }
+    }
+
+    sol_user.mouse_hover_worldidx = -1;
+    sol_user.mouse_hover_ent      = -1;
 
     for (int i = 0; i < solState.worldCount; i++)
     {
         World *world = solState.worlds[i];
         if (world->doesSimulate)
         {
-            sol_user.mouse_hover_ent = Sol_Body2_GetEntAtPoint(world, (vec2s){mouse.x, mouse.y});
-            if (sol_user.mouse_hover_ent >= 0)
+            int hit_ent = Sol_Interact_FindTopmost(world, mouse_pos);
+            if (hit_ent >= 0)
             {
-                hover_world = world;
+                sol_user.mouse_hover_ent      = hit_ent;
+                sol_user.mouse_hover_worldidx = world->index;
                 break;
             }
         }
     }
-    if (sol_user.mouse_hover_ent >= 0 && hover_world)
+    if (sol_user.mouse_hover_ent >= 0 && sol_user.mouse_interact)
     {
-        
+        sol_user.mouse_focus_ent      = sol_user.mouse_hover_ent;
+        sol_user.mouse_focus_worldidx = sol_user.mouse_hover_worldidx;
     }
 }
 
@@ -108,14 +132,15 @@ int Sol_User_Init(void)
     return 0;
 }
 
-void Tooltip_Update(double dt, SolUserHit user_hit)
+void Tooltip_Update(double dt)
 {
     const float stiffness = 5.0f;
     float       alpha     = 1.0f - expf(-stiffness * dt);
-    if (user_hit.hoverId && user_hit.hoverWorld)
+    int         id        = sol_user.mouse_hover_ent;
+    int         worldidx  = sol_user.mouse_hover_worldidx;
+    World      *world     = Sol_GetWorldByIdx(worldidx);
+    if (world && id >= 0)
     {
-        int    id    = user_hit.hoverId;
-        World *world = user_hit.hoverWorld;
         if (Sol_Comp_Has(world, id, ScTooltip))
         {
             //            tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
@@ -208,11 +233,40 @@ void Entity_Actions()
             }
         }
     }
-    if (mouse.buttons[SOL_MOUSE_LEFT])
+    // if (mouse.buttons[SOL_MOUSE_LEFT])
+    // {
+    //     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+    //     bool     hit   = Sol_Raycast1D(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f},
+    //                                    &(SolRayResult){0}, 5.0f);
+    // }
+}
+
+const char *move_state_name[MOVE_STATE_COUNT] = {
+    [MOVE_IDLE] = "Idle",         [MOVE_WALK] = "Walk",     [MOVE_STUN] = "Stun",       [MOVE_FALL] = "Fall",
+    [MOVE_JUMP] = "Jump",         [MOVE_CROUCH] = "Crouch", [MOVE_SLIDE] = "Slide",     [MOVE_WALLRUN] = "Wallrun",
+    [MOVE_WALLJUMP] = "Walljump", [MOVE_MANTLE] = "Mantle", [MOVE_LANDING] = "Landing", [MOVE_FLY] = "Fly",
+    [MOVE_DEAD] = "Dead",
+};
+
+void User_Debug(dt)
+{
+    World *world = Sol_User_GetGameWorld();
+    int    id    = sol_user.view_ent;
+    if (id >= 0)
     {
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        bool     hit   = Sol_Raycast1D(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f},
-                                       &(SolRayResult){0}, 5.0f);
+        if (Sol_Comp_Has(world, id, ScXform))
+        {
+            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+            Sol_Debug_Add("X", xform->pos.x);
+            Sol_Debug_Add("Y", xform->pos.y);
+            Sol_Debug_Add("Z", xform->pos.z);
+        }
+        if (Sol_Comp_Has(world, id, ScMove3))
+        {
+            ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
+            
+            // Sol_Debug_AddText("MoveState", move_state_name[move->state]);
+        }
     }
 }
 
@@ -222,7 +276,7 @@ void Sol_User_Tick(double dt)
     consume_key   = false;
 
     Find_User_Hit();
-    Tooltip_Update(dt, user_hit);
+    Tooltip_Update(dt);
 
     Sol_User_HydrateUI();
 
@@ -236,6 +290,7 @@ void Sol_User_Tick(double dt)
     }
 
     Entity_Actions();
+    User_Debug();
 
     // ### DEBUG ####
     // World *activeWorld = Sol_GetActiveGameWorld();

@@ -29,7 +29,7 @@ void Body2_Step(World *world, double dt)
     for (i = 0; i < set->cnt; i++)
     {
         ScBody2 *body = &set->data[i];
-        body->vel     = glms_vec3_scale(body->vel, 0.999f);
+        body->vel     = glms_vec3_scale(body->vel, 0.966f);
         vec3s accel   = body->vel.y > TERMINAL_VELOCITY ? GLMS_VEC3_ZERO : body->gravity;
         accel         = glms_vec3_add(accel, body->force);
         accel         = glms_vec3_add(accel, body->impulse);
@@ -103,6 +103,18 @@ vec3s Sol_Body2_AABBPen(ScBody2 *body, ScXform *xform, ScBody2 *bodyB, ScXform *
     vec3s b = vecSub(ab, bb);
 
     return vecSub(a, b);
+}
+
+bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point)
+{
+    ScBody2 *body     = Sol_Comp_Get(world, id, ScBody2);
+    ScXform *xform    = Sol_Comp_Get(world, id, ScXform);
+    bool     overlapX = (point.x > xform->pos.x) && point.x < (xform->pos.x + body->dims.x);
+    bool     overlapY = (point.y > xform->pos.y) && point.y < (xform->pos.y + body->dims.y);
+    if (overlapX && overlapY)
+        return true;
+
+    return false;
 }
 
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point)

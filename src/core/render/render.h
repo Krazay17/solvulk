@@ -141,11 +141,11 @@ typedef struct
     u32      count;
     RectSSBO instances[MAX_RECT_INSTANCES];
 } RectInstance;
-extern RectInstance     rectQueue;
-static inline RectSSBO *Sol_Render_GetNext_Rect()
+extern RectInstance     rectQueue[];
+static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
 {
-    assert(rectQueue.count < MAX_RECT_INSTANCES && "rectQueue Full");
-    RectSSBO *ssbo = &rectQueue.instances[rectQueue.count++];
+    assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
+    RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
     *ssbo          = (RectSSBO){0};
     return ssbo;
 }
@@ -159,11 +159,12 @@ typedef struct
     u32      count;
     FontSSBO instances[MAX_FONT_INSTANCES];
 } FontInstance;
-extern FontInstance     font2dQueue;
-static inline FontSSBO *Sol_Render_GetNext_Font()
+extern FontInstance     font2dQueue[];
+static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
 {
-    assert(font2dQueue.count < MAX_FONT_INSTANCES && "font2dQueue Full");
-    return &font2dQueue.instances[font2dQueue.count++];
+    assert(layer >= 0 && layer < UILAYER_COUNT && "INVALID FONT LAYER");
+    assert(font2dQueue[layer].count < MAX_FONT_INSTANCES && "font2dQueue[layer] Full");
+    return &font2dQueue[layer].instances[font2dQueue[layer].count++];
 }
 
 typedef struct SolLineVertex

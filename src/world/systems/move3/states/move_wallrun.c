@@ -28,11 +28,9 @@ static bool CheckEnergy(World *world, int id)
     return true;
 }
 
-static bool CheckWall(World *world, int id, SolRayResult *result, float addRadius)
+static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result, float addRadius)
 {
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
-    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
-    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
     vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
@@ -46,8 +44,9 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
             finalPos.y += (float)i * (dims.y * 0.4f);
             vec3s  rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
             SolRay ray            = {
-                .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true};
-            bool  hit = Sol_Raycast1(world, ray, result);
+                .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true
+            };
+            bool  hit = Sol_Raycast1D(world, ray, result, 0.1f);
             float dot = glms_vec3_dot(result->norm, WORLD_UP);
             // float lookDot = vecDot(cmd->lookdir, result->norm);
             if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
@@ -63,28 +62,15 @@ static bool CheckWall(World *world, int id, SolRayResult *result, float addRadiu
     return false;
 }
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
-{
-    if (cmd->actionState & BITC(ACTION_CROUCH) || move->groundtime > COYOTE_TIMER)
-        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
-            return true;
-    if (!(cmd->actionState & BITC(ACTION_JUMP)))
-        if (Sol_Move3_SetState(world, id, MOVE_WALLJUMP))
-            return true;
-    if (Sol_Move3_SetState(world, id, MOVE_MANTLE))
-        return true;
-    return false;
-}
-
 void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 {
-    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+    ScBody3       *body = Sol_Comp_Get(world, id, ScBody3);
+    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
 
-    MoveStateData *data       = &move->stateData[MOVE_WALLRUN];
-    vec3s          prevvel    = body->vel;
-    vec3s          prevLatVel = prevvel;
-    prevLatVel.y              = 0;
-    float targetSpeed         = fmaxf(glms_vec3_norm(prevLatVel), boost);
+    vec3s prevvel     = body->vel;
+    vec3s prevLatVel  = prevvel;
+    prevLatVel.y      = 0;
+    float targetSpeed = fmaxf(glms_vec3_norm(prevLatVel), boost);
 
     vec3s project;
     vec3s targetVel;
@@ -113,29 +99,24 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
     body->vel = targetVel;
 }
 
-void Wallrun_State_Update(World *world, int id, float dt)
+void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
-    if (LeaveState(world, id, move, cmd))
-        return;
-
     data->accum += dt;
 
-    SolRayResult result   = {0};
-    bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK + 0.1f);
+    SolRayResult result   = { 0 };
+    bool         goodWall = CheckWall(world, id, move, &result, DISTANCE_CHECK + 0.1f);
     if (goodWall)
     {
         data->accum = 0;
     }
-    else if (!goodWall && data->accum >= COYOTE_TIMER)
-    {
-        Sol_Move3_SetState(world, id, MOVE_IDLE);
-        return;
-    }
+    // else if (!goodWall && data->accum >= COYOTE_TIMER)
+    // {
+    //     Sol_Move3_SetState(world, id, MOVE_IDLE);
+    //     return;
+    // }
 
     RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT), move, cmd);
 
@@ -144,47 +125,39 @@ void Wallrun_State_Update(World *world, int id, float dt)
     data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, cmd->yaw);
 }
 
-void Wallrun_State_Enter(World *world, int id)
+void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd  *cmd  = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
-    if (LeaveState(world, id, move, cmd))
-        return;
     if (body->vel.y < 0.0f)
         body->vel.y = 0.0f;
     RunVel(world, id, BOOST_AMOUNT, move, cmd);
     data->accum = 0;
 }
 
-void Wallrun_State_Exit(World *world, int id)
+void Move_Wallrun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScMove3       *move = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
     data->lastExited    = solState.appTime;
 }
 
-bool Wallrun_State_CanExit(World *world, int id, u32 nextState)
+bool Move_Wallrun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    return nextState != MOVE_WALLRUN;
+    return true;
 }
 
-bool Wallrun_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
+bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    ScMove3      *move = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
     if (cmd->actionState & BITC(ACTION_CROUCH))
         return false;
-    SolRayResult result   = {0};
-    bool         goodWall = CheckWall(world, id, &result, DISTANCE_CHECK);
-    // if (goodWall)
-    // {
-    //     if (Sol_Ability_Get(world, id)->state == ABILITY_STATE_DASH)
-    //         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, true);
-    // }
 
-    return goodWall;
+    if (move->airtime > 0 && (cmd->actionState & BITC(ACTION_JUMP)))
+    {
+        SolRayResult result   = { 0 };
+        bool         goodWall = CheckWall(world, id, move, &result, DISTANCE_CHECK);
+        return goodWall;
+    }
+    return false;
 }

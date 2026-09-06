@@ -66,6 +66,8 @@ static inline void Sol_ToggleDebug(int flag)
 
 static inline World *Sol_GetWorldByIdx(WorldIdx idx)
 {
+    if (idx < 0)
+        return NULL;
     return solState.worlds[idx];
 }
 
@@ -76,5 +78,6 @@ void Sol_Destroy();
 void Sol_Window_OnResize(int x, int y, int width, int height);
 
 void Sol_Debug_Add(const char *text, float value);
+void Sol_Debug_AddText(const char *label, const char *value);
 void Sol_Debug_Draw(double dt);
 void Sol_FPS(double dt);

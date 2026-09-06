@@ -27,6 +27,7 @@ typedef enum
     WORLDSYS_MOVE2,
     WORLDSYS_BODY3,
     WORLDSYS_BODY2,
+    WORLDSYS_ABILITY,
 
     WORLDSYS_HOOK,
 
@@ -120,6 +121,8 @@ struct World
                                                                                                                        \
     static inline T *Sol_Comp_Add_##T(World *w, int entId)                                                             \
     {                                                                                                                  \
+        if ((uint32_t)entId >= w->maxEntities)                                                                         \
+            return NULL;                                                                                               \
         SparseSet_##T *set = (SparseSet_##T *)w->components[ENUM_FLAG];                                                \
         if (w->masks[entId] & BITC(ENUM_FLAG))                                                                         \
         {                                                                                                              \
@@ -191,7 +194,7 @@ static inline void Sol_World_InitAllComponents(World *w, int maxEntities)
 }
 
 static const size_t COMP_SIZES[COMPONENT_COUNT] = {
-#define X(enum_name, type_name) sizeof(type_name),
+#define X(type_name, enum_name) sizeof(type_name),
     SOL_COMPONENT_LIST(X)
 #undef X
 };
@@ -293,6 +296,7 @@ void Move3_Step(World *world, double dt);
 void Move2_Step(World *world, double dt);
 void Body3_Step(World *world, double dt);
 void Body2_Step(World *world, double dt);
+void Ability_Step(World *world, double dt);
 
 void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
@@ -300,6 +304,7 @@ void Facing_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
 
 void Model_Render(World *world, double dt);
+void Ability_Draw(World *world, double dt);
 void View2_Draw(World *world, double dt);
 void View2_Healthbar(World *world, double dt);
 void View2_Abilitybar(World *world, double dt);
@@ -315,6 +320,8 @@ void   Sol_Sys_Add(World *world, WorldSystems system);
 void   Sol_Sys_Remove(World *world, WorldSystems system);
 
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
+
+int Sol_Interact_FindTopmost(World *world, vec2s point);
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc);
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
@@ -332,7 +339,10 @@ vec3s Sol_Body3_GetVel(World *world, int id);
 vec3s Sol_Body3_GetDir(World *world, int id);
 float Sol_Body3_GetSpeed(World *world, int id);
 
-int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
+int  Sol_Body2_GetEntAtPoint(World *world, vec2s point);
+bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
+
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
 
 int  Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 int  Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);

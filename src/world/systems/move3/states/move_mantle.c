@@ -14,21 +14,19 @@
 #define MANTLE_TIME 0.5f
 #define MANTLE_SPEED 5.0f
 
-static bool CheckWall(World *world, int id)
+static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScMove3 *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
 
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
     vec3s          basePos = vecAdd(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
 
-    if (Sol_Raycast1(world, (SolRay){.start = xform->pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id},
+    if (Sol_Raycast1(world, (SolRay){ .start = xform->pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id },
                      NULL))
         return false;
 
-    vec3s goodPos     = {0};
+    vec3s goodPos     = { 0 };
     u32   mantleSpace = 0;
     // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
@@ -37,7 +35,8 @@ static bool CheckWall(World *world, int id)
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay ray = {
-            .start = pos, .dist = body->dims.x * 1.5f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cmd->yaw, 0)};
+            .start = pos, .dist = body->dims.x * 1.5f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cmd->yaw, 0)
+        };
         SolRayResult rayResult;
         bool         hit = Sol_Raycast1(world, ray, &rayResult);
         // No hit indicates there is space above
@@ -58,30 +57,12 @@ static bool CheckWall(World *world, int id)
     return false;
 }
 
-static bool LeaveState(World *world, int id, ScMove3 *move, ScCmd *cmd)
+void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    if (move->stateData[move->state].elapsed >= MANTLE_TIME)
-        return true;
-    if (!(cmd->actionState & BITC(ACTION_JUMP)))
-        return true;
-    if (cmd->actionState & BITC(ACTION_CROUCH))
-        return true;
-    if (move->stateData[move->state].as.mantle.closeEnough)
-        return true;
-
-    return false;
-}
-
-void Mantle_State_Update(World *world, int id, float dt)
-{
-    ScMove3       *move  = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd         *cmd   = Sol_Comp_Get(world, id, ScCmd);
     ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_MANTLE];
-    if (LeaveState(world, id, move, cmd))
-        if (Sol_Move3_SetState(world, id, MOVE_IDLE))
-            return;
+
     vec3s pos       = xform->pos;
     vec3s targetPos = data->as.mantle.pos;
     float speed     = MANTLE_SPEED;
@@ -99,48 +80,39 @@ void Mantle_State_Update(World *world, int id, float dt)
         vec3s dir            = vecSub(targetPos, pos);
         float dist           = glms_vec3_norm(dir);
         data->as.mantle.dist = dist;
-        if (dist <= 0.2f && !CheckWall(world, id))
+        if (dist <= 0.2f && !CheckWall(world, id, move, cmd))
             data->as.mantle.closeEnough = 1;
         dir       = vecNorm(dir);
         body->vel = vecSca(dir, speed);
     }
 }
 
-void Mantle_State_Enter(World *world, int id)
+void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScMove3       *move         = Sol_Comp_Get(world, id, ScMove3);
     ScBody3       *body         = Sol_Comp_Get(world, id, ScBody3);
     ScXform       *xform        = Sol_Comp_Add(world, id, ScXform);
-    ScCmd         *cmd          = Sol_Comp_Get(world, id, ScCmd);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
     data->as.mantle.doRoll      = (body->vel.y > 5.0f) && (xform->pos.y < data->as.mantle.ledge_pos.y);
 }
 
-void Mantle_State_Exit(World *world, int id)
+void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
 }
 
-bool Mantle_State_CanExit(World *world, int id, u32 nextState)
+bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
-    ScCmd   *cmd  = Sol_Comp_Get(world, id, ScCmd);
-    return LeaveState(world, id, move, cmd);
+    return move->stateData[move->state].as.mantle.closeEnough || !(cmd->actionState & BITC(ACTION_JUMP));
 }
 
-bool Mantle_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
+bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    if (Sol_Comp_Has(world, id, ScAbility))
-    {
-        ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-
-        if (ability->state == ABILITY_STATE_DASH || ability->state == ABILITY_STATE_SPINSLASH)
-            return false;
-    }
-    return CheckWall(world, id);
+    if (cmd->actionState & BITC(ACTION_JUMP))
+        return CheckWall(world, id, move, cmd);
+    return false;
 }
 
-void Mantle_State_Draw(World *world, int id, double dt)
+void Move_Mantle_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd, double dt)
 {
 }

@@ -6,9 +6,8 @@
 #define DASH_DURATION 0.5f
 #define DAMPING 5.0f
 
-void Walljump_State_Update(World *world, int id, float dt)
+void Move_Walljump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScMove3       *move         = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *walljumpData = &move->stateData[MOVE_WALLJUMP];
 
     if (walljumpData->elapsed >= DASH_DURATION)
@@ -17,7 +16,6 @@ void Walljump_State_Update(World *world, int id, float dt)
         return;
     }
 
-    ScCmd   *cmd   = Sol_Comp_Get(world, id, ScCmd);
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
     float    alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 
@@ -27,20 +25,17 @@ void Walljump_State_Update(World *world, int id, float dt)
     body->vel = vel;
 }
 
-void Walljump_State_Enter(World *world, int id)
+void Move_Walljump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScMove3       *move        = Sol_Comp_Get(world, id, ScMove3);
     MoveStateData *wallrunData = &move->stateData[MOVE_WALLRUN];
-    ScCmd         *cmd         = Sol_Comp_Get(world, id, ScCmd);
     ScBody3       *body        = Sol_Comp_Get(world, id, ScBody3);
 
-    vec3s vel        = body->vel;
-    vec3s up2        = {0.0f, 1.8f, 0.0f};
-    vec3s finalDir   = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
-    finalDir         = vecAdd(finalDir, vecNorm(vel));
-    wallrunData->dir = vecNorm(finalDir);
+    vec3s vel      = body->vel;
+    vec3s up2      = { 0.0f, 1.8f, 0.0f };
+    vec3s finalDir = vecAdd(wallrunData->as.wallrun.wallNormal, up2);
+    finalDir       = vecNorm(vecAdd(finalDir, vecNorm(vel)));
 
-    vec3s finalVel    = vecSca(wallrunData->dir, DASH_VEL);
+    vec3s finalVel    = vecSca(finalDir, DASH_VEL);
     float targetUpVel = finalVel.y;
     if (vel.y < targetUpVel)
         finalVel.y = targetUpVel - vel.y;
@@ -50,16 +45,20 @@ void Walljump_State_Enter(World *world, int id)
     body->vel = vecAdd(body->vel, finalVel);
 }
 
-void Walljump_State_Exit(World *world, int id)
+void Move_Walljump_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
 }
 
-bool Walljump_State_CanExit(World *world, int id, u32 nextState)
+bool Move_Walljump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    return nextState != MOVE_WALLJUMP;
+    return move->stateData[move->state].elapsed > DASH_DURATION;
 }
 
-bool Walljump_State_CanEnter(World *world, int id, u32 lastState, u32 nextState, int slot)
+bool Move_Walljump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    return true;
+    if (last == MOVE_WALLRUN)
+    {
+        return !(cmd->actionState & BITC(ACTION_JUMP));
+    }
+    return false;
 }

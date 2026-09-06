@@ -169,6 +169,7 @@ typedef enum
     MOVE_WALLRUN,
     MOVE_WALLJUMP,
     MOVE_MANTLE,
+    MOVE_LANDING,
     MOVE_FLY,
     MOVE_DEAD,
     MOVE_STATE_COUNT
@@ -306,6 +307,7 @@ typedef enum
     ANIM_WALLRUN_LEFT,
     ANIM_WALLRUN_RIGHT,
     ANIM_BACKFLIP,
+    ANIM_HARDLAND,
     ANIM_MANTLE,
     ANIM_MANTLE_ROLL,
     ANIM_ATTACK_LEFT,
@@ -387,7 +389,7 @@ typedef enum
     INTERACT_HOVERED    = (1 << 3),
     INTERACT_HELD       = (1 << 4),
     INTERACT_PRESSED    = (1 << 5),
-    INTERACT_RAGGABLE   = (1 << 6),
+    INTERACT_DRAGGABLE  = (1 << 6),
     INTERACT_DRAGGING   = (1 << 7),
 } InteractState;
 
@@ -439,11 +441,6 @@ typedef enum
     UILAYER_0,
     UILAYER_1,
     UILAYER_2,
-    UILAYER_3,
-    UILAYER_4,
-    UILAYER_5,
-    UILAYER_6,
-    UILAYER_7,
     UILAYER_COUNT,
 } UiLayer;
 

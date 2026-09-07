@@ -8,7 +8,6 @@
 void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->duration         = ability_base[ability->state].duration;
     data->elapsed += dt;
 
     if (data->elapsed >= data->duration)
@@ -28,6 +27,9 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    data->duration         = ability_base[ABILITY_STATE_DASH].duration;
+    data->cooldown         = ability_base[ABILITY_STATE_DASH].cooldown;
+
     vec3s flat_lookdir     = cmd->lookdir;
     flat_lookdir.y         = 0;
     flat_lookdir           = vecNorm(flat_lookdir);
@@ -37,10 +39,9 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
     {
         data->as.dash.enterDir = cmd->wishdir;
     }
-    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
 
     data->as.dash.strafe =
-        Sol_GetStrafedirYaw(data->as.dash.enterDir.x, data->as.dash.enterDir.z, Sol_Quat_ToYaw(xform->rot));
+        Sol_GetStrafedirYaw(data->as.dash.enterDir.x, data->as.dash.enterDir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
 }
 
 void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
@@ -50,12 +51,12 @@ void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    return data->elapsed > data->duration * 0.9f;
+    return data->elapsed > data->duration * 0.8f;
 }
 
 bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return !(slot == ability->activeSlot || data->lastExited + ability_base[ABILITY_STATE_DASH].cooldown > world->tickTime);
+    return data->lastExited + data->cooldown < world->tickTime;
 }

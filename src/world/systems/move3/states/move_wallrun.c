@@ -30,19 +30,18 @@ static bool CheckEnergy(World *world, int id)
 
 static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result, float addRadius)
 {
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 
     vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
     float radius = dims.x + addRadius;
-
+    Xforms xform = Xform_Get(world, id);
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
         {
-            vec3s finalPos = xform->pos;
+            vec3s finalPos = xform.pos;
             finalPos.y += (float)i * (dims.y * 0.4f);
-            vec3s  rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
+            vec3s  rotated_offset = glms_quat_rotatev(xform.rot, VECTOR_RADIAL_DIRECTIONS[j]);
             SolRay ray            = {
                 .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true
             };
@@ -101,9 +100,8 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 
 void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
-
+    Xforms xform = Xform_Get(world, id);
     data->accum += dt;
 
     SolRayResult result   = { 0 };
@@ -120,14 +118,13 @@ void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float 
 
     RunVel(world, id, Sol_Math_Lerp(BOOST_AMOUNT, 0.0f, data->elapsed / BOOST_TIMEOUT), move, cmd);
 
-    vec3s dirToWall            = glms_vec3_sub(xform->pos, move->lastTouch);
+    vec3s dirToWall            = glms_vec3_sub(xform.pos, move->lastTouch);
     dirToWall                  = glms_vec3_normalize(dirToWall);
     data->as.wallrun.wallTouch = CalcTouch(data->as.wallrun.wallNormal, cmd->yaw);
 }
 
 void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
 

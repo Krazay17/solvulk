@@ -189,7 +189,7 @@ void Create_Sol_Game()
     int attackBar = Sol_Create_Ent(Sol_GetWorldById(WORLDID_HUD), 0);
     Sol_Body2d_Add(Sol_GetWorldById(WORLDID_HUD), attackBar, BODY2DKIND_RECT, 140.0f, 70.0f, 0);
     Sol_Xform_Set(Sol_GetWorldById(WORLDID_HUD), attackBar, 340, 650, 0);
-    Sol_View2d_Add(Sol_GetWorldById(WORLDID_HUD), attackBar, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 140, 70);
+    Sol_View2d_Add(Sol_GetWorldById(WORLDID_HUD), attackBar, VIEW2KIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 140, 70);
     Sol_Interact_Add(Sol_GetWorldById(WORLDID_HUD), attackBar);
 
     for (int i = 0; i < 2; i++)
@@ -206,7 +206,7 @@ void Create_Sol_Game()
     int abilityBar = Sol_Create_Ent(Sol_GetWorldById(WORLDID_HUD), 0);
     Sol_Body2d_Add(Sol_GetWorldById(WORLDID_HUD), abilityBar, BODY2DKIND_RECT, 280, 70, 0);
     Sol_Xform_Set(Sol_GetWorldById(WORLDID_HUD), abilityBar, 500, 650, 0);
-    Sol_View2d_Add(Sol_GetWorldById(WORLDID_HUD), abilityBar, VIEW2DKIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 280,
+    Sol_View2d_Add(Sol_GetWorldById(WORLDID_HUD), abilityBar, VIEW2KIND_RECT, (vec4s){1.0f, 1.0f, 1.0f, 1.0f}, 280,
                    70);
     Sol_Interact_Add(Sol_GetWorldById(WORLDID_HUD), abilityBar);
 

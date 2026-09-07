@@ -267,7 +267,7 @@ void Worlds_Draw2d(World **worlds, int count, double dt)
     }
 }
 
-int Sol_Create_Ent(World *world)
+int Sol_Create_Ent(World *world, vec3s pos)
 {
     int id = 0;
     while (id < world->maxEntities && world->masks[id] != 0)
@@ -282,6 +282,15 @@ int Sol_Create_Ent(World *world)
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = world->tickTime;
     Sol_Debug_Add("Entities", world->entCount);
+    world->xform.pos[id]      = pos;
+    world->xform.last_pos[id] = pos;
+    world->xform.draw_pos[id] = pos;
+    world->xform.rot[id]      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
+    world->xform.last_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};
+    world->xform.draw_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};
+    world->xform.sca[id]      = (vec3s){1.0f, 1.0f, 1.0f};
+    world->xform.last_sca[id] = (vec3s){1.0f, 1.0f, 1.0f};
+    world->xform.draw_sca[id] = (vec3s){1.0f, 1.0f, 1.0f};
 
     return id;
 }

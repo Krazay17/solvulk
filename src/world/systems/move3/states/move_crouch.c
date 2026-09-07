@@ -5,13 +5,12 @@
 void Move_Crouch_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
     MoveStateData *data  = &move->stateData[move->state];
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
 
     if (cmd)
     {
         float x                = cmd->wishdir.x;
         float z                = cmd->wishdir.z;
-        vec3s rot              = Sol_RotFromQuat(xform->rot);
+        vec3s rot              = Sol_RotFromQuat(world->xform.rot[id]);
         data->as.crouch.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
     }
 }
@@ -31,9 +30,8 @@ void Move_Crouch_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
 bool Move_Crouch_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
     bool     hit   = Sol_Raycast1(
-        world, (SolRay){ .start = xform->pos, .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id },
+        world, (SolRay){ .start = world->xform.pos[id], .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id },
         NULL);
 
     if (hit)

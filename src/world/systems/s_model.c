@@ -22,25 +22,24 @@ const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
         {
             .y_offset = -0.8f,
         },
-        [MODELKIND_EVAN] = 
+    [MODELKIND_EVAN] =
         {
             .yaw_offset = GLM_PI_2f,
-        }
+        },
 };
 
 void Model_Render(World *world, double dt)
 {
-    float               fdt = (float)dt;
+    float fdt              = (float)dt;
     SparseSet_ScModel *set = Sol_Comp_Set(world, ScModel);
     for (int i = 0; i < set->cnt; i++)
     {
-        int       id    = set->dense[i];
-        ScModel *model = &set->data[i];
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        if (!xform)
-            continue;
+        int id              = set->dense[i];
+        ScModel *model      = &set->data[i];
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = model->color;
+
+        XformsDraw xform = Xform_GetDraw(world, id);
 
         if (Sol_Comp_Has(world, id, ScInteract))
         {
@@ -56,32 +55,31 @@ void Model_Render(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, ScCombat))
         {
-            ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+            ScCombat *combat  = Sol_Comp_Get(world, id, ScCombat);
             modelSSBO.hitTime = combat->lastHitTime;
         }
         else
             modelSSBO.hitTime = -100.0f;
 
-        vec3s pos = xform->draw_pos;
+        vec3s pos = xform.pos;
         pos.y += model_kinds[model->kind].y_offset;
         pos.y += model->yOffset;
 
         if (model->is2d)
         {
             modelSSBO.flags |= (1 << 2);
-            float px           = UISCALE(pos.x + (model->xOffset * xform->draw_sca.x));
-            float py           = UISCALE(pos.y + (-model->yOffset * xform->draw_sca.y));
+            float px           = UISCALE(pos.x + (model->xOffset * xform.sca.x));
+            float py           = UISCALE(pos.y + (-model->yOffset * xform.sca.y));
             float pz           = pos.z;
             modelSSBO.position = (vec4s){px, py, pz, 1.0f};
-            modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
-            modelSSBO.scale =
-                (vec4s){UISCALE(xform->draw_sca.x), UISCALE(xform->draw_sca.y), UISCALE(xform->draw_sca.z), 1.0f};
+            modelSSBO.rotation = (vec4s){xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
+            modelSSBO.scale    = (vec4s){UISCALE(xform.sca.x), UISCALE(xform.sca.y), UISCALE(xform.sca.z), 1.0f};
         }
         else
         {
             modelSSBO.position = (vec4s){pos.x, pos.y, pos.z, 1.0f};
-            modelSSBO.rotation = (vec4s){xform->draw_rot.x, xform->draw_rot.y, xform->draw_rot.z, xform->draw_rot.w};
-            modelSSBO.scale    = (vec4s){xform->draw_sca.x, xform->draw_sca.y, xform->draw_sca.z, 1.0f};
+            modelSSBO.rotation = (vec4s){xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
+            modelSSBO.scale    = (vec4s){xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
         }
         if (Sol_Comp_Has(world, id, ScAnim))
         {
@@ -99,13 +97,13 @@ void Model_Init(World *world)
 {
 }
 
-Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
+SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
-    Xform        result   = {0};
-    ScModel    *model    = Sol_Comp_Get(world, id, ScModel);
-    ScAnim     *anim     = Sol_Comp_Get(world, id, ScAnim);
-    ScXform    *xform    = Sol_Comp_Get(world, id, ScXform);
+    SolXform result       = {0};
+    ScModel *model        = Sol_Comp_Get(world, id, ScModel);
+    ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
+    XformsDraw xform      = Xform_GetDraw(world, id);
 
     int boneIdx = -1;
     for (int i = 0; i < skeleton->boneCount; i++)
@@ -118,8 +116,8 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     }
     if (boneIdx < 0)
     {
-        result.pos  = GLMS_VEC3_ZERO;
-        result.quat = GLMS_QUAT_IDENTITY;
+        result.pos = GLMS_VEC3_ZERO;
+        result.rot = GLMS_QUAT_IDENTITY;
         return result;
     }
 
@@ -138,15 +136,14 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_identity(entityWorld);
 
     // Apply position (including your yOffset adjustment)
-    vec3 actualDrawPos = {xform->draw_pos.x, xform->draw_pos.y + (model->yOffset * xform->draw_sca.y),
-                          xform->draw_pos.z};
+    vec3 actualDrawPos = {xform.pos.x, xform.pos.y + (model->yOffset * xform.sca.y), xform.pos.z};
     glm_translate(entityWorld, actualDrawPos);
 
     // Apply rotation
-    glm_quat_rotate(entityWorld, xform->draw_rot.raw, entityWorld);
+    glm_quat_rotate(entityWorld, xform.rot.raw, entityWorld);
 
     // Apply scale
-    glm_scale(entityWorld, xform->draw_sca.raw);
+    glm_scale(entityWorld, xform.sca.raw);
 
     // 3. Combine them: Final World Matrix = EntityWorld * BoneModelSpace
     mat4 finalWorldMat;
@@ -159,7 +156,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     result.pos.z = finalWorldMat[3][2];
 
     // Extract Rotation quaternion cleanly from the upper-left 3x3
-    glm_mat4_quat(finalWorldMat, result.quat.raw);
+    glm_mat4_quat(finalWorldMat, result.rot.raw);
 
     return result;
 }

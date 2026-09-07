@@ -6,7 +6,7 @@ typedef struct World World;
 
 typedef struct
 {
-    View2dKind kind;
+    View2Kind kind;
     vec4s      dims, offset;
     vec4s      color;
     vec4s      hoverColor, clickColor, toggleColor;
@@ -26,7 +26,7 @@ typedef struct CompView2d
 } CompView2d;
 
 void        Sol_View2d_Init(World *world);
-SolView2d  *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height);
+SolView2d  *Sol_View2d_Add(World *world, int id, View2Kind kind, vec4s color, float width, float height);
 CompView2d *Sol_View2d_Get(World *world, int id);
 void        Sol_View2d_Set(World *world, int id, CompView2d view);
 void        Sol_View2d_SetText(World *world, int id, SolView2d *view, const char *text);

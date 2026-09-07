@@ -8,13 +8,12 @@ void Camera_Tick(World *world, double dt)
     SparseSet_ScCamera *set = Sol_Comp_Set(world, ScCamera);
     for (int i = 0; i < set->cnt; i++)
     {
-        int       id     = set->dense[i];
+        int id           = set->dense[i];
         ScCamera *camera = &set->data[i];
+        XformsDraw xform = Xform_GetDraw(world, id);
+        ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-
-        vec3s head = xform->draw_pos;
+        vec3s head = xform.pos;
         head.y += body3->dims.y * 0.5f;
         vec3s lookdir = (vec3s){0, 0, 1.0f};
 
@@ -38,7 +37,7 @@ void Camera_Tick(World *world, double dt)
             float factor = 1.0f - expf(-camera->lerpspeed * fdt);
 
             SolRayResult anchortrace = {0};
-            bool         offsetHit   = Sol_Raycast1(
+            bool offsetHit           = Sol_Raycast1(
                 world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset}, &anchortrace);
 
             float target_offset = camera->desired_offset;
@@ -58,8 +57,8 @@ void Camera_Tick(World *world, double dt)
 
             camera->anchor = vecAdd(head, vecSca(offsetvec, camera->current_offset));
 
-            SolRayResult dist_trace  = {0};
-            bool         distanceHit = Sol_Raycast1(
+            SolRayResult dist_trace = {0};
+            bool distanceHit        = Sol_Raycast1(
                 world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance}, &dist_trace);
 
             float target_dist = camera->desired_distance;
@@ -88,7 +87,7 @@ void Camera_Tick(World *world, double dt)
             ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
             if (move->state == MOVE_WALLRUN)
             {
-                vec3s dir   = vecSub(move->lastTouch, xform->pos);
+                vec3s dir   = vecSub(move->lastTouch, xform.pos);
                 dir         = vecNorm(dir);
                 vec3s right = vecCrs(camera->dir, WORLD_UP);
                 float dot   = vecDot(right, dir);

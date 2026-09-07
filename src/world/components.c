@@ -16,22 +16,6 @@ ScModel *Sol_Model_Add(World *world, int id, ModelKind kind)
     return model;
 }
 
-ScXform *Sol_Xform_Add(World *world, int id, vec3s pos)
-{
-    ScXform *xform = Sol_Comp_Add(world, id, ScXform);
-    xform->rot      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->last_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->draw_rot = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    xform->sca      = (vec3s){1.0f, 1.0f, 1.0f};
-    xform->last_sca = (vec3s){1.0f, 1.0f, 1.0f};
-    xform->draw_sca = (vec3s){1.0f, 1.0f, 1.0f};
-    xform->pos      = pos;
-    xform->last_pos = pos;
-    xform->draw_pos = pos;
-
-    return xform;
-}
-
 ScBody3 *Sol_Body3_Add(World *world, int id)
 {
     ScBody3 *body3    = Sol_Comp_Add(world, id, ScBody3);

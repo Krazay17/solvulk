@@ -13,9 +13,9 @@ static void DrawRect(World *world, int id, double dt, double time, SolView2d *vi
 static void DrawCircle(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 static void View_DrawText(World *world, int id, double dt, double time, SolView2d *view, vec3s pos);
 
-DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
-    [VIEW2DKIND_RECT] = DrawRect,
-    [VIEW2DKIND_TEXT] = View_DrawText,
+DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
+    [VIEW2KIND_RECT] = DrawRect,
+    [VIEW2KIND_TEXT] = View_DrawText,
 };
 
 static void View2d_Draw(World *world, double dt, double time)
@@ -98,7 +98,7 @@ void Sol_View2d_Init(World *world)
     WAdd2d(world)   = View2d_Draw;
 }
 
-SolView2d *Sol_View2d_Add(World *world, int id, View2dKind kind, vec4s color, float width, float height)
+SolView2d *Sol_View2d_Add(World *world, int id, View2Kind kind, vec4s color, float width, float height)
 {
     SolView2d view = {
         .kind       = kind,

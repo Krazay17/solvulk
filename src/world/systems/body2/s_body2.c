@@ -2,9 +2,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-typedef void (*Resolver)(ScBody2 *, ScXform *, ScBody2 *, ScXform *);
+typedef void (*Resolver)(World *, ScBody2 *, ScBody2 *);
 
-static void Resolve_Rect(ScBody2 *body, ScXform *xform, ScBody2 *bodyB, ScXform *xformB);
+static void Resolve_Rect(World *world, ScBody2 *body, ScBody2 *bodyB);
 
 const Resolver shape_resolver[SHAPE2_CNT][SHAPE2_CNT] = {
     [SHAPE2_REC][SHAPE2_REC] = Resolve_Rect,
@@ -23,7 +23,7 @@ void Body3_Init(World *world)
 void Body2_Step(World *world, double dt)
 {
     float fdt = (float)dt;
-    int   i, j;
+    int i, j;
 
     SparseSet_ScBody2 *set = Sol_Comp_Set(world, ScBody2);
     for (i = 0; i < set->cnt; i++)
@@ -39,13 +39,10 @@ void Body2_Step(World *world, double dt)
 
     for (i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int id        = set->dense[i];
         ScBody2 *body = &set->data[i];
 
-        if (!Sol_Comp_Has(world, id, ScXform))
-            continue;
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-        xform->pos     = vecAdd(xform->pos, vecSca(body->vel, fdt));
+        world->xform.pos[id] = vecAdd(world->xform.pos[id], vecSca(body->vel, fdt));
     }
 
     // for (i = 0; i < set->cnt; i++)
@@ -69,48 +66,29 @@ void Body2_Step(World *world, double dt)
 
     for (i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int id        = set->dense[i];
         ScBody2 *body = &set->data[i];
-        if (body->ignoreWindow || !Sol_Comp_Has(world, id, ScXform))
+        if (body->ignoreWindow)
             continue;
-        ScXform *xform   = Sol_Comp_Get(world, id, ScXform);
-        vec3s    old_pos = xform->pos;
-        vec3s    max_pos = glms_vec3_sub(bounds_max, body->dims);
+            Xforms xform = Xform_Get(world, id);
+        vec3s old_pos  = xform.pos;
+        vec3s max_pos  = glms_vec3_sub(bounds_max, body->dims);
 
         // Clamp position
-        xform->pos = glms_vec3_maxv(bounds_min, glms_vec3_minv(xform->pos, max_pos));
+        world->xform.pos[id] = glms_vec3_maxv(bounds_min, glms_vec3_minv(old_pos, max_pos));
 
-        if (xform->pos.x != old_pos.x)
+        if (world->xform.pos[id].x != old_pos.x)
             body->vel.x = -body->vel.x * body->restitution;
-        if (xform->pos.y != old_pos.y)
+        if (world->xform.pos[id].y != old_pos.y)
             body->vel.y = -body->vel.y * body->restitution;
     }
 }
 
-static void Resolve_Rect(ScBody2 *body, ScXform *xform, ScBody2 *bodyB, ScXform *xformB)
-{
-}
-
-vec3s Sol_Body2_AABBPen(ScBody2 *body, ScXform *xform, ScBody2 *bodyB, ScXform *xformB)
-{
-    vec3s aa = xform->pos;
-    vec3s ab = vecAdd(xform->pos, body->dims);
-
-    vec3s ba = xformB->pos;
-    vec3s bb = vecAdd(xformB->pos, bodyB->dims);
-
-    vec3s a = vecSub(aa, ba);
-    vec3s b = vecSub(ab, bb);
-
-    return vecSub(a, b);
-}
-
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point)
 {
-    ScBody2 *body     = Sol_Comp_Get(world, id, ScBody2);
-    ScXform *xform    = Sol_Comp_Get(world, id, ScXform);
-    bool     overlapX = (point.x > xform->pos.x) && point.x < (xform->pos.x + body->dims.x);
-    bool     overlapY = (point.y > xform->pos.y) && point.y < (xform->pos.y + body->dims.y);
+    ScBody2 *body = Sol_Comp_Get(world, id, ScBody2);
+    bool overlapX = (point.x > world->xform.pos[id].x) && point.x < (world->xform.pos[id].x + body->dims.x);
+    bool overlapY = (point.y > world->xform.pos[id].y) && point.y < (world->xform.pos[id].y + body->dims.y);
     if (overlapX && overlapY)
         return true;
 
@@ -125,13 +103,10 @@ int Sol_Body2_GetEntAtPoint(World *world, vec2s point)
     SparseSet_ScBody2 *set = Sol_Comp_Set(world, ScBody2);
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int id        = set->dense[i];
         ScBody2 *body = &set->data[i];
-        if (!Sol_Comp_Has(world, id, ScXform))
-            continue;
-        ScXform *xform    = Sol_Comp_Get(world, id, ScXform);
-        bool     overlapX = (point.x > xform->pos.x) && point.x < (xform->pos.x + body->dims.x);
-        bool     overlapY = (point.y > xform->pos.y) && point.y < (xform->pos.y + body->dims.y);
+        bool overlapX = (point.x > world->xform.pos[id].x) && point.x < (world->xform.pos[id].x + body->dims.x);
+        bool overlapY = (point.y > world->xform.pos[id].y) && point.y < (world->xform.pos[id].y + body->dims.y);
         if (overlapX && overlapY && body->zindex > zindex)
         {
             best   = id;
@@ -145,4 +120,9 @@ int Sol_Body2_GetEntAtPoint(World *world, vec2s point)
 bool Sol_Body2_DoesCollide(ScBody2 *body, ScBody2 *bodyB)
 {
     return (body->mask << 16) & bodyB->mask;
+}
+
+static void Resolve_Rect(World *world, ScBody2 *body, ScBody2 *bodyB)
+{
+
 }

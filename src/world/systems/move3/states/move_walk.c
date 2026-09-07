@@ -5,11 +5,9 @@
 
 void Move_Walk_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-
     float x                                   = cmd->wishdir.x;
     float z                                   = cmd->wishdir.z;
-    vec3s rot                                 = Sol_RotFromQuat(xform->rot);
+    vec3s rot                                 = Sol_RotFromQuat(world->xform.rot[id]);
     move->stateData[MOVE_WALK].as.walk.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
 }
 

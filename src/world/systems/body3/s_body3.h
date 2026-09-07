@@ -19,7 +19,6 @@
 #define SOLVER_PERCENT 0.33f
 #define SOLVER_SLACK 0.01f
 
-typedef struct ScXform ScXform;
 typedef struct ScBody3 ScBody3;
 typedef struct SolTri SolTri;
 
@@ -58,16 +57,12 @@ typedef struct
 } SysPhysx;
 
 void Build_Tables(World *world, SysPhysx *sys, float fdt);
-void Resolve_Contact(ScBody3 *bodyA, ScXform *xformA, ScBody3 *bodyB, ScXform *xformB, SolContact *contact);
+void Resolve_Contact(World *world, int idA, int idB, SolContact *contact);
 
 void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, StaticGroup *group,
                                    ThreadContactBuffer *contacts);
 void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, DynamicGroup *group,
                                      ThreadContactBuffer *contacts);
-
-void Collisions_Static_Stage(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body, float fdt);
-void Collisions_Dynamic_Bodies(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body);
-void Collisions_Dynamic_Tris(World *world, int idA, SysPhysx *sys, ScXform *xform, ScBody3 *body);
 
 bool Collide_Sphere_Sphere(World *world, int idA, int idB, SolContact *hit);
 bool Collide_Capsule_Capsule(World *world, int idA, int idB, SolContact *hit);

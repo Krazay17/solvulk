@@ -25,7 +25,7 @@ void Ability_Step(World *world, double dt)
             int mask                   = BITC(ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
-            if (held)
+            if (held && ability->activeSlot != j)
             {
                 Sol_Ability_SetState(world, id, ability->action_map[j], j, false);
             }

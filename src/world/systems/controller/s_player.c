@@ -50,11 +50,10 @@ void Player_Tick(World *world, double dt)
         cmd->wishdir  = CalcWishdir3(sol_user.actions, cmd->lookdir, WORLD_UP, false);
         cmd->wishdir2 = CalcWishDir2(sol_user.actions);
 
-        if (Sol_Comp_Has(world, id, ScBody3) && Sol_Comp_Has(world, id, ScXform))
+        if (Sol_Comp_Has(world, id, ScBody3))
         {
-            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
             ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-            vec3s head     = xform->pos;
+            vec3s head     = world->xform.pos[id];
             head.y += body->dims.y * 0.4f;
             cmd->aimpos = head;
         }

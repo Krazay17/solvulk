@@ -215,22 +215,17 @@ void Entity_Actions()
     // DEBUG FLY
     if (Sol_Input_KeyDown(SOL_KEY_G))
     {
-        if (Sol_Comp_Has(world, id, ScXform))
+        Xforms xform = Xform_Get(world, id);
+        vec3s pos    = vecAdd(xform.pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
+        Sol_Xform_Teleport(world, id, pos);
+        if (Sol_Comp_Has(world, id, ScBody3))
         {
-            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-            xform->pos = vecAdd(xform->pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
-            xform->last_pos = xform->pos;
-            xform->draw_pos = xform->pos;
-            if (Sol_Comp_Has(world, id, ScBody3))
-            {
-                ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-                body3->vel     = GLMS_VEC3_ZERO;
-            }
+            ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+            body3->vel     = GLMS_VEC3_ZERO;
         }
     }
     if (mouse.buttons[SOL_MOUSE_LEFT])
     {
-        ScXform *xform  = Sol_Comp_Get(world, id, ScXform);
         SolRay ray      = {.start = cmd->aimpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = 1};
         vec3s final_pos = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
         // SolRayResult result = {0};
@@ -267,20 +262,16 @@ const char *move_state_name[MOVE_STATE_COUNT] = {
     [MOVE_DEAD] = "Dead",
 };
 
-
 void User_Debug(dt)
 {
     World *world = Sol_User_GetGameWorld();
     int id       = sol_user.view_ent;
     if (id >= 0)
     {
-        if (Sol_Comp_Has(world, id, ScXform))
-        {
-            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-            Sol_Debug_Add("X", xform->pos.x);
-            Sol_Debug_Add("Y", xform->pos.y);
-            Sol_Debug_Add("Z", xform->pos.z);
-        }
+        Xform *xform = &world->xform;
+        Sol_Debug_Add("X", xform->pos[id].x);
+        Sol_Debug_Add("Y", xform->pos[id].y);
+        Sol_Debug_Add("Z", xform->pos[id].z);
         if (Sol_Comp_Has(world, id, ScMove3))
         {
             ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
@@ -333,23 +324,6 @@ void Sol_User_Tick(double dt)
 
     Entity_Actions();
     User_Debug();
-
-    // ### DEBUG ####
-    // World *activeWorld = Sol_GetActiveGameWorld();
-    // int    playerId    = Sol_Player_GetEnt(activeWorld, 0);
-    // if (playerId > -1)
-    // {
-    //     ScXform *xform = Sol_Comp_Get(activeWorld, playerId, ScXform);
-    //     if (xform)
-    //     {
-    //         Sol_Debug_Add("X", xform->pos.x);
-    //         Sol_Debug_Add("Y", xform->pos.y);
-    //         Sol_Debug_Add("Z", xform->pos.z);
-    //         // float speed = glms_vec3_norm(Sol_Body3_GetVel(activeWorld, playerId));
-    //         // Sol_Debug_Add("Velocity", speed);
-    //         Sol_Debug_Add("State", Sol_Comp_Get(activeWorld, playerId, ScMove3)->state);
-    //     }
-    // }
 }
 
 void Sol_User_PostTick(double dt)

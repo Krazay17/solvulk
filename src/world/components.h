@@ -13,24 +13,17 @@
 // ==========================================
 typedef struct ScActive
 {
-    int    active_at_tick;
+    int active_at_tick;
     double time_activated;
 } ScActive;
-
-typedef struct ScXform
-{
-    vec3s   last_pos, pos, draw_pos;
-    vec3s   last_sca, sca, draw_sca;
-    versors last_rot, rot, draw_rot;
-} ScXform;
 
 typedef struct ScCmd
 {
     SolActions actionState;
-    bool       isStrafing;
-    int        target;
-    float      yaw, pitch;
-    vec3s      wishdir, wishdir2, aimdir, aimpos, lookdir;
+    bool isStrafing;
+    int target;
+    float yaw, pitch;
+    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir;
 } ScCmd;
 
 typedef struct ScMeta
@@ -55,31 +48,31 @@ typedef struct
 } AiStateData;
 typedef struct ScAi
 {
-    vec3s       dirToTarget;
-    AiState     state;
-    u32         target, justHitUs;
-    float       distToTarget, dropAggroTimer, lastHit;
+    vec3s dirToTarget;
+    AiState state;
+    u32 target, justHitUs;
+    float distToTarget, dropAggroTimer, lastHit;
     AiStateData stateData[AISTATE_COUNT];
 } ScAi;
 
 typedef struct ScBody3
 {
     Shape3 shape;
-    bool   ignoreFriendly;
-    vec3s  vel, impulse, force, dims, gravity;
-    float  mass, invMass, restitution;
-    u32    mask, base_mask;
-    u32    ray_mask, ray_base_mask;
+    bool ignoreFriendly;
+    vec3s vel, impulse, force, dims, gravity;
+    float mass, invMass, restitution;
+    u32 mask, base_mask;
+    u32 ray_mask, ray_base_mask;
 } ScBody3;
 
 typedef struct ScBody2
 {
     Shape2 shape;
-    vec3s  vel, dims, gravity, force, impulse;
-    u32    mask;
-    float  restitution;
-    bool   ignoreWindow;
-    int    zindex;
+    vec3s vel, dims, gravity, force, impulse;
+    u32 mask;
+    float restitution;
+    bool ignoreWindow;
+    int zindex;
 } ScBody2;
 
 typedef struct ScCamera
@@ -97,12 +90,12 @@ typedef struct ScCamera
 typedef struct ScInteract
 {
     InteractState state;
-    double        hover_start_time;
-    double        unhover_start_time;
-    double        press_start_time;
-    double        pressedAccum;
-    float         range;
-    vec2s         press_pos, drag_offset, drag_target;
+    double hover_start_time;
+    double unhover_start_time;
+    double press_start_time;
+    double pressedAccum;
+    float range;
+    vec2s press_pos, drag_offset, drag_target;
 } ScInteract;
 
 typedef struct
@@ -124,7 +117,7 @@ typedef struct
         {
             vec3s pos, ledge_pos;
             float dist;
-            u8    closeEnough, doRoll;
+            u8 closeEnough, doRoll;
         } mantle;
         struct
         {
@@ -132,7 +125,7 @@ typedef struct
         } slide;
         struct
         {
-            vec3s     wallNormal;
+            vec3s wallNormal;
             WallTouch wallTouch;
         } wallrun;
         struct
@@ -141,14 +134,14 @@ typedef struct
         } fall;
     } as;
     double lastEntered, lastExited;
-    float  elapsed, accum;
-    vec3s  vel;
+    float elapsed, accum;
+    vec3s vel;
 } MoveStateData;
 typedef struct ScMove3
 {
     MovementKind kind;
-    MoveState    state;
-    vec3s        updir, lastTouch, knockVel, lastMoveDir, groundNorm, vel;
+    MoveState state;
+    vec3s updir, lastTouch, knockVel, lastMoveDir, groundNorm, vel;
 
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
@@ -157,14 +150,14 @@ typedef struct ScMove3
     float airtime, groundtime;
     float groundDist;
 
-    bool          wantsJump, jumpPressedLastFrame;
+    bool wantsJump, jumpPressedLastFrame;
     MoveStateData stateData[MOVE_STATE_COUNT];
 } ScMove3;
 
 typedef struct ScMove2
 {
     MovementKind kind;
-    MoveState    state;
+    MoveState state;
 
     float baseHeight, targetHeight;
     float speedMod, frictionMod, gravityMod, knockDur;
@@ -178,51 +171,51 @@ typedef struct ScMove2
 typedef struct ScModel
 {
     ModelKind kind;
-    vec4s     color;
-    bool      is2d;
-    float     xOffset, yOffset, yawOffset;
-    u32       leftWeaponEnt, rightWeaponEnt;
+    vec4s color;
+    bool is2d;
+    float xOffset, yOffset, yawOffset;
+    u32 leftWeaponEnt, rightWeaponEnt;
 } ScModel;
 
 typedef struct ScAnim
 {
-    SolPose   pose;
-    SolPoseE  lastPose;
+    SolPose pose;
+    SolPoseE lastPose;
     AnimLayer layers[ANIM_LAYER_COUNT];
-    bool      hasLastPose;
+    bool hasLastPose;
 } ScAnim;
 
 typedef struct ScEvent
 {
     EventKind kind;
-    u32       entA, entB;
+    u32 entA, entB;
     union {
         struct
         {
             vec3s pos, normal, vel;
-            u32   entA, entB;
+            u32 entA, entB;
         } collision;
         struct
         {
             float damage;
-            u32   entA, entB;
+            u32 entA, entB;
         } death;
         struct
         {
             vec3s pos;
             vec4s color;
-            u32   kind, entA, entB;
+            u32 kind, entA, entB;
             float scale, duration;
         } fx;
         struct
         {
-            u32   kind;
+            u32 kind;
             vec3s pos;
             float volume;
         } sound;
         struct
         {
-            u32   ent;
+            u32 ent;
             vec3s pos;
         } respawn;
         struct
@@ -234,7 +227,7 @@ typedef struct ScEvent
         } equip;
         struct
         {
-            u32   entA, entB;
+            u32 entA, entB;
             float damageDealt;
         } score;
         struct
@@ -250,49 +243,49 @@ typedef struct
     union {
         struct
         {
-            vec3s     enterDir;
+            vec3s enterDir;
             StrafeDir strafe;
         } dash;
         struct
         {
             vec3s laserPoints[16];
-            int   laserPointCount;
+            int laserPointCount;
             vec3s laserPointsVisual[16];
-            int   laserPointCountVisual;
+            int laserPointCountVisual;
         } laser;
         struct
         {
             vec3s whipPoints[16];
-            int   whipPointCount;
+            int whipPointCount;
         } whip;
     } as;
 
     AbilityState kind;
-    float        elapsed, accum, power, recover;
-    float        duration;
-    double       lastEntered, lastExited;
-    u32          stage;
-    bool         held, doesHit;
+    float elapsed, accum, power, recover;
+    float duration, cooldown;
+    double lastEntered, lastExited;
+    u32 stage;
+    bool held, doesHit;
 } AbilityStateData;
 typedef struct ScAbility
 {
-    int              state, activeSlot, slots;
-    int              action_map[ABILITY_SLOTS];
+    int state, activeSlot, slots;
+    int action_map[ABILITY_SLOTS];
     AbilityStateData stateData[ABILITY_SLOTS];
 } ScAbility;
 
 typedef struct
 {
-    u8    kind, inf, harmful;
-    u32   source;
+    u8 kind, inf, harmful;
+    u32 source;
     float ttl, duration, accum;
     float freq, power;
 } Buff;
 typedef struct ScBuff
 {
     Buff buffs[MAX_BUFFS];
-    u32  count;
-    u32  activeKindsMask;
+    u32 count;
+    u32 activeKindsMask;
 } ScBuff;
 
 typedef struct ScTimer
@@ -307,10 +300,10 @@ typedef struct ScAudio
 
 typedef struct ScParent
 {
-    u32     parentId, active;
-    vec3s   localOffset;
+    u32 parentId, active;
+    vec3s localOffset;
     versors localQuat;
-    char    boneFollow[16];
+    char boneFollow[16];
 } ScParent;
 
 typedef struct ScOwner
@@ -321,19 +314,22 @@ typedef struct ScOwner
 
 typedef struct ScCombat
 {
-    u32   kind;
+    u32 kind;
     float health, healthMax, healthRegen;
     float energy, energyMax, energyRegen;
     float mana, manaMax, manaRegen;
+
+    float damageTaken;
+    float healingTaken;
 
     float damageDone;
     float healingDone;
 
     double deathTime, lastHitTime;
-    vec3s  respawnPos;
-    float  respawnTime;
+    vec3s respawnPos;
+    float respawnTime;
 
-    u32   hitPauseDiminish;
+    u32 hitPauseDiminish;
     float hitPause;
 
     int hitSession;
@@ -341,75 +337,82 @@ typedef struct ScCombat
 
 typedef struct ScReplication
 {
-    u8  auth;
+    u8 auth;
     u32 prefabKind;
 } ScReplication;
 
 typedef struct
 {
     ParticleKind kind;
-    vec3s        pos, vel;
-    vec4s        color;
-    float        ttl, scale, span, speed, delay;
-    float        rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
-    u32          randScale, followId, randLife, randScaleout;
+    vec3s pos, vel;
+    vec4s color;
+    float ttl, scale, span, speed, delay;
+    float rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
+    u32 randScale, followId, randLife, randScaleout;
 } Particle;
 
 typedef struct
 {
     EmitterKind emitterKind;
-    vec3s       pos, vel;
-    float       ttl, rate, accumulator;
-    Particle    particle;
-    u32         burst, inf, followId, rateBurst;
-    u32         followIdGen;
+    vec3s pos, vel;
+    float ttl, rate, accumulator;
+    Particle particle;
+    u32 burst, inf, followId, rateBurst;
+    u32 followIdGen;
 } Emitter;
 
 typedef struct ScEmitter
 {
     Emitter emitters[MAX_EMITTERS];
-    u32     emitterCount;
+    u32 emitterCount;
 } ScEmitter;
 
 typedef struct
 {
-    View2dKind kind;
-    vec4s      dims, offset;
-    vec4s      color;
-    vec4s      hoverColor, clickColor, toggleColor;
-    float      fill, scale, textWidth, border;
-    float      hoverAnim, clickAnim;
-    float      targetFill, fillSpeed;
-    u8         textureID, flags;
-    vec2s      textureUV;
-    char       text[64];
+    View2Kind kind;
+    vec4s dims, offset;
+    vec4s color;
+    vec4s hoverColor, clickColor, toggleColor;
+    float fill, scale, textWidth, border;
+    float hoverAnim, clickAnim;
+    float targetFill, fillSpeed;
+    u8 textureID, flags;
+    vec2s textureUV;
+    char text[64];
 } View2;
 typedef struct ScView2
 {
     View2 views[MAX_VIEWS];
-    u8    count;
-    u32   layer;
+    u8 count;
+    u32 layer;
 } ScView2;
+
+typedef struct ScView3
+{
+    View3Kind kind;
+    vec3s dims, offset;
+    vec4s color;
+} ScView3;
 
 typedef struct ScTracker
 {
-    World     *world;
-    u32        entId;
+    World *world;
+    u32 entId;
     GetterFunc getters[MAX_TRACKER_GETTERS];
 } ScTracker;
 
 typedef struct ScProjectile
 {
     ProjectileKind kind;
-    u32            bounces;
-    float          power;
-    float          explodeRadius;
-    u32            hitFX, explodeHitFX;
+    u32 bounces;
+    float power;
+    float explodeRadius;
+    u32 hitFX, explodeHitFX;
 
     SolCallback callback;
-    u32         callbackFlags;
-    SolHit      directHit;
-    SolHit      explosionHit;
+    u32 callbackFlags;
+    SolHit directHit;
+    SolHit explosionHit;
 } ScProjectile;
 
 typedef struct ScHuditem
@@ -419,7 +422,7 @@ typedef struct ScHuditem
 
 typedef struct ScHudslot
 {
-    int  slot;
+    int slot;
     bool onCooldown;
 } ScHudslot;
 
@@ -430,7 +433,7 @@ typedef struct ScTooltip
 
 typedef struct ScZone
 {
-    u32   kind;
+    u32 kind;
     float duration, rate, value, radius;
     float accum;
 } ScZone;
@@ -444,11 +447,11 @@ typedef struct ScSlider
 
 typedef struct ScBuilder
 {
-    bool    placing, doesSnap;
-    float   scale;
-    vec3s   placePos;
+    bool placing, doesSnap;
+    float scale;
+    vec3s placePos;
     versors placeRot;
-    u32     model;
+    u32 model;
 } ScBuilder;
 
 typedef struct ScStage
@@ -459,9 +462,9 @@ typedef struct ScStage
 typedef void (*Hook)(World *, double, int, void *);
 typedef struct ScHook
 {
-    Hook  held;
-    Hook  pressed;
-    Hook  update;
+    Hook held;
+    Hook pressed;
+    Hook update;
     void *data;
 } ScHook;
 
@@ -472,7 +475,6 @@ typedef struct ScHook
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(ScActive, HAS_ScActive)                                                                                          \
-    X(ScXform, HAS_ScXform)                                                                                            \
     X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
     X(ScMeta, HAS_ScMeta)                                                                                              \
@@ -500,6 +502,7 @@ typedef struct ScHook
     X(ScEmitter, HAS_ScEmitter)                                                                                        \
     X(ScSlider, HAS_ScSlider)                                                                                          \
     X(ScView2, HAS_ScView2)                                                                                            \
+    X(ScView3, HAS_ScView3)                                                                                            \
     X(ScTracker, HAS_ScTracker)                                                                                        \
     X(ScProjectile, HAS_ScProjectile)                                                                                  \
     X(ScHudslot, HAS_ScHudslot)                                                                                        \
@@ -516,6 +519,5 @@ typedef enum
     COMPONENT_COUNT
 } WorldComponents;
 
-ScXform *Sol_Xform_Add(World *world, int id, vec3s pos);
-ScAnim  *Sol_Anim_Add(World *world, int id);
+ScAnim *Sol_Anim_Add(World *world, int id);
 ScBody3 *Sol_Body3_Add(World *world, int id);

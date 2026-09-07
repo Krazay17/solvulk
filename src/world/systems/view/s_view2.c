@@ -9,10 +9,10 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u3
 static void DrawCircle(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 
-DrawFunc draw_funcs[VIEW2DKIND_COUNT] = {
-    [VIEW2DKIND_RECT]   = DrawRect,
-    [VIEW2DKIND_CIRCLE] = DrawCircle,
-    [VIEW2DKIND_TEXT]   = DrawText,
+DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
+    [VIEW2KIND_RECT]   = DrawRect,
+    [VIEW2KIND_CIRCLE] = DrawCircle,
+    [VIEW2KIND_TEXT]   = DrawText,
 };
 
 void Sol_View2d_Init(World *world)
@@ -31,10 +31,7 @@ void View2_Draw(World *world, double dt)
         for (int j = 0; j < viewComp->count; j++)
         {
             View2   *view  = &viewComp->views[j];
-            ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-            if (!xform)
-                continue;
-            draw_funcs[view->kind](world, id, fdt, view, xform->draw_pos, viewComp->layer);
+            draw_funcs[view->kind](world, id, fdt, view, world->xform.draw_pos[id], viewComp->layer);
         }
     }
 }

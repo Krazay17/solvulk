@@ -18,7 +18,7 @@ set(EXTERN_DIR "${CMAKE_SOURCE_DIR}/extern")
 
 # --- Dependencies ---
 find_package(Vulkan REQUIRED)
-find_package(OpenMP REQUIRED)
+#find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 add_library(enet STATIC IMPORTED)
@@ -63,7 +63,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c17 /W2)
+    target_compile_options(solvulk PRIVATE /std:c17 /W2 /openmp:experimental)
     #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -92,7 +92,7 @@ PUBLIC
 target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
-        OpenMP::OpenMP_C
+        #OpenMP::OpenMP_C
         enet
         webp_lib
         cglm_headers

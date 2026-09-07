@@ -51,7 +51,6 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         };
         SolRayResult results[128];
         int hits = Sol_RaycastD(world, ray, results, 128, 1.0f);
-        sollog(hits);
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -70,12 +69,14 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 .pos        = result.pos,
                 .vel        = cmd->aimdir,
             };
-            if(Sol_Comp_Has(world, result.entId, ScBody3))
+            // Debug knockup
+            if (Sol_Comp_Has(world, result.entId, ScBody3))
             {
                 ScBody3 *body = Sol_Comp_Get(world, result.entId, ScBody3);
                 body->vel.y += 50.0f;
             }
-            Sol_Combat_Hit(world, result.entId, hit);
+
+            combat->damageDone += Sol_Combat_Hit(world, result.entId, hit);
 
             if (combat->hitPauseDiminish < 4)
             {
@@ -92,6 +93,8 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
     data->accum            = HITINTERVAL;
+    data->duration         = ability_base[ABILITY_STATE_CLAW].duration;
+    data->cooldown         = ability_base[ABILITY_STATE_CLAW].cooldown;
 
     if (Sol_Comp_Has(world, id, ScCombat))
     {
@@ -120,15 +123,14 @@ bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, 
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 
-    return data->elapsed >= ability_base[ABILITY_STATE_CLAW].duration * 0.5f;
+    return data->elapsed >= data->duration * 0.8f;
 }
 
 bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return slot != ability->activeSlot &&
-           !(data->lastExited + ability_base[ABILITY_STATE_CLAW].cooldown > world->tickTime);
+    return data->lastExited + data->cooldown < world->tickTime;
 }
 
 void Ability_Claw_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)

@@ -101,8 +101,7 @@ void Create_Game()
 
     // Level
     {
-        int level1 = Sol_Create_Ent(world);
-        Sol_Xform_Add(world, level1, (vec3s){0, 0, 0});
+        int level1 = Sol_Create_Ent(world, (vec3s){0, 0, 0});
         ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
         levelModel->kind    = MODELKIND_WORLD10;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
@@ -112,12 +111,13 @@ void Create_Game()
     // Wizards
     while (world->entCount < 500)
     {
-        int id = Sol_Create_Ent(world);
-        Sol_Xform_Add(world, id, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
+        int id = Sol_Create_Ent(world, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
         // Sol_Comp_Add(world, id, ScCmd);
         // Sol_Comp_Add(world, id, ScPlayer);
-        // Sol_Comp_Add(world, id, ScCombat);
-        ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
+        ScCombat *combat  = Sol_Comp_Add(world, id, ScCombat);
+        combat->healthMax = 100.0f;
+        combat->health    = 100.0f;
+        ScMeta *meta      = Sol_Comp_Add(world, id, ScMeta);
         snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
         ScInteract *interact                     = Sol_Comp_Add(world, id, ScInteract);
         interact->range                          = 5.0f;

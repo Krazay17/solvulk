@@ -54,9 +54,9 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
 
     if (hit.isHeal)
-        Sol_Combat_Heal(world, id, combat, hit.damage);
+        combat->healingTaken += Sol_Combat_Heal(world, id, combat, hit.damage);
     else
-        Sol_Combat_Damage(world, id, combat, hit.damage);
+        combat->damageTaken += Sol_Combat_Damage(world, id, combat, hit.damage);
 }
 
 float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)

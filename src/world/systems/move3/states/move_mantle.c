@@ -17,12 +17,11 @@
 static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-
+    Xforms xform = Xform_Get(world, id);
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
-    vec3s          basePos = vecAdd(xform->pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
+    vec3s          basePos = vecAdd(xform.pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
 
-    if (Sol_Raycast1(world, (SolRay){ .start = xform->pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id },
+    if (Sol_Raycast1(world, (SolRay){ .start = xform.pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id },
                      NULL))
         return false;
 
@@ -59,11 +58,10 @@ static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
 void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[MOVE_MANTLE];
 
-    vec3s pos       = xform->pos;
+    vec3s pos       = world->xform.pos[id];
     vec3s targetPos = data->as.mantle.pos;
     float speed     = MANTLE_SPEED;
     if (data->as.mantle.doRoll)
@@ -90,11 +88,10 @@ void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float d
 void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3       *body         = Sol_Comp_Get(world, id, ScBody3);
-    ScXform       *xform        = Sol_Comp_Add(world, id, ScXform);
     MoveStateData *data         = &move->stateData[MOVE_MANTLE];
     move->wantsJump             = false;
     data->as.mantle.closeEnough = 0;
-    data->as.mantle.doRoll      = (body->vel.y > 5.0f) && (xform->pos.y < data->as.mantle.ledge_pos.y);
+    data->as.mantle.doRoll      = (body->vel.y > 5.0f) && (world->xform.pos[id].y < data->as.mantle.ledge_pos.y);
 }
 
 void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)

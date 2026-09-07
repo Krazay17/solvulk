@@ -9,12 +9,11 @@ void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt
 {
     float fdt = (float)dt;
 
-    ScXform       *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[move->state];
     vec3s          vel   = body->vel;
     data->vel            = vel;
-    vec3s rot            = Sol_RotFromQuat(xform->rot);
+    vec3s rot            = Sol_RotFromQuat(world->xform.rot[id]);
     vec3s latvel         = vel;
     latvel.y             = 0;
     latvel               = vecNorm(latvel);

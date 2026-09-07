@@ -8,18 +8,13 @@ void Facing_Tick(World *world, double dt)
     SparseSet_ScCmd *set = Sol_Comp_Set(world, ScCmd);
     for (int i = 0; i < set->cnt; i++)
     {
-        int id = set->dense[i];
-
-        // Guard against entities that have input commands but no transform
-        if (!Sol_Comp_Has(world, id, ScXform)) continue;
-
-        ScCmd   *cmd   = &set->data[i];
-        ScXform *xform = Sol_Comp_Get(world, id, ScXform);
+        int id     = set->dense[i];
+        ScCmd *cmd = &set->data[i];
 
         // MODE 1: Strafing / Aiming — Snap or smooth towards camera yaw
         if (cmd->isStrafing)
         {
-            xform->rot = Sol_Quat_FromYawPitch(cmd->yaw, 0.0f);
+            world->xform.rot[id] = Sol_Quat_FromYawPitch(cmd->yaw, 0.0f);
         }
         // MODE 2: Free Movement — Smoothly turn model toward movement wishdir
         else if (glms_vec3_norm(cmd->wishdir) > 0.001f)
@@ -30,7 +25,7 @@ void Facing_Tick(World *world, double dt)
             float turn_speed = 10.0f;
             float factor     = 1.0f - expf(-turn_speed * fdt);
 
-            xform->rot = glms_quat_slerp(xform->rot, target_quat, factor);
+            world->xform.rot[id] = glms_quat_slerp(world->xform.rot[id], target_quat, factor);
         }
     }
 }

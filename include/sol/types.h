@@ -112,11 +112,18 @@ typedef enum
 
 typedef enum
 {
-    VIEW2DKIND_RECT,
-    VIEW2DKIND_TEXT,
-    VIEW2DKIND_CIRCLE,
-    VIEW2DKIND_COUNT,
-} View2dKind;
+    VIEW2KIND_RECT,
+    VIEW2KIND_TEXT,
+    VIEW2KIND_CIRCLE,
+    VIEW2KIND_COUNT,
+} View2Kind;
+
+typedef enum
+{
+    VIEW3KIND_SPHERE,
+    VIEW3KIND_FIREBALL,
+    VIEW3KIND_COUNT,
+} View3Kind;
 
 typedef enum Shape3
 {
@@ -264,6 +271,13 @@ typedef struct
     void        *callbackData;
     int          flag;
 } SolCallback;
+
+typedef struct SolXform
+{
+    vec3s pos;
+    vec3s sca;
+    versors rot;
+} SolXform;
 
 typedef struct SolLine
 {

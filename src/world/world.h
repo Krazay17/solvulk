@@ -72,6 +72,19 @@ SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
 // 4. WORLD CONTAINER DEFINITION
 // ==========================================
 
+typedef struct Xform
+{
+    vec3s pos[MAX_ENTS];
+    vec3s last_pos[MAX_ENTS];
+    vec3s draw_pos[MAX_ENTS];
+    vec3s sca[MAX_ENTS];
+    vec3s last_sca[MAX_ENTS];
+    vec3s draw_sca[MAX_ENTS];
+    versors rot[MAX_ENTS];
+    versors last_rot[MAX_ENTS];
+    versors draw_rot[MAX_ENTS];
+} Xform;
+
 struct World
 {
     SystemUpdate tickSystems[MAX_SYSTEMS];
@@ -80,6 +93,7 @@ struct World
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
+    Xform xform;
     u64 masks[MAX_ENTS];
     void *components[COMPONENT_COUNT];
 
@@ -246,6 +260,34 @@ static inline void Sol_World_FreeAllComponents(World *w)
     }
 }
 
+typedef struct {
+    vec3s   pos;
+    versors rot;
+    vec3s   sca;
+} XformsDraw;
+
+static inline XformsDraw Xform_GetDraw(const World *world, int id) {
+    return (XformsDraw){
+        .pos = world->xform.draw_pos[id],
+        .rot = world->xform.draw_rot[id],
+        .sca = world->xform.draw_sca[id]
+    };
+}
+
+typedef struct {
+    vec3s   pos;
+    versors rot;
+    vec3s   sca;
+} Xforms;
+
+static inline Xforms Xform_Get(const World *world, int id) {
+    return (Xforms){
+        .pos = world->xform.pos[id],
+        .rot = world->xform.rot[id],
+        .sca = world->xform.sca[id]
+    };
+}
+
 static inline void Sol_Destroy_Ent(World *w, int entId)
 {
     u64 mask = w->masks[entId];
@@ -319,7 +361,7 @@ void Debug_Draw2(World *world, double dt);
 // Api
 World *World_Create();
 World *World_Create_AllSys();
-int Sol_Create_Ent(World *world);
+int Sol_Create_Ent(World *world, vec3s pos);
 void Sol_Sys_Add(World *world, WorldSystems system);
 void Sol_Sys_Remove(World *world, WorldSystems system);
 

@@ -119,7 +119,7 @@ void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
     {
         if (Sol_Raycast1D(
                 world,
-                (SolRay){ .start = Sol_Comp_Get(world, id, ScXform)->pos, .dir = WORLD_UP, .dist = newHeight * 0.6f },
+                (SolRay){ .start = world->xform.pos[id], .dir = WORLD_UP, .dist = newHeight * 0.6f },
                 NULL, 0.2f))
             return;
     }
@@ -134,18 +134,17 @@ struct GoodRay
 };
 void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 {
-    ScXform *xform = Sol_Comp_Get(world, id, ScXform);
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-
+    Xforms xform = Xform_Get(world, id);
     // Start from center-bottom of the body
-    vec3s origin = xform->pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
+    vec3s origin = xform.pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
 
     move->groundNorm        = (vec3s){ 0, 0, 0 };
     SolRayResult results[9] = { 0 };
     for (int j = 0; j < 9; j++)
     {
         // Rotate the local offset by the entity's rotation
-        vec3s rotated_offset = glms_quat_rotatev(xform->rot, VECTOR_RADIAL_DIRECTIONS[j]);
+        vec3s rotated_offset = glms_quat_rotatev(xform.rot, VECTOR_RADIAL_DIRECTIONS[j]);
 
         vec3s pos = vecAdd(origin, vecSca(rotated_offset, body->dims.x * 0.95f));
 

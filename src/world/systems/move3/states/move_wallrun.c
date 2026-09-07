@@ -34,7 +34,7 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
 
     vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
     float radius = dims.x + addRadius;
-    Xforms xform = Xform_Get(world, id);
+    Xform xform = Xform_Get(world, id);
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
@@ -101,7 +101,7 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
     MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
-    Xforms xform = Xform_Get(world, id);
+    Xform xform = Xform_Get(world, id);
     data->accum += dt;
 
     SolRayResult result   = { 0 };

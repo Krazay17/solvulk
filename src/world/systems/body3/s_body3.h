@@ -56,12 +56,14 @@ typedef struct
     SolContact *contacts;
 } SysPhysx;
 
+bool Sol_Body3_DoesCollide(const ScBody3 *body, const ScBody3 *other_body);
+
 void Build_Tables(World *world, SysPhysx *sys, float fdt);
 void Resolve_Contact(World *world, int idA, int idB, SolContact *contact);
 
-void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, StaticGroup *group,
+void Collisions_Static_Stage_Local(World *world, int idA, ScBody3 *body, vec3s min, vec3s max, StaticGroup *group,
                                    ThreadContactBuffer *contacts);
-void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, DynamicGroup *group,
+void Collisions_Dynamic_Bodies_Local(World *world, int idA, ScBody3 *body, vec3s min, vec3s max, DynamicGroup *group,
                                      ThreadContactBuffer *contacts);
 
 bool Collide_Sphere_Sphere(World *world, int idA, int idB, SolContact *hit);

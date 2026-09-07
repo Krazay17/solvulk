@@ -36,6 +36,7 @@ typedef enum
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
     WORLDSYS_VIEW2,
+    WORLDSYS_VIEW3,
     WORLDSYS_SCOREBOARD,
 
     WORLDSYS_DEBUG,
@@ -72,7 +73,7 @@ SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
 // 4. WORLD CONTAINER DEFINITION
 // ==========================================
 
-typedef struct Xform
+typedef struct WorldXform
 {
     vec3s pos[MAX_ENTS];
     vec3s last_pos[MAX_ENTS];
@@ -83,7 +84,7 @@ typedef struct Xform
     versors rot[MAX_ENTS];
     versors last_rot[MAX_ENTS];
     versors draw_rot[MAX_ENTS];
-} Xform;
+} WorldXform;
 
 struct World
 {
@@ -93,7 +94,7 @@ struct World
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
-    Xform xform;
+    WorldXform xform;
     u64 masks[MAX_ENTS];
     void *components[COMPONENT_COUNT];
 
@@ -260,32 +261,20 @@ static inline void Sol_World_FreeAllComponents(World *w)
     }
 }
 
-typedef struct {
-    vec3s   pos;
-    versors rot;
-    vec3s   sca;
-} XformsDraw;
-
-static inline XformsDraw Xform_GetDraw(const World *world, int id) {
-    return (XformsDraw){
-        .pos = world->xform.draw_pos[id],
-        .rot = world->xform.draw_rot[id],
-        .sca = world->xform.draw_sca[id]
-    };
+static inline Xform Xform_GetDraw(const World *world, int id)
+{
+    return (Xform){
+        .pos = world->xform.draw_pos[id], .rot = world->xform.draw_rot[id], .sca = world->xform.draw_sca[id]};
 }
 
-typedef struct {
-    vec3s   pos;
-    versors rot;
-    vec3s   sca;
-} Xforms;
+static inline Xform Xform_Get(const World *world, int id)
+{
+    return (Xform){.pos = world->xform.pos[id], .rot = world->xform.rot[id], .sca = world->xform.sca[id]};
+}
 
-static inline Xforms Xform_Get(const World *world, int id) {
-    return (Xforms){
-        .pos = world->xform.pos[id],
-        .rot = world->xform.rot[id],
-        .sca = world->xform.sca[id]
-    };
+static inline XformP Xform_GetP(World *world, int id)
+{
+    return (XformP){.pos = &world->xform.pos[id], .rot = &world->xform.rot[id], .sca = &world->xform.sca[id]};
 }
 
 static inline void Sol_Destroy_Ent(World *w, int entId)
@@ -351,6 +340,7 @@ void Camera_Tick(World *world, double dt);
 void Scoreboard_Draw(World *world, double dt);
 void Model_Render(World *world, double dt);
 void Ability_Draw(World *world, double dt);
+void View3_Draw(World *world, double dt);
 void View2_Draw(World *world, double dt);
 void View2_Healthbar(World *world, double dt);
 void View2_Abilitybar(World *world, double dt);
@@ -369,6 +359,7 @@ void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
 int Sol_Interact_FindTopmost(World *world, vec2s point);
 
+Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
 void Sol_Anim_Play(World *world, int id, AnimDesc desc);
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
 void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
@@ -379,7 +370,6 @@ bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 bool Sol_Move3_SetState(World *world, int id, MoveState state);
 float Sol_Move3_GetBaseSpeed(World *world, int id);
 
-bool Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body);
 vec3s Sol_Body3_GetGround(World *world, int id);
 vec3s Sol_Body3_GetVel(World *world, int id);
 vec3s Sol_Body3_GetDir(World *world, int id);

@@ -135,7 +135,7 @@ struct GoodRay
 void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 {
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-    Xforms xform = Xform_Get(world, id);
+    Xform xform = Xform_Get(world, id);
     // Start from center-bottom of the body
     vec3s origin = xform.pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
 

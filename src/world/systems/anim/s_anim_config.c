@@ -53,6 +53,7 @@ const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
             [ANIM_DASH_BWD]         = 10,
             [ANIM_DASH_RIGHT]       = 11,
             [ANIM_CHARGE_LEFT]      = 25,
+            [ANIM_CHARGE_RIGHT]     = 25,
             [ANIM_CHANNEL_LEFT]     = 29,
             [ANIM_CHANNEL_RIGHT]    = 30,
             [ANIM_ATTACK_LEFT]      = 16,

@@ -43,7 +43,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         data->accum = 0;
 
         SolRay ray = {
-            .start     = cmd->aimpos,
+            .start     = cmd->headpos,
             .dir       = cmd->aimdir,
             .dist      = body->dims.x + MELEE_RANGE,
             .ignoreEnt = id,
@@ -54,7 +54,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            float dot = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, cmd->aimpos)));
+            float dot = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, cmd->headpos)));
             if (dot < 0)
                 continue;
             if (!Sol_Combat_TryHitGen(world, id, result.entId, combat->hitSession))

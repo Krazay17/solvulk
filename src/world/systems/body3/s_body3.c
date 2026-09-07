@@ -67,10 +67,10 @@ void Body3_Step(World *world, double dt)
                     ScBody3 *body  = &set->data[j];
                     if ( body->mass == 0.0f)
                         continue;
-                    Xforms xform = Xform_Get(world, id);
+                    Xform xform = Xform_Get(world, id);
                     vec3s min = vecSub(xform.pos, body->dims);
                     vec3s max = vecAdd(xform.pos, body->dims);
-                    Collisions_Dynamic_Bodies_Local(world, id, body->shape, min, max, &ws->dynamic_group, &local_buf);
+                    Collisions_Dynamic_Bodies_Local(world, id, body, min, max, &ws->dynamic_group, &local_buf);
                 }
             }
             if (ws->static_group.spatial.item_count > 0)
@@ -82,10 +82,10 @@ void Body3_Step(World *world, double dt)
                     ScBody3 *body  = &set->data[k];
                     if (body->mass == 0.0f)
                         continue;
-                    Xforms xform = Xform_Get(world, id);
+                    Xform xform = Xform_Get(world, id);
                     vec3s min = vecSub(xform.pos, body->dims);
                     vec3s max = vecAdd(xform.pos, body->dims);
-                    Collisions_Static_Stage_Local(world, id, body->shape, min, max, &ws->static_group, &local_buf);
+                    Collisions_Static_Stage_Local(world, id, body, min, max, &ws->static_group, &local_buf);
                 }
             }
             if (local_buf.count > 0)
@@ -142,11 +142,6 @@ void Physx_Deinit(World *world)
     }
 }
 
-bool Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body)
-{
-    return (body->mask << 16) & (other_body->mask);
-}
-
 vec3s Sol_Body3_GetGround(World *world, int id)
 {
     return GLMS_VEC3_ZERO;
@@ -193,7 +188,7 @@ bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
 
 
 static inline bool Sol_TestDynamicBody(vec3s origin, vec3s dir, float maxDist, const ScBody3 *body,
-                                       Xforms xform, float extraRadius, float *outT, vec3s *outNorm)
+                                       Xform xform, float extraRadius, float *outT, vec3s *outNorm)
 {
     switch (body->shape)
     {
@@ -291,9 +286,9 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                         continue;
 
                     ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
-                    if (!body || !(body->mask & ray.mask))
+                    if (!body || !((body->mask >> 16) & ray.mask))
                         continue;
-                        Xforms xform = Xform_Get(world, entId);
+                        Xform xform = Xform_Get(world, entId);
 
                     float tHit; vec3s normHit;
                     if (Sol_TestDynamicBody(ray.start, ray.dir, maxDist, body, xform, 0.0f, &tHit, &normHit))
@@ -374,7 +369,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
                     ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
                     if (!body|| !(body->mask >> 16 & ray.mask)) // see mask note below
                         continue;
-                        Xforms xform = Xform_Get(world, entId);
+                        Xform xform = Xform_Get(world, entId);
 
                     float tHit; vec3s normHit;
                     if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, 0.0f, &tHit, &normHit))
@@ -462,7 +457,7 @@ int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
                     ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
                     if (!body|| !(body->mask & ray.mask)) // see mask note below
                         continue;
-                        Xforms xform = Xform_Get(world, entId);
+                        Xform xform = Xform_Get(world, entId);
 
                     float tHit; vec3s normHit;
                     if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, radius, &tHit, &normHit))
@@ -494,4 +489,10 @@ float Sol_Body3_GetSpeed(World *world, int id)
 vec3s Sol_Body3_GetDir(World *world, int id)
 {
     return vecNorm(Sol_Comp_Get(world, id, ScBody3)->vel);
+}
+
+bool Sol_Body3_DoesCollide(const ScBody3 *body, const ScBody3 *other_body)
+{
+    
+    return (body->mask << 16) & (other_body->mask);
 }

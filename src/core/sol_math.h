@@ -406,6 +406,21 @@ static inline void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment
     *outB = glms_vec3_add(p2, glms_vec3_scale(d2, t));
 }
 
+static inline vec3s Closest_Point_Segment_Point(vec3s s0, vec3s s1, vec3s p)
+{
+    vec3s seg      = glms_vec3_sub(s1, s0);
+    float segLenSq = glms_vec3_dot(seg, seg);
+
+    if (segLenSq < 0.0001f)
+        return s0;
+
+    vec3s pDelta = glms_vec3_sub(p, s0);
+    float t      = glms_vec3_dot(pDelta, seg) / segLenSq;
+    t            = glm_clamp(t, 0.0f, 1.0f);
+
+    return glms_vec3_add(s0, glms_vec3_scale(seg, t));
+}
+
 static inline void compose_trs(vec3 pos, versor quat, vec3 scale, mat4 dest)
 {
     // 1. Initialize dest as an identity matrix

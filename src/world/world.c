@@ -50,6 +50,7 @@ const SystemDef system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_VIEW2]      = {.update = {{View2_Draw, UPDATEPHASE_RENDER2},
                                         {View2_Healthbar, UPDATEPHASE_RENDER2},
                                         {View2_Abilitybar, UPDATEPHASE_RENDER2}}},
+    [WORLDSYS_VIEW3]      = {.update = View3_Draw, UPDATEPHASE_RENDER3},
     [WORLDSYS_SCOREBOARD] = {.update = {Scoreboard_Draw, UPDATEPHASE_RENDER2}},
 
     [WORLDSYS_DEBUG] =
@@ -269,12 +270,12 @@ void Worlds_Draw2d(World **worlds, int count, double dt)
 
 int Sol_Create_Ent(World *world, vec3s pos)
 {
-    int id = 0;
+    int id = 1;
     while (id < world->maxEntities && world->masks[id] != 0)
         id++;
 
     if (id >= world->maxEntities)
-        return -1;
+        return 0;
 
     world->activeEnts[id] = true;
     world->entCount++;

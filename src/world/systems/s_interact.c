@@ -53,7 +53,7 @@ void Interact_Tick(World *world, double dt)
     {
         int id               = set->dense[i];
         ScInteract *interact = &set->data[i];
-        Xforms xform = Xform_Get(world, id);
+        Xform xform = Xform_Get(world, id);
         interact->state &=
             (INTERACT_HELD | INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGING | INTERACT_DRAGGABLE);
 
@@ -80,7 +80,7 @@ void Interact_Tick(World *world, double dt)
                 continue;
             ScCmd *cmd = &cmd_set->data[j];
 
-            Xforms cmd_xform = Xform_Get(world, cmd_id);
+            Xform cmd_xform = Xform_Get(world, cmd_id);
             if (glms_vec3_distance(xform.pos, cmd_xform.pos) < interact->range)
             {
                 is_hovered = true;

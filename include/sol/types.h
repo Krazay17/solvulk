@@ -11,9 +11,9 @@
 #define SOLAPI
 #endif
 
-#define WORLD_FORWARD (vec3s){ 0, 0, 1.0f }
-#define WORLD_UP (vec3s){ 0, 1.0f, 0 }
-#define WORLD_DOWN (vec3s){ 0, -1.0f, 0 }
+#define WORLD_FORWARD (vec3s){0, 0, 1.0f}
+#define WORLD_UP (vec3s){0, 1.0f, 0}
+#define WORLD_DOWN (vec3s){0, -1.0f, 0}
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -23,8 +23,10 @@
 #define MAX_ENTS 0x4fff
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
+#define PHYSX_GET_LAYER(packed) (((u32)(packed) >> 16) & 0xFFFF)
+#define PHYSX_GET_FILTER(packed) ((u32)(packed) & 0xFFFF)
 #define ABILITY_SLOTS 10
-#define SOL_PHYS_GRAV (vec3s){ 0.0f, -9.81f, 0.0f }
+#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
 
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
@@ -41,8 +43,8 @@ typedef struct
 
 typedef struct
 {
-    vec3s   poseT[MAX_BONES];
-    vec3s   poseS[MAX_BONES];
+    vec3s poseT[MAX_BONES];
+    vec3s poseS[MAX_BONES];
     versors poseR[MAX_BONES];
 } SolPoseE;
 
@@ -60,13 +62,23 @@ typedef enum
 } EKind;
 
 // Enums
+
 typedef enum
 {
-    COLLISIONGROUP_NONE,
-    COLLISIONGROUP_WORLD      = (1 << 0),
-    COLLISIONGROUP_PAWN       = (1 << 1),
-    COLLISIONGROUP_PROJECTILE = (1 << 2),
-} CollisionGroup;
+    COLLAYER_NONE,
+    COLLAYER_WORLD      = (1 << 0),
+    COLLAYER_TEAMZ      = (1 << 1),
+    COLLAYER_TEAMZ_PROJ = (1 << 2),
+    COLLAYER_TEAMA      = (1 << 4),
+    COLLAYER_TEAMA_PROJ = (1 << 5),
+    COLLAYER_TEAMB      = (1 << 6),
+    COLLAYER_TEAMB_PROJ = (1 << 7),
+    COLLAYER_TEAMC      = (1 << 8),
+    COLLAYER_TEAMC_PROJ = (1 << 9),
+    COLLAYER_TEAMD      = (1 << 10),
+    COLLAYER_TEAMD_PROJ = (1 << 11),
+    COLLAYER_ALL        = 0xffff,
+} ColLayer;
 
 typedef enum
 {
@@ -268,16 +280,23 @@ typedef void (*CallbackFunc)(int, void *);
 typedef struct
 {
     CallbackFunc callbackFunc;
-    void        *callbackData;
-    int          flag;
+    void *callbackData;
+    int flag;
 } SolCallback;
 
-typedef struct SolXform
+typedef struct
 {
     vec3s pos;
-    vec3s sca;
     versors rot;
-} SolXform;
+    vec3s sca;
+} Xform;
+
+typedef struct
+{
+    vec3s *pos;
+    versors *rot;
+    vec3s *sca;
+} XformP;
 
 typedef struct SolLine
 {
@@ -287,7 +306,6 @@ typedef struct SolLine
 
 typedef struct SolSphere
 {
-    u32   kind;
     vec3s pos;
     vec4s color;
     float radius;
@@ -296,13 +314,13 @@ typedef struct SolSphere
 typedef struct DebugLine
 {
     SolLine line;
-    float   ttl;
+    float ttl;
 } DebugLine;
 
 typedef struct DebugSphere
 {
     SolSphere sphere;
-    float     ttl;
+    float ttl;
 } DebugSphere;
 
 // TEXTURE---------------
@@ -393,7 +411,7 @@ typedef struct SolVertex
     vec2 uv;
 
     ivec4 boneIndices; // up to 4 bones per vertex (glTF default)
-    vec4  boneWeights; // weights, sum = 1.0
+    vec4 boneWeights;  // weights, sum = 1.0
 } SolVertex;
 
 typedef struct SolTri
@@ -409,7 +427,7 @@ typedef struct SolTri
         };
         vec3s v[3];
     };
-    int   entId;
+    int entId;
     vec3s normal, center;
     float bounds;
 } SolTri;
@@ -479,29 +497,29 @@ typedef enum
 
 typedef struct AnimDesc
 {
-    u8          playKind, force;
-    float       blendIn, blendOut, seek, speed;
+    u8 playKind, force;
+    float blendIn, blendOut, seek, speed;
     AnimLayerId layerId;
-    int         anim;
+    int anim;
 } AnimDesc;
 
 typedef struct SolContact
 {
-    u32   id, idB;
+    u32 id, idB;
     vec3s pos, normal;
     float penetration;
 } SolContact;
 
 typedef struct SolHit
 {
-    int   entA; // Attacker
-    int   entB; // Victim
+    int entA; // Attacker
+    int entB; // Victim
     float damage;
     vec3s pos;
     vec3s normal;
     vec3s vel;
     float power;
-    bool  isHeal;
+    bool isHeal;
 
     u32 buffMask;
     u32 effectMask;
@@ -511,40 +529,40 @@ typedef struct SolRay
 {
     vec3s start, dir;
     float dist;
-    u16   mask;
-    int   ignoreEnt;
-    bool  debug;
+    u16 mask;
+    int ignoreEnt;
+    bool debug;
 } SolRay;
 
 typedef struct SolRayResult
 {
-    bool  hit;
+    bool hit;
     vec3s pos, norm;
     float dist;
-    int   entId;
+    int entId;
 } SolRayResult;
 
 typedef struct AnimLayer
 {
-    u8      playKind;
-    int     currentAnim, lastAnim, animId, last_frame_played;
-    vec3s   cachedT[MAX_BONES];
-    vec3s   cachedS[MAX_BONES];
+    u8 playKind;
+    int currentAnim, lastAnim, animId, last_frame_played;
+    vec3s cachedT[MAX_BONES];
+    vec3s cachedS[MAX_BONES];
     versors cachedR[MAX_BONES];
-    float   currentSeek, lastSeek;
-    float   blendFactor, blendInSpeed; // Internal crossfade between lastAnim -> currentAnim
-    float   playRate;
-    float   weight;        // Active layer weight [0.0f - 1.0f]
-    float   blendOutSpeed; // Rate at which weight decays during fade-out
-    bool    isBlendingOut; // Flag indicating layer weight is decaying
-    bool    force, hasSnapshot;
+    float currentSeek, lastSeek;
+    float blendFactor, blendInSpeed; // Internal crossfade between lastAnim -> currentAnim
+    float playRate;
+    float weight;        // Active layer weight [0.0f - 1.0f]
+    float blendOutSpeed; // Rate at which weight decays during fade-out
+    bool isBlendingOut;  // Flag indicating layer weight is decaying
+    bool force, hasSnapshot;
 } AnimLayer;
 
 typedef struct SolUserHit
 {
-    int    hoverId, focusId;
+    int hoverId, focusId;
     World *hoverWorld, *focusWorld;
-    bool   isHoverUi, isFocusUi, isDragging;
+    bool isHoverUi, isFocusUi, isDragging;
     ivec2s pressPos;
 } SolUserHit;
 
@@ -661,10 +679,11 @@ typedef enum
 
 typedef struct
 {
-    u32   state, rarity;
-    float damage, cooldown, duration, maxpower;
-    u32   buffMask;
-    u32   effectMask;
+    u32 state, rarity;
+    float damage, maxpower;
+    float cooldown, duration, recoverDuration;
+    u32 buffMask;
+    u32 effectMask;
 } AbilityConfig;
 
 typedef struct SolItem

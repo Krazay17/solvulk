@@ -101,7 +101,7 @@ void Create_Game()
 
     // Level
     {
-        int level1 = Sol_Create_Ent(world, (vec3s){0, 0, 0});
+        int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
         ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
         levelModel->kind    = MODELKIND_WORLD10;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
@@ -111,23 +111,11 @@ void Create_Game()
     // Wizards
     while (world->entCount < 500)
     {
-        int id = Sol_Create_Ent(world, (vec3s){sinf(id) * 10.0f, 50.0f, cosf(id) * 10.0f});
+        static int inc = 0;
+        int id         = Sol_Prefab_Wizard(world, (vec3s){sinf(inc) * 10.0f, 50.0f, cosf(inc) * 10.0f}, 1.0f);
+        Sol_Comp_Add(world, id, ScHook)->pressed = Hook_Test;
         // Sol_Comp_Add(world, id, ScCmd);
         // Sol_Comp_Add(world, id, ScPlayer);
-        ScCombat *combat  = Sol_Comp_Add(world, id, ScCombat);
-        combat->healthMax = 100.0f;
-        combat->health    = 100.0f;
-        ScMeta *meta      = Sol_Comp_Add(world, id, ScMeta);
-        snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
-        ScInteract *interact                     = Sol_Comp_Add(world, id, ScInteract);
-        interact->range                          = 5.0f;
-        Sol_Comp_Add(world, id, ScHook)->pressed = Hook_Test;
-        ScModel *model                           = Sol_Comp_Add(world, id, ScModel);
-        ScBody3 *body3                           = Sol_Body3_Add(world, id);
-        body3->shape                             = SHAPE3_CAP;
-        body3->mask                              = PHYSXMASK(1, 1);
-        body3->dims                              = (vec3s){0.5f, 3.0f, 0.5f};
-        model->kind                              = MODELKIND_WIZARD;
-        Sol_Anim_Add(world, id);
+        inc++;
     }
 }

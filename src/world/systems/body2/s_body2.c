@@ -70,7 +70,7 @@ void Body2_Step(World *world, double dt)
         ScBody2 *body = &set->data[i];
         if (body->ignoreWindow)
             continue;
-            Xforms xform = Xform_Get(world, id);
+            Xform xform = Xform_Get(world, id);
         vec3s old_pos  = xform.pos;
         vec3s max_pos  = glms_vec3_sub(bounds_max, body->dims);
 

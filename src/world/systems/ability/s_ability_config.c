@@ -25,6 +25,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_FIREBALL] =
         {
             .duration   = 3.0f,
+            .recoverDuration = 0.5f,
             .cooldown   = 0.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
@@ -122,15 +123,15 @@ const AbilityStateFunc ABILITY_STATE_FUNC[ABILITY_STATE_COUNT] = {
             Ability_Claw_CanEnter,
             Ability_Claw_Draw,
         },
-    // [ABILITY_STATE_FIREBALL] =
-    //     {
-    //         Fireball_State_Update,
-    //         Fireball_State_Enter,
-    //         Fireball_State_Exit,
-    //         Fireball_State_CanExit,
-    //         Fireball_State_CanEnter,
-    //         Fireball_State_Draw,
-    //     },
+    [ABILITY_STATE_FIREBALL] =
+        {
+            Ability_Fireball_Update,
+            Ability_Fireball_Enter,
+            Ability_Fireball_Exit,
+            Ability_Fireball_CanExit,
+            Ability_Fireball_CanEnter,
+            Ability_Fireball_Draw,
+        },
     // [ABILITY_STATE_SHIELD] =
     //     {
     //         Shield_State_Update,

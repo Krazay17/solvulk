@@ -39,7 +39,7 @@ void Model_Render(World *world, double dt)
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = model->color;
 
-        XformsDraw xform = Xform_GetDraw(world, id);
+        Xform xform = Xform_GetDraw(world, id);
 
         if (Sol_Comp_Has(world, id, ScInteract))
         {
@@ -97,13 +97,13 @@ void Model_Init(World *world)
 {
 }
 
-SolXform Sol_Model_GetBoneXform(World *world, int id, const char *name)
+Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
-    SolXform result       = {0};
+    Xform result       = {0};
     ScModel *model        = Sol_Comp_Get(world, id, ScModel);
     ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
-    XformsDraw xform      = Xform_GetDraw(world, id);
+    Xform xform      = Xform_GetDraw(world, id);
 
     int boneIdx = -1;
     for (int i = 0; i < skeleton->boneCount; i++)

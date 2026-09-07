@@ -111,7 +111,7 @@ if(WIN32)
        "${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
-       target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup")
+       target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")
        #target_link_options(solapp PRIVATE "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>")
    endif()
 

@@ -10,7 +10,7 @@ void Worlds_Xform_Snapshot(World **worlds, int count)
         World *world = worlds[w];
         if (!world->doesSimulate)
             continue;
-        Xform *xform = &world->xform;
+        WorldXform *xform = &world->xform;
         memcpy(xform->last_pos, xform->pos, sizeof(vec3s) * MAX_ENTS);
         memcpy(xform->last_sca, xform->sca, sizeof(vec3s) * MAX_ENTS);
         memcpy(xform->last_rot, xform->rot, sizeof(versors) * MAX_ENTS);
@@ -26,7 +26,7 @@ void Worlds_Xform_Interpolate(World **worlds, int count, float alpha)
         if (!world->doesSimulate)
             continue;
 
-        Xform *xform = &world->xform;
+        WorldXform *xform = &world->xform;
 #pragma omp parallel for
         for (i = 0; i < MAX_ENTS; i++)
         {

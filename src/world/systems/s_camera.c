@@ -10,7 +10,7 @@ void Camera_Tick(World *world, double dt)
     {
         int id           = set->dense[i];
         ScCamera *camera = &set->data[i];
-        XformsDraw xform = Xform_GetDraw(world, id);
+        Xform xform = Xform_GetDraw(world, id);
         ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
         vec3s head = xform.pos;
@@ -38,7 +38,7 @@ void Camera_Tick(World *world, double dt)
 
             SolRayResult anchortrace = {0};
             bool offsetHit           = Sol_Raycast1(
-                world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset}, &anchortrace);
+                world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset, .mask = 1}, &anchortrace);
 
             float target_offset = camera->desired_offset;
             if (offsetHit)
@@ -59,7 +59,7 @@ void Camera_Tick(World *world, double dt)
 
             SolRayResult dist_trace = {0};
             bool distanceHit        = Sol_Raycast1(
-                world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance}, &dist_trace);
+                world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance, .mask = 1}, &dist_trace);
 
             float target_dist = camera->desired_distance;
             if (distanceHit)

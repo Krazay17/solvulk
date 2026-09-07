@@ -23,13 +23,21 @@ typedef struct ScCmd
     bool isStrafing;
     int target;
     float yaw, pitch;
-    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir;
+    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir, headpos;
 } ScCmd;
 
 typedef struct ScMeta
 {
     char name[64];
 } ScMeta;
+
+typedef struct ScTeam
+{
+    u32 faction;
+    u32 team;
+    u32 party[4];
+    u32 party_count;
+} ScTeam;
 
 typedef struct ScPlayer
 {
@@ -59,6 +67,7 @@ typedef struct ScBody3
 {
     Shape3 shape;
     bool ignoreFriendly;
+    u32 ignoreEnt;
     vec3s vel, impulse, force, dims, gravity;
     float mass, invMass, restitution;
     u32 mask, base_mask;
@@ -243,7 +252,7 @@ typedef struct
     union {
         struct
         {
-            vec3s enterDir;
+            vec3s dir;
             StrafeDir strafe;
         } dash;
         struct
@@ -261,11 +270,16 @@ typedef struct
     } as;
 
     AbilityState kind;
-    float elapsed, accum, power, recover;
-    float duration, cooldown;
+    float elapsed, duration;
+    float recover, recoverDuration;
+
+    float accum, power;
+
     double lastEntered, lastExited;
-    u32 stage;
-    bool held, doesHit;
+    float cooldown;
+
+    u8 stage;
+    bool held;
 } AbilityStateData;
 typedef struct ScAbility
 {
@@ -309,7 +323,7 @@ typedef struct ScParent
 typedef struct ScOwner
 {
     u32 ownerId;
-    u32 team;
+    u32 ownerGen;
 } ScOwner;
 
 typedef struct ScCombat
@@ -478,6 +492,7 @@ typedef struct ScHook
     X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
     X(ScMeta, HAS_ScMeta)                                                                                              \
+    X(ScTeam, HAS_ScTeam)                                                                                              \
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \
     X(ScAi, HAS_ScAi)                                                                                                  \

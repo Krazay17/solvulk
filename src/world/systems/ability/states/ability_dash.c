@@ -20,7 +20,7 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
     if (Sol_Comp_Has(world, id, ScBody3))
     {
         ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
-        body->vel     = glms_vec3_scale(data->as.dash.enterDir, alpha * DASH_VEL);
+        body->vel     = glms_vec3_scale(data->as.dash.dir, alpha * DASH_VEL);
     }
 }
 
@@ -33,15 +33,15 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
     vec3s flat_lookdir     = cmd->lookdir;
     flat_lookdir.y         = 0;
     flat_lookdir           = vecNorm(flat_lookdir);
-    data->as.dash.enterDir = flat_lookdir;
+    data->as.dash.dir = flat_lookdir;
     data->as.dash.strafe   = STRAFE_FWD;
     if (glms_vec3_norm2(cmd->wishdir) > 0)
     {
-        data->as.dash.enterDir = cmd->wishdir;
+        data->as.dash.dir = cmd->wishdir;
     }
 
     data->as.dash.strafe =
-        Sol_GetStrafedirYaw(data->as.dash.enterDir.x, data->as.dash.enterDir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
+        Sol_GetStrafedirYaw(data->as.dash.dir.x, data->as.dash.dir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
 }
 
 void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)

@@ -5,9 +5,10 @@
 struct Aim
 {
     vec3s dir;
+    vec3s pos;
     int target;
 };
-static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s aimpos, vec3s lookpos, vec3s lookdir,
+static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos, vec3s lookpos, vec3s lookdir,
                                             float range, float hitdepth)
 {
     struct Aim aim        = {.dir = lookdir};
@@ -15,15 +16,15 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s aimpos, 
     bool hit              = Sol_Raycast1(world,
                                          (SolRay){
                                              .start = lookpos,
-                                             .mask  = COLLISIONGROUP_PAWN | COLLISIONGROUP_WORLD,
+                                             .mask  = COLLAYER_ALL,
                                              .dir   = lookdir,
                                              .dist  = range,
                                          },
                                          &aimTrace);
     // Add slight depth into hit
-    aimTrace.pos = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
-
-    vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, aimpos));
+    aimTrace.pos       = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
+    aim.pos            = aimTrace.pos;
+    vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, headpos));
     aim.dir            = vecDot(dirFromTrace, lookdir) > 0.7f ? dirFromTrace : lookdir;
     aim.target         = aimTrace.entId > -1 ? aimTrace.entId : -1;
     return aim;
@@ -52,18 +53,19 @@ void Player_Tick(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, ScBody3))
         {
-            ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-            vec3s head     = world->xform.pos[id];
+            ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+            vec3s head    = world->xform.pos[id];
             head.y += body->dims.y * 0.4f;
-            cmd->aimpos = head;
+            cmd->headpos = head;
         }
 
         if (Sol_Comp_Has(world, id, ScCamera))
         {
             ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
-            struct Aim aim   = Sol_Player_SetParallaxAim(world, id, cmd->aimpos, camera->pos, camera->dir, 50.0f, 0.5f);
-            cmd->aimdir      = aim.dir;
-            cmd->target      = aim.target;
+            struct Aim aim = Sol_Player_SetParallaxAim(world, id, cmd->headpos, camera->pos, camera->dir, 50.0f, 0.5f);
+            cmd->aimpos    = aim.pos;
+            cmd->aimdir    = aim.dir;
+            cmd->target    = aim.target;
         }
 
         if (Sol_Comp_Has(world, id, ScAbility))

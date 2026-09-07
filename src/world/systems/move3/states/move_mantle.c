@@ -17,7 +17,7 @@
 static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
-    Xforms xform = Xform_Get(world, id);
+    Xform xform = Xform_Get(world, id);
     MoveStateData *data    = &move->stateData[MOVE_MANTLE];
     vec3s          basePos = vecAdd(xform.pos, vecSca(WORLD_UP, body->dims.y * 0.7f));
 

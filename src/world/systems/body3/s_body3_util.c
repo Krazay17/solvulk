@@ -32,7 +32,7 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
     {
         int id        = bodySet->dense[i];
         ScBody3 *body = &bodySet->data[i];
-        Xforms xform  = Xform_Get(world, id);
+        Xform xform   = Xform_Get(world, id);
         SpatialAABB aabb;
         aabb.id  = id;
         aabb.min = vecSub(xform.pos, body->dims);
@@ -139,7 +139,7 @@ void Resolve_Contact(World *world, int idA, int idB, SolContact *contact)
         bodyB->vel = glms_vec3_sub(bodyB->vel, glms_vec3_scale(impulse, invMassB));
 }
 
-void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, StaticGroup *group,
+void Collisions_Static_Stage_Local(World *world, int idA, ScBody3 *body, vec3s min, vec3s max, StaticGroup *group,
                                    ThreadContactBuffer *contacts)
 {
     ivec3s minCellA = SpatialGrid_WorldToCell(&group->spatial, min);
@@ -189,8 +189,11 @@ void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s mi
                         continue;
 
                     int idB = tri->entId;
+                    if (body->ignoreEnt == idB)
+                        continue;
+
                     SolContact contact;
-                    if (shape_tri_test[shape] && shape_tri_test[shape](world, idA, idB, tri, &contact))
+                    if (shape_tri_test[body->shape] && shape_tri_test[body->shape](world, idA, idB, tri, &contact))
                     {
                         if (contacts->count < MAX_THREAD_CONTACTS)
                         {
@@ -206,7 +209,7 @@ void Collisions_Static_Stage_Local(World *world, int idA, Shape3 shape, vec3s mi
     }
 }
 
-void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s min, vec3s max, DynamicGroup *group,
+void Collisions_Dynamic_Bodies_Local(World *world, int idA, ScBody3 *body, vec3s min, vec3s max, DynamicGroup *group,
                                      ThreadContactBuffer *contacts)
 {
     ivec3s minCellA = SpatialGrid_WorldToCell(&group->spatial, min);
@@ -238,8 +241,13 @@ void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s 
                     if (idA >= idB)
                         continue;
 
+                    if (!Sol_Comp_Has(world, idB, ScBody3))
+                        continue;
                     ScBody3 *other_body = Sol_Comp_Get(world, idB, ScBody3);
-                    if (!other_body)
+
+                    if (!((body->mask >> 16) & COLLAYER_TEAMZ || (other_body->mask >> 16 & COLLAYER_TEAMZ)) ||
+                        body->ignoreEnt == idB || other_body->ignoreEnt == idA ||
+                        !((body->mask >> 16) & other_body->mask) || !((other_body->mask >> 16) & body->mask))
                         continue;
 
                     // Compute minimum shared overlapping cell between A and B
@@ -259,8 +267,8 @@ void Collisions_Dynamic_Bodies_Local(World *world, int idA, Shape3 shape, vec3s 
                         continue;
 
                     SolContact contact;
-                    if (shape_pair_test[shape][other_body->shape] &&
-                        shape_pair_test[shape][other_body->shape](world, idA, idB, &contact))
+                    if (shape_pair_test[body->shape][other_body->shape] &&
+                        shape_pair_test[body->shape][other_body->shape](world, idA, idB, &contact))
                     {
                         if (contacts->count < MAX_THREAD_CONTACTS)
                         {
@@ -279,8 +287,8 @@ bool Collide_Sphere_Sphere(World *world, int idA, int idB, SolContact *contact)
 {
     ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
     ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
-    Xforms xformA  = Xform_Get(world, idA);
-    Xforms xformB  = Xform_Get(world, idB);
+    Xform xformA   = Xform_Get(world, idA);
+    Xform xformB   = Xform_Get(world, idB);
     if (!bodyA || !bodyB)
         return false;
 
@@ -315,8 +323,8 @@ bool Collide_Capsule_Capsule(World *world, int idA, int idB, SolContact *hit)
 {
     ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
     ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
-    Xforms xformA  = Xform_Get(world, idA);
-    Xforms xformB  = Xform_Get(world, idB);
+    Xform xformA   = Xform_Get(world, idA);
+    Xform xformB   = Xform_Get(world, idB);
 
     float aRadius   = bodyA->dims.x;
     float aHalfSpan = (bodyA->dims.y * 0.5f) - aRadius;
@@ -356,11 +364,75 @@ bool Collide_Capsule_Capsule(World *world, int idA, int idB, SolContact *hit)
 }
 bool Collide_Sphere_Capsule(World *world, int idA, int idB, SolContact *hit)
 {
-    return false;
+    ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
+    ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
+    Xform xformA   = Xform_Get(world, idA);
+    Xform xformB   = Xform_Get(world, idB);
+
+    float aRadius = bodyA->dims.x;
+
+    float bRadius   = bodyB->dims.x;
+    float bHalfSpan = (bodyB->dims.y * 0.5f) - bRadius;
+    if (bHalfSpan < 0.0f)
+        bHalfSpan = 0.0f;
+
+    vec3s bTop    = {{xformB.pos.x, xformB.pos.y + bHalfSpan, xformB.pos.z}};
+    vec3s bBottom = {{xformB.pos.x, xformB.pos.y - bHalfSpan, xformB.pos.z}};
+
+    // Find closest point on capsule B's spine to sphere A's center
+    vec3s closestB = Closest_Point_Segment_Point(bBottom, bTop, xformA.pos);
+
+    // Sphere-sphere collision test between Sphere A and closest point on Capsule B
+    vec3s delta     = glms_vec3_sub(xformA.pos, closestB);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aRadius + bRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    hit->normal      = glms_vec3_scale(delta, 1.0f / distance); // Points from B (Capsule) to A (Sphere)
+    hit->penetration = radiusSum - distance;
+    hit->pos         = glms_vec3_add(closestB, glms_vec3_scale(hit->normal, bRadius));
+
+    return true;
 }
 bool Collide_Capsule_Sphere(World *world, int idA, int idB, SolContact *hit)
 {
-    return false;
+    ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
+    ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
+    Xform xformA   = Xform_Get(world, idA);
+    Xform xformB   = Xform_Get(world, idB);
+
+    float aRadius   = bodyA->dims.x;
+    float aHalfSpan = (bodyA->dims.y * 0.5f) - aRadius;
+    if (aHalfSpan < 0.0f)
+        aHalfSpan = 0.0f;
+
+    float bRadius = bodyB->dims.x;
+
+    vec3s aTop    = {{xformA.pos.x, xformA.pos.y + aHalfSpan, xformA.pos.z}};
+    vec3s aBottom = {{xformA.pos.x, xformA.pos.y - aHalfSpan, xformA.pos.z}};
+
+    // Find closest point on capsule A's spine to sphere B's center
+    vec3s closestA = Closest_Point_Segment_Point(aBottom, aTop, xformB.pos);
+
+    // Sphere-sphere collision test between closest point on Capsule A and Sphere B
+    vec3s delta     = glms_vec3_sub(closestA, xformB.pos);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aRadius + bRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    hit->normal      = glms_vec3_scale(delta, 1.0f / distance); // Points from B (Sphere) to A (Capsule)
+    hit->penetration = radiusSum - distance;
+    hit->pos         = glms_vec3_add(xformB.pos, glms_vec3_scale(hit->normal, bRadius));
+
+    return true;
 }
 bool Collide_Box_Box(World *world, int idA, int idB, SolContact *hit)
 {
@@ -378,7 +450,7 @@ bool Collide_Sphere_Box(World *world, int idA, int idB, SolContact *hit)
 bool Collide_Sphere_Tri(World *world, int idA, int idB, const SolTri *tri, SolContact *contact)
 {
     ScBody3 *body3 = Sol_Comp_Get(world, idA, ScBody3);
-    Xforms xform   = Xform_Get(world, idA);
+    Xform xform    = Xform_Get(world, idA);
     vec3s closestP = ClosestPointOnTriangle(xform.pos, tri->a, tri->b, tri->c);
     vec3s delta    = glms_vec3_sub(xform.pos, closestP);
     float distSq   = glms_vec3_dot(delta, delta);
@@ -400,7 +472,7 @@ bool Collide_Sphere_Tri(World *world, int idA, int idB, const SolTri *tri, SolCo
 bool Collide_Capsule_Tri(World *world, int idA, int idB, const SolTri *tri, SolContact *hit)
 {
     ScBody3 *body = Sol_Comp_Get(world, idA, ScBody3);
-    Xforms xform  = Xform_Get(world, idA);
+    Xform xform   = Xform_Get(world, idA);
 
     float radius     = body->dims.x;
     float halfHeight = fmaxf(0.0f, body->dims.y * 0.5f - radius);

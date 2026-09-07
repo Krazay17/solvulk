@@ -66,7 +66,7 @@ void Debug_Draw3(World *world, double dt)
     {
         SolSphere *dsphere = &sys->spheres[i].sphere;
 
-        SphereSSBO *sphere = Sol_Render_GetNextSphere(dsphere->kind);
+        SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_DEBUG);
         sphere->color      = dsphere->color;
         sphere->pos        = (vec4s){ dsphere->pos.x, dsphere->pos.y, dsphere->pos.z, dsphere->radius };
     }

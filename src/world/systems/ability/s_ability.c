@@ -77,12 +77,16 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         ability->stateData[ability->activeSlot].lastExited = world->tickTime;
     prevfunc->exit(world, id, ability, cmd);
 
-    ability->state = target_state;
+    ability->state      = target_state;
+    ability->activeSlot = slot;
 
-    ability->activeSlot                  = slot;
-    ability->stateData[slot].elapsed     = 0;
-    ability->stateData[slot].accum       = 0;
-    ability->stateData[slot].lastEntered = world->tickTime;
+    AbilityStateData *data = &ability->stateData[slot];
+    data->lastEntered      = world->tickTime;
+    data->elapsed          = 0;
+    data->accum            = 0;
+    data->stage            = 0;
+    data->recover          = 0;
+    data->power            = 0;
     nextfunc->enter(world, id, ability, cmd);
 
     return true;

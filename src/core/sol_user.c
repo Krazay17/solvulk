@@ -215,7 +215,7 @@ void Entity_Actions()
     // DEBUG FLY
     if (Sol_Input_KeyDown(SOL_KEY_G))
     {
-        Xforms xform = Xform_Get(world, id);
+        Xform xform = Xform_Get(world, id);
         vec3s pos    = vecAdd(xform.pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
         Sol_Xform_Teleport(world, id, pos);
         if (Sol_Comp_Has(world, id, ScBody3))
@@ -226,7 +226,7 @@ void Entity_Actions()
     }
     if (mouse.buttons[SOL_MOUSE_LEFT])
     {
-        SolRay ray      = {.start = cmd->aimpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = 1};
+        SolRay ray      = {.start = cmd->headpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = 1};
         vec3s final_pos = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
         // SolRayResult result = {0};
         // bool hit            = Sol_Raycast1D(world, ray, &result, 1.0f);
@@ -268,10 +268,10 @@ void User_Debug(dt)
     int id       = sol_user.view_ent;
     if (id >= 0)
     {
-        Xform *xform = &world->xform;
-        Sol_Debug_Add("X", xform->pos[id].x);
-        Sol_Debug_Add("Y", xform->pos[id].y);
-        Sol_Debug_Add("Z", xform->pos[id].z);
+        Xform xform = Xform_Get(world, id);
+        Sol_Debug_Add("X", xform.pos.x);
+        Sol_Debug_Add("Y", xform.pos.y);
+        Sol_Debug_Add("Z", xform.pos.z);
         if (Sol_Comp_Has(world, id, ScMove3))
         {
             ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);

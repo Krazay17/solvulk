@@ -26,7 +26,8 @@
 #define PHYSX_GET_LAYER(packed) (((u32)(packed) >> 16) & 0xFFFF)
 #define PHYSX_GET_FILTER(packed) ((u32)(packed) & 0xFFFF)
 #define ABILITY_SLOTS 10
-#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
+
+#define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
@@ -50,7 +51,7 @@ typedef struct
 
 typedef enum
 {
-    EKIND_PLAYER = 1,
+    EKIND_DUDE = 1,
     EKIND_WIZARD,
     EKIND_ZORGON,
     EKIND_FIREBALL,

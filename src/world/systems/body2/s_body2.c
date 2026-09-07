@@ -13,7 +13,7 @@ const Resolver shape_resolver[SHAPE2_CNT][SHAPE2_CNT] = {
 const vec3s bounds_min = {0.0f, 0.0f, 0.0f};
 const vec3s bounds_max = {WINDOW_WIDTH, WINDOW_HEIGHT, 0.0f};
 
-void Body3_Init(World *world)
+void Body2_Init(World *world)
 {
     SysBody2 *ws                   = malloc(sizeof(SysBody2));
     world->systems[WORLDSYS_BODY2] = ws;

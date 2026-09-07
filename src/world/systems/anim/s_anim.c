@@ -5,15 +5,19 @@
 
 #include <omp.h>
 
+void Anim_Init(World *world)
+{
+}
+
 static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 {
     float fdt = (float)dt;
-    int   i;
+    int i;
 
 #pragma omp parallel for schedule(dynamic)
     for (i = 0; i < set->cnt; i++)
     {
-        int     id   = set->dense[i];
+        int id       = set->dense[i];
         ScAnim *anim = &set->data[i];
 
         ScModel *model = Sol_Comp_Get(world, id, ScModel);
@@ -97,20 +101,20 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 void Anim_Tick(World *world, double dt)
 {
     float fdt = (float)dt;
-    int   i;
+    int i;
 
     SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);
 #pragma omp parallel for schedule(dynamic)
     for (i = 0; i < set->cnt; i++)
     {
-        int     id   = set->dense[i];
+        int id       = set->dense[i];
         ScAnim *anim = &set->data[i];
 
         if (Sol_Comp_Has(world, id, ScAbility))
         {
-            ScAbility        *ability      = Sol_Comp_Get(world, id, ScAbility);
-            AbilityStateData *data         = &ability->stateData[ability->activeSlot];
-            AnimDesc          ability_anim = { .layerId = ANIM_LAYER_OVERRIDE };
+            ScAbility *ability     = Sol_Comp_Get(world, id, ScAbility);
+            AbilityStateData *data = &ability->stateData[ability->activeSlot];
+            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE};
 
             switch (ability->state)
             {
@@ -131,11 +135,13 @@ void Anim_Tick(World *world, double dt)
                 switch (data->stage)
                 {
                 case 0:
-                    ability_anim.anim = ability->activeSlot == 1 ? ANIM_CHARGE_RIGHT : ANIM_CHARGE_LEFT;
+                    ability_anim.anim =
+                        ANIM_CHARGE_LEFT; // ability->activeSlot == 1 ? ANIM_CHARGE_RIGHT : ANIM_CHARGE_LEFT;
                     break;
                 case 1:
                 case 2:
-                    ability_anim.anim = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
+                    ability_anim.anim =
+                        ANIM_ATTACK_LEFT; // ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
                     ability_anim.seek = 0.16f;
                     break;
                 }
@@ -170,10 +176,10 @@ void Anim_Tick(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, ScMove3))
         {
-            ScMove3       *movement     = Sol_Comp_Get(world, id, ScMove3);
-            MoveStateData *data         = &movement->stateData[movement->state];
-            bool           modify_speed = false;
-            AnimDesc       move_anim    = { .anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE };
+            ScMove3 *movement   = Sol_Comp_Get(world, id, ScMove3);
+            MoveStateData *data = &movement->stateData[movement->state];
+            bool modify_speed   = false;
+            AnimDesc move_anim  = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
             switch (movement->state)
             {
             case MOVE_LANDING: {
@@ -238,7 +244,7 @@ void Anim_Tick(World *world, double dt)
         }
         else
         {
-            Sol_Anim_Play(world, id, (AnimDesc){ .anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE });
+            Sol_Anim_Play(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
         }
         for (int i = 0; i < ANIM_LAYER_COUNT; i++)
         {
@@ -250,19 +256,32 @@ void Anim_Tick(World *world, double dt)
     Anim_Solver(set, world, dt);
 }
 
-void Anim_Init(World *world)
+static const ScAnim ANIM_DEFAULT = {.layers = {
+                                        [0] = {.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f},
+                                        [1] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                                        [2] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                                        [3] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                                    }};
+
+ScAnim *Sol_Anim_Add(World *world, int id, u32 model)
 {
+    ScModel *model_comp = Sol_Comp_Add(world, id, ScModel);
+    model_comp->kind    = model;
+    ScAnim *anim_comp   = Sol_Comp_Add(world, id, ScAnim);
+    *anim_comp          = ANIM_DEFAULT;
+
+    return anim_comp;
 }
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc)
 {
-    ScModel   *modelComp = Sol_Comp_Get(world, id, ScModel);
-    ScAnim    *anim      = Sol_Comp_Get(world, id, ScAnim);
-    AnimLayer *layer     = &anim->layers[desc.layerId];
+    ScModel *modelComp = Sol_Comp_Get(world, id, ScModel);
+    ScAnim *anim       = Sol_Comp_Get(world, id, ScAnim);
+    AnimLayer *layer   = &anim->layers[desc.layerId];
 
-    AnimId animId   = desc.anim;
-    float  blendIn  = desc.blendIn > 0.0f ? desc.blendIn : BLEND_SPEED_DEFAULT;
-    float  blendOut = desc.blendOut > 0.0f ? desc.blendOut : BLEND_SPEED_DEFAULT;
+    AnimId animId  = desc.anim;
+    float blendIn  = desc.blendIn > 0.0f ? desc.blendIn : BLEND_SPEED_DEFAULT;
+    float blendOut = desc.blendOut > 0.0f ? desc.blendOut : BLEND_SPEED_DEFAULT;
 
     layer->last_frame_played = world->currentTick;
 

@@ -16,19 +16,18 @@
 
 void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+
     if (!Sol_Comp_Has(world, id, ScCombat))
         return;
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    ScBody3 *body          = Sol_Comp_Get(world, id, ScBody3);
-    ScAnim *anim           = Sol_Comp_Get(world, id, ScAnim);
+    ScBody3 *body    = Sol_Comp_Get(world, id, ScBody3);
 
     combat->hitPause = fmaxf(0, combat->hitPause - dt * 5.0f);
     if (combat->hitPause == 0)
         data->elapsed += dt;
 
-    if (data->elapsed >= ability_base[ABILITY_STATE_CLAW].duration)
+    if (data->elapsed >= data->duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
         return;
@@ -47,7 +46,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             .dir       = cmd->aimdir,
             .dist      = body->dims.x + MELEE_RANGE,
             .ignoreEnt = id,
-            .mask      = 1,
+            .mask      = COLLAYER_ALL,
         };
         SolRayResult results[128];
         int hits = Sol_RaycastD(world, ray, results, 128, 1.0f);

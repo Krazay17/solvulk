@@ -22,6 +22,13 @@
 typedef struct ScBody3 ScBody3;
 typedef struct SolTri SolTri;
 
+typedef enum
+{
+    BODY3KIND_DUDE,
+    BODY3KIND_WIZARD,
+    BODY3KIND_COUNT,
+} Body3Kind;
+
 typedef struct
 {
     SolContact contacts[MAX_THREAD_CONTACTS];

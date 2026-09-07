@@ -82,7 +82,6 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
 
 void Resolve_Contact(World *world, int idA, int idB, SolContact *contact)
 {
-
     ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
     ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
 
@@ -118,17 +117,26 @@ void Resolve_Contact(World *world, int idA, int idB, SolContact *contact)
             world->xform.pos[idB] = glms_vec3_sub(world->xform.pos[idB], glms_vec3_scale(correction, invMassB));
     }
 
-    // --- 2. Velocity Projection (Pure Sliding) ---
-    // Only resolve if moving INTO the surface
+    // --- 2. Velocity Projection (Sliding + Elastic Bounce) ---
     if (velAlongNormal >= 0.0f)
         return;
 
     float restA = bodyA ? bodyA->restitution : 0.0f;
     float restB = bodyB ? bodyB->restitution : 0.0f;
-    float e     = fminf(restA, restB);
 
-    // When e == 0, j cancels ONLY the velocity heading directly into the normal,
-    // leaving 100% of tangential speed so the body slides along the wall.
+    // Standard mixing: fmaxf (or restA * restB) so bouncy objects bounce off non-bouncy ground
+    float e = fmaxf(restA, restB);
+
+// --- RESTITUTION THRESHOLD ---
+// If the impact speed is low (e.g. under 0.5m/s - 1.0m/s or resting gravity),
+// clamp restitution to 0 to prevent micro-bouncing/jitter while sliding.
+#define SOLVER_RESTITUTION_THRESHOLD 1.0f
+
+    if (fabsf(velAlongNormal) < SOLVER_RESTITUTION_THRESHOLD)
+    {
+        e = 0.0f;
+    }
+
     float j       = -(1.0f + e) * velAlongNormal / totalInvMass;
     vec3s impulse = glms_vec3_scale(contact->normal, j);
 

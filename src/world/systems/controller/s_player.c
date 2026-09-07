@@ -11,8 +11,9 @@ struct Aim
 static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos, vec3s lookpos, vec3s lookdir,
                                             float range, float hitdepth)
 {
-    struct Aim aim        = {.dir = lookdir};
-    SolRayResult aimTrace = {.pos = vecAdd(lookpos, vecSca(lookdir, range))};
+    vec3s end             = vecAdd(lookpos, vecSca(lookdir, range));
+    struct Aim aim        = {.dir = lookdir, .pos = end, .target = -1};
+    SolRayResult aimTrace = {.pos = end};
     bool hit              = Sol_Raycast1(world,
                                          (SolRay){
                                              .start = lookpos,
@@ -23,10 +24,14 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
                                          &aimTrace);
     // Add slight depth into hit
     aimTrace.pos       = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
-    aim.pos            = aimTrace.pos;
     vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, headpos));
-    aim.dir            = vecDot(dirFromTrace, lookdir) > 0.7f ? dirFromTrace : lookdir;
-    aim.target         = aimTrace.entId > -1 ? aimTrace.entId : -1;
+    
+    if (vecDot(dirFromTrace, lookdir) > 0.7f)
+    {
+        aim.dir = dirFromTrace;
+        aim.pos = aimTrace.pos;
+    }
+    aim.target = aimTrace.entId > -1 ? aimTrace.entId : -1;
     return aim;
 }
 

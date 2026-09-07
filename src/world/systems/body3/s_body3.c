@@ -22,6 +22,31 @@ static SolProfiler prof2  = {.name = "Dynamic"};
 static SolProfiler prof3  = {.name = "Static"};
 const static float sub_dt = (float)SOL_TIMESTEP * (1.0f / (float)SOLVER_ITERATIONS);
 
+void Body3_Init(World *world)
+{
+    SysPhysx *sys                  = malloc(sizeof(SysPhysx));
+    world->systems[WORLDSYS_BODY3] = sys;
+    SpatialGrid_Init(&sys->dynamic_group.spatial, DYNAMIC_CELL_SIZE);
+    SpatialGrid_SetMaxCellsPerAxis(&sys->dynamic_group.spatial, 64);
+    SpatialGrid_Init(&sys->static_group.spatial, STATIC_CELL_SIZE);
+
+    solb_init(sys->dynamic_group.aabb_scratch, 16);
+    solb_init(sys->contacts, MAX_CONTACTS);
+    solb_init(sys->static_group.tris, WORLD_TRI_INIT);
+}
+
+void Body3_Deinit(World *world)
+{
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
+    if (ws)
+    {
+        SpatialGrid_Destroy(&ws->dynamic_group.spatial);
+        SpatialGrid_Destroy(&ws->static_group.spatial);
+        free(ws);
+        world->systems[WORLDSYS_BODY3] = NULL;
+    }
+}
+
 void Body3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
@@ -50,9 +75,10 @@ void Body3_Step(World *world, double dt)
     {
         for (i = 0; i < set->cnt; i++)
         {
-            int id         = set->dense[i];
-            ScBody3 *body  = &set->data[i];
-            world->xform.pos[id]     = glms_vec3_add(world->xform.pos[id], glms_vec3_scale(body->vel, fdt / (float)SOLVER_ITERATIONS));
+            int id        = set->dense[i];
+            ScBody3 *body = &set->data[i];
+            world->xform.pos[id] =
+                glms_vec3_add(world->xform.pos[id], glms_vec3_scale(body->vel, fdt / (float)SOLVER_ITERATIONS));
         }
         solb_zero(ws->contacts);
 #pragma omp parallel if (count > 100)
@@ -63,13 +89,13 @@ void Body3_Step(World *world, double dt)
 #pragma omp for schedule(dynamic)
                 for (j = 0; j < set->cnt; j++)
                 {
-                    int id         = set->dense[j];
-                    ScBody3 *body  = &set->data[j];
-                    if ( body->mass == 0.0f)
+                    int id        = set->dense[j];
+                    ScBody3 *body = &set->data[j];
+                    if (body->mass == 0.0f)
                         continue;
                     Xform xform = Xform_Get(world, id);
-                    vec3s min = vecSub(xform.pos, body->dims);
-                    vec3s max = vecAdd(xform.pos, body->dims);
+                    vec3s min   = vecSub(xform.pos, body->dims);
+                    vec3s max   = vecAdd(xform.pos, body->dims);
                     Collisions_Dynamic_Bodies_Local(world, id, body, min, max, &ws->dynamic_group, &local_buf);
                 }
             }
@@ -78,13 +104,13 @@ void Body3_Step(World *world, double dt)
 #pragma omp for schedule(dynamic)
                 for (k = 0; k < set->cnt; k++)
                 {
-                    int id         = set->dense[k];
-                    ScBody3 *body  = &set->data[k];
+                    int id        = set->dense[k];
+                    ScBody3 *body = &set->data[k];
                     if (body->mass == 0.0f)
                         continue;
                     Xform xform = Xform_Get(world, id);
-                    vec3s min = vecSub(xform.pos, body->dims);
-                    vec3s max = vecAdd(xform.pos, body->dims);
+                    vec3s min   = vecSub(xform.pos, body->dims);
+                    vec3s max   = vecAdd(xform.pos, body->dims);
                     Collisions_Static_Stage_Local(world, id, body, min, max, &ws->static_group, &local_buf);
                 }
             }
@@ -109,36 +135,11 @@ void Body3_Step(World *world, double dt)
     // -------------------------------------------------------------
     for (m = 0; m < set->cnt; m++)
     {
-        int id         = set->dense[m];
+        int id = set->dense[m];
         if (world->xform.pos[id].y < -20.0f)
         {
             Sol_Xform_Teleport(world, id, (vec3s){0, 50, 0});
         }
-    }
-}
-
-void Physx_Init(World *world)
-{
-    SysPhysx *sys                   = malloc(sizeof(SysPhysx));
-    world->systems[WORLDSYS_BODY3] = sys;
-    SpatialGrid_Init(&sys->dynamic_group.spatial, DYNAMIC_CELL_SIZE);
-    SpatialGrid_SetMaxCellsPerAxis(&sys->dynamic_group.spatial, 64);
-    SpatialGrid_Init(&sys->static_group.spatial, STATIC_CELL_SIZE);
-
-    solb_init(sys->dynamic_group.aabb_scratch, 16);
-    solb_init(sys->contacts, MAX_CONTACTS);
-    solb_init(sys->static_group.tris, WORLD_TRI_INIT);
-}
-
-void Physx_Deinit(World *world)
-{
-    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
-    if (ws)
-    {
-        SpatialGrid_Destroy(&ws->dynamic_group.spatial);
-        SpatialGrid_Destroy(&ws->static_group.spatial);
-        free(ws);
-        world->systems[WORLDSYS_BODY3] = NULL;
     }
 }
 
@@ -186,9 +187,8 @@ bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
     return hit;
 }
 
-
-static inline bool Sol_TestDynamicBody(vec3s origin, vec3s dir, float maxDist, const ScBody3 *body,
-                                       Xform xform, float extraRadius, float *outT, vec3s *outNorm)
+static inline bool Sol_TestDynamicBody(vec3s origin, vec3s dir, float maxDist, const ScBody3 *body, Xform xform,
+                                       float extraRadius, float *outT, vec3s *outNorm)
 {
     switch (body->shape)
     {
@@ -208,7 +208,7 @@ static inline bool Sol_TestDynamicBody(vec3s origin, vec3s dir, float maxDist, c
     }
 }
 static inline void Sol_CommitHit(SolRayResult *result, int *hits, vec3s origin, vec3s dir, float t, vec3s norm,
-                                  int entId)
+                                 int entId)
 {
     result[*hits].hit   = true;
     result[*hits].dist  = t;
@@ -231,11 +231,11 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
     if (!ws)
         return false;
 
-    bool  hitFound = false;
-    float maxDist  = ray.dist;
+    bool hitFound = false;
+    float maxDist = ray.dist;
 
-    SpatialGrid *grids[2]    = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
-    bool         isStatic[2] = {true, false};
+    SpatialGrid *grids[2] = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
+    bool isStatic[2]      = {true, false};
 
     for (int g = 0; g < 2; g++)
     {
@@ -243,8 +243,8 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
         if (grid->item_count == 0)
             continue;
 
-        GridDDA it           = GridDDA_Init(grid, ray.start, ray.dir);
-        float   currentCellT = 0.0f;
+        GridDDA it         = GridDDA_Init(grid, ray.start, ray.dir);
+        float currentCellT = 0.0f;
 
         while (GridDDA_InBounds(&it, grid) && currentCellT < maxDist)
         {
@@ -261,7 +261,8 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                     if (tri->entId == ray.ignoreEnt)
                         continue;
 
-                    float tHit; vec3s normHit;
+                    float tHit;
+                    vec3s normHit;
                     if (Ray_Intersect_Tri(ray.start, ray.dir, maxDist, tri, &tHit, &normHit))
                     {
                         if (debugThisRay)
@@ -285,12 +286,13 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                     if (entId == ray.ignoreEnt)
                         continue;
 
-                    ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
+                    ScBody3 *body = Sol_Comp_Get(world, entId, ScBody3);
                     if (!body || !((body->mask >> 16) & ray.mask))
                         continue;
-                        Xform xform = Xform_Get(world, entId);
+                    Xform xform = Xform_Get(world, entId);
 
-                    float tHit; vec3s normHit;
+                    float tHit;
+                    vec3s normHit;
                     if (Sol_TestDynamicBody(ray.start, ray.dir, maxDist, body, xform, 0.0f, &tHit, &normHit))
                     {
                         if (debugThisRay)
@@ -325,11 +327,11 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
         return 0;
     ray.dir = glms_vec3_normalize(ray.dir);
 
-    SysPhysx *ws   = world->systems[WORLDSYS_BODY3];
-    int       hits = 0;
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
+    int hits     = 0;
 
-    SpatialGrid *grids[2]    = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
-    bool         isStatic[2] = {true, false};
+    SpatialGrid *grids[2] = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
+    bool isStatic[2]      = {true, false};
 
     for (int g = 0; g < 2 && hits < max; g++)
     {
@@ -337,8 +339,8 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
         if (grid->item_count == 0)
             continue;
 
-        GridDDA it           = GridDDA_Init(grid, ray.start, ray.dir);
-        float   currentCellT = 0.0f;
+        GridDDA it         = GridDDA_Init(grid, ray.start, ray.dir);
+        float currentCellT = 0.0f;
 
         while (GridDDA_InBounds(&it, grid) && currentCellT < ray.dist && hits < max)
         {
@@ -351,12 +353,13 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
 
                 if (isStatic[g])
                 {
-                    const SolTri *tri   = &ws->static_group.tris[idx];
-                    int           entId = tri->entId;
+                    const SolTri *tri = &ws->static_group.tris[idx];
+                    int entId         = tri->entId;
                     if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
                         continue;
 
-                    float tHit; vec3s normHit;
+                    float tHit;
+                    vec3s normHit;
                     if (Ray_Intersect_Tri(ray.start, ray.dir, ray.dist, tri, &tHit, &normHit))
                         Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
@@ -366,12 +369,13 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
                     if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
                         continue;
 
-                    ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
-                    if (!body|| !(body->mask >> 16 & ray.mask)) // see mask note below
+                    ScBody3 *body = Sol_Comp_Get(world, entId, ScBody3);
+                    if (!body || !(body->mask >> 16 & ray.mask)) // see mask note below
                         continue;
-                        Xform xform = Xform_Get(world, entId);
+                    Xform xform = Xform_Get(world, entId);
 
-                    float tHit; vec3s normHit;
+                    float tHit;
+                    vec3s normHit;
                     if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, 0.0f, &tHit, &normHit))
                         Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
@@ -384,7 +388,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
     for (int i = 1; i < hits; i++) // insertion sort by distance
     {
         SolRayResult key = result[i];
-        int j = i - 1;
+        int j            = i - 1;
         while (j >= 0 && result[j].dist > key.dist)
         {
             result[j + 1] = result[j];
@@ -404,15 +408,15 @@ int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
         return 0;
     ray.dir = glms_vec3_normalize(ray.dir);
 
-    SysPhysx *ws   = world->systems[WORLDSYS_BODY3];
-    int       hits = 0;
+    SysPhysx *ws = world->systems[WORLDSYS_BODY3];
+    int hits     = 0;
 
     vec3s rayEnd = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, ray.dist));
     vec3s minP   = glms_vec3_sub(glms_vec3_minv(ray.start, rayEnd), (vec3s){radius, radius, radius});
     vec3s maxP   = glms_vec3_add(glms_vec3_maxv(ray.start, rayEnd), (vec3s){radius, radius, radius});
 
-    SpatialGrid *grids[2]    = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
-    bool         isStatic[2] = {true, false};
+    SpatialGrid *grids[2] = {&ws->static_group.spatial, &ws->dynamic_group.spatial};
+    bool isStatic[2]      = {true, false};
 
     for (int g = 0; g < 2 && hits < max; g++)
     {
@@ -422,55 +426,60 @@ int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
 
         ivec3s minCell = SpatialGrid_WorldToCell(grid, minP);
         ivec3s maxCell = SpatialGrid_WorldToCell(grid, maxP);
-        minCell.x = clampi(minCell.x, 0, grid->dims.x - 1); maxCell.x = clampi(maxCell.x, 0, grid->dims.x - 1);
-        minCell.y = clampi(minCell.y, 0, grid->dims.y - 1); maxCell.y = clampi(maxCell.y, 0, grid->dims.y - 1);
-        minCell.z = clampi(minCell.z, 0, grid->dims.z - 1); maxCell.z = clampi(maxCell.z, 0, grid->dims.z - 1);
+        minCell.x      = clampi(minCell.x, 0, grid->dims.x - 1);
+        maxCell.x      = clampi(maxCell.x, 0, grid->dims.x - 1);
+        minCell.y      = clampi(minCell.y, 0, grid->dims.y - 1);
+        maxCell.y      = clampi(maxCell.y, 0, grid->dims.y - 1);
+        minCell.z      = clampi(minCell.z, 0, grid->dims.z - 1);
+        maxCell.z      = clampi(maxCell.z, 0, grid->dims.z - 1);
 
         for (int z = minCell.z; z <= maxCell.z && hits < max; z++)
-        for (int y = minCell.y; y <= maxCell.y && hits < max; y++)
-        for (int x = minCell.x; x <= maxCell.x && hits < max; x++)
-        {
-            uint32_t cellIdx = SpatialGrid_GetCellIndex(grid, x, y, z);
-            GridCell gCell   = grid->cells[cellIdx];
-
-            for (uint32_t i = 0; i < gCell.count && hits < max; i++)
-            {
-                uint32_t idx = grid->index_buffer[gCell.offset + i];
-
-                if (isStatic[g])
+            for (int y = minCell.y; y <= maxCell.y && hits < max; y++)
+                for (int x = minCell.x; x <= maxCell.x && hits < max; x++)
                 {
-                    const SolTri *tri   = &ws->static_group.tris[idx];
-                    int           entId = tri->entId;
-                    if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
-                        continue;
+                    uint32_t cellIdx = SpatialGrid_GetCellIndex(grid, x, y, z);
+                    GridCell gCell   = grid->cells[cellIdx];
 
-                    float tHit; vec3s normHit;
-                    if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &tHit, &normHit))
-                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
+                    for (uint32_t i = 0; i < gCell.count && hits < max; i++)
+                    {
+                        uint32_t idx = grid->index_buffer[gCell.offset + i];
+
+                        if (isStatic[g])
+                        {
+                            const SolTri *tri = &ws->static_group.tris[idx];
+                            int entId         = tri->entId;
+                            if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
+                                continue;
+
+                            float tHit;
+                            vec3s normHit;
+                            if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &tHit, &normHit))
+                                Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
+                        }
+                        else
+                        {
+                            int entId = (int)idx;
+                            if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
+                                continue;
+
+                            ScBody3 *body = Sol_Comp_Get(world, entId, ScBody3);
+                            if (!body || !(body->mask & ray.mask)) // see mask note below
+                                continue;
+                            Xform xform = Xform_Get(world, entId);
+
+                            float tHit;
+                            vec3s normHit;
+                            if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, radius, &tHit, &normHit))
+                                Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
+                        }
+                    }
                 }
-                else
-                {
-                    int entId = (int)idx;
-                    if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
-                        continue;
-
-                    ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
-                    if (!body|| !(body->mask & ray.mask)) // see mask note below
-                        continue;
-                        Xform xform = Xform_Get(world, entId);
-
-                    float tHit; vec3s normHit;
-                    if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, radius, &tHit, &normHit))
-                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
-                }
-            }
-        }
     }
 
     for (int i = 1; i < hits; i++) // insertion sort by distance
     {
         SolRayResult key = result[i];
-        int j = i - 1;
+        int j            = i - 1;
         while (j >= 0 && result[j].dist > key.dist)
         {
             result[j + 1] = result[j];
@@ -493,6 +502,6 @@ vec3s Sol_Body3_GetDir(World *world, int id)
 
 bool Sol_Body3_DoesCollide(const ScBody3 *body, const ScBody3 *other_body)
 {
-    
+
     return (body->mask << 16) & (other_body->mask);
 }

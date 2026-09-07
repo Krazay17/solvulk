@@ -9,54 +9,85 @@
 #include "world.h"
 #include "sol_math.h"
 
+static const ScBody3 wizard_body = {
+    .shape       = SHAPE3_CAP,
+    .mass        = 1.0f,
+    .invMass     = 1.0f,
+    .restitution = 0.2f,
+    .gravity     = SOL_GRAVITY,
+    .dims        = {0.5f, 3.0f, 0.5f},
+    .mask        = PHYSXMASK(COLLAYER_TEAMZ, COLLAYER_ALL),
+};
+
+static const ScCombat wizard_combat = {
+    .healthMax = 100.0f,
+    .health    = 100.0f,
+};
+
+static const ScBody3 dude_body = {
+    .shape       = SHAPE3_CAP,
+    .mass        = 1.0f,
+    .invMass     = 1.0f,
+    .restitution = 0.01f,
+    .gravity     = SOL_GRAVITY,
+    .dims        = {0.5f, 1.7f, 0.5f},
+    .mask        = PHYSXMASK(COLLAYER_TEAMA, COLLAYER_ALL),
+};
+
+static const ScCombat dude_combat = {
+    .healthMax = 100.0f,
+    .health    = 100.0f,
+};
+
+static const ScAbility dude_ability = {
+    .action_map = {ABILITY_STATE_CLAW, ABILITY_STATE_FIREBALL, 0, 0, 0, 0, 0, 0, 0, ABILITY_STATE_DASH},
+    .slots      = 10,
+    .activeSlot = -1,
+};
+
+static const ScMove3 dude_move = {
+    .kind = MOVEMENTKIND_PLAYER,
+};
+
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
-    int id         = Sol_Create_Ent(world, pos);
-    ScModel *model = Sol_Comp_Add(world, id, ScModel);
-    model->kind    = MODELKIND_DUDE;
-    Sol_Anim_Add(world, id);
-    ScBody3 *body     = Sol_Body3_Add(world, id);
-    body->restitution = 0.01f;
-    body->shape       = SHAPE3_CAP;
-    body->dims        = (vec3s){0.5f, 1.7f, 0.5f};
-    body->mask        = PHYSXMASK(COLLAYER_TEAMA, COLLAYER_ALL);
+    int id = Sol_Create_Ent(world, pos);
 
-    ScCombat *combat  = Sol_Comp_Add(world, id, ScCombat);
-    combat->healthMax = 100.0f;
-    combat->health    = 100.0f;
+    Sol_Anim_Add(world, id, MODELKIND_DUDE);
+
+    ScBody3 *body = Sol_Comp_Add(world, id, ScBody3);
+    *body         = dude_body;
+
+    ScCombat *combat = Sol_Comp_Add(world, id, ScCombat);
+    *combat          = dude_combat;
 
     ScAbility *ability = Sol_Comp_Add(world, id, ScAbility);
-    *ability           = (ScAbility){
-        .action_map = {ABILITY_STATE_CLAW, ABILITY_STATE_FIREBALL, 0, 0, 0, 0, 0, 0, 0, ABILITY_STATE_DASH},
-        .slots      = 10,
-        .activeSlot = -1,
-    };
+    *ability           = dude_ability;
 
-    ScMove3 *move      = Sol_Comp_Add(world, id, ScMove3);
-    move->kind         = MOVEMENTKIND_PLAYER;
-    move->baseHeight   = body->dims.y;
-    move->targetHeight = move->baseHeight;
+    ScMove3 *move    = Sol_Comp_Add(world, id, ScMove3);
+    move->kind       = MOVEMENTKIND_PLAYER;
+    move->baseHeight = body->dims.y;
 
     return id;
 }
 
 int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 {
-    int id            = Sol_Create_Ent(world, pos);
-    ScCombat *combat  = Sol_Comp_Add(world, id, ScCombat);
-    combat->healthMax = 100.0f;
-    combat->health    = 100.0f;
-    ScMeta *meta      = Sol_Comp_Add(world, id, ScMeta);
+    int id = Sol_Create_Ent(world, pos);
+
+    ScCombat *combat = Sol_Comp_Add(world, id, ScCombat);
+    *combat          = wizard_combat;
+
+    ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
     snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
+
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->range      = 5.0f;
-    ScModel *model       = Sol_Comp_Add(world, id, ScModel);
-    ScBody3 *body3       = Sol_Body3_Add(world, id);
-    body3->shape         = SHAPE3_CAP;
-    body3->mask          = PHYSXMASK(COLLAYER_TEAMZ, COLLAYER_ALL);
-    body3->dims          = (vec3s){0.5f, 3.0f, 0.5f};
-    model->kind          = MODELKIND_WIZARD;
-    Sol_Anim_Add(world, id);
+
+    Sol_Anim_Add(world, id, MODELKIND_WIZARD);
+
+    ScBody3 *body3 = Sol_Comp_Add(world, id, ScBody3);
+    *body3         = wizard_body;
 
     return id;
 }
@@ -189,8 +220,15 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
 
 int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float speed, float size)
 {
-    int id        = Sol_Create_Ent(world, pos);
-    ScBody3 *body = Sol_Comp_Add(world, id, ScBody3);
+    int id            = Sol_Create_Ent(world, pos);
+    ScBody3 *body     = Sol_Comp_Add(world, id, ScBody3);
+    body->dims        = (vec3s){size, size, size};
+    body->gravity     = (vec3s)SOL_GRAVITY;
+    body->mass        = 1.0f;
+    body->invMass     = 1.0f;
+    body->restitution = 1.0f;
+    body->ignoreEnt   = owner;
+    body->vel         = vecSca(dir, speed);
 
     ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
     u32 projLayer       = COLLAYER_TEAMA_PROJ; // Default fallback
@@ -205,19 +243,12 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         // Target everything EXCEPT friendly body layer and friendly projectile layer
         targetFilter = COLLAYER_WORLD | (COLLAYER_ALL & ~(ownerLayer | projLayer));
     }
-    body->mask      = PHYSXMASK(projLayer, targetFilter);
-    body->ignoreEnt = owner;
-    body->shape     = SHAPE3_SPH;
-    body->mass = 1.0f;
-    body->invMass = 1.0f;
-    body->dims.x    = size;
-    body->dims.y    = size;
-    body->gravity = SOL_PHYS_GRAV;
-    body->vel       = vecSca(dir, speed);
-    ScView3 *view   = Sol_Comp_Add(world, id, ScView3);
-    view->kind      = VIEW3KIND_FIREBALL;
-    view->color     = VEC4_RED;
-    view->dims.x    = size;
+
+    body->mask    = PHYSXMASK(projLayer, targetFilter);
+    ScView3 *view = Sol_Comp_Add(world, id, ScView3);
+    view->kind    = VIEW3KIND_FIREBALL;
+    view->color   = VEC4_RED;
+    view->dims.x  = size;
 
     return id;
 }

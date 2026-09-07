@@ -311,8 +311,8 @@ void Player_Init(World *world);
 void Player_Deinit(World *world);
 void Move3_Init(World *world);
 void Move3_Deinit(World *world);
-void Physx_Init(World *world);
-void Physx_Deinit(World *world);
+void Body3_Init(World *world);
+void Body3_Deinit(World *world);
 void Anim_Init(World *world);
 void Anim_Deinit(World *world);
 void Camera_Init(World *world);
@@ -360,6 +360,8 @@ void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 int Sol_Interact_FindTopmost(World *world, vec2s point);
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
+
+ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
 void Sol_Anim_Play(World *world, int id, AnimDesc desc);
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
 void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);

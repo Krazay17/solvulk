@@ -183,7 +183,6 @@ typedef struct ScModel
     vec4s color;
     bool is2d;
     float xOffset, yOffset, yawOffset;
-    u32 leftWeaponEnt, rightWeaponEnt;
 } ScModel;
 
 typedef struct ScAnim
@@ -533,6 +532,3 @@ typedef enum
 #undef AS_ENUM
     COMPONENT_COUNT
 } WorldComponents;
-
-ScAnim *Sol_Anim_Add(World *world, int id);
-ScBody3 *Sol_Body3_Add(World *world, int id);

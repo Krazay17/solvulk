@@ -37,7 +37,7 @@ const SystemDef system_inits[WORLDSYS_COUNT] = {
 
     [WORLDSYS_MOVE3]   = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]   = {.update = {Move2_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_BODY3]   = {.init = Physx_Init, .update = {Body3_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_BODY3]   = {.init = Body3_Init, .update = {Body3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY2]   = {.update = {Body2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ABILITY] = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_COMBAT]  = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},

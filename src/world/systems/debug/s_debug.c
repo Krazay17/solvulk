@@ -1,5 +1,5 @@
 /*
- * File: s_line.c
+ * File: s_debug.c
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-05-08
@@ -9,36 +9,67 @@
 #include "world.h"
 #include "render/render.h"
 
-typedef struct WorldLines
+typedef struct SysDebug
 {
-    SolLine *lines;
+    DebugLine   *lines;
+    DebugSphere *spheres;
 } SysDebug;
 
 void Debug_Tick(World *world, double dt)
 {
     SysDebug *sys = world->systems[WORLDSYS_DEBUG];
-
-    if (!sys || !sys->lines)
+    if (!sys)
         return;
-    int count = solb_count(sys->lines);
-    int write = 0;
-    for (int i = 0; i < count; i++)
+
+    int i, count, write;
+
+    count = solb_count(sys->lines);
+    write = 0;
+    for (i = 0; i < count; i++)
     {
-        sys->lines[i].ttl -= (float)dt;
-        if (sys->lines[i].ttl >= 0)
+        DebugLine *line = &sys->lines[i];
+        line->ttl -= (float)dt;
+        if (line->ttl > 0)
         {
-            sys->lines[write++] = sys->lines[i];
+            sys->lines[write++] = *line;
         }
     }
     solb_set_count(sys->lines, write);
+
+    count = solb_count(sys->spheres);
+    write = 0;
+    for (i = 0; i < count; i++)
+    {
+        DebugSphere *sphere = &sys->spheres[i];
+        sphere->ttl -= (float)dt;
+        if (sphere->ttl > 0)
+        {
+            sys->spheres[write++] = *sphere;
+        }
+    }
+    solb_set_count(sys->spheres, write);
 }
 
 void Debug_Draw3(World *world, double dt)
 {
     SysDebug *sys = world->systems[WORLDSYS_DEBUG];
-    if (!sys || !sys->lines ||solb_count(sys->lines) == 0)
+    if (!sys)
         return;
-    Sol_Render_DrawLine(sys->lines, solb_count(sys->lines));
+
+    if (solb_count(sys->lines) > 0)
+    {
+        Sol_Render_DrawLines(&sys->lines[0].line, solb_count(sys->lines), sizeof(DebugLine));
+    }
+
+    // sollog(solb_count(sys->spheres));
+    for (int i = 0; i < solb_count(sys->spheres); i++)
+    {
+        SolSphere *dsphere = &sys->spheres[i].sphere;
+
+        SphereSSBO *sphere = Sol_Render_GetNextSphere(dsphere->kind);
+        sphere->color      = dsphere->color;
+        sphere->pos        = (vec4s){ dsphere->pos.x, dsphere->pos.y, dsphere->pos.z, dsphere->radius };
+    }
 }
 
 void Debug_Draw2(World *world, double dt)
@@ -50,20 +81,34 @@ void Debug_Init(World *world)
     SysDebug *ws                   = malloc(sizeof(SysDebug));
     world->systems[WORLDSYS_DEBUG] = ws;
     solb_init(ws->lines, 32);
+    solb_init(ws->spheres, 32);
 }
 
-SolLine *Sol_Line_New(World *world)
+SolLine *Sol_Debug_NewLine(World *world, float ttl)
 {
     SysDebug *sys = world->systems[WORLDSYS_DEBUG];
     if (!world || !sys)
         return NULL;
 
-    return solb_next(sys->lines);
+    DebugLine *dline = solb_next(sys->lines);
+    dline->ttl       = ttl;
+    return &dline->line;
 }
 
-void Sol_Line_Push(World *world, SolLine desc)
+void Sol_Line_Push(World *world, SolLine desc, float ttl)
 {
-    SolLine *line = Sol_Line_New(world);
+    SolLine *line = Sol_Debug_NewLine(world, ttl);
     if (line)
         *line = desc;
+}
+
+SolSphere *Sol_Debug_NewSphere(World *world, float ttl)
+{
+    SysDebug *sys = world->systems[WORLDSYS_DEBUG];
+    if (!world || !sys)
+        return NULL;
+
+    DebugSphere *dsphere = solb_next(sys->spheres);
+    dsphere->ttl         = ttl;
+    return &dsphere->sphere;
 }

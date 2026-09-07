@@ -24,15 +24,15 @@ const static float sub_dt = (float)SOL_TIMESTEP * (1.0f / (float)SOLVER_ITERATIO
 
 void Body3_Step(World *world, double dt)
 {
-    float     fdt = (float)dt;
-    int       i, j, k, l, m, iter;
+    float fdt = (float)dt;
+    int i, j, k, l, m, iter;
     SysPhysx *ws = world->systems[WORLDSYS_BODY3];
 
-    SparseSet_ScBody3 *set   = Sol_Comp_Set(world, ScBody3);
-    int                count = set->cnt;
+    SparseSet_ScBody3 *set = Sol_Comp_Set(world, ScBody3);
+    int count              = set->cnt;
     for (i = 0; i < set->cnt; i++)
     {
-        int      id    = set->dense[i];
+        int id         = set->dense[i];
         ScBody3 *body3 = &set->data[i];
         ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         if (!xform || body3->mass == 0.0f)
@@ -51,7 +51,7 @@ void Body3_Step(World *world, double dt)
     {
         for (i = 0; i < set->cnt; i++)
         {
-            int      id    = set->dense[i];
+            int id         = set->dense[i];
             ScBody3 *body  = &set->data[i];
             ScXform *xform = Sol_Comp_Get(world, id, ScXform);
             xform->pos     = glms_vec3_add(xform->pos, glms_vec3_scale(body->vel, fdt / (float)SOLVER_ITERATIONS));
@@ -65,7 +65,7 @@ void Body3_Step(World *world, double dt)
 #pragma omp for schedule(dynamic)
                 for (j = 0; j < set->cnt; j++)
                 {
-                    int      id    = set->dense[j];
+                    int id         = set->dense[j];
                     ScBody3 *body  = &set->data[j];
                     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
                     if (!xform || body->mass == 0.0f)
@@ -81,7 +81,7 @@ void Body3_Step(World *world, double dt)
 #pragma omp for schedule(dynamic)
                 for (k = 0; k < set->cnt; k++)
                 {
-                    int      id    = set->dense[k];
+                    int id         = set->dense[k];
                     ScBody3 *body  = &set->data[k];
                     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
                     if (!xform || body->mass == 0.0f)
@@ -119,7 +119,7 @@ void Body3_Step(World *world, double dt)
     // -------------------------------------------------------------
     for (m = 0; m < set->cnt; m++)
     {
-        int      id    = set->dense[m];
+        int id         = set->dense[m];
         ScXform *xform = Sol_Comp_Get(world, id, ScXform);
         if (xform && xform->pos.y < -20.0f)
         {
@@ -130,13 +130,15 @@ void Body3_Step(World *world, double dt)
 
 void Physx_Init(World *world)
 {
-    SysPhysx *ws                   = malloc(sizeof(SysPhysx));
-    world->systems[WORLDSYS_BODY3] = ws;
-    SpatialGrid_Init(&ws->dynamic_group.spatial, DYNAMIC_CELL_SIZE);
-    SpatialGrid_Init(&ws->static_group.spatial, STATIC_CELL_SIZE);
-    solb_init(ws->dynamic_group.aabb_scratch, 16);
-    solb_init(ws->contacts, MAX_CONTACTS);
-    solb_init(ws->static_group.tris, WORLD_TRI_INIT);
+    SysPhysx *sys                   = malloc(sizeof(SysPhysx));
+    world->systems[WORLDSYS_BODY3] = sys;
+    SpatialGrid_Init(&sys->dynamic_group.spatial, DYNAMIC_CELL_SIZE);
+    SpatialGrid_SetMaxCellsPerAxis(&sys->dynamic_group.spatial, 64);
+    SpatialGrid_Init(&sys->static_group.spatial, STATIC_CELL_SIZE);
+
+    solb_init(sys->dynamic_group.aabb_scratch, 16);
+    solb_init(sys->contacts, MAX_CONTACTS);
+    solb_init(sys->static_group.tris, WORLD_TRI_INIT);
 }
 
 void Physx_Deinit(World *world)
@@ -165,24 +167,22 @@ int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float 
 {
     int hits = Sol_Raycast(world, ray, result, max);
 
-    SolLine *line = Sol_Line_New(world);
+    SolLine *line = Sol_Debug_NewLine(world, time);
     line->a       = ray.start;
     vec3s end     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
     if (result[0].hit)
     {
         line->b        = result[0].pos;
-        SolLine *line2 = Sol_Line_New(world);
+        SolLine *line2 = Sol_Debug_NewLine(world, time);
         line2->a       = result[0].pos;
         line2->b       = end;
         line2->aColor  = VEC4_GREEN;
         line2->bColor  = VEC4_GREEN;
-        line2->ttl     = time;
     }
     else
         line->b = end;
     line->aColor = VEC4_RED;
     line->bColor = VEC4_RED;
-    line->ttl    = time;
     return hits;
 }
 
@@ -190,7 +190,7 @@ bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
 {
     bool hit = Sol_Raycast1(world, ray, result);
 
-    SolLine *line = Sol_Line_New(world);
+    SolLine *line = Sol_Debug_NewLine(world, time);
     line->a       = ray.start;
     if (hit && result)
         line->b = result->pos;
@@ -198,9 +198,40 @@ bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
         line->b = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
     line->aColor = VEC4_RED;
     line->bColor = VEC4_RED;
-    line->ttl    = time;
 
     return hit;
+}
+
+
+static inline bool Sol_TestDynamicBody(vec3s origin, vec3s dir, float maxDist, const ScBody3 *body,
+                                       const ScXform *xform, float extraRadius, float *outT, vec3s *outNorm)
+{
+    switch (body->shape)
+    {
+    case SHAPE3_SPH:
+        return Ray_Intersect_Sphere(origin, dir, maxDist, xform->pos, body->dims.x + extraRadius, outT, outNorm);
+
+    case SHAPE3_CAP: {
+        vec3s top    = xform->pos;
+        vec3s bottom = xform->pos;
+        top.y += body->dims.y * 0.5f;
+        bottom.y -= body->dims.y * 0.5f;
+        return Ray_Intersect_Capsule(origin, dir, maxDist, top, bottom, body->dims.x + extraRadius, outT, outNorm);
+    }
+
+    default:
+        return false; // extend here when a new SHAPE3_* is added -- one place, not two
+    }
+}
+static inline void Sol_CommitHit(SolRayResult *result, int *hits, vec3s origin, vec3s dir, float t, vec3s norm,
+                                  int entId)
+{
+    result[*hits].hit   = true;
+    result[*hits].dist  = t;
+    result[*hits].pos   = glms_vec3_add(origin, glms_vec3_scale(dir, t));
+    result[*hits].norm  = norm;
+    result[*hits].entId = entId;
+    (*hits)++;
 }
 
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
@@ -275,24 +306,22 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                     if (!body || !xform || !(body->mask & ray.mask))
                         continue;
 
-                    if (body->shape == SHAPE3_SPH)
+                    float tHit; vec3s normHit;
+                    if (Sol_TestDynamicBody(ray.start, ray.dir, maxDist, body, xform, 0.0f, &tHit, &normHit))
                     {
-                        float tHit; vec3s normHit;
-                        if (Ray_Intersect_Sphere(ray.start, ray.dir, maxDist, xform->pos, body->dims.x, &tHit,
-                                                 &normHit))
-                        {
-                            if (!outResult)
-                                return true;
+                        if (debugThisRay)
+                            printf("HIT tHit=%.4f entId=%d\n", tHit, entId);
+                        if (!outResult)
+                            return true;
 
-                            hitFound = true;
-                            maxDist  = tHit;
+                        hitFound = true;
+                        maxDist  = tHit;
 
-                            outResult->hit   = true;
-                            outResult->dist  = tHit;
-                            outResult->pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
-                            outResult->norm  = normHit;
-                            outResult->entId = entId;
-                        }
+                        outResult->hit   = true;
+                        outResult->dist  = tHit;
+                        outResult->pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
+                        outResult->norm  = normHit;
+                        outResult->entId = entId;
                     }
                 }
             }
@@ -324,7 +353,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
         if (grid->item_count == 0)
             continue;
 
-        GridDDA it           = GridDDA_Init(grid, ray.start, ray.dir); // now uses grid->cellSize -- bug fixed here too
+        GridDDA it           = GridDDA_Init(grid, ray.start, ray.dir);
         float   currentCellT = 0.0f;
 
         while (GridDDA_InBounds(&it, grid) && currentCellT < ray.dist && hits < max)
@@ -340,21 +369,12 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
                 {
                     const SolTri *tri   = &ws->static_group.tris[idx];
                     int           entId = tri->entId;
-                    // NOTE: per-entity dedup -- see write-up above. A single large
-                    // static mesh entity will only ever report one hit through this path.
                     if (entId == ray.ignoreEnt || Is_Already_Hit(result, hits, entId))
                         continue;
 
                     float tHit; vec3s normHit;
                     if (Ray_Intersect_Tri(ray.start, ray.dir, ray.dist, tri, &tHit, &normHit))
-                    {
-                        result[hits].hit   = true;
-                        result[hits].dist  = tHit;
-                        result[hits].pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
-                        result[hits].norm  = normHit;
-                        result[hits].entId = entId;
-                        hits++;
-                    }
+                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
                 else
                 {
@@ -364,23 +384,12 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
 
                     ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
                     ScXform *xform = Sol_Comp_Get(world, entId, ScXform);
-                    if (!body || !xform || !(body->mask & ray.mask))
+                    if (!body || !xform || !(body->mask >> 16 & ray.mask)) // see mask note below
                         continue;
 
-                    if (body->shape == SHAPE3_SPH)
-                    {
-                        float tHit; vec3s normHit;
-                        if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform->pos, body->dims.x, &tHit,
-                                                 &normHit))
-                        {
-                            result[hits].hit   = true;
-                            result[hits].dist  = tHit;
-                            result[hits].pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
-                            result[hits].norm  = normHit;
-                            result[hits].entId = entId;
-                            hits++;
-                        }
-                    }
+                    float tHit; vec3s normHit;
+                    if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, 0.0f, &tHit, &normHit))
+                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
             }
 
@@ -388,9 +397,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
         }
     }
 
-    // Multi-hit results were never guaranteed sorted -- Sol_RaycastD's debug
-    // line (and any caller) assumed result[0] was nearest. Fix that here.
-    for (int i = 1; i < hits; i++)
+    for (int i = 1; i < hits; i++) // insertion sort by distance
     {
         SolRayResult key = result[i];
         int j = i - 1;
@@ -405,125 +412,6 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max)
     return hits;
 }
 
-static inline float clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
-
-// Ray vs infinite cylinder of radius r along segment [a,b]. dir must be unit length.
-static bool Ray_Intersect_Cylinder(vec3s O, vec3s D, float maxDist, vec3s a, vec3s b, float r,
-                                    float *outT, float *outS)
-{
-    vec3s axis    = glms_vec3_sub(b, a);
-    float axisLen = glms_vec3_norm(axis);
-    if (axisLen < 1e-8f)
-        return false;
-    vec3s d = glms_vec3_scale(axis, 1.0f / axisLen);
-
-    vec3s m  = glms_vec3_sub(O, a);
-    float md = glms_vec3_dot(m, d);
-    float dd = glms_vec3_dot(D, d);
-
-    float qa = 1.0f - dd * dd; // D is unit
-    float qb = 2.0f * (glms_vec3_dot(m, D) - md * dd);
-    float qc = glms_vec3_dot(m, m) - md * md - r * r;
-
-    if (fabsf(qa) < 1e-8f)
-        return false; // ray parallel to edge axis -- vertex spheres cover this case
-
-    float disc = qb * qb - 4.0f * qa * qc;
-    if (disc < 0.0f)
-        return false;
-
-    float sqrtDisc = sqrtf(disc);
-    float t0 = (-qb - sqrtDisc) / (2.0f * qa);
-    float t1 = (-qb + sqrtDisc) / (2.0f * qa);
-    float t  = (t0 > 1e-6f) ? t0 : t1;
-    if (t <= 1e-6f || t > maxDist)
-        return false;
-
-    float s = (md + t * dd) / axisLen;
-    if (s < 0.0f || s > 1.0f)
-        return false;
-
-    *outT = t;
-    *outS = s;
-    return true;
-}
-
-// Sphere-swept ray ("thick ray" / capsule) vs triangle.
-bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri, float r,
-                              float *outT, vec3s *outNorm)
-{
-    float bestT    = maxDist;
-    bool  found    = false;
-    vec3s bestNorm = {0};
-
-    // --- Face (offset plane) test ---
-    float faceSide   = glms_vec3_dot(glms_vec3_sub(O, tri->v0), tri->normal);
-    float faceSign   = (faceSide >= 0.0f) ? r : -r;
-    vec3s planeP0    = glms_vec3_add(tri->v0, glms_vec3_scale(tri->normal, faceSign));
-    float denom      = glms_vec3_dot(D, tri->normal);
-
-    if (fabsf(denom) > 1e-8f)
-    {
-        float t = glms_vec3_dot(glms_vec3_sub(planeP0, O), tri->normal) / denom;
-        if (t > 1e-6f && t < bestT)
-        {
-            vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
-            vec3s Pflat = glms_vec3_sub(P, glms_vec3_scale(tri->normal, faceSign));
-
-            vec3s v0v1 = glms_vec3_sub(tri->v1, tri->v0);
-            vec3s v0v2 = glms_vec3_sub(tri->v2, tri->v0);
-            vec3s v0p  = glms_vec3_sub(Pflat, tri->v0);
-            float d00 = glms_vec3_dot(v0v1, v0v1), d01 = glms_vec3_dot(v0v1, v0v2);
-            float d11 = glms_vec3_dot(v0v2, v0v2), d20 = glms_vec3_dot(v0p, v0v1);
-            float d21 = glms_vec3_dot(v0p, v0v2);
-            float invDenom = 1.0f / (d00 * d11 - d01 * d01);
-            float u = (d11 * d20 - d01 * d21) * invDenom;
-            float v = (d00 * d21 - d01 * d20) * invDenom;
-
-            if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
-            {
-                bestT    = t;
-                bestNorm = (faceSide >= 0.0f) ? tri->normal : glms_vec3_scale(tri->normal, -1.0f);
-                found    = true;
-            }
-        }
-    }
-
-    // --- Edge cylinder tests ---
-    vec3s edges[3][2] = {{tri->v0, tri->v1}, {tri->v1, tri->v2}, {tri->v2, tri->v0}};
-    for (int e = 0; e < 3; e++)
-    {
-        float t, s;
-        if (Ray_Intersect_Cylinder(O, D, bestT, edges[e][0], edges[e][1], r, &t, &s))
-        {
-            vec3s axisP = glms_vec3_lerp(edges[e][0], edges[e][1], s);
-            vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
-            bestT    = t;
-            bestNorm = glms_vec3_normalize(glms_vec3_sub(P, axisP));
-            found    = true;
-        }
-    }
-
-    // --- Vertex sphere tests ---
-    vec3s verts[3] = {tri->v0, tri->v1, tri->v2};
-    for (int v = 0; v < 3; v++)
-    {
-        float t; vec3s n;
-        if (Ray_Intersect_Sphere(O, D, bestT, verts[v], r, &t, &n))
-        {
-            bestT    = t;
-            bestNorm = n;
-            found    = true;
-        }
-    }
-
-    if (found)
-    {
-        *outT    = bestT;
-        *outNorm = bestNorm;
-    }
-    return found;
-}
 int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *result, int max)
 {
     if (!result || max <= 0 || ray.dist <= 0.0f)
@@ -574,14 +462,7 @@ int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
 
                     float tHit; vec3s normHit;
                     if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &tHit, &normHit))
-                    {
-                        result[hits].hit   = true;
-                        result[hits].dist  = tHit;
-                        result[hits].pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
-                        result[hits].norm  = normHit;
-                        result[hits].entId = entId;
-                        hits++;
-                    }
+                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
                 else
                 {
@@ -591,30 +472,18 @@ int Sol_Body3_Spherecast(World *world, SolRay ray, float radius, SolRayResult *r
 
                     ScBody3 *body  = Sol_Comp_Get(world, entId, ScBody3);
                     ScXform *xform = Sol_Comp_Get(world, entId, ScXform);
-                    if (!body || !xform || !(body->mask & ray.mask))
+                    if (!body || !xform || !(body->mask & ray.mask)) // see mask note below
                         continue;
 
-                    if (body->shape == SHAPE3_SPH)
-                    {
-                        float expandedRadius = body->dims.x + radius;
-                        float tHit; vec3s normHit;
-                        if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform->pos, expandedRadius, &tHit,
-                                                 &normHit))
-                        {
-                            result[hits].hit   = true;
-                            result[hits].dist  = tHit;
-                            result[hits].pos   = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, tHit));
-                            result[hits].norm  = normHit;
-                            result[hits].entId = entId;
-                            hits++;
-                        }
-                    }
+                    float tHit; vec3s normHit;
+                    if (Sol_TestDynamicBody(ray.start, ray.dir, ray.dist, body, xform, radius, &tHit, &normHit))
+                        Sol_CommitHit(result, &hits, ray.start, ray.dir, tHit, normHit, entId);
                 }
             }
         }
     }
 
-    for (int i = 1; i < hits; i++) // sort by distance, same as Sol_Raycast
+    for (int i = 1; i < hits; i++) // insertion sort by distance
     {
         SolRayResult key = result[i];
         int j = i - 1;

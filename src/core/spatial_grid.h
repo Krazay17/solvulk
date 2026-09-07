@@ -14,23 +14,27 @@ typedef struct
     uint32_t offset; // Index into global index_buffer
     uint32_t count;  // Number of items/triangles in this cell
 } GridCell;
+#define SPATIAL_GRID_DEFAULT_MAX_CELLS_PER_AXIS 128
 
 typedef struct
 {
-    // 16-byte aligned SIMD members grouped together
-    vec4s min;            // {min.x, min.y, min.z, 0.0f}
-    vec4s max;            // {max.x, max.y, max.z, 0.0f}
-    vec4s invCellSizeVec; // {1/cellSize, 1/cellSize, 1/cellSize, 0.0f}
+    vec4s min, max, invCellSizeVec;
 
-    float    cellSize, invCellSize;
-    ivec3s   dims;        // Grid cell dimensions (x, y, z)
-    uint32_t totalCells;  // Total volume (dims.x * dims.y * dims.z)
+    float baseCellSize;      // preferred/minimum resolution -- set once at Init, never changes
+    float cellSize, invCellSize; // EFFECTIVE resolution for the current build; may grow
+                                  // above baseCellSize if the tracked extent needs it
+    int   maxCellsPerAxis;   // hard budget on dims.{x,y,z} -- cellSize scales to respect this
 
-    void     *memory_block; // <--- The ONLY heap ownership handle
-    GridCell *cells;        // View into memory_block
-    uint32_t *index_buffer; // View into memory_block
+    ivec3s   dims;
+    uint32_t totalCells;
+
+    void     *memory_block;
+    GridCell *cells;
+    uint32_t *index_buffer;
     uint32_t  item_count;
 } SpatialGrid;
+
+void SpatialGrid_SetMaxCellsPerAxis(SpatialGrid *grid, int maxCellsPerAxis);
 
 typedef struct
 {

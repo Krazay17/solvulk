@@ -43,7 +43,7 @@ void Create_Menu()
     Sol_Sys_Add(world, WORLDSYS_VIEW2);
 
     { // QUIT BUTTON
-        int     id    = Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE);
+        int id        = Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE);
         ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
         hook->pressed = Hook_Quit;
         Sol_Comp_Get(world, id, ScView2)->layer = UILAYER_2;
@@ -70,7 +70,7 @@ void Create_Hud()
 
     // Healthbar
     {
-        int     id   = Sol_Prefab_Healthbar(world, (vec3s){400, 400, 0});
+        int id       = Sol_Prefab_Healthbar(world, (vec3s){400, 650, 0});
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->update = Hook_Healthbar;
     }
@@ -89,12 +89,14 @@ void Create_Game()
         Sol_Debug_Add("Player Ent", id);
         Sol_Comp_Add(world, id, ScCmd);
         Sol_Comp_Add(world, id, ScPlayer);
-        ScCamera *camera                             = Sol_Comp_Add(world, id, ScCamera);
-        camera->fov                                  = 80.0f;
-        camera->up.y                                 = 1.0f;
-        camera->lerpspeed                            = 10.0f;
-        camera->desired_offset                       = 1.0f;
-        camera->desired_distance                     = 2.0f;
+        ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
+        snprintf(meta->name, sizeof(meta->name), "Krazay");
+        ScCamera *camera         = Sol_Comp_Add(world, id, ScCamera);
+        camera->fov              = 80.0f;
+        camera->up.y             = 1.0f;
+        camera->lerpspeed        = 10.0f;
+        camera->desired_offset   = 1.0f;
+        camera->desired_distance = 2.0f;
     }
 
     // Level
@@ -115,16 +117,17 @@ void Create_Game()
         // Sol_Comp_Add(world, id, ScCmd);
         // Sol_Comp_Add(world, id, ScPlayer);
         // Sol_Comp_Add(world, id, ScCombat);
-
-        ScInteract *interact                         = Sol_Comp_Add(world, id, ScInteract);
-        interact->range                              = 5.0f;
-        Sol_Comp_Add(world, id, ScHook)->pressed     = Hook_Test;
-        ScModel *model = Sol_Comp_Add(world, id, ScModel);
-        ScBody3 *body3 = Sol_Body3_Add(world, id);
-        body3->shape   = SHAPE3_CAP;
-        body3->mask    = PHYSXMASK(1, 1);
-        body3->dims    = (vec3s){0.5f, 3.0f, 0.5f};
-        model->kind    = MODELKIND_WIZARD;
+        ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
+        snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
+        ScInteract *interact                     = Sol_Comp_Add(world, id, ScInteract);
+        interact->range                          = 5.0f;
+        Sol_Comp_Add(world, id, ScHook)->pressed = Hook_Test;
+        ScModel *model                           = Sol_Comp_Add(world, id, ScModel);
+        ScBody3 *body3                           = Sol_Body3_Add(world, id);
+        body3->shape                             = SHAPE3_CAP;
+        body3->mask                              = PHYSXMASK(1, 1);
+        body3->dims                              = (vec3s){0.5f, 3.0f, 0.5f};
+        model->kind                              = MODELKIND_WIZARD;
         Sol_Anim_Add(world, id);
     }
 }

@@ -1118,3 +1118,9 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
     //         user_hit.pressPos   = (ivec2s){Sol_Input_GetMouse().x, Sol_Input_GetMouse().y};
     //     }
     // }
+
+            // *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
+        // if (*yaw > GLM_PIf)
+        //     *yaw -= 2.0f * GLM_PIf;
+        // else if (*yaw < -GLM_PIf)
+        //     *yaw += 2.0f * GLM_PIf;

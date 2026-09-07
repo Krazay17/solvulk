@@ -4,6 +4,7 @@
 typedef struct World   World;
 typedef struct ScMove3 ScMove3;
 typedef struct ScCmd   ScCmd;
+typedef struct ScAbility ScAbility;
 
 typedef void (*StateUpdate)(World *world, int id, float dt);
 typedef void (*StateEnter)(World *world, int id);
@@ -18,6 +19,13 @@ typedef void (*MoveStateExit)(World *world, int id, ScMove3 *move, ScCmd *cmd);
 typedef bool (*MoveStateCanExit)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 typedef bool (*MoveStateCanEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 typedef void (*MoveStateDraw)(World *world, int id, ScMove3 *move, ScCmd *cmd);
+
+typedef void (*AbilityStateUpdate)(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt);
+typedef void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd);
+typedef void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
+typedef bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
+typedef bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
+typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 
 typedef struct
 {
@@ -38,6 +46,16 @@ typedef struct
     MoveStateCanEnter canEnter;
     MoveStateDraw     draw;
 } MoveStateFunc;
+
+typedef struct
+{
+    AbilityStateUpdate   update;
+    AbilityStateEnter    enter;
+    AbilityStateExit     exit;
+    AbilityStateCanExit  canExit;
+    AbilityStateCanEnter canEnter;
+    AbilityStateDraw     draw;
+} AbilityStateFunc;
 
 // void State_Update(World *world, int id, float dt);
 // void State_Enter(World *world, int id);

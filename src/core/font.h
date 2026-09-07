@@ -9,7 +9,6 @@ typedef enum
 
 typedef struct
 {
-    const char *str;
     float       x, y, size;
     vec4s       color;
     SolFontKind kind;
@@ -20,7 +19,6 @@ typedef struct
 
 typedef struct
 {
-    const char *text;
     vec3s       pos;
     float       size;
     vec4s       color;

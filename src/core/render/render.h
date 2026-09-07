@@ -15,7 +15,7 @@
 #define MAX_RECT_INSTANCES (1 << 14)
 #define MAX_FONT_INSTANCES (1 << 16)
 #define MAX_QUAD_INSTANCES (1 << 20)
-#define MAX_LINE_VERTICES 0xffffff
+#define MAX_BUFFER_VERTS 0xffffff
 
 typedef struct ScModelData ScModelData;
 
@@ -30,6 +30,8 @@ typedef enum
     PIPE_TEXT_2D,
     PIPE_RECT,
     PIPE_LINE,
+
+    PIPE_DEBUG_SPHERE,
 
     PIPE_SPHERE,
     PIPE_SPHERE_FX,
@@ -84,6 +86,12 @@ typedef struct
     float aspect;
 } SceneUBO;
 
+typedef struct RenderVert
+{
+    vec3s pos;
+    vec4s color;
+} RenderVert;
+
 typedef struct
 {
     float x, y, w, h;
@@ -118,15 +126,6 @@ typedef struct
 
 typedef struct
 {
-    vec4s pos;
-    vec4s color;
-    vec4s params;
-    u32   type;
-    u32   _padding[3];
-} SphereSSBO;
-
-typedef struct
-{
     Rect  rect;
     float scale, zindex, spin, fill;
     vec4s color, uv;
@@ -146,7 +145,7 @@ static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
 {
     assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
     RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
-    *ssbo          = (RectSSBO){0};
+    *ssbo          = (RectSSBO){ 0 };
     return ssbo;
 }
 
@@ -166,20 +165,6 @@ static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
     assert(font2dQueue[layer].count < MAX_FONT_INSTANCES && "font2dQueue[layer] Full");
     return &font2dQueue[layer].instances[font2dQueue[layer].count++];
 }
-
-typedef struct SolLineVertex
-{
-    vec3s pos;
-    vec4s color;
-} SolLineVertex;
-
-typedef struct
-{
-    vec4s pos;
-    vec4s color;
-    vec4s params;
-    bool  isfx;
-} SphereDesc;
 
 typedef enum
 {
@@ -249,37 +234,70 @@ static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSS
     }
 }
 
+// SPHERES ######################
+
+typedef struct SphereSSBO
+{
+    vec4s pos;
+    vec4s color;
+    vec4s extra;
+} SphereSSBO;
+
+typedef enum
+{
+    SPHEREKIND_BASIC,
+    SPHEREKIND_BASICFX,
+    SPHEREKIND_FIREBALL,
+    SPHEREKIND_DEBUG,
+    SPHEREKIND_COUNT,
+} SphereKind;
+
 typedef struct
 {
-    u32        count;
     SphereSSBO instances[MAX_QUAD_INSTANCES];
+    u32        count;
 } SphereQueue;
-extern SphereQueue        sphereQueue;
-extern SphereQueue        sphereFxQueue;
-static inline SphereSSBO *Sol_Render_GetNext_Sphere(bool isfx)
-{
-    SphereQueue *q = isfx ? &sphereFxQueue : &sphereQueue;
 
+extern SphereQueue        sphereQueues[SPHEREKIND_COUNT];
+static inline SphereSSBO *Sol_Render_GetNextSphere(SphereKind kind)
+{
+    SphereQueue *q = &sphereQueues[kind];
     if (q->count >= MAX_QUAD_INSTANCES)
         return NULL;
+    SphereSSBO *ssbo = &q->instances[q->count++];
+    *ssbo            = (SphereSSBO){ 0 };
 
-    return &q->instances[q->count++];
+    return ssbo;
 }
 
-typedef struct
-{
-    u32        count;
-    SphereSSBO instances[MAX_QUAD_INSTANCES];
-} FireballQueue;
-extern FireballQueue      fireballQueue;
-static inline SphereSSBO *Sol_Render_GetNext_Fireball()
-{
-    FireballQueue *q = &fireballQueue;
-    if (q->count >= MAX_QUAD_INSTANCES)
-        return NULL;
+// extern SphereQueue        sphereQueue;
+// extern SphereQueue        sphereFxQueue;
+// static inline SphereSSBO *Sol_Render_GetNext_Sphere(bool isfx)
+// {
+//     SphereQueue *q = isfx ? &sphereFxQueue : &sphereQueue;
 
-    return &q->instances[q->count++];
-}
+//     if (q->count >= MAX_QUAD_INSTANCES)
+//         return NULL;
+
+//     return &q->instances[q->count++];
+// }
+
+// typedef struct
+// {
+//     u32        count;
+//     SphereSSBO instances[MAX_QUAD_INSTANCES];
+// } FireballQueue;
+// extern FireballQueue      fireballQueue;
+// static inline SphereSSBO *Sol_Render_GetNext_Fireball()
+// {
+//     FireballQueue *q = &fireballQueue;
+//     if (q->count >= MAX_QUAD_INSTANCES)
+//         return NULL;
+
+//     return &q->instances[q->count++];
+// }
+
+// RIBBONS #########################
 
 typedef struct
 {
@@ -390,9 +408,10 @@ static inline QuadSSBO *Sol_Render_GetNext_Quad(u8 kind)
         break;
     }
     QuadSSBO *ssbo = &q->instances[q->count++];
-    *ssbo          = (QuadSSBO){0};
+    *ssbo          = (QuadSSBO){ 0 };
     return ssbo;
 }
+
 SceneUBO *Sol_Render_GetNext_Scene();
 
 int Sol_Render_Init(void *hwnd, void *hInstance);
@@ -407,10 +426,11 @@ void Sol_Render_CheckGpuUploads();
 
 float Sol_Render_GetAspect(void);
 void  Sol_Render_DrawSkybox(void);
-void  Sol_Render_DrawLine(SolLine *lines, int count);
+void  Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride);
+void Sol_Render_DrawSpheres(const SolSphere *spheres, int count, size_t stride);
 // void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
-void Sol_Render_DrawText(SolFontDesc desc);
+void Sol_Render_DrawText(const char *str, SolFontDesc desc);
 void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
 void Sol_Render_UploadModel(ScModelData *model, u32 kind);
-void Sol_Render_DrawText2D(SolFontDesc desc);
-void Sol_Render_DrawText3D(Text3DDesc desc);
+void Sol_Render_DrawText2D(const char *str, SolFontDesc desc);
+void Sol_Render_DrawText3D(const char *str, Text3DDesc desc);

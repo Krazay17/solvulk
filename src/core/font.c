@@ -120,9 +120,8 @@ static TextBounds ParseBounds(const char *p, const char *end)
     return bounds;
 }
 
-ShaderPushTexts Prepare_Text(SolFontDesc desc)
+ShaderPushTexts Prepare_Text(const char *str, SolFontDesc desc)
 {
-    const char *str   = desc.str;
     float       x     = desc.x;
     float       y     = desc.y;
     float       size  = desc.size;

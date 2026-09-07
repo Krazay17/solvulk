@@ -10,7 +10,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-#define RAY_COUNT 12
+#define RAY_COUNT 10
 #define MANTLE_TIME 0.5f
 #define MANTLE_SPEED 5.0f
 
@@ -31,14 +31,14 @@ static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
     // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
     {
-        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 0.8f));
+        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 1.1f));
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay ray = {
             .start = pos, .dist = body->dims.x * 1.5f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cmd->yaw, 0)
         };
         SolRayResult rayResult;
-        bool         hit = Sol_Raycast1(world, ray, &rayResult);
+        bool         hit = Sol_Raycast1D(world, ray, &rayResult, 0.1f);
         // No hit indicates there is space above
         if (!hit)
         {
@@ -103,7 +103,7 @@ void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
 bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    return move->stateData[move->state].as.mantle.closeEnough || !(cmd->actionState & BITC(ACTION_JUMP));
+    return move->stateData[move->state].as.mantle.closeEnough || !(cmd->actionState & BITC(ACTION_JUMP)) || move->stateData[move->state].elapsed >= MANTLE_TIME;
 }
 
 bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)

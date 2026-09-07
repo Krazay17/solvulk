@@ -30,7 +30,7 @@ typedef struct
     u32         mesh_count;
 } SolGpuModel;
 
-static SolVkState solvkstate = {0};
+static SolVkState solvkstate = { 0 };
 
 static u32 boundPipeline;
 
@@ -40,38 +40,51 @@ static SolGpuModel gpuModels[SOL_MODEL_COUNT];
 static SolPipe pipes[PIPE_COUNT];
 
 static ScBufferDescriptor descriptors[DESC_COUNT];
-static SolImageDescriptor  image_array_descriptor;
+static SolImageDescriptor image_array_descriptor;
 
 static SolFrameBuffer frameBuffers[FRAMEBUFFER_COUNT];
 
 static SolImageUploadConfig image_upload[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_REDSKY] = {.Uwrap = VK_SAMPLER_ADDRESS_MODE_REPEAT},
+    [SOL_TEXTURE_REDSKY] = { .Uwrap = VK_SAMPLER_ADDRESS_MODE_REPEAT },
 };
 
 static SolFrameBufferConfig buffer_config[FRAMEBUFFER_COUNT] = {
-    [FRAMEBUFFER_LINE] =
+    [FRAMEBUFFER_VERT] =
         {
-            .size  = sizeof(SolLineVertex) * MAX_LINE_VERTICES,
+            .size  = sizeof(RenderVert) * MAX_BUFFER_VERTS,
             .stage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         },
 };
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
+    [PIPE_DEBUG_SPHERE] = 
+    {
+        .vertResource = "ID_SHADER_SPHERE_V",
+        .fragResource = "ID_SHADER_SPHERE_F",
+        .depthTest = 1,
+        .depthWrite = 1,
+        .blendMode = BLEND_ALPHA,
+        .cullMode = VK_CULL_MODE_NONE,
+        .type = VERTEX_SINGLE,
+        .descId = {DESC_SCENE_UBO},
+        .descCount = 1,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+    },
     [PIPE_MODEL] =
-        {
-            .vertResource      = "ID_SHADER_MODEL_V",
-            .fragResource      = "ID_SHADER_MODEL_F",
-            .depthTest         = 1,
-            .depthWrite        = 1,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(SolMaterial),
-            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .type              = VERTEX_TRI,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
-            .descCount         = 5,
-        },
+    {
+        .vertResource      = "ID_SHADER_MODEL_V",
+        .fragResource      = "ID_SHADER_MODEL_F",
+        .depthTest         = 1,
+        .depthWrite        = 1,
+        .blendMode         = BLEND_ALPHA,
+        .cullMode          = VK_CULL_MODE_NONE,
+        .pushRangeSize     = sizeof(SolMaterial),
+        .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .type              = VERTEX_TRI,
+        .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
+        .descCount         = 5,
+    },
     [PIPE_MODEL_SKINNED] =
         {
             .vertResource      = "ID_SHADER_SKINNED_V",
@@ -272,7 +285,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .cullMode          = VK_CULL_MODE_NONE,
             .pushRangeSize     = 0,
             .pushStageFlags    = 0,
-            .type              = VERTEX_LINE,
+            .type              = VERTEX_POINT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             .descId            = {DESC_SCENE_UBO},
             .descCount         = 1,
@@ -332,7 +345,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES,
+                                    .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES * SPHEREKIND_COUNT,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_QUAD_SSBO]     = {.kind       = DESC_KIND_BUFFER,
@@ -437,8 +450,7 @@ int Sol_Render_BuildPipes()
 
     for (int i = 0; i < FRAMEBUFFER_COUNT; i++)
     {
-        Sol_CreateFrameBuffer(&solvkstate, buffer_config[i].size, buffer_config[i].stage,
-                              &frameBuffers[FRAMEBUFFER_LINE]);
+        Sol_CreateFrameBuffer(&solvkstate, buffer_config[i].size, buffer_config[i].stage, &frameBuffers[i]);
     }
 
     Sol_Render_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
@@ -464,7 +476,7 @@ SceneUBO *Sol_Render_GetNext_Scene()
 SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id)
 {
     u32 frame = solvkstate.currentFrame;
-    return (SolFrameBufferRef){.buffers = &frameBuffers[id].buffers[frame], .mapped = frameBuffers[id].mapped[frame]};
+    return (SolFrameBufferRef){ .buffers = &frameBuffers[id].buffers[frame], .mapped = frameBuffers[id].mapped[frame] };
 }
 
 float Sol_Render_GetAspect(void)
@@ -474,7 +486,7 @@ float Sol_Render_GetAspect(void)
     return (float)solvkstate.swapchainExtent.width / (float)solvkstate.swapchainExtent.height;
 }
 
-void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
+void Sol_Render_Bind_Pipeline(VkCommandBuffer cmd, PipelineId id)
 {
     if (id == boundPipeline)
         return;
@@ -535,7 +547,7 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
 // void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill)
 // {
 //     VkCommandBuffer cmd = Command_Buffer_Get();
-//     Bind_Pipeline(cmd, PIPE_RECT);
+//     Sol_Render_Bind_Pipeline(cmd, PIPE_RECT);
 
 //     ShaderPushRect push = {
 //         .rec    = {rect.x, rect.y, rect.z, rect.w},
@@ -550,14 +562,14 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
 void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_MODEL);
+    Sol_Render_Bind_Pipeline(cmd, PIPE_MODEL);
 
     SolGpuModel *model = &gpuModels[handle];
     for (int m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
-        VkDeviceSize offsets[] = {0};
+        VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
@@ -567,26 +579,26 @@ void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstan
 void Render_Model_Skinned(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
+    Sol_Render_Bind_Pipeline(cmd, PIPE_MODEL_SKINNED);
 
     SolGpuModel *model = &gpuModels[handle];
     for (int m = 0; m < model->mesh_count; m++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_MODEL_SKINNED].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
                            &model->meshes[m].material);
-        VkDeviceSize offsets[] = {0};
+        VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
     }
 }
 
-void Sol_Render_DrawText(SolFontDesc desc)
+void Sol_Render_DrawText(const char *str, SolFontDesc desc)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_TEXT);
+    Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT);
 
-    ShaderPushTexts texts = Prepare_Text(desc);
+    ShaderPushTexts texts = Prepare_Text(str, desc);
     for (int i = 0; i < texts.count; i++)
     {
         vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText),
@@ -608,11 +620,11 @@ void Sol_Begin_Draw()
     VkCommandBuffer currentCmd = solvkstate.commandBuffers[solvkstate.currentFrame];
     vkResetCommandBuffer(currentCmd, 0);
 
-    VkCommandBufferBeginInfo beginInfo = {0};
+    VkCommandBufferBeginInfo beginInfo = { 0 };
     beginInfo.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     vkBeginCommandBuffer(currentCmd, &beginInfo);
 
-    VkImageMemoryBarrier depthBarrier        = {0};
+    VkImageMemoryBarrier depthBarrier        = { 0 };
     depthBarrier.sType                       = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     depthBarrier.oldLayout                   = VK_IMAGE_LAYOUT_UNDEFINED;
     depthBarrier.newLayout                   = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
@@ -628,10 +640,10 @@ void Sol_Begin_Draw()
                          0, NULL, 0, NULL, 1, &depthBarrier);
 
     // clear depth
-    VkClearValue depthClear       = {0};
+    VkClearValue depthClear       = { 0 };
     depthClear.depthStencil.depth = 1.0f;
 
-    VkRenderingAttachmentInfo depthAttachment = {0};
+    VkRenderingAttachmentInfo depthAttachment = { 0 };
     depthAttachment.clearValue                = depthClear;
     depthAttachment.sType                     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     depthAttachment.imageView                 = solvkstate.depthImageView;
@@ -640,7 +652,7 @@ void Sol_Begin_Draw()
     depthAttachment.storeOp                   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     // transition → color attachment
-    VkImageMemoryBarrier toRender        = {0};
+    VkImageMemoryBarrier toRender        = { 0 };
     toRender.sType                       = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     toRender.oldLayout                   = VK_IMAGE_LAYOUT_UNDEFINED;
     toRender.newLayout                   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -655,9 +667,9 @@ void Sol_Begin_Draw()
     vkCmdPipelineBarrier(currentCmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          0, 0, NULL, 0, NULL, 1, &toRender);
 
-    VkClearValue clearColor = {{RENDER_CLEAR_COLOR}};
+    VkClearValue clearColor = { { RENDER_CLEAR_COLOR } };
 
-    VkRenderingAttachmentInfo colorAttachment = {0};
+    VkRenderingAttachmentInfo colorAttachment = { 0 };
     colorAttachment.sType                     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     colorAttachment.imageView                 = solvkstate.swapchainImageViews[solvkstate.currentImageIndex];
     colorAttachment.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -665,7 +677,7 @@ void Sol_Begin_Draw()
     colorAttachment.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.clearValue                = clearColor;
 
-    VkRenderingInfo renderingInfo      = {0};
+    VkRenderingInfo renderingInfo      = { 0 };
     renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderingInfo.renderArea.extent    = solvkstate.swapchainExtent;
     renderingInfo.layerCount           = 1;
@@ -675,7 +687,7 @@ void Sol_Begin_Draw()
 
     vkCmdBeginRendering(currentCmd, &renderingInfo);
 
-    VkViewport viewport = {0};
+    VkViewport viewport = { 0 };
     viewport.x          = 0.0f;
     viewport.y          = (float)solvkstate.swapchainExtent.height;
     viewport.width      = (float)solvkstate.swapchainExtent.width;
@@ -684,7 +696,7 @@ void Sol_Begin_Draw()
     viewport.maxDepth   = 1.0f;
     vkCmdSetViewport(currentCmd, 0, 1, &viewport);
 
-    VkRect2D scissor = {0};
+    VkRect2D scissor = { 0 };
     scissor.extent   = solvkstate.swapchainExtent;
     vkCmdSetScissor(currentCmd, 0, 1, &scissor);
 
@@ -698,7 +710,7 @@ void Sol_End_Draw()
     vkCmdEndRendering(currentCmd);
 
     // transition → present
-    VkImageMemoryBarrier toPresent        = {0};
+    VkImageMemoryBarrier toPresent        = { 0 };
     toPresent.sType                       = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     toPresent.oldLayout                   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     toPresent.newLayout                   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -717,7 +729,7 @@ void Sol_End_Draw()
 
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    VkSubmitInfo submitInfo         = {0};
+    VkSubmitInfo submitInfo         = { 0 };
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &solvkstate.imageAvailableSemaphores[solvkstate.currentFrame];
@@ -729,7 +741,7 @@ void Sol_End_Draw()
 
     vkQueueSubmit(solvkstate.graphicsQueue, 1, &submitInfo, solvkstate.inFlightFences[solvkstate.currentFrame]);
 
-    VkPresentInfoKHR presentInfo   = {0};
+    VkPresentInfoKHR presentInfo   = { 0 };
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores    = &solvkstate.renderFinishedSemaphores[solvkstate.currentFrame];
@@ -763,12 +775,12 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
         return 1;
 
     // --- create shader modules ---
-    VkShaderModuleCreateInfo vertModuleInfo = {0};
+    VkShaderModuleCreateInfo vertModuleInfo = { 0 };
     vertModuleInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     vertModuleInfo.codeSize                 = vertRes.size;
     vertModuleInfo.pCode                    = (uint32_t *)vertRes.data;
 
-    VkShaderModuleCreateInfo fragModuleInfo = {0};
+    VkShaderModuleCreateInfo fragModuleInfo = { 0 };
     fragModuleInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     fragModuleInfo.codeSize                 = fragRes.size;
     fragModuleInfo.pCode                    = (uint32_t *)fragRes.data;
@@ -778,25 +790,25 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     vkCreateShaderModule(vkstate->device, &fragModuleInfo, NULL, &fragModule);
 
     // --- shader stages ---
-    VkPipelineShaderStageCreateInfo vertStage = {0};
+    VkPipelineShaderStageCreateInfo vertStage = { 0 };
     vertStage.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertStage.stage                           = VK_SHADER_STAGE_VERTEX_BIT;
     vertStage.module                          = vertModule;
     vertStage.pName                           = "main";
 
-    VkPipelineShaderStageCreateInfo fragStage = {0};
+    VkPipelineShaderStageCreateInfo fragStage = { 0 };
     fragStage.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragStage.stage                           = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragStage.module                          = fragModule;
     fragStage.pName                           = "main";
 
-    VkPipelineShaderStageCreateInfo stages[] = {vertStage, fragStage};
+    VkPipelineShaderStageCreateInfo stages[] = { vertStage, fragStage };
 
     VkVertexInputBindingDescription binding = {
         .binding   = 0,
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
     };
-    VkVertexInputAttributeDescription attrs[5]     = {0};
+    VkVertexInputAttributeDescription attrs[5]     = { 0 };
     uint32_t                          attrCount    = 0;
     uint32_t                          bindingCount = 1;
 
@@ -804,22 +816,25 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     {
         binding.stride = sizeof(SolVertex);
         attrs[0]       = (VkVertexInputAttributeDescription){
-            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)};
+            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)
+        };
         attrs[1] = (VkVertexInputAttributeDescription){
-            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)};
+            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)
+        };
         attrs[2] = (VkVertexInputAttributeDescription){
-            .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)};
+            .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)
+        };
         attrCount = 3;
     }
-    else if (config->type == VERTEX_LINE)
+    else if (config->type == VERTEX_POINT)
     {
-        binding.stride = sizeof(SolLineVertex);
+        binding.stride = sizeof(RenderVert);
         attrs[0]       = (VkVertexInputAttributeDescription){
-            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolLineVertex, pos)};
-        attrs[1]  = (VkVertexInputAttributeDescription){.location = 1,
-                                                        .binding  = 0,
-                                                        .format   = VK_FORMAT_R32G32B32_SFLOAT,
-                                                        .offset   = offsetof(SolLineVertex, color)};
+            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(RenderVert, pos)
+        };
+        attrs[1] = (VkVertexInputAttributeDescription){
+            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(RenderVert, color)
+        };
         attrCount = 2;
     }
     else if (config->type == VERTEX_SKINNED)
@@ -827,19 +842,22 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
         binding.stride = sizeof(SolVertex);
 
         attrs[0] = (VkVertexInputAttributeDescription){
-            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)};
+            .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, position)
+        };
         attrs[1] = (VkVertexInputAttributeDescription){
-            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)};
+            .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(SolVertex, normal)
+        };
         attrs[2] = (VkVertexInputAttributeDescription){
-            .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)};
-        attrs[3]  = (VkVertexInputAttributeDescription){.location = 3,
-                                                        .binding  = 0,
-                                                        .format   = VK_FORMAT_R32G32B32A32_UINT,
-                                                        .offset   = offsetof(SolVertex, boneIndices)};
-        attrs[4]  = (VkVertexInputAttributeDescription){.location = 4,
-                                                        .binding  = 0,
-                                                        .format   = VK_FORMAT_R32G32B32A32_SFLOAT,
-                                                        .offset   = offsetof(SolVertex, boneWeights)};
+            .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(SolVertex, uv)
+        };
+        attrs[3]  = (VkVertexInputAttributeDescription){ .location = 3,
+                                                         .binding  = 0,
+                                                         .format   = VK_FORMAT_R32G32B32A32_UINT,
+                                                         .offset   = offsetof(SolVertex, boneIndices) };
+        attrs[4]  = (VkVertexInputAttributeDescription){ .location = 4,
+                                                         .binding  = 0,
+                                                         .format   = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                         .offset   = offsetof(SolVertex, boneWeights) };
         attrCount = 5;
     }
     else
@@ -848,7 +866,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     }
 
     // --- vertex input ---
-    VkPipelineVertexInputStateCreateInfo vertexInput = {0};
+    VkPipelineVertexInputStateCreateInfo vertexInput = { 0 };
     vertexInput.sType                                = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInput.vertexBindingDescriptionCount        = bindingCount;
     vertexInput.pVertexBindingDescriptions           = bindingCount ? &binding : NULL;
@@ -856,18 +874,18 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     vertexInput.pVertexAttributeDescriptions         = attrCount ? attrs : NULL;
 
     // --- input assembly (what shape to draw) ---
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = { 0 };
     inputAssembly.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology                               = config->primitiveTopology;
 
     // --- viewport and scissor (dynamic so we can resize) ---
-    VkPipelineViewportStateCreateInfo viewportState = {0};
+    VkPipelineViewportStateCreateInfo viewportState = { 0 };
     viewportState.sType                             = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount                     = 1;
     viewportState.scissorCount                      = 1;
 
     // --- rasterizer ---
-    VkPipelineRasterizationStateCreateInfo rasterizer = {0};
+    VkPipelineRasterizationStateCreateInfo rasterizer = { 0 };
     rasterizer.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.polygonMode                            = VK_POLYGON_MODE_FILL;
     rasterizer.cullMode                               = config->cullMode;
@@ -875,12 +893,12 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     rasterizer.lineWidth                              = 1.0f;
 
     // --- multisampling (disabled) ---
-    VkPipelineMultisampleStateCreateInfo multisampling = {0};
+    VkPipelineMultisampleStateCreateInfo multisampling = { 0 };
     multisampling.sType                                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.rasterizationSamples                 = VK_SAMPLE_COUNT_1_BIT;
 
     // --- color blending (no blending, just write output) ---
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {0};
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = { 0 };
     colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT; //| VK_COLOR_COMPONENT_A_BIT;
     if (config->blendMode != BLEND_NONE)
@@ -895,26 +913,26 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
         colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
     }
 
-    VkPipelineColorBlendStateCreateInfo colorBlending = {0};
+    VkPipelineColorBlendStateCreateInfo colorBlending = { 0 };
     colorBlending.sType                               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.attachmentCount                     = 1;
     colorBlending.pAttachments                        = &colorBlendAttachment;
 
     // --- dynamic state (viewport and scissor set at draw time) ---
-    VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
-    VkPipelineDynamicStateCreateInfo dynamicState = {0};
+    VkPipelineDynamicStateCreateInfo dynamicState = { 0 };
     dynamicState.sType                            = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount                = 2;
     dynamicState.pDynamicStates                   = dynamicStates;
 
-    VkPushConstantRange pushRange = {0};
+    VkPushConstantRange pushRange = { 0 };
     pushRange.stageFlags          = config->pushStageFlags;
     pushRange.offset              = 0;
     pushRange.size                = config->pushRangeSize;
 
     // layout
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {0};
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = { 0 };
     pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount             = layoutCount;
     pipelineLayoutInfo.pSetLayouts                = layouts;
@@ -923,14 +941,14 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, &out->layout);
 
     // --- dynamic rendering info (replaces render pass) ---
-    VkPipelineRenderingCreateInfo renderingInfo = {0};
+    VkPipelineRenderingCreateInfo renderingInfo = { 0 };
     renderingInfo.sType                         = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount          = 1;
     renderingInfo.pColorAttachmentFormats       = &vkstate->swapchainImageFormat;
     renderingInfo.depthAttachmentFormat         = config->depthTest ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_UNDEFINED;
 
     // ---- depth stencil ----
-    VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
+    VkPipelineDepthStencilStateCreateInfo depthStencil = { 0 };
     depthStencil.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable                       = config->depthTest ? VK_TRUE : VK_FALSE;
     depthStencil.depthWriteEnable                      = config->depthWrite ? VK_TRUE : VK_FALSE;
@@ -939,7 +957,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     depthStencil.stencilTestEnable     = VK_FALSE;
 
     // --- create the pipeline ---
-    VkGraphicsPipelineCreateInfo pipelineInfo = {0};
+    VkGraphicsPipelineCreateInfo pipelineInfo = { 0 };
     pipelineInfo.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.pNext                        = &renderingInfo;
     pipelineInfo.stageCount                   = 2;
@@ -1107,7 +1125,7 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
 
     // if (!model || model->mesh_count < 1)
     //     return;
-    SolGpuModel gpuModel = {0};
+    SolGpuModel gpuModel = { 0 };
     gpuModel.mesh_count  = model->mesh_count;
     gpuModel.meshes      = malloc(sizeof(SolGpuMesh) * model->mesh_count);
 
@@ -1135,15 +1153,15 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
     vkUnmapMemory(solvkstate.device, stagingMemory);
 
     // 5. Setup single command buffer for batch transfer
-    VkCommandBufferAllocateInfo allocInfo = {.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                                             .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                                             .commandPool        = solvkstate.commandPool,
-                                             .commandBufferCount = 1};
+    VkCommandBufferAllocateInfo allocInfo = { .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                                              .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                                              .commandPool        = solvkstate.commandPool,
+                                              .commandBufferCount = 1 };
     VkCommandBuffer             copyCmd;
     vkAllocateCommandBuffers(solvkstate.device, &allocInfo, &copyCmd);
 
-    VkCommandBufferBeginInfo beginInfo = {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                                          .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT};
+    VkCommandBufferBeginInfo beginInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                           .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT };
     vkBeginCommandBuffer(copyCmd, &beginInfo);
 
     // 6. Create GPU buffers and record copy commands
@@ -1166,10 +1184,10 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &dst->indexBuffer, &dst->indexMemory);
 
         // Record Copies
-        VkBufferCopy vCopy = {.srcOffset = vSrcOffset, .dstOffset = 0, .size = vSize};
+        VkBufferCopy vCopy = { .srcOffset = vSrcOffset, .dstOffset = 0, .size = vSize };
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->vertexBuffer, 1, &vCopy);
 
-        VkBufferCopy iCopy = {.srcOffset = iSrcOffset, .dstOffset = 0, .size = iSize};
+        VkBufferCopy iCopy = { .srcOffset = iSrcOffset, .dstOffset = 0, .size = iSize };
         vkCmdCopyBuffer(copyCmd, stagingBuffer, dst->indexBuffer, 1, &iCopy);
     }
 
@@ -1178,8 +1196,9 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
     // TODO POOL AND UPLOAD AT ONCE
 
     // 7. Submit and wait ONCE
-    VkSubmitInfo submitInfo = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &copyCmd};
+    VkSubmitInfo submitInfo = { .sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                                .commandBufferCount = 1,
+                                .pCommandBuffers    = &copyCmd };
     vkQueueSubmit(solvkstate.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(solvkstate.graphicsQueue);
 
@@ -1233,7 +1252,7 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType     = VK_IMAGE_TYPE_2D,
         .format        = format,
-        .extent        = {width, height, 1},
+        .extent        = { width, height, 1 },
         .mipLevels     = 1,
         .arrayLayers   = 1,
         .samples       = VK_SAMPLE_COUNT_1_BIT,
@@ -1290,7 +1309,7 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image               = out->image,
-        .subresourceRange    = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        .subresourceRange    = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
         .srcAccessMask       = 0,
         .dstAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
     };
@@ -1299,8 +1318,8 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u
 
     // Copy buffer → image
     VkBufferImageCopy region = {
-        .imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-        .imageExtent      = {width, height, 1},
+        .imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+        .imageExtent      = { width, height, 1 },
     };
     vkCmdCopyBufferToImage(cmd, staging, out->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
@@ -1312,7 +1331,7 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image               = out->image,
-        .subresourceRange    = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        .subresourceRange    = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
         .srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
         .dstAccessMask       = VK_ACCESS_SHADER_READ_BIT,
     };
@@ -1340,7 +1359,7 @@ void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u
         .image            = out->image,
         .viewType         = VK_IMAGE_VIEW_TYPE_2D,
         .format           = format,
-        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
     };
     vkCreateImageView(vkstate->device, &viewInfo, NULL, &out->view);
 

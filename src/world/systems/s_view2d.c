@@ -55,7 +55,7 @@ void View2_Healthbar(World *world, double dt)
         if (!Sol_Comp_Has(world, id, ScCombat))
             continue;
         ScCombat *combat          = Sol_Comp_Get(tracker->world, tracker->entId, ScCombat);
-        float     target          = combat->maxHealth > 0 ? combat->health / combat->maxHealth : 0.0f;
+        float     target          = combat->healthMax > 0 ? combat->health / combat->healthMax : 0.0f;
         view->views[2].targetFill = target;
         view->views[3].fill = view->views[3].targetFill = target;
     }
@@ -133,9 +133,8 @@ static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u3
         return;
 
     float textWidth = Sol_MeasureText(view->text, view->dims.x, SOL_FONT_ICE);
-    Sol_Render_DrawText2D((SolFontDesc){
+    Sol_Render_DrawText2D(view->text, (SolFontDesc){
         .layer = layer,
-        .str   = view->text,
         .x     = UISCALE(pos.x + view->offset.x - textWidth * 0.5f),
         .y     = UISCALE(pos.y + view->offset.y + view->dims.x * 0.35f),
         .size  = UISCALE(view->dims.x),

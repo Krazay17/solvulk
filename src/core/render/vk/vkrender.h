@@ -89,7 +89,7 @@ typedef struct SolPipe
 typedef enum
 {
     VERTEX_SINGLE,
-    VERTEX_LINE,
+    VERTEX_POINT,
     VERTEX_TRI,
     VERTEX_SKINNED,
 } VertexType;
@@ -181,6 +181,6 @@ int Sol_CreateFrameBuffer(SolVkState *vkstate, VkDeviceSize size, VkBufferUsageF
 VkCommandBuffer   Command_Buffer_Get(void);
 SolFrameBufferRef Sol_GetFrameBuffer(FrameBufferId id);
 
-void Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
+void Sol_Render_Bind_Pipeline(VkCommandBuffer cmd, PipelineId id);
 int  Sol_ImageDescriptor_BuildLayout(SolVkState *vkstate, SolImageDescriptor *out);
 void Sol_ImageDescriptor_UpdateSlot(SolVkState *vkstate, SolImageDescriptor *desc, SolGpuImage *image, u32 slotIndex);

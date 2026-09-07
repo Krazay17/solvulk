@@ -28,7 +28,7 @@ typedef enum
     WORLDSYS_BODY3,
     WORLDSYS_BODY2,
     WORLDSYS_ABILITY,
-
+    WORLDSYS_COMBAT,
     WORLDSYS_HOOK,
 
     WORLDSYS_FACING,
@@ -36,6 +36,7 @@ typedef enum
     WORLDSYS_ANIM,
     WORLDSYS_MODEL,
     WORLDSYS_VIEW2,
+    WORLDSYS_SCOREBOARD,
 
     WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
@@ -46,20 +47,20 @@ typedef enum
 // ==========================================
 typedef struct BaseSparseSet
 {
-    int   cnt;
-    int   cap;
-    int  *sparse;
-    int  *dense;
+    int cnt;
+    int cap;
+    int *sparse;
+    int *dense;
     void *data;
 } BaseSparseSet;
 #define SPARSE_SET_STRUCT(T)                                                                                           \
     typedef struct SparseSet_##T                                                                                       \
     {                                                                                                                  \
-        int  cnt;                                                                                                      \
-        int  cap;                                                                                                      \
+        int cnt;                                                                                                       \
+        int cap;                                                                                                       \
         int *sparse;                                                                                                   \
         int *dense;                                                                                                    \
-        T   *data;                                                                                                     \
+        T *data;                                                                                                       \
     } SparseSet_##T
 
 // Declare all SparseSet structs
@@ -79,10 +80,10 @@ struct World
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
-    u64   masks[MAX_ENTS];
+    u64 masks[MAX_ENTS];
     void *components[COMPONENT_COUNT];
 
-    u64   system_mask;
+    u64 system_mask;
     void *systems[WORLDSYS_COUNT];
 
     u32 hitGenMatrix[MAX_ENTS][MAX_ENTS];
@@ -97,11 +98,11 @@ struct World
     int activeEnts[MAX_ENTS];
     int entCount;
 
-    u32    currentTick, currentStep;
+    u32 currentTick, currentStep;
     double tickTime, stepTime;
-    int    maxEntities;
-    int    index;
-    bool   doesSimulate, doesRender, doesReplicate;
+    int maxEntities;
+    int index;
+    bool doesSimulate, doesRender, doesReplicate;
 };
 
 // ==========================================
@@ -146,12 +147,12 @@ struct World
     {                                                                                                                  \
         if (!(w->masks[entId] & BITC(ENUM_FLAG)))                                                                      \
             return;                                                                                                    \
-        SparseSet_##T *set          = (SparseSet_##T *)w->components[ENUM_FLAG];                                       \
-        int            removedDense = set->sparse[entId];                                                              \
-        int            lastEntity   = set->dense[set->cnt - 1];                                                        \
-        set->data[removedDense]     = set->data[set->cnt - 1];                                                         \
-        set->dense[removedDense]    = lastEntity;                                                                      \
-        set->sparse[lastEntity]     = removedDense;                                                                    \
+        SparseSet_##T *set       = (SparseSet_##T *)w->components[ENUM_FLAG];                                          \
+        int removedDense         = set->sparse[entId];                                                                 \
+        int lastEntity           = set->dense[set->cnt - 1];                                                           \
+        set->data[removedDense]  = set->data[set->cnt - 1];                                                            \
+        set->dense[removedDense] = lastEntity;                                                                         \
+        set->sparse[lastEntity]  = removedDense;                                                                       \
         set->cnt--;                                                                                                    \
         w->masks[entId] &= ~BITC(ENUM_FLAG);                                                                           \
     }
@@ -204,11 +205,11 @@ static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
     if (!(w->masks[entId] & BITC(compEnum)))
         return;
 
-    BaseSparseSet *set          = (BaseSparseSet *)w->components[compEnum];
-    int            removedDense = set->sparse[entId];
-    int            lastIdx      = set->cnt - 1;
-    int            lastEntity   = set->dense[lastIdx];
-    size_t         elemSize     = COMP_SIZES[compEnum];
+    BaseSparseSet *set = (BaseSparseSet *)w->components[compEnum];
+    int removedDense   = set->sparse[entId];
+    int lastIdx        = set->cnt - 1;
+    int lastEntity     = set->dense[lastIdx];
+    size_t elemSize    = COMP_SIZES[compEnum];
 
     // Swap payload data in the dense array
     if (removedDense != lastIdx && set->data)
@@ -274,6 +275,7 @@ void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
 // Systems
+void Combat_Init(World *world);
 void Player_Init(World *world);
 void Player_Deinit(World *world);
 void Move3_Init(World *world);
@@ -297,12 +299,14 @@ void Move2_Step(World *world, double dt);
 void Body3_Step(World *world, double dt);
 void Body2_Step(World *world, double dt);
 void Ability_Step(World *world, double dt);
+void Combat_Step(World *world, double dt);
 
 void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
 void Facing_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
 
+void Scoreboard_Draw(World *world, double dt);
 void Model_Render(World *world, double dt);
 void Ability_Draw(World *world, double dt);
 void View2_Draw(World *world, double dt);
@@ -315,9 +319,9 @@ void Debug_Draw2(World *world, double dt);
 // Api
 World *World_Create();
 World *World_Create_AllSys();
-int    Sol_Create_Ent(World *world);
-void   Sol_Sys_Add(World *world, WorldSystems system);
-void   Sol_Sys_Remove(World *world, WorldSystems system);
+int Sol_Create_Ent(World *world);
+void Sol_Sys_Add(World *world, WorldSystems system);
+void Sol_Sys_Remove(World *world, WorldSystems system);
 
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
@@ -330,23 +334,28 @@ void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
-bool  Sol_Move3_SetState(World *world, int id, MoveState state);
+bool Sol_Move3_SetState(World *world, int id, MoveState state);
 float Sol_Move3_GetBaseSpeed(World *world, int id);
 
-bool  Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body);
+bool Sol_Body3_DoesCollide(ScBody3 *body, ScBody3 *other_body);
 vec3s Sol_Body3_GetGround(World *world, int id);
 vec3s Sol_Body3_GetVel(World *world, int id);
 vec3s Sol_Body3_GetDir(World *world, int id);
 float Sol_Body3_GetSpeed(World *world, int id);
 
-int  Sol_Body2_GetEntAtPoint(World *world, vec2s point);
+int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
 
-int  Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
-int  Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
 bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
 
-SolLine *Sol_Line_New(World *world);
+SolLine *Sol_Debug_NewLine(World *world, float ttl);
+SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
+
+float Sol_Combat_Hit(World *world, int id, SolHit hit);
+float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
+float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);

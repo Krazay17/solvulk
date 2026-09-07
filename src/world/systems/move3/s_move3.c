@@ -208,8 +208,8 @@ void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
         Move3_CommitState(world, id, target_state, current_state_func, target_state_func, move, cmd);
         break;
     }
-    if (current_state != move->state)
-        sollog(move->state);
+    // if (current_state != move->state)
+    //     sollog(move->state);
 }
 
 void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFunc *current_state_func,

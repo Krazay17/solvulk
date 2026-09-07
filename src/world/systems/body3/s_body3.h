@@ -14,47 +14,47 @@
 #define GET_TRI_INDEX(val) ((val) & 0xFFFF)
 
 #define WORLD_TRI_INIT 0xfff
-#define MAX_THREAD_CONTACTS (1<<12)
+#define MAX_THREAD_CONTACTS (1 << 12)
 #define SOLVER_ITERATIONS 2
 #define SOLVER_PERCENT 0.33f
 #define SOLVER_SLACK 0.01f
 
 typedef struct ScXform ScXform;
 typedef struct ScBody3 ScBody3;
-typedef struct SolTri  SolTri;
+typedef struct SolTri SolTri;
 
 typedef struct
 {
     SolContact contacts[MAX_THREAD_CONTACTS];
-    u32        count;
+    u32 count;
 } ThreadContactBuffer;
 
 typedef struct
 {
-    int   id;
-    int   shape;
+    int id;
+    int shape;
     vec3s pos, dims, vel;
     mat3s rot;
 } EntProxy;
 
 typedef struct
 {
-    SpatialGrid  spatial;
-    EntProxy    *proxies;
+    SpatialGrid spatial;
+    EntProxy *proxies;
     SpatialAABB *aabb_scratch;
 } DynamicGroup;
 
 typedef struct
 {
     SpatialGrid spatial;
-    SolTri     *tris;
+    SolTri *tris;
 } StaticGroup;
 
 typedef struct
 {
     DynamicGroup dynamic_group;
-    StaticGroup  static_group;
-    SolContact  *contacts;
+    StaticGroup static_group;
+    SolContact *contacts;
 } SysPhysx;
 
 void Build_Tables(World *world, SysPhysx *sys, float fdt);
@@ -84,3 +84,8 @@ bool Is_Already_Hit(const SolRayResult *results, int hitCount, int entId);
 bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm);
 bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, float radius, float *outT,
                           vec3s *outNorm);
+
+bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri, float r, float *outT, vec3s *outNorm);
+bool Ray_Intersect_Cylinder(vec3s O, vec3s D, float maxDist, vec3s a, vec3s b, float r, float *outT, float *outS);
+bool Ray_Intersect_Capsule(vec3s O, vec3s D, float maxDist, vec3s top, vec3s bottom, float radius, float *outT,
+                           vec3s *outNorm);

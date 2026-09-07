@@ -31,8 +31,8 @@ void Hook_Healthbar(World *w, double dt, int id, void *data)
     if (!game_world || !view2)
         return;
 
-    float totalHealth    = 0.0f;
-    float totalMaxHealth = 0.0f;
+    float totalMaxHealth    = 0.0f;
+    float totalHealth = 0.0f;
 
     SparseSet_ScPlayer *player_set = Sol_Comp_Set(game_world, ScPlayer);
     for (int i = 0; i < player_set->cnt; i++)
@@ -43,7 +43,7 @@ void Hook_Healthbar(World *w, double dt, int id, void *data)
         if (!combat)
             continue;
         totalHealth += combat->health;
-        totalMaxHealth += combat->maxHealth;
+        totalMaxHealth += combat->healthMax;
     }
     if (totalMaxHealth > 0.0f)
         view2->views[0].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);

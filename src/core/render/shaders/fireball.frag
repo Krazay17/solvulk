@@ -3,20 +3,21 @@
 layout(set = 0, binding = 0) uniform Util {
     double time;
 };
+
 layout(set = 1, binding = 0) uniform Scene {
-    mat4 viewProjection;
+    mat4 viewProj;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
     vec4 sun;
 } scene;
 
-
+// Matched to sphere.vert output locations
 layout(location = 0) in vec3 fragWorldPos;
-layout(location = 1) in vec4 fragColor;
-layout(location = 2) in vec4 fragSphereCenter;
-layout(location = 3) in vec3 fragRayOrigin;
-layout(location = 4) in vec4 fragParams;
+layout(location = 1) in vec3 fragCenter;
+layout(location = 2) in vec4 fragColor;
+layout(location = 3) in float fragRadius;
+layout(location = 4) in vec4 fragExtra;
 
 layout(location = 0) out vec4 outColor;
 
@@ -31,23 +32,22 @@ float FireNoise(vec3 p, float t) {
 
 void main() {
     float fTime = float(time);
-    vec3 rayDir = normalize(fragWorldPos - fragRayOrigin);
+    vec3 ro = scene.cameraPos.xyz; // Ray origin driven directly by scene camera
+    vec3 rayDir = normalize(fragWorldPos - ro);
     
     // 1. WAVY BOUNDARY MATH (Displace the radius before intersecting)
-    // We sample the noise based on the ray direction vector so the 
-    // sphere's shell deforms dynamically in local space.
     vec3 waveSamplePos = rayDir * 2.0;
     waveSamplePos.y -= fTime * 2.0; // Wave movement velocity
     
     float waveNoise = FireNoise(waveSamplePos, fTime);
     
     // Deform the base radius by up to 15% inwards or outwards
-    float baseRadius = fragSphereCenter.w;
+    float baseRadius = fragRadius;
     float waveAmplitude = baseRadius * 0.15; 
     float dynamicRadius = baseRadius + (waveNoise - 0.5) * waveAmplitude;
 
-    // 2. Ray-Sphere Intersection using our new DYNAMIC radius
-    vec3 oc = fragRayOrigin - fragSphereCenter.xyz;
+    // 2. Ray-Sphere Intersection using DYNAMIC radius
+    vec3 oc = ro - fragCenter;
     float b = dot(oc, rayDir);
     float c = dot(oc, oc) - dynamicRadius * dynamicRadius;
     float disc = b * b - c;
@@ -57,21 +57,20 @@ void main() {
     if (t < 0.0) discard;
     
     // Calculate world space surface details
-    vec3 hitPos = fragRayOrigin + rayDir * t;
+    vec3 hitPos = ro + rayDir * t;
     
     // 3. Wavy Normals
-    // Recomputing the normal using the displaced radius breaks the clean sphere shading
-    vec3 normal = normalize(hitPos - fragSphereCenter.xyz);
+    vec3 normal = normalize(hitPos - fragCenter);
     
-    // Write correct depth for the newly distorted surface
-    vec4 clipPos = scene.viewProjection * vec4(hitPos, 1.0);
+    // Write correct depth for the newly distorted surface (using scene.viewProj)
+    vec4 clipPos = scene.viewProj * vec4(hitPos, 1.0);
     gl_FragDepth = clipPos.z / clipPos.w;
     
     // 4. Local Space + Radius Normalization
-    vec3 localHitPos = (hitPos - fragSphereCenter.xyz) / dynamicRadius; 
+    vec3 localHitPos = (hitPos - fragCenter) / dynamicRadius; 
     
-    // 5. Calculate Fresnel Edge based on our wavy surface
-    vec3 viewDir = normalize(fragRayOrigin - hitPos);
+    // 5. Calculate Fresnel Edge based on wavy surface
+    vec3 viewDir = normalize(ro - hitPos);
     float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
     
     // 6. Secondary Internal Fire Noise & Dripping
@@ -100,9 +99,7 @@ void main() {
     // Add glowing heat highlight to the wavy borders
     fireColor += moltenCore * edgeProfile * 0.6;
     
-    // 8. Soft Edge Alpha Alpha Masking
-    // We already warped the geometry shell, but dropping the alpha slightly 
-    // right at the extreme tips softens the raymarching rim edge cleanly.
+    // 8. Soft Edge Alpha Masking
     float alpha = fragColor.a;
     float edgeMask = smoothstep(0.98, 0.8, fresnel * (1.0 - rawNoise * 0.3));
     alpha *= edgeMask;

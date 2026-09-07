@@ -11,9 +11,9 @@
 #define SOLAPI
 #endif
 
-#define WORLD_FORWARD (vec3s){0, 0, 1.0f}
-#define WORLD_UP (vec3s){0, 1.0f, 0}
-#define WORLD_DOWN (vec3s){0, -1.0f, 0}
+#define WORLD_FORWARD (vec3s){ 0, 0, 1.0f }
+#define WORLD_UP (vec3s){ 0, 1.0f, 0 }
+#define WORLD_DOWN (vec3s){ 0, -1.0f, 0 }
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -24,7 +24,7 @@
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define ABILITY_SLOTS 10
-#define SOL_PHYS_GRAV (vec3s){0.0f, -9.81f, 0.0f}
+#define SOL_PHYS_GRAV (vec3s){ 0.0f, -9.81f, 0.0f }
 
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
@@ -177,7 +177,7 @@ typedef enum
 
 typedef enum
 {
-    FRAMEBUFFER_LINE,
+    FRAMEBUFFER_VERT,
     FRAMEBUFFER_COUNT,
 } FrameBufferId;
 
@@ -269,8 +269,27 @@ typedef struct SolLine
 {
     vec3s a, b;
     vec4s aColor, bColor;
-    float ttl;
 } SolLine;
+
+typedef struct SolSphere
+{
+    u32   kind;
+    vec3s pos;
+    vec4s color;
+    float radius;
+} SolSphere;
+
+typedef struct DebugLine
+{
+    SolLine line;
+    float   ttl;
+} DebugLine;
+
+typedef struct DebugSphere
+{
+    SolSphere sphere;
+    float     ttl;
+} DebugSphere;
 
 // TEXTURE---------------
 
@@ -461,7 +480,6 @@ typedef struct SolContact
 
 typedef struct SolHit
 {
-    u32   kind;
     int   entA; // Attacker
     int   entB; // Victim
     float damage;
@@ -469,6 +487,7 @@ typedef struct SolHit
     vec3s normal;
     vec3s vel;
     float power;
+    bool  isHeal;
 
     u32 buffMask;
     u32 effectMask;
@@ -553,6 +572,7 @@ typedef enum
     ACTION_ZOOMIN,
     ACTION_ZOOMOUT,
     ACTION_BUILD,
+    ACTION_SCORE,
     ACTION_DEBUGTELE,
     ACTION_COUNT,
 } SolActions;
@@ -578,6 +598,7 @@ typedef enum
     SOL_KEY_G,
     SOL_KEY_Q,
     SOL_KEY_E,
+    SOL_KEY_TAB,
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
     SOL_KEY_SHIFT,
@@ -613,10 +634,10 @@ typedef enum
 {
     ABILITY_STATE_IDLE,
     ABILITY_STATE_DASH,
+    ABILITY_STATE_CLAW,
     ABILITY_STATE_FIREBALL,
     ABILITY_STATE_PISTOL,
     ABILITY_STATE_SPINSLASH,
-    ABILITY_STATE_CLAW,
     ABILITY_STATE_SHIELD,
     ABILITY_STATE_LASER,
     ABILITY_STATE_WHIP,

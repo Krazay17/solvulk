@@ -33,9 +33,14 @@ typedef struct ScCmd
     vec3s      wishdir, wishdir2, aimdir, aimpos, lookdir;
 } ScCmd;
 
+typedef struct ScMeta
+{
+    char name[64];
+} ScMeta;
+
 typedef struct ScPlayer
 {
-    float yaw, pitch;
+    int level;
 } ScPlayer;
 
 typedef struct ScRemote
@@ -267,7 +272,6 @@ typedef struct
     float        duration;
     double       lastEntered, lastExited;
     u32          stage;
-    u32          hitSessionGen;
     bool         held, doesHit;
 } AbilityStateData;
 typedef struct ScAbility
@@ -317,20 +321,22 @@ typedef struct ScOwner
 
 typedef struct ScCombat
 {
-    vec3s  respawnPos;
-    float  maxHealth, maxEnergy, maxMana;
-    float  health, energy, mana;
-    float  energyRegen;
-    bool   doesRespawn;
-    float  respawnTime;
+    u32   kind;
+    float health, healthMax, healthRegen;
+    float energy, energyMax, energyRegen;
+    float mana, manaMax, manaRegen;
+
+    float damageDone;
+    float healingDone;
+
     double deathTime, lastHitTime;
+    vec3s  respawnPos;
+    float  respawnTime;
 
-    int leftWeaponEnt, rightWeaponEnt;
-
-    u16   flags;
     u32   hitPauseDiminish;
-    bool  hitEnts[128];
-    float hitPause, baseAnimRate;
+    float hitPause;
+
+    int hitSession;
 } ScCombat;
 
 typedef struct ScReplication
@@ -469,6 +475,7 @@ typedef struct ScHook
     X(ScXform, HAS_ScXform)                                                                                            \
     X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
+    X(ScMeta, HAS_ScMeta)                                                                                              \
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \
     X(ScAi, HAS_ScAi)                                                                                                  \

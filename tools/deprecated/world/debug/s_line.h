@@ -2,5 +2,5 @@
 #include "types.h"
 
 void     Sol_Line_Init(World *world);
-void     Sol_Line_Push(World *world, SolLine desc);
+void     Sol_Line_Push(World *world, SolLine desc, float ttl);
 SolLine *Sol_Line_New(World *w);

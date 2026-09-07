@@ -1,14 +1,14 @@
 #include "sol/sol.h"
 
-#define MAX_DEBUGS 14
+#define MAX_DEBUGS 16
 #define MAX_STR_LEN 64
 
 typedef struct Debuggers
 {
     int   characterCount[MAX_DEBUGS];
-    char  text[MAX_DEBUGS][MAX_STR_LEN];
+    char  label[MAX_DEBUGS][MAX_STR_LEN];
     float value[MAX_DEBUGS];
-    char  textValue[MAX_STR_LEN];
+    char  textValue[MAX_DEBUGS][MAX_STR_LEN];
     int   count;
 } Debuggers;
 
@@ -18,11 +18,11 @@ static double    total, throttle;
 static char      fpsbuffer[64];
 static int       count;
 
-void Sol_Debug_Add(const char *text, float value)
+void Sol_Debug_Add(const char *label, float value)
 {
     for (int i = 0; i < debuggers.count; ++i)
     {
-        if (strncmp(text, debuggers.text[i], MAX_STR_LEN) == 0)
+        if (strncmp(label, debuggers.label[i], MAX_STR_LEN) == 0)
         {
             debuggers.value[i] = value;
             return;
@@ -32,9 +32,9 @@ void Sol_Debug_Add(const char *text, float value)
     if (debuggers.count > MAX_DEBUGS)
         return;
 
-    strncpy(debuggers.text[debuggers.count], text, MAX_STR_LEN - 1);
-    debuggers.text[debuggers.count][MAX_STR_LEN - 1] = '\0';
-    debuggers.value[debuggers.count]                 = value;
+    strncpy(debuggers.label[debuggers.count], label, MAX_STR_LEN - 1);
+    debuggers.label[debuggers.count][MAX_STR_LEN - 1] = '\0';
+    debuggers.value[debuggers.count]                  = value;
 
     debuggers.count++;
 }
@@ -43,19 +43,22 @@ void Sol_Debug_AddText(const char *label, const char *value)
 {
     for (int i = 0; i < debuggers.count; ++i)
     {
-        if (strncmp(label, debuggers.text[i], MAX_STR_LEN) == 0)
+        if (strncmp(label, debuggers.label[i], MAX_STR_LEN) == 0)
         {
-            strncpy(debuggers.textValue[debuggers.count], value, MAX_STR_LEN - 1);
+            strncpy(debuggers.textValue[i], value, MAX_STR_LEN - 1);
+            debuggers.textValue[i][MAX_STR_LEN - 1] = '\0';
+
             return;
         }
     }
 
     if (debuggers.count > MAX_DEBUGS)
         return;
-    strncpy(debuggers.text[debuggers.count], label, MAX_STR_LEN - 1);
-    debuggers.text[debuggers.count][MAX_STR_LEN - 1] = '\0';
+    strncpy(debuggers.label[debuggers.count], label, MAX_STR_LEN - 1);
+    debuggers.label[debuggers.count][MAX_STR_LEN - 1] = '\0';
 
     strncpy(debuggers.textValue[debuggers.count], value, MAX_STR_LEN - 1);
+    debuggers.textValue[debuggers.count][MAX_STR_LEN - 1] = '\0';
 
     debuggers.count++;
 }
@@ -75,35 +78,33 @@ void Sol_Debug_Draw(double dt)
     rect->flags       = 0;
     for (int i = 0; i < debuggers.count; ++i)
     {
-        char buffer[MAX_STR_LEN];
-        if (debuggers.textValue[i])
+        char buffer[MAX_STR_LEN * 2];
+        if (debuggers.textValue[i][0] != 0)
         {
-            sprintf(buffer, "%s: %s", debuggers.text[i], debuggers.textValue[i]);
+            sprintf(buffer, "%s: %s", debuggers.label[i], debuggers.textValue[i]);
         }
         else
-            sprintf(buffer, "%s: %.4f", debuggers.text[i], debuggers.value[i]);
+            sprintf(buffer, "%s: %.4f", debuggers.label[i], debuggers.value[i]);
         SolFontDesc fontDesc = {
             .layer = UILAYER_2,
-            .str   = buffer,
             .x     = 6.0f,
             .y     = i * spacing + offset,
             .size  = 16.0f,
             .color = (vec4s){ 255, 0, 122, 255 },
             .kind  = SOL_FONT_ICE,
         };
-        Sol_Render_DrawText(fontDesc);
+        Sol_Render_DrawText(buffer, fontDesc);
     }
 
     SolFontDesc fontDesc = {
         .layer = UILAYER_2,
-        .str   = fpsbuffer,
         .x     = 6.0f,
         .y     = 24.0f,
         .size  = 24.0f,
         .color = (vec4s){ 0, 1, 0, 1 },
         .kind  = SOL_FONT_ICE,
     };
-    Sol_Render_DrawText(fontDesc);
+    Sol_Render_DrawText(fpsbuffer, fontDesc);
 }
 
 void Sol_FPS(double dt)

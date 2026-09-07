@@ -1,56 +1,56 @@
 #version 450
 
+struct SphereData {
+    vec4 posRadius; // xyz = position, w = radius
+    vec4 color;
+    vec4 extra;
+};
+
+layout(std430, set = 2, binding = 0) readonly buffer SphereBuffer {
+    SphereData spheres[];
+};
+
 layout(set = 1, binding = 0) uniform Scene {
-    mat4 viewProjection;
+    mat4 viewProj;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
     vec4 sun;
 } scene;
 
-struct Sphere {
-    vec4 pos;       // xyz = world position, w = radius
-    vec4 color;
-    vec4 params;    // params.x = glow intensity (optional)
-    uint kind;
-    uint _padding[3];
-};
+layout(location = 0) out vec3 fragWorldPos;
+layout(location = 1) out vec3 fragCenter;
+layout(location = 2) out vec4 fragColor;
+layout(location = 3) out float fragRadius;
+layout(location = 4) out vec4 fragExtra;
 
-layout(set = 2, binding = 0) readonly buffer Spheres {
-    Sphere spheres[];
-};
-
-const vec2 CORNERS[6] = vec2[](
-    vec2(-1, -1), vec2( 1, -1), vec2( 1,  1),
-    vec2(-1, -1), vec2( 1,  1), vec2(-1,  1)
+const vec2 QUAD_OFFSETS[6] = vec2[](
+    vec2(-1.0, -1.0), vec2( 1.0, -1.0), vec2(-1.0,  1.0),
+    vec2(-1.0,  1.0), vec2( 1.0, -1.0), vec2( 1.0,  1.0)
 );
 
-layout(location = 0) out vec3 fragWorldPos;
-layout(location = 1) out vec4 fragColor;
-layout(location = 2) out vec4 fragSphereCenter;  // xyz = center, w = radius
-layout(location = 3) out vec3 fragRayOrigin;
-layout(location = 4) out vec4 fragParams;
+// Scale quad size slightly higher than 1.0 to fit perspective projection silhouette
+const float QUAD_PAD = 1.35;
 
 void main() {
-    Sphere s = spheres[gl_InstanceIndex];
-    vec2 corner = CORNERS[gl_VertexIndex];
-    float radius = s.pos.w;
-    float quadSize = radius * 1.2;
+    SphereData sphere = spheres[gl_InstanceIndex];
 
-    // 1. Transform sphere center to View Space
-    vec4 viewCenter = scene.view * vec4(s.pos.xyz, 1.0);
+    vec3 center  = sphere.posRadius.xyz;
+    float radius = sphere.posRadius.w;
+    vec2 offset  = QUAD_OFFSETS[gl_VertexIndex % 6];
 
-    // 2. Expand quad directly in View Space (Screen Aligned!)
-    vec4 viewPos = viewCenter;
-    viewPos.xy += corner * quadSize;
+    // Camera Right/Up vectors from View Matrix
+    vec3 camRight = vec3(scene.view[0][0], scene.view[1][0], scene.view[2][0]);
+    vec3 camUp    = vec3(scene.view[0][1], scene.view[1][1], scene.view[2][1]);
 
-    // 3. Project to Clip Space
-    gl_Position = scene.proj * viewPos;
+    // Expand quad size by QUAD_PAD factor
+    vec3 worldPos = center + (camRight * offset.x + camUp * offset.y) * (radius * QUAD_PAD);
 
-    // Pass data to fragment shader...
-    fragWorldPos     = (inverse(scene.view) * viewPos).xyz;
-    fragSphereCenter = vec4(s.pos.xyz, radius);
-    fragRayOrigin    = scene.cameraPos.xyz;
-    fragColor        = s.color;
-    fragParams       = s.params;
+    gl_Position = scene.viewProj * vec4(worldPos, 1.0);
+
+    fragWorldPos = worldPos;
+    fragCenter   = center;
+    fragColor    = sphere.color;
+    fragRadius   = radius;
+    fragExtra    = sphere.extra;
 }

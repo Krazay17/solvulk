@@ -10,12 +10,6 @@ void Move_Walljump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float
 {
     MoveStateData *walljumpData = &move->stateData[MOVE_WALLJUMP];
 
-    if (walljumpData->elapsed >= DASH_DURATION)
-    {
-        Sol_Move3_SetState(world, id, MOVE_IDLE);
-        return;
-    }
-
     ScBody3 *body  = Sol_Comp_Get(world, id, ScBody3);
     float    alpha = 1.0f - (walljumpData->elapsed / DASH_DURATION);
 

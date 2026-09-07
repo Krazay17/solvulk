@@ -18,13 +18,20 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     ScBody3 *body     = Sol_Body3_Add(world, id);
     body->restitution = 0.01f;
     body->shape       = SHAPE3_CAP;
-    body->dims        = (vec3s){0.5f, 1.7f, 0.5f};
+    body->dims        = (vec3s){ 0.5f, 1.7f, 0.5f };
     body->mask        = PHYSXMASK(1, 1);
 
-    ScAbility *ability     = Sol_Comp_Add(world, id, ScAbility);
-    ability->action_map[0] = ABILITY_STATE_CLAW;
-    ability->slots         = 1;
-    ability->activeSlot    = -1;
+    ScCombat *combat  = Sol_Comp_Add(world, id, ScCombat);
+    combat->health    = 100.0f;
+    combat->healthMax = 100.0f;
+    combat->damageDone = 12.2f;
+
+    ScAbility *ability = Sol_Comp_Add(world, id, ScAbility);
+    *ability           = (ScAbility){
+        .action_map = { ABILITY_STATE_CLAW, ABILITY_STATE_DASH, 0, 0, 0, 0, 0, 0, 0, ABILITY_STATE_DASH },
+        .slots      = 10,
+        .activeSlot = -1,
+    };
 
     ScMove3 *move      = Sol_Comp_Add(world, id, ScMove3);
     move->kind         = MOVEMENTKIND_PLAYER;
@@ -37,18 +44,18 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 int Sol_Prefab_Crosshair(World *world)
 {
     int id = Sol_Create_Ent(world);
-    Sol_Xform_Add(world, id, (vec3s){(float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0});
+    Sol_Xform_Add(world, id, (vec3s){ (float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0 });
     ScView2 *buttonView2  = Sol_Comp_Add(world, id, ScView2);
     buttonView2->count    = 1;
     buttonView2->views[0] = (View2){
         .kind       = VIEW2DKIND_RECT,
         .textureID  = SOL_TEXTURE_CROSSHAIR,
-        .offset     = {-9.0f, -9.0f},
-        .dims       = {18.0f, 18.0f},
-        .color      = {1, 1, 1, 1},
+        .offset     = { -9.0f, -9.0f },
+        .dims       = { 18.0f, 18.0f },
+        .color      = { 1, 1, 1, 1 },
         .scale      = 1.0f,
         .targetFill = 1.0f,
-        .hoverColor = {1, 1, 1, 1},
+        .hoverColor = { 1, 1, 1, 1 },
     };
 
     return id;
@@ -56,7 +63,7 @@ int Sol_Prefab_Crosshair(World *world)
 
 int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_mask)
 {
-    vec2s dims = {150.0f, 50.0f};
+    vec2s dims = { 150.0f, 50.0f };
 
     int id = Sol_Create_Ent(world);
     if (id < 0)
@@ -68,7 +75,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_ma
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
         .shape = SHAPE2_REC,
-        .dims  = {dims.x, dims.y, 0},
+        .dims  = { dims.x, dims.y, 0 },
         .mask  = PHYSXMASK(COLLISIONGROUP_PAWN, COLLISIONGROUP_PAWN),
     };
 
@@ -76,30 +83,30 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_ma
     view->count    = 4;
     view->views[0] = (View2){
         .kind        = VIEW2DKIND_RECT,
-        .dims        = {dims.x, dims.y},
-        .color       = {0.1f, 0.1f, 0.1f, 1.0f},
-        .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .dims        = { dims.x, dims.y },
+        .color       = { 0.1f, 0.1f, 0.1f, 1.0f },
+        .hoverColor  = { 1.0f, 1.0f, 1.0f, 1.0f },
+        .toggleColor = { 0.0f, 0.5f, 0.5f, 1.0f },
     };
     view->views[1] = (View2){
         .kind        = VIEW2DKIND_RECT,
-        .dims        = {dims.x, dims.y},
-        .color       = {0.5f, 0.1f, 0.1f, 1.0f},
-        .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .dims        = { dims.x, dims.y },
+        .color       = { 0.5f, 0.1f, 0.1f, 1.0f },
+        .hoverColor  = { 1.0f, 1.0f, 1.0f, 1.0f },
+        .toggleColor = { 0.0f, 0.5f, 0.5f, 1.0f },
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[2] = (View2){
         .kind   = VIEW2DKIND_RECT,
-        .dims   = {dims.x, dims.y},
-        .color  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .dims   = { dims.x, dims.y },
+        .color  = { 0.0f, 0.0f, 0.0f, 1.0f },
         .border = 3.0f,
     };
     view->views[3] = (View2){
         .kind   = VIEW2DKIND_TEXT,
-        .dims   = {16.0f},
-        .color  = {0.0f, 1.0f, 0.0f, 1.0f},
-        .offset = {dims.x * 0.5f, dims.y * 0.5f},
+        .dims   = { 16.0f },
+        .color  = { 0.0f, 1.0f, 0.0f, 1.0f },
+        .offset = { dims.x * 0.5f, dims.y * 0.5f },
     };
     strncpy(view->views[3].text, text, sizeof(view->views[3].text));
 
@@ -108,7 +115,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_ma
 
 int Sol_Prefab_Healthbar(World *world, vec3s pos)
 {
-    vec2s dims = {300.0f, 30.0f};
+    vec2s dims = { 300.0f, 30.0f };
 
     int id = Sol_Create_Ent(world);
     Sol_Xform_Add(world, id, pos);
@@ -119,44 +126,44 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
     *body         = (ScBody2){
         .shape       = SHAPE2_REC,
         .restitution = 1.0f,
-        .dims        = {dims.x, dims.y, 0},
+        .dims        = { dims.x, dims.y, 0 },
     };
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
     view->count    = 5;
     view->views[0] = (View2){
         .kind       = VIEW2DKIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {0.0f, 0.0f, 0.0f, 1.0f},
-        .hoverColor = {1, 1, 1, 0.5f},
+        .dims       = { dims.x, dims.y },
+        .color      = { 0.0f, 0.0f, 0.0f, 1.0f },
+        .hoverColor = { 1, 1, 1, 0.5f },
     };
     view->views[1] = (View2){
         .kind       = VIEW2DKIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {0.2f, 0.2f, 0.2f, 1.0f},
-        .hoverColor = {1, 1, 1, 0.5f},
+        .dims       = { dims.x, dims.y },
+        .color      = { 0.2f, 0.2f, 0.2f, 1.0f },
+        .hoverColor = { 1, 1, 1, 0.5f },
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[2] = (View2){
         .kind       = VIEW2DKIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {1.0f, 0.0f, 0.0f, 1.0f},
+        .dims       = { dims.x, dims.y },
+        .color      = { 1.0f, 0.0f, 0.0f, 1.0f },
         .fillSpeed  = 4.0f,
-        .hoverColor = {1, 1, 0, 0.5f},
+        .hoverColor = { 1, 1, 0, 0.5f },
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[3] = (View2){
         .kind       = VIEW2DKIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
+        .dims       = { dims.x, dims.y },
+        .color      = { 0.0f, 1.0f, 0.0f, 1.0f },
         .fillSpeed  = 4.0f,
-        .hoverColor = {1, 1, 0, 0.5f},
+        .hoverColor = { 1, 1, 0, 0.5f },
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[4] = (View2){
         .kind   = VIEW2DKIND_RECT,
-        .dims   = {dims.x, dims.y},
-        .color  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .dims   = { dims.x, dims.y },
+        .color  = { 0.0f, 0.0f, 0.0f, 1.0f },
         .border = 2.0f,
     };
 

@@ -174,7 +174,6 @@ set(SHADERS
     ${SHADER_DIR}/skybox.vert
     ${SHADER_DIR}/skybox.frag
     ${SHADER_DIR}/fireball.frag
-    
     ${SHADER_DIR}/ribbon.vert
     
     ${SHADER_DIR}/font2d.vert

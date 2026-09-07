@@ -13,10 +13,10 @@
 #include "string.h"
 
 ViewSSBO g_solView = {
-    .pos      = {0.0f, 0.0f, -5.0f},
-    .dir      = {0.0f, 0.0f, 1.0f},
-    .target   = {0.0f, 0.0f, 0.0f},
-    .up       = {0.0f, 1.0f, 0.0f},
+    .pos      = { 0.0f, 0.0f, -5.0f },
+    .dir      = { 0.0f, 0.0f, 1.0f  },
+    .target   = { 0.0f, 0.0f, 0.0f  },
+    .up       = { 0.0f, 1.0f, 0.0f  },
     .fov      = 60.0f,
     .nearClip = 0.2f,
     .farClip  = 2500.0f,
@@ -25,12 +25,17 @@ ViewSSBO g_solView = {
 ModelSubmission        modelQueue;
 ModelSkinnedSubmission skinningQueue;
 
-SphereQueue   sphereQueue;
-SphereQueue   sphereFxQueue;
-FireballQueue fireballQueue;
-RibbonQueue   ribbonQueue;
-RibbonQueue   ribbonQueueAdd;
-RibbonQueue   ribbonQueueFront;
+SphereQueue sphereQueues[SPHEREKIND_COUNT];
+const PipelineId sphere_pipe_map[SPHEREKIND_COUNT] = {
+    [SPHEREKIND_BASIC]    = PIPE_SPHERE,
+    [SPHEREKIND_BASICFX]  = PIPE_SPHERE_FX,
+    [SPHEREKIND_FIREBALL] = PIPE_FIREBALL,
+    [SPHEREKIND_DEBUG]    = PIPE_DEBUG_SPHERE,
+};
+
+RibbonQueue ribbonQueue;
+RibbonQueue ribbonQueueAdd;
+RibbonQueue ribbonQueueFront;
 
 QuadQueue healthQueue;
 QuadQueue spriteQueue0;
@@ -56,8 +61,8 @@ static void Flush_View()
     ubo->view           = g_solView.view;
     ubo->proj           = g_solView.proj;
     ubo->viewProjection = g_solView.viewProj;
-    ubo->cameraPos      = (vec4s){g_solView.pos.x, g_solView.pos.y, g_solView.pos.z, 1.0f};
-    ubo->sun            = (vec4s){0.0f, 1.0f, 0.4f, 0.3f};
+    ubo->cameraPos      = (vec4s){ g_solView.pos.x, g_solView.pos.y, g_solView.pos.z, 1.0f };
+    ubo->sun            = (vec4s){ 0.0f, 1.0f, 0.4f, 0.3f };
     ubo->aspect         = solState.aspectRatio;
 }
 
@@ -83,9 +88,9 @@ void Sol_Render_Flush2D(void)
     u32 rect_offset = 0;
     u32 font_offset = 0;
 
-    RectSSBO *rect_gpu  = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
-    FontSSBO *font_gpu  = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
+    RectSSBO       *rect_gpu = Sol_GetDescriptorMapping(DESC_RECT_SSBO);
+    FontSSBO       *font_gpu = Sol_GetDescriptorMapping(DESC_FONT_SSBO);
+    VkCommandBuffer cmd      = Command_Buffer_Get();
 
     for (int layer = 0; layer < UILAYER_COUNT; layer++)
     {
@@ -96,7 +101,7 @@ void Sol_Render_Flush2D(void)
             // Pointer arithmetic advances destination by (rect_offset * sizeof(RectSSBO)) bytes
             memcpy(rect_gpu + rect_offset, rectQueue[layer].instances, sizeof(RectSSBO) * r_count);
 
-            Bind_Pipeline(cmd, PIPE_RECT);
+            Sol_Render_Bind_Pipeline(cmd, PIPE_RECT);
             vkCmdDraw(cmd, 6, r_count, 0, rect_offset);
 
             rect_offset += r_count;
@@ -110,7 +115,7 @@ void Sol_Render_Flush2D(void)
             // Pointer arithmetic advances destination by (font_offset * sizeof(FontSSBO)) bytes
             memcpy(font_gpu + font_offset, font2dQueue[layer].instances, sizeof(FontSSBO) * f_count);
 
-            Bind_Pipeline(cmd, PIPE_TEXT_2D);
+            Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_2D);
             vkCmdDraw(cmd, 6, f_count, 0, font_offset);
 
             font_offset += f_count;
@@ -122,7 +127,7 @@ void Sol_Render_Flush2D(void)
 void Sol_Render_DrawSkybox()
 {
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_SKYBOX);
+    Sol_Render_Bind_Pipeline(cmd, PIPE_SKYBOX);
     vkCmdDraw(cmd, 3, 1, 0, 0);
 }
 
@@ -139,18 +144,55 @@ void Sol_Render_CheckGpuUploads()
     }
 }
 
-void Sol_Render_DrawLine(SolLine *lines, int count)
+void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride)
 {
-    SolFrameBufferRef ref   = Sol_GetFrameBuffer(FRAMEBUFFER_LINE);
-    SolLineVertex    *verts = (SolLineVertex *)ref.mapped;
+    if (count <= 0 || !lines)
+        return;
+    if (stride == 0)
+    {
+        stride = sizeof(SolLine);
+    }
+    SolFrameBufferRef ref   = Sol_GetFrameBuffer(FRAMEBUFFER_VERT);
+    RenderVert       *verts = (RenderVert *)ref.mapped;
+
+    const uint8_t *ptr = (const uint8_t *)lines;
     for (int i = 0; i < count; i++)
     {
-        verts[i * 2 + 0] = (SolLineVertex){.pos = lines[i].a, .color = lines[i].aColor};
-        verts[i * 2 + 1] = (SolLineVertex){.pos = lines[i].b, .color = lines[i].bColor};
+        const SolLine *line = (const SolLine *)(ptr + i * stride);
+        verts[i * 2 + 0]    = (RenderVert){ .pos = line->a, .color = line->aColor };
+        verts[i * 2 + 1]    = (RenderVert){ .pos = line->b, .color = line->bColor };
     }
 
     VkCommandBuffer cmd = Command_Buffer_Get();
-    Bind_Pipeline(cmd, PIPE_LINE);
+    Sol_Render_Bind_Pipeline(cmd, PIPE_LINE);
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(cmd, 0, 1, ref.buffers, &offset);
+
+    vkCmdDraw(cmd, count * 2, 1, 0, 0);
+}
+
+void Sol_Render_DrawSpheres(const SolSphere *spheres, int count, size_t stride)
+{
+    if (count <= 0 || !spheres)
+        return;
+    if (stride == 0)
+    {
+        stride = sizeof(SolSphere);
+    }
+    SolFrameBufferRef ref  = Sol_GetFrameBuffer(FRAMEBUFFER_VERT);
+    RenderVert       *vert = (RenderVert *)ref.mapped;
+
+    const uint8_t *ptr = (const uint8_t *)spheres;
+    for (int i = 0; i < count; i++)
+    {
+        const SolSphere *sphere = (const SolSphere *)(ptr + i * stride);
+
+        vert[i] = (RenderVert){ .pos = sphere->pos, .color = sphere->color };
+    }
+
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Sol_Render_Bind_Pipeline(cmd, PIPE_DEBUG_SPHERE);
 
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, ref.buffers, &offset);
@@ -175,12 +217,12 @@ void Flush_Models(void)
     if (modelQueue.count > 0)
     {
         // Count per handle
-        uint32_t counts[SOL_MODEL_COUNT] = {0};
+        uint32_t counts[SOL_MODEL_COUNT] = { 0 };
         for (int i = 0; i < modelQueue.count; i++)
             counts[modelQueue.handles[i]]++;
 
         // Prefix sum
-        uint32_t offsets[SOL_MODEL_COUNT] = {0};
+        uint32_t offsets[SOL_MODEL_COUNT] = { 0 };
         for (int i = 1; i < SOL_MODEL_COUNT; i++)
             offsets[i] = offsets[i - 1] + counts[i - 1];
 
@@ -218,12 +260,12 @@ void Flush_Models(void)
         SolPose *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
 
         // Count per handle
-        uint32_t counts[SOL_MODEL_COUNT] = {0};
+        uint32_t counts[SOL_MODEL_COUNT] = { 0 };
         for (int i = 0; i < skinningQueue.count; i++)
             counts[skinningQueue.handles[i]]++;
 
         // Prefix sum (Local to skinning allocation space)
-        uint32_t offsets[SOL_MODEL_COUNT] = {0};
+        uint32_t offsets[SOL_MODEL_COUNT] = { 0 };
         for (int i = 1; i < SOL_MODEL_COUNT; i++)
             offsets[i] = offsets[i - 1] + counts[i - 1];
 
@@ -263,42 +305,23 @@ void Flush_Models(void)
 
 void Flush_Spheres(void)
 {
-    SphereSSBO     *gpu = Sol_GetDescriptorMapping(DESC_SPHERE_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
 
-    u32 currentOffset = 0;
+    SphereSSBO     *gpu           = Sol_GetDescriptorMapping(DESC_SPHERE_SSBO);
+    VkCommandBuffer cmd           = Command_Buffer_Get();
+    u32             currentOffset = 0;
 
-    // 1. Regular Spheres
-    u32 solidCount = sphereQueue.count;
-    if (solidCount > 0)
+    for (int i = 0; i < SPHEREKIND_COUNT; i++)
     {
-        memcpy(gpu + currentOffset, sphereQueue.instances, sizeof(SphereSSBO) * solidCount);
-        Bind_Pipeline(cmd, PIPE_SPHERE);
-        vkCmdDraw(cmd, 6, solidCount, 0, currentOffset);
-        currentOffset += solidCount;
-        sphereQueue.count = 0;
-    }
+        SphereQueue *q = &sphereQueues[i];
+        if (q->count > 0 && currentOffset + q->count < MAX_QUAD_INSTANCES)
+        {
+            memcpy(gpu + currentOffset, q->instances, sizeof(SphereSSBO) * q->count);
+            Sol_Render_Bind_Pipeline(cmd, sphere_pipe_map[i]);
+            vkCmdDraw(cmd, 6, q->count, 0, currentOffset);
 
-    // 2. FX Spheres
-    u32 fxCount = sphereFxQueue.count;
-    if (fxCount > 0)
-    {
-        memcpy(gpu + currentOffset, sphereFxQueue.instances, sizeof(SphereSSBO) * fxCount);
-        Bind_Pipeline(cmd, PIPE_SPHERE_FX);
-        vkCmdDraw(cmd, 6, fxCount, 0, currentOffset);
-        currentOffset += fxCount;
-        sphereFxQueue.count = 0;
-    }
-
-    // 3. Fireballs
-    u32 fireballCount = fireballQueue.count;
-    if (fireballCount > 0)
-    {
-        memcpy(gpu + currentOffset, fireballQueue.instances, sizeof(SphereSSBO) * fireballCount);
-        Bind_Pipeline(cmd, PIPE_FIREBALL);
-        vkCmdDraw(cmd, 6, fireballCount, 0, currentOffset);
-        currentOffset += fireballCount;
-        fireballQueue.count = 0;
+            currentOffset += q->count;
+            q->count = 0;
+        }
     }
 }
 
@@ -312,7 +335,7 @@ void Flush_Quads()
     if (healthCount > 0)
     {
         memcpy(gpu + currentOffset, healthQueue.instances, sizeof(QuadSSBO) * healthCount);
-        Bind_Pipeline(cmd, PIPE_HEALTHBAR);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_HEALTHBAR);
         vkCmdDraw(cmd, 6, healthCount, 0, currentOffset);
         currentOffset += healthCount;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -324,7 +347,7 @@ void Flush_Quads()
     if (spriteCount0 > 0)
     {
         memcpy(gpu + currentOffset, spriteQueue0.instances, sizeof(QuadSSBO) * spriteCount0);
-        Bind_Pipeline(cmd, PIPE_SPRITE);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE);
         vkCmdDraw(cmd, 6, spriteCount0, 0, currentOffset);
         currentOffset += spriteCount0;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -336,7 +359,7 @@ void Flush_Quads()
     if (spriteCount1 > 0)
     {
         memcpy(gpu + currentOffset, spriteQueue1.instances, sizeof(QuadSSBO) * spriteCount1);
-        Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
         vkCmdDraw(cmd, 6, spriteCount1, 0, currentOffset);
         currentOffset += spriteCount1;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -347,7 +370,7 @@ void Flush_Quads()
     if (spriteQueueFront.count > 0)
     {
         memcpy(gpu + currentOffset, spriteQueueFront.instances, sizeof(QuadSSBO) * spriteQueueFront.count);
-        Bind_Pipeline(cmd, PIPE_SPRITE_FRONT);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE_FRONT);
         vkCmdDraw(cmd, 6, spriteQueueFront.count, 0, currentOffset);
         currentOffset += spriteQueueFront.count;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -359,7 +382,7 @@ void Flush_Quads()
     if (textCount > 0)
     {
         memcpy(gpu + currentOffset, text3dQueue.instances, sizeof(QuadSSBO) * textCount);
-        Bind_Pipeline(cmd, PIPE_TEXT_3D);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_3D);
         vkCmdDraw(cmd, 6, textCount, 0, currentOffset);
         currentOffset += textCount;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -371,7 +394,7 @@ void Flush_Quads()
     if (textFrontCount > 0)
     {
         memcpy(gpu + currentOffset, text3dFrontQueue.instances, sizeof(QuadSSBO) * textFrontCount);
-        Bind_Pipeline(cmd, PIPE_TEXT_3D_FRONT);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_3D_FRONT);
         vkCmdDraw(cmd, 6, textFrontCount, 0, currentOffset);
         currentOffset += textFrontCount;
         if (currentOffset >= MAX_QUAD_INSTANCES)
@@ -388,7 +411,7 @@ void Flush_Rects()
     // VkCommandBuffer cmd = Command_Buffer_Get();
 
     // memcpy(gpu, rectQueue.instances, sizeof(RectSSBO) * rectQueue.count);
-    // Bind_Pipeline(cmd, PIPE_RECT);
+    // Sol_Render_Bind_Pipeline(cmd, PIPE_RECT);
     // vkCmdDraw(cmd, 6, rectQueue.count, 0, 0);
     // rectQueue.count = 0;
 }
@@ -401,7 +424,7 @@ void Flush_Fonts2d()
     // VkCommandBuffer cmd = Command_Buffer_Get();
 
     // memcpy(gpu, font2dQueue.instances, sizeof(FontSSBO) * font2dQueue.count);
-    // Bind_Pipeline(cmd, PIPE_TEXT_2D);
+    // Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_2D);
     // vkCmdDraw(cmd, 6, font2dQueue.count, 0, 0);
     // font2dQueue.count = 0;
 }
@@ -418,7 +441,7 @@ void Flush_Ribbons()
     if (regularCount > 0)
     {
         memcpy(gpu + currentOffset, ribbonQueue.instances, sizeof(RibbonSegSSBO) * regularCount);
-        Bind_Pipeline(cmd, PIPE_RIBBON);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON);
 
         vkCmdDraw(cmd, 6, regularCount, 0, currentOffset);
         currentOffset += regularCount;
@@ -430,7 +453,7 @@ void Flush_Ribbons()
     if (addCount > 0)
     {
         memcpy(gpu + currentOffset, ribbonQueueAdd.instances, sizeof(RibbonSegSSBO) * addCount);
-        Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
 
         vkCmdDraw(cmd, 6, addCount, 0, currentOffset);
         currentOffset += addCount;
@@ -442,16 +465,16 @@ void Flush_Ribbons()
     if (frontCount > 0)
     {
         memcpy(gpu + currentOffset, ribbonQueueFront.instances, sizeof(RibbonSegSSBO) * frontCount);
-        Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
+        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
         vkCmdDraw(cmd, 6, frontCount, 0, currentOffset);
         currentOffset += frontCount;
         ribbonQueueFront.count = 0;
     }
 }
 
-void Sol_Render_DrawText3D(Text3DDesc desc)
+void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
 {
-    if (!desc.text || desc.text[0] == '\0')
+    if (!str || str[0] == '\0')
         return;
     if (desc.size <= 0.0f)
         return;
@@ -461,7 +484,7 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
 
     // Total width in world units (advance * size) for horizontal centering
     float totalWidth = 0.0f;
-    for (const char *c = desc.text; *c; c++)
+    for (const char *c = str; *c; c++)
     {
         unsigned char ch = (unsigned char)*c;
         if (ch >= 128)
@@ -473,17 +496,21 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
     // Billboard mode: use camera right + world up so all chars share the same axes
     //                 and stay on a line facing the camera.
     // Quat mode:      use local x/y axes; the rotation quaternion is applied per glyph in the shader.
-    vec3s right = (vec3s){{1.0f, 0.0f, 0.0f}};
-    vec3s up    = (vec3s){{0.0f, 1.0f, 0.0f}};
+    vec3s right = (vec3s){
+        { 1.0f, 0.0f, 0.0f }
+    };
+    vec3s up = (vec3s){
+        { 0.0f, 1.0f, 0.0f }
+    };
     if (desc.billboard)
     {
         right = g_solView.right;
-        // up stays world-up so text stays vertically aligned with screen
+        // up stays world-str stays vertically aligned with screen
     }
 
     float cursorX = -totalWidth * 0.5f; // centered horizontally
 
-    for (const char *c = desc.text; *c; c++)
+    for (const char *c = str; *c; c++)
     {
         unsigned char ch = (unsigned char)*c;
         if (ch >= 128)
@@ -509,7 +536,7 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         float gw = (g->xright - g->xoffset) * desc.size; // glyph width
         float gh = (g->ytop - g->yoffset) * desc.size;   // glyph height
 
-        // Glyph center (in 2D layout space, relative to text origin)
+        // Glyph center (in 2D layout space, str origin)
         float cx = cursorX + (g->xoffset + g->xright) * 0.5f * desc.size;
         float cy = (g->yoffset + g->ytop) * 0.5f * desc.size;
 
@@ -522,7 +549,9 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         else
         {
             // Quat mode: rotate the local (cx, cy, 0) by the orientation, then offset from origin.
-            vec3s local = {{cx, cy, 0.0f}};
+            vec3s local = {
+                { cx, cy, 0.0f }
+            };
             vec3s rotated;
             glm_quat_rotatev(desc.rotation.raw, local.raw, rotated.raw);
             glyphPos = vecAdd(desc.pos, rotated);
@@ -536,12 +565,16 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         if (!q)
             break;
 
-        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
+        q->pos = (vec4s){
+            { glyphPos.x, glyphPos.y, glyphPos.z, 1.0f }
+        };
         q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
-        q->color     = (vec4s){0, 0, 0, 1.0f};
-        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->rect      = (vec4s){0, 0, halfWidth * 1.1f, halfHeight * 1.1f};
+        q->color = (vec4s){ 0, 0, 0, 1.0f };
+        q->uv    = (vec4s){
+            { g->u, 1.0f - g->v - g->vh, g->uw, g->vh }
+        };
+        q->rect      = (vec4s){ 0, 0, halfWidth * 1.1f, halfHeight * 1.1f };
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;
@@ -550,12 +583,16 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
         if (!q)
             break;
 
-        q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
+        q->pos = (vec4s){
+            { glyphPos.x, glyphPos.y, glyphPos.z, 1.0f }
+        };
         q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
-        q->color     = desc.color;
-        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->rect      = (vec4s){0, 0, halfWidth, halfHeight};
+        q->color = desc.color;
+        q->uv    = (vec4s){
+            { g->u, 1.0f - g->v - g->vh, g->uw, g->vh }
+        };
+        q->rect      = (vec4s){ 0, 0, halfWidth, halfHeight };
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;
@@ -564,9 +601,9 @@ void Sol_Render_DrawText3D(Text3DDesc desc)
     }
 }
 
-void Sol_Render_DrawText2D(SolFontDesc desc)
+void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
 {
-    if (!desc.str || desc.str[0] == '\0')
+    if (!str || str[0] == '\0')
         return;
     if (desc.size <= 0.0f)
         return;
@@ -577,7 +614,7 @@ void Sol_Render_DrawText2D(SolFontDesc desc)
     float baseSize = desc.size / 32.0f;
     float pad      = 0.2f * baseSize * (224.0f / 32.0f);
 
-    for (const char *c = desc.str; *c; c++)
+    for (const char *c = str; *c; c++)
     {
         if (*c == ' ')
         {
@@ -595,19 +632,23 @@ void Sol_Render_DrawText2D(SolFontDesc desc)
         if (!ssbo)
             break;
 
-        ssbo->pos   = (vec4s){{
-            cursorX + g->xoffset * desc.size - pad,
-            desc.y - g->ytop * desc.size - pad,
-            g->uw * 224.0f * baseSize + pad * 2.0f,
-            g->vh * 224.0f * baseSize + pad * 2.0f,
-        }};
+        ssbo->pos = (vec4s){
+            {
+             cursorX + g->xoffset * desc.size - pad,
+             desc.y - g->ytop * desc.size - pad,
+             g->uw * 224.0f * baseSize + pad * 2.0f,
+             g->vh * 224.0f * baseSize + pad * 2.0f,
+             }
+        };
         ssbo->color = desc.color;
-        ssbo->uv    = (vec4s){{
-            g->u,
-            1.0f - g->v - g->vh,
-            g->uw,
-            g->vh,
-        }};
+        ssbo->uv    = (vec4s){
+            {
+             g->u,
+             1.0f - g->v - g->vh,
+             g->uw,
+             g->vh,
+             }
+        };
 
         ssbo->outline = desc.outline;
 

@@ -110,13 +110,6 @@ void CrouchHeight(World *world, int id, ScMove3 *move, float fdt);
 void RestoreFriction(World *world, int id, ScMove3 *move, float fdt);
 void GroundCheck(World *world, int id, ScMove3 *move, float fdt);
 
-typedef void (*MoveStateUpdate)(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-typedef void (*MoveStateEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd);
-typedef void (*MoveStateExit)(World *world, int id, ScMove3 *move, ScCmd *cmd);
-typedef bool (*MoveStateCanExit)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-typedef bool (*MoveStateCanEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-typedef void (*MoveStateDraw)(World *world, int id, ScMove3 *move, ScCmd *cmd);
-
 void Move_Idle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
 void Move_Idle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
 void Move_Idle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);

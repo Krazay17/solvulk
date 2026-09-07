@@ -4,14 +4,14 @@ const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
     MOVE_DEAD,     //
     MOVE_STUN,     //
     MOVE_LANDING,  //
+    MOVE_JUMP,     //
     MOVE_MANTLE,   //
     MOVE_WALLJUMP, //
     MOVE_WALLRUN,  //
-    MOVE_JUMP,     //
     MOVE_SLIDE,    //
-    MOVE_CROUCH,   //
     MOVE_FALL,     //
     MOVE_FLY,      //
+    MOVE_CROUCH,   //
     MOVE_WALK,     //
     MOVE_IDLE,     //
 };

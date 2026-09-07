@@ -13,9 +13,11 @@
 #include "platform/platform.h"
 #include "render/render.h"
 
+#include "ability/s_ability.h"
+
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUser            sol_user = { .menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1 };
+SolUser sol_user = {.menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -28,21 +30,22 @@ static const SolActions key_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
     [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = ACTION_INTERACT, [SOL_KEY_SPACE] = ACTION_JUMP,
     [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
+    [SOL_KEY_TAB] = ACTION_SCORE,
 };
 static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
     [SOL_MOUSE_LEFT]  = ACTION_ABILITY1,
     [SOL_MOUSE_RIGHT] = ACTION_ABILITY2,
 };
 
-bool         consume_mouse;
-bool         consume_key;
-UserData     user_data = { .look_sens = 0.001f };
+bool consume_mouse;
+bool consume_key;
+UserData user_data = {.look_sens = 0.001f};
 static float tooltipAlpha;
 
 void Find_User_Hit(void)
 {
     SolMouse mouse          = Sol_Input_GetMouse();
-    vec2s    mouse_pos      = Sol_Input_GetMouseUI();
+    vec2s mouse_pos         = Sol_Input_GetMouseUI();
     sol_user.mouse_interact = mouse.buttons[SOL_MOUSE_LEFT];
     sol_user.mouse_pos      = mouse_pos;
 
@@ -104,8 +107,8 @@ void Sol_User_HydrateUI()
     for (int i = 0; i < user_data.itemCount; i++)
     {
         SolItem *item = &user_data.items[i];
-        float    x    = 100.0f + (i % 5) * 64.0f;
-        float    y    = 100.0f + (i / 5) * 64.0f;
+        float x       = 100.0f + (i % 5) * 64.0f;
+        float y       = 100.0f + (i / 5) * 64.0f;
         //       Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item->ability, item->rarity);
     }
 }
@@ -135,10 +138,10 @@ int Sol_User_Init(void)
 void Tooltip_Update(double dt)
 {
     const float stiffness = 5.0f;
-    float       alpha     = 1.0f - expf(-stiffness * dt);
-    int         id        = sol_user.mouse_hover_ent;
-    int         worldidx  = sol_user.mouse_hover_worldidx;
-    World      *world     = Sol_GetWorldByIdx(worldidx);
+    float alpha           = 1.0f - expf(-stiffness * dt);
+    int id                = sol_user.mouse_hover_ent;
+    int worldidx          = sol_user.mouse_hover_worldidx;
+    World *world          = Sol_GetWorldByIdx(worldidx);
     if (world && id >= 0)
     {
         if (Sol_Comp_Has(world, id, ScTooltip))
@@ -153,11 +156,12 @@ void Tooltip_Update(double dt)
 void Entity_Actions()
 {
     World *world = Sol_User_GetGameWorld();
-    int    id    = sol_user.view_ent;
+    int id       = sol_user.view_ent;
     if (!world || id < 0)
         return;
     ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
-    SolMouse  mouse  = Sol_Input_GetMouse();
+    ScCmd *cmd       = Sol_Comp_Get(world, id, ScCmd);
+    SolMouse mouse   = Sol_Input_GetMouse();
 
     sol_user.mouse_locked = mouse.locked;
     sol_user.actions      = 0;
@@ -167,14 +171,9 @@ void Entity_Actions()
     if (mouse.locked)
     {
         *yaw -= (float)(mouse.dx * user_data.look_sens);
+        *yaw -= (2.0f * GLM_PIf) * floorf((*yaw + GLM_PIf) / (2.0f * GLM_PIf));
+
         *pitch -= (float)(mouse.dy * user_data.look_sens);
-
-        *yaw = fmodf(*yaw, 2.0f * GLM_PIf);
-        if (*yaw > GLM_PIf)
-            *yaw -= 2.0f * GLM_PIf;
-        else if (*yaw < -GLM_PIf)
-            *yaw += 2.0f * GLM_PIf;
-
         *pitch = glm_clamp(*pitch, -MAX_PITCH, MAX_PITCH);
     }
 
@@ -212,10 +211,6 @@ void Entity_Actions()
             camera->desired_distance += changeDist;
         }
     }
-    if (camera)
-    {
-        Sol_Player_SetParallaxAim(world, id, camera->pos, camera->dir, 60.0f, 0.5f);
-    }
 
     // DEBUG FLY
     if (Sol_Input_KeyDown(SOL_KEY_G))
@@ -233,12 +228,36 @@ void Entity_Actions()
             }
         }
     }
-    // if (mouse.buttons[SOL_MOUSE_LEFT])
-    // {
-    //     ScXform *xform = Sol_Comp_Get(world, id, ScXform);
-    //     bool     hit   = Sol_Raycast1D(world, (SolRay){.start = xform->pos, .dir = camera->dir, .dist = 50.0f},
-    //                                    &(SolRayResult){0}, 5.0f);
-    // }
+    if (mouse.buttons[SOL_MOUSE_LEFT])
+    {
+        ScXform *xform  = Sol_Comp_Get(world, id, ScXform);
+        SolRay ray      = {.start = cmd->aimpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = 1};
+        vec3s final_pos = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
+        // SolRayResult result = {0};
+        // bool hit            = Sol_Raycast1D(world, ray, &result, 1.0f);
+        // if (hit)
+        // {
+        //     final_pos = result.pos;
+        // }
+
+        // SolSphere *sphere = Sol_Debug_NewSphere(world, 5.0f);
+        // sphere->color     = VEC4_GREEN;
+        // sphere->pos       = final_pos;
+        // sphere->radius    = 1.0f;
+        // sphere->kind      = SPHEREKIND_FIREBALL;
+
+        // SolRayResult results[64] = {0};
+        // int hits                 = Sol_RaycastD(world, ray, results, 64, 0.2f);
+        // for (int i = 0; i < hits; i++)
+        // {
+        //     int idB = results[i].entId;
+        //     if (Sol_Comp_Has(world, idB, ScBody3))
+        //     {
+        //         ScBody3 *hit_body = Sol_Comp_Get(world, idB, ScBody3);
+        //         hit_body->vel.y += 50.0f;
+        //     }
+        // }
+    }
 }
 
 const char *move_state_name[MOVE_STATE_COUNT] = {
@@ -248,10 +267,11 @@ const char *move_state_name[MOVE_STATE_COUNT] = {
     [MOVE_DEAD] = "Dead",
 };
 
+
 void User_Debug(dt)
 {
     World *world = Sol_User_GetGameWorld();
-    int    id    = sol_user.view_ent;
+    int id       = sol_user.view_ent;
     if (id >= 0)
     {
         if (Sol_Comp_Has(world, id, ScXform))
@@ -264,8 +284,30 @@ void User_Debug(dt)
         if (Sol_Comp_Has(world, id, ScMove3))
         {
             ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
-            
-            // Sol_Debug_AddText("MoveState", move_state_name[move->state]);
+
+            static u32 prev_state = 0;
+
+            bool state_changed = move->state != prev_state;
+            if (state_changed)
+            {
+                Sol_Debug_AddText("MoveState", move_state_name[move->state]);
+                Sol_Debug_AddText("PrevState", move_state_name[prev_state]);
+                prev_state = move->state;
+            }
+        }
+        if (Sol_Comp_Has(world, id, ScAbility))
+        {
+            ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+
+            static u32 prev_Astate = 0;
+
+            bool state_changed = ability->state != prev_Astate;
+            if (state_changed)
+            {
+                Sol_Debug_AddText("AbilityState", ability_names[ability->state]);
+                Sol_Debug_AddText("PrevAState", ability_names[prev_Astate]);
+                prev_Astate = ability->state;
+            }
         }
     }
 }
@@ -313,7 +355,7 @@ void Sol_User_Tick(double dt)
 void Sol_User_PostTick(double dt)
 {
     World *world = Sol_User_GetGameWorld();
-    int    id    = sol_user.view_ent;
+    int id       = sol_user.view_ent;
     if (!world || id < 0)
         return;
     ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);

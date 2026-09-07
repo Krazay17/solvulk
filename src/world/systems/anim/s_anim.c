@@ -1,139 +1,9 @@
+#include "s_anim.h"
 #include "world.h"
 #include "model.h"
 #include "sol_core.h"
 
 #include <omp.h>
-
-const int strafe_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_WALK_FWD,       [STRAFE_FWD_LEFT] = ANIM_WALK_FWD,  [STRAFE_LEFT] = ANIM_WALK_LEFT,
-    [STRAFE_BWD_LEFT] = ANIM_WALK_LEFT, [STRAFE_BWD] = ANIM_WALK_BWD,       [STRAFE_BWD_RIGHT] = ANIM_WALK_RIGHT,
-    [STRAFE_RIGHT] = ANIM_WALK_RIGHT,   [STRAFE_FWD_RIGHT] = ANIM_WALK_FWD,
-};
-const int wallrun_map[WALLTOUCH_COUNT] = {
-    [WALLTOUCH_FRONT] = ANIM_WALLRUN_FWD,
-    [WALLTOUCH_LEFT]  = ANIM_WALLRUN_LEFT,
-    [WALLTOUCH_BACK]  = ANIM_WALLRUN_LEFT,
-    [WALLTOUCH_RIGHT] = ANIM_WALLRUN_RIGHT,
-};
-const int walljump_map[WALLTOUCH_COUNT] = {
-    [WALLTOUCH_FRONT] = ANIM_BACKFLIP,
-    [WALLTOUCH_LEFT]  = ANIM_WALLJUMP_LEFT,
-    [WALLTOUCH_BACK]  = ANIM_FLIPJUMP,
-    [WALLTOUCH_RIGHT] = ANIM_WALLJUMP_RIGHT,
-};
-const int crouch_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_CROUCHWALK_FWD,     [STRAFE_FWD_LEFT] = ANIM_CROUCHWALK_FWD,
-    [STRAFE_LEFT] = ANIM_CROUCHWALK_LEFT,   [STRAFE_BWD_LEFT] = ANIM_CROUCHWALK_LEFT,
-    [STRAFE_BWD] = ANIM_CROUCHWALK_BWD,     [STRAFE_BWD_RIGHT] = ANIM_CROUCHWALK_RIGHT,
-    [STRAFE_RIGHT] = ANIM_CROUCHWALK_RIGHT, [STRAFE_FWD_RIGHT] = ANIM_CROUCHWALK_FWD,
-};
-const int dash_map[STRAFE_COUNT] = {
-    [STRAFE_FWD] = ANIM_DASH_FWD,       [STRAFE_FWD_LEFT] = ANIM_DASH_LEFT,   [STRAFE_LEFT] = ANIM_DASH_LEFT,
-    [STRAFE_BWD_LEFT] = ANIM_DASH_LEFT, [STRAFE_BWD] = ANIM_DASH_BWD,         [STRAFE_BWD_RIGHT] = ANIM_DASH_RIGHT,
-    [STRAFE_RIGHT] = ANIM_DASH_RIGHT,   [STRAFE_FWD_RIGHT] = ANIM_DASH_RIGHT,
-};
-
-const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
-    [MODELKIND_WIZARD] =
-        {
-            [ANIM_IDLE] = 0,       [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 1,   [ANIM_WALK_LEFT] = 1,
-            [ANIM_WALK_RIGHT] = 1, [ANIM_JUMP] = 1,      [ANIM_FALL] = 1,       [ANIM_DASH_FWD] = 1,
-            [ANIM_DASH_BWD] = 1,   [ANIM_DASH_LEFT] = 1, [ANIM_DASH_RIGHT] = 1, [ANIM_ABILITY0] = 2,
-            [ANIM_ABILITY1] = 2,   [ANIM_ABILITY2] = 2,  [ANIM_ABILITY3] = 2,   [ANIM_ABILITY4] = 2,
-            [ANIM_ABILITY5] = 2,   [ANIM_ABILITY6] = 2,  [ANIM_ABILITY7] = 2,   [ANIM_ABILITY8] = 2,
-            [ANIM_ABILITY9] = 2,   [ANIM_DEATH] = 3,     [ANIM_STUN] = 4,
-        },
-    [MODELKIND_DUDE] =
-        {
-            [ANIM_IDLE]             = 0,
-            [ANIM_WALK_FWD]         = 1,
-            [ANIM_WALK_LEFT]        = 2,
-            [ANIM_WALK_BWD]         = 3,
-            [ANIM_WALK_RIGHT]       = 4,
-            [ANIM_JUMP]             = 39,
-            [ANIM_FLIPJUMP]         = 7,
-            [ANIM_FALL]             = 5,
-            [ANIM_DASH_FWD]         = 8,
-            [ANIM_DASH_LEFT]        = 9,
-            [ANIM_DASH_BWD]         = 10,
-            [ANIM_DASH_RIGHT]       = 11,
-            [ANIM_CHARGE_LEFT]      = 25,
-            [ANIM_CHANNEL_LEFT]     = 29,
-            [ANIM_CHANNEL_RIGHT]    = 30,
-            [ANIM_ATTACK_LEFT]      = 16,
-            [ANIM_ATTACK_RIGHT]     = 15,
-            [ANIM_SPINSLASH]        = 24,
-            [ANIM_ABILITY0]         = 24,
-            [ANIM_ABILITY1]         = 15,
-            [ANIM_ABILITY2]         = 15,
-            [ANIM_ABILITY3]         = 15,
-            [ANIM_ABILITY4]         = 25,
-            [ANIM_ABILITY5]         = 15,
-            [ANIM_ABILITY6]         = 15,
-            [ANIM_ABILITY7]         = 15,
-            [ANIM_ABILITY8]         = 15,
-            [ANIM_ABILITY9]         = 15,
-            [ANIM_CROUCHWALK_FWD]   = 26,
-            [ANIM_CROUCHWALK_BWD]   = 26,
-            [ANIM_CROUCHWALK_LEFT]  = 26,
-            [ANIM_CROUCHWALK_RIGHT] = 26,
-            [ANIM_SLIDE_FWD]        = 27,
-            [ANIM_SLIDE_BWD]        = 27,
-            [ANIM_SLIDE_LEFT]       = 27,
-            [ANIM_SLIDE_RIGHT]      = 27,
-            [ANIM_DEATH]            = 23,
-            [ANIM_STUN]             = 28,
-            [ANIM_WALLJUMP_LEFT]    = 31,
-            [ANIM_WALLJUMP_RIGHT]   = 32,
-            [ANIM_WALLRUN_FWD]      = 34,
-            [ANIM_MANTLE]           = 33,
-            [ANIM_MANTLE_ROLL]      = 37,
-            [ANIM_WALLRUN_LEFT]     = 35,
-            [ANIM_WALLRUN_RIGHT]    = 36,
-            [ANIM_BACKFLIP]         = 38,
-            [ANIM_HARDLAND]         = 40,
-        },
-    [MODELKIND_ZORGON] =
-        {
-            [ANIM_IDLE]             = 0,
-            [ANIM_WALK_FWD]         = 1,
-            [ANIM_WALK_LEFT]        = 2,
-            [ANIM_WALK_BWD]         = 3,
-            [ANIM_WALK_RIGHT]       = 4,
-            [ANIM_JUMP]             = 6,
-            [ANIM_FALL]             = 5,
-            [ANIM_DASH_FWD]         = 8,
-            [ANIM_DASH_LEFT]        = 9,
-            [ANIM_DASH_BWD]         = 10,
-            [ANIM_DASH_RIGHT]       = 11,
-            [ANIM_CHARGE_LEFT]      = 25,
-            [ANIM_CHANNEL_LEFT]     = 29,
-            [ANIM_CHANNEL_RIGHT]    = 30,
-            [ANIM_ATTACK_LEFT]      = 16,
-            [ANIM_ATTACK_RIGHT]     = 15,
-            [ANIM_SPINSLASH]        = 24,
-            [ANIM_ABILITY0]         = 24,
-            [ANIM_ABILITY1]         = 15,
-            [ANIM_ABILITY2]         = 15,
-            [ANIM_ABILITY3]         = 15,
-            [ANIM_ABILITY4]         = 25,
-            [ANIM_ABILITY5]         = 15,
-            [ANIM_ABILITY6]         = 15,
-            [ANIM_ABILITY7]         = 15,
-            [ANIM_ABILITY8]         = 15,
-            [ANIM_ABILITY9]         = 15,
-            [ANIM_CROUCHWALK_FWD]   = 26,
-            [ANIM_CROUCHWALK_BWD]   = 26,
-            [ANIM_CROUCHWALK_LEFT]  = 26,
-            [ANIM_CROUCHWALK_RIGHT] = 26,
-            [ANIM_SLIDE_FWD]        = 27,
-            [ANIM_SLIDE_BWD]        = 27,
-            [ANIM_SLIDE_LEFT]       = 27,
-            [ANIM_SLIDE_RIGHT]      = 27,
-            [ANIM_DEATH]            = 23,
-            [ANIM_STUN]             = 28,
-        },
-};
 
 static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
 {
@@ -240,7 +110,8 @@ void Anim_Tick(World *world, double dt)
         {
             ScAbility        *ability      = Sol_Comp_Get(world, id, ScAbility);
             AbilityStateData *data         = &ability->stateData[ability->activeSlot];
-            AnimDesc          ability_anim = {.layerId = ANIM_LAYER_OVERRIDE};
+            AnimDesc          ability_anim = { .layerId = ANIM_LAYER_OVERRIDE };
+
             switch (ability->state)
             {
             case ABILITY_STATE_DASH: {
@@ -286,6 +157,15 @@ void Anim_Tick(World *world, double dt)
             }
             if (ability->state != 0)
                 Sol_Anim_Play(world, id, ability_anim);
+
+            if (Sol_Comp_Has(world, id, ScCombat))
+            {
+                ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+                if (combat->hitPause > 0)
+                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, 0.001f);
+                else
+                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
+            }
         }
 
         if (Sol_Comp_Has(world, id, ScMove3))
@@ -293,7 +173,7 @@ void Anim_Tick(World *world, double dt)
             ScMove3       *movement     = Sol_Comp_Get(world, id, ScMove3);
             MoveStateData *data         = &movement->stateData[movement->state];
             bool           modify_speed = false;
-            AnimDesc       move_anim    = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
+            AnimDesc       move_anim    = { .anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE };
             switch (movement->state)
             {
             case MOVE_LANDING: {
@@ -358,7 +238,7 @@ void Anim_Tick(World *world, double dt)
         }
         else
         {
-            Sol_Anim_Play(world, id, (AnimDesc){.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE});
+            Sol_Anim_Play(world, id, (AnimDesc){ .anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE });
         }
         for (int i = 0; i < ANIM_LAYER_COUNT; i++)
         {

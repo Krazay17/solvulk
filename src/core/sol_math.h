@@ -20,7 +20,7 @@
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
 #define vecDist(a, b) glms_vec3_distance(a, b)
 
-#define SOL_COLOR(hex) (vec4s){.r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255}
+#define SOL_COLOR(hex) (vec4s){ .r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255 }
 
 #define SOL_COLORA(hex, alpha)                                                                                         \
     (vec4s)                                                                                                            \
@@ -39,6 +39,29 @@ versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
 
 // INLINES-------------------
+static inline StrafeDir Sol_GetStrafedirYaw(float x, float z, float yaw)
+{
+    // 1. Get the relative angle between velocity and facing direction
+    float angle = atan2f(x, z) - yaw;
+
+    // 2. Keep the angle strictly positive within [0, 2PI]
+    if (angle < 0.0f)
+        angle += 2.0f * GLM_PIf;
+
+    // 3. Offset by half a wedge (22.5 degrees) so cardinal directions
+    // sit right in the middle of our integer sectors instead of on the edges.
+    angle += GLM_PI_4f * 0.5f;
+
+    // 4. Handle wrapping after the offset addition
+    if (angle >= 2.0f * GLM_PIf)
+        angle -= 2.0f * GLM_PIf;
+
+    // 5. Use floorf to establish clean boundaries, then cast
+    int sector = (int)floorf(angle / GLM_PI_4f);
+
+    // Safety clamp to guarantee it maps to your 0-7 enum range
+    return (StrafeDir)(sector & 7);
+}
 
 static inline StrafeDir Sol_GetStrafedir(float x, float z, float bX, float bZ)
 {
@@ -168,6 +191,14 @@ static inline float Sol_Math_MapRange(float startA, float endA, float startB, fl
     return Sol_Math_Lerp(startA, endA, amount / (endB - startB));
 }
 
+static inline float Sol_Quat_ToYaw(versors q) 
+{
+    // Extract yaw (rotation around Y axis) from unit quaternion
+    // atan2(2*(w*y + x*z), 1 - 2*(y^2 + z^2))
+    // Simplified for pure Y-axis rotations:
+    return atan2f(2.0f * (q.w * q.y + q.x * q.z), 1.0f - 2.0f * (q.y * q.y + q.z * q.z));
+}
+
 static inline float Sol_YawFromQuat(versor q)
 {
     return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
@@ -251,7 +282,7 @@ static inline vec3s Sol_BounceVec(vec3s a, vec3s b)
 
 static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bool includeY)
 {
-    vec3s wishdir  = {0, 0, 0};
+    vec3s wishdir  = { 0, 0, 0 };
     vec3s flatdir  = lookdir;
     flatdir.y      = 0;
     flatdir        = glms_vec3_normalize(flatdir);
@@ -282,7 +313,7 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bo
 
 static inline vec3s CalcWishDir2(uint32_t action)
 {
-    vec3s wishdir = {0};
+    vec3s wishdir = { 0 };
     if (action & BITC(ACTION_RIGHT))
         wishdir.x += 1;
     if (action & BITC(ACTION_LEFT))

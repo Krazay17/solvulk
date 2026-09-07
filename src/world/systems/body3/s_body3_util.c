@@ -768,3 +768,158 @@ bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, 
     }
     return false;
 }
+
+// Ray vs infinite cylinder of radius r along segment [a,b]. dir must be unit length.
+bool Ray_Intersect_Cylinder(vec3s O, vec3s D, float maxDist, vec3s a, vec3s b, float r, float *outT, float *outS)
+{
+    vec3s axis    = glms_vec3_sub(b, a);
+    float axisLen = glms_vec3_norm(axis);
+    if (axisLen < 1e-8f)
+        return false;
+    vec3s d = glms_vec3_scale(axis, 1.0f / axisLen);
+
+    vec3s m  = glms_vec3_sub(O, a);
+    float md = glms_vec3_dot(m, d);
+    float dd = glms_vec3_dot(D, d);
+
+    float qa = 1.0f - dd * dd; // D is unit
+    float qb = 2.0f * (glms_vec3_dot(m, D) - md * dd);
+    float qc = glms_vec3_dot(m, m) - md * md - r * r;
+
+    if (fabsf(qa) < 1e-8f)
+        return false; // ray parallel to edge axis -- vertex spheres cover this case
+
+    float disc = qb * qb - 4.0f * qa * qc;
+    if (disc < 0.0f)
+        return false;
+
+    float sqrtDisc = sqrtf(disc);
+    float t0       = (-qb - sqrtDisc) / (2.0f * qa);
+    float t1       = (-qb + sqrtDisc) / (2.0f * qa);
+    float t        = (t0 > 1e-6f) ? t0 : t1;
+    if (t <= 1e-6f || t > maxDist)
+        return false;
+
+    float s = (md + t * dd) / axisLen;
+    if (s < 0.0f || s > 1.0f)
+        return false;
+
+    *outT = t;
+    *outS = s;
+    return true;
+}
+
+// Ray vs Capsule (cylinder body + two hemispherical caps).
+bool Ray_Intersect_Capsule(vec3s O, vec3s D, float maxDist, vec3s top, vec3s bottom, float radius,
+                            float *outT, vec3s *outNorm)
+{
+    float bestT    = maxDist;
+    bool  found    = false;
+    vec3s bestNorm = {0};
+
+    float t, s;
+    if (Ray_Intersect_Cylinder(O, D, bestT, top, bottom, radius, &t, &s))
+    {
+        vec3s axisP = glms_vec3_lerp(top, bottom, s);
+        vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
+        bestT       = t;
+        bestNorm    = glms_vec3_normalize(glms_vec3_sub(P, axisP));
+        found       = true;
+    }
+
+    vec3s caps[2] = {top, bottom};
+    for (int i = 0; i < 2; i++)
+    {
+        float tCap; vec3s nCap;
+        if (Ray_Intersect_Sphere(O, D, bestT, caps[i], radius, &tCap, &nCap))
+        {
+            bestT    = tCap;
+            bestNorm = nCap;
+            found    = true;
+        }
+    }
+
+    if (found)
+    {
+        *outT    = bestT;
+        *outNorm = bestNorm;
+    }
+    return found;
+}
+
+// Sphere-swept ray ("thick ray" / capsule) vs triangle.
+bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri, float r, float *outT, vec3s *outNorm)
+{
+    float bestT    = maxDist;
+    bool found     = false;
+    vec3s bestNorm = {0};
+
+    // --- Face (offset plane) test ---
+    float faceSide = glms_vec3_dot(glms_vec3_sub(O, tri->v0), tri->normal);
+    float faceSign = (faceSide >= 0.0f) ? r : -r;
+    vec3s planeP0  = glms_vec3_add(tri->v0, glms_vec3_scale(tri->normal, faceSign));
+    float denom    = glms_vec3_dot(D, tri->normal);
+
+    if (fabsf(denom) > 1e-8f)
+    {
+        float t = glms_vec3_dot(glms_vec3_sub(planeP0, O), tri->normal) / denom;
+        if (t > 1e-6f && t < bestT)
+        {
+            vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
+            vec3s Pflat = glms_vec3_sub(P, glms_vec3_scale(tri->normal, faceSign));
+
+            vec3s v0v1 = glms_vec3_sub(tri->v1, tri->v0);
+            vec3s v0v2 = glms_vec3_sub(tri->v2, tri->v0);
+            vec3s v0p  = glms_vec3_sub(Pflat, tri->v0);
+            float d00 = glms_vec3_dot(v0v1, v0v1), d01 = glms_vec3_dot(v0v1, v0v2);
+            float d11 = glms_vec3_dot(v0v2, v0v2), d20 = glms_vec3_dot(v0p, v0v1);
+            float d21      = glms_vec3_dot(v0p, v0v2);
+            float invDenom = 1.0f / (d00 * d11 - d01 * d01);
+            float u        = (d11 * d20 - d01 * d21) * invDenom;
+            float v        = (d00 * d21 - d01 * d20) * invDenom;
+
+            if (u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f)
+            {
+                bestT    = t;
+                bestNorm = (faceSide >= 0.0f) ? tri->normal : glms_vec3_scale(tri->normal, -1.0f);
+                found    = true;
+            }
+        }
+    }
+
+    // --- Edge cylinder tests ---
+    vec3s edges[3][2] = {{tri->v0, tri->v1}, {tri->v1, tri->v2}, {tri->v2, tri->v0}};
+    for (int e = 0; e < 3; e++)
+    {
+        float t, s;
+        if (Ray_Intersect_Cylinder(O, D, bestT, edges[e][0], edges[e][1], r, &t, &s))
+        {
+            vec3s axisP = glms_vec3_lerp(edges[e][0], edges[e][1], s);
+            vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
+            bestT       = t;
+            bestNorm    = glms_vec3_normalize(glms_vec3_sub(P, axisP));
+            found       = true;
+        }
+    }
+
+    // --- Vertex sphere tests ---
+    vec3s verts[3] = {tri->v0, tri->v1, tri->v2};
+    for (int v = 0; v < 3; v++)
+    {
+        float t;
+        vec3s n;
+        if (Ray_Intersect_Sphere(O, D, bestT, verts[v], r, &t, &n))
+        {
+            bestT    = t;
+            bestNorm = n;
+            found    = true;
+        }
+    }
+
+    if (found)
+    {
+        *outT    = bestT;
+        *outNorm = bestNorm;
+    }
+    return found;
+}

@@ -17,13 +17,19 @@ SpatialGrid *SpatialGrid_Create(float cellSize)
 void SpatialGrid_Init(SpatialGrid *grid, float cellSize)
 {
     memset(grid, 0, sizeof(SpatialGrid));
-    grid->cellSize = cellSize;
+    grid->baseCellSize    = cellSize;
+    grid->cellSize        = cellSize; // effective size starts at base; a Build call may grow it
+    grid->maxCellsPerAxis = SPATIAL_GRID_DEFAULT_MAX_CELLS_PER_AXIS;
     if (cellSize > 0.0f)
     {
-        grid->invCellSize = 1.0f / cellSize;
-        grid->invCellSizeVec =
-            (vec4s){.x = grid->invCellSize, .y = grid->invCellSize, .z = grid->invCellSize, .w = 0.0f};
+        grid->invCellSize    = 1.0f / cellSize;
+        grid->invCellSizeVec = (vec4s){grid->invCellSize, grid->invCellSize, grid->invCellSize, 0.0f};
     }
+}
+
+void SpatialGrid_SetMaxCellsPerAxis(SpatialGrid *grid, int maxCellsPerAxis)
+{
+    grid->maxCellsPerAxis = maxCellsPerAxis > 0 ? maxCellsPerAxis : 1;
 }
 
 void SpatialGrid_Deinit(SpatialGrid *grid)
@@ -55,6 +61,23 @@ void SpatialGrid_Clear(SpatialGrid *grid)
     memset(grid->cells, 0, grid->totalCells * sizeof(GridCell));
 }
 
+// Recomputed on EVERY build, not just once. If the tracked extent needs more
+// cells than maxCellsPerAxis allows at baseCellSize, cellSize grows to cover
+// it. An outlier costs resolution for that frame, never correctness.
+static void SpatialGrid_ComputeEffectiveCellSize(SpatialGrid *grid)
+{
+    float rangeX   = grid->max.x - grid->min.x;
+    float rangeY   = grid->max.y - grid->min.y;
+    float rangeZ   = grid->max.z - grid->min.z;
+    float maxRange = fmaxf(rangeX, fmaxf(rangeY, rangeZ));
+
+    float neededCellSize = maxRange / (float)grid->maxCellsPerAxis;
+    grid->cellSize        = fmaxf(grid->baseCellSize, neededCellSize);
+
+    grid->invCellSize    = 1.0f / grid->cellSize;
+    grid->invCellSizeVec = (vec4s){grid->invCellSize, grid->invCellSize, grid->invCellSize, 0.0f};
+}
+
 void SpatialGrid_BuildFromAABBs(SpatialGrid *grid, const SpatialAABB *boxes, uint32_t count)
 {
     if (!grid || !boxes || count == 0 || grid->cellSize <= 0.0f)
@@ -79,17 +102,20 @@ void SpatialGrid_BuildFromAABBs(SpatialGrid *grid, const SpatialAABB *boxes, uin
         meshMax = glms_vec3_maxv(meshMax, boxes[i].max);
     }
 
-    grid->min = (vec4s){.x = meshMin.x - 0.1f, .y = meshMin.y - 0.1f, .z = meshMin.z - 0.1f, .w = 0.0f};
-    grid->max = (vec4s){.x = meshMax.x + 0.1f, .y = meshMax.y + 0.1f, .z = meshMax.z + 0.1f, .w = 0.0f};
+grid->min = (vec4s){ meshMin.x - 0.1f, meshMin.y - 0.1f, meshMin.z - 0.1f, 0.0f };
+grid->max = (vec4s){ meshMax.x + 0.1f, meshMax.y + 0.1f, meshMax.z + 0.1f, 0.0f };
 
-    int gx = (int)ceilf((grid->max.x - grid->min.x) * grid->invCellSize);
-    int gy = (int)ceilf((grid->max.y - grid->min.y) * grid->invCellSize);
-    int gz = (int)ceilf((grid->max.z - grid->min.z) * grid->invCellSize);
+SpatialGrid_ComputeEffectiveCellSize(grid); // must come after min/max, before WorldToCell
 
-    // TODO check if grid cap is wrong?
-    grid->dims.x = gx <= 0 ? 1 : gx > 128 ? 128 : gx;
-    grid->dims.y = gy <= 0 ? 1 : gy > 128 ? 128 : gy;
-    grid->dims.z = gz <= 0 ? 1 : gz > 128 ? 128 : gz;
+int gx = (int)ceilf((grid->max.x - grid->min.x) * grid->invCellSize);
+int gy = (int)ceilf((grid->max.y - grid->min.y) * grid->invCellSize);
+int gz = (int)ceilf((grid->max.z - grid->min.z) * grid->invCellSize);
+
+// cellSize was already chosen to fit the budget -- this clamp is just a
+// defensive guard against float rounding at the boundary, not a truncation.
+grid->dims.x = clampi(gx, 1, grid->maxCellsPerAxis);
+grid->dims.y = clampi(gy, 1, grid->maxCellsPerAxis);
+grid->dims.z = clampi(gz, 1, grid->maxCellsPerAxis);
 
     grid->totalCells = (uint32_t)(grid->dims.x * grid->dims.y * grid->dims.z);
 
@@ -207,15 +233,20 @@ void SpatialGrid_BuildFromTris(SpatialGrid *grid, const SolTri *tris, uint32_t t
         meshMax = glms_vec3_maxv(meshMax, glms_vec3_maxv(tris[i].a, glms_vec3_maxv(tris[i].b, tris[i].c)));
     }
 
-    grid->min = (vec4s){meshMin.x - 0.1f, meshMin.y - 0.1f, meshMin.z - 0.1f, 0.0f};
-    grid->max = (vec4s){meshMax.x + 0.1f, meshMax.y + 0.1f, meshMax.z + 0.1f, 0.0f};
+grid->min = (vec4s){ meshMin.x - 0.1f, meshMin.y - 0.1f, meshMin.z - 0.1f, 0.0f };
+grid->max = (vec4s){ meshMax.x + 0.1f, meshMax.y + 0.1f, meshMax.z + 0.1f, 0.0f };
 
-    int gx           = (int)ceilf((grid->max.x - grid->min.x) * grid->invCellSize);
-    int gy           = (int)ceilf((grid->max.y - grid->min.y) * grid->invCellSize);
-    int gz           = (int)ceilf((grid->max.z - grid->min.z) * grid->invCellSize);
-    grid->dims.x     = gx <= 0 ? 1 : gx;
-    grid->dims.y     = gy <= 0 ? 1 : gy;
-    grid->dims.z     = gz <= 0 ? 1 : gz;
+SpatialGrid_ComputeEffectiveCellSize(grid); // must come after min/max, before WorldToCell
+
+int gx = (int)ceilf((grid->max.x - grid->min.x) * grid->invCellSize);
+int gy = (int)ceilf((grid->max.y - grid->min.y) * grid->invCellSize);
+int gz = (int)ceilf((grid->max.z - grid->min.z) * grid->invCellSize);
+
+// cellSize was already chosen to fit the budget -- this clamp is just a
+// defensive guard against float rounding at the boundary, not a truncation.
+grid->dims.x = clampi(gx, 1, grid->maxCellsPerAxis);
+grid->dims.y = clampi(gy, 1, grid->maxCellsPerAxis);
+grid->dims.z = clampi(gz, 1, grid->maxCellsPerAxis);
     grid->totalCells = (uint32_t)(grid->dims.x * grid->dims.y * grid->dims.z);
 
     size_t cellsSizeBytes = grid->totalCells * sizeof(GridCell);

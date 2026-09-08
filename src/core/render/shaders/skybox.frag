@@ -6,7 +6,7 @@ layout(location = 0) in vec3 viewDir;
 layout(location = 0) out vec4 outColor;
 
 const float PI = 3.14159265359;
-const uint SKYBOX_TEX_ID = 5;  // SOL_TEXTURE_SKYBOX — match your enum
+const uint SKYBOX_TEX_ID = 1u;  // SOL_TEXTURE_SKYBOX — match your enum
 
 vec2 dirToEquirect(vec3 dir) {
     float u = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;

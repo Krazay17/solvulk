@@ -357,7 +357,7 @@ World *Sol_User_GetGameWorld()
     return solState.worlds[sol_user.game_world];
 }
 
-void Sol_User_EnterGameWorld(u32 idx)
+void Sol_User_EnterGameWorld(u32 idx, bool sim, vec3s pos)
 {
     if (solState.worldCount == 0)
         return;
@@ -367,14 +367,15 @@ void Sol_User_EnterGameWorld(u32 idx)
     u32 last_world_idx = sol_user.game_world;
     World *last_world  = solState.worlds[last_world_idx];
 
-    last_world->doesSimulate = false;
+    last_world->doesSimulate = sim;
     last_world->doesRender   = false;
 
     sol_user.game_world        = idx;
     World *target_world        = solState.worlds[sol_user.game_world];
     target_world->doesSimulate = true;
     target_world->doesRender   = true;
-
-    SparseSet_ScPlayer *set = Sol_Comp_Set(target_world, ScPlayer);
-    sol_user.view_ent       = set->dense[0];
+    SparseSet_ScPlayer *set    = Sol_Comp_Set(last_world, ScPlayer);
+    int last_id                = set->dense[0];
+    sol_user.view_ent          = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
+    Sol_Destroy_Ent(last_world, last_id);
 }

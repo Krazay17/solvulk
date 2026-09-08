@@ -37,7 +37,7 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
             }
 
             float dur     = m->skeleton.animations[layer->currentAnim].duration;
-            float speed   = (layer->playRate != 0.0f) ? layer->playRate * fdt : fdt;
+            float speed   = layer->playRate * fdt;
             float newSeek = layer->currentSeek + speed;
 
             switch (layer->playKind)
@@ -114,7 +114,7 @@ void Anim_Tick(World *world, double dt)
         {
             ScAbility *ability     = Sol_Comp_Get(world, id, ScAbility);
             AbilityStateData *data = &ability->stateData[ability->activeSlot];
-            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE};
+            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f};
 
             switch (ability->state)
             {
@@ -142,6 +142,7 @@ void Anim_Tick(World *world, double dt)
                 case 2:
                     ability_anim.anim =
                         ANIM_ATTACK_LEFT; // ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
+                        sollog("Attack");
                     ability_anim.seek = 0.16f;
                     break;
                 }
@@ -179,7 +180,7 @@ void Anim_Tick(World *world, double dt)
             ScMove3 *movement   = Sol_Comp_Get(world, id, ScMove3);
             MoveStateData *data = &movement->stateData[movement->state];
             bool modify_speed   = false;
-            AnimDesc move_anim  = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE};
+            AnimDesc move_anim  = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE, .speed = 1.0f};
             switch (movement->state)
             {
             case MOVE_LANDING: {
@@ -237,10 +238,12 @@ void Anim_Tick(World *world, double dt)
             }
             break;
             }
+
             Sol_Anim_Play(world, id, move_anim);
-            if (modify_speed)
-                Sol_Anim_SetSpeed(world, id, move_anim.layerId,
-                                  Sol_Body3_GetSpeed(world, id) / Sol_Move3_GetBaseSpeed(world, id));
+
+            float base_speed = Sol_Move3_GetBaseSpeed(world, id);
+            if (modify_speed && base_speed > 0)
+                Sol_Anim_SetSpeed(world, id, move_anim.layerId, Sol_Body3_GetSpeed(world, id) / base_speed);
         }
         else
         {

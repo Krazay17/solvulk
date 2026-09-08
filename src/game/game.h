@@ -28,9 +28,14 @@ void Hook_Healthbar(World *w, double dt, int id, void *data);
 
 static inline void Hook_SwitchWorld(World *w, double dt, int id, void *data)
 {
-    Sol_User_EnterGameWorld(2);
+    Sol_User_EnterGameWorld(2, true, (vec3s){0,5,0});
 }
 static inline void Hook_SwitchWorld2(World *w, double dt, int id, void *data)
 {
-    Sol_User_EnterGameWorld(3);
+    Sol_User_EnterGameWorld(3, true, (vec3s){0,5,0});
+}
+
+static inline void Hook_SpawnWizard(World *w, double dt, int id, void *data)
+{
+    Sol_Prefab_Wizard(Sol_User_GetGameWorld(), (vec3s){0, 20.f, 0}, 1.0f);
 }

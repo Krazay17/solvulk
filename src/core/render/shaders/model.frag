@@ -46,7 +46,7 @@ const uint FLAG_YELLOW  = 1u << 1;
 const uint FLAG_DAMAGED = 1u << 2;
 
 const float PI = 3.14159265359;
-const uint  SKY_TEXTURE_ID = 5u;
+const uint  SKY_TEXTURE_ID = 1u;
 
 float SpecularGGX_Fast(vec3 N, vec3 H, float roughness)
 {

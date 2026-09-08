@@ -42,4 +42,4 @@ void Sol_User_SaveUserSettings(int flags);
 void Sol_User_LoadUserSettings(int flags);
 void Sol_User_HydrateUI();
 World *Sol_User_GetGameWorld();
-void Sol_User_EnterGameWorld(u32 idx);
+void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);

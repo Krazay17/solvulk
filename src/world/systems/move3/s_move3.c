@@ -81,8 +81,8 @@ void Move3_Step(World *world, double dt)
             body3->vel.z = vel.z;
             break;
         default:
-            vel         = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-            vel         = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            vel          = ApplyFriction3(wishdir, vel, finalFriction, fdt);
+            vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
@@ -261,5 +261,7 @@ bool Sol_Move3_SetState(World *world, int id, MoveState target_state)
 float Sol_Move3_GetBaseSpeed(World *world, int id)
 {
     ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
-    return MOVE_STATE_FORCES[move->kind][move->state].speed;
+    if (move)
+        return MOVE_STATE_FORCES[move->kind][move->state].speed;
+    return 0.0f;
 }

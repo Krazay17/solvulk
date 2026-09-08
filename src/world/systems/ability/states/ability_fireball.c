@@ -47,6 +47,7 @@ void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd
     data->duration         = ability_base[ABILITY_STATE_FIREBALL].duration;
     data->cooldown         = ability_base[ABILITY_STATE_FIREBALL].cooldown;
     data->recoverDuration  = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
+    Sol_Comp_Get(world, id, ScCombat)->hitPause = 0;
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)

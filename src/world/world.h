@@ -200,6 +200,10 @@ SOL_COMPONENT_LIST(GENERATE_SPARSE_FUNCS)
 // Access backing SparseSet directly for system dense iteration
 #define Sol_Comp_Set(w, Type) ((SparseSet_##Type *)(w)->components[HAS_##Type])
 
+#define Sol_Comp_HasE(w, entId, idx) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(idx)) != 0))
+#define Sol_Comp_GetE(w, entId, idx)                                                                                   \
+    (Sol_Comp_HasE((w), (entId), idx) ? (&((w)->components[idx])->data[((w)->components[idx])->sparse[(entId)]]) : NULL)
+
 // Initialize all sparse sets on the world
 static inline void Sol_World_InitAllComponents(World *w, int maxEntities)
 {
@@ -214,6 +218,41 @@ static const size_t COMP_SIZES[COMPONENT_COUNT] = {
     SOL_COMPONENT_LIST(X)
 #undef X
 };
+
+static inline void *Sol_Comp_AddE(World *w, int entId, int enum_idx)
+{
+    if ((uint32_t)entId >= w->maxEntities)
+        return NULL;
+
+    BaseSparseSet *set = (BaseSparseSet *)w->components[enum_idx];
+    size_t comp_size   = COMP_SIZES[enum_idx];
+
+    // 1. Check if entity already has component
+    if (w->masks[entId] & BITC(enum_idx))
+    {
+        return ((char *)set->data) + (set->sparse[entId] * comp_size);
+    }
+
+    // 2. Grow backing buffers if full
+    if (set->cnt >= set->cap)
+    {
+        set->cap   = (set->cap == 0) ? 2 : set->cap * 2;
+        set->dense = realloc(set->dense, set->cap * sizeof(int));
+        set->data  = realloc(set->data, set->cap * comp_size);
+    }
+
+    // 3. Assign sparse and dense indices
+    int denseIdx         = set->cnt++;
+    set->sparse[entId]   = denseIdx;
+    set->dense[denseIdx] = entId;
+
+    w->masks[entId] |= BITC(enum_idx);
+
+    // 4. Calculate byte pointer and initialize
+    void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
+    memset(elem_ptr, 0, comp_size);
+    return elem_ptr;
+}
 
 static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
 {
@@ -352,6 +391,7 @@ void Debug_Draw2(World *world, double dt);
 World *World_Create();
 World *World_Create_AllSys();
 int Sol_Create_Ent(World *world, vec3s pos);
+int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
 void Sol_Sys_Add(World *world, WorldSystems system);
 void Sol_Sys_Remove(World *world, WorldSystems system);
 

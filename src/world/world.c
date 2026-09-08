@@ -295,3 +295,23 @@ int Sol_Create_Ent(World *world, vec3s pos)
 
     return id;
 }
+
+int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
+{
+    int new_id = Sol_Create_Ent(target_world, pos);
+    for (int i = 0; i < COMPONENT_COUNT; i++)
+    {
+        if (Sol_Comp_HasE(world, id, i))
+        {
+            BaseSparseSet *src_set = (BaseSparseSet *)world->components[i];
+            int src_dense = src_set->sparse[id];
+            void *old_comp = ((char * )src_set->data) + (src_dense * COMP_SIZES[i]);
+
+            void *new_comp = Sol_Comp_AddE(target_world, new_id, i);
+            if (old_comp && new_comp)
+                memcpy(new_comp, old_comp, COMP_SIZES[i]);
+        }
+    }
+
+    return new_id;
+}

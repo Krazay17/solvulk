@@ -31,11 +31,7 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
     case 1:
         data->stage++;
         vec3s pos = GetProjectilePos(world, id, cmd, data->power);
-        SolSphere *sphere = Sol_Debug_NewSphere(world, 5.0f);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
-        sphere->pos = vecAdd(pos, vecSca(dir, 25.0f));
-        sphere->color = VEC4_GREEN;
-        sphere->radius = 1.0f;
         Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
     case 2:
         data->recover += dt;

@@ -145,10 +145,10 @@ typedef struct ScModelDataMasks
 //     mat4     *outBones;                      // final skinning matrices
 // } PoseRequest;
 
-extern ScModelData      loaded_models[SOL_MODEL_COUNT];
-extern ScModelDataMasks model_masks[SOL_MODEL_COUNT];
-extern const char       *model_path[SOL_MODEL_COUNT];
-extern const i32         model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT];
+extern ScModelData      loaded_models[MODELKIND_COUNT];
+extern ScModelDataMasks model_masks[MODELKIND_COUNT];
+extern const char       *model_path[MODELKIND_COUNT];
+extern const i32         model_anim_map[MODELKIND_COUNT][ANIM_COUNT];
 
 int  Sol_Models_Init();
 void Init_Anim_Masks(ModelKind kind, SolSkeleton *skele);

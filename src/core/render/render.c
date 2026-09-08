@@ -172,34 +172,6 @@ void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
-void Sol_Render_DrawSpheres(const SolSphere *spheres, int count, size_t stride)
-{
-    if (count <= 0 || !spheres)
-        return;
-    if (stride == 0)
-    {
-        stride = sizeof(SolSphere);
-    }
-    SolFrameBufferRef ref  = Sol_GetFrameBuffer(FRAMEBUFFER_VERT);
-    RenderVert       *vert = (RenderVert *)ref.mapped;
-
-    const uint8_t *ptr = (const uint8_t *)spheres;
-    for (int i = 0; i < count; i++)
-    {
-        const SolSphere *sphere = (const SolSphere *)(ptr + i * stride);
-
-        vert[i] = (RenderVert){ .pos = sphere->pos, .color = sphere->color };
-    }
-
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Sol_Render_Bind_Pipeline(cmd, PIPE_DEBUG_SPHERE);
-
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(cmd, 0, 1, ref.buffers, &offset);
-
-    vkCmdDraw(cmd, count * 2, 1, 0, 0);
-}
-
 void Flush_Models(void)
 {
     // Always reset the frame allocation tracker to 0 at the start of flushing
@@ -217,17 +189,17 @@ void Flush_Models(void)
     if (modelQueue.count > 0)
     {
         // Count per handle
-        uint32_t counts[SOL_MODEL_COUNT] = { 0 };
+        uint32_t counts[MODELKIND_COUNT] = { 0 };
         for (int i = 0; i < modelQueue.count; i++)
             counts[modelQueue.handles[i]]++;
 
         // Prefix sum
-        uint32_t offsets[SOL_MODEL_COUNT] = { 0 };
-        for (int i = 1; i < SOL_MODEL_COUNT; i++)
+        uint32_t offsets[MODELKIND_COUNT] = { 0 };
+        for (int i = 1; i < MODELKIND_COUNT; i++)
             offsets[i] = offsets[i - 1] + counts[i - 1];
 
         // Write sorted into SSBO
-        uint32_t cursors[SOL_MODEL_COUNT];
+        uint32_t cursors[MODELKIND_COUNT];
         memcpy(cursors, offsets, sizeof(offsets));
 
         for (int i = 0; i < modelQueue.count; i++)
@@ -239,7 +211,7 @@ void Flush_Models(void)
         }
 
         // Dispatch commands
-        for (int h = 0; h < SOL_MODEL_COUNT; h++)
+        for (int h = 0; h < MODELKIND_COUNT; h++)
         {
             if (counts[h] > 0)
             {
@@ -260,16 +232,16 @@ void Flush_Models(void)
         SolPose *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
 
         // Count per handle
-        uint32_t counts[SOL_MODEL_COUNT] = { 0 };
+        uint32_t counts[MODELKIND_COUNT] = { 0 };
         for (int i = 0; i < skinningQueue.count; i++)
             counts[skinningQueue.handles[i]]++;
 
         // Prefix sum (Local to skinning allocation space)
-        uint32_t offsets[SOL_MODEL_COUNT] = { 0 };
-        for (int i = 1; i < SOL_MODEL_COUNT; i++)
+        uint32_t offsets[MODELKIND_COUNT] = { 0 };
+        for (int i = 1; i < MODELKIND_COUNT; i++)
             offsets[i] = offsets[i - 1] + counts[i - 1];
 
-        uint32_t cursors[SOL_MODEL_COUNT];
+        uint32_t cursors[MODELKIND_COUNT];
         memcpy(cursors, offsets, sizeof(offsets));
 
         for (int i = 0; i < skinningQueue.count; i++)
@@ -288,7 +260,7 @@ void Flush_Models(void)
         }
 
         // Dispatch commands
-        for (int h = 0; h < SOL_MODEL_COUNT; h++)
+        for (int h = 0; h < MODELKIND_COUNT; h++)
         {
             if (counts[h] > 0)
             {

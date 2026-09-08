@@ -45,7 +45,7 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
             SolRay ray            = {
                 .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true
             };
-            bool  hit = Sol_Raycast1D(world, ray, result, 0.1f);
+            bool  hit = Sol_Raycast1(world, ray, result);
             float dot = glms_vec3_dot(result->norm, WORLD_UP);
             // float lookDot = vecDot(cmd->lookdir, result->norm);
             if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)

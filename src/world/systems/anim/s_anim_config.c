@@ -28,7 +28,7 @@ const int dash_map[STRAFE_COUNT] = {
     [STRAFE_BWD_LEFT] = ANIM_DASH_LEFT, [STRAFE_BWD] = ANIM_DASH_BWD,         [STRAFE_BWD_RIGHT] = ANIM_DASH_RIGHT,
     [STRAFE_RIGHT] = ANIM_DASH_RIGHT,   [STRAFE_FWD_RIGHT] = ANIM_DASH_RIGHT,
 };
-const i32 model_anim_map[SOL_MODEL_COUNT][ANIM_COUNT] = {
+const i32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
     [MODELKIND_WIZARD] =
         {
             [ANIM_IDLE] = 0,       [ANIM_WALK_FWD] = 1,  [ANIM_WALK_BWD] = 1,   [ANIM_WALK_LEFT] = 1,

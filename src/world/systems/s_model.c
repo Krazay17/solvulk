@@ -9,7 +9,7 @@ typedef struct
     float yaw_offset;
 } ModelKindData;
 
-const ModelKindData model_kinds[SOL_MODEL_COUNT] = {
+const ModelKindData model_kinds[MODELKIND_COUNT] = {
     [MODELKIND_DUDE] =
         {
             .y_offset = -0.825f,

@@ -81,6 +81,7 @@ void Body3_Step(World *world, double dt)
                 glms_vec3_add(world->xform.pos[id], glms_vec3_scale(body->vel, fdt / (float)SOLVER_ITERATIONS));
         }
         solb_zero(ws->contacts);
+
 #pragma omp parallel if (count > 100)
         {
             ThreadContactBuffer local_buf = {0};
@@ -498,10 +499,4 @@ float Sol_Body3_GetSpeed(World *world, int id)
 vec3s Sol_Body3_GetDir(World *world, int id)
 {
     return vecNorm(Sol_Comp_Get(world, id, ScBody3)->vel);
-}
-
-bool Sol_Body3_DoesCollide(const ScBody3 *body, const ScBody3 *other_body)
-{
-
-    return (body->mask << 16) & (other_body->mask);
 }

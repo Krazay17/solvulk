@@ -13,8 +13,8 @@ typedef struct
     float speed, accell, friction, gravity, duration;
 } MoveStateForce;
 
-extern const MoveState      MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
-extern const MoveStateFunc  MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
+extern const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
+extern const MoveStateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
 extern const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT];
 
 static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
@@ -22,7 +22,7 @@ static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction,
     const float speed = glms_vec3_norm(prevvel);
     if (speed < 0.1f)
         return GLMS_VEC3_ZERO;
-    vec3s       vel      = prevvel;
+    vec3s vel            = prevvel;
     const float drop     = speed * friction * dt;
     const float newspeed = fmaxf(0.0f, speed - drop);
     vel                  = glms_vec3_scale(vel, newspeed / speed);
@@ -32,26 +32,62 @@ static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction,
 
 static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
 {
-    if (glms_vec3_norm(wishdir) == 0)
+    float wishlen2 = glms_vec3_norm2(wishdir);
+    if (wishlen2 <= 0.00001f)
         return prevvel;
 
-    vec3s       vel       = prevvel;
-    const float dotdir    = glms_vec3_dot(wishdir, glms_vec3_normalize(vel));
-    float       lerpalpha = (1.0f - dotdir);
+    float currentspeed = glms_vec3_dot(prevvel, wishdir);
+    float addspeed     = speed - currentspeed;
 
-    vec3s projected     = glms_vec3_proj(vel, wishdir);
-    float steerStrength = fminf(1.0f, accel * dt);
-    vel                 = glms_vec3_lerp(vel, projected, lerpalpha * steerStrength);
-
-    const float dirspeed = glms_vec3_dot(vel, wishdir);
-    const float addspeed = speed - dirspeed;
-    if (addspeed > 0)
+    if (addspeed > 0.0f)
     {
-        const float accelspeed = accel * speed * dt;
-        const float finaladd   = fminf(accelspeed, addspeed);
-        vel                    = glms_vec3_add(vel, glms_vec3_scale(wishdir, finaladd));
+        float accelspeed = accel * speed * dt;
+        float finaladd   = fminf(accelspeed, addspeed);
+        prevvel = glms_vec3_add(prevvel, glms_vec3_scale(wishdir, finaladd));
     }
-    return vel;
+
+    // --- 4. adjustVelocityDirection Logic ---
+    // If moving generally towards wishdir, smoothly rotate 2D momentum
+    if (currentspeed > 0.0f)
+    {
+        float speed2D = glms_vec3_norm(prevvel);
+        if (speed2D > 0.0001f)
+        {
+            // Vector with identical 2D speed, but pointed purely along wishdir
+            vec3s targetVel2D = glms_vec3_scale(wishdir, speed2D);
+
+            // Lerp towards the target direction
+            const float blendFactor = 1.0f * dt; 
+            prevvel = glms_vec3_lerp(prevvel, targetVel2D, fminf(1.0f, blendFactor));
+        }
+    }
+
+    return prevvel;
+}
+
+static inline vec3s ApplyAccel3_Arcade(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
+{
+    float wishlen2 = glms_vec3_norm2(wishdir);
+    if (wishlen2 <= 0.00001f)
+        return prevvel;
+
+    vec3s wishnorm = glms_vec3_scale(wishdir, 1.0f / sqrtf(wishlen2));
+
+    // Target velocity is strictly bounded by 'speed'
+    vec3s targetVel = glms_vec3_scale(wishnorm, speed);
+
+    // Steer current velocity toward target velocity at rate (accel * dt)
+    vec3s diff    = glms_vec3_sub(targetVel, prevvel);
+    float diffLen = glms_vec3_norm(diff);
+
+    if (diffLen <= 0.0001f)
+        return targetVel;
+
+    float step = accel * speed * dt;
+    if (step > diffLen)
+        return targetVel;
+
+    return glms_vec3_add(prevvel, glms_vec3_scale(diff, step / diffLen));
 }
 
 static inline vec3s ProjectOntoGround(vec3s ground, vec3s wishdir)
@@ -103,7 +139,7 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd);
 
-void Move3_CommitState(World *world, int id, MoveState target_state,const MoveStateFunc *current_state_func,
+void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFunc *current_state_func,
                        const MoveStateFunc *target_state_func, ScMove3 *move, ScCmd *cmd);
 void Knockback(World *world, int id, ScMove3 *move, float fdt);
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt);

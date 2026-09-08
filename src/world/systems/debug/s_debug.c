@@ -61,7 +61,6 @@ void Debug_Draw3(World *world, double dt)
         Sol_Render_DrawLines(&sys->lines[0].line, solb_count(sys->lines), sizeof(DebugLine));
     }
 
-    // sollog(solb_count(sys->spheres));
     for (int i = 0; i < solb_count(sys->spheres); i++)
     {
         SolSphere *dsphere = &sys->spheres[i].sphere;

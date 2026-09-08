@@ -17,7 +17,7 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUser sol_user = {.menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
+SolUser sol_user = {.active_world = -1, .menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -216,42 +216,13 @@ void Entity_Actions()
     if (Sol_Input_KeyDown(SOL_KEY_G))
     {
         Xform xform = Xform_Get(world, id);
-        vec3s pos    = vecAdd(xform.pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
+        vec3s pos   = vecAdd(xform.pos, vecSca(vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch)), 0.1f));
         Sol_Xform_Teleport(world, id, pos);
         if (Sol_Comp_Has(world, id, ScBody3))
         {
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
             body3->vel     = GLMS_VEC3_ZERO;
         }
-    }
-    if (mouse.buttons[SOL_MOUSE_LEFT])
-    {
-        SolRay ray      = {.start = cmd->headpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = 1};
-        vec3s final_pos = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
-        // SolRayResult result = {0};
-        // bool hit            = Sol_Raycast1D(world, ray, &result, 1.0f);
-        // if (hit)
-        // {
-        //     final_pos = result.pos;
-        // }
-
-        // SolSphere *sphere = Sol_Debug_NewSphere(world, 5.0f);
-        // sphere->color     = VEC4_GREEN;
-        // sphere->pos       = final_pos;
-        // sphere->radius    = 1.0f;
-        // sphere->kind      = SPHEREKIND_FIREBALL;
-
-        // SolRayResult results[64] = {0};
-        // int hits                 = Sol_RaycastD(world, ray, results, 64, 0.2f);
-        // for (int i = 0; i < hits; i++)
-        // {
-        //     int idB = results[i].entId;
-        //     if (Sol_Comp_Has(world, idB, ScBody3))
-        //     {
-        //         ScBody3 *hit_body = Sol_Comp_Get(world, idB, ScBody3);
-        //         hit_body->vel.y += 50.0f;
-        //     }
-        // }
     }
 }
 
@@ -265,7 +236,9 @@ const char *move_state_name[MOVE_STATE_COUNT] = {
 void User_Debug(dt)
 {
     World *world = Sol_User_GetGameWorld();
-    int id       = sol_user.view_ent;
+    if (!world)
+        return;
+    int id = sol_user.view_ent;
     if (id >= 0)
     {
         Xform xform = Xform_Get(world, id);
@@ -328,8 +301,9 @@ void Sol_User_Tick(double dt)
 
 void Sol_User_PostTick(double dt)
 {
-    World *world = Sol_User_GetGameWorld();
-    int id       = sol_user.view_ent;
+    SolMouse mouse = Sol_Input_GetMouse();
+    World *world   = Sol_User_GetGameWorld();
+    int id         = sol_user.view_ent;
     if (!world || id < 0)
         return;
     ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);
@@ -341,6 +315,28 @@ void Sol_User_PostTick(double dt)
         g_solView.fov    = cam->fov;
         g_solView.up     = cam->up;
         g_solView.target = vecAdd(cam->pos, cam->dir);
+    }
+
+    if (Sol_Comp_Has(world, id, ScCmd))
+    {
+        ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+        if (mouse.buttons[SOL_MOUSE_LEFT])
+        {
+            SolRay ray = {
+                .start = cmd->headpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
+            vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
+            SolRayResult result = {0};
+            bool hit            = Sol_Raycast1D(world, ray, &result, 1.0f);
+            if (hit)
+            {
+                final_pos = result.pos;
+            }
+
+            SolSphere *sphere = Sol_Debug_NewSphere(world, 5.0f);
+            sphere->color     = VEC4_GREEN;
+            sphere->pos       = final_pos;
+            sphere->radius    = 1.0f;
+        }
     }
 }
 
@@ -359,4 +355,26 @@ World *Sol_User_GetGameWorld()
     if (sol_user.game_world < 0)
         return NULL;
     return solState.worlds[sol_user.game_world];
+}
+
+void Sol_User_EnterGameWorld(u32 idx)
+{
+    if (solState.worldCount == 0)
+        return;
+    if (sol_user.game_world == idx || solState.worldCount - 1 < idx)
+        return;
+
+    u32 last_world_idx = sol_user.game_world;
+    World *last_world  = solState.worlds[last_world_idx];
+
+    last_world->doesSimulate = false;
+    last_world->doesRender   = false;
+
+    sol_user.game_world        = idx;
+    World *target_world        = solState.worlds[sol_user.game_world];
+    target_world->doesSimulate = true;
+    target_world->doesRender   = true;
+
+    SparseSet_ScPlayer *set = Sol_Comp_Set(target_world, ScPlayer);
+    sol_user.view_ent       = set->dense[0];
 }

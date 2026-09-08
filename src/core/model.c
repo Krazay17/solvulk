@@ -8,17 +8,17 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf/cgltf.h"
 
-const char *model_path[SOL_MODEL_COUNT] = {
+const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_DUDE]    = "Dude.glb",
     [MODELKIND_WIZARD]  = "Wizard.glb",
+    [MODELKIND_WORLD0]  = "World0.glb",
+    [MODELKIND_WORLD1]  = "World1.glb",
     [MODELKIND_WORLD10] = "World10.glb",
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
     // [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
-    // [SOL_MODEL_WORLD0]      = "World0.glb",
     // [MODELKIND_WALL]        = "Wall.glb",
     // [MODELKIND_WORLD4]      = "World4.glb",
-    // [SOL_MODEL_WORLD1]      = "World1.glb",
     // [SOL_MODEL_WORLD2]      = "World2.glb",
     // [SOL_MODEL_WORLD6]      = "World6.glb",
     // [SOL_MODEL_WORLD7]      = "World7.glb",
@@ -31,11 +31,11 @@ const char *model_path[SOL_MODEL_COUNT] = {
     // [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
 };
 
-ScModelData loaded_models[SOL_MODEL_COUNT];
+ScModelData loaded_models[MODELKIND_COUNT];
 
 static ScModelData *Parse_Model(SolResource res, u32 id);
 static SolSkeleton  ParseSkeleton(cgltf_data *data);
-ScModelDataMasks    model_masks[SOL_MODEL_COUNT];
+ScModelDataMasks    model_masks[MODELKIND_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
@@ -53,7 +53,7 @@ void Sol_FreeModel(ScModelData *model)
 
 int Sol_Models_Init()
 {
-    for (int i = 0; i < SOL_MODEL_COUNT; i++)
+    for (int i = 0; i < MODELKIND_COUNT; i++)
     {
         if (!model_path[i])
             continue;

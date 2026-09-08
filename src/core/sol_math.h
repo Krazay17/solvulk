@@ -20,7 +20,7 @@
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
 #define vecDist(a, b) glms_vec3_distance(a, b)
 
-#define SOL_COLOR(hex) (vec4s){ .r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255 }
+#define SOL_COLOR(hex) (vec4s){.r = ((hex) >> 16) & 0xFF, .g = ((hex) >> 8) & 0xFF, .b = ((hex)) & 0xFF, .a = 255}
 
 #define SOL_COLORA(hex, alpha)                                                                                         \
     (vec4s)                                                                                                            \
@@ -33,7 +33,7 @@
 extern const vec3s VECTOR_RADIAL_DIRECTIONS[9];
 
 // FUNCS------------------------------------
-vec3s   Sol_Vec3_FromYawPitch(float yaw, float pitch);
+vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromYawPitch(float yaw, float pitch);
 versors Sol_Quat_FromLookDir(vec3s lookDir);
 versors Sol_Quat_FromLookDira(vec3s lookDir);
@@ -191,7 +191,7 @@ static inline float Sol_Math_MapRange(float startA, float endA, float startB, fl
     return Sol_Math_Lerp(startA, endA, amount / (endB - startB));
 }
 
-static inline float Sol_Quat_ToYaw(versors q) 
+static inline float Sol_Quat_ToYaw(versors q)
 {
     // Extract yaw (rotation around Y axis) from unit quaternion
     // atan2(2*(w*y + x*z), 1 - 2*(y^2 + z^2))
@@ -282,7 +282,7 @@ static inline vec3s Sol_BounceVec(vec3s a, vec3s b)
 
 static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bool includeY)
 {
-    vec3s wishdir  = { 0, 0, 0 };
+    vec3s wishdir  = {0, 0, 0};
     vec3s flatdir  = lookdir;
     flatdir.y      = 0;
     flatdir        = glms_vec3_normalize(flatdir);
@@ -308,12 +308,16 @@ static inline vec3s CalcWishdir3(uint32_t action, vec3s lookdir, vec3s updir, bo
             wishdir = glms_vec3_sub(wishdir, updir);
     }
 
-    return glms_vec3_normalize(wishdir);
+    float len2 = glms_vec3_norm2(wishdir);
+    if (len2 <= 0.00001f)
+        return (vec3s){0, 0, 0};
+
+    return glms_vec3_scale(wishdir, 1.0f / sqrtf(len2));
 }
 
 static inline vec3s CalcWishDir2(uint32_t action)
 {
-    vec3s wishdir = { 0 };
+    vec3s wishdir = {0};
     if (action & BITC(ACTION_RIGHT))
         wishdir.x += 1;
     if (action & BITC(ACTION_LEFT))
@@ -327,7 +331,11 @@ static inline vec3s CalcWishDir2(uint32_t action)
     if (action & BITC(ACTION_CROUCH))
         wishdir.z -= 1;
 
-    return glms_vec3_normalize(wishdir);
+    float len2 = glms_vec3_norm2(wishdir);
+    if (len2 <= 0.00001f)
+        return (vec3s){0, 0, 0};
+
+    return glms_vec3_scale(wishdir, 1.0f / sqrtf(len2));
 }
 
 static inline void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1

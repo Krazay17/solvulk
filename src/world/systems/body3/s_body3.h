@@ -63,8 +63,6 @@ typedef struct
     SolContact *contacts;
 } SysPhysx;
 
-bool Sol_Body3_DoesCollide(const ScBody3 *body, const ScBody3 *other_body);
-
 void Build_Tables(World *world, SysPhysx *sys, float fdt);
 void Resolve_Contact(World *world, int idA, int idB, SolContact *contact);
 

@@ -16,16 +16,17 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
     SolRayResult aimTrace = {.pos = end};
     bool hit              = Sol_Raycast1(world,
                                          (SolRay){
-                                             .start = lookpos,
-                                             .mask  = COLLAYER_ALL,
-                                             .dir   = lookdir,
-                                             .dist  = range,
+                                             .start     = lookpos,
+                                             .mask      = COLLAYER_ALL,
+                                             .dir       = lookdir,
+                                             .dist      = range,
+                                             .ignoreEnt = id,
                                          },
                                          &aimTrace);
     // Add slight depth into hit
     aimTrace.pos       = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
     vec3s dirFromTrace = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, headpos));
-    
+
     if (vecDot(dirFromTrace, lookdir) > 0.7f)
     {
         aim.dir = dirFromTrace;
@@ -53,6 +54,7 @@ void Player_Tick(World *world, double dt)
         cmd->actionState = sol_user.actions;
 
         cmd->lookdir  = vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch));
+        cmd->aimdir   = cmd->lookdir;
         cmd->wishdir  = CalcWishdir3(sol_user.actions, cmd->lookdir, WORLD_UP, false);
         cmd->wishdir2 = CalcWishDir2(sol_user.actions);
 

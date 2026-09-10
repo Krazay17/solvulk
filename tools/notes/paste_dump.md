@@ -1124,3 +1124,75 @@ void Sol_Ability_Bind(World *world, int id, u32 slot, u32 ability, u32 rarity, f
         //     *yaw -= 2.0f * GLM_PIf;
         // else if (*yaw < -GLM_PIf)
         //     *yaw += 2.0f * GLM_PIf;
+
+// void Interact_Tick(World *world, double dt)
+// {
+//     float fdt = (float)dt;
+
+//     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
+//     SparseSet_ScCmd *cmd_set  = Sol_Comp_Set(world, ScCmd);
+
+//     for (int i = 0; i < set->cnt; i++)
+//     {
+//         int id               = set->dense[i];
+//         ScInteract *interact = &set->data[i];
+//         Xform xform          = Xform_Get(world, id);
+//         interact->state &=
+//             (INTERACT_HELD | INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGING | INTERACT_DRAGGABLE);
+//         int idB         = 0;
+//         bool is_hovered = (sol_user.mouse_hover_worldidx == world->index && sol_user.mouse_hover_ent == id);
+//         bool is_holding = false;
+//         vec2s hold_pos  = {0};
+
+//         if (sol_user.mouse_focus_ent >= 0)
+//         {
+//             is_holding = (sol_user.mouse_focus_ent == id && sol_user.mouse_focus_worldidx == world->index &&
+//                           sol_user.mouse_interact);
+//             hold_pos   = sol_user.mouse_pos;
+//         }
+//         else if (is_hovered)
+//         {
+//             is_holding = sol_user.mouse_interact;
+//             hold_pos   = sol_user.mouse_pos;
+//         }
+
+//         for (int j = 0; j < cmd_set->cnt; j++)
+//         {
+//             int cmd_id = cmd_set->dense[j];
+//             if (id == cmd_id)
+//                 continue;
+//             ScCmd *cmd   = &cmd_set->data[j];
+//             float dist2  = glms_vec3_distance2(world->xform.pos[cmd_id], xform.pos);
+//             float range2 = interact->range * interact->range;
+//             if (dist2 < range2)
+//             {
+//                 is_hovered = true;
+//                 if (cmd->actionState & BITC(ACTION_INTERACT))
+//                     is_holding = true;
+//             }
+//         }
+//         Press(world, idB, interact, is_hovered, is_holding, hold_pos, (vec2s){xform.pos.x, xform.pos.y});
+//     }
+
+//     float factor = 40.0f - expf(-25.0f * fdt);
+//     for (int i = 0; i < set->cnt; i++)
+//     {
+//         int id               = set->dense[i];
+//         ScInteract *interact = &set->data[i];
+
+//         if (interact->state & INTERACT_DRAGGING)
+//         {
+//             if (Sol_Comp_Has(world, id, ScBody2))
+//             {
+//                 ScBody2 *body = Sol_Comp_Get(world, id, ScBody2);
+//                 vec2s xform2  = {world->xform.pos[id].x, world->xform.pos[id].y};
+
+//                 vec2s target = glms_vec2_sub(interact->drag_target, interact->drag_offset);
+//                 vec2s delta  = glms_vec2_sub(target, xform2);
+//                 vec2s vel2   = glms_vec2_scale(delta, factor);
+
+//                 body->vel = (vec3s){vel2.x, vel2.y, 0};
+//             }
+//         }
+//     }
+// }

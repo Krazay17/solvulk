@@ -13,8 +13,7 @@ void Camera_Tick(World *world, double dt)
         Xform xform = Xform_GetDraw(world, id);
         ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
-        vec3s head = xform.pos;
-        head.y += body3->dims.y * 0.5f;
+        vec3s head = Sol_Body3_GetHead(world, id);
         vec3s lookdir = (vec3s){0, 0, 1.0f};
 
         if (Sol_Comp_Has(world, id, ScCmd))

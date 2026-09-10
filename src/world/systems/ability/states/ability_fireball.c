@@ -1,5 +1,6 @@
 #include "ability/s_ability.h"
 #include "world.h"
+#include "sol_core.h"
 #include "sol_math.h"
 
 #include "render/render.h"
@@ -43,15 +44,17 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
 
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->duration         = ability_base[ABILITY_STATE_FIREBALL].duration;
-    data->cooldown         = ability_base[ABILITY_STATE_FIREBALL].cooldown;
-    data->recoverDuration  = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
+    AbilityStateData *data                      = &ability->stateData[ability->activeSlot];
+    data->duration                              = ability_base[ABILITY_STATE_FIREBALL].duration;
+    data->cooldown                              = ability_base[ABILITY_STATE_FIREBALL].cooldown;
+    data->recoverDuration                       = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
     Sol_Comp_Get(world, id, ScCombat)->hitPause = 0;
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    data->cooldownRemaining = data->cooldown;
 }
 
 bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
@@ -63,7 +66,7 @@ bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *c
 bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    return data->lastExited + data->cooldown < world->tickTime;
+    return data->cooldownRemaining <= 0.0f;
 }
 
 void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)

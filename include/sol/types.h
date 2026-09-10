@@ -102,7 +102,7 @@ typedef enum
 
 typedef enum
 {
-    MOVEMENTKIND_PLAYER,
+    MOVEMENTKIND_DUDE,
     MOVEMENTKIND_SPECTATE,
     MOVEMENTKIND_WIZARD,
     MOVEMENTKIND_COUNT,
@@ -175,6 +175,7 @@ typedef enum
 typedef enum
 {
     AIKIND_WIZARD,
+    AIKIND_COUNT,
 } AiKind;
 
 typedef enum
@@ -435,14 +436,17 @@ typedef struct SolTri
 
 typedef enum
 {
-    INTERACT_NONE,
-    INTERACT_TOGGLEABLE = (1 << 1),
-    INTERACT_TOGGLED    = (1 << 2),
-    INTERACT_HOVERED    = (1 << 3),
-    INTERACT_HELD       = (1 << 4),
-    INTERACT_PRESSED    = (1 << 5),
-    INTERACT_DRAGGABLE  = (1 << 6),
-    INTERACT_DRAGGING   = (1 << 7),
+    INTERACT_UP,
+    INTERACT_ENTHOVERED     = (1 << 0),
+    INTERACT_MOUSEHOVERED   = (1 << 1),
+    INTERACT_DOWN           = (1 << 2),
+    INTERACT_JUSTDOWN       = (1 << 3),
+    INTERACT_JUSTUP         = (1 << 4),
+    INTERACT_DRAGGING       = (1 << 5),
+    INTERACT_TOGGLED        = (1 << 6),
+    INTERACT_TOGGLEABLE = (1 << 7),
+    INTERACT_DRAGGABLE  = (1 << 8),
+
 } InteractState;
 
 typedef enum
@@ -510,6 +514,13 @@ typedef struct SolContact
     vec3s pos, normal;
     float penetration;
 } SolContact;
+
+typedef struct SolInteractor
+{
+    int id;
+    bool pressing, hovering;
+    bool just_pressed, just_released;
+} SolInteractor;
 
 typedef struct SolHit
 {

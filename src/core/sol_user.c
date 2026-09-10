@@ -17,7 +17,9 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-SolUser sol_user = {.active_world = -1, .menu_world = -1, .game_world = -1, .hud_world = -1, .view_ent = -1};
+const float g_drag_dist = 100.0f;
+
+SolUser sol_user = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
@@ -42,55 +44,46 @@ bool consume_key;
 UserData user_data = {.look_sens = 0.001f};
 static float tooltipAlpha;
 
-void Find_User_Hit(void)
+void Find_User_Hit(double dt, SolMouse mouse)
 {
-    SolMouse mouse          = Sol_Input_GetMouse();
-    vec2s mouse_pos         = Sol_Input_GetMouseUI();
-    sol_user.mouse_interact = mouse.buttons[SOL_MOUSE_LEFT];
-    sol_user.mouse_pos      = mouse_pos;
-
-    if (sol_user.mouse_focus_ent >= 0)
+    bool interacting = mouse.buttons[SOL_MOUSE_LEFT];
+    if (sol_user.focus > 0)
     {
-        if (!sol_user.mouse_interact)
+        if (!interacting)
         {
-            sol_user.mouse_hover_ent      = sol_user.mouse_focus_ent;
-            sol_user.mouse_hover_worldidx = sol_user.mouse_focus_worldidx;
-            sol_user.mouse_focus_ent      = -1;
-            sol_user.mouse_focus_worldidx = -1;
+            sol_user.target   = sol_user.focus;
+            sol_user.target_w = sol_user.focus_w;
+            sol_user.focus    = 0;
+            sol_user.focus_w  = -1;
         }
         else
-        {
-            ScInteract *interact =
-                Sol_Comp_Get(Sol_GetWorldByIdx(sol_user.mouse_focus_worldidx), sol_user.mouse_focus_ent, ScInteract);
-            if (interact)
-            {
-                interact->drag_target = sol_user.mouse_pos;
-            }
             return;
-        }
     }
 
-    sol_user.mouse_hover_worldidx = -1;
-    sol_user.mouse_hover_ent      = -1;
+    // 2. Scan for hover target
+    sol_user.target   = 0;
+    sol_user.target_w = -1;
 
     for (int i = 0; i < solState.worldCount; i++)
     {
         World *world = solState.worlds[i];
         if (world->doesSimulate)
         {
-            int hit_ent = Sol_Interact_FindTopmost(world, mouse_pos);
-            if (hit_ent >= 0)
+            int hit_ent = Sol_Interact_FindTopmost(world, Sol_Input_GetMouseUI());
+            if (hit_ent > 0)
             {
-                sol_user.mouse_hover_ent      = hit_ent;
-                sol_user.mouse_hover_worldidx = world->index;
+                sol_user.target   = hit_ent;
+                sol_user.target_w = world->index;
                 break;
             }
         }
     }
-    if (sol_user.mouse_hover_ent >= 0 && sol_user.mouse_interact)
+
+    // 3. Acquire focus on press start
+    if (sol_user.target > 0 && interacting)
     {
-        sol_user.mouse_focus_ent      = sol_user.mouse_hover_ent;
-        sol_user.mouse_focus_worldidx = sol_user.mouse_hover_worldidx;
+        sol_user.focus   = sol_user.target;
+        sol_user.focus_w = sol_user.target_w;
     }
 }
 
@@ -139,8 +132,8 @@ void Tooltip_Update(double dt)
 {
     const float stiffness = 5.0f;
     float alpha           = 1.0f - expf(-stiffness * dt);
-    int id                = sol_user.mouse_hover_ent;
-    int worldidx          = sol_user.mouse_hover_worldidx;
+    int id                = sol_user.target;
+    int worldidx          = sol_user.target_w;
     World *world          = Sol_GetWorldByIdx(worldidx);
     if (world && id >= 0)
     {
@@ -278,10 +271,13 @@ void User_Debug(dt)
 
 void Sol_User_Tick(double dt)
 {
+    SolMouse mouse = Sol_Input_GetMouse();
+    sol_user.interact = mouse.buttons[SOL_MOUSE_LEFT];
+    // sol_user.click_r = mouse.buttons[SOL_MOUSE_RIGHT];
     consume_mouse = false;
     consume_key   = false;
 
-    Find_User_Hit();
+    Find_User_Hit(dt, mouse);
     Tooltip_Update(dt);
 
     Sol_User_HydrateUI();
@@ -317,25 +313,27 @@ void Sol_User_PostTick(double dt)
         g_solView.target = vecAdd(cam->pos, cam->dir);
     }
 
+    vec3s head = Sol_Body3_GetHead(world, id);
+
     if (Sol_Comp_Has(world, id, ScCmd))
     {
         ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
         if (mouse.buttons[SOL_MOUSE_LEFT])
         {
             SolRay ray = {
-                .start = cmd->headpos, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
+                .start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
             vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
             SolRayResult result = {0};
-            bool hit            = Sol_Raycast1D(world, ray, &result, 1.0f);
+            bool hit            = Sol_Raycast1D(world, ray, &result, 0.1f);
             if (hit)
             {
                 final_pos = result.pos;
             }
 
-            SolSphere *sphere = Sol_Debug_NewSphere(world, 5.0f);
+            SolSphere *sphere = Sol_Debug_NewSphere(world, 0.1f);
             sphere->color     = VEC4_GREEN;
             sphere->pos       = final_pos;
-            sphere->radius    = 1.0f;
+            sphere->radius    = 0.2f;
         }
     }
 }

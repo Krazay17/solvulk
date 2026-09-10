@@ -500,3 +500,11 @@ vec3s Sol_Body3_GetDir(World *world, int id)
 {
     return vecNorm(Sol_Comp_Get(world, id, ScBody3)->vel);
 }
+vec3s Sol_Body3_GetHead(World *world, int id)
+{
+    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+    vec3s pos     = world->xform.draw_pos[id];
+    if (body)
+        pos.y += body->dims.y * 0.4f;
+    return pos;
+}

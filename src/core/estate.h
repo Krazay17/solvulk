@@ -1,17 +1,25 @@
 #pragma once
 #include "sol/base.h"
 
-typedef struct World   World;
+typedef struct World World;
 typedef struct ScMove3 ScMove3;
-typedef struct ScCmd   ScCmd;
+typedef struct ScAi ScAi;
+typedef struct ScCmd ScCmd;
 typedef struct ScAbility ScAbility;
 
 typedef void (*StateUpdate)(World *world, int id, float dt);
 typedef void (*StateEnter)(World *world, int id);
 typedef void (*StateExit)(World *world, int id);
 typedef bool (*StateCanExit)(World *world, int id, u32 next);
-typedef bool (*StateCanEnter)(World *world, int id, u32 last, u32 next, int slot);
+typedef bool (*StateCanEnter)(World *world, int id, u32 last);
 typedef void (*StateDraw)(World *world, int id);
+
+typedef void (*AiStateUpdate)(World *world, int id, ScAi *ai, float dt);
+typedef void (*AiStateEnter)(World *world, int id, ScAi *ai);
+typedef void (*AiStateExit)(World *world, int id, ScAi *ai);
+typedef bool (*AiStateCanExit)(World *world, int id, ScAi *ai, u32 next);
+typedef bool (*AiStateCanEnter)(World *world, int id, ScAi *ai, u32 last);
+typedef void (*AiStateDraw)(World *world, int id, ScAi *ai);
 
 typedef void (*MoveStateUpdate)(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
 typedef void (*MoveStateEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd);
@@ -29,32 +37,42 @@ typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, ScCmd
 
 typedef struct
 {
-    StateUpdate   update;
-    StateEnter    enter;
-    StateExit     exit;
-    StateCanExit  canExit;
+    StateUpdate update;
+    StateEnter enter;
+    StateExit exit;
+    StateCanExit canExit;
     StateCanEnter canEnter;
-    StateDraw     draw;
-} StateFunc;
+    StateDraw draw;
+} StateFuncs;
 
 typedef struct
 {
-    MoveStateUpdate   update;
-    MoveStateEnter    enter;
-    MoveStateExit     exit;
-    MoveStateCanExit  canExit;
+    AiStateUpdate update;
+    AiStateEnter enter;
+    AiStateExit exit;
+    AiStateCanExit canExit;
+    AiStateCanEnter canEnter;
+    AiStateDraw draw;
+} AiStateFuncs;
+
+typedef struct
+{
+    MoveStateUpdate update;
+    MoveStateEnter enter;
+    MoveStateExit exit;
+    MoveStateCanExit canExit;
     MoveStateCanEnter canEnter;
-    MoveStateDraw     draw;
-} MoveStateFunc;
+    MoveStateDraw draw;
+} MoveStateFuncs;
 
 typedef struct
 {
-    AbilityStateUpdate   update;
-    AbilityStateEnter    enter;
-    AbilityStateExit     exit;
-    AbilityStateCanExit  canExit;
+    AbilityStateUpdate update;
+    AbilityStateEnter enter;
+    AbilityStateExit exit;
+    AbilityStateCanExit canExit;
     AbilityStateCanEnter canEnter;
-    AbilityStateDraw     draw;
+    AbilityStateDraw draw;
 } AbilityStateFunc;
 
 // void State_Update(World *world, int id, float dt);
@@ -69,10 +87,10 @@ typedef struct
 //     void *currentState;
 //     if (currentState == nextState)
 //         return false;
-//     const StateFunc *prevfunc = &state_func[currentState];
+//     const StateFuncs *prevfunc = &state_func[currentState];
 //     if (!prevfunc->canExit(world, id, nextState))
 //         return false;
-//     const StateFunc *nextfunc = &state_func[nextState];
+//     const StateFuncs *nextfunc = &state_func[nextState];
 //     if (!nextfunc->canEnter(world, id, currentState))
 //         return false;
 

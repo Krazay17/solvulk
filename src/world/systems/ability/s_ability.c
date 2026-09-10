@@ -7,6 +7,7 @@
  */
 #include "s_ability.h"
 #include "world.h"
+#include "sol_core.h"
 
 void Ability_Step(World *world, double dt)
 {
@@ -22,6 +23,8 @@ void Ability_Step(World *world, double dt)
             continue;
         for (int j = 0; j < ability->slots; j++)
         {
+            AbilityStateData *data     = &ability->stateData[j];
+            data->cooldownRemaining    = fmaxf(0.0f, data->cooldownRemaining - fdt);
             int mask                   = BITC(ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
@@ -59,7 +62,7 @@ void Ability_Draw(World *world, double dt)
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int slot, bool force)
 {
-    if (target_state > ABILITY_STATE_COUNT)
+    if (target_state >= ABILITY_STATE_COUNT)
         return false;
     ScAbility *ability               = Sol_Comp_Get(world, id, ScAbility);
     ScCmd *cmd                       = Sol_Comp_Get(world, id, ScCmd);
@@ -73,21 +76,21 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability, cmd, ability->state, slot))
             return false;
     }
-    if (ability->activeSlot >= 0)
-        ability->stateData[ability->activeSlot].lastExited = world->tickTime;
-    prevfunc->exit(world, id, ability, cmd);
+    if (prevfunc->exit)
+        prevfunc->exit(world, id, ability, cmd);
 
     ability->state      = target_state;
     ability->activeSlot = slot;
 
     AbilityStateData *data = &ability->stateData[slot];
-    data->lastEntered      = world->tickTime;
     data->elapsed          = 0;
     data->accum            = 0;
     data->stage            = 0;
     data->recover          = 0;
     data->power            = 0;
-    nextfunc->enter(world, id, ability, cmd);
+    
+    if (nextfunc->enter)
+        nextfunc->enter(world, id, ability, cmd);
 
     return true;
 }

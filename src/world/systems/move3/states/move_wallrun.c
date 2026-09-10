@@ -30,23 +30,21 @@ static bool CheckEnergy(World *world, int id)
 
 static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result, float addRadius)
 {
-    MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
+    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
 
     vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
     float radius = dims.x + addRadius;
-    Xform xform = Xform_Get(world, id);
+    Xform xform  = Xform_Get(world, id);
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
         {
             vec3s finalPos = xform.pos;
             finalPos.y += (float)i * (dims.y * 0.4f);
-            vec3s  rotated_offset = glms_quat_rotatev(xform.rot, VECTOR_RADIAL_DIRECTIONS[j]);
-            SolRay ray            = {
-                .start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .debug = true
-            };
-            bool  hit = Sol_Raycast1(world, ray, result);
-            float dot = glms_vec3_dot(result->norm, WORLD_UP);
+            vec3s rotated_offset = glms_quat_rotatev(xform.rot, VECTOR_RADIAL_DIRECTIONS[j]);
+            SolRay ray           = {.start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id};
+            bool hit             = Sol_Raycast1(world, ray, result);
+            float dot            = glms_vec3_dot(result->norm, WORLD_UP);
             // float lookDot = vecDot(cmd->lookdir, result->norm);
             if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
             {
@@ -63,7 +61,7 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
 
 void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 {
-    ScBody3       *body = Sol_Comp_Get(world, id, ScBody3);
+    ScBody3 *body       = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
 
     vec3s prevvel     = body->vel;
@@ -100,12 +98,12 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 
 void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
-    Xform xform = Xform_Get(world, id);
+    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
+    Xform xform         = Xform_Get(world, id);
     data->accum += dt;
 
-    SolRayResult result   = { 0 };
-    bool         goodWall = CheckWall(world, id, move, &result, DISTANCE_CHECK + 0.1f);
+    SolRayResult result = {0};
+    bool goodWall       = CheckWall(world, id, move, &result, DISTANCE_CHECK + 0.1f);
     if (goodWall)
     {
         data->accum = 0;
@@ -125,8 +123,8 @@ void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float 
 
 void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
-    MoveStateData *data  = &move->stateData[MOVE_WALLRUN];
+    ScBody3 *body       = Sol_Comp_Get(world, id, ScBody3);
+    MoveStateData *data = &move->stateData[MOVE_WALLRUN];
 
     if (body->vel.y < 0.0f)
         body->vel.y = 0.0f;
@@ -152,8 +150,8 @@ bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 
 
     if (move->airtime > 0 && (cmd->actionState & BITC(ACTION_JUMP)))
     {
-        SolRayResult result   = { 0 };
-        bool         goodWall = CheckWall(world, id, move, &result, DISTANCE_CHECK);
+        SolRayResult result = {0};
+        bool goodWall       = CheckWall(world, id, move, &result, DISTANCE_CHECK);
         return goodWall;
     }
     return false;

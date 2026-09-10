@@ -18,7 +18,7 @@ const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
 
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
 {
-        [MOVEMENTKIND_PLAYER] =
+        [MOVEMENTKIND_DUDE] =
             {
                 [MOVE_IDLE]     = {.speed = 0.0f, .accell = 0.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_WALK]     = {.speed = 7.0f, .accell = 12.0f, .friction = 10.0f, .gravity = -13.0f},
@@ -53,7 +53,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
             },
 };
 
-const MoveStateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
+const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
     [MOVE_IDLE] =
         {
             Move_Idle_Update,

@@ -9,6 +9,14 @@
 #include "world.h"
 #include "sol_math.h"
 
+static const ScCamera player_camera = {
+    .fov              = 80.0f,
+    .up.y             = 1.0f,
+    .lerpspeed        = 10.0f,
+    .desired_offset   = 1.0f,
+    .desired_distance = 2.0f,
+};
+
 static const ScBody3 wizard_body = {
     .shape       = SHAPE3_CAP,
     .mass        = 1.0f,
@@ -24,14 +32,24 @@ static const ScCombat wizard_combat = {
     .health    = 100.0f,
 };
 
+static const ScAi wizard_ai = {
+    .kind       = AIKIND_WIZARD,
+    .aggroRange = 20.0f,
+};
+
 static const ScBody3 dude_body = {
     .shape       = SHAPE3_CAP,
     .mass        = 1.0f,
     .invMass     = 1.0f,
     .restitution = 0.01f,
     .gravity     = SOL_GRAVITY,
-    .dims        = {0.5f, 1.7f, 0.5f},
+    .dims        = {0.5f, 1.8f, 0.5f},
     .mask        = PHYSXMASK(COLLAYER_TEAMA, COLLAYER_ALL),
+};
+
+static const ScMove3 dude_move = {
+    .kind       = MOVEMENTKIND_DUDE,
+    .baseHeight = 1.8f,
 };
 
 static const ScCombat dude_combat = {
@@ -45,49 +63,43 @@ static const ScAbility dude_ability = {
     .activeSlot = -1,
 };
 
-static const ScMove3 dude_move = {
-    .kind = MOVEMENTKIND_PLAYER,
-};
-
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, pos);
 
     Sol_Anim_Add(world, id, MODELKIND_DUDE);
 
-    ScBody3 *body = Sol_Comp_Add(world, id, ScBody3);
-    *body         = dude_body;
+    *Sol_Comp_Add(world, id, ScBody3)   = dude_body;
+    *Sol_Comp_Add(world, id, ScCombat)  = dude_combat;
+    *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
+    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
+    *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
 
-    ScCombat *combat = Sol_Comp_Add(world, id, ScCombat);
-    *combat          = dude_combat;
-
-    ScAbility *ability = Sol_Comp_Add(world, id, ScAbility);
-    *ability           = dude_ability;
-
-    ScMove3 *move    = Sol_Comp_Add(world, id, ScMove3);
-    move->kind       = MOVEMENTKIND_PLAYER;
-    move->baseHeight = body->dims.y;
+    Sol_Comp_Add(world, id, ScTeam);
+    Sol_Comp_Add(world, id, ScCmd);
 
     return id;
 }
 
 int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 {
-    int id = Sol_Create_Ent(world, pos);
-
-    ScCombat *combat = Sol_Comp_Add(world, id, ScCombat);
-    *combat          = wizard_combat;
-
+    int id       = Sol_Create_Ent(world, pos);
     ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
     snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->range      = 5.0f;
+    interact->range      = 25.0f;
+
+    ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
+    team->team   = 1;
 
     Sol_Anim_Add(world, id, MODELKIND_WIZARD);
 
-    ScBody3 *body3 = Sol_Comp_Add(world, id, ScBody3);
-    *body3         = wizard_body;
+    *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
+    *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
+    *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
+
+    Sol_Comp_Add(world, id, ScCmd);
 
     return id;
 }
@@ -111,7 +123,7 @@ int Sol_Prefab_Crosshair(World *world)
     return id;
 }
 
-int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_mask)
+int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_flags)
 {
     vec2s dims = {150.0f, 50.0f};
 
@@ -119,7 +131,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_ma
     if (id < 0)
         return -1;
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state |= interact_mask;
+    interact->state |= interact_flags;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -251,4 +263,8 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     view->dims.x  = size;
 
     return id;
+}
+
+int Sol_Prefab_Crystal(World *world, vec3s pos)
+{
 }

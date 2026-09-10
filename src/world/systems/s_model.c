@@ -1,6 +1,7 @@
 #include "world.h"
 #include "sol_core.h"
 #include "sol_math.h"
+#include "sol_user.h"
 #include "render/render.h"
 
 typedef struct
@@ -12,7 +13,7 @@ typedef struct
 const ModelKindData model_kinds[MODELKIND_COUNT] = {
     [MODELKIND_DUDE] =
         {
-            .y_offset = -0.825f,
+            .y_offset = -0.9f,
         },
     [MODELKIND_WIZARD] =
         {
@@ -30,7 +31,8 @@ const ModelKindData model_kinds[MODELKIND_COUNT] = {
 
 void Model_Render(World *world, double dt)
 {
-    float fdt              = (float)dt;
+    float fdt = (float)dt;
+
     SparseSet_ScModel *set = Sol_Comp_Set(world, ScModel);
     for (int i = 0; i < set->cnt; i++)
     {
@@ -44,7 +46,7 @@ void Model_Render(World *world, double dt)
         if (Sol_Comp_Has(world, id, ScInteract))
         {
             ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
-            if (interact->state & (INTERACT_HOVERED | INTERACT_DRAGGING))
+            if (interact->state & (INTERACT_MOUSEHOVERED | INTERACT_DRAGGING | INTERACT_ENTHOVERED))
                 modelSSBO.flags |= (1 << 0);
         }
         if (Sol_Comp_Has(world, id, ScBuff))
@@ -99,11 +101,11 @@ void Model_Init(World *world)
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
-    Xform result       = {0};
+    Xform result          = {0};
     ScModel *model        = Sol_Comp_Get(world, id, ScModel);
     ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
-    Xform xform      = Xform_GetDraw(world, id);
+    Xform xform           = Xform_GetDraw(world, id);
 
     int boneIdx = -1;
     for (int i = 0; i < skeleton->boneCount; i++)

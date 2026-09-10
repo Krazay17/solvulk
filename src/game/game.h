@@ -21,21 +21,73 @@ void Create_Hud();
 void Create_Game();
 void Create_Game2();
 
-void Hook_Test(World *world, double dt, int id, void *data);
-void Hook_Quit(World *w, double dt, int id, void *data);
-void Hook_Fullscreen(World *w, double dt, int id, void *data);
-void Hook_Healthbar(World *w, double dt, int id, void *data);
-
-static inline void Hook_SwitchWorld(World *w, double dt, int id, void *data)
+static inline void Hook_SwitchWorld(World *w, int id, int interactor, double dt, void *data)
 {
-    Sol_User_EnterGameWorld(2, true, (vec3s){0,5,0});
-}
-static inline void Hook_SwitchWorld2(World *w, double dt, int id, void *data)
-{
-    Sol_User_EnterGameWorld(3, true, (vec3s){0,5,0});
+    Sol_User_EnterGameWorld(2, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_SpawnWizard(World *w, double dt, int id, void *data)
+static inline void Hook_SwitchWorld2(World *w, int id, int interactor, double dt, void *data)
 {
-    Sol_Prefab_Wizard(Sol_User_GetGameWorld(), (vec3s){0, 20.f, 0}, 1.0f);
+    Sol_User_EnterGameWorld(3, true, (vec3s){0, 5, 0});
+}
+
+static inline void Hook_Test(World *w, int id, int interactor, double dt, void *data)
+{
+    ScBody3 *body = Sol_Comp_Get(w, id, ScBody3);
+    if (body)
+        body->vel.y += 50.0f;
+}
+
+static inline void Hook_SpawnWizard(World *w, int id, int interactor, double dt, void *data)
+{
+    World *world = Sol_User_GetGameWorld();
+    int wizard   = Sol_Prefab_Wizard(world, (vec3s){0, 20.f, 0}, 1.0f);
+
+    Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Test;
+}
+
+static inline void Hook_DebugToggle(World *w, int id, int interactor, double dt, void *data)
+{
+    solState.debug = (Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED) != 0;
+}
+
+static inline void Hook_CrystalDrain(World *w, int id, int interactor, double dt, void *data)
+{
+}
+
+static inline void Hook_Quit(World *w, int id, int interactor, double dt, void *data)
+{
+    QuitApp(0);
+}
+
+static inline void Hook_Fullscreen(World *w, int id, int interactor, double dt, void *data)
+{
+    W_Set_Fullscreen(Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED);
+}
+
+static inline void Hook_Healthbar(World *w, int id, int interactor, double dt, void *data)
+{
+    World *game_world = Sol_User_GetGameWorld();
+    ScView2 *view2    = Sol_Comp_Get(w, id, ScView2);
+    if (!game_world || !view2)
+        return;
+
+    float totalMaxHealth = 0.0f;
+    float totalHealth    = 0.0f;
+
+    SparseSet_ScPlayer *player_set = Sol_Comp_Set(game_world, ScPlayer);
+    for (int i = 0; i < player_set->cnt; i++)
+    {
+        int id = player_set->dense[i];
+
+        ScCombat *combat = Sol_Comp_Get(game_world, id, ScCombat);
+        if (!combat)
+            continue;
+        totalHealth += combat->health;
+        totalMaxHealth += combat->healthMax;
+    }
+    if (totalMaxHealth > 0.0f)
+        view2->views[0].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);
+    else
+        view2->views[0].targetFill = 0.0f;
 }

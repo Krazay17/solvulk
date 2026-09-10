@@ -46,34 +46,40 @@ void Create_Menu()
     { // QUIT BUTTON
         int id        = Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE);
         ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-        hook->pressed = Hook_Quit;
+        hook->release = Hook_Quit;
         Sol_Comp_Get(world, id, ScView2)->layer = UILAYER_2;
     }
-    { // WIZARD BUTTON
-        int id        = Sol_Prefab_Button(world, (vec3s){1130.0f, 200.0f, 0}, "Wizard", INTERACT_DRAGGABLE);
+    { // DEBUG BUTTON
+        int id =
+            Sol_Prefab_Button(world, (vec3s){1130.0f, 150.0f, 0}, "Debug", INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE);
         ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-        hook->pressed = Hook_SpawnWizard;
+        hook->release = Hook_DebugToggle;
+    }
+    { // FULLSCREEN BUTTON
+        int id        = Sol_Prefab_Button(world, (vec3s){1130.0f, 200.0f, 0}, "FULLSCREEN",
+                                          INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE);
+        ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
+        hook->release = Hook_Fullscreen;
+    }
+    { // WIZARD BUTTON
+        int id        = Sol_Prefab_Button(world, (vec3s){0, 350.0f, 0}, "Wizard", INTERACT_DRAGGABLE);
+        ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
+        hook->release = Hook_SpawnWizard;
     }
     { // WIZARDS BUTTON
-        int id       = Sol_Prefab_Button(world, (vec3s){1130.0f, 250.0f, 0}, "Wizards", INTERACT_DRAGGABLE);
+        int id       = Sol_Prefab_Button(world, (vec3s){0, 400.0f, 0}, "Wizards", INTERACT_DRAGGABLE);
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->held   = Hook_SpawnWizard;
     }
-    { // FULLSCREEN BUTTON
-        int id =
-            Sol_Prefab_Button(world, (vec3s){0.0f, 400.0f, 0}, "FULLSCREEN", INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE);
-        ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-        hook->pressed = Hook_Fullscreen;
-    }
     { // BUTTON WORLD1
-        int id        = Sol_Prefab_Button(world, (vec3s){0, 500.0f, 0}, "World1", INTERACT_DRAGGABLE);
+        int id        = Sol_Prefab_Button(world, (vec3s){0, 450.0f, 0}, "World1", INTERACT_DRAGGABLE);
         ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-        hook->pressed = Hook_SwitchWorld;
+        hook->release = Hook_SwitchWorld;
     }
     { // BUTTON WORLD2
-        int id        = Sol_Prefab_Button(world, (vec3s){0, 550.0f, 0}, "World2", INTERACT_DRAGGABLE);
+        int id        = Sol_Prefab_Button(world, (vec3s){0, 500.0f, 0}, "World2", INTERACT_DRAGGABLE);
         ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-        hook->pressed = Hook_SwitchWorld2;
+        hook->release = Hook_SwitchWorld2;
     }
 }
 
@@ -103,19 +109,14 @@ void Create_Game()
     WAddPosttick(world) = Debug;
 
     { // Player
-        int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
-        sol_user.view_ent = id;
-        Sol_Debug_Add("Player Ent", id);
-        Sol_Comp_Add(world, id, ScCmd);
+        int id = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
         Sol_Comp_Add(world, id, ScPlayer);
+        sol_user.view_ent = id;
+
         ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
         snprintf(meta->name, sizeof(meta->name), "Krazay");
-        ScCamera *camera         = Sol_Comp_Add(world, id, ScCamera);
-        camera->fov              = 80.0f;
-        camera->up.y             = 1.0f;
-        camera->lerpspeed        = 10.0f;
-        camera->desired_offset   = 1.0f;
-        camera->desired_distance = 2.0f;
+
+        Sol_Debug_Add("Player Ent", id);
     }
     { // Level
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
@@ -124,14 +125,17 @@ void Create_Game()
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
     }
+    { // Drainable Crystal
+        int id = Sol_Create_Ent(world, (vec3s){5, 5, 0});
+        Sol_Comp_Add(world, id, ScInteract);
+        Sol_Comp_Add(world, id, ScHook)->held = Hook_CrystalDrain;
+    }
 
-    // while (world->entCount < 500)
+    // while (world->entCount < 4)
     // { // Wizards
     //     static int inc = 0;
     //     int id         = Sol_Prefab_Wizard(world, (vec3s){sinf(inc) * 10.0f, 50.0f, cosf(inc) * 10.0f}, 1.0f);
     //     Sol_Comp_Add(world, id, ScHook)->pressed = Hook_Test;
-    //     // Sol_Comp_Add(world, id, ScCmd);
-    //     // Sol_Comp_Add(world, id, ScPlayer);
     //     inc++;
     // }
 }

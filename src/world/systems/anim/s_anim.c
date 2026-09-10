@@ -142,7 +142,6 @@ void Anim_Tick(World *world, double dt)
                 case 2:
                     ability_anim.anim =
                         ANIM_ATTACK_LEFT; // ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
-                        sollog("Attack");
                     ability_anim.seek = 0.16f;
                     break;
                 }

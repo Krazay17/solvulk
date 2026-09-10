@@ -1,5 +1,6 @@
 #include "ability/s_ability.h"
 #include "world.h"
+#include "sol_core.h"
 #include "sol_math.h"
 
 #define DASH_VEL 20.0f
@@ -30,11 +31,11 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
     data->duration         = ability_base[ABILITY_STATE_DASH].duration;
     data->cooldown         = ability_base[ABILITY_STATE_DASH].cooldown;
 
-    vec3s flat_lookdir     = cmd->lookdir;
-    flat_lookdir.y         = 0;
-    flat_lookdir           = vecNorm(flat_lookdir);
-    data->as.dash.dir = flat_lookdir;
-    data->as.dash.strafe   = STRAFE_FWD;
+    vec3s flat_lookdir   = cmd->lookdir;
+    flat_lookdir.y       = 0;
+    flat_lookdir         = vecNorm(flat_lookdir);
+    data->as.dash.dir    = flat_lookdir;
+    data->as.dash.strafe = STRAFE_FWD;
     if (glms_vec3_norm2(cmd->wishdir) > 0)
     {
         data->as.dash.dir = cmd->wishdir;
@@ -46,6 +47,8 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
 void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    data->cooldownRemaining = data->cooldown;
 }
 
 bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
@@ -58,5 +61,5 @@ bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return data->lastExited + data->cooldown < world->tickTime;
+    return data->cooldownRemaining <= 0.0f;
 }

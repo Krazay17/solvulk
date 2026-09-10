@@ -7,6 +7,7 @@
  */
 #include "ability/s_ability.h"
 #include "world.h"
+#include "sol_core.h"
 #include "sol_math.h"
 #include "render/render.h"
 
@@ -37,12 +38,12 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         return;
     data->accum += dt;
 
-    if (data->accum > HITINTERVAL)
+    if (data->accum >= HITINTERVAL)
     {
-        data->accum = 0;
-
+        data->accum -= HITINTERVAL;
+        vec3s head = Sol_Body3_GetHead(world, id);
         SolRay ray = {
-            .start     = cmd->headpos,
+            .start     = head,
             .dir       = cmd->aimdir,
             .dist      = body->dims.x + MELEE_RANGE,
             .ignoreEnt = id,
@@ -53,7 +54,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            float dot = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, cmd->headpos)));
+            float dot = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, head)));
             if (dot < 0)
                 continue;
             if (!Sol_Combat_TryHitGen(world, id, result.entId, combat->hitSession))
@@ -114,7 +115,7 @@ void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 
-    data->lastExited = world->tickTime;
+    data->cooldownRemaining = data->cooldown;
     Sol_Anim_Stop(world, id, ANIM_LAYER_UPPER, 0);
 }
 
@@ -129,7 +130,7 @@ bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return data->lastExited + data->cooldown < world->tickTime;
+    return data->cooldownRemaining <= 0.0f;
 }
 
 void Ability_Claw_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)

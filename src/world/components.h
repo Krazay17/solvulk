@@ -7,6 +7,7 @@
 #define MAX_VIEWS 10
 #define MAX_TRACKER_GETTERS 2
 #define MAX_EMITTERS 8
+#define MAX_INTERACTS 32
 
 // ==========================================
 // 1. COMPONENT DATA STRUCTS
@@ -17,13 +18,23 @@ typedef struct ScActive
     double time_activated;
 } ScActive;
 
+typedef enum
+{
+    CMDKIND_PLAYER_LOCAL,
+    CMDKIND_PLAYER_REMOTE,
+    CMDKIND_NPC,
+} CmdKind;
+
 typedef struct ScCmd
 {
-    SolActions actionState;
+    u8 kind;
     bool isStrafing;
+    SolActions actionState;
+    SolActions action_state_prev;
+    u32 reaction_state;
     int target;
     float yaw, pitch;
-    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir, headpos;
+    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir;
 } ScCmd;
 
 typedef struct ScMeta
@@ -56,9 +67,11 @@ typedef struct
 } AiStateData;
 typedef struct ScAi
 {
-    vec3s dirToTarget;
+    u8 kind;
     AiState state;
-    u32 target, justHitUs;
+    vec3s dirToTarget;
+    u32 target, last_target, justHitUs;
+    float aggroRange;
     float distToTarget, dropAggroTimer, lastHit;
     AiStateData stateData[AISTATE_COUNT];
 } ScAi;
@@ -98,13 +111,19 @@ typedef struct ScCamera
 
 typedef struct ScInteract
 {
-    InteractState state;
+    uint16_t state;
+    uint16_t state_prev;
+    bool is_local;
+    vec3s drag_offset, down_pos;
+    float range, duration;
+
+    int *interactors;
+    int interactor_limit;
+
+    double down_start_time;
+    double down_end_time;
     double hover_start_time;
-    double unhover_start_time;
-    double press_start_time;
-    double pressedAccum;
-    float range;
-    vec2s press_pos, drag_offset, drag_target;
+    double hover_end_time;
 } ScInteract;
 
 typedef struct
@@ -268,14 +287,11 @@ typedef struct
         } whip;
     } as;
 
-    AbilityState kind;
-    float elapsed, duration;
-    float recover, recoverDuration;
-
     float accum, power;
 
-    double lastEntered, lastExited;
-    float cooldown;
+    float elapsed, duration;
+    float recover, recoverDuration;
+    float cooldown, cooldownRemaining;
 
     u8 stage;
     bool held;
@@ -472,12 +488,14 @@ typedef struct ScStage
     bool isDirty;
 } ScStage;
 
-typedef void (*Hook)(World *, double, int, void *);
+typedef void (*Hook)(World *, int, int, double, void *);
 typedef struct ScHook
 {
     Hook held;
     Hook pressed;
     Hook update;
+    Hook release;
+    Hook in_range;
     void *data;
 } ScHook;
 

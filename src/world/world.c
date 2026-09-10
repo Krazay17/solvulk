@@ -33,7 +33,7 @@ typedef struct
 
 const SystemDef system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT] = {.update = {Interact_Tick, UPDATEPHASE_TICK}},
+    [WORLDSYS_INTERACT] = {.update = {{Interact_Tick, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
 
     [WORLDSYS_MOVE3]   = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]   = {.update = {Move2_Step, UPDATEPHASE_STEP}},
@@ -41,6 +41,7 @@ const SystemDef system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_BODY2]   = {.update = {Body2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ABILITY] = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_COMBAT]  = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_AI]      = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
     [WORLDSYS_HOOK]       = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FACING]     = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
@@ -304,8 +305,8 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
         if (Sol_Comp_HasE(world, id, i))
         {
             BaseSparseSet *src_set = (BaseSparseSet *)world->components[i];
-            int src_dense = src_set->sparse[id];
-            void *old_comp = ((char * )src_set->data) + (src_dense * COMP_SIZES[i]);
+            int src_dense          = src_set->sparse[id];
+            void *old_comp         = ((char *)src_set->data) + (src_dense * COMP_SIZES[i]);
 
             void *new_comp = Sol_Comp_AddE(target_world, new_id, i);
             if (old_comp && new_comp)

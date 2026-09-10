@@ -187,12 +187,12 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     MoveState current_state                 = move->state;
-    const MoveStateFunc *current_state_func = &MOVE_STATE_FUNCS[current_state];
+    const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
 
     for (int i = 0; i < MOVE_STATE_COUNT; i++)
     {
         MoveState target_state                 = MOVE_STATE_PRIORITY[i];
-        const MoveStateFunc *target_state_func = &MOVE_STATE_FUNCS[target_state];
+        const MoveStateFuncs *target_state_func = &MOVE_STATE_FUNCS[target_state];
         if (current_state_func->canExit && !current_state_func->canExit(world, id, move, cmd, target_state))
             continue;
         if (target_state_func->canEnter && !target_state_func->canEnter(world, id, move, cmd, current_state))
@@ -209,8 +209,8 @@ void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
     //     sollog(move->state);
 }
 
-void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFunc *current_state_func,
-                       const MoveStateFunc *target_state_func, ScMove3 *move, ScCmd *cmd)
+void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFuncs *current_state_func,
+                       const MoveStateFuncs *target_state_func, ScMove3 *move, ScCmd *cmd)
 {
     if (current_state_func->exit)
         current_state_func->exit(world, id, move, cmd);
@@ -232,8 +232,8 @@ bool Sol_Move3_SetState(World *world, int id, MoveState target_state)
     ScCmd *cmd    = Sol_Comp_Get(world, id, ScCmd);
 
     const MoveState current_state           = move->state;
-    const MoveStateFunc *current_state_func = &MOVE_STATE_FUNCS[current_state];
-    const MoveStateFunc *target_state_func  = &MOVE_STATE_FUNCS[target_state];
+    const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
+    const MoveStateFuncs *target_state_func  = &MOVE_STATE_FUNCS[target_state];
 
     if (current_state_func->canExit && !current_state_func->canExit(world, id, move, cmd, target_state))
         return false;

@@ -14,7 +14,7 @@ typedef struct
 } MoveStateForce;
 
 extern const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
-extern const MoveStateFunc MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
+extern const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
 extern const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT];
 
 static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
@@ -139,8 +139,8 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd);
 
-void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFunc *current_state_func,
-                       const MoveStateFunc *target_state_func, ScMove3 *move, ScCmd *cmd);
+void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFuncs *current_state_func,
+                       const MoveStateFuncs *target_state_func, ScMove3 *move, ScCmd *cmd);
 void Knockback(World *world, int id, ScMove3 *move, float fdt);
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt);
 void RestoreFriction(World *world, int id, ScMove3 *move, float fdt);

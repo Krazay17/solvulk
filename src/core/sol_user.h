@@ -3,21 +3,26 @@
 
 #define MAX_USER_ITEMS 512
 
+typedef enum
+{
+    USERACTION_LCLICK = (1 << 0),
+    USERACTION_RCLICK = (1 << 1),
+    USERACTION_MCLICK = (1 << 2),
+    USERACTION_MENU   = (1 << 3),
+} UserAction;
 typedef struct SolUser
 {
-    int active_world;
-    int menu_world, game_world, hud_world;
+    int view_world;
     int view_ent;
+    int menu_world, game_world, hud_world;
     float yaw, pitch;
     SolActions actions;
-
-    vec2s mouse_pos;
-    int mouse_hover_worldidx;
-    int mouse_hover_ent;
-    int mouse_focus_worldidx;
-    int mouse_focus_ent;
-    bool mouse_interact;
     bool mouse_locked;
+    vec2s mouse_pos;
+    bool interact;
+
+    int target, focus;
+    int target_w, focus_w;
 } SolUser;
 
 typedef struct UserData

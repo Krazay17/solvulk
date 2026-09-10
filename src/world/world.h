@@ -30,6 +30,7 @@ typedef enum
     WORLDSYS_ABILITY,
     WORLDSYS_COMBAT,
     WORLDSYS_HOOK,
+    WORLDSYS_AI,
 
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
@@ -370,6 +371,8 @@ void Body3_Step(World *world, double dt);
 void Body2_Step(World *world, double dt);
 void Ability_Step(World *world, double dt);
 void Combat_Step(World *world, double dt);
+void Ai_Step(World *world, double dt);
+void Interact_Body_Step(World *world, double dt);
 
 void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
@@ -416,6 +419,7 @@ vec3s Sol_Body3_GetGround(World *world, int id);
 vec3s Sol_Body3_GetVel(World *world, int id);
 vec3s Sol_Body3_GetDir(World *world, int id);
 float Sol_Body3_GetSpeed(World *world, int id);
+vec3s Sol_Body3_GetHead(World *world, int id);
 
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);

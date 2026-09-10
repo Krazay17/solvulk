@@ -46,7 +46,8 @@ void Model_Render(World *world, double dt)
         if (Sol_Comp_Has(world, id, ScInteract))
         {
             ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
-            if (interact->state & (INTERACT_MOUSEHOVERED | INTERACT_DRAGGING | INTERACT_ENTHOVERED))
+
+            if (interact->is_local && (interact->state & (INTERACT_DRAGGING | INTERACT_HOVERED)))
                 modelSSBO.flags |= (1 << 0);
         }
         if (Sol_Comp_Has(world, id, ScBuff))

@@ -17,60 +17,49 @@ static void User_Interact(World *world, double dt)
     if (world->index == sol_user.focus_w && sol_user.focus > 0)
     {
         ScInteract *interact = Sol_Comp_Get(world, sol_user.focus, ScInteract);
-        interact->state |= INTERACT_MOUSEHOVERED;
-        interact->state |= INTERACT_DRAGGING;
+        ScHook *hook         = Sol_Comp_Get(world, sol_user.focus, ScHook);
+        vec3s mouse3         = (vec3s){sol_user.mouse_pos.x, sol_user.mouse_pos.y, 0};
+        interact->state |= INTERACT_HOVERED;
         interact->state |= INTERACT_DOWN;
+        interact->is_local = true;
 
-        if (!(interact->state_prev & INTERACT_MOUSEHOVERED))
-        {
-            interact->hover_start_time = world->tickTime;
-        }
-
-        ScHook *hook = Sol_Comp_Get(world, sol_user.focus, ScHook);
         if (!(interact->state_prev & INTERACT_DOWN))
         {
-            interact->state |= INTERACT_JUSTDOWN;
-            interact->down_start_time = world->tickTime;
+            interact->down_pos    = mouse3;
+            interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
+
             if (hook && hook->pressed)
-                hook->pressed(world, sol_user.target, 0, dt, hook->data);
+                hook->pressed(world, sol_user.target, sol_user.view_ent, dt, hook->data);
         }
+        float d2 = glms_vec3_distance2(mouse3, interact->down_pos);
+        if (d2 > drag_dist2)
+        {
+            interact->state |= INTERACT_DRAGGING;
+            return;
+        }
+
         if (hook && hook->held)
-            hook->held(world, sol_user.target, 0, dt, hook->data);
+            hook->held(world, sol_user.target, sol_user.view_ent, dt, hook->data);
     }
     else if (world->index == sol_user.target_w && sol_user.target > 0)
     {
         ScInteract *interact = Sol_Comp_Get(world, sol_user.target, ScInteract);
-        interact->state |= INTERACT_MOUSEHOVERED;
-
-        if (!(interact->state_prev & INTERACT_MOUSEHOVERED))
+        interact->state |= INTERACT_HOVERED;
+        interact->is_local = true;
+        if (sol_user.interact_last && !(interact->state_prev & INTERACT_DRAGGING))
         {
-            interact->hover_start_time = world->tickTime;
-        }
-        if (interact->state_prev & INTERACT_DOWN)
-        {
-            interact->state |= INTERACT_JUSTUP;
-            interact->down_end_time = world->tickTime;
             if (interact->state & INTERACT_TOGGLEABLE)
                 interact->state ^= INTERACT_TOGGLED;
-
             ScHook *hook = Sol_Comp_Get(world, sol_user.target, ScHook);
             if (hook && hook->release)
-                hook->release(world, sol_user.target, 0, dt, hook->data);
+                hook->release(world, sol_user.target, sol_user.view_ent, dt, hook->data);
         }
     }
 }
 
-void Interact_Tick(World *world, double dt)
+static void Cmd_Interact(World *world, double dt, SparseSet_ScInteract *set_interact)
 {
-    SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
-    SparseSet_ScCmd *set_cmd  = Sol_Comp_Set(world, ScCmd);
-    for (int i = 0; i < set->cnt; i++)
-    {
-        ScInteract *interact = &set->data[i];
-        interact->state_prev = interact->state;
-        interact->state &= (INTERACT_TOGGLED | INTERACT_DRAGGING | INTERACT_TOGGLEABLE);
-    }
-    User_Interact(world, dt);
+    SparseSet_ScCmd *set_cmd = Sol_Comp_Set(world, ScCmd);
     for (int i = 0; i < set_cmd->cnt; i++)
     {
         int id               = set_cmd->dense[i];
@@ -80,16 +69,16 @@ void Interact_Tick(World *world, double dt)
         int best_id          = 0;
         float best_dot       = 0.0f;
         ScInteract *interact = NULL;
-        for (int j = 0; j < set->cnt; j++)
+        for (int j = 0; j < set_interact->cnt; j++)
         {
-            int idB = set->dense[j];
+            int idB = set_interact->dense[j];
             if (id == idB)
                 continue;
-            interact     = &set->data[j];
+            float range  = set_interact->data[j].range;
             vec3s posB   = world->xform.pos[idB];
             float d2     = glms_vec3_distance2(posB, pos);
             vec3s dir_to = glms_vec3_scale(glms_vec3_sub(posB, pos), 1.0f / (d2 > 0 ? sqrt(d2) : 1.0f));
-            float range2 = interact->range * interact->range;
+            float range2 = range > 0 ? range * range : 5.0f;
             if (d2 < range2)
             {
                 float dot = glms_vec3_dot(cmd->aimdir, dir_to);
@@ -105,17 +94,20 @@ void Interact_Tick(World *world, double dt)
             ScInteract *best_interact = Sol_Comp_Get(world, best_id, ScInteract);
             if (is_player)
             {
-                best_interact->state |= INTERACT_ENTHOVERED;
-                if (!(best_interact->state_prev & INTERACT_ENTHOVERED))
-                    best_interact->hover_start_time = world->tickTime;
+                best_interact->state |= INTERACT_HOVERED;
+                best_interact->is_local = true;
             }
             ScHook *hook = Sol_Comp_Get(world, best_id, ScHook);
             if ((cmd->actionState & BITC(ACTION_INTERACT)))
             {
                 best_interact->state |= INTERACT_DOWN;
-                if (!(best_interact->state_prev & INTERACT_DOWN))
+
+                best_interact->interactor = id;
+                if (interact->state & INTERACT_TOGGLEABLE)
+                    interact->state ^= INTERACT_TOGGLED;
+
+                if (!(cmd->action_state_prev & BITC(ACTION_INTERACT)))
                 {
-                    best_interact->state |= INTERACT_JUSTDOWN;
                     if (hook && hook->pressed)
                         hook->pressed(world, best_id, id, dt, hook->data);
                 }
@@ -123,11 +115,9 @@ void Interact_Tick(World *world, double dt)
                 if (hook && hook->held)
                     hook->held(world, best_id, id, dt, hook->data);
             }
-            else if (best_interact->state_prev & INTERACT_DOWN)
+            else if (cmd->action_state_prev & BITC(ACTION_INTERACT))
             {
-                best_interact->state |= INTERACT_JUSTUP;
-                best_interact->down_end_time = world->tickTime;
-
+                best_interact->interactor = id;
                 if (hook && hook->release)
                     hook->release(world, best_id, id, dt, hook->data);
             }
@@ -135,16 +125,66 @@ void Interact_Tick(World *world, double dt)
     }
 }
 
+static void Interact_Update(World *world, double dt, SparseSet_ScInteract *set)
+{
+    for (int i = 0; i < set->cnt; i++)
+    {
+        ScInteract *interact = &set->data[i];
+        if ((interact->state & INTERACT_HOVERED))
+        {
+            if (!(interact->state_prev & INTERACT_HOVERED))
+            {
+                interact->state |= INTERACT_JUSTHOVERED;
+                interact->hover_start_time = world->tickTime;
+            }
+        }
+        else if (interact->state_prev & INTERACT_HOVERED)
+        {
+            interact->state |= INTERACT_JUSTUNHOVERED;
+            interact->hover_end_time = world->tickTime;
+        }
+
+        if ((interact->state & INTERACT_DOWN))
+        {
+            if (!(interact->state_prev & INTERACT_DOWN))
+            {
+                interact->state |= INTERACT_JUSTDOWN;
+                interact->down_start_time = world->tickTime;
+            }
+        }
+        else if ((interact->state_prev & INTERACT_DOWN))
+        {
+            interact->state |= INTERACT_JUSTUP;
+            interact->down_end_time = world->tickTime;
+        }
+    }
+}
+
+void Interact_Tick(World *world, double dt)
+{
+    SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        ScInteract *interact = &set->data[i];
+        interact->state_prev = interact->state;
+        interact->state &= (INTERACT_TOGGLED | INTERACT_TOGGLEABLE);
+    }
+
+    User_Interact(world, dt);
+    Cmd_Interact(world, dt, set);
+    Interact_Update(world, dt, set);
+}
+
 void Interact_Body_Step(World *world, double dt)
 {
     float fdt = (float)dt;
 
-    SparseSet_ScInteract *set_interacts = Sol_Comp_Set(world, ScInteract);
+    SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
 
-    for (int j = 0; j < set_interacts->cnt; j++)
+    for (int j = 0; j < set->cnt; j++)
     {
-        int interact_id      = set_interacts->dense[j];
-        ScInteract *interact = &set_interacts->data[j];
+        int interact_id      = set->dense[j];
+        ScInteract *interact = &set->data[j];
 
         if (!(interact->state & INTERACT_DRAGGING))
             continue;
@@ -153,30 +193,13 @@ void Interact_Body_Step(World *world, double dt)
         if (body2)
         {
             vec3s xform_pos = world->xform.pos[interact_id];
-            vec2s target_pos;
+            vec2s target_pos =
+                glms_vec2_sub(sol_user.mouse_pos, (vec2s){interact->drag_offset.x, interact->drag_offset.y});
+            float factor = 40.0f - expf(-25.0f * fdt);
+            vec2s delta  = glms_vec2_sub(target_pos, (vec2s){xform_pos.x, xform_pos.y});
+            vec2s vel2   = glms_vec2_scale(delta, factor);
 
-            // if (interact->interactors[0].id == -1)
-            // { // Mouse Drag
-            //     target_pos =
-            //         glms_vec2_sub(sol_user.mouse_pos, (vec2s){interact->drag_offset.x, interact->drag_offset.y});
-            // }
-            // else if (interact->interactors > 0)
-            // { // Entity Drag
-            //     vec3s holder_pos = world->xform.pos[interact->active_interactor];
-            //     target_pos       = glms_vec2_sub((vec2s){holder_pos.x, holder_pos.y},
-            //                                      (vec2s){interact->drag_offset.x, interact->drag_offset.y});
-            // }
-            // else
-            // {
-            //     continue;
-            // }
-
-            // Apply physics velocity toward target
-            // float factor = 40.0f - expf(-25.0f * fdt);
-            // vec2s delta  = glms_vec2_sub(target_pos, (vec2s){xform_pos.x, xform_pos.y});
-            // vec2s vel2   = glms_vec2_scale(delta, factor);
-
-            // body2->vel = (vec3s){vel2.x, vel2.y, 0.0f};
+            body2->vel = (vec3s){vel2.x, vel2.y, 0.0f};
         }
     }
 }

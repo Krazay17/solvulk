@@ -17,21 +17,18 @@ typedef enum
     UPDATEPHASE_RENDER3,
     UPDATEPHASE_RENDER2,
 } UpdatePhase;
-
 typedef struct
 {
     SystemUpdate update;
     UpdatePhase phase;
 } SystemUpdateDef;
 #define SYSTEMUPDATEDEF_COUNT 3
-typedef struct
+const struct SystemDef
 {
     SystemInit init;
     SystemDeinit deinit;
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
-} SystemDef;
-
-const SystemDef system_inits[WORLDSYS_COUNT] = {
+} system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT] = {.update = {{Interact_Tick, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
 

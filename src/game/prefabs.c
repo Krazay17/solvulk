@@ -123,7 +123,7 @@ int Sol_Prefab_Crosshair(World *world)
     return id;
 }
 
-int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_flags)
+int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook func)
 {
     vec2s dims = {150.0f, 50.0f};
 
@@ -132,6 +132,9 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         return -1;
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->state |= interact_flags;
+
+    ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
+    hook->release = func;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -147,7 +150,9 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .dims        = {dims.x, dims.y},
         .color       = {0.1f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
+        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
         .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     view->views[1] = (View2){
         .kind        = VIEW2KIND_RECT,
@@ -155,19 +160,25 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .color       = {0.5f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[2] = (View2){
-        .kind   = VIEW2KIND_RECT,
-        .dims   = {dims.x, dims.y},
-        .color  = {0.0f, 0.0f, 0.0f, 1.0f},
-        .border = 3.0f,
+        .kind       = VIEW2KIND_RECT,
+        .dims       = {dims.x, dims.y},
+        .color      = {0.0f, 0.0f, 0.0f, 1.0f},
+        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .border     = 3.0f,
     };
     view->views[3] = (View2){
-        .kind   = VIEW2KIND_TEXT,
-        .dims   = {16.0f},
-        .color  = {0.0f, 1.0f, 0.0f, 1.0f},
-        .offset = {dims.x * 0.5f, dims.y * 0.5f},
+        .kind       = VIEW2KIND_TEXT,
+        .dims       = {16.0f},
+        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
+        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .offset     = {dims.x * 0.5f, dims.y * 0.5f},
     };
     strncpy(view->views[3].text, text, sizeof(view->views[3].text));
 

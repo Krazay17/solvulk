@@ -271,8 +271,10 @@ void User_Debug(dt)
 
 void Sol_User_Tick(double dt)
 {
-    SolMouse mouse = Sol_Input_GetMouse();
-    sol_user.interact = mouse.buttons[SOL_MOUSE_LEFT];
+    SolMouse mouse         = Sol_Input_GetMouse();
+    sol_user.interact_last = sol_user.interact;
+    sol_user.interact      = mouse.buttons[SOL_MOUSE_LEFT];
+    sol_user.mouse_pos     = Sol_Input_GetMouseUI();
     // sol_user.click_r = mouse.buttons[SOL_MOUSE_RIGHT];
     consume_mouse = false;
     consume_key   = false;
@@ -320,8 +322,7 @@ void Sol_User_PostTick(double dt)
         ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
         if (mouse.buttons[SOL_MOUSE_LEFT])
         {
-            SolRay ray = {
-                .start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
+            SolRay ray = {.start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
             vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
             SolRayResult result = {0};
             bool hit            = Sol_Raycast1D(world, ray, &result, 0.1f);

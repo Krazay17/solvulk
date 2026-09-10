@@ -114,11 +114,10 @@ typedef struct ScInteract
     uint16_t state;
     uint16_t state_prev;
     bool is_local;
-    vec3s drag_offset, down_pos;
-    float range, duration;
 
-    int *interactors;
-    int interactor_limit;
+    int interactor;
+    float range, duration;
+    vec3s drag_offset, down_pos;
 
     double down_start_time;
     double down_end_time;
@@ -401,9 +400,9 @@ typedef struct
     View2Kind kind;
     vec4s dims, offset;
     vec4s color;
-    vec4s hoverColor, clickColor, toggleColor;
+    vec4s hoverColor, downColor, clickColor, toggleColor;
+    float hoverAnim, downAnim, clickAnim;
     float fill, scale, textWidth, border;
-    float hoverAnim, clickAnim;
     float targetFill, fillSpeed;
     u8 textureID, flags;
     vec2s textureUV;
@@ -488,7 +487,6 @@ typedef struct ScStage
     bool isDirty;
 } ScStage;
 
-typedef void (*Hook)(World *, int, int, double, void *);
 typedef struct ScHook
 {
     Hook held;

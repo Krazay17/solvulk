@@ -20,6 +20,7 @@ typedef struct SolUser
     bool mouse_locked;
     vec2s mouse_pos;
     bool interact;
+    bool interact_last;
 
     int target, focus;
     int target_w, focus_w;

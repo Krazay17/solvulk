@@ -21,16 +21,16 @@ void Sol_View2d_Init(World *world)
 
 void View2_Draw(World *world, double dt)
 {
-    float              fdt = (float)dt;
+    float fdt              = (float)dt;
     SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id       = set->dense[i];
+        int id            = set->dense[i];
         ScView2 *viewComp = &set->data[i];
 
         for (int j = 0; j < viewComp->count; j++)
         {
-            View2   *view  = &viewComp->views[j];
+            View2 *view = &viewComp->views[j];
             draw_funcs[view->kind](world, id, fdt, view, world->xform.draw_pos[id], viewComp->layer);
         }
     }
@@ -41,7 +41,7 @@ void View2_Healthbar(World *world, double dt)
     SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int id        = set->dense[i];
         ScView2 *view = &set->data[i];
 
         if (!Sol_Comp_Has(world, id, ScTracker))
@@ -52,7 +52,7 @@ void View2_Healthbar(World *world, double dt)
         if (!Sol_Comp_Has(world, id, ScCombat))
             continue;
         ScCombat *combat          = Sol_Comp_Get(tracker->world, tracker->entId, ScCombat);
-        float     target          = combat->healthMax > 0 ? combat->health / combat->healthMax : 0.0f;
+        float target              = combat->healthMax > 0 ? combat->health / combat->healthMax : 0.0f;
         view->views[2].targetFill = target;
         view->views[3].fill = view->views[3].targetFill = target;
     }
@@ -63,7 +63,7 @@ void View2_Abilitybar(World *world, double dt)
     SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
     for (int i = 0; i < set->cnt; i++)
     {
-        int      id   = set->dense[i];
+        int id        = set->dense[i];
         ScView2 *view = &set->data[i];
 
         if (!Sol_Comp_Has(world, id, ScTracker))
@@ -88,18 +88,27 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u3
     if (Sol_Comp_Has(world, id, ScInteract))
     {
         ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
-        if (interact->state & (INTERACT_MOUSEHOVERED | INTERACT_ENTHOVERED))
+
+        if (interact->state & INTERACT_DOWN)
+            view->downAnim = fminf(view->downAnim + fdt * 20.0f, 1.0f);
+        else
+            view->downAnim = fmaxf(view->downAnim - fdt * 20.0f, 0.0f);
+
+        if (interact->state & INTERACT_HOVERED)
             view->hoverAnim = fminf(view->hoverAnim + fdt * 12.0f, 1.0f);
         else
             view->hoverAnim = fmaxf(view->hoverAnim - fdt * 8.0f, 0.0f);
-        if (interact->state & INTERACT_JUSTUP)
+
+        if ((interact->state & INTERACT_JUSTUP) && !(interact->state_prev & INTERACT_DRAGGING))
             view->clickAnim = 1.0f;
+
         view->clickAnim = fmaxf(view->clickAnim - fdt * 5.0f, 0.0f);
 
         if (interact->state & INTERACT_TOGGLED)
             drawCol = view->toggleColor;
     }
     drawCol          = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
+    drawCol          = glms_vec4_lerp(drawCol, view->downColor, view->downAnim);
     drawCol          = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
     float speed      = view->fillSpeed > 0 ? -view->fillSpeed : -14.0f;
     float factor     = 1.0f - expf(speed * fdt);
@@ -131,13 +140,13 @@ static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u3
 
     float textWidth = Sol_MeasureText(view->text, view->dims.x, SOL_FONT_ICE);
     Sol_Render_DrawText2D(view->text, (SolFontDesc){
-        .layer = layer,
-        .x     = UISCALE(pos.x + view->offset.x - textWidth * 0.5f),
-        .y     = UISCALE(pos.y + view->offset.y + view->dims.x * 0.35f),
-        .size  = UISCALE(view->dims.x),
-        .color = view->color,
-        .kind  = SOL_FONT_ICE,
-    });
+                                          .layer = layer,
+                                          .x     = UISCALE(pos.x + view->offset.x - textWidth * 0.5f),
+                                          .y     = UISCALE(pos.y + view->offset.y + view->dims.x * 0.35f),
+                                          .size  = UISCALE(view->dims.x),
+                                          .color = view->color,
+                                          .kind  = SOL_FONT_ICE,
+                                      });
 }
 
 void Sol_View2d_SetText(World *world, int id, View2 *view, const char *text)

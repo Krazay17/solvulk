@@ -36,6 +36,7 @@ typedef void (*SystemDeinit)(World *);
 typedef void (*SystemUpdate)(World *, double);
 typedef void (*TickEnt)(World *, int, double);
 typedef float (*GetterFunc)(World *world, int id);
+typedef void (*Hook)(World *, int, int, double, void *);
 
 typedef struct
 {
@@ -437,16 +438,20 @@ typedef struct SolTri
 typedef enum
 {
     INTERACT_UP,
-    INTERACT_ENTHOVERED     = (1 << 0),
-    INTERACT_MOUSEHOVERED   = (1 << 1),
-    INTERACT_DOWN           = (1 << 2),
-    INTERACT_JUSTDOWN       = (1 << 3),
-    INTERACT_JUSTUP         = (1 << 4),
-    INTERACT_DRAGGING       = (1 << 5),
-    INTERACT_TOGGLED        = (1 << 6),
+    INTERACT_ENTHOVERED   = (1 << 0),
+    INTERACT_MOUSEHOVERED = (1 << 1),
+    INTERACT_DOWN         = (1 << 2),
+    INTERACT_JUSTDOWN     = (1 << 3),
+    INTERACT_JUSTUP       = (1 << 4),
+    INTERACT_DRAGGING     = (1 << 5),
+    INTERACT_TOGGLED      = (1 << 6),
+
+    INTERACT_HOVERED     = (1 << 10),
+    INTERACT_JUSTHOVERED = (1 << 11),
+    INTERACT_JUSTUNHOVERED = (1 << 12),
+    
     INTERACT_TOGGLEABLE = (1 << 7),
     INTERACT_DRAGGABLE  = (1 << 8),
-
 } InteractState;
 
 typedef enum

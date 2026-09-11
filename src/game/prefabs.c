@@ -99,8 +99,6 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
-    Sol_Comp_Add(world, id, ScCmd);
-
     return id;
 }
 
@@ -157,7 +155,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
     view->views[1] = (View2){
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
-        .color       = {0.5f, 0.1f, 0.1f, 1.0f},
+        .color       = {0.9f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
         .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
@@ -181,6 +179,100 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .offset     = {dims.x * 0.5f, dims.y * 0.5f},
     };
     strncpy(view->views[3].text, text, sizeof(view->views[3].text));
+
+    return id;
+}
+
+static void Hook_PrintValue(World *w, int a, int b, double dt, void *data)
+{
+    sollog(Sol_Comp_Get(w, a, ScSlider)->value);
+}
+int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook func)
+{
+    vec2s dims = {150.0f, 50.0f};
+    int id     = Sol_Create_Ent(world, pos);
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->state |= interact_flags;
+
+    ScBody2 body = {
+        .shape = SHAPE2_REC,
+        .dims  = {dims.x, dims.y, 0},
+        .mask  = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
+    };
+    *Sol_Comp_Add(world, id, ScBody2) = body;
+
+    ScSlider slider = {
+        .axis      = {1, 0, 0},
+        .track_len = dims.x,
+        .value     = 0.0f,
+    };
+    *Sol_Comp_Add(world, id, ScSlider) = slider;
+
+    ScHook hook                      = {.held = Hook_PrintValue};
+    *Sol_Comp_Add(world, id, ScHook) = hook;
+
+    ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
+    view->count    = 8;
+    view->views[0] = (View2){
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .color       = {0.1f, 0.1f, 0.1f, 1.0f},
+        .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
+        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
+        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+    };
+    view->views[1] = (View2){
+        .kind  = VIEW2KIND_SLIDER_FILL,
+        .dims  = {dims.x, dims.y},
+        .color = {0.0f, 1.0f, 0.0f, 1.0f},
+    };
+    view->views[2] = (View2){
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .color       = {0.9f, 0.1f, 0.1f, 1.0f},
+        .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
+        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+        .textureID   = SOL_TEXTURE_SWIRLFRAME,
+    };
+    view->views[3] = (View2){
+        .kind       = VIEW2KIND_RECT,
+        .dims       = {dims.x, dims.y},
+        .color      = {0.0f, 0.0f, 0.0f, 1.0f},
+        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .border     = 3.0f,
+    };
+
+    view->views[4] = (View2){
+        .kind  = VIEW2KIND_SLIDER,
+        .dims  = {dims.x, dims.y},
+        .color = {0.1f, 0.1f, 0.7f, 1.0f},
+    };
+    view->views[5] = (View2){
+        .kind      = VIEW2KIND_SLIDER,
+        .dims      = {dims.x, dims.y},
+        .color     = {0.5f, 0.1f, 0.7f, 1.0f},
+        .textureID = SOL_TEXTURE_SWIRLFRAME,
+    };
+    view->views[6] = (View2){
+        .kind   = VIEW2KIND_SLIDER,
+        .dims   = {dims.x, dims.y},
+        .color  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .border = 3.0f,
+    };
+    view->views[7] = (View2){
+        .kind       = VIEW2KIND_TEXT,
+        .dims       = {16.0f},
+        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
+        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
+        .offset     = {dims.x * 0.5f, dims.y * 0.5f},
+    };
+    strncpy(view->views[7].text, text, sizeof(view->views[7].text));
 
     return id;
 }

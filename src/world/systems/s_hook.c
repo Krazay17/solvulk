@@ -18,20 +18,5 @@ void Hook_Tick(World *world, double dt)
 
         if (hook->update)
             hook->update(world, id, 0, dt, hook->data);
-
-        // if (Sol_Comp_Has(world, id, ScInteract))
-        // {
-        //     ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
-        //     if (interact->state & INTERACT_DOWN)
-        //     {
-        //         if (hook->held)
-        //             hook->held(world, id, dt, interact->interactors, hook->data);
-        //     }
-        //     if (interact->state & INTERACT_JUSTUP)
-        //     {
-        //         if (hook->pressed)
-        //             hook->pressed(world, id, dt, interact->interactors, hook->data);
-        //     }
-        // }
     }
 }

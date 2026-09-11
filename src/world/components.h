@@ -32,7 +32,7 @@ typedef struct ScCmd
     SolActions actionState;
     SolActions action_state_prev;
     u32 reaction_state;
-    int target;
+    int target, interact;
     float yaw, pitch;
     vec3s wishdir, wishdir2, aimdir, aimpos, lookdir;
 } ScCmd;
@@ -395,6 +395,17 @@ typedef struct ScEmitter
     u32 emitterCount;
 } ScEmitter;
 
+enum UiKind
+{
+    UIKIND_BUTTON,
+    UIKIND_SLIDER,
+};
+typedef struct ScUi
+{
+    u8 kind;
+    float value;
+} ScUi;
+
 typedef struct
 {
     View2Kind kind;
@@ -468,9 +479,10 @@ typedef struct ScZone
 
 typedef struct ScSlider
 {
-    float min_val;
-    float max_val;
-    float current_val;
+    vec3s offset, axis;
+    float track_len;
+    float step;
+    float value;
 } ScSlider;
 
 typedef struct ScBuilder
@@ -506,6 +518,7 @@ typedef struct ScHook
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
+    X(ScUi, HAS_ScUi)                                                                                                  \
     X(ScMeta, HAS_ScMeta)                                                                                              \
     X(ScTeam, HAS_ScTeam)                                                                                              \
     X(ScPlayer, HAS_ScPlayer)                                                                                          \

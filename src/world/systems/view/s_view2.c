@@ -6,11 +6,15 @@
 typedef void (*DrawFunc)(World *, int, float, View2 *, vec3s, u32);
 
 static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
+static void DrawSliderFill(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
+static void DrawSlider(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 static void DrawCircle(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 
 DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
     [VIEW2KIND_RECT]   = DrawRect,
+    [VIEW2KIND_SLIDER] = DrawSlider,
+    [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
     [VIEW2KIND_CIRCLE] = DrawCircle,
     [VIEW2KIND_TEXT]   = DrawText,
 };
@@ -33,52 +37,6 @@ void View2_Draw(World *world, double dt)
             View2 *view = &viewComp->views[j];
             draw_funcs[view->kind](world, id, fdt, view, world->xform.draw_pos[id], viewComp->layer);
         }
-    }
-}
-
-void View2_Healthbar(World *world, double dt)
-{
-    SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
-    for (int i = 0; i < set->cnt; i++)
-    {
-        int id        = set->dense[i];
-        ScView2 *view = &set->data[i];
-
-        if (!Sol_Comp_Has(world, id, ScTracker))
-            continue;
-        ScTracker *tracker = Sol_Comp_Get(world, id, ScTracker);
-        if (!tracker->world || !tracker->entId)
-            continue;
-        if (!Sol_Comp_Has(world, id, ScCombat))
-            continue;
-        ScCombat *combat          = Sol_Comp_Get(tracker->world, tracker->entId, ScCombat);
-        float target              = combat->healthMax > 0 ? combat->health / combat->healthMax : 0.0f;
-        view->views[2].targetFill = target;
-        view->views[3].fill = view->views[3].targetFill = target;
-    }
-}
-
-void View2_Abilitybar(World *world, double dt)
-{
-    SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
-    for (int i = 0; i < set->cnt; i++)
-    {
-        int id        = set->dense[i];
-        ScView2 *view = &set->data[i];
-
-        if (!Sol_Comp_Has(world, id, ScTracker))
-            continue;
-
-        ScTracker *tracker = Sol_Comp_Get(world, id, ScTracker);
-        if (!tracker->getters[0] || !tracker->getters[1])
-            continue;
-
-        float target              = tracker->getters[0](tracker->world, tracker->entId) > 0
-                                        ? tracker->getters[0](tracker->world, tracker->entId) /
-                                              tracker->getters[1](tracker->world, tracker->entId)
-                                        : 0.0f;
-        view->views[2].targetFill = target;
-        view->views[3].fill = view->views[3].targetFill = target;
     }
 }
 
@@ -127,6 +85,61 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u3
     ssbo->uv         = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
                            ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
                            : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
+}
+
+static void DrawSliderFill(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer)
+{
+    ScSlider *slider = Sol_Comp_Get(world, id, ScSlider);
+    if (!slider)
+        return;
+
+    float t = slider->value;
+
+    float track_origin = pos.x + view->offset.x;
+
+    float right = view->dims.x * t;
+    float y = pos.y + view->offset.y;
+
+    RectSSBO *ssbo  = Sol_Render_GetNext_Rect(layer);
+    ssbo->rect      = (vec4s){UISCALE(track_origin), UISCALE(y), UISCALE(right), UISCALE(view->dims.y)};
+    ssbo->scale     = 1.0f;
+    ssbo->fill      = 1.0f;
+    ssbo->color     = view->color;
+    ssbo->flags     = view->flags;
+    ssbo->textureID = view->textureID;
+    ssbo->border    = view->border * (1.0f + view->clickAnim);
+    ssbo->uv        = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
+                          ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
+                          : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
+}
+
+static void DrawSlider(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer)
+{
+    ScSlider *slider = Sol_Comp_Get(world, id, ScSlider);
+    if (!slider)
+        return;
+
+    float t = slider->value;
+
+    float width        = view->dims.x * 0.15f;
+    float track_origin = pos.x + view->offset.x;
+    float travel_range = view->dims.x - width;
+
+    // Position of handle's left edge
+    float x = track_origin + (travel_range * t);
+    float y = pos.y + view->offset.y;
+
+    RectSSBO *ssbo  = Sol_Render_GetNext_Rect(layer);
+    ssbo->rect      = (vec4s){UISCALE(x), UISCALE(y), UISCALE(width), UISCALE(view->dims.y)};
+    ssbo->scale     = 1.0f;
+    ssbo->fill      = 1.0f;
+    ssbo->color     = view->color;
+    ssbo->flags     = view->flags;
+    ssbo->textureID = view->textureID;
+    ssbo->border    = view->border * (1.0f + view->clickAnim);
+    ssbo->uv        = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
+                          ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
+                          : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
 }
 
 static void DrawCircle(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer)

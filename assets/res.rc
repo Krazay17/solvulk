@@ -1,5 +1,5 @@
 //ID_NAME               TYPE            PATH
-MAINICON                ICON            "images/AuraIco.ico"
+MAINICON                ICON            "images/SolEngine.ico"
 atlas.raw               RCDATA          "fonts/atlas.raw"
 atlas.json              RCDATA          "fonts/atlas.json"
 Crosshair.png          RCDATA          "images/Crosshair4.png"
@@ -27,6 +27,7 @@ SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
 // FogStrip.png          RCDATA          "images/FogStrip.png"
 // Shield.png          RCDATA          "images/Shield.png"
 // Grid.png          RCDATA          "images/Grid.png"
+
 
 
 Dude.glb                RCDATA          "models/Dude.glb"

@@ -30,7 +30,7 @@ const struct SystemDef
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT] = {.update = {{Interact_Tick, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
+    [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
 
     [WORLDSYS_MOVE3]   = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]   = {.update = {Move2_Step, UPDATEPHASE_STEP}},
@@ -40,15 +40,15 @@ const struct SystemDef
     [WORLDSYS_COMBAT]  = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]      = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
-    [WORLDSYS_HOOK]       = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FACING]     = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_CAMERA]     = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_ANIM]       = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_MODEL]      = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
-    [WORLDSYS_VIEW2]      = {.update = {{View2_Draw, UPDATEPHASE_RENDER2},
-                                        {View2_Healthbar, UPDATEPHASE_RENDER2},
-                                        {View2_Abilitybar, UPDATEPHASE_RENDER2}}},
-    [WORLDSYS_VIEW3]      = {.update = View3_Draw, UPDATEPHASE_RENDER3},
+    [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+
+    [WORLDSYS_MODEL] = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
+    [WORLDSYS_VIEW3] = {.update = {View3_Draw, UPDATEPHASE_RENDER3}},
+
+    [WORLDSYS_VIEW2]      = {.update = {View2_Draw, UPDATEPHASE_RENDER2}},
     [WORLDSYS_SCOREBOARD] = {.update = {Scoreboard_Draw, UPDATEPHASE_RENDER2}},
 
     [WORLDSYS_DEBUG] =

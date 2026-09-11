@@ -81,22 +81,6 @@ void Player_Tick(World *world, double dt)
             cmd->aimdir    = aim.dir;
             cmd->target    = aim.target;
         }
-
-        if (Sol_Comp_Has(world, id, ScAbility))
-        {
-            ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-            // for (int i = 0; i < ABILITY_SLOTS; i++)
-            // {
-            //     int  ability_mask          = BITC(ACTION_ABILITY1 + i);
-            //     bool isDown                = cmd->actionState & ability_mask;
-            //     ability->stateData[i].held = isDown;
-
-            //     if (isDown)
-            //     {
-            //         Sol_Ability_SetState(world, id, ability->action_map[i], i, false);
-            //     }
-            // }
-        }
     }
 }
 

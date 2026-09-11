@@ -41,7 +41,6 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
     }
     SpatialGrid_BuildFromAABBs(&sys->dynamic_group.spatial, sys->dynamic_group.aabb_scratch,
                                solb_count(sys->dynamic_group.aabb_scratch));
-    Prof_EndEz(&prof1, true, fdt);
 
     SparseSet_ScStage *stageSet = Sol_Comp_Set(world, ScStage);
     bool stageDirty             = false;
@@ -78,6 +77,8 @@ void Build_Tables(World *world, SysPhysx *sys, float fdt)
         SpatialGrid_BuildFromTris(&sys->static_group.spatial, sys->static_group.tris,
                                   solb_count(sys->static_group.tris));
     }
+
+    Prof_EndEz(&prof1, true, fdt);
 }
 
 void Resolve_Contact(World *world, int idA, int idB, SolContact *contact)
@@ -253,8 +254,7 @@ void Collisions_Dynamic_Bodies_Local(World *world, int idA, ScBody3 *body, vec3s
                         continue;
                     ScBody3 *other_body = Sol_Comp_Get(world, idB, ScBody3);
 
-                    if (!((body->mask >> 16) & COLLAYER_TEAMZ || (other_body->mask >> 16 & COLLAYER_TEAMZ)) ||
-                        body->ignoreEnt == idB || other_body->ignoreEnt == idA ||
+                    if ((body->ignoreEnt == idB) || (other_body->ignoreEnt == idA) ||
                         !((body->mask >> 16) & other_body->mask) || !((other_body->mask >> 16) & body->mask))
                         continue;
 

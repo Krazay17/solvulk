@@ -17,7 +17,7 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-const float g_drag_dist = 100.0f;
+const float drag_dist2 = 100.0f;
 
 SolUser sol_user = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
 static SolResource user_settings_file;
@@ -46,23 +46,28 @@ static float tooltipAlpha;
 
 void Find_User_Hit(double dt, SolMouse mouse)
 {
-    bool interacting = mouse.buttons[SOL_MOUSE_LEFT];
+    bool click = mouse.buttons[SOL_MOUSE_LEFT];
+    bool grab  = mouse.buttons[SOL_MOUSE_MIDDLE];
+
     if (sol_user.focus > 0)
     {
-        if (!interacting)
+        if (!click && !grab)
         {
             sol_user.target   = sol_user.focus;
             sol_user.target_w = sol_user.focus_w;
             sol_user.focus    = 0;
             sol_user.focus_w  = -1;
         }
-        else
-            return;
+        sol_user.grab = grab;
+        // else if (glms_vec2_distance2(sol_user.mouse_pos, sol_user.focus_start) > drag_dist2)
+        //     sol_user.grab = 1;
+        return;
     }
 
     // 2. Scan for hover target
     sol_user.target   = 0;
     sol_user.target_w = -1;
+    sol_user.grab     = 0;
 
     for (int i = 0; i < solState.worldCount; i++)
     {
@@ -80,10 +85,12 @@ void Find_User_Hit(double dt, SolMouse mouse)
     }
 
     // 3. Acquire focus on press start
-    if (sol_user.target > 0 && interacting)
+    if (sol_user.target > 0 && (click || grab))
     {
-        sol_user.focus   = sol_user.target;
-        sol_user.focus_w = sol_user.target_w;
+        sol_user.focus       = sol_user.target;
+        sol_user.focus_w     = sol_user.target_w;
+        sol_user.focus_start = sol_user.mouse_pos;
+        sol_user.grab        = grab;
     }
 }
 
@@ -272,9 +279,12 @@ void User_Debug(dt)
 void Sol_User_Tick(double dt)
 {
     SolMouse mouse         = Sol_Input_GetMouse();
+    sol_user.mouse_pos     = Sol_Input_GetMouseUI();
     sol_user.interact_last = sol_user.interact;
     sol_user.interact      = mouse.buttons[SOL_MOUSE_LEFT];
-    sol_user.mouse_pos     = Sol_Input_GetMouseUI();
+    sol_user.grab_last     = sol_user.drag;
+    sol_user.grab          = mouse.buttons[SOL_MOUSE_MIDDLE];
+
     // sol_user.click_r = mouse.buttons[SOL_MOUSE_RIGHT];
     consume_mouse = false;
     consume_key   = false;

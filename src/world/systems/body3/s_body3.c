@@ -18,8 +18,8 @@
 
 static int user_contact_count = 0;
 
-static SolProfiler prof2  = {.name = "Dynamic"};
-static SolProfiler prof3  = {.name = "Static"};
+static SolProfiler prof2  = {.name = "Body3Tables"};
+static SolProfiler profile  = {.name = "Body3"};
 const static float sub_dt = (float)SOL_TIMESTEP * (1.0f / (float)SOLVER_ITERATIONS);
 
 void Body3_Init(World *world)
@@ -49,6 +49,7 @@ void Body3_Deinit(World *world)
 
 void Body3_Step(World *world, double dt)
 {
+    Prof_Begin(&profile);
     float fdt = (float)dt;
     int i, j, k, l, m, iter;
     SysPhysx *ws = world->systems[WORLDSYS_BODY3];
@@ -142,6 +143,8 @@ void Body3_Step(World *world, double dt)
             Sol_Xform_Teleport(world, id, (vec3s){0, 50, 0});
         }
     }
+
+    Prof_EndEz(&profile, true, dt);
 }
 
 vec3s Sol_Body3_GetGround(World *world, int id)

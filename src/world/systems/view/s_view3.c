@@ -19,6 +19,7 @@ void View3_Draw(World *world, double dt)
         int id        = set->dense[i];
         ScView3 *view = &set->data[i];
 
+        // TODO use draw_funcs instead of hardcoded Fireball
         SphereKind sphereKind = SPHEREKIND_BASIC;
         switch (view->kind)
         {

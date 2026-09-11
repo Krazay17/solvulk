@@ -57,7 +57,7 @@ void Ability_Draw(World *world, double dt)
 }
 
 // ###########################
-// #### PUBLIC ###############
+// ######## PUBLIC ###########
 // ###########################
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int slot, bool force)
@@ -88,7 +88,7 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     data->stage            = 0;
     data->recover          = 0;
     data->power            = 0;
-    
+
     if (nextfunc->enter)
         nextfunc->enter(world, id, ability, cmd);
 

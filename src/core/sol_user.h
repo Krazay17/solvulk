@@ -18,12 +18,14 @@ typedef struct SolUser
     float yaw, pitch;
     SolActions actions;
     bool mouse_locked;
-    vec2s mouse_pos;
+    vec2s mouse_pos, focus_start;
     bool interact;
     bool interact_last;
+    bool grab, grab_last;
 
-    int target, focus;
-    int target_w, focus_w;
+    int target, target_w;
+    int focus, focus_w;
+    int drag, drag_w;
 } SolUser;
 
 typedef struct UserData

@@ -363,7 +363,8 @@ void Debug_Init(World *world);
 void Debug_Deinit(World *world);
 
 void Player_Tick(World *world, double dt);
-void Interact_Tick(World *world, double dt);
+void Interact_Update(World *world, double dt);
+void Slider_Update(World *world, double dt);
 
 void Move3_Step(World *world, double dt);
 void Move2_Step(World *world, double dt);

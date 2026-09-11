@@ -69,6 +69,10 @@ void Create_Menu()
     { // BUTTON WORLD2
         int id = Sol_Prefab_Button(world, (vec3s){0, 500.0f, 0}, "World2", INTERACT_DRAGGABLE, 0, Hook_SwitchWorld2);
     }
+    {
+        int id = Sol_Prefab_Slider(world, (vec3s){0.0f, 550.0f, 0}, "Volume", INTERACT_DRAGGABLE, 0, Hook_SetVolume);
+    }
+    Sol_Prefab_Button(world, (vec3s){0,600.0f, 0}, "Clone", INTERACT_DRAGGABLE, 0, Hook_Clone);
 }
 
 void Create_Hud()

@@ -91,3 +91,19 @@ static inline void Hook_Healthbar(World *w, int id, int interactor, double dt, v
     else
         view2->views[0].targetFill = 0.0f;
 }
+
+static inline void Hook_SetVolume(World *w, int id, int interactor, double dt, void *data)
+{
+}
+
+static inline void Hook_SunAngle(World *w, int id, int interactor, double dt, void *data)
+{
+}
+
+static inline void Hook_Clone(World *w, int a, int b, double dt, void *data)
+{
+    World *world = Sol_User_GetGameWorld();
+    vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
+    int id       = Sol_Prefab_Dude(world, pos, 1.0f);
+    Sol_Comp_Add(world, id, ScPlayer);
+}

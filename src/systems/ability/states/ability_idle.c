@@ -1,4 +1,4 @@
-#include "ability/s_ability.h"
+#include "ability/si_ability.h"
 #include "world.h"
 
 void Ability_Idle_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)

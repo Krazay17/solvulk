@@ -8,13 +8,15 @@ void Parent_Update(World *world, double dt)
     {
         int id           = set->dense[i];
         ScParent *parent = &set->data[i];
-        if (!parent->active)
-            continue;
-        XformP xform       = Xform_GetP(world, id);
+
         Xform xform_parent = Xform_Get(world, parent->parentId);
 
-        *xform.pos = glms_vec3_add(*xform.pos, glms_vec3_add(xform_parent.pos, parent->localOffset));
-        *xform.rot = glms_quat_mul(*xform.rot, xform_parent.rot);
-        *xform.sca = glms_vec3_mul(*xform.sca, xform_parent.sca);
+        vec3s pos_final   = glms_vec3_add(xform_parent.pos, parent->localOffset);
+        versors rot_final = glms_quat_mul(xform_parent.rot, parent->localQuat);
+        vec3s sca_final   = xform_parent.sca;
+
+        world->xform.pos[id] = pos_final;
+        world->xform.rot[id] = rot_final;
+        world->xform.sca[id] = sca_final;
     }
 }

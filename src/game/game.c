@@ -72,7 +72,7 @@ void Create_Menu()
     {
         int id = Sol_Prefab_Slider(world, (vec3s){0.0f, 550.0f, 0}, "Volume", INTERACT_DRAGGABLE, 0, Hook_SetVolume);
     }
-    Sol_Prefab_Button(world, (vec3s){0,600.0f, 0}, "Clone", INTERACT_DRAGGABLE, 0, Hook_Clone);
+    Sol_Prefab_Button(world, (vec3s){0, 600.0f, 0}, "Clone", INTERACT_DRAGGABLE, 0, Hook_Clone);
 }
 
 void Create_Hud()
@@ -92,6 +92,7 @@ void Create_Hud()
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->update = Hook_Healthbar;
     }
+     Sol_Prefab_AbilityCard(world, (vec3s){100.0f, 400.0f, 0}, ABILITY_STATE_CLAW);
 }
 
 void Create_Game()
@@ -103,12 +104,17 @@ void Create_Game()
     { // Player
         int id = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
         Sol_Comp_Add(world, id, ScPlayer);
-        sol_user.view_ent = id;
-
         ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
         snprintf(meta->name, sizeof(meta->name), "Krazay");
-
+        sol_user.view_ent = id;
         Sol_Debug_Add("Player Ent", (float)id);
+
+        int idB       = Sol_Create_Ent(world, (vec3s){0, 0, 0});
+        ScView3 *view = Sol_Comp_Add(world, idB, ScView3);
+        view->kind    = VIEW3KIND_FIREBALL;
+        view->color   = VEC4_RED;
+        view->dims.x  = 0.5f;
+        Sol_Comp_Add(world, idB, ScParent)->parentId = id;
 
         // int idB = Sol_Prefab_Dude(world, (vec3s){2, 6, 0}, 1.0f);
         // Sol_Comp_Add(world, idB, ScPlayer);

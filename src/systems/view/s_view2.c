@@ -161,8 +161,3 @@ static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u3
                                           .kind  = SOL_FONT_ICE,
                                       });
 }
-
-void Sol_View2d_SetText(World *world, int id, View2 *view, const char *text)
-{
-    strncpy(view->text, text, 64);
-}

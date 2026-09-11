@@ -5,9 +5,8 @@
  * Created: 2026-08-26
  *
  */
-
 #pragma once
-#include "components.h"
+#include "component.h"
 
 #define WAddTick(w) ((w)->tickSystems[(w)->tickCount++])
 #define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
@@ -22,6 +21,7 @@ typedef enum
 {
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
+    WORLDSYS_PARENT,
 
     WORLDSYS_MOVE3,
     WORLDSYS_MOVE2,
@@ -43,6 +43,55 @@ typedef enum
     WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
 } WorldSystems;
+
+#define SOL_COMPONENT_LIST(X)                                                                                          \
+    X(ScActive, HAS_ScActive)                                                                                          \
+    X(ScHook, HAS_ScHook)                                                                                              \
+    X(ScCmd, HAS_ScCmd)                                                                                                \
+    X(ScUi, HAS_ScUi)                                                                                                  \
+    X(ScMeta, HAS_ScMeta)                                                                                              \
+    X(ScTeam, HAS_ScTeam)                                                                                              \
+    X(ScPlayer, HAS_ScPlayer)                                                                                          \
+    X(ScRemote, HAS_ScRemote)                                                                                          \
+    X(ScAi, HAS_ScAi)                                                                                                  \
+    X(ScBody2, HAS_ScBody2)                                                                                            \
+    X(ScBody3, HAS_ScBody3)                                                                                            \
+    X(ScStage, HAS_ScStage)                                                                                            \
+    X(ScModel, HAS_ScModel)                                                                                            \
+    X(ScAnim, HAS_ScAnim)                                                                                              \
+    X(ScCamera, HAS_ScCamera)                                                                                          \
+    X(ScInteract, HAS_ScInteract)                                                                                      \
+    X(ScMove3, HAS_ScMove3)                                                                                            \
+    X(ScMove2, HAS_ScMove2)                                                                                            \
+    X(ScAbility, HAS_ScAbility)                                                                                        \
+    X(ScBuff, HAS_ScBuff)                                                                                              \
+    X(ScTimer, HAS_ScTimer)                                                                                            \
+    X(ScEvent, HAS_ScEvent)                                                                                            \
+    X(ScAudio, HAS_ScAudio)                                                                                            \
+    X(ScParent, HAS_ScParent)                                                                                          \
+    X(ScOwner, HAS_ScOwner)                                                                                            \
+    X(ScCombat, HAS_ScCombat)                                                                                          \
+    X(ScReplication, HAS_ScReplication)                                                                                \
+    X(ScEmitter, HAS_ScEmitter)                                                                                        \
+    X(ScSlider, HAS_ScSlider)                                                                                          \
+    X(ScView2, HAS_ScView2)                                                                                            \
+    X(ScView3, HAS_ScView3)                                                                                            \
+    X(ScTracker, HAS_ScTracker)                                                                                        \
+    X(ScProjectile, HAS_ScProjectile)                                                                                  \
+    X(ScHudslot, HAS_ScHudslot)                                                                                        \
+    X(ScHuditem, HAS_ScHuditem)                                                                                        \
+    X(ScTooltip, HAS_ScTooltip)                                                                                        \
+    X(ScZone, HAS_ScZone)                                                                                              \
+    X(ScBuilder, HAS_ScBuilder)
+
+typedef enum
+{
+#define AS_ENUM(type, flag) flag,
+    SOL_COMPONENT_LIST(AS_ENUM)
+#undef AS_ENUM
+    COMPONENT_COUNT
+} WorldComponents;
+
 
 // ==========================================
 // 3. GENERIC SPARSE SET STRUCT DECLARATOR
@@ -301,22 +350,6 @@ static inline void Sol_World_FreeAllComponents(World *w)
     }
 }
 
-static inline Xform Xform_GetDraw(const World *world, int id)
-{
-    return (Xform){
-        .pos = world->xform.draw_pos[id], .rot = world->xform.draw_rot[id], .sca = world->xform.draw_sca[id]};
-}
-
-static inline Xform Xform_Get(const World *world, int id)
-{
-    return (Xform){.pos = world->xform.pos[id], .rot = world->xform.rot[id], .sca = world->xform.sca[id]};
-}
-
-static inline XformP Xform_GetP(World *world, int id)
-{
-    return (XformP){.pos = &world->xform.pos[id], .rot = &world->xform.rot[id], .sca = &world->xform.sca[id]};
-}
-
 static inline void Sol_Destroy_Ent(World *w, int entId)
 {
     u64 mask = w->masks[entId];
@@ -335,7 +368,37 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
     w->activeEnts[entId] = false;
 }
 
-// Internal
+static inline Xform Xform_GetDraw(const World *world, int id)
+{
+    return (Xform){
+        .pos = world->xform.draw_pos[id], .rot = world->xform.draw_rot[id], .sca = world->xform.draw_sca[id]};
+}
+
+static inline Xform Xform_Get(const World *world, int id)
+{
+    return (Xform){.pos = world->xform.pos[id], .rot = world->xform.rot[id], .sca = world->xform.sca[id]};
+}
+
+static inline XformP Xform_GetP(World *world, int id)
+{
+    return (XformP){.pos = &world->xform.pos[id], .rot = &world->xform.rot[id], .sca = &world->xform.sca[id]};
+}
+
+static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, vec3s sca)
+{
+    world->xform.pos[id]      = pos;
+    world->xform.draw_pos[id] = pos;
+    world->xform.last_pos[id] = pos;
+
+    world->xform.rot[id]      = rot;
+    world->xform.draw_rot[id] = rot;
+    world->xform.last_rot[id] = rot;
+
+    world->xform.sca[id]      = sca;
+    world->xform.draw_sca[id] = sca;
+    world->xform.last_sca[id] = sca;
+}
+
 void Worlds_Tick(World **worlds, int count, double dt);
 void Worlds_Step(World **worlds, int count, double dt);
 void Worlds_Draw3d(World **worlds, int count, double dt);
@@ -345,96 +408,13 @@ void Worlds_PostTick(World **worlds, int count, double dt);
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
-// Systems
-void Combat_Init(World *world);
-void Player_Init(World *world);
-void Player_Deinit(World *world);
-void Move3_Init(World *world);
-void Move3_Deinit(World *world);
-void Body3_Init(World *world);
-void Body3_Deinit(World *world);
-void Anim_Init(World *world);
-void Anim_Deinit(World *world);
-void Camera_Init(World *world);
-void Camera_Deinit(World *world);
-void Model_Init(World *world);
-void Model_Deinit(World *world);
-void Debug_Init(World *world);
-void Debug_Deinit(World *world);
-
-void Player_Tick(World *world, double dt);
-void Interact_Update(World *world, double dt);
-void Slider_Update(World *world, double dt);
-
-void Move3_Step(World *world, double dt);
-void Move2_Step(World *world, double dt);
-void Body3_Step(World *world, double dt);
-void Body2_Step(World *world, double dt);
-void Ability_Step(World *world, double dt);
-void Combat_Step(World *world, double dt);
-void Ai_Step(World *world, double dt);
-void Interact_Body_Step(World *world, double dt);
-
-void Hook_Tick(World *world, double dt);
-void Anim_Tick(World *world, double dt);
-void Facing_Tick(World *world, double dt);
-void Camera_Tick(World *world, double dt);
-
-void Scoreboard_Draw(World *world, double dt);
-void Model_Render(World *world, double dt);
-void Ability_Draw(World *world, double dt);
-void View3_Draw(World *world, double dt);
-void View2_Draw(World *world, double dt);
-void View2_Healthbar(World *world, double dt);
-void View2_Abilitybar(World *world, double dt);
-void Debug_Tick(World *world, double dt);
-void Debug_Draw3(World *world, double dt);
-void Debug_Draw2(World *world, double dt);
 
 // Api
 World *World_Create();
 World *World_Create_AllSys();
 int Sol_Create_Ent(World *world, vec3s pos);
 int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
+
 void Sol_Sys_Add(World *world, WorldSystems system);
 void Sol_Sys_Remove(World *world, WorldSystems system);
-
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
-
-int Sol_Interact_FindTopmost(World *world, vec2s point);
-
-Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
-
-ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
-void Sol_Anim_Play(World *world, int id, AnimDesc desc);
-void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
-void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
-void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
-
-bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
-
-bool Sol_Move3_SetState(World *world, int id, MoveState state);
-float Sol_Move3_GetBaseSpeed(World *world, int id);
-
-vec3s Sol_Body3_GetGround(World *world, int id);
-vec3s Sol_Body3_GetVel(World *world, int id);
-vec3s Sol_Body3_GetDir(World *world, int id);
-float Sol_Body3_GetSpeed(World *world, int id);
-vec3s Sol_Body3_GetHead(World *world, int id);
-
-int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
-bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
-
-bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
-
-int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
-int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
-bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
-bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
-
-SolLine *Sol_Debug_NewLine(World *world, float ttl);
-SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
-
-float Sol_Combat_Hit(World *world, int id, SolHit hit);
-float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
-float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);

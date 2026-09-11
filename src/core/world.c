@@ -6,8 +6,9 @@
  * World!
  */
 
-#include "sol_core.h"
 #include "world.h"
+#include "system.h"
+#include "sol_core.h"
 
 typedef enum
 {
@@ -31,6 +32,7 @@ const struct SystemDef
 } system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
+    [WORLDSYS_PARENT]   = {.update = {Parent_Update, UPDATEPHASE_TICK}},
 
     [WORLDSYS_MOVE3]   = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]   = {.update = {Move2_Step, UPDATEPHASE_STEP}},

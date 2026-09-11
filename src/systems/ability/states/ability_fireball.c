@@ -1,4 +1,4 @@
-#include "ability/s_ability.h"
+#include "ability/si_ability.h"
 #include "world.h"
 #include "sol_core.h"
 #include "sol_math.h"

@@ -12,10 +12,7 @@
 typedef struct ScAbility ScAbility;
 typedef struct ScCmd     ScCmd;
 
-extern const char            *ability_names[ABILITY_STATE_COUNT];
 extern const AbilityStateFunc ABILITY_STATE_FUNC[ABILITY_STATE_COUNT];
-extern const AbilityConfig    ability_rarity_base[ABILITY_STATE_COUNT][4];
-extern const AbilityConfig    ability_base[ABILITY_STATE_COUNT];
 
 void Ability_Script_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt);
 void Ability_Script_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd);

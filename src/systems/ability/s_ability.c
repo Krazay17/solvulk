@@ -5,7 +5,7 @@
  * Created: 2026-09-04
  *
  */
-#include "s_ability.h"
+#include "si_ability.h"
 #include "world.h"
 #include "sol_core.h"
 

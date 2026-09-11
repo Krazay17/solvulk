@@ -9,9 +9,6 @@
 #define MAX_EMITTERS 8
 #define MAX_INTERACTS 32
 
-// ==========================================
-// 1. COMPONENT DATA STRUCTS
-// ==========================================
 typedef struct ScActive
 {
     int active_at_tick;
@@ -509,55 +506,45 @@ typedef struct ScHook
     void *data;
 } ScHook;
 
-// ==========================================
-// 2. X-MACRO COMPONENT LIST
-// X(Type, EnumFlag)
-// ==========================================
+extern const char *ability_names[ABILITY_STATE_COUNT];
+extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
+extern const AbilityConfig ability_rarity_base[ABILITY_STATE_COUNT][4];
+extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
 
-#define SOL_COMPONENT_LIST(X)                                                                                          \
-    X(ScActive, HAS_ScActive)                                                                                          \
-    X(ScHook, HAS_ScHook)                                                                                              \
-    X(ScCmd, HAS_ScCmd)                                                                                                \
-    X(ScUi, HAS_ScUi)                                                                                                  \
-    X(ScMeta, HAS_ScMeta)                                                                                              \
-    X(ScTeam, HAS_ScTeam)                                                                                              \
-    X(ScPlayer, HAS_ScPlayer)                                                                                          \
-    X(ScRemote, HAS_ScRemote)                                                                                          \
-    X(ScAi, HAS_ScAi)                                                                                                  \
-    X(ScBody2, HAS_ScBody2)                                                                                            \
-    X(ScBody3, HAS_ScBody3)                                                                                            \
-    X(ScStage, HAS_ScStage)                                                                                            \
-    X(ScModel, HAS_ScModel)                                                                                            \
-    X(ScAnim, HAS_ScAnim)                                                                                              \
-    X(ScCamera, HAS_ScCamera)                                                                                          \
-    X(ScInteract, HAS_ScInteract)                                                                                      \
-    X(ScMove3, HAS_ScMove3)                                                                                            \
-    X(ScMove2, HAS_ScMove2)                                                                                            \
-    X(ScAbility, HAS_ScAbility)                                                                                        \
-    X(ScBuff, HAS_ScBuff)                                                                                              \
-    X(ScTimer, HAS_ScTimer)                                                                                            \
-    X(ScEvent, HAS_ScEvent)                                                                                            \
-    X(ScAudio, HAS_ScAudio)                                                                                            \
-    X(ScParent, HAS_ScParent)                                                                                          \
-    X(ScOwner, HAS_ScOwner)                                                                                            \
-    X(ScCombat, HAS_ScCombat)                                                                                          \
-    X(ScReplication, HAS_ScReplication)                                                                                \
-    X(ScEmitter, HAS_ScEmitter)                                                                                        \
-    X(ScSlider, HAS_ScSlider)                                                                                          \
-    X(ScView2, HAS_ScView2)                                                                                            \
-    X(ScView3, HAS_ScView3)                                                                                            \
-    X(ScTracker, HAS_ScTracker)                                                                                        \
-    X(ScProjectile, HAS_ScProjectile)                                                                                  \
-    X(ScHudslot, HAS_ScHudslot)                                                                                        \
-    X(ScHuditem, HAS_ScHuditem)                                                                                        \
-    X(ScTooltip, HAS_ScTooltip)                                                                                        \
-    X(ScZone, HAS_ScZone)                                                                                              \
-    X(ScBuilder, HAS_ScBuilder)
+int Sol_Interact_FindTopmost(World *world, vec2s point);
 
-typedef enum
-{
-#define AS_ENUM(type, flag) flag,
-    SOL_COMPONENT_LIST(AS_ENUM)
-#undef AS_ENUM
-    COMPONENT_COUNT
-} WorldComponents;
+Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
+
+ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
+void Sol_Anim_Play(World *world, int id, AnimDesc desc);
+void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
+void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
+void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
+
+bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
+
+bool Sol_Move3_SetState(World *world, int id, MoveState state);
+float Sol_Move3_GetBaseSpeed(World *world, int id);
+
+vec3s Sol_Body3_GetGround(World *world, int id);
+vec3s Sol_Body3_GetVel(World *world, int id);
+vec3s Sol_Body3_GetDir(World *world, int id);
+float Sol_Body3_GetSpeed(World *world, int id);
+vec3s Sol_Body3_GetHead(World *world, int id);
+
+int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
+bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
+
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
+
+int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
+bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
+
+SolLine *Sol_Debug_NewLine(World *world, float ttl);
+SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
+
+float Sol_Combat_Hit(World *world, int id, SolHit hit);
+float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
+float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);

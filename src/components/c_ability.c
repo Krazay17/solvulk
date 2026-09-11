@@ -1,0 +1,22 @@
+#include "component.h"
+
+const char *ability_names[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE] = "Idle",           [ABILITY_STATE_DASH] = "Dash",
+    [ABILITY_STATE_FIREBALL] = "Fireball",   [ABILITY_STATE_PISTOL] = "Pistol",
+    [ABILITY_STATE_SPINSLASH] = "Spinslash", [ABILITY_STATE_CLAW] = "Claw",
+    [ABILITY_STATE_SHIELD] = "Shield",       [ABILITY_STATE_LASER] = "Laser",
+    [ABILITY_STATE_WHIP] = "Whip",           [ABILITY_STATE_FIREBALLVOLLEY] = "FireballVolley",
+};
+
+const u32 ability_texture_map[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE]     = 0,
+    [ABILITY_STATE_DASH]     = SOL_TEXTURE_DASH_CARD,
+    [ABILITY_STATE_CLAW]     = SOL_TEXTURE_BLADE_CARD,
+    [ABILITY_STATE_FIREBALL] = SOL_TEXTURE_FIREBALL_CARD,
+    [ABILITY_STATE_PISTOL]   = SOL_TEXTURE_PISTOL_CARD,
+    // [ABILITY_STATE_SPINSLASH] = ,
+    // [ABILITY_STATE_SHIELD] = ,
+    // [ABILITY_STATE_LASER] = ,
+    // [ABILITY_STATE_WHIP] = ,
+    // [ABILITY_STATE_FIREBALLVOLLEY] = ,
+};

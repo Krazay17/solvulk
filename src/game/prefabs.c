@@ -371,3 +371,54 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
 int Sol_Prefab_Crystal(World *world, vec3s pos)
 {
 }
+
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
+{
+    vec2s dims  = {62.0f, 62.0f};
+    u32 texture = ability_texture_map[ability];
+    int id      = Sol_Create_Ent(world, pos);
+
+    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
+
+    *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .dims.x = dims.x,
+        .dims.y = dims.y,
+        .zindex = 1,
+        .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
+    };
+
+    *Sol_Comp_Add(world, id, ScTooltip) = (ScTooltip){
+        .kind = TOOLTIPKIND_CARD,
+    };
+
+    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
+        .layer = UILAYER_1,
+        .count = 2,
+        .views[0] =
+            {
+                .kind      = VIEW2KIND_RECT,
+                .dims      = {dims.x, dims.y},
+                .textureID = texture,
+                .textureUV = {1.0f, 0.816f},
+
+                .color      = {1, 1, 1, 1},
+                .hoverColor = {0.5f, 0.5f, 0.5f, 1.0f},
+                .clickColor = {1, 1, 1, 1},
+                .downColor  = {1, 1, 1, 1},
+            },
+        .views[1] =
+            {
+                .kind      = VIEW2KIND_RECT,
+                .dims.x    = dims.x,
+                .dims.y    = dims.y,
+                .textureID = SOL_TEXTURE_BORDER,
+
+                .color      = {0.0f, 0.0f, 0.0f, 1.0f},
+                .hoverColor = {1.0f, 1.0f, 1.0f, 1.0f},
+                .clickColor = {1, 1, 1, 1},
+                .downColor  = {1, 1, 1, 1},
+            },
+    };
+
+    return id;
+}

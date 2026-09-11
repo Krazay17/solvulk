@@ -13,7 +13,7 @@
 #include "platform/platform.h"
 #include "render/render.h"
 
-#include "ability/s_ability.h"
+#include "ability/si_ability.h"
 
 #define USER_SETTINGS_FILENAME "UserData"
 

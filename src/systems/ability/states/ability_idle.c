@@ -1,5 +1,5 @@
-#include "ability/si_ability.h"
 #include "world.h"
+#include "estate.h"
 
 void Ability_Idle_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
@@ -19,3 +19,11 @@ bool Ability_Idle_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 {
     return true;
 }
+
+extern const AbilityStateFunc idle_state = {
+    .update   = Ability_Idle_Update,
+    .enter    = Ability_Idle_Enter,
+    .exit     = Ability_Idle_Exit,
+    .canExit  = Ability_Idle_CanExit,
+    .canEnter = Ability_Idle_CanEnter,
+};

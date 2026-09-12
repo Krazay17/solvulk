@@ -5,8 +5,8 @@
  * Created: 2026-09-04
  *
  */
-#include "ability/si_ability.h"
 #include "world.h"
+#include "estate.h"
 #include "sol_core.h"
 #include "sol_math.h"
 #include "render/render.h"
@@ -49,12 +49,12 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             .ignoreEnt = id,
             .mask      = COLLAYER_ALL,
         };
-        SolRayResult results[128];
-        int hits = Sol_RaycastD(world, ray, results, 128, 1.0f);
+        SolRayResult results[8];
+        int hits = Sol_RaycastD(world, ray, results, 8, 1.0f);
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            float dot = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, head)));
+            float dot           = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, head)));
             if (dot < 0)
                 continue;
             if (!Sol_Combat_TryHitGen(world, id, result.entId, combat->hitSession))
@@ -69,22 +69,21 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 .pos        = result.pos,
                 .vel        = cmd->aimdir,
             };
-            // Debug knockup
-            if (Sol_Comp_Has(world, result.entId, ScBody3))
-            {
-                ScBody3 *body = Sol_Comp_Get(world, result.entId, ScBody3);
-                body->vel.y += 50.0f;
-            }
 
             combat->damageDone += Sol_Combat_Hit(world, result.entId, hit);
-
             if (combat->hitPauseDiminish < 4)
             {
                 combat->hitPause = 1.0f;
                 combat->hitPauseDiminish++;
             }
+            body->vel.y = fmaxf(body->vel.y, 1.0f);
 
-            body->vel.y = fmax(body->vel.y, 1.0f);
+            // Debug knockup
+            // if (Sol_Comp_Has(world, result.entId, ScBody3))
+            // {
+            //     ScBody3 *body = Sol_Comp_Get(world, result.entId, ScBody3);
+            //     body->vel.y += 50.0f;
+            // }
         }
     }
 }
@@ -103,12 +102,6 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
         combat->hitPause         = 0;
         combat->hitPauseDiminish = 0;
     }
-
-    // Sol_Event_Add(world, (SolEvent){
-    //                          .kind       = EVENTKIND_FX,
-    //                          .as.fx.kind = FXKIND_SWORD_SWING,
-    //                          .as.fx.pos  = Sol_Controller_GetShootPos(world, id, 1.0f),
-    //                      });
 }
 
 void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
@@ -137,3 +130,12 @@ void Ability_Claw_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 }
+
+const AbilityStateFunc claw_state = {
+    .update   = Ability_Claw_Update,
+    .enter    = Ability_Claw_Enter,
+    .exit     = Ability_Claw_Exit,
+    .canExit  = Ability_Claw_CanExit,
+    .canEnter = Ability_Claw_CanEnter,
+    .draw     = Ability_Claw_Draw,
+};

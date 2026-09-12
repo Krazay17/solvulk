@@ -18,7 +18,7 @@
 SolState solState;
 
 static double accumulator = SOL_TIMESTEP;
-static void   Sol_OnResize();
+static void Sol_OnResize();
 
 int Sol_Init(void *hwnd, void *hInstance)
 {

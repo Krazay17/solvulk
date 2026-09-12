@@ -107,3 +107,17 @@ static inline void Hook_Clone(World *w, int a, int b, double dt, void *data)
     int id       = Sol_Prefab_Dude(world, pos, 1.0f);
     Sol_Comp_Add(world, id, ScPlayer);
 }
+
+static inline void Hook_AddItem(World *w, int a, int b, double dt, void *data)
+{
+    Sol_User_AddItem(&(SolItem){.ability.state = ABILITY_STATE_CLAW});
+}
+
+static inline void Hook_SaveUser(World *w, int a, int b, double dt, void *data)
+{
+    Sol_User_SaveUserSettings();
+}
+static inline void Hook_SaveClear(World *w, int a, int b, double dt, void *data)
+{
+    Sol_User_ClearUserSettings();
+}

@@ -1,3 +1,10 @@
+/*
+ * File: component.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-11
+ * 
+*/
 #pragma once
 
 #include "sol/types.h"
@@ -506,45 +513,13 @@ typedef struct ScHook
     void *data;
 } ScHook;
 
-extern const char *ability_names[ABILITY_STATE_COUNT];
+typedef struct ScRef
+{
+    u32 kind;
+    int index;
+} ScRef;
+
+extern const char *ability_state_name[ABILITY_STATE_COUNT];
+extern const char *move_state_name[MOVE_STATE_COUNT];
 extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
-extern const AbilityConfig ability_rarity_base[ABILITY_STATE_COUNT][4];
 extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
-
-int Sol_Interact_FindTopmost(World *world, vec2s point);
-
-Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
-
-ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
-void Sol_Anim_Play(World *world, int id, AnimDesc desc);
-void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
-void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
-void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
-
-bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
-
-bool Sol_Move3_SetState(World *world, int id, MoveState state);
-float Sol_Move3_GetBaseSpeed(World *world, int id);
-
-vec3s Sol_Body3_GetGround(World *world, int id);
-vec3s Sol_Body3_GetVel(World *world, int id);
-vec3s Sol_Body3_GetDir(World *world, int id);
-float Sol_Body3_GetSpeed(World *world, int id);
-vec3s Sol_Body3_GetHead(World *world, int id);
-
-int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
-bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
-
-bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
-
-int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
-int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
-bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
-bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
-
-SolLine *Sol_Debug_NewLine(World *world, float ttl);
-SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
-
-float Sol_Combat_Hit(World *world, int id, SolHit hit);
-float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
-float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);

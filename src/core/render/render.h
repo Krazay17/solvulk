@@ -76,16 +76,6 @@ typedef struct
     mat4s ortho2d;
 } OrthoUBO;
 
-typedef struct
-{
-    mat4s viewProjection;
-    mat4s view;
-    mat4s proj;
-    vec4s cameraPos;
-    vec4s sun;
-    float aspect;
-} SceneUBO;
-
 typedef struct RenderVert
 {
     vec3s pos;
@@ -102,31 +92,12 @@ typedef struct
 typedef struct
 {
     ShaderPushText *push;
-    u32             count;
+    u32 count;
 } ShaderPushTexts;
 
 typedef struct
 {
-    vec4s rec;
-    vec4s color;
-    vec4s extras;
-} ShaderPushRect;
-
-typedef struct
-{
-    vec4s position;
-    vec4s scale;
-    vec4s rotation;
-    vec4s color;
-    vec4s material;
-    u32   flags;
-    float hitTime;
-    u32   _padding[2];
-} ModelSSBO;
-
-typedef struct
-{
-    Rect  rect;
+    Rect rect;
     float scale, zindex, spin, fill;
     vec4s color, uv;
     float border;
@@ -137,15 +108,15 @@ typedef struct
 } RectSSBO;
 typedef struct
 {
-    u32      count;
+    u32 count;
     RectSSBO instances[MAX_RECT_INSTANCES];
-} RectInstance;
-extern RectInstance     rectQueue[];
+} RectQueue;
+extern RectQueue rectQueue[];
 static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
 {
     assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
     RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
-    *ssbo          = (RectSSBO){ 0 };
+    *ssbo          = (RectSSBO){0};
     return ssbo;
 }
 
@@ -155,10 +126,10 @@ typedef struct
 } FontSSBO;
 typedef struct
 {
-    u32      count;
+    u32 count;
     FontSSBO instances[MAX_FONT_INSTANCES];
-} FontInstance;
-extern FontInstance     font2dQueue[];
+} FontQueue;
+extern FontQueue font2dQueue[];
 static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
 {
     assert(layer >= 0 && layer < UILAYER_COUNT && "INVALID FONT LAYER");
@@ -166,51 +137,63 @@ static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
     return &font2dQueue[layer].instances[font2dQueue[layer].count++];
 }
 
-typedef enum
-{
-    SPRITE_CAMFACE,
-    SPRITE_3D,
-} SpriteKind;
+// typedef enum
+// {
+//     SPRITE_CAMFACE,
+//     SPRITE_3D,
+// } SpriteKind;
+// typedef struct
+// {
+//     vec4s pos;
+//     versors rotation;
+//     vec4s color;
+//     vec4s uv;
+//     SpriteKind kind;
+//     SolTextureId textureId;
+//     bool isfx;
+// } SpriteDesc;
+
+// typedef struct ModelPushDesc
+// {
+//     ModelKind handle;
+//     vec4s position;
+//     vec4s scale;
+//     vec4s rotation;
+//     vec4s color;
+//     vec4s material;
+//     u32 flags;
+//     bool hasAnim;
+//     mat4 *bones;
+// } ModelPushDesc;
+
 typedef struct
 {
-    vec4s        pos;
-    versors      rotation;
-    vec4s        color;
-    vec4s        uv;
-    SpriteKind   kind;
-    SolTextureId textureId;
-    bool         isfx;
-} SpriteDesc;
-
-typedef struct ModelPushDesc
-{
-    ModelKind handle;
-    vec4s     position;
-    vec4s     scale;
-    vec4s     rotation;
-    vec4s     color;
-    vec4s     material;
-    u32       flags;
-    bool      hasAnim;
-    mat4     *bones;
-} ModelPushDesc;
+    vec4s position;
+    vec4s scale;
+    vec4s rotation;
+    vec4s color;
+    vec4s material;
+    u32 flags;
+    float hitTime;
+    u32 _padding[2];
+} ModelSSBO;
 
 typedef struct
 {
-    u32       count;
+    u32 count;
     ModelSSBO modelSSBO[MAX_MODEL_INSTANCES];
     ModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSubmission;
 
 typedef struct
 {
-    u32            count;
-    ModelSSBO      modelSSBO[MAX_MODEL_INSTANCES];
+    u32 count;
+    ModelSSBO modelSSBO[MAX_MODEL_INSTANCES];
     const SolPose *bones[MAX_MODEL_INSTANCES];
-    ModelKind      handles[MAX_MODEL_INSTANCES];
+    ModelKind handles[MAX_MODEL_INSTANCES];
 } ModelSkinnedSubmission;
 
-extern ModelSubmission        modelQueue;
+extern ModelSubmission modelQueue;
 extern ModelSkinnedSubmission skinningQueue;
 
 static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSSBO, SolPose *pose)
@@ -255,47 +238,20 @@ typedef enum
 typedef struct
 {
     SphereSSBO instances[MAX_QUAD_INSTANCES];
-    u32        count;
+    u32 count;
 } SphereQueue;
 
-extern SphereQueue        sphereQueues[SPHEREKIND_COUNT];
+extern SphereQueue sphereQueues[SPHEREKIND_COUNT];
 static inline SphereSSBO *Sol_Render_GetNextSphere(SphereKind kind)
 {
     SphereQueue *q = &sphereQueues[kind];
     if (q->count >= MAX_QUAD_INSTANCES)
         return NULL;
     SphereSSBO *ssbo = &q->instances[q->count++];
-    *ssbo            = (SphereSSBO){ 0 };
+    *ssbo            = (SphereSSBO){0};
 
     return ssbo;
 }
-
-// extern SphereQueue        sphereQueue;
-// extern SphereQueue        sphereFxQueue;
-// static inline SphereSSBO *Sol_Render_GetNext_Sphere(bool isfx)
-// {
-//     SphereQueue *q = isfx ? &sphereFxQueue : &sphereQueue;
-
-//     if (q->count >= MAX_QUAD_INSTANCES)
-//         return NULL;
-
-//     return &q->instances[q->count++];
-// }
-
-// typedef struct
-// {
-//     u32        count;
-//     SphereSSBO instances[MAX_QUAD_INSTANCES];
-// } FireballQueue;
-// extern FireballQueue      fireballQueue;
-// static inline SphereSSBO *Sol_Render_GetNext_Fireball()
-// {
-//     FireballQueue *q = &fireballQueue;
-//     if (q->count >= MAX_QUAD_INSTANCES)
-//         return NULL;
-
-//     return &q->instances[q->count++];
-// }
 
 // RIBBONS #########################
 
@@ -306,14 +262,14 @@ typedef struct
     vec4s colorA;
     vec4s colorB;
     vec4s uv;
-    u32   textureId, _pad0, _pad1, _pad2;
+    u32 textureId, _pad0, _pad1, _pad2;
 } RibbonSegSSBO;
 
 #define MAX_RIBBON_SEGS_TOTAL (1 << 16)
 
 typedef struct
 {
-    u32           count;
+    u32 count;
     RibbonSegSSBO instances[MAX_RIBBON_SEGS_TOTAL];
 } RibbonQueue;
 
@@ -324,19 +280,15 @@ extern RibbonQueue ribbonQueueFront;
 static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 kind)
 {
     u32 totalSegCount = ribbonQueue.count + ribbonQueueAdd.count + ribbonQueueFront.count;
+    if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
+        return NULL;
     switch (kind)
     {
     case 0:
-        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
-            return NULL;
         return &ribbonQueue.instances[ribbonQueue.count++];
     case 1:
-        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
-            return NULL;
         return &ribbonQueueFront.instances[ribbonQueueFront.count++];
     case 2:
-        if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
-            return NULL;
         return &ribbonQueueAdd.instances[ribbonQueueAdd.count++];
     }
     return NULL;
@@ -370,47 +322,37 @@ typedef enum
 typedef struct
 {
     vec4s pos, rect, rot, color, uv, extra;
-    u32   type, flags, textureId, _pad;
+    u32 type, flags, textureId, _pad;
 } QuadSSBO;
 typedef struct
 {
-    u32      count;
+    u32 count;
     QuadSSBO instances[MAX_QUAD_INSTANCES];
 } QuadQueue;
-extern QuadQueue        healthQueue;
-extern QuadQueue        spriteQueue0;
-extern QuadQueue        spriteQueue1;
-extern QuadQueue        text3dQueue;
-extern QuadQueue        text3dFrontQueue;
-extern QuadQueue        spriteQueueFront;
-static inline QuadSSBO *Sol_Render_GetNext_Quad(u8 kind)
+
+extern QuadQueue quadQueues[QUADKIND_COUNT];
+static inline QuadSSBO *Sol_Render_GetNextQuad(QuadKind kind)
 {
-    QuadQueue *q;
-    switch (kind)
-    {
-    case QUADKIND_SPRITE:
-        q = &spriteQueue0;
-        break;
-    case QUADKIND_SPRITE_ADD:
-        q = &spriteQueue1;
-        break;
-    case QUADKIND_HEALTH:
-        q = &healthQueue;
-        break;
-    case QUADKIND_TEXT:
-        q = &text3dQueue;
-        break;
-    case QUADKIND_TEXT_FRONT:
-        q = &text3dFrontQueue;
-        break;
-    case QUADKIND_SPRITE_FRONT:
-        q = &spriteQueueFront;
-        break;
-    }
+    if (kind >= QUADKIND_COUNT)
+        return NULL;
+    QuadQueue *q = &quadQueues[kind];
+    if (!q || q->count >= MAX_QUAD_INSTANCES)
+        return NULL;
     QuadSSBO *ssbo = &q->instances[q->count++];
-    *ssbo          = (QuadSSBO){ 0 };
+    *ssbo          = (QuadSSBO){0};
+
     return ssbo;
 }
+
+typedef struct
+{
+    mat4s viewProjection;
+    mat4s view;
+    mat4s proj;
+    vec4s cameraPos;
+    vec4s sun;
+    float aspect;
+} SceneUBO;
 
 SceneUBO *Sol_Render_GetNext_Scene();
 
@@ -425,10 +367,8 @@ void Sol_Render_Flush2D(void);
 void Sol_Render_CheckGpuUploads();
 
 float Sol_Render_GetAspect(void);
-void  Sol_Render_DrawSkybox(void);
-void  Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride);
-void Sol_Render_DrawSpheres(const SolSphere *spheres, int count, size_t stride);
-// void  Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill);
+void Sol_Render_DrawSkybox(void);
+void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride);
 void Sol_Render_DrawText(const char *str, SolFontDesc desc);
 void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
 void Sol_Render_UploadModel(ScModelData *model, u32 kind);

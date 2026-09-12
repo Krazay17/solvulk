@@ -1,8 +1,15 @@
+/*
+ * File: s_combat.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-11
+ *
+ */
 #include "world.h"
 
 typedef struct HitGen
 {
-    u32 hitGenMatrix[MAX_ENTS][MAX_ENTS];
+    u32 hitGenMatrix[MAX_ENTS][256];
     u32 globalHitGen;
 } HitGen;
 
@@ -40,9 +47,9 @@ void Combat_Step(World *world, double dt)
 
         if (combat->health <= 0)
         {
-            if (combat->respawnTime && (combat->deathTime + combat->respawnTime > world->tickTime))
-                OnRespawn(world, id, combat);
             OnDeath(world, id, combat);
+            if (combat->respawnTime && (world->tickTime >= (combat->deathTime + combat->respawnTime)))
+                OnRespawn(world, id, combat);
         }
     }
 }
@@ -50,47 +57,36 @@ void Combat_Step(World *world, double dt)
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
     if (!Sol_Comp_Has(world, id, ScCombat))
-        return 0;
+        return 0.0f;
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
 
     if (hit.isHeal)
-        combat->healingTaken += Sol_Combat_Heal(world, id, combat, hit.damage);
+        return Sol_Combat_Heal(world, id, combat, hit.damage);
     else
-        combat->damageTaken += Sol_Combat_Damage(world, id, combat, hit.damage);
+        return Sol_Combat_Damage(world, id, combat, hit.damage);
 }
 
 float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)
 {
-    if (combat->health <= 0)
-        return 0;
+    if (combat->health <= 0.0f || amount <= 0.0f)
+        return 0.0f;
 
-    float damage_done = amount;
-
-    if (combat->health <= amount)
-    {
-        damage_done    = combat->health;
-        combat->health = 0;
-        return damage_done;
-    }
-    combat->health -= amount;
+    float damage_done = (amount > combat->health) ? combat->health : amount;
+    combat->health -= damage_done;
+    combat->damageTaken += damage_done;
 
     return damage_done;
 }
 
 float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount)
 {
-    if (combat->health <= 0)
-        return 0;
+    if (combat->health <= 0.0f || amount <= 0.0f)
+        return 0.0f;
 
-    float healing_done = amount;
-
-    if (combat->health + amount > combat->healthMax)
-    {
-        healing_done   = combat->healthMax - combat->health;
-        combat->health = combat->healthMax;
-        return healing_done;
-    }
-    combat->health += amount;
+    float missing_health = combat->healthMax - combat->health;
+    float healing_done   = (amount > missing_health) ? missing_health : amount;
+    combat->health += healing_done;
+    combat->healingTaken += healing_done;
 
     return healing_done;
 }

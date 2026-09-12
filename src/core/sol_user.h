@@ -43,11 +43,14 @@ extern UserData user_data;
 extern SolUser sol_user;
 
 int Sol_User_Init(void);
+
 void Sol_User_Tick(double dt);
 void Sol_User_PostTick(double dt);
 void Sol_User_Draw(double dt);
-void Sol_User_SaveUserSettings(int flags);
-void Sol_User_LoadUserSettings(int flags);
-void Sol_User_HydrateUI();
+
+void Sol_User_SaveUserSettings();
+void Sol_User_LoadUserSettings();
+void Sol_User_ClearUserSettings();
 World *Sol_User_GetGameWorld();
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);
+void Sol_User_AddItem(SolItem *item);

@@ -5,9 +5,21 @@
  * Created: 2026-09-04
  *
  */
-#include "si_ability.h"
 #include "world.h"
+#include "estate.h"
 #include "sol_core.h"
+
+extern const AbilityStateFunc idle_state;
+extern const AbilityStateFunc claw_state;
+extern const AbilityStateFunc fireball_state;
+extern const AbilityStateFunc dash_state;
+
+const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE]     = &idle_state,
+    [ABILITY_STATE_CLAW]     = &claw_state,
+    [ABILITY_STATE_FIREBALL] = &fireball_state,
+    [ABILITY_STATE_DASH]     = &dash_state,
+};
 
 void Ability_Step(World *world, double dt)
 {
@@ -33,9 +45,10 @@ void Ability_Step(World *world, double dt)
                 Sol_Ability_SetState(world, id, ability->action_map[j], j, false);
             }
         }
-
-        if (ABILITY_STATE_FUNC[ability->state].update)
-            ABILITY_STATE_FUNC[ability->state].update(world, id, ability, cmd, fdt);
+        
+        const AbilityStateFunc *state_func = ability_state_func[ability->state];
+        if (state_func && state_func->update)
+            state_func->update(world, id, ability, cmd, fdt);
     }
 }
 
@@ -50,15 +63,12 @@ void Ability_Draw(World *world, double dt)
         if (!Sol_Comp_Has(world, id, ScCmd))
             continue;
         ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-
-        if (ABILITY_STATE_FUNC[ability->state].draw)
-            ABILITY_STATE_FUNC[ability->state].draw(world, id, ability, cmd);
+        
+        const AbilityStateFunc *state_func = ability_state_func[ability->state];
+        if (state_func && state_func->draw)
+            state_func->draw(world, id, ability, cmd);
     }
 }
-
-// ###########################
-// ######## PUBLIC ###########
-// ###########################
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int slot, bool force)
 {
@@ -66,9 +76,10 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         return false;
     ScAbility *ability               = Sol_Comp_Get(world, id, ScAbility);
     ScCmd *cmd                       = Sol_Comp_Get(world, id, ScCmd);
-    const AbilityStateFunc *prevfunc = &ABILITY_STATE_FUNC[ability->state];
-    const AbilityStateFunc *nextfunc = &ABILITY_STATE_FUNC[target_state];
-
+    const AbilityStateFunc *prevfunc = ability_state_func[ability->state];
+    const AbilityStateFunc *nextfunc = ability_state_func[target_state];
+    if (!prevfunc || !nextfunc)
+        return false;
     if (!force)
     {
         if (!prevfunc->canExit || !prevfunc->canExit(world, id, ability, cmd, target_state))

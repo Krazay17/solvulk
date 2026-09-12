@@ -138,6 +138,7 @@ typedef enum
 {
     VIEW3KIND_SPHERE,
     VIEW3KIND_FIREBALL,
+    VIEW3KIND_HEALTHBAR,
     VIEW3KIND_COUNT,
 } View3Kind;
 
@@ -198,6 +199,11 @@ typedef enum
     MOVE_DEAD,
     MOVE_STATE_COUNT
 } MoveState;
+
+typedef enum
+{
+    REFKIND_ITEM,
+} RefKind;
 
 typedef enum
 {
@@ -448,10 +454,10 @@ typedef enum
     INTERACT_DRAGGING     = (1 << 5),
     INTERACT_TOGGLED      = (1 << 6),
 
-    INTERACT_HOVERED     = (1 << 10),
-    INTERACT_JUSTHOVERED = (1 << 11),
+    INTERACT_HOVERED       = (1 << 10),
+    INTERACT_JUSTHOVERED   = (1 << 11),
     INTERACT_JUSTUNHOVERED = (1 << 12),
-    
+
     INTERACT_TOGGLEABLE = (1 << 7),
     INTERACT_DRAGGABLE  = (1 << 8),
 } InteractState;

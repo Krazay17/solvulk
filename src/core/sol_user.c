@@ -6,14 +6,13 @@
  *
  */
 #include "sol_user.h"
-#include "sol_core.h"
-#include "sol_math.h"
 #include "world.h"
 #include "input.h"
+#include "sol_core.h"
+#include "sol_math.h"
 #include "platform/platform.h"
 #include "render/render.h"
-
-#include "ability/si_ability.h"
+#include "prefabs.h"
 
 #define USER_SETTINGS_FILENAME "UserData"
 
@@ -94,22 +93,44 @@ void Find_User_Hit(double dt, SolMouse mouse)
     }
 }
 
-static void Sol_User_LoadUserSettings(int flags)
+static void Sol_User_LoadUserSettings()
 {
     Sol_ReadFile(USER_SETTINGS_FILENAME, &user_settings_file);
 }
 
-void Sol_User_HydrateUI()
+void Sol_User_SyncUI()
 {
     World *world = Sol_GetWorldByIdx(WORLDID_HUD);
     if (!world)
         return;
+
+    bool spawned[MAX_USER_ITEMS] = {0};
+
+    SparseSet_ScRef *set = Sol_Comp_Set(world, ScRef);
+    for (int i = set->cnt - 1; i >= 0; i--)
+    {
+        ScRef *ref = &set->data[i];
+        if (ref->kind != REFKIND_ITEM)
+            continue;
+
+        int id = set->dense[i];
+        if (ref->index < 0 || ref->index >= user_data.itemCount)
+        {
+            Sol_Destroy_Ent(world, id);
+            continue;
+        }
+        spawned[ref->index] = true;
+    }
+
     for (int i = 0; i < user_data.itemCount; i++)
     {
-        SolItem *item = &user_data.items[i];
-        float x       = 100.0f + (i % 5) * 64.0f;
-        float y       = 100.0f + (i / 5) * 64.0f;
-        //       Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item->ability, item->rarity);
+        if (!spawned[i])
+        {
+            SolItem *item = &user_data.items[i];
+            float x       = 100.0f + (i % 5) * 64.0f;
+            float y       = 100.0f + (i / 5) * 64.0f;
+            Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item->ability.state, i);
+        }
     }
 }
 
@@ -124,7 +145,7 @@ static void LoadDefaults(void)
 
 int Sol_User_Init(void)
 {
-    Sol_User_LoadUserSettings(0);
+    Sol_User_LoadUserSettings();
     if (user_settings_file.data)
     {
         memcpy(&user_data, user_settings_file.data, sizeof(UserData));
@@ -226,13 +247,6 @@ void Entity_Actions()
     }
 }
 
-const char *move_state_name[MOVE_STATE_COUNT] = {
-    [MOVE_IDLE] = "Idle",         [MOVE_WALK] = "Walk",     [MOVE_STUN] = "Stun",       [MOVE_FALL] = "Fall",
-    [MOVE_JUMP] = "Jump",         [MOVE_CROUCH] = "Crouch", [MOVE_SLIDE] = "Slide",     [MOVE_WALLRUN] = "Wallrun",
-    [MOVE_WALLJUMP] = "Walljump", [MOVE_MANTLE] = "Mantle", [MOVE_LANDING] = "Landing", [MOVE_FLY] = "Fly",
-    [MOVE_DEAD] = "Dead",
-};
-
 void User_Debug(dt)
 {
     World *world = Sol_User_GetGameWorld();
@@ -268,8 +282,8 @@ void User_Debug(dt)
             bool state_changed = ability->state != prev_Astate;
             if (state_changed)
             {
-                Sol_Debug_AddText("AbilityState", ability_names[ability->state]);
-                Sol_Debug_AddText("PrevAState", ability_names[prev_Astate]);
+                Sol_Debug_AddText("AbilityState", ability_state_name[ability->state]);
+                Sol_Debug_AddText("PrevAState", ability_state_name[prev_Astate]);
                 prev_Astate = ability->state;
             }
         }
@@ -292,7 +306,7 @@ void Sol_User_Tick(double dt)
     Find_User_Hit(dt, mouse);
     Tooltip_Update(dt);
 
-    Sol_User_HydrateUI();
+    Sol_User_SyncUI();
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {
@@ -312,7 +326,7 @@ void Sol_User_PostTick(double dt)
     SolMouse mouse = Sol_Input_GetMouse();
     World *world   = Sol_User_GetGameWorld();
     int id         = sol_user.view_ent;
-    if (!world || id < 0)
+    if (!world || id <= 0)
         return;
     ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);
     if (cam)
@@ -325,28 +339,25 @@ void Sol_User_PostTick(double dt)
         g_solView.target = vecAdd(cam->pos, cam->dir);
     }
 
-    vec3s head = Sol_Body3_GetHead(world, id);
+    // if (Sol_Comp_Has(world, id, ScCmd))
+    // {
+    //     vec3s head = Sol_Body3_GetHead(world, id);
+    //     ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    //     if (mouse.buttons[SOL_MOUSE_LEFT])
+    //     {
+    //         SolRay ray = {.start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD |
+    //         COLLAYER_TEAMZ)}; vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist)); SolRayResult result
+    //         = {0}; bool hit            = Sol_Raycast1D(world, ray, &result, 0.1f); if (hit)
+    //         {
+    //             final_pos = result.pos;
+    //         }
 
-    if (Sol_Comp_Has(world, id, ScCmd))
-    {
-        ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-        if (mouse.buttons[SOL_MOUSE_LEFT])
-        {
-            SolRay ray = {.start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD | COLLAYER_TEAMZ)};
-            vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
-            SolRayResult result = {0};
-            bool hit            = Sol_Raycast1D(world, ray, &result, 0.1f);
-            if (hit)
-            {
-                final_pos = result.pos;
-            }
-
-            SolSphere *sphere = Sol_Debug_NewSphere(world, 0.1f);
-            sphere->color     = VEC4_GREEN;
-            sphere->pos       = final_pos;
-            sphere->radius    = 0.2f;
-        }
-    }
+    //         SolSphere *sphere = Sol_Debug_NewSphere(world, 0.1f);
+    //         sphere->color     = VEC4_GREEN;
+    //         sphere->pos       = final_pos;
+    //         sphere->radius    = 0.2f;
+    //     }
+    // }
 }
 
 void Sol_User_Draw(double dt)
@@ -354,9 +365,15 @@ void Sol_User_Draw(double dt)
     // Sol_Tooltip_Draw(user_hit, tooltipAlpha, dt, time);
 }
 
-void Sol_User_SaveUserSettings(int flags)
+void Sol_User_SaveUserSettings()
 {
     Sol_WriteFile(USER_SETTINGS_FILENAME, &user_data, sizeof(UserData));
+}
+
+void Sol_User_ClearUserSettings()
+{
+    remove(USER_SETTINGS_FILENAME);
+    LoadDefaults();
 }
 
 World *Sol_User_GetGameWorld()
@@ -366,17 +383,15 @@ World *Sol_User_GetGameWorld()
     return solState.worlds[sol_user.game_world];
 }
 
-void Sol_User_EnterGameWorld(u32 idx, bool sim, vec3s pos)
+void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)
 {
-    if (solState.worldCount == 0)
-        return;
-    if (sol_user.game_world == idx || solState.worldCount - 1 < idx)
+    if (solState.worldCount == 0 || sol_user.game_world == idx || solState.worldCount - 1 < idx)
         return;
 
     u32 last_world_idx = sol_user.game_world;
     World *last_world  = solState.worlds[last_world_idx];
 
-    last_world->doesSimulate = sim;
+    last_world->doesSimulate = sim_last;
     last_world->doesRender   = false;
 
     sol_user.game_world        = idx;
@@ -387,4 +402,9 @@ void Sol_User_EnterGameWorld(u32 idx, bool sim, vec3s pos)
     int last_id                = set->dense[0];
     sol_user.view_ent          = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
     Sol_Destroy_Ent(last_world, last_id);
+}
+
+void Sol_User_AddItem(SolItem *item)
+{
+    user_data.items[user_data.itemCount++] = *item;
 }

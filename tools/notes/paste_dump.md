@@ -1243,3 +1243,155 @@ void View2_Abilitybar(World *world, double dt)
     }
 }
 
+
+const AbilityStateFunc ability_state_func[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE] =
+        {
+            Ability_Idle_Update,
+            Ability_Idle_Enter,
+            Ability_Idle_Exit,
+            Ability_Idle_CanExit,
+            Ability_Idle_CanEnter,
+        },
+    [ABILITY_STATE_DASH] =
+        {
+            Ability_Dash_Update,
+            Ability_Dash_Enter,
+            Ability_Dash_Exit,
+            Ability_Dash_CanExit,
+            Ability_Dash_CanEnter,
+        },
+    [ABILITY_STATE_CLAW] =
+        {
+            Ability_Claw_Update,
+            Ability_Claw_Enter,
+            Ability_Claw_Exit,
+            Ability_Claw_CanExit,
+            Ability_Claw_CanEnter,
+            Ability_Claw_Draw,
+        },
+    [ABILITY_STATE_FIREBALL] =
+        {
+            Ability_Fireball_Update,
+            Ability_Fireball_Enter,
+            Ability_Fireball_Exit,
+            Ability_Fireball_CanExit,
+            Ability_Fireball_CanEnter,
+            Ability_Fireball_Draw,
+        },
+    // [ABILITY_STATE_SHIELD] =
+    //     {
+    //         Shield_State_Update,
+    //         Shield_State_Enter,
+    //         Shield_State_Exit,
+    //         Shield_State_CanExit,
+    //         Shield_State_CanEnter,
+    //         Shield_State_Draw,
+    //     },
+    // [ABILITY_STATE_PISTOL] =
+    //     {
+    //         Pistol_State_Update,
+    //         Pistol_State_Enter,
+    //         Pistol_State_Exit,
+    //         Pistol_State_CanExit,
+    //         Pistol_State_CanEnter,
+    //     },
+    // [ABILITY_STATE_SPINSLASH] =
+    //     {
+    //         Spinslash_State_Update,
+    //         Spinslash_State_Enter,
+    //         Spinslash_State_Exit,
+    //         Spinslash_State_CanExit,
+    //         Spinslash_State_CanEnter,
+    //     },
+    // [ABILITY_STATE_LASER] =
+    //     {
+    //         Laser_State_Update,
+    //         Laser_State_Enter,
+    //         Laser_State_Exit,
+    //         Laser_State_CanExit,
+    //         Laser_State_CanEnter,
+    //         Laser_State_Draw,
+    //     },
+    // [ABILITY_STATE_WHIP] =
+    //     {
+    //         Whip_State_Update,
+    //         Whip_State_Enter,
+    //         Whip_State_Exit,
+    //         Whip_State_CanExit,
+    //         Whip_State_CanEnter,
+    //     },
+    // [ABILITY_STATE_FIREBALLVOLLEY] = SCRIPT_STATE_FUNCS,
+};
+
+
+    // u32 healthCount = healthQueue.count;
+    // if (healthCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, healthQueue.instances, sizeof(QuadSSBO) * healthCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_HEALTHBAR);
+    //     vkCmdDraw(cmd, 6, healthCount, 0, currentOffset);
+    //     currentOffset += healthCount;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     healthQueue.count = 0;
+    // }
+
+    // u32 spriteCount0 = spriteQueue0.count;
+    // if (spriteCount0 > 0)
+    // {
+    //     memcpy(gpu + currentOffset, spriteQueue0.instances, sizeof(QuadSSBO) * spriteCount0);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE);
+    //     vkCmdDraw(cmd, 6, spriteCount0, 0, currentOffset);
+    //     currentOffset += spriteCount0;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     spriteQueue0.count = 0;
+    // }
+
+    // u32 spriteCount1 = spriteQueue1.count;
+    // if (spriteCount1 > 0)
+    // {
+    //     memcpy(gpu + currentOffset, spriteQueue1.instances, sizeof(QuadSSBO) * spriteCount1);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE_ADD);
+    //     vkCmdDraw(cmd, 6, spriteCount1, 0, currentOffset);
+    //     currentOffset += spriteCount1;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     spriteQueue1.count = 0;
+    // }
+
+    // if (spriteQueueFront.count > 0)
+    // {
+    //     memcpy(gpu + currentOffset, spriteQueueFront.instances, sizeof(QuadSSBO) * spriteQueueFront.count);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_SPRITE_FRONT);
+    //     vkCmdDraw(cmd, 6, spriteQueueFront.count, 0, currentOffset);
+    //     currentOffset += spriteQueueFront.count;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     spriteQueueFront.count = 0;
+    // }
+
+    // u32 textCount = text3dQueue.count;
+    // if (textCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, text3dQueue.instances, sizeof(QuadSSBO) * textCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_3D);
+    //     vkCmdDraw(cmd, 6, textCount, 0, currentOffset);
+    //     currentOffset += textCount;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     text3dQueue.count = 0;
+    // }
+
+    // u32 textFrontCount = text3dFrontQueue.count;
+    // if (textFrontCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, text3dFrontQueue.instances, sizeof(QuadSSBO) * textFrontCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_3D_FRONT);
+    //     vkCmdDraw(cmd, 6, textFrontCount, 0, currentOffset);
+    //     currentOffset += textFrontCount;
+    //     if (currentOffset >= MAX_QUAD_INSTANCES)
+    //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
+    //     text3dFrontQueue.count = 0;
+    // }

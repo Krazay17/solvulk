@@ -82,6 +82,7 @@ typedef enum
     X(ScHuditem, HAS_ScHuditem)                                                                                        \
     X(ScTooltip, HAS_ScTooltip)                                                                                        \
     X(ScZone, HAS_ScZone)                                                                                              \
+    X(ScRef, HAS_ScRef)                                                                                                \
     X(ScBuilder, HAS_ScBuilder)
 
 typedef enum
@@ -91,7 +92,6 @@ typedef enum
 #undef AS_ENUM
     COMPONENT_COUNT
 } WorldComponents;
-
 
 // ==========================================
 // 3. GENERIC SPARSE SET STRUCT DECLARATOR
@@ -408,7 +408,6 @@ void Worlds_PostTick(World **worlds, int count, double dt);
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 
-
 // Api
 World *World_Create();
 World *World_Create_AllSys();
@@ -418,3 +417,42 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
 void Sol_Sys_Add(World *world, WorldSystems system);
 void Sol_Sys_Remove(World *world, WorldSystems system);
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
+
+// Systems
+int Sol_Interact_FindTopmost(World *world, vec2s point);
+
+Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
+
+ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
+void Sol_Anim_Play(World *world, int id, AnimDesc desc);
+void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
+void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
+void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
+
+bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
+
+bool Sol_Move3_SetState(World *world, int id, MoveState state);
+float Sol_Move3_GetBaseSpeed(World *world, int id);
+
+vec3s Sol_Body3_GetGround(World *world, int id);
+vec3s Sol_Body3_GetVel(World *world, int id);
+vec3s Sol_Body3_GetDir(World *world, int id);
+float Sol_Body3_GetSpeed(World *world, int id);
+vec3s Sol_Body3_GetHead(World *world, int id);
+
+int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
+bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
+
+bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
+
+int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
+bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
+
+SolLine *Sol_Debug_NewLine(World *world, float ttl);
+SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
+
+float Sol_Combat_Hit(World *world, int id, SolHit hit);
+float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
+float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);

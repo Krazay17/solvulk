@@ -95,6 +95,11 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 
     Sol_Anim_Add(world, id, MODELKIND_WIZARD);
 
+    *Sol_Comp_Add(world, id, ScView3)  = (ScView3){
+        .kind  = VIEW3KIND_HEALTHBAR,
+        .color = {0.1f, 0.85f, 0.2f, 1.0f},
+    };
+
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
@@ -335,50 +340,54 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
 
 int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float speed, float size)
 {
-    int id            = Sol_Create_Ent(world, pos);
-    ScBody3 *body     = Sol_Comp_Add(world, id, ScBody3);
-    body->dims        = (vec3s){size, size, size};
-    body->gravity     = (vec3s)SOL_GRAVITY;
-    body->mass        = 1.0f;
-    body->invMass     = 1.0f;
-    body->restitution = 1.0f;
-    body->ignoreEnt   = owner;
-    body->vel         = vecSca(dir, speed);
-
     ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
-    u32 projLayer       = COLLAYER_TEAMA_PROJ; // Default fallback
-    u32 targetFilter    = COLLAYER_ALL;
+    int id              = Sol_Create_Ent(world, pos);
+
+    u32 projLayer    = COLLAYER_TEAMA_PROJ; // Default fallback
+    u32 targetFilter = COLLAYER_ALL;
     if (owner_body)
     {
         u32 ownerLayer = PHYSX_GET_LAYER(owner_body->mask);
-
         // Projectile layer is 1 bit higher than team layer (TEAMA -> TEAMA_PROJ)
         projLayer = ownerLayer << 1;
-
         // Target everything EXCEPT friendly body layer and friendly projectile layer
         targetFilter = COLLAYER_WORLD | (COLLAYER_ALL & ~(ownerLayer | projLayer));
     }
 
-    body->mask    = PHYSXMASK(projLayer, targetFilter);
-    ScView3 *view = Sol_Comp_Add(world, id, ScView3);
-    view->kind    = VIEW3KIND_FIREBALL;
-    view->color   = VEC4_RED;
-    view->dims.x  = size;
+    *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
+        .dims        = (vec3s){size, size, size},
+        .gravity     = (vec3s)SOL_GRAVITY,
+        .mass        = 1.0f,
+        .invMass     = 1.0f,
+        .restitution = 1.0f,
+        .ignoreEnt   = owner,
+        .vel         = vecSca(dir, speed),
+        .mask        = PHYSXMASK(projLayer, targetFilter),
+    };
+
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind   = VIEW3KIND_FIREBALL,
+        .color  = VEC4_RED,
+        .dims.x = size,
+    };
 
     return id;
 }
 
 int Sol_Prefab_Crystal(World *world, vec3s pos)
 {
+    return 0;
 }
 
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int ref)
 {
     vec2s dims  = {62.0f, 62.0f};
     u32 texture = ability_texture_map[ability];
     int id      = Sol_Create_Ent(world, pos);
 
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
+
+    *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ITEM, .index = ref};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .dims.x = dims.x,
@@ -409,8 +418,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability)
         .views[1] =
             {
                 .kind      = VIEW2KIND_RECT,
-                .dims.x    = dims.x,
-                .dims.y    = dims.y,
+                .dims      = {dims.x, dims.y},
                 .textureID = SOL_TEXTURE_BORDER,
 
                 .color      = {0.0f, 0.0f, 0.0f, 1.0f},

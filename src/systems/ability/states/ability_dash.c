@@ -1,5 +1,5 @@
-#include "ability/si_ability.h"
 #include "world.h"
+#include "estate.h"
 #include "sol_core.h"
 #include "sol_math.h"
 
@@ -63,3 +63,11 @@ bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 
     return data->cooldownRemaining <= 0.0f;
 }
+
+extern const AbilityStateFunc dash_state = {
+    .update   = Ability_Dash_Update,
+    .enter    = Ability_Dash_Enter,
+    .exit     = Ability_Dash_Exit,
+    .canExit  = Ability_Dash_CanExit,
+    .canEnter = Ability_Dash_CanEnter,
+};

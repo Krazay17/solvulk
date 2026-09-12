@@ -544,21 +544,6 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkDepthResources(&solvkstate);
 }
 
-// void Sol_Render_DrawRectangle(vec4s rect, vec4s color, float thickness, float fill)
-// {
-//     VkCommandBuffer cmd = Command_Buffer_Get();
-//     Sol_Render_Bind_Pipeline(cmd, PIPE_RECT);
-
-//     ShaderPushRect push = {
-//         .rec    = {rect.x, rect.y, rect.z, rect.w},
-//         .color  = {color.r, color.g, color.b, color.a},
-//         .extras = {thickness, fill, 0, 0},
-//     };
-
-//     vkCmdPushConstants(cmd, pipes[PIPE_RECT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushRect), &push);
-//     vkCmdDraw(cmd, 6, 1, 0, 0);
-// }
-
 void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
 {
     VkCommandBuffer cmd = Command_Buffer_Get();

@@ -159,7 +159,7 @@ int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float 
     SolLine *line = Sol_Debug_NewLine(world, time);
     line->a       = ray.start;
     vec3s end     = vecAdd(ray.start, vecSca(ray.dir, ray.dist));
-    if (result[0].hit)
+    if (hits > 0)
     {
         line->b        = result[0].pos;
         SolLine *line2 = Sol_Debug_NewLine(world, time);

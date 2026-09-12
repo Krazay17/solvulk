@@ -1,5 +1,5 @@
-#include "ability/si_ability.h"
 #include "world.h"
+#include "estate.h"
 #include "sol_core.h"
 #include "sol_math.h"
 
@@ -53,7 +53,7 @@ void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
     data->cooldownRemaining = data->cooldown;
 }
 
@@ -82,3 +82,12 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
     push->pos   = (vec4s){pos.x, pos.y, pos.z, data->power};
     push->color = (vec4s){1, 0, 0, 0.8f};
 }
+
+extern const AbilityStateFunc fireball_state = {
+    .update   = Ability_Fireball_Update,
+    .enter    = Ability_Fireball_Enter,
+    .exit     = Ability_Fireball_Exit,
+    .canExit  = Ability_Fireball_CanExit,
+    .canEnter = Ability_Fireball_CanEnter,
+    .draw     = Ability_Fireball_Draw,
+};

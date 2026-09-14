@@ -514,3 +514,8 @@ static inline int clampi(int v, int a, int b)
 {
     return v < a ? a : (v > b ? b : v);
 }
+
+static inline vec3s Sol_AddScaledDir(vec3s start, vec3s dir, float dist)
+{
+    return glms_vec3_add(start, glms_vec3_scale(dir, dist));
+}

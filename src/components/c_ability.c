@@ -3,9 +3,9 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-11
- * 
-*/
-#include "component.h"
+ *
+ */
+#include "components.h"
 #include "world.h"
 
 const char *ability_state_name[ABILITY_STATE_COUNT] = {
@@ -28,7 +28,6 @@ const u32 ability_texture_map[ABILITY_STATE_COUNT] = {
     // [ABILITY_STATE_WHIP] = ,
     // [ABILITY_STATE_FIREBALLVOLLEY] = ,
 };
-
 
 const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_IDLE] =

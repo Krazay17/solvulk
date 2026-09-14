@@ -9,9 +9,8 @@ void Anim_Init(World *world)
 {
 }
 
-static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
+static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
 {
-    float fdt = (float)dt;
     int i;
 
 #pragma omp parallel for schedule(dynamic)
@@ -98,9 +97,9 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, double dt)
     }
 }
 
-void Anim_Tick(World *world, double dt)
+void Anim_Tick(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->fdt;
     int i;
 
     SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);
@@ -255,24 +254,7 @@ void Anim_Tick(World *world, double dt)
         }
     }
 
-    Anim_Solver(set, world, dt);
-}
-
-static const ScAnim ANIM_DEFAULT = {.layers = {
-                                        [0] = {.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f},
-                                        [1] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-                                        [2] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-                                        [3] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-                                    }};
-
-ScAnim *Sol_Anim_Add(World *world, int id, u32 model)
-{
-    ScModel *model_comp = Sol_Comp_Add(world, id, ScModel);
-    model_comp->kind    = model;
-    ScAnim *anim_comp   = Sol_Comp_Add(world, id, ScAnim);
-    *anim_comp          = ANIM_DEFAULT;
-
-    return anim_comp;
+    Anim_Solver(set, world, fdt);
 }
 
 void Sol_Anim_Play(World *world, int id, AnimDesc desc)

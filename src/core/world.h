@@ -6,7 +6,8 @@
  *
  */
 #pragma once
-#include "component.h"
+#include "components.h"
+#include "singles.h"
 
 #define WAddTick(w) ((w)->tickSystems[(w)->tickCount++])
 #define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
@@ -28,6 +29,7 @@ typedef enum
     WORLDSYS_BODY3,
     WORLDSYS_BODY2,
     WORLDSYS_ABILITY,
+    WORLDSYS_PROJECTILE,
     WORLDSYS_COMBAT,
     WORLDSYS_HOOK,
     WORLDSYS_AI,
@@ -43,6 +45,19 @@ typedef enum
     WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
 } WorldSystems;
+
+#define SINGLES_LIST(X) X(SINGLE_SPATIAL, Sl_Spatial_Init)
+
+#define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
+SINGLES_LIST(SINGLES_FWD)
+#undef SINGLES_FWD
+typedef enum
+{
+#define SINGLES_ENUM(ENUM, FUNC) ENUM,
+SINGLES_LIST(SINGLES_ENUM)
+#undef SINGLES_ENUM
+SINGLES_COUNT,
+} WorldSingles;
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(ScActive, HAS_ScActive)                                                                                          \
@@ -145,14 +160,12 @@ struct World
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
     WorldXform xform;
+
     u64 masks[MAX_ENTS];
-    void *components[COMPONENT_COUNT];
-
     u64 system_mask;
+    void *components[COMPONENT_COUNT];
     void *systems[WORLDSYS_COUNT];
-
-    u32 hitGenMatrix[MAX_ENTS][MAX_ENTS];
-    u32 globalHitGen;
+    void *singles[SINGLES_COUNT];
 
     int tickCount;
     int stepCount;
@@ -163,6 +176,8 @@ struct World
     int activeEnts[MAX_ENTS];
     int entCount;
 
+    double dt, timestep;
+    float fdt, timescale;
     u32 currentTick, currentStep;
     double tickTime, stepTime;
     int maxEntities;
@@ -400,10 +415,10 @@ static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, ve
 }
 
 void Worlds_Tick(World **worlds, int count, double dt);
-void Worlds_Step(World **worlds, int count, double dt);
-void Worlds_Draw3d(World **worlds, int count, double dt);
-void Worlds_Draw2d(World **worlds, int count, double dt);
-void Worlds_PostTick(World **worlds, int count, double dt);
+void Worlds_Step(World **worlds, int count);
+void Worlds_Draw3d(World **worlds, int count);
+void Worlds_Draw2d(World **worlds, int count);
+void Worlds_PostTick(World **worlds, int count);
 
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
@@ -423,7 +438,6 @@ int Sol_Interact_FindTopmost(World *world, vec2s point);
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
 
-ScAnim *Sol_Anim_Add(World *world, int id, u32 model);
 void Sol_Anim_Play(World *world, int id, AnimDesc desc);
 void Sol_Anim_Stop(World *world, int id, AnimLayerId layerId, float blendOut);
 void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
@@ -439,16 +453,17 @@ vec3s Sol_Body3_GetVel(World *world, int id);
 vec3s Sol_Body3_GetDir(World *world, int id);
 float Sol_Body3_GetSpeed(World *world, int id);
 vec3s Sol_Body3_GetHead(World *world, int id);
+int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
+int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
+bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
+bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
+int Sol_Spherecast(World *world, SolRay ray, SolRayResult *result, int max, float radius);
+int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float radius, float time);
 
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
 
 bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot, bool force);
-
-int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
-int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
-bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
-bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
 
 SolLine *Sol_Debug_NewLine(World *world, float ttl);
 SolSphere *Sol_Debug_NewSphere(World *world, float ttl);

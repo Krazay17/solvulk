@@ -8,15 +8,15 @@
 
 // --- Shared state between threads ---
 static volatile long int g_running = 1;
-static HWND              g_hwnd    = NULL;
-static bool              isFullscreen;
+static HWND g_hwnd                 = NULL;
+static bool isFullscreen;
 
-static bool  isDragging = false;
+static bool isDragging = false;
 static POINT dragStartPos;
 
 // --- Forward declarations ---
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
-LRESULT CALLBACK    WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point
@@ -26,11 +26,11 @@ int main(int argc, char *argv[])
     void *platform_handle = NULL;
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
-    int       nShowCmd  = SW_SHOWDEFAULT;
-    HICON     hIcon     = LoadIcon(hInstance, "MAINICON");
+    int nShowCmd        = SW_SHOWDEFAULT;
+    HICON hIcon         = LoadIcon(hInstance, "MAINICON");
 
     const char CLASS_NAME[] = "SolVulk";
-    WNDCLASS   wc           = {0};
+    WNDCLASS wc             = {0};
     wc.lpfnWndProc          = WindowProc;
     wc.hInstance            = hInstance;
     wc.lpszClassName        = CLASS_NAME;
@@ -118,16 +118,15 @@ static DWORD WINAPI GameThreadProc(LPVOID lpParam)
 {
     LARGE_INTEGER startTime, lastTime, currentTime, endTime, freq;
     QueryPerformanceCounter(&startTime);
+    QueryPerformanceFrequency(&freq);
     lastTime = currentTime = startTime;
 
     while (InterlockedAdd(&g_running, 0))
     {
-        QueryPerformanceFrequency(&freq);
         QueryPerformanceCounter(&currentTime);
         double dt      = (double)(currentTime.QuadPart - lastTime.QuadPart) / (double)freq.QuadPart;
         double runTime = (double)(currentTime.QuadPart - startTime.QuadPart) / (double)freq.QuadPart;
         lastTime       = currentTime;
-        dt *= solState.timescale;
         Sol_Tick(dt, runTime);
 
         QueryPerformanceFrequency(&freq);
@@ -163,7 +162,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_INPUT: {
-        UINT        dwSize = sizeof(RAWINPUT);
+        UINT dwSize = sizeof(RAWINPUT);
         static BYTE lpb[sizeof(RAWINPUT)]; // Static buffer for performance
 
         GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
@@ -284,8 +283,8 @@ void W_Set_Ontop(int flags)
 void W_Set_Fullscreen(int flags)
 {
     bool toggle = flags;
-    u32  width  = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
-    u32  height = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
+    u32 width   = toggle ? GetSystemMetrics(SM_CXSCREEN) : WINDOW_WIDTH;
+    u32 height  = toggle ? GetSystemMetrics(SM_CYSCREEN) + 1 : WINDOW_HEIGHT;
 
     SetWindowPos(g_hwnd, HWND_TOP, 0, 0, width, height, SWP_FRAMECHANGED);
 }

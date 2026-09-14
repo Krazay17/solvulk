@@ -48,22 +48,6 @@ void Find_User_Hit(double dt, SolMouse mouse)
     bool click = mouse.buttons[SOL_MOUSE_LEFT];
     bool grab  = mouse.buttons[SOL_MOUSE_MIDDLE];
 
-    if (sol_user.focus > 0)
-    {
-        if (!click && !grab)
-        {
-            sol_user.target   = sol_user.focus;
-            sol_user.target_w = sol_user.focus_w;
-            sol_user.focus    = 0;
-            sol_user.focus_w  = -1;
-        }
-        sol_user.grab = grab;
-        // else if (glms_vec2_distance2(sol_user.mouse_pos, sol_user.focus_start) > drag_dist2)
-        //     sol_user.grab = 1;
-        return;
-    }
-
-    // 2. Scan for hover target
     sol_user.target   = 0;
     sol_user.target_w = -1;
     sol_user.grab     = 0;
@@ -82,8 +66,19 @@ void Find_User_Hit(double dt, SolMouse mouse)
             }
         }
     }
+    if (sol_user.focus > 0)
+    {
+        if (!click && !grab)
+        {
+            sol_user.focus   = 0;
+            sol_user.focus_w = -1;
+        }
+        sol_user.grab = grab;
+        // else if (glms_vec2_distance2(sol_user.mouse_pos, sol_user.focus_start) > drag_dist2)
+        //     sol_user.grab = 1;
+        return;
+    }
 
-    // 3. Acquire focus on press start
     if (sol_user.target > 0 && (click || grab))
     {
         sol_user.focus       = sol_user.target;

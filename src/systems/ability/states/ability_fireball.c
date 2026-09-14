@@ -33,6 +33,12 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
         data->stage++;
         vec3s pos = GetProjectilePos(world, id, cmd, data->power);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+        *Sol_Debug_NewLine(world, 0.2f) = (SolLine){
+            .a = pos,
+            .b = vecAdd(pos, vecSca(dir, 25.0f)),
+            .aColor = VEC4_RED,
+            .bColor = VEC4_RED,
+        };
         Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
     case 2:
         data->recover += dt;

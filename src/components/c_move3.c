@@ -1,4 +1,4 @@
-#include "component.h"
+#include "components.h"
 
 const char *move_state_name[MOVE_STATE_COUNT] = {
     [MOVE_IDLE] = "Idle",         [MOVE_WALK] = "Walk",     [MOVE_STUN] = "Stun",       [MOVE_FALL] = "Fall",

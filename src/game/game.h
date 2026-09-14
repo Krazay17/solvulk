@@ -21,24 +21,24 @@ void Create_Hud();
 void Create_Game();
 void Create_Game2();
 
-static inline void Hook_SwitchWorld(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_SwitchWorld(World *w, int id, int interactor, void *data)
 {
     Sol_User_EnterGameWorld(2, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_SwitchWorld2(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_SwitchWorld2(World *w, int id, int interactor, void *data)
 {
     Sol_User_EnterGameWorld(3, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_Test(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_Test(World *w, int id, int interactor, void *data)
 {
     ScBody3 *body = Sol_Comp_Get(w, id, ScBody3);
     if (body)
         body->vel.y += 50.0f;
 }
 
-static inline void Hook_SpawnWizard(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_SpawnWizard(World *w, int id, int interactor, void *data)
 {
     World *world = Sol_User_GetGameWorld();
     int wizard   = Sol_Prefab_Wizard(world, (vec3s){0, 20.f, 0}, 1.0f);
@@ -46,26 +46,26 @@ static inline void Hook_SpawnWizard(World *w, int id, int interactor, double dt,
     Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Test;
 }
 
-static inline void Hook_DebugToggle(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_DebugToggle(World *w, int id, int interactor, void *data)
 {
     solState.debug = (Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED) != 0;
 }
 
-static inline void Hook_CrystalDrain(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_CrystalDrain(World *w, int id, int interactor, void *data)
 {
 }
 
-static inline void Hook_Quit(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_Quit(World *w, int id, int interactor, void *data)
 {
     QuitApp(0);
 }
 
-static inline void Hook_Fullscreen(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_Fullscreen(World *w, int id, int interactor, void *data)
 {
     W_Set_Fullscreen(Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED);
 }
 
-static inline void Hook_Healthbar(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_Healthbar(World *w, int id, int interactor, void *data)
 {
     World *game_world = Sol_User_GetGameWorld();
     ScView2 *view2    = Sol_Comp_Get(w, id, ScView2);
@@ -92,15 +92,15 @@ static inline void Hook_Healthbar(World *w, int id, int interactor, double dt, v
         view2->views[0].targetFill = 0.0f;
 }
 
-static inline void Hook_SetVolume(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_SetVolume(World *w, int id, int interactor, void *data)
 {
 }
 
-static inline void Hook_SunAngle(World *w, int id, int interactor, double dt, void *data)
+static inline void Hook_SunAngle(World *w, int id, int interactor, void *data)
 {
 }
 
-static inline void Hook_Clone(World *w, int a, int b, double dt, void *data)
+static inline void Hook_Clone(World *w, int a, int b, void *data)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
@@ -108,16 +108,16 @@ static inline void Hook_Clone(World *w, int a, int b, double dt, void *data)
     Sol_Comp_Add(world, id, ScPlayer);
 }
 
-static inline void Hook_AddItem(World *w, int a, int b, double dt, void *data)
+static inline void Hook_AddItem(World *w, int a, int b, void *data)
 {
     Sol_User_AddItem(&(SolItem){.ability.state = ABILITY_STATE_CLAW});
 }
 
-static inline void Hook_SaveUser(World *w, int a, int b, double dt, void *data)
+static inline void Hook_SaveUser(World *w, int a, int b, void *data)
 {
     Sol_User_SaveUserSettings();
 }
-static inline void Hook_SaveClear(World *w, int a, int b, double dt, void *data)
+static inline void Hook_SaveClear(World *w, int a, int b, void *data)
 {
     Sol_User_ClearUserSettings();
 }

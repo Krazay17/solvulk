@@ -1,86 +1,58 @@
+/*
+ * File: spatial_grid.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-12
+ *
+ */
 #pragma once
 #include "sol/types.h"
-#include <emmintrin.h>
-#include <smmintrin.h> // For SSE4.1 _mm_floor_ps
+#include "sol_math.h"
+#include "sol_buffer.h"
 
-typedef struct
-{
-    vec3s min, max;
-    int   id;
-} SpatialAABB;
+#define QUERY_HASH_SIZE 256 // Power of 2 (1KB on stack)
+#define QUERY_HASH_MASK (QUERY_HASH_SIZE - 1)
 
-typedef struct
-{
-    uint32_t offset; // Index into global index_buffer
-    uint32_t count;  // Number of items/triangles in this cell
-} GridCell;
-#define SPATIAL_GRID_DEFAULT_MAX_CELLS_PER_AXIS 128
-
-typedef struct
-{
-    vec4s min, max, invCellSizeVec;
-
-    float baseCellSize;      // preferred/minimum resolution -- set once at Init, never changes
-    float cellSize, invCellSize; // EFFECTIVE resolution for the current build; may grow
-                                  // above baseCellSize if the tracked extent needs it
-    int   maxCellsPerAxis;   // hard budget on dims.{x,y,z} -- cellSize scales to respect this
-
-    ivec3s   dims;
-    uint32_t totalCells;
-
-    void     *memory_block;
-    GridCell *cells;
-    uint32_t *index_buffer;
-    uint32_t  item_count;
-} SpatialGrid;
-
-void SpatialGrid_SetMaxCellsPerAxis(SpatialGrid *grid, int maxCellsPerAxis);
+#define SPATIAL_PACK_ID(id, idx) ((((id) & 0xFFFF) << 16) | ((idx) & 0xFFFF))
+#define SPATIAL_UNPACK_IDX(id) ((id) & 0xFFFF)
+#define SPATIAL_UNPACK_ID(id) (((id) >> 16) & 0xFFFF)
 
 typedef struct
 {
     ivec3s step;
     ivec3s cell;
-    vec3s  tMax;
-    vec3s  tDelta;
+    vec3s tMax;
+    vec3s tDelta;
 } GridDDA;
 
+typedef struct
+{
+    uint32_t id;
+    uint32_t stamp;
+} HashSlot;
 
-// World pos -> cell coordinate (SIMD Optimized)
+typedef struct
+{
+    vec3s min, max;
+    float cell_size;
+    float cell_size_inv;
+    ivec3s dims;
+    uint32_t cell_count;
+
+    uint32_t *cell_offsets;
+    uint32_t *ids;
+    uint32_t *cursor;
+} SpatialGrid;
+
 static inline ivec3s SpatialGrid_WorldToCell(const SpatialGrid *grid, vec3s pos)
 {
-    // Load pos into a 128-bit SIMD register
-    __m128 vpos = _mm_setr_ps(pos.x, pos.y, pos.z, 0.0f);
-
-    // Load min and invCellSizeVec directly from grid struct
-    __m128 vmin = _mm_loadu_ps((const float *)&grid->min);
-    __m128 vinv = _mm_loadu_ps((const float *)&grid->invCellSizeVec);
-
-    // Parallel Subtraction & Multiplication: (pos - min) * invCellSize
-    __m128 vscaled = _mm_mul_ps(_mm_sub_ps(vpos, vmin), vinv);
-
-    // Parallel Floor and Float-to-Int Conversion
-#if defined(__SSE4_1__)
-    __m128  vfloored = _mm_floor_ps(vscaled);
-    __m128i vi       = _mm_cvttps_epi32(vfloored);
-#else
-    // Correct SSE2 fallback floor:
-    __m128i vi   = _mm_cvttps_epi32(vscaled);
-    __m128  v_i  = _mm_cvtepi32_ps(vi);
-    __m128  mask = _mm_cmplt_ps(vscaled, v_i);
-    vi           = _mm_add_epi32(vi, _mm_castps_si128(mask));
-#endif
-
-    // Unpack result into ivec3s
-    int tmp[4];
-    _mm_storeu_si128((__m128i *)tmp, vi);
-
-    return (ivec3s){tmp[0], tmp[1], tmp[2]};
+    vec3s final_pos = glms_vec3_scale(glms_vec3_sub(pos, grid->min), grid->cell_size_inv);
+    final_pos       = glms_vec3_floor(final_pos);
+    return (ivec3s){(int)final_pos.x, (int)final_pos.y, (int)final_pos.z};
 }
 
-// Cell coordinate -> flat array index
-static inline uint32_t SpatialGrid_GetCellIndex(const SpatialGrid *grid, int x, int y, int z)
+static inline uint32_t SpatialGrid_GetCellIdx(const SpatialGrid *grid, int x, int y, int z)
 {
-    // Clamp to grid limits to prevent out-of-bounds reads
     x = x < 0 ? 0 : (x >= grid->dims.x ? grid->dims.x - 1 : x);
     y = y < 0 ? 0 : (y >= grid->dims.y ? grid->dims.y - 1 : y);
     z = z < 0 ? 0 : (z >= grid->dims.z ? grid->dims.z - 1 : z);
@@ -88,16 +60,189 @@ static inline uint32_t SpatialGrid_GetCellIndex(const SpatialGrid *grid, int x, 
     return (uint32_t)(x + y * grid->dims.x + z * grid->dims.x * grid->dims.y);
 }
 
-static inline void SpatialGrid_EnsureInvCellSize(SpatialGrid *grid)
+static inline uint32_t SpatialGrid_Resize(SpatialGrid *grid, vec3s min, vec3s max, float cell_size)
 {
-    if (grid->invCellSize == 0.0f && grid->cellSize > 0.0f)
-    {
-        grid->invCellSize    = 1.0f / grid->cellSize;
-        grid->invCellSizeVec = (vec4s){grid->invCellSize, grid->invCellSize, grid->invCellSize, 0.0f};
-    }
+    if (cell_size <= 0.0f)
+        return 0;
+
+    grid->min           = min;
+    grid->max           = max;
+    grid->cell_size     = cell_size;
+    grid->cell_size_inv = 1.0f / cell_size;
+
+    grid->dims.x = (uint32_t)ceilf((max.x - min.x) * grid->cell_size_inv);
+    grid->dims.y = (uint32_t)ceilf((max.y - min.y) * grid->cell_size_inv);
+    grid->dims.z = (uint32_t)ceilf((max.z - min.z) * grid->cell_size_inv);
+
+    grid->cell_count = grid->dims.x * grid->dims.y * grid->dims.z;
+
+    // solb_reserve is a no-op if existing capacity already covers this size —
+    // only actually reallocs when cell_count grew past current capacity.
+    solb_reserve(grid->cell_offsets, grid->cell_count + 1);
+    solb_set_count(grid->cell_offsets, grid->cell_count + 1);
+
+    solb_reserve(grid->cursor, grid->cell_count);
+    solb_set_count(grid->cursor, grid->cell_count);
+
+    return grid->cell_count;
 }
 
-// dir MUST already be normalized.
+static inline uint32_t SpatialGrid_Init(SpatialGrid *grid, vec3s min, vec3s max, float cell_size)
+{
+    grid->cell_offsets = NULL; // only safe to null here, once, before any allocation exists
+    grid->cursor       = NULL;
+    solb_init(grid->ids, 64);
+
+    return SpatialGrid_Resize(grid, min, max, cell_size);
+}
+
+static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *poss, vec3s *half_extents,
+                                                uint32_t item_count)
+{
+    if (item_count == 0)
+        return;
+
+    vec3s min = glms_vec3_sub(poss[0], half_extents[0]);
+    vec3s max = glms_vec3_add(poss[0], half_extents[0]);
+
+    for (uint32_t i = 1; i < item_count; i++)
+    {
+        vec3s itemMin = glms_vec3_sub(poss[i], half_extents[i]);
+        vec3s itemMax = glms_vec3_add(poss[i], half_extents[i]);
+        min           = glms_vec3_minv(min, itemMin);
+        max           = glms_vec3_maxv(max, itemMax);
+    }
+
+    // small margin so items exactly on the boundary don't clamp oddly
+    min = glms_vec3_subs(min, 0.1f);
+    max = glms_vec3_adds(max, 0.1f);
+
+    SpatialGrid_Resize(grid, min, max, grid->cell_size); // recompute dims/cell_count from tight bounds
+}
+
+// Rebuilds the grid from scratch for this frame's item set.
+// Returns total id-slots written (== solb_count(grid->ids) afterward).
+static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s *poss, vec3s *half_extents,
+                                         uint32_t item_count)
+{
+    SpatialGrid_FitBoundsToItems(grid, poss, half_extents, item_count);
+    // --- Pass 1: count how many spans land in each cell ---
+    // offsets[0] stays 0; counts go into offsets[i+1] temporarily.
+    memset(grid->cell_offsets, 0, sizeof(uint32_t) * (grid->cell_count + 1));
+
+    for (uint32_t i = 0; i < item_count; i++)
+    {
+        vec3s min = glms_vec3_sub(poss[i], half_extents[i]);
+        vec3s max = glms_vec3_add(poss[i], half_extents[i]);
+
+        ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
+        ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
+
+        for (int z = min_cell.z; z <= max_cell.z; z++)
+            for (int y = min_cell.y; y <= max_cell.y; y++)
+                for (int x = min_cell.x; x <= max_cell.x; x++)
+                {
+                    uint32_t cell_idx = SpatialGrid_GetCellIdx(grid, x, y, z);
+                    grid->cell_offsets[cell_idx + 1]++;
+                }
+    }
+
+    // --- Pass 2: prefix sum turns counts into real offsets ---
+    for (uint32_t i = 0; i < grid->cell_count; i++)
+        grid->cell_offsets[i + 1] += grid->cell_offsets[i];
+
+    uint32_t total = grid->cell_offsets[grid->cell_count];
+
+    // Size the flat id buffer exactly to what's needed this frame —
+    // this is the number you wanted reported/reused.
+    solb_reserve(grid->ids, total);
+    solb_set_count(grid->ids, total);
+
+    // cursor starts as a copy of the *start* of each cell's range;
+    // we increment cursor (not cell_offsets!) while writing, so
+    // cell_offsets stays intact for Query afterward.
+    memcpy(grid->cursor, grid->cell_offsets, sizeof(uint32_t) * grid->cell_count);
+
+    // --- Pass 3: fill — recompute spans, write ids into their slot ---
+    for (uint32_t i = 0; i < item_count; i++)
+    {
+        uint32_t id       = ids[i];
+        vec3s pos         = poss[i];
+        vec3s half_extent = half_extents[i];
+
+        vec3s min = glms_vec3_sub(pos, half_extent);
+        vec3s max = glms_vec3_add(pos, half_extent);
+
+        ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
+        ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
+
+        for (int z = min_cell.z; z <= max_cell.z; z++)
+            for (int y = min_cell.y; y <= max_cell.y; y++)
+                for (int x = min_cell.x; x <= max_cell.x; x++)
+                {
+                    uint32_t cell_idx                   = SpatialGrid_GetCellIdx(grid, x, y, z);
+                    grid->ids[grid->cursor[cell_idx]++] = id;
+                }
+    }
+
+    return total;
+}
+
+static inline uint32_t SpatialGrid_Query(SpatialGrid *grid, vec3s pos, vec3s half_extent, ThreadIdBuffer *id_buf)
+{
+    vec3s min = glms_vec3_sub(pos, half_extent);
+    vec3s max = glms_vec3_add(pos, half_extent);
+
+    ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
+    ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
+
+    static _Thread_local HashSlot hash_table[QUERY_HASH_SIZE];
+    static _Thread_local uint32_t local_gen = 0;
+    uint32_t this_gen                       = ++local_gen;
+
+    solb_set_count(id_buf->ids, 0); // reset for THIS query — not once per phase
+
+    for (int z = min_cell.z; z <= max_cell.z; z++)
+        for (int y = min_cell.y; y <= max_cell.y; y++)
+            for (int x = min_cell.x; x <= max_cell.x; x++)
+            {
+                uint32_t cell_idx = SpatialGrid_GetCellIdx(grid, x, y, z);
+                uint32_t start    = grid->cell_offsets[cell_idx];
+                uint32_t end      = grid->cell_offsets[cell_idx + 1];
+
+                for (uint32_t i = start; i < end; i++)
+                {
+                    uint32_t id   = grid->ids[i];
+                    uint32_t slot = (id * 2654435761u) & QUERY_HASH_MASK;
+                    bool inserted = false;
+
+                    for (uint32_t probe = 0; probe < QUERY_HASH_SIZE; probe++)
+                    {
+                        if (hash_table[slot].stamp != this_gen)
+                        {
+                            hash_table[slot].id    = id;
+                            hash_table[slot].stamp = this_gen;
+                            inserted               = true;
+                            break;
+                        }
+                        if (hash_table[slot].id == id)
+                            break; // seen — leave inserted false
+                        slot = (slot + 1) & QUERY_HASH_MASK;
+                    }
+
+                    if (inserted)
+                        solb_push(id_buf->ids, id);
+                }
+            }
+
+    return solb_count(id_buf->ids);
+}
+
+// #########################
+// ####### RAY TRACE #######
+// #########################
+
+// dir MUST already be normalized — tDelta below assumes unit length.
 static inline GridDDA GridDDA_Init(const SpatialGrid *grid, vec3s start, vec3s dir)
 {
     GridDDA it;
@@ -107,7 +252,7 @@ static inline GridDDA GridDDA_Init(const SpatialGrid *grid, vec3s start, vec3s d
     it.step.y = (dir.y > 0.0f) ? 1 : (dir.y < 0.0f ? -1 : 0);
     it.step.z = (dir.z > 0.0f) ? 1 : (dir.z < 0.0f ? -1 : 0);
 
-    const float cs = grid->cellSize; // <-- the actual grid cell size, not range/dims
+    float cs = grid->cell_size;
 
     it.tDelta.x = (it.step.x != 0) ? cs * fabsf(1.0f / dir.x) : 1e30f;
     it.tDelta.y = (it.step.y != 0) ? cs * fabsf(1.0f / dir.y) : 1e30f;
@@ -143,35 +288,39 @@ static inline bool GridDDA_InBounds(const GridDDA *it, const SpatialGrid *grid)
            it->cell.z >= 0 && it->cell.z < grid->dims.z;
 }
 
-// Advances to the next cell; returns the ray distance at which it was entered.
+// Advances to the next cell boundary crossed; returns the ray distance at which it happened.
 static inline float GridDDA_Step(GridDDA *it)
 {
     float t;
     if (it->tMax.x < it->tMax.y)
     {
-        if (it->tMax.x < it->tMax.z) { t = it->tMax.x; it->cell.x += it->step.x; it->tMax.x += it->tDelta.x; }
-        else                         { t = it->tMax.z; it->cell.z += it->step.z; it->tMax.z += it->tDelta.z; }
+        if (it->tMax.x < it->tMax.z)
+        {
+            t = it->tMax.x;
+            it->cell.x += it->step.x;
+            it->tMax.x += it->tDelta.x;
+        }
+        else
+        {
+            t = it->tMax.z;
+            it->cell.z += it->step.z;
+            it->tMax.z += it->tDelta.z;
+        }
     }
     else
     {
-        if (it->tMax.y < it->tMax.z) { t = it->tMax.y; it->cell.y += it->step.y; it->tMax.y += it->tDelta.y; }
-        else                         { t = it->tMax.z; it->cell.z += it->step.z; it->tMax.z += it->tDelta.z; }
+        if (it->tMax.y < it->tMax.z)
+        {
+            t = it->tMax.y;
+            it->cell.y += it->step.y;
+            it->tMax.y += it->tDelta.y;
+        }
+        else
+        {
+            t = it->tMax.z;
+            it->cell.z += it->step.z;
+            it->tMax.z += it->tDelta.z;
+        }
     }
     return t;
 }
-
-// Safe to use only where bounds are already guaranteed (e.g. inside a
-// GridDDA_InBounds-gated loop). No clamping — that's the whole point.
-static inline uint32_t SpatialGrid_GetCellIndexUnchecked(const SpatialGrid *grid, int x, int y, int z)
-{
-    return (uint32_t)(x + y * grid->dims.x + z * grid->dims.x * grid->dims.y);
-}
-
-
-SpatialGrid *SpatialGrid_Create(float cellSize);
-void         SpatialGrid_Init(SpatialGrid *grid, float cellSize);
-void         SpatialGrid_Deinit(SpatialGrid *grid);
-void         SpatialGrid_Destroy(SpatialGrid *grid);
-void         SpatialGrid_BuildFromAABBs(SpatialGrid *grid, const SpatialAABB *aabbs, uint32_t count);
-void         SpatialGrid_BuildFromTris(SpatialGrid *grid, const SolTri *tris, uint32_t triCount);
-void         SpatialGrid_Clear(SpatialGrid *grid);

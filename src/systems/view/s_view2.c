@@ -12,20 +12,17 @@ static void DrawCircle(World *world, int id, float fdt, View2 *view, vec3s pos, 
 static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
 
 DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
-    [VIEW2KIND_RECT]   = DrawRect,
-    [VIEW2KIND_SLIDER] = DrawSlider,
-    [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
-    [VIEW2KIND_CIRCLE] = DrawCircle,
-    [VIEW2KIND_TEXT]   = DrawText,
+    [VIEW2KIND_RECT] = DrawRect,     [VIEW2KIND_SLIDER] = DrawSlider, [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
+    [VIEW2KIND_CIRCLE] = DrawCircle, [VIEW2KIND_TEXT] = DrawText,
 };
 
 void Sol_View2d_Init(World *world)
 {
 }
 
-void View2_Draw(World *world, double dt)
+void View2_Draw(World *world)
 {
-    float fdt              = (float)dt;
+    float fdt              = world->fdt;
     SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
     for (int i = 0; i < set->cnt; i++)
     {
@@ -57,17 +54,13 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u3
         else
             view->hoverAnim = fmaxf(view->hoverAnim - fdt * 8.0f, 0.0f);
 
-        if ((interact->state & INTERACT_JUSTUP) && !(interact->state_prev & INTERACT_DRAGGING))
-            view->clickAnim = 1.0f;
-
-        view->clickAnim = fmaxf(view->clickAnim - fdt * 5.0f, 0.0f);
-
-        if (interact->state & INTERACT_TOGGLED)
-            drawCol = view->toggleColor;
+        view->activeAnim = fmaxf(view->activeAnim - fdt * 5.0f, 0.0f);
+        if ((interact->state & (INTERACT_TOGGLED | INTERACT_ACTIVE)))
+            view->activeAnim = 1.0f;
     }
     drawCol          = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);
     drawCol          = glms_vec4_lerp(drawCol, view->downColor, view->downAnim);
-    drawCol          = glms_vec4_lerp(drawCol, view->clickColor, view->clickAnim);
+    drawCol          = glms_vec4_lerp(drawCol, view->activeColor, view->activeAnim);
     float speed      = view->fillSpeed > 0 ? -view->fillSpeed : -14.0f;
     float factor     = 1.0f - expf(speed * fdt);
     view->targetFill = view->targetFill == 0 ? 1.0f : view->targetFill;
@@ -81,7 +74,7 @@ static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u3
     ssbo->color      = drawCol;
     ssbo->flags      = view->flags;
     ssbo->textureID  = view->textureID;
-    ssbo->border     = view->border * (1.0f + view->clickAnim); // border thickness in pixels
+    ssbo->border     = view->border * (1.0f + view->activeAnim); // border thickness in pixels
     ssbo->uv         = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
                            ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
                            : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
@@ -98,7 +91,7 @@ static void DrawSliderFill(World *world, int id, float fdt, View2 *view, vec3s p
     float track_origin = pos.x + view->offset.x;
 
     float right = view->dims.x * t;
-    float y = pos.y + view->offset.y;
+    float y     = pos.y + view->offset.y;
 
     RectSSBO *ssbo  = Sol_Render_GetNext_Rect(layer);
     ssbo->rect      = (vec4s){UISCALE(track_origin), UISCALE(y), UISCALE(right), UISCALE(view->dims.y)};
@@ -107,7 +100,7 @@ static void DrawSliderFill(World *world, int id, float fdt, View2 *view, vec3s p
     ssbo->color     = view->color;
     ssbo->flags     = view->flags;
     ssbo->textureID = view->textureID;
-    ssbo->border    = view->border * (1.0f + view->clickAnim);
+    ssbo->border    = view->border * (1.0f + view->activeAnim);
     ssbo->uv        = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
                           ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
                           : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
@@ -136,7 +129,7 @@ static void DrawSlider(World *world, int id, float fdt, View2 *view, vec3s pos, 
     ssbo->color     = view->color;
     ssbo->flags     = view->flags;
     ssbo->textureID = view->textureID;
-    ssbo->border    = view->border * (1.0f + view->clickAnim);
+    ssbo->border    = view->border * (1.0f + view->activeAnim);
     ssbo->uv        = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
                           ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
                           : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};

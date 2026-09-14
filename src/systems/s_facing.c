@@ -3,7 +3,7 @@
 
 void Facing_Tick(World *world, double dt)
 {
-    float fdt = (float)dt;
+    float fdt = world->fdt;
 
     SparseSet_ScCmd *set = Sol_Comp_Set(world, ScCmd);
     for (int i = 0; i < set->cnt; i++)

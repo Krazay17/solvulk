@@ -1,10 +1,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Camera_Tick(World *world, double dt)
+void Camera_Tick(World *world)
 {
-    float fdt = (float)dt;
-
+    float fdt = world->fdt;
     SparseSet_ScCamera *set = Sol_Comp_Set(world, ScCamera);
     for (int i = 0; i < set->cnt; i++)
     {
@@ -37,12 +36,12 @@ void Camera_Tick(World *world, double dt)
 
             SolRayResult anchortrace = {0};
             bool offsetHit           = Sol_Raycast1(
-                world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset, .mask = 1}, &anchortrace);
+                world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset, .mask = 1, .ignoreEnt = id}, &anchortrace);
 
             float target_offset = camera->desired_offset;
             if (offsetHit)
             {
-                target_offset = (-camera->desired_offset + (anchortrace.dist * 2.0f));
+                target_offset = (-camera->desired_offset + (anchortrace.t * 2.0f));
             }
             target_offset -= 0.2f;
             if (target_offset < camera->current_offset)
@@ -58,12 +57,12 @@ void Camera_Tick(World *world, double dt)
 
             SolRayResult dist_trace = {0};
             bool distanceHit        = Sol_Raycast1(
-                world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance, .mask = 1}, &dist_trace);
+                world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance, .mask = 1, .ignoreEnt = id}, &dist_trace);
 
             float target_dist = camera->desired_distance;
             if (distanceHit)
             {
-                target_dist = dist_trace.dist;
+                target_dist = dist_trace.t;
             }
             target_dist -= 0.2f;
             if (target_dist < camera->current_distance)

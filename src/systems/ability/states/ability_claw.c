@@ -54,7 +54,8 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            float dot           = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(result.pos, head)));
+            vec3s hit_pos = Sol_AddScaledDir(ray.start, ray.dir, result.t);
+            float dot           = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(hit_pos, head)));
             if (dot < 0)
                 continue;
             if (!Sol_Combat_TryHitGen(world, id, result.entId, combat->hitSession))
@@ -66,7 +67,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 .effectMask = ability_base[ABILITY_STATE_CLAW].effectMask,
                 .entA       = id,
                 .entB       = result.entId,
-                .pos        = result.pos,
+                .pos        = hit_pos,
                 .vel        = cmd->aimdir,
             };
 

@@ -16,8 +16,7 @@ void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
     }
     if (data->elapsed > REMOVE_PHYSX_TIMER)
     {
-        world->masks[id] &= ~BITC(HAS_ScBody3);
-        world->masks[id] &= ~BITC(HAS_ScBody2);
+        Sol_Comp_Rem(world, id, ScBody3);
     }
 }
 

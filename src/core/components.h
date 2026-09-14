@@ -1,10 +1,10 @@
 /*
- * File: component.h
+ * File: components.h
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-11
- * 
-*/
+ *
+ */
 #pragma once
 
 #include "sol/types.h"
@@ -415,8 +415,8 @@ typedef struct
     View2Kind kind;
     vec4s dims, offset;
     vec4s color;
-    vec4s hoverColor, downColor, clickColor, toggleColor;
-    float hoverAnim, downAnim, clickAnim;
+    vec4s hoverColor, downColor, activeColor;
+    float hoverAnim, downAnim, activeAnim;
     float fill, scale, textWidth, border;
     float targetFill, fillSpeed;
     u8 textureID, flags;
@@ -523,3 +523,4 @@ extern const char *ability_state_name[ABILITY_STATE_COUNT];
 extern const char *move_state_name[MOVE_STATE_COUNT];
 extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
 extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
+extern const ScAnim anim_default;

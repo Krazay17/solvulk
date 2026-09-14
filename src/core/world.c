@@ -7,7 +7,7 @@
  */
 
 #include "world.h"
-#include "system.h"
+#include "systems.h"
 #include "sol_core.h"
 
 typedef enum
@@ -34,13 +34,14 @@ const struct SystemDef
     [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
     [WORLDSYS_PARENT]   = {.update = {Parent_Update, UPDATEPHASE_TICK}},
 
-    [WORLDSYS_MOVE3]   = {.update = {Move3_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_MOVE2]   = {.update = {Move2_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_BODY3]   = {.init = Body3_Init, .update = {Body3_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_BODY2]   = {.update = {Body2_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_ABILITY] = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_COMBAT]  = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_AI]      = {.update = {Ai_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_BODY3]      = {.update = {Body3_Update, UPDATEPHASE_STEP}},
+    [WORLDSYS_BODY2]      = {.update = {Body2_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_ABILITY]    = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
+    [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_COMBAT]     = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
     [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
@@ -62,12 +63,20 @@ const struct SystemDef
         },
 };
 
+SystemInit singles_init[SINGLES_COUNT] = {
+#define SINGLES_INIT(ENUM, FUNC) [ENUM] = FUNC,
+    SINGLES_LIST(SINGLES_INIT)
+#undef SINGLES_INIT
+};
+
 World *World_Create()
 {
     World *world = calloc(1, sizeof(World));
     if (!world)
         return NULL;
     int index              = solState.worldCount++;
+    world->timescale       = 1.0f;
+    world->timestep        = SOL_TIMESTEP;
     world->maxEntities     = MAX_ENTS;
     world->doesSimulate    = true;
     world->doesRender      = true;
@@ -79,15 +88,24 @@ World *World_Create()
     return world;
 }
 
+void Sol_Single_Add(World *world, WorldSingles single)
+{
+    if (singles_init[single])
+        singles_init[single](world);
+}
+
 World *World_Create_AllSys()
 {
     World *world = World_Create();
     if (!world)
         return NULL;
+
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
-    {
         Sol_Sys_Add(world, (WorldSystems)sys);
-    }
+
+    for (int i = 0; i < SINGLES_COUNT; i++)
+        singles_init[i](world);
+
     return world;
 }
 
@@ -202,69 +220,71 @@ void Sol_Sys_Remove(World *world, WorldSystems system)
     world->system_mask &= ~BITC(system);
 }
 
-void Worlds_Step(World **worlds, int count, double dt)
+void Worlds_Tick(World **worlds, int worldCount, double dt)
+{
+    for (int w = 0; w < worldCount; w++)
+    {
+        World *world = worlds[w];
+        if (world->doesSimulate)
+        {
+            double world_dt = dt * world->timescale;
+            world->dt       = world_dt;
+            world->fdt      = (float)world_dt;
+            world->currentTick++;
+            world->tickTime += world_dt;
+
+            for (int i = 0; i < world->tickCount; i++)
+                world->tickSystems[i](world);
+        }
+    }
+}
+
+void Worlds_Step(World **worlds, int count)
 {
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (!world->doesSimulate)
-            continue;
-        world->currentStep++;
-        world->stepTime += dt;
-        for (int i = 0; i < world->stepCount; i++)
-        {
-            world->stepSystems[i](world, dt);
-        }
-    }
-}
-
-void Worlds_Tick(World **worlds, int worldCount, double dt)
-{
-    for (int i = 0; i < worldCount; i++)
-    {
-        World *world = worlds[i];
         if (world->doesSimulate)
         {
-            for (int w = 0; w < world->tickCount; w++)
-                world->tickSystems[w](world, dt);
-            world->currentTick++;
-            world->tickTime += dt;
+            world->currentStep++;
+            world->stepTime += world->timestep;
+
+            for (int i = 0; i < world->stepCount; i++)
+                world->stepSystems[i](world);
         }
     }
 }
 
-void Worlds_PostTick(World **worlds, int count, double dt)
+void Worlds_PostTick(World **worlds, int count)
 {
-    for (int i = 0; i < count; i++)
+    for (int w = 0; w < count; w++)
     {
-        World *world = worlds[i];
+        World *world = worlds[w];
         if (world->doesSimulate)
-        {
-            for (int w = 0; w < world->posttickCount; w++)
-                world->posttickSystems[w](world, dt);
-        }
+            for (int i = 0; i < world->posttickCount; i++)
+                world->posttickSystems[i](world);
     }
 }
 
-void Worlds_Draw3d(World **worlds, int count, double dt)
+void Worlds_Draw3d(World **worlds, int count)
 {
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
         if (world->doesRender)
             for (int i = 0; i < world->draw3dCount; i++)
-                world->draw3dSystems[i](world, dt);
+                world->draw3dSystems[i](world);
     }
 }
 
-void Worlds_Draw2d(World **worlds, int count, double dt)
+void Worlds_Draw2d(World **worlds, int count)
 {
     for (int w = count - 1; w >= 0; w--)
     {
         World *world = worlds[w];
         if (world->doesRender)
             for (int i = 0; i < world->draw2dCount; i++)
-                world->draw2dSystems[i](world, dt);
+                world->draw2dSystems[i](world);
     }
 }
 

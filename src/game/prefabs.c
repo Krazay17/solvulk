@@ -23,8 +23,8 @@ static const ScBody3 wizard_body = {
     .invMass     = 1.0f,
     .restitution = 0.2f,
     .gravity     = SOL_GRAVITY,
-    .dims        = {0.5f, 3.0f, 0.5f},
-    .mask        = PHYSXMASK(COLLAYER_TEAMZ, COLLAYER_ALL),
+    .dims        = {0.5f, 1.5f, 0.5f},
+    .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
 static const ScCombat wizard_combat = {
@@ -37,14 +37,18 @@ static const ScAi wizard_ai = {
     .aggroRange = 20.0f,
 };
 
+static const ScModel dude_model = {
+    .kind = MODELKIND_DUDE,
+};
+
 static const ScBody3 dude_body = {
     .shape       = SHAPE3_CAP,
     .mass        = 1.0f,
     .invMass     = 1.0f,
     .restitution = 0.01f,
     .gravity     = SOL_GRAVITY,
-    .dims        = {0.5f, 1.8f, 0.5f},
-    .mask        = PHYSXMASK(COLLAYER_TEAMA, COLLAYER_ALL),
+    .dims        = {0.5f, 1.0f, 0.5f},
+    .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
 static const ScMove3 dude_move = {
@@ -67,13 +71,13 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, pos);
 
-    Sol_Anim_Add(world, id, MODELKIND_DUDE);
-
+    *Sol_Comp_Add(world, id, ScModel)   = dude_model;
+    *Sol_Comp_Add(world, id, ScAnim)    = anim_default;
     *Sol_Comp_Add(world, id, ScBody3)   = dude_body;
     *Sol_Comp_Add(world, id, ScCombat)  = dude_combat;
     *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
-    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
     *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
+    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
@@ -93,9 +97,10 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
     team->team   = 1;
 
-    Sol_Anim_Add(world, id, MODELKIND_WIZARD);
+    Sol_Comp_Add(world, id, ScModel)->kind = MODELKIND_WIZARD;
+    *Sol_Comp_Add(world, id, ScAnim)       = anim_default;
 
-    *Sol_Comp_Add(world, id, ScView3)  = (ScView3){
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
         .kind  = VIEW3KIND_HEALTHBAR,
         .color = {0.1f, 0.85f, 0.2f, 1.0f},
     };
@@ -103,6 +108,10 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
+
+    Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
+     Sol_Comp_Add(world, id, ScCmd);
+     Sol_Comp_Add(world, id, ScPlayer);
 
     return id;
 }
@@ -153,8 +162,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .dims        = {dims.x, dims.y},
         .color       = {0.1f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     view->views[1] = (View2){
@@ -162,26 +170,25 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .dims        = {dims.x, dims.y},
         .color       = {0.9f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
-        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[2] = (View2){
-        .kind       = VIEW2KIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {0.0f, 0.0f, 0.0f, 1.0f},
-        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
-        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
-        .border     = 3.0f,
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .color       = {0.0f, 0.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+        .border      = 3.0f,
     };
     view->views[3] = (View2){
-        .kind       = VIEW2KIND_TEXT,
-        .dims       = {16.0f},
-        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
-        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
-        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
-        .offset     = {dims.x * 0.5f, dims.y * 0.5f},
+        .kind        = VIEW2KIND_TEXT,
+        .dims        = {16.0f},
+        .color       = {0.0f, 1.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+        .offset      = {dims.x * 0.5f, dims.y * 0.5f},
     };
     strncpy(view->views[3].text, text, sizeof(view->views[3].text));
 
@@ -224,8 +231,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .dims        = {dims.x, dims.y},
         .color       = {0.1f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     view->views[1] = (View2){
@@ -238,18 +244,17 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .dims        = {dims.x, dims.y},
         .color       = {0.9f, 0.1f, 0.1f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-        .toggleColor = {0.0f, 0.5f, 0.5f, 1.0f},
-        .clickColor  = {0.0f, 1.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[3] = (View2){
-        .kind       = VIEW2KIND_RECT,
-        .dims       = {dims.x, dims.y},
-        .color      = {0.0f, 0.0f, 0.0f, 1.0f},
-        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
-        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
-        .border     = 3.0f,
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .color       = {0.0f, 0.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+        .border      = 3.0f,
     };
 
     view->views[4] = (View2){
@@ -270,12 +275,12 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .border = 3.0f,
     };
     view->views[7] = (View2){
-        .kind       = VIEW2KIND_TEXT,
-        .dims       = {16.0f},
-        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
-        .clickColor = {0.0f, 1.0f, 0.0f, 1.0f},
-        .downColor  = {0.0f, 0.0f, 0.0f, 1.0f},
-        .offset     = {dims.x * 0.5f, dims.y * 0.5f},
+        .kind        = VIEW2KIND_TEXT,
+        .dims        = {16.0f},
+        .color       = {0.0f, 1.0f, 0.0f, 1.0f},
+        .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
+        .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
+        .offset      = {dims.x * 0.5f, dims.y * 0.5f},
     };
     strncpy(view->views[7].text, text, sizeof(view->views[7].text));
 
@@ -343,7 +348,11 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
     int id              = Sol_Create_Ent(world, pos);
 
-    u32 projLayer    = COLLAYER_TEAMA_PROJ; // Default fallback
+    *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
+        .ownerId = owner,
+    };
+
+    u32 projLayer    = COLLAYER_PROJECTILE; // Default fallback
     u32 targetFilter = COLLAYER_ALL;
     if (owner_body)
     {
@@ -369,6 +378,10 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .kind   = VIEW3KIND_FIREBALL,
         .color  = VEC4_RED,
         .dims.x = size,
+    };
+
+    *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
+        0,
     };
 
     return id;
@@ -410,10 +423,10 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
                 .textureID = texture,
                 .textureUV = {1.0f, 0.816f},
 
-                .color      = {1, 1, 1, 1},
-                .hoverColor = {0.5f, 0.5f, 0.5f, 1.0f},
-                .clickColor = {1, 1, 1, 1},
-                .downColor  = {1, 1, 1, 1},
+                .color       = {1, 1, 1, 1},
+                .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
+                .activeColor = {1, 1, 1, 1},
+                .downColor   = {1, 1, 1, 1},
             },
         .views[1] =
             {
@@ -421,10 +434,10 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
                 .dims      = {dims.x, dims.y},
                 .textureID = SOL_TEXTURE_BORDER,
 
-                .color      = {0.0f, 0.0f, 0.0f, 1.0f},
-                .hoverColor = {1.0f, 1.0f, 1.0f, 1.0f},
-                .clickColor = {1, 1, 1, 1},
-                .downColor  = {1, 1, 1, 1},
+                .color       = {0.0f, 0.0f, 0.0f, 1.0f},
+                .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
+                .activeColor = {1, 1, 1, 1},
+                .downColor   = {1, 1, 1, 1},
             },
     };
 

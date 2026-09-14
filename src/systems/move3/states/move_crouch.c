@@ -32,7 +32,7 @@ bool Move_Crouch_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 ne
 {
     bool     hit   = Sol_Raycast1(
         world, (SolRay){ .start = world->xform.pos[id], .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id },
-        NULL);
+        &(SolRayResult){0});
 
     if (hit)
         return false;

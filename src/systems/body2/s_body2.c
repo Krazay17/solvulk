@@ -20,9 +20,9 @@ void Body2_Init(World *world)
     solb_init(ws->contacts, 32);
 }
 
-void Body2_Step(World *world, double dt)
+void Body2_Step(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->timestep;
     int i, j;
 
     SparseSet_ScBody2 *set = Sol_Comp_Set(world, ScBody2);

@@ -5,10 +5,8 @@
 
 #define BOOST_CD 2.5f
 
-void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
+void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float fdt)
 {
-    float fdt = (float)dt;
-
     ScBody3       *body  = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data  = &move->stateData[move->state];
     vec3s          vel   = body->vel;
@@ -33,7 +31,7 @@ void Move_Slide_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
     move->targetHeight = move->baseHeight * 0.65f;
     if (move->groundtime > 0)
     {
-        data->as.slide.boost = fminf(data->as.slide.boost + (solState.appTime - data->lastExited), BOOST_CD);
+        data->as.slide.boost = fminf(data->as.slide.boost + (world->tickTime - data->lastExited), BOOST_CD);
         body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Body3_GetDir(world, id))),
                                       Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost));
 

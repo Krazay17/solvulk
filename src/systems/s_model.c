@@ -13,7 +13,7 @@ typedef struct
 const ModelKindData model_kinds[MODELKIND_COUNT] = {
     [MODELKIND_DUDE] =
         {
-            .y_offset = -0.9f,
+            .y_offset = -1.0f,
         },
     [MODELKIND_WIZARD] =
         {
@@ -29,9 +29,9 @@ const ModelKindData model_kinds[MODELKIND_COUNT] = {
         },
 };
 
-void Model_Render(World *world, double dt)
+void Model_Render(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->fdt;
 
     SparseSet_ScModel *set = Sol_Comp_Set(world, ScModel);
     for (int i = 0; i < set->cnt; i++)

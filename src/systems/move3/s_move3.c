@@ -1,12 +1,13 @@
 #include "s_move3.h"
 #include "world.h"
+#include "sol_user.h"
 #include "sol_core.h"
 
 #include <omp.h>
 
-void Move3_Step(World *world, double dt)
+void Move3_Step(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->timestep;
     int i;
 
     SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);
@@ -36,9 +37,10 @@ void Move3_Step(World *world, double dt)
 
         Move3_EvaluateState(world, id, move, cmd);
 
-        move->stateData[move->state].elapsed += dt;
-        if (MOVE_STATE_FUNCS[move->state].update)
-            MOVE_STATE_FUNCS[move->state].update(world, id, move, cmd, dt);
+        MoveStateFuncs funcs = MOVE_STATE_FUNCS[move->state];
+        move->stateData[move->state].elapsed += fdt;
+        if (funcs.update)
+            funcs.update(world, id, move, cmd, fdt);
 
         vec3s vel         = body3->vel;
         vec3s wishdir     = cmd->wishdir;
@@ -90,14 +92,13 @@ void Move3_Step(World *world, double dt)
         if (move->knockDur > 0.0f)
         {
             move->knockDur -= fdt;
-            const float knockFactor = 1.0f - expf(-10.0f * fdt); // Decays smoothly over time
-            body3->vel              = glms_vec3_lerp(body3->vel, move->knockVel, knockFactor);
+            body3->vel = glms_vec3_lerp(body3->vel, move->knockVel, 0.5f);
         }
 
         // Framerate-independent friction modifier recovery
         if (move->frictionMod != 1.0f)
         {
-            const float fricFactor = 1.0f - expf(-5.0f * fdt);
+            const float fricFactor = 1.0f - expf(-1.0f * fdt);
             move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
         }
     }
@@ -118,7 +119,7 @@ void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
     if (newHeight > currentHeight)
     {
         if (Sol_Raycast1D(world, (SolRay){.start = world->xform.pos[id], .dir = WORLD_UP, .dist = newHeight * 0.6f},
-                          NULL, 0.2f))
+                          &(SolRayResult){0}, 0.2f))
             return;
     }
     body->dims.y                              = newHeight;
@@ -135,7 +136,7 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
     ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
     Xform xform   = Xform_Get(world, id);
     // Start from center-bottom of the body
-    vec3s origin = xform.pos; // vecAdd(xform->pos, vecSca(WORLD_DOWN, body->dims.y * 0.4f));
+    vec3s origin = xform.pos;
 
     move->groundNorm        = (vec3s){0, 0, 0};
     SolRayResult results[9] = {0};
@@ -159,7 +160,7 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
     struct GoodRay best_ray = {.dist = 1e9f, .norm = (vec3s){0}};
     for (int j = 0; j < 9; j++)
     {
-        float dist = results[j].dist;
+        float dist = results[j].t;
         vec3s norm = results[j].norm;
 
         if (norm.y > WALKABLE_SLOPE && dist < best_ray.dist)
@@ -172,7 +173,7 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
     move->groundNorm = best_ray.norm;
     move->groundDist = best_ray.dist;
 
-    if (move->groundNorm.y > WALKABLE_SLOPE && (move->groundDist < (body->dims.y * 0.5f + MAX_WALK_DISTANCE_BUFFER)))
+    if (move->groundNorm.y > WALKABLE_SLOPE && (move->groundDist < (body->dims.y + MAX_WALK_DISTANCE_BUFFER)))
     {
         move->airtime = 0;
         move->groundtime += fdt;
@@ -186,12 +187,12 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    MoveState current_state                 = move->state;
+    MoveState current_state                  = move->state;
     const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
 
     for (int i = 0; i < MOVE_STATE_COUNT; i++)
     {
-        MoveState target_state                 = MOVE_STATE_PRIORITY[i];
+        MoveState target_state                  = MOVE_STATE_PRIORITY[i];
         const MoveStateFuncs *target_state_func = &MOVE_STATE_FUNCS[target_state];
         if (current_state_func->canExit && !current_state_func->canExit(world, id, move, cmd, target_state))
             continue;
@@ -231,7 +232,7 @@ bool Sol_Move3_SetState(World *world, int id, MoveState target_state)
     ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
     ScCmd *cmd    = Sol_Comp_Get(world, id, ScCmd);
 
-    const MoveState current_state           = move->state;
+    const MoveState current_state            = move->state;
     const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
     const MoveStateFuncs *target_state_func  = &MOVE_STATE_FUNCS[target_state];
 

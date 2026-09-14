@@ -21,18 +21,20 @@ typedef enum
 typedef struct SolState
 {
     World *worlds[WORLDID_COUNT];
-    u16    worldCount;
+    u16 worldCount;
 
     volatile bool isRunning;
     volatile bool needsResize;
-    bool          debug;
+    bool debug;
 
+    double dt;
+    float fdt;
     double appTime, timescale, fps;
     double uiScale, aspectRatio;
-    u32    tickCounter, stepCounter;
+    u32 tickCounter, stepCounter;
 
-    int   windowWidth, windowHeight;
-    int   windowX, windowY;
+    int windowWidth, windowHeight;
+    int windowX, windowY;
     void *g_hwnd;
 } SolState;
 
@@ -46,8 +48,8 @@ static inline int Sol_Realloc(void **data, int count, int *capacity, size_t size
 {
     if (count >= *capacity)
     {
-        int   newCap = (*capacity <= 0) ? 32 : *capacity * 2;
-        void *tmp    = realloc(*data, size * newCap);
+        int newCap = (*capacity <= 0) ? 32 : *capacity * 2;
+        void *tmp  = realloc(*data, size * newCap);
         if (!tmp)
         {
             fprintf(stderr, "Failed to realloc\n");
@@ -71,7 +73,7 @@ static inline World *Sol_GetWorldByIdx(WorldIdx idx)
     return solState.worlds[idx];
 }
 
-int  Sol_Init(void *hwnd, void *hInstance);
+int Sol_Init(void *hwnd, void *hInstance);
 void Sol_Tick(double dt, double time);
 void Sol_Destroy();
 

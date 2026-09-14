@@ -15,8 +15,9 @@ typedef struct SysDebug
     DebugSphere *spheres;
 } SysDebug;
 
-void Debug_Tick(World *world, double dt)
+void Debug_Tick(World *world)
 {
+    float fdt = world->fdt;
     SysDebug *sys = world->systems[WORLDSYS_DEBUG];
     if (!sys)
         return;
@@ -28,7 +29,7 @@ void Debug_Tick(World *world, double dt)
     for (i = 0; i < count; i++)
     {
         DebugLine *line = &sys->lines[i];
-        line->ttl -= (float)dt;
+        line->ttl -= fdt;
         if (line->ttl > 0)
         {
             sys->lines[write++] = *line;
@@ -41,7 +42,7 @@ void Debug_Tick(World *world, double dt)
     for (i = 0; i < count; i++)
     {
         DebugSphere *sphere = &sys->spheres[i];
-        sphere->ttl -= (float)dt;
+        sphere->ttl -= fdt;
         if (sphere->ttl > 0)
         {
             sys->spheres[write++] = *sphere;

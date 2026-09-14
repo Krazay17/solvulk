@@ -21,9 +21,9 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_DASH]     = &dash_state,
 };
 
-void Ability_Step(World *world, double dt)
+void Ability_Step(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->timestep;
 
     SparseSet_ScAbility *set = Sol_Comp_Set(world, ScAbility);
     for (int i = 0; i < set->cnt; i++)
@@ -52,7 +52,7 @@ void Ability_Step(World *world, double dt)
     }
 }
 
-void Ability_Draw(World *world, double dt)
+void Ability_Draw(World *world)
 {
     SparseSet_ScAbility *set = Sol_Comp_Set(world, ScAbility);
     for (int i = 0; i < set->cnt; i++)

@@ -15,7 +15,7 @@
 
 static SolProfiler profile = {.name = "Interact"};
 
-static void User_Update(World *world, double dt)
+static void User_Update(World *world)
 {
     if (world->index == sol_user.focus_w && sol_user.focus > 0)
     {
@@ -43,13 +43,11 @@ static void User_Update(World *world, double dt)
         if (!(interact->state_prev & INTERACT_DOWN))
         {
             if (hook && hook->pressed)
-                hook->pressed(world, sol_user.target, sol_user.view_ent, dt, hook->data);
+                hook->pressed(world, sol_user.target, sol_user.view_ent, hook->data);
         }
-
-        if (hook && hook->held)
-            hook->held(world, sol_user.target, sol_user.view_ent, dt, hook->data);
     }
-    else if (world->index == sol_user.target_w && sol_user.target > 0)
+
+    if (world->index == sol_user.target_w && sol_user.target > 0)
     {
         ScInteract *interact = Sol_Comp_Get(world, sol_user.target, ScInteract);
         if (!interact)
@@ -57,18 +55,43 @@ static void User_Update(World *world, double dt)
 
         interact->state |= INTERACT_HOVERED;
         interact->is_local = true;
-        if (sol_user.interact_last && !(interact->state_prev & INTERACT_DRAGGING))
+
+        if (!(interact->state & INTERACT_DRAGGING))
         {
-            if (interact->state & INTERACT_TOGGLEABLE)
-                interact->state ^= INTERACT_TOGGLED;
             ScHook *hook = Sol_Comp_Get(world, sol_user.target, ScHook);
-            if (hook && hook->release)
-                hook->release(world, sol_user.target, sol_user.view_ent, dt, hook->data);
+
+            if (sol_user.interact)
+            {
+                interact->state |= INTERACT_DOWN;
+
+                if (hook && hook->held)
+                    hook->held(world, sol_user.target, sol_user.view_ent, hook->data);
+
+                if (!sol_user.interact_last)
+                {
+                    interact->state |= INTERACT_JUSTDOWN;
+
+                    if (hook && hook->pressed)
+                        hook->pressed(world, sol_user.target, sol_user.view_ent, hook->data);
+                }
+            }
+            else if (sol_user.interact_last)
+            {
+                interact->state |= INTERACT_JUSTUP;
+
+                if (interact->state & INTERACT_TOGGLEABLE)
+                    interact->state ^= INTERACT_TOGGLED;
+                if (hook && hook->release)
+                {
+                    interact->state |= INTERACT_ACTIVE;
+                    hook->release(world, sol_user.target, sol_user.view_ent, hook->data);
+                }
+            }
         }
     }
 }
 
-static void Slider_Update(World *world, double dt, SparseSet_ScInteract *set_interact)
+static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
 {
     SparseSet_ScSlider *set = Sol_Comp_Set(world, ScSlider);
     for (int i = 0; i < set->cnt; i++)
@@ -91,7 +114,7 @@ static void Slider_Update(World *world, double dt, SparseSet_ScInteract *set_int
     }
 }
 
-static void Cmd_Update(World *world, double dt, SparseSet_ScInteract *set_interact)
+static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
 {
     int i, j;
     SparseSet_ScCmd *set_cmd = Sol_Comp_Set(world, ScCmd);
@@ -157,22 +180,22 @@ static void Cmd_Update(World *world, double dt, SparseSet_ScInteract *set_intera
             if (!(cmd->action_state_prev & BITC(ACTION_INTERACT)))
             {
                 if (hook && hook->pressed)
-                    hook->pressed(world, best_id, id, dt, hook->data);
+                    hook->pressed(world, best_id, id, hook->data);
             }
 
             if (hook && hook->held)
-                hook->held(world, best_id, id, dt, hook->data);
+                hook->held(world, best_id, id, hook->data);
         }
         else if (cmd->action_state_prev & BITC(ACTION_INTERACT))
         {
             best_interact->interactor = id;
             if (hook && hook->release)
-                hook->release(world, best_id, id, dt, hook->data);
+                hook->release(world, best_id, id, hook->data);
         }
     }
 }
 
-static void Interact_Final(World *world, double dt, SparseSet_ScInteract *set)
+static void Interact_Final(World *world, SparseSet_ScInteract *set)
 {
     for (int i = 0; i < set->cnt; i++)
     {
@@ -207,31 +230,28 @@ static void Interact_Final(World *world, double dt, SparseSet_ScInteract *set)
     }
 }
 
-void Interact_Update(World *world, double dt)
+void Interact_Update(World *world)
 {
     Prof_Begin(&profile);
-    int i;
-
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
-    for (i = 0; i < set->cnt; i++)
+    for (int i = 0; i < set->cnt; i++)
     {
         ScInteract *interact = &set->data[i];
         interact->state_prev = interact->state;
         interact->state &= (INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGABLE);
     }
 
-    User_Update(world, dt);
-    Slider_Update(world, dt, set);
-    Cmd_Update(world, dt, set);
+    User_Update(world);
+    Slider_Update(world, set);
+    Cmd_Update(world, set);
+    Interact_Final(world, set);
 
-    Interact_Final(world, dt, set);
-
-    Prof_EndEz(&profile, true, dt);
+    Prof_EndEz(&profile, true, world->dt / solState.worldCount);
 }
 
-void Interact_Body_Step(World *world, double dt)
+void Interact_Body_Step(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->timestep;
 
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
 

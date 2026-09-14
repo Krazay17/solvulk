@@ -2,9 +2,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Ai_Step(World *world, double dt)
+void Ai_Step(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->timestep;
 
     SparseSet_ScAi *set = Sol_Comp_Set(world, ScAi);
     for (int i = 0; i < set->cnt; i++)

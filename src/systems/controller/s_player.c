@@ -21,18 +21,21 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
         .dir       = lookdir,
         .dist      = range,
         .ignoreEnt = id,
+        .debug     = true,
     };
     bool hit              = false;
-    SolRayResult aimTrace = {.pos = end};
+    SolRayResult aimTrace = {0};
     if (solState.debug)
         hit = Sol_Raycast1D(world, ray, &aimTrace, 0.1f);
     else
         hit = Sol_Raycast1(world, ray, &aimTrace);
-    vec3s dir_to_hit = glms_vec3_normalize(glms_vec3_sub(aimTrace.pos, headpos));
+        
+    vec3s hit_pos    = vecAdd(ray.start, vecSca(ray.dir, aimTrace.t));
+    vec3s dir_to_hit = glms_vec3_normalize(glms_vec3_sub(hit_pos, headpos));
     if (hit && vecDot(dir_to_hit, lookdir) > 0.5f)
     {
         // Add slight depth into hit
-        vec3s pos_with_depth = vecAdd(aimTrace.pos, vecSca(lookdir, hitdepth));
+        vec3s pos_with_depth = vecAdd(hit_pos, vecSca(lookdir, hitdepth));
         vec3s dir_with_depth = glms_vec3_normalize(glms_vec3_sub(pos_with_depth, headpos));
 
         aim.dir = dir_with_depth;
@@ -40,7 +43,7 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
     }
     if (solState.debug)
     {
-        SolSphere *debug_sphere = Sol_Debug_NewSphere(world, 0.1f);
+        SolSphere *debug_sphere = Sol_Debug_NewSphere(world, 0.5f);
         debug_sphere->color     = VEC4_GREEN;
         debug_sphere->pos       = aim.pos;
         debug_sphere->radius    = 0.2f;
@@ -50,9 +53,9 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
     return aim;
 }
 
-void Player_Tick(World *world, double dt)
+void Player_Tick(World *world)
 {
-    float fdt = (float)dt;
+    float fdt = world->fdt;
 
     SparseSet_ScPlayer *set = Sol_Comp_Set(world, ScPlayer);
     for (int i = 0; i < set->cnt; i++)
@@ -76,10 +79,11 @@ void Player_Tick(World *world, double dt)
         if (Sol_Comp_Has(world, id, ScCamera))
         {
             ScCamera *camera = Sol_Comp_Get(world, id, ScCamera);
-            struct Aim aim = Sol_Player_SetParallaxAim(world, id, Sol_Body3_GetHead(world, id), camera->pos, camera->dir, 50.0f, 0.25f);
-            cmd->aimpos    = aim.pos;
-            cmd->aimdir    = aim.dir;
-            cmd->target    = aim.target;
+            struct Aim aim   = Sol_Player_SetParallaxAim(world, id, Sol_Body3_GetHead(world, id), camera->pos,
+                                                         camera->dir, 10.0f, 0.25f);
+            cmd->aimpos      = aim.pos;
+            cmd->aimdir      = aim.dir;
+            cmd->target      = aim.target;
         }
     }
 }

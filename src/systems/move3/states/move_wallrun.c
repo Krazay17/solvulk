@@ -49,7 +49,7 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
             if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
             {
                 MoveStateData *data         = &move->stateData[MOVE_WALLRUN];
-                move->lastTouch             = result->pos;
+                move->lastTouch             = Sol_AddScaledDir(ray.start, ray.dir, result->t);
                 data->as.wallrun.wallNormal = result->norm;
                 return true;
             }
@@ -135,7 +135,7 @@ void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 void Move_Wallrun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
-    data->lastExited    = solState.appTime;
+    data->lastExited    = world->tickTime;
 }
 
 bool Move_Wallrun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)

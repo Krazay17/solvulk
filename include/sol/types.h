@@ -33,10 +33,10 @@ typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemInit)(World *);
 typedef void (*SystemDeinit)(World *);
-typedef void (*SystemUpdate)(World *, double);
-typedef void (*TickEnt)(World *, int, double);
+typedef void (*SystemUpdate)(World *);
+typedef void (*TickEnt)(World *, int);
 typedef float (*GetterFunc)(World *world, int id);
-typedef void (*Hook)(World *, int, int, double, void *);
+typedef void (*Hook)(World *, int, int, void *);
 
 typedef struct
 {
@@ -69,16 +69,8 @@ typedef enum
 {
     COLLAYER_NONE,
     COLLAYER_WORLD      = (1 << 0),
-    COLLAYER_TEAMZ      = (1 << 1),
-    COLLAYER_TEAMZ_PROJ = (1 << 2),
-    COLLAYER_TEAMA      = (1 << 4),
-    COLLAYER_TEAMA_PROJ = (1 << 5),
-    COLLAYER_TEAMB      = (1 << 6),
-    COLLAYER_TEAMB_PROJ = (1 << 7),
-    COLLAYER_TEAMC      = (1 << 8),
-    COLLAYER_TEAMC_PROJ = (1 << 9),
-    COLLAYER_TEAMD      = (1 << 10),
-    COLLAYER_TEAMD_PROJ = (1 << 11),
+    COLLAYER_PAWN       = (1 << 1),
+    COLLAYER_PROJECTILE = (1 << 2),
     COLLAYER_ALL        = 0xffff,
 } ColLayer;
 
@@ -446,20 +438,19 @@ typedef struct SolTri
 typedef enum
 {
     INTERACT_UP,
-    INTERACT_ENTHOVERED   = (1 << 0),
-    INTERACT_MOUSEHOVERED = (1 << 1),
-    INTERACT_DOWN         = (1 << 2),
-    INTERACT_JUSTDOWN     = (1 << 3),
-    INTERACT_JUSTUP       = (1 << 4),
-    INTERACT_DRAGGING     = (1 << 5),
-    INTERACT_TOGGLED      = (1 << 6),
-
-    INTERACT_HOVERED       = (1 << 10),
-    INTERACT_JUSTHOVERED   = (1 << 11),
-    INTERACT_JUSTUNHOVERED = (1 << 12),
-
-    INTERACT_TOGGLEABLE = (1 << 7),
-    INTERACT_DRAGGABLE  = (1 << 8),
+    INTERACT_ENTHOVERED    = (1 << 0),
+    INTERACT_MOUSEHOVERED  = (1 << 1),
+    INTERACT_DOWN          = (1 << 2),
+    INTERACT_JUSTDOWN      = (1 << 3),
+    INTERACT_JUSTUP        = (1 << 4),
+    INTERACT_DRAGGING      = (1 << 5),
+    INTERACT_TOGGLED       = (1 << 6),
+    INTERACT_ACTIVE        = (1 << 7),
+    INTERACT_HOVERED       = (1 << 8),
+    INTERACT_JUSTHOVERED   = (1 << 9),
+    INTERACT_JUSTUNHOVERED = (1 << 10),
+    INTERACT_TOGGLEABLE    = (1 << 11),
+    INTERACT_DRAGGABLE     = (1 << 12),
 } InteractState;
 
 typedef enum
@@ -523,10 +514,20 @@ typedef struct AnimDesc
 
 typedef struct SolContact
 {
-    u32 id, idB;
+    u32 idA, idB;
     vec3s pos, normal;
     float penetration;
 } SolContact;
+
+typedef struct
+{
+    SolContact *contacts;
+} ThreadContactBuffer;
+
+typedef struct
+{
+    u32 *ids;
+} ThreadIdBuffer;
 
 typedef struct SolInteractor
 {
@@ -562,8 +563,8 @@ typedef struct SolRay
 typedef struct SolRayResult
 {
     bool hit;
-    vec3s pos, norm;
-    float dist;
+    vec3s norm;
+    float t;
     int entId;
 } SolRayResult;
 
@@ -598,7 +599,7 @@ typedef enum
     EFFECTMASK_KNOCKUP           = (1 << 2),
     EFFECTMASK_REFLECTPROJECTILE = (1 << 3),
     EFFECTMASK_CHAINLIGHTNING    = (1 << 4),
-    EFFECTMASK_HEALONHIT         = (1 << 5),
+    EFFECTMASK_LIFESTEAL         = (1 << 5),
 } EffectMask;
 
 typedef struct

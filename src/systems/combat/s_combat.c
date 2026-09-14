@@ -8,17 +8,6 @@
 #include "world.h"
 #include "sol_math.h"
 
-typedef struct HitGen
-{
-    u32 hitGenMatrix[MAX_ENTS][256];
-    u32 globalHitGen;
-} HitGen;
-
-typedef struct
-{
-    HitGen hitgen;
-} SysCombat;
-
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
     combat->health = combat->healthMax;
@@ -32,10 +21,6 @@ static void OnDeath(World *world, int id, ScCombat *combat)
 
 void Combat_Init(World *world)
 {
-    SysCombat *sys                  = malloc(sizeof(SysCombat));
-    world->systems[WORLDSYS_COMBAT] = sys;
-    memset(sys->hitgen.hitGenMatrix, 0, sizeof(sys->hitgen.hitGenMatrix));
-    sys->hitgen.globalHitGen = 1;
 }
 
 void Combat_Step(World *world, double dt)
@@ -121,29 +106,4 @@ float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount)
     combat->healingTaken += healing_done;
 
     return healing_done;
-}
-
-u32 Sol_Combat_StartHitGen(World *world, int id)
-{
-    SysCombat *sys = world->systems[WORLDSYS_COMBAT];
-
-    HitGen *hitgen = &sys->hitgen;
-    hitgen->globalHitGen++;
-    if (hitgen->globalHitGen == 0)
-    {
-        memset(hitgen->hitGenMatrix, 0, sizeof(hitgen->hitGenMatrix));
-        hitgen->globalHitGen = 1;
-    }
-    return hitgen->globalHitGen;
-}
-
-bool Sol_Combat_TryHitGen(World *world, int id, int target, u32 sessionGen)
-{
-    SysCombat *sys = world->systems[WORLDSYS_COMBAT];
-
-    if (sys->hitgen.hitGenMatrix[id][target] == sessionGen)
-        return false;
-
-    sys->hitgen.hitGenMatrix[id][target] = sessionGen;
-    return true;
 }

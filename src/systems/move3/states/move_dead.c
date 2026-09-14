@@ -2,7 +2,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-#define REMOVE_PHYSX_TIMER 20.0f
+#define REMOVE_PHYSX_TIMER 5.0f
 #define DESTROY_TIMER 125.0f
 
 void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
@@ -16,7 +16,9 @@ void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
     }
     if (data->elapsed > REMOVE_PHYSX_TIMER)
     {
-        Sol_Comp_Rem(world, id, ScBody3);
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+            body3->flag_destroy = true;
     }
 }
 

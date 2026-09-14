@@ -17,8 +17,8 @@ void Sl_Spatial_Init(World *world)
     solb_init(spatial->contacts, 4096);
     solb_init(spatial->tris_static, 4096);
     solb_init(spatial->build_ids, 64);
-    solb_init(spatial->build_poss, 64);
-    solb_init(spatial->build_extents, 64);
+    solb_init(spatial->build_mins, 64);
+    solb_init(spatial->build_maxs, 64);
 
     int max_threads = omp_get_max_threads();
     solb_init(spatial->threadContacts, max_threads);

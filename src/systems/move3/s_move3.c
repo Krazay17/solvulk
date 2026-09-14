@@ -153,7 +153,7 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
                          .dir       = WORLD_DOWN,
                          .dist      = 6.0f,
                          .ignoreEnt = id,
-                         .mask      = 0,
+                         .mask      = 1,
                      },
                      &results[j]);
     }

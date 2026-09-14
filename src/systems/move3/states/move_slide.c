@@ -35,6 +35,7 @@ void Move_Slide_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
         body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Body3_GetDir(world, id))),
                                       Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost));
 
+                                      sollog(body->impulse);
         data->as.slide.boost /= 2.0f;
     }
 }

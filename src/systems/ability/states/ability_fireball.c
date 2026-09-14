@@ -31,15 +31,18 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
         break;
     case 1:
         data->stage++;
-        vec3s pos = GetProjectilePos(world, id, cmd, data->power);
-        vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
-        *Sol_Debug_NewLine(world, 0.2f) = (SolLine){
-            .a = pos,
-            .b = vecAdd(pos, vecSca(dir, 25.0f)),
-            .aColor = VEC4_RED,
-            .bColor = VEC4_RED,
+        vec3s pos  = GetProjectilePos(world, id, cmd, data->power);
+        vec3s dir  = vecNorm(vecSub(cmd->aimpos, pos));
+        SolHit hit = {
+            .entA       = id,
+            .effectMask = ability_base[ABILITY_STATE_FIREBALL].effectMask,
+            .damage     = 10.0f,
         };
-        Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+        int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+        ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
+        projectile->hit          = hit;
+
+        break;
     case 2:
         data->recover += dt;
         if (data->recover > data->recoverDuration)
@@ -50,10 +53,11 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
 
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data                      = &ability->stateData[ability->activeSlot];
-    data->duration                              = ability_base[ABILITY_STATE_FIREBALL].duration;
-    data->cooldown                              = ability_base[ABILITY_STATE_FIREBALL].cooldown;
-    data->recoverDuration                       = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    data->duration         = ability_base[ABILITY_STATE_FIREBALL].duration;
+    data->cooldown         = ability_base[ABILITY_STATE_FIREBALL].cooldown;
+    data->recoverDuration  = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
+
     Sol_Comp_Get(world, id, ScCombat)->hitPause = 0;
 }
 

@@ -42,7 +42,7 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
             vec3s finalPos = xform.pos;
             finalPos.y += (float)i * (dims.y * 0.4f);
             vec3s rotated_offset = glms_quat_rotatev(xform.rot, VECTOR_RADIAL_DIRECTIONS[j]);
-            SolRay ray           = {.start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id};
+            SolRay ray           = {.start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
             bool hit             = Sol_Raycast1(world, ray, result);
             float dot            = glms_vec3_dot(result->norm, WORLD_UP);
             // float lookDot = vecDot(cmd->lookdir, result->norm);

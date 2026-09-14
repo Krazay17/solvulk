@@ -96,47 +96,40 @@ static inline uint32_t SpatialGrid_Init(SpatialGrid *grid, vec3s min, vec3s max,
     return SpatialGrid_Resize(grid, min, max, cell_size);
 }
 
-static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *poss, vec3s *half_extents,
+static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *mins, vec3s *maxs,
                                                 uint32_t item_count)
 {
     if (item_count == 0)
         return;
 
-    vec3s min = glms_vec3_sub(poss[0], half_extents[0]);
-    vec3s max = glms_vec3_add(poss[0], half_extents[0]);
+    vec3s min = mins[0];
+    vec3s max = maxs[0];
 
     for (uint32_t i = 1; i < item_count; i++)
     {
-        vec3s itemMin = glms_vec3_sub(poss[i], half_extents[i]);
-        vec3s itemMax = glms_vec3_add(poss[i], half_extents[i]);
-        min           = glms_vec3_minv(min, itemMin);
-        max           = glms_vec3_maxv(max, itemMax);
+        min           = glms_vec3_minv(min, mins[i]);
+        max           = glms_vec3_maxv(max, maxs[i]);
     }
 
     // small margin so items exactly on the boundary don't clamp oddly
-    min = glms_vec3_subs(min, 0.1f);
-    max = glms_vec3_adds(max, 0.1f);
+    min = glms_vec3_subs(min, grid->cell_size);
+    max = glms_vec3_adds(max, grid->cell_size);
 
     SpatialGrid_Resize(grid, min, max, grid->cell_size); // recompute dims/cell_count from tight bounds
 }
 
-// Rebuilds the grid from scratch for this frame's item set.
-// Returns total id-slots written (== solb_count(grid->ids) afterward).
-static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s *poss, vec3s *half_extents,
+static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s *mins, vec3s *maxs,
                                          uint32_t item_count)
 {
-    SpatialGrid_FitBoundsToItems(grid, poss, half_extents, item_count);
+    SpatialGrid_FitBoundsToItems(grid, mins, maxs, item_count);
     // --- Pass 1: count how many spans land in each cell ---
     // offsets[0] stays 0; counts go into offsets[i+1] temporarily.
     memset(grid->cell_offsets, 0, sizeof(uint32_t) * (grid->cell_count + 1));
 
     for (uint32_t i = 0; i < item_count; i++)
     {
-        vec3s min = glms_vec3_sub(poss[i], half_extents[i]);
-        vec3s max = glms_vec3_add(poss[i], half_extents[i]);
-
-        ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
-        ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
+        ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
+        ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
 
         for (int z = min_cell.z; z <= max_cell.z; z++)
             for (int y = min_cell.y; y <= max_cell.y; y++)
@@ -152,35 +145,23 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
         grid->cell_offsets[i + 1] += grid->cell_offsets[i];
 
     uint32_t total = grid->cell_offsets[grid->cell_count];
-
-    // Size the flat id buffer exactly to what's needed this frame —
-    // this is the number you wanted reported/reused.
     solb_reserve(grid->ids, total);
     solb_set_count(grid->ids, total);
 
-    // cursor starts as a copy of the *start* of each cell's range;
-    // we increment cursor (not cell_offsets!) while writing, so
-    // cell_offsets stays intact for Query afterward.
     memcpy(grid->cursor, grid->cell_offsets, sizeof(uint32_t) * grid->cell_count);
 
-    // --- Pass 3: fill — recompute spans, write ids into their slot ---
     for (uint32_t i = 0; i < item_count; i++)
     {
         uint32_t id       = ids[i];
-        vec3s pos         = poss[i];
-        vec3s half_extent = half_extents[i];
-
-        vec3s min = glms_vec3_sub(pos, half_extent);
-        vec3s max = glms_vec3_add(pos, half_extent);
-
-        ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
-        ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
+        ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
+        ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
 
         for (int z = min_cell.z; z <= max_cell.z; z++)
             for (int y = min_cell.y; y <= max_cell.y; y++)
                 for (int x = min_cell.x; x <= max_cell.x; x++)
                 {
-                    uint32_t cell_idx                   = SpatialGrid_GetCellIdx(grid, x, y, z);
+                    uint32_t cell_idx = SpatialGrid_GetCellIdx(grid, x, y, z);
+
                     grid->ids[grid->cursor[cell_idx]++] = id;
                 }
     }
@@ -188,11 +169,28 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
     return total;
 }
 
-static inline uint32_t SpatialGrid_Query(SpatialGrid *grid, vec3s pos, vec3s half_extent, ThreadIdBuffer *id_buf)
+// Returns true if `id` is new this generation (and records it as seen).
+// Returns false if `id` was already recorded — caller should skip it.
+static inline bool SpatialGrid_HashInsert(HashSlot *table, uint32_t gen, uint32_t id)
 {
-    vec3s min = glms_vec3_sub(pos, half_extent);
-    vec3s max = glms_vec3_add(pos, half_extent);
+    uint32_t slot = (id * 2654435761u) & QUERY_HASH_MASK;
+    for (uint32_t probe = 0; probe < QUERY_HASH_SIZE; probe++)
+    {
+        if (table[slot].stamp != gen)
+        {
+            table[slot].id    = id;
+            table[slot].stamp = gen;
+            return true;
+        }
+        if (table[slot].id == id)
+            return false;
+        slot = (slot + 1) & QUERY_HASH_MASK;
+    }
+    return false; // table full — degrade safely by treating as "seen" (drops dedup, doesn't crash)
+}
 
+static inline uint32_t SpatialGrid_Query(SpatialGrid *grid, vec3s min, vec3s max, IdBuffer *id_buf)
+{
     ivec3s min_cell = SpatialGrid_WorldToCell(grid, min);
     ivec3s max_cell = SpatialGrid_WorldToCell(grid, max);
 
@@ -212,25 +210,8 @@ static inline uint32_t SpatialGrid_Query(SpatialGrid *grid, vec3s pos, vec3s hal
 
                 for (uint32_t i = start; i < end; i++)
                 {
-                    uint32_t id   = grid->ids[i];
-                    uint32_t slot = (id * 2654435761u) & QUERY_HASH_MASK;
-                    bool inserted = false;
-
-                    for (uint32_t probe = 0; probe < QUERY_HASH_SIZE; probe++)
-                    {
-                        if (hash_table[slot].stamp != this_gen)
-                        {
-                            hash_table[slot].id    = id;
-                            hash_table[slot].stamp = this_gen;
-                            inserted               = true;
-                            break;
-                        }
-                        if (hash_table[slot].id == id)
-                            break; // seen — leave inserted false
-                        slot = (slot + 1) & QUERY_HASH_MASK;
-                    }
-
-                    if (inserted)
+                    uint32_t id = grid->ids[i];
+                    if (SpatialGrid_HashInsert(hash_table, this_gen, id))
                         solb_push(id_buf->ids, id);
                 }
             }

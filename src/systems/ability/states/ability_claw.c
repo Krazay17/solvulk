@@ -11,8 +11,8 @@
 #include "sol_math.h"
 #include "render/render.h"
 
-#define HITDELAY 0.2f
-#define HITINTERVAL 0.1f
+#define HITDELAY 0.25f
+#define HITINTERVAL 0.025f
 #define MELEE_RANGE 2.0f
 
 void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
@@ -36,6 +36,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 
     if (data->elapsed < HITDELAY)
         return;
+
     data->accum += dt;
 
     if (data->accum >= HITINTERVAL)
@@ -54,11 +55,11 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
-            vec3s hit_pos = Sol_AddScaledDir(ray.start, ray.dir, result.t);
+            vec3s hit_pos       = Sol_AddScaledDir(ray.start, ray.dir, result.t);
             float dot           = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(hit_pos, head)));
             if (dot < 0)
                 continue;
-            if (!Sol_Combat_TryHitGen(world, id, result.entId, combat->hitSession))
+            if (!Sol_Hitgen_Try(world, id, result.entId, data->hitgen))
                 continue;
 
             SolHit hit = {
@@ -95,14 +96,7 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
     data->accum            = HITINTERVAL;
     data->duration         = ability_base[ABILITY_STATE_CLAW].duration;
     data->cooldown         = ability_base[ABILITY_STATE_CLAW].cooldown;
-
-    if (Sol_Comp_Has(world, id, ScCombat))
-    {
-        ScCombat *combat         = Sol_Comp_Get(world, id, ScCombat);
-        combat->hitSession       = Sol_Combat_StartHitGen(world, id);
-        combat->hitPause         = 0;
-        combat->hitPauseDiminish = 0;
-    }
+    data->hitgen           = Sol_Hitgen_Start(world, id);
 }
 
 void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)

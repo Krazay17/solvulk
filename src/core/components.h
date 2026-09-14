@@ -89,6 +89,7 @@ typedef struct ScBody3
     float mass, invMass, restitution;
     u32 mask, base_mask;
     u32 ray_mask, ray_base_mask;
+    u32 flag_destroy;
 } ScBody3;
 
 typedef struct ScBody2
@@ -295,7 +296,7 @@ typedef struct
     float elapsed, duration;
     float recover, recoverDuration;
     float cooldown, cooldownRemaining;
-
+    u32 hitgen;
     u8 stage;
     bool held;
 } AbilityStateData;
@@ -447,15 +448,12 @@ typedef struct ScTracker
 typedef struct ScProjectile
 {
     ProjectileKind kind;
+    u32 mask;
+    u32 hitgen;
     u32 bounces;
-    float power;
-    float explodeRadius;
-    u32 hitFX, explodeHitFX;
-
-    SolCallback callback;
-    u32 callbackFlags;
-    SolHit directHit;
-    SolHit explosionHit;
+    SolHit hit;
+    float radius;
+    Hook hook;
 } ScProjectile;
 
 typedef struct ScHuditem

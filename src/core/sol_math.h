@@ -429,6 +429,15 @@ static inline vec3s Closest_Point_Segment_Point(vec3s s0, vec3s s1, vec3s p)
     return glms_vec3_add(s0, glms_vec3_scale(seg, t));
 }
 
+static inline vec3s ClosestPointOnSegment(vec3s p, vec3s a, vec3s b)
+{
+    vec3s ab    = glms_vec3_sub(b, a);
+    float denom = glms_vec3_dot(ab, ab);
+    float t     = denom > FLOATING_EPSILON ? glms_vec3_dot(glms_vec3_sub(p, a), ab) / denom : 0.0f;
+    t           = fmaxf(0.0f, fminf(1.0f, t));
+    return glms_vec3_add(a, glms_vec3_scale(ab, t));
+}
+
 static inline void compose_trs(vec3 pos, versor quat, vec3 scale, mat4 dest)
 {
     // 1. Initialize dest as an identity matrix

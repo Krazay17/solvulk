@@ -29,6 +29,8 @@
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
+typedef struct SolHit SolHit;
+
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemInit)(World *);
@@ -36,7 +38,22 @@ typedef void (*SystemDeinit)(World *);
 typedef void (*SystemUpdate)(World *);
 typedef void (*TickEnt)(World *, int);
 typedef float (*GetterFunc)(World *world, int id);
-typedef void (*Hook)(World *, int, int, void *);
+typedef void (*Hook)(World *, int, int);
+
+struct SolHit
+{
+    int entA; // Attacker
+    int entB; // Victim
+    float damage;
+    vec3s pos;
+    vec3s normal;
+    vec3s vel;
+    float power;
+    bool isHeal;
+
+    u32 buffMask;
+    u32 effectMask;
+};
 
 typedef struct
 {
@@ -527,7 +544,7 @@ typedef struct
 typedef struct
 {
     u32 *ids;
-} ThreadIdBuffer;
+} IdBuffer;
 
 typedef struct SolInteractor
 {
@@ -536,25 +553,10 @@ typedef struct SolInteractor
     bool just_pressed, just_released;
 } SolInteractor;
 
-typedef struct SolHit
-{
-    int entA; // Attacker
-    int entB; // Victim
-    float damage;
-    vec3s pos;
-    vec3s normal;
-    vec3s vel;
-    float power;
-    bool isHeal;
-
-    u32 buffMask;
-    u32 effectMask;
-} SolHit;
-
 typedef struct SolRay
 {
     vec3s start, dir;
-    float dist;
+    float dist, radius;
     u16 mask;
     int ignoreEnt;
     bool debug;

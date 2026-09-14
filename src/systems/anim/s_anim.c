@@ -113,7 +113,7 @@ void Anim_Tick(World *world)
         {
             ScAbility *ability     = Sol_Comp_Get(world, id, ScAbility);
             AbilityStateData *data = &ability->stateData[ability->activeSlot];
-            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f};
+            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .blendIn = 0.1f, .blendOut = 0.1f};
 
             switch (ability->state)
             {

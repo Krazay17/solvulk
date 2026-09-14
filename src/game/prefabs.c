@@ -110,8 +110,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
-     Sol_Comp_Add(world, id, ScCmd);
-     Sol_Comp_Add(world, id, ScPlayer);
+    Sol_Comp_Add(world, id, ScCmd);
 
     return id;
 }
@@ -354,24 +353,16 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
 
     u32 projLayer    = COLLAYER_PROJECTILE; // Default fallback
     u32 targetFilter = COLLAYER_ALL;
-    if (owner_body)
-    {
-        u32 ownerLayer = PHYSX_GET_LAYER(owner_body->mask);
-        // Projectile layer is 1 bit higher than team layer (TEAMA -> TEAMA_PROJ)
-        projLayer = ownerLayer << 1;
-        // Target everything EXCEPT friendly body layer and friendly projectile layer
-        targetFilter = COLLAYER_WORLD | (COLLAYER_ALL & ~(ownerLayer | projLayer));
-    }
 
     *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
         .dims        = (vec3s){size, size, size},
         .gravity     = (vec3s)SOL_GRAVITY,
         .mass        = 1.0f,
-        .invMass     = 1.0f,
+        .invMass     = 0.0f,
         .restitution = 1.0f,
         .ignoreEnt   = owner,
         .vel         = vecSca(dir, speed),
-        .mask        = PHYSXMASK(projLayer, targetFilter),
+        .mask        = PHYSXMASK(COLLAYER_PROJECTILE, 1),
     };
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
@@ -381,7 +372,9 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     };
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
-        0,
+        .kind   = PROJECTILEKIND_FIREBALL,
+        .radius = size,
+        .hitgen = Sol_Hitgen_Start(world, id),
     };
 
     return id;

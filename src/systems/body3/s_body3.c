@@ -15,6 +15,23 @@
 
 #define TERMINAL_VELOCITY -100.0f
 
+static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top, vec3s bottom, float capRadius,
+                                          float *outDist, vec3s *outNorm)
+{
+    vec3s closest  = ClosestPointOnSegment(center, top, bottom);
+    vec3s delta    = glms_vec3_sub(center, closest);
+    float distSq   = glms_vec3_dot(delta, delta);
+    float combined = radius + capRadius;
+
+    if (distSq >= combined * combined)
+        return false;
+
+    float dist = sqrtf(distSq);
+    *outDist   = dist;
+    *outNorm   = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : (vec3s){0.0f, 1.0f, 0.0f};
+    return true;
+}
+
 // Ray vs Triangle Intersection (Möller–Trumbore)
 bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm)
 {
@@ -47,6 +64,7 @@ bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri
     }
     return false;
 }
+
 // Ray vs Sphere Intersection
 bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, float radius, float *outT,
                           vec3s *outNorm)
@@ -509,12 +527,18 @@ void Body3_Update(World *world)
     int i, body_count;
 
     SparseSet_ScBody3 *set = Sol_Comp_Set(world, ScBody3);
-    body_count             = set->cnt;
+    for (i = set->cnt; i-- > 0;)
+    {
+        int id         = set->dense[i];
+        ScBody3 *body3 = &set->data[i];
+        if (body3->flag_destroy)
+            Sol_Comp_Rem(world, id, ScBody3);
+    }
+    body_count = set->cnt;
 
     SlSpatial *spatial = world->singles[SINGLE_SPATIAL];
     solb_set_count(spatial->contacts, 0);
-
-    for (i = 0; i < body_count; i++)
+    for (i = body_count; i-- > 0;)
     {
         int id         = set->dense[i];
         ScBody3 *body3 = &set->data[i];
@@ -534,22 +558,22 @@ void Body3_Update(World *world)
 
     solb_reserve(spatial->build_ids, body_count);
     solb_set_count(spatial->build_ids, body_count);
-    solb_reserve(spatial->build_poss, body_count);
-    solb_set_count(spatial->build_poss, body_count);
-    solb_reserve(spatial->build_extents, body_count);
-    solb_set_count(spatial->build_extents, body_count);
+    solb_reserve(spatial->build_mins, body_count);
+    solb_set_count(spatial->build_mins, body_count);
+    solb_reserve(spatial->build_maxs, body_count);
+    solb_set_count(spatial->build_maxs, body_count);
 
-    for (i = 0; i < body_count; i++)
+    for (i = body_count; i-- > 0;)
     {
         int id         = set->dense[i];
         ScBody3 *body3 = &set->data[i];
 
-        spatial->build_ids[i]     = id;
-        spatial->build_poss[i]    = world->xform.pos[id];
-        spatial->build_extents[i] = body3->dims;
+        spatial->build_ids[i]  = id;
+        spatial->build_mins[i] = glms_vec3_sub(world->xform.pos[id], body3->dims);
+        spatial->build_maxs[i] = glms_vec3_add(world->xform.pos[id], body3->dims);
     }
 
-    SpatialGrid_Build(spatial->grid_dynamic, spatial->build_ids, spatial->build_poss, spatial->build_extents,
+    SpatialGrid_Build(spatial->grid_dynamic, spatial->build_ids, spatial->build_mins, spatial->build_maxs,
                       solb_count(spatial->build_ids));
 
     bool stage_dirty             = false;
@@ -566,8 +590,8 @@ void Body3_Update(World *world)
     if (stage_dirty)
     {
         solb_set_count(spatial->build_ids, 0);
-        solb_set_count(spatial->build_poss, 0);
-        solb_set_count(spatial->build_extents, 0);
+        solb_set_count(spatial->build_mins, 0);
+        solb_set_count(spatial->build_maxs, 0);
         for (i = 0; i < stage_count; i++)
         {
             int id         = set_stage->dense[i];
@@ -587,15 +611,15 @@ void Body3_Update(World *world)
                     vec3s tri_min = glms_vec3_minv(glms_vec3_minv(tri.a, tri.b), tri.c);
                     vec3s tri_max = glms_vec3_maxv(glms_vec3_maxv(tri.a, tri.b), tri.c);
 
-                    vec3s pos         = glms_vec3_scale(glms_vec3_add(tri_min, tri_max), 0.5f);
-                    vec3s half_extent = glms_vec3_scale(glms_vec3_sub(tri_max, tri_min), 0.5f);
+                    // vec3s pos         = glms_vec3_scale(glms_vec3_add(tri_min, tri_max), 0.5f);
+                    // vec3s half_extent = glms_vec3_scale(glms_vec3_sub(tri_max, tri_min), 0.5f);
                     solb_push(spatial->build_ids, SPATIAL_PACK_ID(id, solb_count(spatial->tris_static) - 1));
-                    solb_push(spatial->build_poss, pos);
-                    solb_push(spatial->build_extents, half_extent);
+                    solb_push(spatial->build_mins, tri_min);
+                    solb_push(spatial->build_maxs, tri_max);
                 }
             }
         }
-        SpatialGrid_Build(spatial->grid_static, spatial->build_ids, spatial->build_poss, spatial->build_extents,
+        SpatialGrid_Build(spatial->grid_static, spatial->build_ids, spatial->build_mins, spatial->build_maxs,
                           solb_count(spatial->build_ids));
     }
 
@@ -604,21 +628,26 @@ void Body3_Update(World *world)
         int thread_num                 = omp_get_thread_num();
         ThreadContactBuffer *local_buf = &spatial->threadContacts[thread_num];
         solb_set_count(local_buf->contacts, 0);
-        ThreadIdBuffer *id_buf = &spatial->threadIds[thread_num];
+        IdBuffer *id_buf = &spatial->threadIds[thread_num];
 #pragma omp for schedule(dynamic)
-        for (i = 0; i < body_count; i++)
+        for (i = body_count - 1; i >= 0;i--)
         {
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
             Xform xform   = Xform_Get(world, id);
-            int hits      = SpatialGrid_Query(spatial->grid_dynamic, xform.pos, body->dims, id_buf);
+
+            vec3s min = glms_vec3_sub(xform.pos, body->dims);
+            vec3s max = glms_vec3_add(xform.pos, body->dims);
+            int hits  = SpatialGrid_Query(spatial->grid_dynamic, min, max, id_buf);
             for (int j = 0; j < hits; j++)
             {
                 int idB = id_buf->ids[j];
                 if (id == idB)
                     continue;
                 ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
-                Xform xformB   = Xform_Get(world, idB);
+                if (!bodyB)
+                    continue;
+                Xform xformB = Xform_Get(world, idB);
                 SolContact contact;
                 if (shape_pair_test[body->shape][bodyB->shape] &&
                     shape_pair_test[body->shape][bodyB->shape](world, body, xform, bodyB, xformB, &contact))
@@ -631,13 +660,15 @@ void Body3_Update(World *world)
         }
 
 #pragma omp for schedule(dynamic)
-        for (i = 0; i < body_count; i++)
+        for (i = body_count - 1; i >= 0;i--)
         {
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
             Xform xform   = Xform_Get(world, id);
             Prof_Begin(&prof_static);
-            int hits = SpatialGrid_Query(spatial->grid_static, xform.pos, body->dims, id_buf);
+            vec3s min = glms_vec3_sub(xform.pos, body->dims);
+            vec3s max = glms_vec3_add(xform.pos, body->dims);
+            int hits  = SpatialGrid_Query(spatial->grid_static, min, max, id_buf);
             Prof_EndEz(&prof_static, true, fdt / body_count);
             Prof_Begin(&prof_static_test);
             for (int j = 0; j < hits; j++)
@@ -669,16 +700,16 @@ void Body3_Update(World *world)
         Resolve_Contact(world, spatial->contacts[i]);
     }
 
-    for (i = 0; i < body_count; i++)
+    for (i = body_count; i-- > 0;)
     {
         int id        = set->dense[i];
         ScBody3 *body = &set->data[i];
         Xform xform   = Xform_Get(world, id);
 
-        if (xform.pos.y <= 0.0f)
+        if (xform.pos.y <= -15.0f)
         {
-            world->xform.pos[id].y = 0.0f;
-            body->vel.y            = 0.0f;
+            world->xform.pos[id] = (vec3s){0, 5.0f, 0};
+            body->vel            = (vec3s){0, 5.0f, 0};
         }
     }
     Prof_EndEz(&prof_body3, true, fdt);
@@ -694,7 +725,10 @@ vec3s Sol_Body3_GetVel(World *world, int id)
 }
 vec3s Sol_Body3_GetDir(World *world, int id)
 {
-    return (vec3s){0};
+    if (Sol_Comp_Has(world, id, ScBody3))
+        return glms_vec3_normalize(Sol_Comp_Get(world, id, ScBody3)->vel);
+    else
+        return (vec3s){0};
 }
 float Sol_Body3_GetSpeed(World *world, int id)
 {
@@ -714,9 +748,65 @@ vec3s Sol_Body3_GetHead(World *world, int id)
     return pos;
 }
 
-int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time)
+bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
 {
-    return 0;
+    bool hit = Sol_Raycast1(world, ray, result);
+
+    SolLine *line = Sol_Debug_NewLine(world, time);
+    line->a       = ray.start;
+    if (hit && result)
+        line->b = Sol_AddScaledDir(ray.start, ray.dir, result->t);
+    else
+        line->b = Sol_AddScaledDir(ray.start, ray.dir, ray.dist);
+    line->aColor = VEC4_RED;
+    line->bColor = VEC4_RED;
+
+    return hit;
+}
+
+int Sol_RaycastD(World *world, SolRay ray, SolRayResult *results, int max, float time)
+{
+    int hits = Sol_Raycast(world, ray, results, max);
+
+    SolLine *line = Sol_Debug_NewLine(world, time);
+    line->a       = ray.start;
+    if (hits > 0)
+        line->b = Sol_AddScaledDir(ray.start, ray.dir, results[0].t);
+    else
+        line->b = Sol_AddScaledDir(ray.start, ray.dir, ray.dist);
+    line->aColor = VEC4_RED;
+    line->bColor = VEC4_RED;
+
+    return hits;
+}
+
+int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float time)
+{
+    int hits = Sol_Spherecast(world, ray, results, max);
+
+    *Sol_Debug_NewSphere(world, time) = (SolSphere){
+        .pos    = ray.start,
+        .radius = ray.radius,
+        .color  = VEC4_RED,
+    };
+    *Sol_Debug_NewSphere(world, time) = (SolSphere){
+        .pos    = Sol_AddScaledDir(ray.start, ray.dir, ray.dist),
+        .radius = ray.radius,
+        .color  = VEC4_GREEN,
+    };
+
+    return hits;
+}
+
+int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max_hits, float time)
+{
+    int hits                          = Sol_SphereOverlap(world, ray, out_hits, max_hits);
+    *Sol_Debug_NewSphere(world, time) = (SolSphere){
+        .pos    = ray.start,
+        .radius = ray.radius,
+        .color  = VEC4_GREEN,
+    };
+    return hits;
 }
 
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
@@ -753,7 +843,7 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                     continue;
 
                 // adjust to your actual mask field/semantics
-                if (ray.mask != 0 && (body->mask & ray.mask) == 0)
+                if (ray.mask != 0 && (body->mask >> 16 & ray.mask) == 0)
                     continue;
 
                 Xform xform = Xform_Get(world, id);
@@ -836,13 +926,6 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
     return outResult->hit;
 }
 
-bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time)
-{
-    bool hit = Sol_Raycast1(world, ray, result);
-
-    return hit;
-}
-
 int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
@@ -852,10 +935,10 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 
     int count = 0;
 
-    static _Thread_local HashSlot seen_bodies[QUERY_HASH_SIZE];
-    static _Thread_local HashSlot seen_tris[QUERY_HASH_SIZE];
+    static _Thread_local HashSlot hash_slot[QUERY_HASH_SIZE];
     static _Thread_local uint32_t local_gen = 0;
-    uint32_t this_gen                       = ++local_gen; // one stamp value covers both tables this call
+
+    uint32_t this_gen = ++local_gen; // one stamp value covers both tables this call
 
     // --- Dynamic bodies ---
     {
@@ -874,31 +957,13 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
                 if (id == ray.ignoreEnt)
                     continue;
 
-                // Dedup: has this id already been tested/hit earlier in THIS raycast?
-                uint32_t slot = ((uint32_t)id * 2654435761u) & QUERY_HASH_MASK;
-                bool already  = false;
-                for (uint32_t probe = 0; probe < QUERY_HASH_SIZE; probe++)
-                {
-                    if (seen_bodies[slot].stamp != this_gen)
-                    {
-                        seen_bodies[slot].id    = id;
-                        seen_bodies[slot].stamp = this_gen;
-                        break;
-                    }
-                    if (seen_bodies[slot].id == id)
-                    {
-                        already = true;
-                        break;
-                    }
-                    slot = (slot + 1) & QUERY_HASH_MASK;
-                }
-                if (already)
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, id))
                     continue;
 
                 ScBody3 *body = &set_body->data[set_body->sparse[id]];
                 if (!body)
                     continue;
-                if (ray.mask != 0 && (body->mask & ray.mask) == 0)
+                if (ray.mask != 0 && ((body->mask >> 16) & ray.mask) == 0)
                     continue;
 
                 Xform xform = Xform_Get(world, id);
@@ -950,27 +1015,10 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 
                 if (entId == ray.ignoreEnt)
                     continue;
+                // if (ray.mask != 0 && (COLLAYER_WORLD & ray.mask) == 0)
+                //     continue;
 
-                // Dedup by TRIANGLE index, not entity id — a model can
-                // legitimately contribute several distinct triangle hits.
-                uint32_t slot = ((uint32_t)triIdx * 2654435761u) & QUERY_HASH_MASK;
-                bool already  = false;
-                for (uint32_t probe = 0; probe < QUERY_HASH_SIZE; probe++)
-                {
-                    if (seen_tris[slot].stamp != this_gen)
-                    {
-                        seen_tris[slot].id    = triIdx;
-                        seen_tris[slot].stamp = this_gen;
-                        break;
-                    }
-                    if (seen_tris[slot].id == (uint32_t)triIdx)
-                    {
-                        already = true;
-                        break;
-                    }
-                    slot = (slot + 1) & QUERY_HASH_MASK;
-                }
-                if (already)
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, packed))
                     continue;
 
                 SolTri *tri = &spatial->tris_static[triIdx];
@@ -994,7 +1042,212 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
     return count;
 }
 
-int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float radius, float time)
+int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 {
-    return 0;
+    float radius                = ray.radius;
+    SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
+    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
+    SpatialGrid *grid_static    = spatial->grid_static;
+
+    int count = 0;
+
+    static _Thread_local HashSlot hash_slot[QUERY_HASH_SIZE];
+    static _Thread_local uint32_t local_gen = 0;
+
+    uint32_t this_gen = ++local_gen;
+
+    // --- Dynamic bodies ---
+    {
+        GridDDA dda     = GridDDA_Init(grid_dynamic, ray.start, ray.dir);
+        float current_t = 0.0f;
+
+        while (GridDDA_InBounds(&dda, grid_dynamic) && current_t <= ray.dist && count < max)
+        {
+            uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_dynamic, dda.cell.x, dda.cell.y, dda.cell.z);
+            uint32_t start    = grid_dynamic->cell_offsets[cell_idx];
+            uint32_t end      = grid_dynamic->cell_offsets[cell_idx + 1];
+
+            for (uint32_t i = start; i < end && count < max; i++)
+            {
+                int id = grid_dynamic->ids[i];
+                if (id == ray.ignoreEnt)
+                    continue;
+
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, id))
+                    continue;
+
+                ScBody3 *body = &set_body->data[set_body->sparse[id]];
+                if (!body)
+                    continue;
+                if (ray.mask != 0 && ((body->mask >> 16) & ray.mask) == 0)
+                    continue;
+
+                Xform xform = Xform_Get(world, id);
+
+                switch (body->shape)
+                {
+                case SHAPE3_CAP: {
+                    vec3s top    = xform.pos;
+                    vec3s bottom = xform.pos;
+                    top.y += body->dims.y;
+                    bottom.y -= body->dims.y;
+
+                    // Expand capsule radius by sphere radius for Minkowski sum
+                    float combined_radius = body->dims.x + radius;
+
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, combined_radius, &t, &norm))
+                    {
+                        results[count].hit   = true;
+                        results[count].t     = t;
+                        results[count].norm  = norm;
+                        results[count].entId = id;
+                        count++;
+                    }
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+
+            current_t = GridDDA_Step(&dda);
+        }
+    }
+
+    // --- Static geometry (triangles) ---
+    {
+        GridDDA dda     = GridDDA_Init(grid_static, ray.start, ray.dir);
+        float current_t = 0.0f;
+
+        while (GridDDA_InBounds(&dda, grid_static) && current_t <= ray.dist && count < max)
+        {
+            uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_static, dda.cell.x, dda.cell.y, dda.cell.z);
+            uint32_t start    = grid_static->cell_offsets[cell_idx];
+            uint32_t end      = grid_static->cell_offsets[cell_idx + 1];
+
+            for (uint32_t i = start; i < end && count < max; i++)
+            {
+                uint32_t packed = grid_static->ids[i];
+                int entId       = SPATIAL_UNPACK_ID(packed);
+                int triIdx      = SPATIAL_UNPACK_IDX(packed);
+
+                if (entId == ray.ignoreEnt)
+                    continue;
+
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, packed))
+                    continue;
+
+                SolTri *tri = &spatial->tris_static[triIdx];
+
+                float t;
+                vec3s norm;
+                if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &t, &norm))
+                {
+                    results[count].hit   = true;
+                    results[count].t     = t;
+                    results[count].norm  = norm;
+                    results[count].entId = entId;
+                    count++;
+                }
+            }
+
+            current_t = GridDDA_Step(&dda);
+        }
+    }
+
+    return count;
+}
+
+int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
+{
+    vec3s center                = ray.start;
+    float radius                = ray.radius;
+    uint16_t mask               = ray.mask;
+    int ignoreEnt               = ray.ignoreEnt;
+    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
+
+    vec3s bmin = glms_vec3_subs(center, radius);
+    vec3s bmax = glms_vec3_adds(center, radius);
+
+    static _Thread_local IdBuffer id_buf;
+    static _Thread_local bool id_buf_ready = false;
+    if (!id_buf_ready)
+    {
+        solb_init(id_buf.ids, 64);
+        id_buf_ready = true;
+    }
+
+    int count = 0;
+
+    // --- Dynamic bodies ---
+    int found = SpatialGrid_Query(spatial->grid_dynamic, bmin, bmax, &id_buf);
+    for (int i = 0; i < found && count < max_hits; i++)
+    {
+        int id = id_buf.ids[i];
+        if (id == ignoreEnt)
+            continue;
+
+        ScBody3 *body = &set_body->data[set_body->sparse[id]];
+        if (!body)
+            continue;
+        if (mask != 0 && (body->mask & mask) == 0)
+            continue;
+
+        Xform xform = Xform_Get(world, id);
+
+        switch (body->shape)
+        {
+        case SHAPE3_CAP: {
+            vec3s top    = xform.pos;
+            vec3s bottom = xform.pos;
+            top.y += body->dims.y;
+            bottom.y -= body->dims.y;
+            float capRadius = body->dims.x;
+
+            float dist;
+            vec3s norm;
+            if (Sphere_Overlap_Capsule(center, radius, top, bottom, capRadius, &dist, &norm))
+            {
+                out_hits[count].hit   = true;
+                out_hits[count].t     = dist; // distance from center to surface, NOT a ray t
+                out_hits[count].norm  = norm;
+                out_hits[count].entId = id;
+                count++;
+            }
+            break;
+        }
+        }
+    }
+
+    // --- Static geometry ---
+    found = SpatialGrid_Query(spatial->grid_static, bmin, bmax, &id_buf);
+    for (int i = 0; i < found && count < max_hits; i++)
+    {
+        uint32_t packed = id_buf.ids[i];
+        int entId       = SPATIAL_UNPACK_ID(packed);
+        int triIdx      = SPATIAL_UNPACK_IDX(packed);
+        if (entId == ignoreEnt)
+            continue;
+
+        SolTri *tri   = &spatial->tris_static[triIdx];
+        vec3s closest = ClosestPointOnTriangle(center, tri->a, tri->b, tri->c);
+        vec3s delta   = glms_vec3_sub(center, closest);
+        float distSq  = glms_vec3_dot(delta, delta);
+
+        if (distSq >= radius * radius)
+            continue;
+
+        float dist            = sqrtf(distSq);
+        out_hits[count].hit   = true;
+        out_hits[count].t     = dist;
+        out_hits[count].norm  = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : tri->normal;
+        out_hits[count].entId = entId;
+        count++;
+    }
+
+    return count;
 }

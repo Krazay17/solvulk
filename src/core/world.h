@@ -46,7 +46,9 @@ typedef enum
     WORLDSYS_COUNT,
 } WorldSystems;
 
-#define SINGLES_LIST(X) X(SINGLE_SPATIAL, Sl_Spatial_Init)
+#define SINGLES_LIST(X)                                                                                                \
+    X(SINGLE_SPATIAL, Sl_Spatial_Init)                                                                                 \
+    X(SINGLE_HITGEN, Sl_Hitgen_Init)
 
 #define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
 SINGLES_LIST(SINGLES_FWD)
@@ -54,9 +56,9 @@ SINGLES_LIST(SINGLES_FWD)
 typedef enum
 {
 #define SINGLES_ENUM(ENUM, FUNC) ENUM,
-SINGLES_LIST(SINGLES_ENUM)
+    SINGLES_LIST(SINGLES_ENUM)
 #undef SINGLES_ENUM
-SINGLES_COUNT,
+    SINGLES_COUNT,
 } WorldSingles;
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
@@ -457,8 +459,10 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
 bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
-int Sol_Spherecast(World *world, SolRay ray, SolRayResult *result, int max, float radius);
-int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float radius, float time);
+int Sol_Spherecast(World *world, SolRay ray, SolRayResult *result, int max);
+int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float time);
+int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_hits);
+int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max_hits, float time);
 
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);

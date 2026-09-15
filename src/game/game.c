@@ -52,6 +52,8 @@ void Create_Menu()
     Sol_Prefab_Button(world, (vec3s){150.0f, 350.0f, 0}, "AddItem", INTERACT_DRAGGABLE, 0, Hook_AddItem);
     Sol_Prefab_Button(world, (vec3s){150.0f, 400.0f, 0}, "Save", INTERACT_DRAGGABLE, 0, Hook_SaveUser);
     Sol_Prefab_Button(world, (vec3s){150.0f, 450.0f, 0}, "Save Clear", INTERACT_DRAGGABLE, 0, Hook_SaveClear);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 500.0f, 0}, "Emitter", INTERACT_DRAGGABLE, 0, Hook_SpawnEmitter);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 550.0f, 0}, "Emitter", INTERACT_DRAGGABLE, 0, Hook_SpawnEmitter2);
 }
 
 void Create_Hud()
@@ -78,7 +80,7 @@ void Create_Game()
     sol_user.game_world = world->index;
 
     { // Player
-        int id = Sol_Prefab_Dude(world, (vec3s){0, 6, 0}, 1.0f);
+        int id = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
         Sol_Comp_Add(world, id, ScPlayer);
         ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
         snprintf(meta->name, sizeof(meta->name), "Krazay");

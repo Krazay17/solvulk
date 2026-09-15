@@ -8,7 +8,19 @@ layout(location = 5) flat in uint fragFlags;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 2, binding = 0) uniform sampler2D textures[64];
+layout(set = 0, binding = 0) uniform Game {
+    double gameTime;
+} game;
+
+layout(set = 1, binding = 0) uniform Scene {
+    mat4 viewProjection;
+    mat4 view;
+    mat4 proj;
+    vec4 cameraPos;
+    vec4 sun;
+} scene;
+
+layout(set = 3, binding = 0) uniform sampler2D textures[64];
 
 
 void main() {

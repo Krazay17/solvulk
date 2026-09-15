@@ -12,13 +12,15 @@ static inline bool FireballHit(World *w, int a, ScProjectile *projectile, SolHit
 {
     if (Sol_Hitgen_Try(w, a, hit.entB, projectile->hitgen))
     {
+
         Sol_Combat_Hit(w, hit.entB, hit);
         ScOwner *owner = Sol_Comp_Get(w, a, ScOwner);
         int ownerId    = owner ? owner->ownerId : 0;
 
-        SolRay ray = {.start = w->xform.pos[a], .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = 3.0f};
+        SolRay ray = {
+            .start = w->xform.pos[a], .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = 3.0f};
         SolRayResult results[32];
-        int hits = Sol_SphereOverlapD(w, ray, results, 32, 0.1f);
+        int hits = Sol_SphereOverlap(w, ray, results, 32);
         for (int i = 0; i < hits; i++)
         {
             int hit_id = results[i].entId;
@@ -31,12 +33,18 @@ static inline bool FireballHit(World *w, int a, ScProjectile *projectile, SolHit
                                .effectMask = EFFECTMASK_KNOCKUP,
                            });
         }
+        Particle particle = particle_kinds[PARTICLE_FRACTAL];
+        particle.pos = ray.start;
+        particle.scale = 6.0f;
+        particle.speed = 0.0f;
+        particle.ttl = 0.5f;
+        Sol_Particle_Burst(w, particle, 1);
     }
-    if (Sol_Comp_Has(w, hit.entB, ScStage))
-    {
-        Sol_Destroy_Ent(w, a);
-        return true;
-    }
+    // if (Sol_Comp_Has(w, hit.entB, ScStage))
+    // {
+    //     Sol_Destroy_Ent(w, a);
+    //     return true;
+    // }
     return false;
 }
 

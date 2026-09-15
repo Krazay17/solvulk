@@ -34,6 +34,7 @@ typedef enum
     WORLDSYS_HOOK,
     WORLDSYS_AI,
 
+    WORLDSYS_EMITTER,
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
@@ -48,6 +49,7 @@ typedef enum
 
 #define SINGLES_LIST(X)                                                                                                \
     X(SINGLE_SPATIAL, Sl_Spatial_Init)                                                                                 \
+    X(SINGLE_EMITTER, Sl_Emitter_Init)                                                                                 \
     X(SINGLE_HITGEN, Sl_Hitgen_Init)
 
 #define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
@@ -475,3 +477,6 @@ SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
 float Sol_Combat_Hit(World *world, int id, SolHit hit);
 float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
 float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);
+
+void Sol_Emitter_Push(World *world, Emitter emitter);
+void Sol_Particle_Burst(World *world, Particle particle, int count);

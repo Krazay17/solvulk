@@ -7,7 +7,7 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MAX_POWER 1.5f
+#define MAX_POWER 10.5f
 
 static vec3s GetProjectilePos(World *world, int id, ScCmd *cmd, float power)
 {
@@ -86,11 +86,23 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
     if (data->stage > 0)
         return;
 
-    SphereSSBO *push = Sol_Render_GetNextSphere(SPHEREKIND_FIREBALL);
+    // SphereSSBO *push = Sol_Render_GetNextSphere(SPHEREKIND_PARTICLE_DRAGON);
 
-    vec3s pos   = GetProjectilePos(world, id, cmd, data->power);
-    push->pos   = (vec4s){pos.x, pos.y, pos.z, data->power};
-    push->color = (vec4s){1, 0, 0, 0.8f};
+    vec3s pos = GetProjectilePos(world, id, cmd, data->power);
+    // push->pos   = (vec4s){pos.x, pos.y, pos.z, data->power};
+    // push->color = (vec4s){1, 1, 1, 0.8f};
+
+    QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
+    *push          = (QuadSSBO){
+        .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
+        .rot   = GLMS_VEC4_ZERO,
+        .color = {1, 1, 1, 1},
+        .uv    = (vec4s){0, 0, 1, 1},
+        .type  = QUADTYPE_FACECAM,
+        .rect  = (vec4s){0, 0, 2.0f, 2.0f},
+        .extra = (vec4s){0, 0.015f, 1.0f, 0},
+
+    };
 }
 
 extern const AbilityStateFunc fireball_state = {

@@ -120,18 +120,43 @@ typedef enum
 
 typedef enum
 {
-    EMITTERKIND_FLASH_BALL,
-    EMITTERKIND_FLASH_FIREBALL,
-    EMITTERKIND_SINGLE_SPARK,
-    EMITTERKIND_BURST_SPARKS,
-    EMITTERKIND_BURST_CLOUDS,
-    EMITTERKIND_BURST_FIRE,
-    EMITTERKIND_POP_FIRE,
-    EMITTERKIND_FOUNTAIN_FIRE,
-    EMITTERKIND_FOUNTAIN_FOG,
-    EMITTERKIND_FOUNTAIN_SPARKS,
+    EMITTERKIND_BURST,
     EMITTERKIND_COUNT,
 } EmitterKind;
+
+typedef enum
+{
+    PARTICLE_FRACTAL,
+    PARTICLE_SPHERE,
+    // PARTICLE_FIRE,
+    // PARTICLE_SHOCK,
+    // PARTICLE_SHOCK_ADD,
+    // PARTICLE_CLOUD,
+    // PARTICLE_BLOOD,
+    // PARTICLE_FIREBALL,
+    // PARTICLE_SPARKFRONT,
+    PARTICLE_COUNT,
+} ParticleKind;
+
+typedef struct
+{
+    ParticleKind kind;
+    vec3s pos, vel;
+    vec4s color;
+    float ttl, scale, span, speed, delay;
+    float rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
+    u32 randScale, followId, randLife, randScaleout;
+} Particle;
+
+typedef struct
+{
+    EmitterKind emitterKind;
+    ParticleKind particle_kind;
+    vec3s pos, vel;
+    float ttl, rate, accumulator;
+    u32 burst, inf, followId, rateBurst;
+    u32 followIdGen;
+} Emitter;
 
 typedef enum
 {
@@ -148,6 +173,7 @@ typedef enum
     VIEW3KIND_SPHERE,
     VIEW3KIND_FIREBALL,
     VIEW3KIND_HEALTHBAR,
+    VIEW3KIND_PYRAMID,
     VIEW3KIND_COUNT,
 } View3Kind;
 
@@ -248,19 +274,6 @@ typedef enum
     TOOLTIPKIND_PLAYER_INTERACT,
     TOOLTIPKIND_COUNT,
 } TooltipKind;
-
-typedef enum
-{
-    PARTICLE_ORB,
-    PARTICLE_FIRE,
-    PARTICLE_SHOCK,
-    PARTICLE_SHOCK_ADD,
-    PARTICLE_CLOUD,
-    PARTICLE_BLOOD,
-    PARTICLE_FIREBALL,
-    PARTICLE_SPARKFRONT,
-    PARTICLE_COUNT,
-} ParticleKind;
 
 typedef enum
 {

@@ -358,16 +358,16 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .dims        = (vec3s){size, size, size},
         .gravity     = (vec3s)SOL_GRAVITY,
         .mass        = 1.0f,
-        .invMass     = 0.0f,
-        .restitution = 1.0f,
+        .invMass     = 1.0f,
+        .restitution = 0.2f,
         .ignoreEnt   = owner,
         .vel         = vecSca(dir, speed),
         .mask        = PHYSXMASK(COLLAYER_PROJECTILE, 1),
     };
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind   = VIEW3KIND_FIREBALL,
-        .color  = VEC4_RED,
+        .kind   = VIEW3KIND_PYRAMID,
+        .color  = VEC4_WHITE,
         .dims.x = size,
     };
 

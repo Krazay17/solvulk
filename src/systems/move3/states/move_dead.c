@@ -2,24 +2,11 @@
 #include "world.h"
 #include "sol_math.h"
 
-#define REMOVE_PHYSX_TIMER 5.0f
-#define DESTROY_TIMER 125.0f
+#define REMOVE_PHYSX_TIMER 2.0f
+#define DESTROY_TIMER 5.0f
 
 void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    MoveStateData *data = &move->stateData[move->state];
-
-    if (data->elapsed > DESTROY_TIMER)
-    {
-        Sol_Destroy_Ent(world, id);
-        return;
-    }
-    if (data->elapsed > REMOVE_PHYSX_TIMER)
-    {
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-        if (body3)
-            body3->flag_destroy = true;
-    }
 }
 
 void Move_Dead_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)

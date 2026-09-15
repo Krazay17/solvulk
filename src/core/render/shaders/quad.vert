@@ -1,5 +1,4 @@
 #version 450
-
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out vec4 fragColor;
 layout(location = 2) out vec4 fragExtra;
@@ -7,7 +6,11 @@ layout(location = 3) flat out uint fragType;
 layout(location = 4) flat out uint fragTextureId;
 layout(location = 5) flat out uint fragFlags;
 
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 0, binding = 0) uniform Game {
+    double gameTime;
+} game;
+
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProjection;
     mat4 view;
     mat4 proj;
@@ -28,7 +31,7 @@ struct Quad {
     uint _pad;
 };
 
-layout(set = 1, binding = 0) readonly buffer Quads {
+layout(set = 2, binding = 0) readonly buffer Quads {
     Quad quads[];
 };
 

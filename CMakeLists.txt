@@ -174,6 +174,9 @@ set(SHADERS
     ${SHADER_DIR}/skybox.frag
     ${SHADER_DIR}/fireball.frag
     ${SHADER_DIR}/ribbon.vert
+    ${SHADER_DIR}/coral_reef.frag
+    ${SHADER_DIR}/particle_dragon.frag
+    ${SHADER_DIR}/fractal_pyramid.frag
     
     ${SHADER_DIR}/font2d.vert
     ${SHADER_DIR}/font.frag

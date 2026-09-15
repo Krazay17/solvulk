@@ -150,7 +150,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
-            .type              = VERTEX_SINGLE,
             .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -196,12 +195,24 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .vertResource      = "ID_SHADER_QUAD_V",
             .fragResource      = "ID_SHADER_SPRITE_F",
             .depthTest         = 1,
-            .depthWrite        = 1,
+            .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
-            .descCount         = 3,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 4,
+        },
+    [PIPE_FRACTAL_PYRAMID] =
+        {
+            .vertResource      = "ID_SHADER_QUAD_V",
+            .fragResource      = "ID_SHADER_FRACTAL_PYRAMID_F",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 4,
         },
     [PIPE_SPRITE_ADD] =
         {
@@ -272,8 +283,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO},
-            .descCount         = 2,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 4,
         },
     [PIPE_LINE] =
         {
@@ -293,16 +304,29 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
     [PIPE_SKYBOX] =
         {
             .vertResource      = "ID_SHADER_SKYBOX_V",
-            .fragResource      = "ID_SHADER_SKYBOX_F",
+            .fragResource      = "ID_SHADER_CORAL_REEF_F",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_NONE,
             .depthCompareOp    = VK_COMPARE_OP_LESS_OR_EQUAL,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_IMAGES},
-            .descCount         = 2,
+            .descId            = {DESC_SCENE_UBO, DESC_IMAGES, DESC_GAME_UBO},
+            .descCount         = 3,
         },
+    [PIPE_PARTICLE_DRAGON] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_PARTICLE_DRAGON_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+            .descCount         = 3,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
+
 };
 
 static SolDescriptorConfig desc_config[DESC_COUNT] = {

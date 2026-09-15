@@ -1080,6 +1080,7 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
                 ScBody3 *body = &set_body->data[set_body->sparse[id]];
                 if (!body)
                     continue;
+                    
                 if (ray.mask != 0 && ((body->mask >> 16) & ray.mask) == 0)
                     continue;
 

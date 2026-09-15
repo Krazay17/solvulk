@@ -8,6 +8,8 @@
 #include "world.h"
 #include "sol_math.h"
 
+#define DESTROY_TIMER 10.0f
+
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
     combat->health = combat->healthMax;
@@ -17,6 +19,17 @@ static void OnRespawn(World *world, int id, ScCombat *combat)
 
 static void OnDeath(World *world, int id, ScCombat *combat)
 {
+    if(!combat->is_dead)
+    {
+        combat->is_dead = true;
+        combat->deathTime = world->tickTime;
+    }
+    if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+        Sol_Destroy_Ent(world, id);
+
+    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+    if (body3)
+        body3->flag_destroy = true;
 }
 
 void Combat_Init(World *world)
@@ -72,7 +85,6 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             ScTeam *team             = Sol_Comp_Get(world, id, ScTeam);
             ScTeam *attacker_team    = Sol_Comp_Get(world, hit.entA, ScTeam);
 
-            
             team->team = attacker_team->team;
         }
     }

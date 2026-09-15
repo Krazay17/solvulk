@@ -43,10 +43,11 @@ const struct SystemDef
     [WORLDSYS_COMBAT]     = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
-    [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
+    [WORLDSYS_HOOK]    = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_FACING]  = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_CAMERA]  = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_ANIM]    = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
 
     [WORLDSYS_MODEL] = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
     [WORLDSYS_VIEW3] = {.update = {View3_Draw, UPDATEPHASE_RENDER3}},

@@ -365,7 +365,7 @@ typedef struct ScCombat
     u32 hitPauseDiminish;
     float hitPause;
 
-    int hitSession;
+    bool is_dead;
 } ScCombat;
 
 typedef struct ScReplication
@@ -374,30 +374,9 @@ typedef struct ScReplication
     u32 prefabKind;
 } ScReplication;
 
-typedef struct
-{
-    ParticleKind kind;
-    vec3s pos, vel;
-    vec4s color;
-    float ttl, scale, span, speed, delay;
-    float rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
-    u32 randScale, followId, randLife, randScaleout;
-} Particle;
-
-typedef struct
-{
-    EmitterKind emitterKind;
-    vec3s pos, vel;
-    float ttl, rate, accumulator;
-    Particle particle;
-    u32 burst, inf, followId, rateBurst;
-    u32 followIdGen;
-} Emitter;
-
 typedef struct ScEmitter
 {
     Emitter emitters[MAX_EMITTERS];
-    u32 emitterCount;
 } ScEmitter;
 
 enum UiKind
@@ -516,6 +495,7 @@ typedef struct ScRef
     u32 kind;
     int index;
 } ScRef;
+
 
 extern const char *ability_state_name[ABILITY_STATE_COUNT];
 extern const char *move_state_name[MOVE_STATE_COUNT];

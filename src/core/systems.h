@@ -47,7 +47,10 @@ void Hook_Tick(World *world);
 void Anim_Tick(World *world);
 void Facing_Tick(World *world);
 void Camera_Tick(World *world);
+void Emitter_Update(World *world);
 
+
+void Particle_Draw(World *world);
 void Scoreboard_Draw(World *world);
 void Model_Render(World *world);
 void Ability_Draw(World *world);

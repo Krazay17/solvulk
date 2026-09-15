@@ -266,6 +266,7 @@ static Particle *Particle_Activate(SolEmitters *s, Emitter *e)
     p->pos      = vecAdd(e->pos, vecSca(p->vel, p->offset));
 
     Sol_Debug_Add("Particles", (float)s->particle_count);
+    
     return p;
 }
 

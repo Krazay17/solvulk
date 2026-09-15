@@ -119,3 +119,29 @@ static inline void Hook_SaveClear(World *w, int a, int b)
 {
     Sol_User_ClearUserSettings();
 }
+static inline void Hook_SpawnEmitter(World *w, int a, int b)
+{
+    World *world = Sol_User_GetGameWorld();
+    vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
+
+    *solb_next(((SlEmitter *)world->singles[SINGLE_EMITTER])->emitters) = (Emitter){
+        .pos           = pos,
+        .particle_kind = PARTICLE_SPHERE,
+        .rate          = 0.1f,
+        .burst         = 5,
+        .ttl           = 10.0f,
+    };
+}
+static inline void Hook_SpawnEmitter2(World *w, int a, int b)
+{
+    World *world = Sol_User_GetGameWorld();
+    vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
+
+    *solb_next(((SlEmitter *)world->singles[SINGLE_EMITTER])->emitters) = (Emitter){
+        .pos           = pos,
+        .particle_kind = PARTICLE_FRACTAL,
+        .rate          = 0.1f,
+        .burst         = 5,
+        .ttl           = 10.0f,
+    };
+}

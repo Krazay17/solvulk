@@ -61,18 +61,16 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
     ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
     if (body)
         pos.y += body->dims.y;
-    float hbHalfWidth  = 1.0f;
-    float hbHalfHeight = 0.1f;
-    float fill         = combat->health <= 0 ? 0 : combat->health / combat->healthMax;
+
+    float fill = combat->health / combat->healthMax;
 
     *Sol_Render_GetNextQuad(QUADKIND_HEALTH) = (QuadSSBO){
         .pos   = pos,
-        .rot   = GLMS_VEC4_ZERO,
+        .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
         .color = view->color,
-        .uv    = (vec4s){0, 0, 1, 1},
+        .uv    = (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
+        .extra = (vec4s){fill, 0.0f, 0.0f, 0.0f},
         .type  = QUADTYPE_FACECAM,
-        .rect  = (vec4s){0, 0, hbHalfWidth, hbHalfHeight},
-        .extra = (vec4s){0, 0.015f, fill, 0},
     };
 }
 
@@ -83,11 +81,9 @@ static void Pyramid_Draw(World *world, int id, ScView3 *view)
 
     QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
     *push          = (QuadSSBO){
-        .pos   = (vec4s){pos.x, pos.y, pos.z, view->dims.x * 5.0f},
-        .rot   = GLMS_VEC4_ZERO,
+        .pos   = (vec4s){pos.x, pos.y, pos.z, view->dims.x},
+        .rect  = {0, 0, 7.0f, 7.0f},
         .color = {1, 1, 1, 1},
-        .uv    = (vec4s){0, 0, 1, 1},
-        .type  = QUADTYPE_FACECAM,
-        .extra = (vec4s){0, 0.015f, 1.0f, 0},
+        .uv    = (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
     };
 }

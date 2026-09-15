@@ -34,7 +34,5 @@ typedef struct SlEmitter
     Particle *particles;
 } SlEmitter;
 
-extern const Particle particle_kinds[PARTICLE_COUNT];
-
 u32 Sol_Hitgen_Start(World *world, int id);
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);

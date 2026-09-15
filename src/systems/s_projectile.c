@@ -8,11 +8,12 @@
 #include "world.h"
 #include "sol_math.h"
 
-static inline bool FireballHit(World *w, int a, ScProjectile *projectile, SolHit hit)
+typedef bool isDestroyed;
+
+static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile, SolHit hit)
 {
     if (Sol_Hitgen_Try(w, a, hit.entB, projectile->hitgen))
     {
-
         Sol_Combat_Hit(w, hit.entB, hit);
         ScOwner *owner = Sol_Comp_Get(w, a, ScOwner);
         int ownerId    = owner ? owner->ownerId : 0;
@@ -33,12 +34,13 @@ static inline bool FireballHit(World *w, int a, ScProjectile *projectile, SolHit
                                .effectMask = EFFECTMASK_KNOCKUP,
                            });
         }
-        Particle particle = particle_kinds[PARTICLE_FRACTAL];
-        particle.pos = ray.start;
-        particle.scale = 6.0f;
-        particle.speed = 0.0f;
-        particle.ttl = 0.5f;
-        Sol_Particle_Burst(w, particle, 1);
+        Emitter emitter = emitter_kinds[EMITTERKIND_SPHERE_BURST_FRACTAL];
+        emitter.p_scale = projectile->power * 2.0f;
+        emitter.p_speed = projectile->power * 10.0f;
+        emitter.p_lifespan = 0.5f;
+        emitter.burst = 15;
+        emitter.ttl = 0;
+        Sol_Emitter_Push(w, hit.pos, emitter);
     }
     // if (Sol_Comp_Has(w, hit.entB, ScStage))
     // {

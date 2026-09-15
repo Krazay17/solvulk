@@ -9,6 +9,18 @@
 #include "world.h"
 #include "render/render.h"
 
+typedef struct DebugLine
+{
+    SolLine line;
+    float ttl;
+} DebugLine;
+
+typedef struct DebugSphere
+{
+    SolSphere sphere;
+    float ttl;
+} DebugSphere;
+
 typedef struct SysDebug
 {
     DebugLine   *lines;

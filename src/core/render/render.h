@@ -323,10 +323,18 @@ typedef enum
     QUADTYPE_FACECAM,
     QUADTYPE_QUAT,
 } QuadType;
-typedef struct
+typedef struct QuadSSBO
 {
-    vec4s pos, rect, rot, color, uv, extra;
-    u32 type, flags, textureId, _pad;
+    vec4s pos;     // 16 w=scale
+    vec4s rect;    // 32 x,y=offset, z,w=dims
+    vec4s color;   // 48
+    vec4s uv;      // 64
+    vec4s rot;     // 80
+    vec4s extra;   // 96
+    u32 type;      // 100 0=FaceCam, 1=rot
+    u32 textureId; // 104
+    u32 flags;     // 108
+    u32 _pad;      // 112
 } QuadSSBO;
 typedef struct
 {

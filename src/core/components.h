@@ -432,6 +432,7 @@ typedef struct ScProjectile
     u32 bounces;
     SolHit hit;
     float radius;
+    float power;
     Hook hook;
 } ScProjectile;
 

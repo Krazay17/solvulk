@@ -60,7 +60,7 @@ typedef enum
 #define SINGLES_ENUM(ENUM, FUNC) ENUM,
     SINGLES_LIST(SINGLES_ENUM)
 #undef SINGLES_ENUM
-    SINGLES_COUNT,
+    SINGLE_COUNT,
 } WorldSingles;
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
@@ -169,7 +169,7 @@ struct World
     u64 system_mask;
     void *components[COMPONENT_COUNT];
     void *systems[WORLDSYS_COUNT];
-    void *singles[SINGLES_COUNT];
+    void *singles[SINGLE_COUNT];
 
     int tickCount;
     int stepCount;
@@ -478,5 +478,5 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit);
 float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
 float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);
 
-void Sol_Emitter_Push(World *world, Emitter emitter);
-void Sol_Particle_Burst(World *world, Particle particle, int count);
+extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
+void Sol_Emitter_Push(World *world, vec3s pos, Emitter emitter);

@@ -7,7 +7,7 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MAX_POWER 10.5f
+#define MAX_POWER 3.5f
 
 static vec3s GetProjectilePos(World *world, int id, ScCmd *cmd, float power)
 {
@@ -41,6 +41,7 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
         int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
         ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
         projectile->hit          = hit;
+        projectile->power        = data->power;
 
         break;
     case 2:
@@ -86,22 +87,14 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
     if (data->stage > 0)
         return;
 
-    // SphereSSBO *push = Sol_Render_GetNextSphere(SPHEREKIND_PARTICLE_DRAGON);
-
     vec3s pos = GetProjectilePos(world, id, cmd, data->power);
-    // push->pos   = (vec4s){pos.x, pos.y, pos.z, data->power};
-    // push->color = (vec4s){1, 1, 1, 0.8f};
 
     QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
     *push          = (QuadSSBO){
         .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
-        .rot   = GLMS_VEC4_ZERO,
+        .rect  = {0, 0, 7.0f, 7.0f},
         .color = {1, 1, 1, 1},
         .uv    = (vec4s){0, 0, 1, 1},
-        .type  = QUADTYPE_FACECAM,
-        .rect  = (vec4s){0, 0, 2.0f, 2.0f},
-        .extra = (vec4s){0, 0.015f, 1.0f, 0},
-
     };
 }
 

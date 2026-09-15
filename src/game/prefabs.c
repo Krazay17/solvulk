@@ -102,7 +102,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
         .kind  = VIEW3KIND_HEALTHBAR,
-        .color = {0.1f, 0.85f, 0.2f, 1.0f},
+        .color = {0.1f, 0.9f, 0.1f, 1.0f},
     };
 
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;

@@ -43,7 +43,7 @@ typedef struct Particle
 typedef struct Emitter
 {
     EmitterKind emitterKind;
-    vec3s       pos, vel;
+    vec3s       pos, vel, dir;
     float       ttl, rate, accumulator;
     Particle    particle;
     u32         burst, inf, followId, rateBurst;

@@ -64,7 +64,7 @@ const struct SystemDef
         },
 };
 
-SystemInit singles_init[SINGLES_COUNT] = {
+SystemInit singles_init[SINGLE_COUNT] = {
 #define SINGLES_INIT(ENUM, FUNC) [ENUM] = FUNC,
     SINGLES_LIST(SINGLES_INIT)
 #undef SINGLES_INIT
@@ -104,7 +104,7 @@ World *World_Create_AllSys()
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
         Sol_Sys_Add(world, (WorldSystems)sys);
 
-    for (int i = 0; i < SINGLES_COUNT; i++)
+    for (int i = 0; i < SINGLE_COUNT; i++)
         singles_init[i](world);
 
     return world;

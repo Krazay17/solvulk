@@ -120,42 +120,48 @@ typedef enum
 
 typedef enum
 {
-    EMITTERKIND_BURST,
-    EMITTERKIND_COUNT,
-} EmitterKind;
-
-typedef enum
-{
     PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
-    // PARTICLE_FIRE,
-    // PARTICLE_SHOCK,
-    // PARTICLE_SHOCK_ADD,
-    // PARTICLE_CLOUD,
-    // PARTICLE_BLOOD,
-    // PARTICLE_FIREBALL,
-    // PARTICLE_SPARKFRONT,
     PARTICLE_COUNT,
 } ParticleKind;
 
 typedef struct
 {
     ParticleKind kind;
-    vec3s pos, vel;
+    vec3s pos;
+    vec3s vel;
     vec4s color;
-    float ttl, scale, span, speed, delay;
-    float rot, rotspeed, offset, scalein, scaleout, fadein, fadeout;
-    u32 randScale, followId, randLife, randScaleout;
+    float elapsed, lifespan, scale, speed;
 } Particle;
+
+typedef enum
+{
+    EMITTERKIND_SPHERE_BURST_FRACTAL,
+    EMITTERKIND_COUNT,
+} EmitterKind;
+
+typedef enum
+{
+    EMITKIND_SPHERE,
+    EMITKIND_CONE,
+    EMITKIND_COUNT,
+} EmitKind;
 
 typedef struct
 {
-    EmitterKind emitterKind;
-    ParticleKind particle_kind;
-    vec3s pos, vel;
-    float ttl, rate, accumulator;
-    u32 burst, inf, followId, rateBurst;
-    u32 followIdGen;
+    EmitKind kind;
+    vec3s pos, vel, dir;
+    float ttl;
+    float rate;
+    float accum;
+    float cone;
+    u32 burst, inf;
+
+    ParticleKind p_kind;
+    float p_lifespan;
+    float p_speed;
+    float p_scale;
+    vec4s p_color;
 } Emitter;
 
 typedef enum
@@ -343,18 +349,6 @@ typedef struct SolSphere
     vec4s color;
     float radius;
 } SolSphere;
-
-typedef struct DebugLine
-{
-    SolLine line;
-    float ttl;
-} DebugLine;
-
-typedef struct DebugSphere
-{
-    SolSphere sphere;
-    float ttl;
-} DebugSphere;
 
 // TEXTURE---------------
 

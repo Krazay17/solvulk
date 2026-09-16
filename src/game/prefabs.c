@@ -194,7 +194,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
     return id;
 }
 
-static void Hook_PrintValue(World *w, int a, int b, double dt, void *data)
+static void Hook_PrintValue(World *w, int a, int b)
 {
     sollog(Sol_Comp_Get(w, a, ScSlider)->value);
 }
@@ -220,8 +220,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     };
     *Sol_Comp_Add(world, id, ScSlider) = slider;
 
-    ScHook hook                      = {.held = Hook_PrintValue};
-    *Sol_Comp_Add(world, id, ScHook) = hook;
+    *Sol_Comp_Add(world, id, ScHook) = (ScHook){.held = Hook_PrintValue};
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
     view->count    = 8;
@@ -344,8 +343,10 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
 
 int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float speed, float size)
 {
+    int id = Sol_Create_Ent(world, pos);
+
+    vec3s dims          = {size, size, size};
     ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
-    int id              = Sol_Create_Ent(world, pos);
 
     *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
         .ownerId = owner,
@@ -355,25 +356,25 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     u32 targetFilter = COLLAYER_ALL;
 
     *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
-        .dims        = (vec3s){size, size, size},
+        .dims        = dims,
         .gravity     = (vec3s)SOL_GRAVITY,
         .mass        = 1.0f,
-        .invMass     = 1.0f,
-        .restitution = 0.2f,
+        .invMass     = 0.0f,
+        .restitution = 0.5f,
         .ignoreEnt   = owner,
         .vel         = vecSca(dir, speed),
         .mask        = PHYSXMASK(COLLAYER_PROJECTILE, 1),
     };
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind   = VIEW3KIND_PYRAMID,
-        .color  = VEC4_WHITE,
-        .dims.x = size,
+        .kind  = VIEW3KIND_FIREBALL,
+        .color = VEC4_RED,
+        .scale = size,
     };
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_FIREBALL,
-        .radius = size,
+        .radius = size * 0.8f,
         .hitgen = Sol_Hitgen_Start(world, id),
     };
 

@@ -4,47 +4,20 @@
 
 typedef void (*View3KindDraw)(World *, int, ScView3 *);
 
-static void Sphere_Draw(World *world, int id, ScView3 *view);
-static void Fireball_Draw(World *world, int id, ScView3 *view);
-static void Healthbar_Draw(World *world, int id, ScView3 *view);
-static void Pyramid_Draw(World *world, int id, ScView3 *view);
-
-static const View3KindDraw draw_func[VIEW3KIND_COUNT] = {
-    [VIEW3KIND_SPHERE]    = Sphere_Draw,
-    [VIEW3KIND_FIREBALL]  = Fireball_Draw,
-    [VIEW3KIND_HEALTHBAR] = Healthbar_Draw,
-    [VIEW3KIND_PYRAMID]   = Pyramid_Draw,
-};
-
-void View3_Draw(World *world, double dt)
-{
-    SparseSet_ScView3 *set = Sol_Comp_Set(world, ScView3);
-    for (int i = 0; i < set->cnt; i++)
-    {
-        int id        = set->dense[i];
-        ScView3 *view = &set->data[i];
-
-        View3KindDraw func = draw_func[view->kind];
-
-        if (func)
-            func(world, id, view);
-    }
-}
-
 static void Sphere_Draw(World *world, int id, ScView3 *view)
 {
     SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_BASIC);
     Xform xform        = Xform_GetDraw(world, id);
     sphere->color      = view->color;
-    sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->dims.x};
+    sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
 }
 
 static void Fireball_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
-    vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->dims.x};
+    vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
 
-    *Sol_Render_GetNextSphere(SPHEREKIND_PARTICLE_DRAGON) = (SphereSSBO){
+    *Sol_Render_GetNextSphere(SPHEREKIND_FIREBALL) = (SphereSSBO){
         .color = view->color,
         .pos   = pos,
     };
@@ -77,13 +50,50 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
 static void Pyramid_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
-    vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
 
     QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
     *push          = (QuadSSBO){
-        .pos   = (vec4s){pos.x, pos.y, pos.z, view->dims.x},
+        .pos   = (vec4s){pos.x, pos.y, pos.z, view->scale},
         .rect  = {0, 0, 7.0f, 7.0f},
         .color = {1, 1, 1, 1},
         .uv    = (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
     };
+}
+
+static const View3KindDraw draw_func[VIEW3KIND_COUNT] = {
+    [VIEW3KIND_SPHERE]    = Sphere_Draw,
+    [VIEW3KIND_FIREBALL]  = Fireball_Draw,
+    [VIEW3KIND_HEALTHBAR] = Healthbar_Draw,
+    [VIEW3KIND_PYRAMID]   = Pyramid_Draw,
+};
+
+void View3_Draw(World *world, double dt)
+{
+    SparseSet_ScView3 *set = Sol_Comp_Set(world, ScView3);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id        = set->dense[i];
+        ScView3 *view = &set->data[i];
+
+        // View3KindDraw func = draw_func[view->kind];
+
+        switch (view->kind)
+        {
+        case VIEW3KIND_FIREBALL:
+            Fireball_Draw(world, id, view);
+            break;
+        case VIEW3KIND_SPHERE:
+            Sphere_Draw(world, id, view);
+            break;
+        case VIEW3KIND_HEALTHBAR:
+            Healthbar_Draw(world, id, view);
+            break;
+        case VIEW3KIND_PYRAMID:
+            Pyramid_Draw(world, id, view);
+            break;
+        }
+        // if (func)
+        //     func(world, id, view);
+    }
 }

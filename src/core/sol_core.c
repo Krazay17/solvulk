@@ -119,7 +119,8 @@ void Sol_Destroy()
 
     for (int i = 0; i < solState.worldCount; i++)
     {
-        free(solState.worlds[i]);
+        World *world = solState.worlds[i];
+        World_Destroy(world);
     }
     solState.isRunning = false;
 }

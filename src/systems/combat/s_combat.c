@@ -36,7 +36,7 @@ void Combat_Init(World *world)
 {
 }
 
-void Combat_Step(World *world, double dt)
+void Combat_Step(World *world)
 {
     SparseSet_ScCombat *set = Sol_Comp_Set(world, ScCombat);
     for (int i = 0; i < set->cnt; i++)

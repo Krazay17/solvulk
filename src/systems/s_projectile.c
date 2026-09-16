@@ -12,16 +12,21 @@ typedef bool isDestroyed;
 
 static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile, SolHit hit)
 {
+    float explode_radius = 2.0f * projectile->power;
+    ScOwner *owner = Sol_Comp_Get(w, a, ScOwner);
+    int ownerId    = owner ? owner->ownerId : 0;
+
     if (Sol_Hitgen_Try(w, a, hit.entB, projectile->hitgen))
     {
         Sol_Combat_Hit(w, hit.entB, hit);
-        ScOwner *owner = Sol_Comp_Get(w, a, ScOwner);
-        int ownerId    = owner ? owner->ownerId : 0;
 
-        SolRay ray = {
-            .start = w->xform.pos[a], .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = 3.0f};
-        SolRayResult results[32];
-        int hits = Sol_SphereOverlap(w, ray, results, 32);
+        SolRay ray = {.start     = w->xform.pos[a],
+                      .ignoreEnt = a,
+                      .dir       = WORLD_DOWN,
+                      .mask      = COLLAYER_ALL,
+                      .radius    = explode_radius};
+        SolRayResult results[512];
+        int hits = Sol_SphereOverlap(w, ray, results, 512);
         for (int i = 0; i < hits; i++)
         {
             int hit_id = results[i].entId;
@@ -34,21 +39,23 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
                                .effectMask = EFFECTMASK_KNOCKUP,
                            });
         }
-        // Emitter emitter    = emitter_kinds[EMITTERKIND_SPHERE_BURST_FRACTAL];
-        // emitter.p_scale    = projectile->power * 2.0f;
-        // emitter.p_speed    = projectile->power * 10.0f;
-        // emitter.p_lifespan = 0.5f;
-        // emitter.burst      = 15;
-        // emitter.ttl        = 0;
-        // Sol_Emitter_Push(w, hit.pos, emitter);
+        Sol_Event_Push(w, EVENTKIND_FX,
+                       (SolEvent){
+                           .as.fx.kind     = EMITTERKIND_SMOKE_BURST,
+                           .as.fx.pos      = hit.pos,
+                           .as.fx.color    = {1, 1, 1, 1},
+                           .as.fx.duration = 1.0f,
+                           .as.fx.scale    = 1.0f,
+                       });
+        Sol_Event_Push(w, EVENTKIND_FX,
+                       (SolEvent){
+                           .as.fx.kind     = EMITTERKIND_SPHERE,
+                           .as.fx.pos      = hit.pos,
+                           .as.fx.color    = {1, 1, 1, 1},
+                           .as.fx.duration = 0.2f,
+                           .as.fx.scale    = explode_radius,
+                       });
 
-        Emitter emitter2 = emitter_kinds[EMITTERKIND_SMOKE_BURST];
-        Sol_Emitter_Push(w, hit.pos, emitter2);
-        Emitter emitter3 = emitter_kinds[EMITTERKIND_SPHERE_BURST];
-        Sol_Emitter_Push(w, hit.pos, emitter3);
-    }
-    if (Sol_Comp_Has(w, hit.entB, ScStage))
-    {
         Sol_Destroy_Ent(w, a);
         return true;
     }
@@ -73,12 +80,12 @@ void Projectile_Step(World *world)
         vec3s dir   = (speed > 0.001f) ? vecSca(vel, 1.0f / speed) : (vec3s){0, 0, 1};
 
         SolRay ray = {
-            .start     = xform.pos,
+            .start     = vecSub(xform.pos, vecSca(dir, -speed * fdt)),
             .dir       = dir,
             .dist      = speed * fdt,
             .mask      = projectile->mask,
             .ignoreEnt = id,
-            .radius    = body3->dims.x,
+            .radius    = projectile->radius,
         };
 
         SolRayResult results[16];
@@ -91,10 +98,10 @@ void Projectile_Step(World *world)
         for (int j = 0; j < hits; j++)
         {
             SolRayResult result = results[j];
-
             // Skip owner collision
             if (result.entId == ownerId)
                 continue;
+
             SolHit hit = projectile->hit;
             hit.entB   = result.entId;
             hit.normal = result.norm;

@@ -528,3 +528,52 @@ static inline vec3s Sol_AddScaledDir(vec3s start, vec3s dir, float dist)
 {
     return glms_vec3_add(start, glms_vec3_scale(dir, dist));
 }
+
+typedef enum
+{
+    CURVE_CONSTANT,        // Always 1.0
+    CURVE_LINEAR_FADEIN,   // 0 -> 1
+    CURVE_LINEAR_FADEOUT,  // 1 -> 0
+    CURVE_SMOOTH_INOUT,    // Symmetric Arch (0 -> 1 -> 0, peaks at t=0.5)
+    CURVE_QUICKIN_SLOWOUT, // Flash Arch (0 -> 1 -> 0, peaks fast at t=0.33)
+    CURVE_EASE_IN,         // Quadratic Ease In (0 -> 1)
+    CURVE_EASE_OUT,        // Quadratic Ease Out (0 -> 1)
+    CURVE_SMOOTHSTEP,      // Hermite Smoothstep (0 -> 1)
+    CURVE_COUNT,
+} CurveTypes;
+
+static inline float EvaluateCurve(CurveTypes type, float t)
+{
+    switch (type)
+    {
+    case CURVE_LINEAR_FADEIN:
+        return t;
+
+    case CURVE_LINEAR_FADEOUT:
+        return 1.0f - t;
+
+    case CURVE_SMOOTH_INOUT:
+        // Parabolic arch: 4t(1-t)
+        return 4.0f * t * (1.0f - t);
+
+    case CURVE_QUICKIN_SLOWOUT:
+        // Asymmetric arch: 6.75 * t * (1-t)^2
+        return 6.75f * t * (1.0f - t) * (1.0f - t);
+
+    case CURVE_EASE_IN:
+        // Slow start, fast finish: t^2
+        return t * t;
+
+    case CURVE_EASE_OUT:
+        // Fast start, slow finish: t(2-t)
+        return t * (2.0f - t);
+
+    case CURVE_SMOOTHSTEP:
+        // S-Curve transition: 3t^2 - 2t^3
+        return t * t * (3.0f - 2.0f * t);
+
+    case CURVE_CONSTANT:
+    default:
+        return 1.0f;
+    }
+}

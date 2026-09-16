@@ -54,18 +54,18 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     }
 
     {
-        float cell_size       = 4.0f;
+        float cell_size    = 4.0f;
         self->grid_dynamic = malloc(sizeof(SpatialGrid));
-        vec3s min             = {-512.0f, -512.0f, -32.0f};
-        vec3s max             = {512.0f, 512.0f, 128.0f};
+        vec3s min          = {-512.0f, -512.0f, -32.0f};
+        vec3s max          = {512.0f, 512.0f, 128.0f};
         SpatialGrid_Init(self->grid_dynamic, min, max, cell_size);
     }
 
     {
-        float cell_size      = 4.0f;
+        float cell_size   = 4.0f;
         self->grid_static = malloc(sizeof(SpatialGrid));
-        vec3s min            = {-512.0f, -512.0f, -32.0f};
-        vec3s max            = {512.0f, 512.0f, 128.0f};
+        vec3s min         = {-512.0f, -512.0f, -32.0f};
+        vec3s max         = {512.0f, 512.0f, 128.0f};
         SpatialGrid_Init(self->grid_static, min, max, cell_size);
     }
 }
@@ -98,7 +98,7 @@ u32 Sol_Hitgen_Start(World *world, int id)
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
 {
     SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
-    HitgenRow *row = &single->rows[id];
+    HitgenRow *row   = &single->rows[id];
 
     if (row->gen != sessionGen)
     {
@@ -113,4 +113,11 @@ bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
 
     solb_push(row->hit_targets, (u32)target);
     return true;
+}
+
+void Sol_Event_Push(World *world, EventKind kind, SolEvent event)
+{
+    SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
+    event.kind = kind;
+    solb_push(single->events, event);
 }

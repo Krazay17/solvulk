@@ -31,17 +31,19 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
         break;
     case 1:
         data->stage++;
-        vec3s pos  = GetProjectilePos(world, id, cmd, data->power);
-        vec3s dir  = vecNorm(vecSub(cmd->aimpos, pos));
-        SolHit hit = {
-            .entA       = id,
-            .effectMask = ability_base[ABILITY_STATE_FIREBALL].effectMask,
-            .damage     = 10.0f,
-        };
-        int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
-        ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
-        projectile->hit          = hit;
-        projectile->power        = data->power;
+        vec3s pos = GetProjectilePos(world, id, cmd, data->power);
+        vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+
+        { // Spawn fireball
+            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+            ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
+            projectile->hit          = (SolHit){
+                .entA       = id,
+                .effectMask = ability_base[ABILITY_STATE_FIREBALL].effectMask,
+                .damage     = 10.0f,
+            };
+            projectile->power = data->power;
+        }
 
         break;
     case 2:
@@ -89,13 +91,18 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
     vec3s pos = GetProjectilePos(world, id, cmd, data->power);
 
-    QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
-    *push          = (QuadSSBO){
+    *Sol_Render_GetNextSphere(SPHEREKIND_FIREBALL) = (SphereSSBO){
+        .color = VEC4_RED,
         .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
-        .rect  = {0, 0, 7.0f, 7.0f},
-        .color = {1, 1, 1, 1},
-        .uv    = (vec4s){0, 0, 1, 1},
     };
+
+    // QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
+    // *push          = (QuadSSBO){
+    //     .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
+    //     .rect  = {0, 0, 7.0f, 7.0f},
+    //     .color = {1, 1, 1, 1},
+    //     .uv    = (vec4s){0, 0, 1, 1},
+    // };
 }
 
 extern const AbilityStateFunc fireball_state = {

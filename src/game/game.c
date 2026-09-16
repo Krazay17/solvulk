@@ -15,16 +15,6 @@ void Create_Sol_Game()
     Create_Game2();
 }
 
-void Destroy_Sol_Game()
-{
-    for(int i =0;i<solState.worldCount;i++)
-    {
-        World *world = solState.worlds[i];
-        World_DeinitSingletons(world); // frees internal solb_ buffers, structs still intact
-        Sol_World_FreeAllComponents(world); // now safely frees the (now-empty) struct storage itself
-    }
-}
-
 void Create_Menu()
 {
     World *world        = World_Create();

@@ -8,7 +8,7 @@
 
 #include "world.h"
 
-void Hook_Tick(World *world, double dt)
+void Hook_Tick(World *world)
 {
     SparseSet_ScHook *set = Sol_Comp_Set(world, ScHook);
     for (int i = 0; i < set->cnt; i++)

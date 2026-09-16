@@ -1,7 +1,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Facing_Tick(World *world, double dt)
+void Facing_Tick(World *world)
 {
     float fdt = world->fdt;
 

@@ -31,7 +31,7 @@ const struct SystemDef
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Body_Step, UPDATEPHASE_STEP}}},
+    [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
     [WORLDSYS_PARENT]   = {.update = {Parent_Update, UPDATEPHASE_TICK}},
 
     [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
@@ -64,12 +64,6 @@ const struct SystemDef
         },
 };
 
-// SystemInit singles_init[SINGLE_COUNT] = {
-// #define SINGLES_INIT(ENUM, FUNC) [ENUM] = FUNC,
-//     SINGLES_LIST(SINGLES_INIT)
-// #undef SINGLES_INIT
-// };
-
 World *World_Create()
 {
     World *world = calloc(1, sizeof(World));
@@ -97,12 +91,6 @@ World *World_Create()
     return world;
 }
 
-// void Sol_Single_Add(World *world, WorldSingles single)
-// {
-//     if (singles_init[single])
-//         singles_init[single](world);
-// }
-
 World *World_Create_AllSys()
 {
     World *world = World_Create();
@@ -111,9 +99,6 @@ World *World_Create_AllSys()
 
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
         Sol_Sys_Add(world, (WorldSystems)sys);
-
-    // for (int i = 0; i < SINGLE_COUNT; i++)
-    //     singles_init[i](world);
 
     World_InitSingletons(world);
 
@@ -124,12 +109,8 @@ void World_Destroy(World *world)
 {
     if (world)
     {
-        for (int i = 0; i < WORLDSYS_COUNT; i++)
-        {
-            if (world->system_mask & BITC(i))
-                Sol_Sys_Remove(world, i);
-        }
-        Sol_World_FreeAllComponents(world);
+        World_FreeAllComponents(world);
+        World_DeinitSingletons(world);      // frees internal solb_ buffers, structs still intact
 
         // Swap-with-back removal to keep solState.worlds contiguous
         for (int i = 0; i < solState.worldCount; i++)

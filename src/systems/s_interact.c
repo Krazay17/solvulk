@@ -249,7 +249,7 @@ void Interact_Update(World *world)
     Prof_EndEz(&profile, true, world->dt / solState.worldCount);
 }
 
-void Interact_Body_Step(World *world)
+void Interact_Step(World *world)
 {
     float fdt = world->timestep;
 

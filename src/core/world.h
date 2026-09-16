@@ -60,22 +60,6 @@ typedef enum
 SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
 #undef SINGLETON_FWD
 
-// #define SINGLES_LIST(X)                                                                                                \
-//     X(SINGLE_SPATIAL, Sl_Spatial_Init)                                                                                 \
-//     X(SINGLE_EMITTER, Sl_Emitter_Init)                                                                                 \
-//     X(SINGLE_HITGEN, Sl_Hitgen_Init)
-
-// #define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
-// SINGLES_LIST(SINGLES_FWD)
-// #undef SINGLES_FWD
-// typedef enum
-// {
-// #define SINGLES_ENUM(ENUM, FUNC) ENUM,
-//     SINGLES_LIST(SINGLES_ENUM)
-// #undef SINGLES_ENUM
-//     SINGLE_COUNT,
-// } WorldSingles;
-
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(SlEvent, HAS_SlEvent)                                                                                            \
     X(SlSpatial, HAS_SlSpatial)                                                                                        \
@@ -391,7 +375,7 @@ static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
 }
 
 // Free all sparse set component arrays and their container memory
-static inline void Sol_World_FreeAllComponents(World *w)
+static inline void World_FreeAllComponents(World *w)
 {
     for (int i = 0; i < COMPONENT_COUNT; ++i)
     {
@@ -472,6 +456,8 @@ void Worlds_Event_Clear(World **worlds, int count);
 // Api
 World *World_Create();
 World *World_Create_AllSys();
+void World_Destroy(World *world);
+
 int Sol_Create_Ent(World *world, vec3s pos);
 int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
 
@@ -521,4 +507,6 @@ float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
 float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);
 
 extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
-void Sol_Emitter_Push(World *world, vec3s pos, Emitter emitter);
+void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
+void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s vel, vec3s dir);
+Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);

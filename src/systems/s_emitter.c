@@ -3,88 +3,48 @@
 #include "render/render.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
+    [EMITTERKIND_SPHERE] =
+        {
+            .ttl         = 0.0f,
+            .burst       = 1,
+            .rate        = 0.5f,
+            .speed       = 0.0f,
+            .kind        = EMITKIND_STILL,
+            .p_kind      = PARTICLE_SPHERE,
+            .p_lifespan  = 1.0f,
+            .p_scale     = 1.0f,
+            .p_color     = {1, 0, 0, 1},
+            .alpha_curve = CURVE_SMOOTH_INOUT,
+            .scale_curve = CURVE_QUICKIN_SLOWOUT,
+        },
     [EMITTERKIND_SPHERE_BURST_FRACTAL] =
         {
-            .kind       = EMITKIND_SPHERE,
+            .ttl        = 5.0f,
             .burst      = 1,
             .rate       = 0.1f,
-            .ttl        = 5.0f,
+            .speed      = 2.0f,
+            .kind       = EMITKIND_SPHERE,
             .p_kind     = PARTICLE_FRACTAL,
             .p_lifespan = 5.0f,
             .p_scale    = 5.0f,
             .p_color    = {1, 1, 1, 1},
-            .p_speed    = 2.0f,
         },
     [EMITTERKIND_SMOKE_BURST] =
         {
+            .ttl        = 0.3f,
+            .burst      = 25,
+            .rate       = 0.1f,
+            .speed      = 3.0f,
             .kind       = EMITKIND_SPHERE,
-            .burst      = 5,
-            .rate       = 0.5f,
-            .ttl        = 1.0f,
             .p_kind     = PARTICLE_SMOKE,
             .p_lifespan = 1.0f,
-            .p_scale    = 5.0f,
+            .p_scale    = 2.0f,
             .p_color    = {1, 0, 0, 1},
-            .p_speed    = 4.0f,
-        },
-    [EMITTERKIND_SPHERE_BURST] =
-        {
-            .burst      = 1,
-            .rate       = 0.5f,
-            .ttl        = 1.0f,
-            .p_kind     = PARTICLE_SPHERE,
-            .p_lifespan = 1.0f,
-            .p_scale    = 1.0f,
-            .p_color    = {1, 0, 0, 1},
+            .alpha_curve = CURVE_EASE_OUT,
+            .scale_curve = CURVE_QUICKIN_SLOWOUT,
         },
 };
 
-const Particle particle_kinds[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] =
-        {
-            .scale    = 1.0f,
-            .lifespan = 1.0f,
-            .color    = {1, 1, 1, 1},
-            .speed    = 1.0f,
-        },
-    [PARTICLE_SMOKE] =
-        {
-            .scale    = 1.0f,
-            .lifespan = 1.0f,
-            .color    = {1, 1, 1, 1},
-            .speed    = 1.0f,
-        },
-    [PARTICLE_SPHERE] =
-        {
-            .scale    = 1.0f,
-            .lifespan = 1.0f,
-            .color    = {1, 1, 1, 1},
-            .speed    = 1.0f,
-        },
-};
-
-const struct ParticleConf
-{
-    float fadein;
-    float fadeout;
-    float scalein;
-    float scaleout;
-} particle_conf_kinds[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] =
-        {
-            .fadein   = 0.5f,
-            .fadeout  = 0.5f,
-            .scalein  = 0.5f,
-            .scaleout = 0.5f,
-        },
-    [PARTICLE_SPHERE] =
-        {
-            .fadein   = 0.5f,
-            .fadeout  = 0.5f,
-            .scalein  = 0.5f,
-            .scaleout = 0.5f,
-        },
-};
 enum RenderKind
 {
     RENDERKIND_QUAD,
@@ -156,31 +116,33 @@ static inline vec3s RandomVel_Cone(float speed, vec3s direction, float max_angle
     return vel;
 }
 
-static inline void Particle_Spawn(SlEmitter *single, vec3s pos, Emitter emitter)
+static inline void Particle_Spawn(SlEmitter *single, Emitter emitter)
 {
-    Particle base = particle_kinds[emitter.p_kind];
-    base.kind     = emitter.p_kind;
-    base.pos      = pos;
-    base.color    = glms_vec4_mul(base.color, emitter.p_color);
-    base.scale *= emitter.p_scale;
-    base.speed *= emitter.p_speed;
-    base.lifespan *= emitter.p_lifespan;
+    Particle p = {
+        .pos         = emitter.pos,
+        .kind        = emitter.p_kind,
+        .color       = emitter.p_color,
+        .scale       = emitter.p_scale,
+        .lifespan    = emitter.p_lifespan,
+        .alpha_curve = emitter.alpha_curve,
+        .scale_curve = emitter.scale_curve,
+    };
 
     for (int i = 0; i < emitter.burst; i++)
     {
-        Particle p = base;
+        Particle inst = p;
         switch (emitter.kind)
         {
         case EMITKIND_SPHERE:
-            p.vel = RandomVel_Sphere(p.speed);
+            inst.vel = RandomVel_Sphere(emitter.speed);
             break;
         case EMITKIND_CONE:
-            p.vel = RandomVel_Cone(p.speed, emitter.dir, emitter.cone);
+            inst.vel = RandomVel_Cone(emitter.speed, emitter.dir, emitter.cone);
             break;
         default:
             break;
         }
-        solb_push(single->particles, p);
+        solb_push(single->particles, inst);
     }
 }
 
@@ -207,27 +169,35 @@ void Emitter_Update(World *world)
 {
     float fdt         = world->fdt;
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
-    int count         = solb_count(single->emitters);
+    SlEvent *events   = Sol_Comp_Get(world, 0, SlEvent);
+    for (int i = 0; i < solb_count(events->events); i++)
+    {
+        SolEvent event = events->events[i];
+        if (event.kind != EVENTKIND_FX)
+            continue;
+        Emitter emitter    = emitter_kinds[event.as.fx.kind];
+        emitter.pos        = event.as.fx.pos;
+        emitter.p_color    = event.as.fx.color;
+        emitter.p_lifespan = event.as.fx.duration;
+        emitter.p_scale    = event.as.fx.scale;
+        Sol_Emitter_Push(world, &emitter, 1);
+    }
 
+    int count = solb_count(single->emitters);
     int write = 0;
     for (int i = 0; i < count; i++)
     {
         Emitter *emitter = &single->emitters[i];
         emitter->pos     = vecAdd(emitter->pos, vecSca(emitter->vel, fdt));
         emitter->ttl -= fdt;
-        if (emitter->ttl <= 0.0f)
-            continue;
         emitter->accum += fdt;
-        float rate = emitter->rate;
-        if (emitter->rate > 0)
+        while (emitter->accum >= emitter->rate)
         {
-            while (emitter->accum >= rate)
-            {
-                emitter->accum -= rate;
-                Particle_Spawn(single, emitter->pos, *emitter);
-            }
+            emitter->accum = emitter->rate > 0.0f ? emitter->accum - emitter->rate : -1.0f;
+            Particle_Spawn(single, *emitter);
         }
-        single->emitters[write++] = *emitter;
+        if (emitter->ttl > 0.0f)
+            single->emitters[write++] = *emitter;
     }
     solb_set_count(single->emitters, write);
 
@@ -236,43 +206,78 @@ void Emitter_Update(World *world)
 
 void Particle_Draw(World *world)
 {
-    float fdt         = world->fdt;
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
-    int count         = solb_count(single->particles);
 
-    int write = 0;
+    int count = solb_count(single->particles);
     for (int i = 0; i < count; i++)
     {
-        Particle p = single->particles[i];
+        Particle p        = single->particles[i];
+        float t           = p.elapsed / p.lifespan;
+        float scale       = EvaluateCurve(p.scale_curve, t);
+        float alpha       = EvaluateCurve(p.alpha_curve, t);
+        float final_scale = p.scale;
+        final_scale *= scale;
+        vec4s final_color = p.color;
+        final_color.a     = final_color.a * alpha;
 
         switch (particle_pipekind[p.kind])
         {
         case RENDERKIND_QUAD:
             *Sol_Render_GetNextQuad(particle_renderkind[p.kind]) = (QuadSSBO){
-                .pos       = {p.pos.x, p.pos.y, p.pos.z, p.scale},
+                .pos       = {p.pos.x, p.pos.y, p.pos.z, final_scale},
                 .rect      = {0, 0, 1, 1},
-                .color     = p.color,
+                .color     = final_color,
                 .textureId = particle_texture[p.kind],
                 .uv        = {0, 0, 1, 1},
             };
             break;
         case RENDERKIND_SPHERE:
             *Sol_Render_GetNextSphere(particle_renderkind[p.kind]) = (SphereSSBO){
-                .pos   = {p.pos.x, p.pos.y, p.pos.z, p.scale},
-                .color = p.color,
+                .pos   = {p.pos.x, p.pos.y, p.pos.z, final_scale},
+                .color = final_color,
             };
             break;
         }
     }
 }
 
-void Sol_Emitter_Push(World *world, vec3s pos, Emitter emitter)
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos)
+{
+    Emitter e = emitter_kinds[kind];
+    e.pos     = pos;
+    Sol_Emitter_Push(world, &e, 1);
+}
+
+void Sol_Emitter_Push(World *world, Emitter *emitters, int count)
 {
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
-    emitter.pos       = pos;
+    for (int i = 0; i < count; i++)
+    {
+        Particle_Spawn(single, emitters[i]);
+        if (emitters[i].ttl > 0)
+            solb_push(single->emitters, emitters[i]);
+    }
+}
 
-    Particle_Spawn(single, pos, emitter);
+void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s vel, vec3s dir)
+{
+    SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
+    for (int i = 0; i < count; i++)
+    {
+        emitters[i].pos = pos;
+        emitters[i].vel = vel;
+        emitters[i].dir = dir;
+        Particle_Spawn(single, emitters[i]);
+        if (emitters[i].ttl > 0)
+            solb_push(single->emitters, emitters[i]);
+    }
+}
 
-    if (emitter.ttl > 0)
-        solb_push(single->emitters, emitter);
+Emitter *Sol_Emitter_Next(World *world, EmitterKind kind)
+{
+    SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
+    Emitter *e        = solb_next(single->emitters);
+    *e                = emitter_kinds[kind];
+    e->accum          = e->rate;
+    return e;
 }

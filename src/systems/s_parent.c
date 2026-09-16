@@ -1,7 +1,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Parent_Update(World *world, double dt)
+void Parent_Update(World *world)
 {
     SparseSet_ScParent *set = Sol_Comp_Set(world, ScParent);
     for (int i = 0; i < set->cnt; i++)

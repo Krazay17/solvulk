@@ -360,8 +360,9 @@ typedef struct ScView2
 typedef struct ScView3
 {
     View3Kind kind;
-    vec3s dims, offset;
+    vec3s offset;
     vec4s color;
+    float scale;
 } ScView3;
 
 typedef struct ScTracker
@@ -492,3 +493,4 @@ extern const ScAnim anim_default;
 
 u32 Sol_Hitgen_Start(World *world, int id);
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
+void Sol_Event_Push(World *world, EventKind kind, SolEvent event);

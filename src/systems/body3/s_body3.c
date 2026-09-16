@@ -463,7 +463,7 @@ void Resolve_Contact(World *world, SolContact contact)
     float velAlongNormal = glms_vec3_dot(relativeVel, contact.normal);
 
     const float slack   = 0.01f;
-    const float percent = 0.2f;
+    const float percent = 0.8f;
 
     float pen = fmaxf(contact.penetration - slack, 0.0f);
     if (pen > 0.0f)
@@ -744,7 +744,7 @@ vec3s Sol_Body3_GetHead(World *world, int id)
     vec3s pos      = world->xform.draw_pos[id];
     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
     if (body3)
-        pos.y += body3->dims.y;
+        pos.y += body3->dims.y * 0.75f;
     return pos;
 }
 

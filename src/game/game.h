@@ -11,7 +11,6 @@
 #include "prefabs.h"
 
 void Create_Sol_Game();
-void Destroy_Sol_Game();
 
 void QuitApp(int flags);
 void W_Set_Ontop(int flags);
@@ -124,12 +123,21 @@ static inline void Hook_SpawnEmitter(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
-
-    Sol_Emitter_Push(world,pos, emitter_kinds[EMITTERKIND_SPHERE_BURST_FRACTAL]);
 }
 static inline void Hook_SpawnEmitter2(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
-    Sol_Emitter_Push(world,pos, emitter_kinds[EMITTERKIND_SPHERE_BURST]);
+
+    Emitter *e = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
+    e->pos     = pos;
+    e->p_scale = 10.0f;
+
+    for (int i = 0; i < 25; i++)
+    {
+        Emitter *e = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
+        e->pos     = pos;
+        e->pos.y += i;
+        e->p_scale = 10.0f;
+    }
 }

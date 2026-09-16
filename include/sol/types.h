@@ -112,22 +112,26 @@ typedef enum
 {
     PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
+    PARTICLE_SPHERE_INOUT,
     PARTICLE_SMOKE,
     PARTICLE_COUNT,
 } ParticleKind;
-
 typedef struct
 {
-    ParticleKind kind;
-    vec3s pos;
-    vec3s vel;
-    vec4s color;
-    float elapsed, lifespan, scale, speed;
+    ParticleKind kind; // 4
+    vec3s pos;         // 16
+    vec3s vel;         // 28
+    vec4s color;       // 44
+    float elapsed;     // 48
+    float lifespan;    // 52
+    float scale;       // 56
+    u32 alpha_curve;   // 60
+    u32 scale_curve;   // 64
 } Particle;
 
 typedef enum
 {
-    EMITTERKIND_SPHERE_BURST,
+    EMITTERKIND_SPHERE,
     EMITTERKIND_SPHERE_BURST_FRACTAL,
     EMITTERKIND_SMOKE_BURST,
     EMITTERKIND_COUNT,
@@ -135,7 +139,7 @@ typedef enum
 
 typedef enum
 {
-    EMITKIND_STILL,
+    EMITKIND_STILL = 0,
     EMITKIND_SPHERE,
     EMITKIND_CONE,
     EMITKIND_COUNT,
@@ -145,17 +149,19 @@ typedef struct
 {
     EmitKind kind;
     vec3s pos, vel, dir;
+    u32 burst, inf;
     float ttl;
     float rate;
     float accum;
     float cone;
-    u32 burst, inf;
+    float speed;
 
     ParticleKind p_kind;
     float p_lifespan;
-    float p_speed;
     float p_scale;
     vec4s p_color;
+    u32 alpha_curve;
+    u32 scale_curve;
 } Emitter;
 
 typedef enum

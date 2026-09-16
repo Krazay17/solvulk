@@ -109,6 +109,8 @@ void Sol_Tick(double dt, double time)
     Sol_FPS(dt);
     Sol_Debug_Draw(dt);
     Sol_End_Draw();
+
+    Worlds_Event_Clear(solState.worlds, solState.worldCount);
 }
 
 void Sol_Destroy()

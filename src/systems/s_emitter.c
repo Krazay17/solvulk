@@ -15,10 +15,46 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .p_color    = {1, 1, 1, 1},
             .p_speed    = 2.0f,
         },
+    [EMITTERKIND_SMOKE_BURST] =
+        {
+            .kind       = EMITKIND_SPHERE,
+            .burst      = 5,
+            .rate       = 0.5f,
+            .ttl        = 1.0f,
+            .p_kind     = PARTICLE_SMOKE,
+            .p_lifespan = 1.0f,
+            .p_scale    = 5.0f,
+            .p_color    = {1, 0, 0, 1},
+            .p_speed    = 4.0f,
+        },
+    [EMITTERKIND_SPHERE_BURST] =
+        {
+            .burst      = 1,
+            .rate       = 0.5f,
+            .ttl        = 1.0f,
+            .p_kind     = PARTICLE_SPHERE,
+            .p_lifespan = 1.0f,
+            .p_scale    = 1.0f,
+            .p_color    = {1, 0, 0, 1},
+        },
 };
 
 const Particle particle_kinds[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] =
+        {
+            .scale    = 1.0f,
+            .lifespan = 1.0f,
+            .color    = {1, 1, 1, 1},
+            .speed    = 1.0f,
+        },
+    [PARTICLE_SMOKE] =
+        {
+            .scale    = 1.0f,
+            .lifespan = 1.0f,
+            .color    = {1, 1, 1, 1},
+            .speed    = 1.0f,
+        },
+    [PARTICLE_SPHERE] =
         {
             .scale    = 1.0f,
             .lifespan = 1.0f,
@@ -49,13 +85,26 @@ const struct ParticleConf
             .scaleout = 0.5f,
         },
 };
-const QuadKind particle_quad[PARTICLE_COUNT] = {
+enum RenderKind
+{
+    RENDERKIND_QUAD,
+    RENDERKIND_SPHERE,
+};
+const u32 particle_pipekind[PARTICLE_COUNT] = {
+    [PARTICLE_FRACTAL] = RENDERKIND_QUAD,
+    [PARTICLE_SMOKE]   = RENDERKIND_QUAD,
+    [PARTICLE_SPHERE]  = RENDERKIND_SPHERE,
+};
+
+const u32 particle_renderkind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = QUADKIND_FRACTAL_PYRAMID,
-    [PARTICLE_SPHERE]  = QUADKIND_SPRITE,
+    [PARTICLE_SMOKE]   = QUADKIND_SPRITE,
+    [PARTICLE_SPHERE]  = SPHEREKIND_BASIC,
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
     [PARTICLE_SPHERE] = SOL_TEXTURE_CLOUDPARTICLE,
+    [PARTICLE_SMOKE]  = SOL_TEXTURE_CLOUDPARTICLE,
 };
 
 static inline vec3s RandomVel_Sphere(float speed)
@@ -128,6 +177,8 @@ static inline void Particle_Spawn(SlEmitter *single, vec3s pos, Emitter emitter)
         case EMITKIND_CONE:
             p.vel = RandomVel_Cone(p.speed, emitter.dir, emitter.cone);
             break;
+        default:
+            break;
         }
         solb_push(single->particles, p);
     }
@@ -194,13 +245,24 @@ void Particle_Draw(World *world)
     {
         Particle p = single->particles[i];
 
-        *Sol_Render_GetNextQuad(particle_quad[p.kind]) = (QuadSSBO){
-            .pos       = {p.pos.x, p.pos.y, p.pos.z, p.scale},
-            .rect      = {0, 0, 1, 1},
-            .color     = p.color,
-            .textureId = particle_texture[p.kind],
-            .uv        = {0, 0, 1, 1},
-        };
+        switch (particle_pipekind[p.kind])
+        {
+        case RENDERKIND_QUAD:
+            *Sol_Render_GetNextQuad(particle_renderkind[p.kind]) = (QuadSSBO){
+                .pos       = {p.pos.x, p.pos.y, p.pos.z, p.scale},
+                .rect      = {0, 0, 1, 1},
+                .color     = p.color,
+                .textureId = particle_texture[p.kind],
+                .uv        = {0, 0, 1, 1},
+            };
+            break;
+        case RENDERKIND_SPHERE:
+            *Sol_Render_GetNextSphere(particle_renderkind[p.kind]) = (SphereSSBO){
+                .pos   = {p.pos.x, p.pos.y, p.pos.z, p.scale},
+                .color = p.color,
+            };
+            break;
+        }
     }
 }
 

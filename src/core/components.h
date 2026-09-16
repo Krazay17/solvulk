@@ -216,59 +216,6 @@ typedef struct ScAnim
     bool hasLastPose;
 } ScAnim;
 
-typedef struct ScEvent
-{
-    EventKind kind;
-    u32 entA, entB;
-    union {
-        struct
-        {
-            vec3s pos, normal, vel;
-            u32 entA, entB;
-        } collision;
-        struct
-        {
-            float damage;
-            u32 entA, entB;
-        } death;
-        struct
-        {
-            vec3s pos;
-            vec4s color;
-            u32 kind, entA, entB;
-            float scale, duration;
-        } fx;
-        struct
-        {
-            u32 kind;
-            vec3s pos;
-            float volume;
-        } sound;
-        struct
-        {
-            u32 ent;
-            vec3s pos;
-        } respawn;
-        struct
-        {
-            u32 entId;
-            u32 slot;
-            u32 ability;
-            u32 rarity;
-        } equip;
-        struct
-        {
-            u32 entA, entB;
-            float damageDealt;
-        } score;
-        struct
-        {
-            u32 kind;
-            u32 interactor, interactee;
-        } interact;
-    } as;
-} ScEvent;
-
 typedef struct
 {
     union {
@@ -499,6 +446,11 @@ typedef struct ScRef
 // #################
 // #### SINGLES ####
 // #################
+
+typedef struct SlEvent
+{
+    SolEvent *events;
+} SlEvent;
 
 typedef struct SpatialGrid SpatialGrid;
 typedef struct SlSpatial

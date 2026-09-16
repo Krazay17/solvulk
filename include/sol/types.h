@@ -93,16 +93,6 @@ typedef enum
 
 typedef enum
 {
-    EVENTKIND_COLLISION,
-    EVENTKIND_FX,
-    EVENTKIND_SOUND,
-    EVENTKIND_EQUIP,
-    EVENTKIND_SCORE,
-    EVENTKIND_COUNT,
-} EventKind;
-
-typedef enum
-{
     ANIM_LAYER_BASE,  // full body, always active
     ANIM_LAYER_LOWER, // overrides legs
     ANIM_LAYER_UPPER, // overrides torso/arms
@@ -122,6 +112,7 @@ typedef enum
 {
     PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
+    PARTICLE_SMOKE,
     PARTICLE_COUNT,
 } ParticleKind;
 
@@ -136,12 +127,15 @@ typedef struct
 
 typedef enum
 {
+    EMITTERKIND_SPHERE_BURST,
     EMITTERKIND_SPHERE_BURST_FRACTAL,
+    EMITTERKIND_SMOKE_BURST,
     EMITTERKIND_COUNT,
 } EmitterKind;
 
 typedef enum
 {
+    EMITKIND_STILL,
     EMITKIND_SPHERE,
     EMITKIND_CONE,
     EMITKIND_COUNT,
@@ -725,3 +719,65 @@ typedef struct SolItem
 {
     AbilityConfig ability;
 } SolItem;
+
+typedef enum
+{
+    EVENTKIND_COLLISION,
+    EVENTKIND_FX,
+    EVENTKIND_SOUND,
+    EVENTKIND_EQUIP,
+    EVENTKIND_SCORE,
+    EVENTKIND_COUNT,
+} EventKind;
+typedef struct SolEvent
+{
+    EventKind kind;
+    u32 entA, entB;
+    union {
+        struct
+        {
+            vec3s pos, normal, vel;
+            u32 entA, entB;
+        } collision;
+        struct
+        {
+            float damage;
+            u32 entA, entB;
+        } death;
+        struct
+        {
+            vec3s pos;
+            vec4s color;
+            u32 kind, entA, entB;
+            float scale, duration;
+        } fx;
+        struct
+        {
+            u32 kind;
+            vec3s pos;
+            float volume;
+        } sound;
+        struct
+        {
+            u32 ent;
+            vec3s pos;
+        } respawn;
+        struct
+        {
+            u32 entId;
+            u32 slot;
+            u32 ability;
+            u32 rarity;
+        } equip;
+        struct
+        {
+            u32 entA, entB;
+            float damageDealt;
+        } score;
+        struct
+        {
+            u32 kind;
+            u32 interactor, interactee;
+        } interact;
+    } as;
+} SolEvent;

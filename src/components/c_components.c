@@ -2,6 +2,15 @@
 #include "spatial_grid.h"
 #include <omp.h>
 
+void SlEvent_Init(World *world, SlEvent *self)
+{
+    solb_init(self->events, 64);
+}
+void SlEvent_Deinit(SlEvent *self)
+{
+    solb_free(self->events);
+}
+
 void SlEmitter_Init(World *world, SlEmitter *self)
 {
     solb_init(self->emitters, 128);

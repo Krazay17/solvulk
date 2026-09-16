@@ -19,6 +19,7 @@ typedef struct World World;
 
 typedef enum
 {
+    WORLDSYS_EVENT,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
@@ -46,7 +47,8 @@ typedef enum
     WORLDSYS_COUNT,
 } WorldSystems;
 
-// Only list types that need init/deinit beyond the zero-init Sol_Comp_Add already does.
+#define CORE_SINGLETON_LIFECYCLE_LIST(X) X(SlEvent, SlEvent_Init, SlEvent_Deinit)
+
 #define SINGLETON_LIFECYCLE_LIST(X)                                                                                    \
     X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
     X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
@@ -75,6 +77,7 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
 // } WorldSingles;
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
+    X(SlEvent, HAS_SlEvent)                                                                                            \
     X(SlSpatial, HAS_SlSpatial)                                                                                        \
     X(SlHitgen, HAS_SlHitgen)                                                                                          \
     X(SlEmitter, HAS_SlEmitter)                                                                                        \
@@ -100,7 +103,6 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScAbility, HAS_ScAbility)                                                                                        \
     X(ScBuff, HAS_ScBuff)                                                                                              \
     X(ScTimer, HAS_ScTimer)                                                                                            \
-    X(ScEvent, HAS_ScEvent)                                                                                            \
     X(ScAudio, HAS_ScAudio)                                                                                            \
     X(ScParent, HAS_ScParent)                                                                                          \
     X(ScOwner, HAS_ScOwner)                                                                                            \
@@ -156,7 +158,7 @@ SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
 // ==========================================
 // 4. WORLD CONTAINER DEFINITION
 // ==========================================
-
+typedef struct SolEvent SolEvent;
 typedef struct WorldXform
 {
     vec3s pos[MAX_ENTS];
@@ -184,6 +186,8 @@ struct World
     u64 system_mask;
     void *components[COMPONENT_COUNT];
     void *systems[WORLDSYS_COUNT];
+
+    SolEvent *events;
 
     int tickCount;
     int stepCount;
@@ -463,6 +467,7 @@ void Worlds_PostTick(World **worlds, int count);
 
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
+void Worlds_Event_Clear(World **worlds, int count);
 
 // Api
 World *World_Create();

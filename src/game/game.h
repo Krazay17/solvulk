@@ -131,5 +131,5 @@ static inline void Hook_SpawnEmitter2(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
-
+    Sol_Emitter_Push(world,pos, emitter_kinds[EMITTERKIND_SPHERE_BURST]);
 }

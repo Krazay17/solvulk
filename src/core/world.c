@@ -86,6 +86,14 @@ World *World_Create()
 
     Sol_World_InitAllComponents(world, world->maxEntities);
 
+#define CORE_SINGLETON_INIT(Type, InitFn, DeinitFn)                                                                    \
+    {                                                                                                                  \
+        Type *self = Sol_Comp_Add(world, 0, Type);                                                                     \
+        InitFn(world, self);                                                                                           \
+    }
+    CORE_SINGLETON_LIFECYCLE_LIST(CORE_SINGLETON_INIT)
+#undef CORE_SINGLETON_INIT
+
     return world;
 }
 
@@ -288,6 +296,18 @@ void Worlds_Draw2d(World **worlds, int count)
         if (world->doesRender)
             for (int i = 0; i < world->draw2dCount; i++)
                 world->draw2dSystems[i](world);
+    }
+}
+
+void Worlds_Event_Clear(World **worlds, int count)
+{
+    for (int w = 0; w < count; w++)
+    {
+        World *world = worlds[w];
+        if (!world->doesSimulate)
+            continue;
+        SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
+        solb_set_count(single->events, 0);
     }
 }
 

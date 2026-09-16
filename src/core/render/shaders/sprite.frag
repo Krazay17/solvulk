@@ -2,9 +2,7 @@
 layout(location = 0) in vec2 fragUV;
 layout(location = 1) in vec4 fragColor;
 layout(location = 2) in vec4 fragExtra;
-layout(location = 3) flat in uint fragType;
-layout(location = 4) flat in uint fragTextureId;
-layout(location = 5) flat in uint fragFlags;
+layout(location = 3) flat in uint fragTextureId;
 
 layout(location = 0) out vec4 outColor;
 

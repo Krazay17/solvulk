@@ -488,7 +488,6 @@ typedef struct ScHook
     Hook update;
     Hook release;
     Hook in_range;
-    void *data;
 } ScHook;
 
 typedef struct ScRef
@@ -515,11 +514,16 @@ typedef struct SlSpatial
     vec3s *build_maxs;
 } SlSpatial;
 
+typedef struct
+{
+    u32 gen;       // this attacker's current session generation
+    u32 *hit_targets; // solb_ buffer: which target ids have been marked this session
+} HitgenRow;
+
 typedef struct SlHitgen
 {
     u32 global;
-    u32 ent_gen[MAX_ENTS];
-    u32 matrix[MAX_ENTS][256];
+    HitgenRow rows[MAX_ENTS]; // one row per potential attacker, allocated lazily
 } SlHitgen;
 
 typedef struct SlEmitter

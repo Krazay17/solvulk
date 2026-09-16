@@ -43,7 +43,7 @@ static void User_Update(World *world)
         if (!(interact->state_prev & INTERACT_DOWN))
         {
             if (hook && hook->pressed)
-                hook->pressed(world, sol_user.target, sol_user.view_ent, hook->data);
+                hook->pressed(world, sol_user.target, sol_user.view_ent);
         }
     }
 
@@ -65,14 +65,14 @@ static void User_Update(World *world)
                 interact->state |= INTERACT_DOWN;
 
                 if (hook && hook->held)
-                    hook->held(world, sol_user.target, sol_user.view_ent, hook->data);
+                    hook->held(world, sol_user.target, sol_user.view_ent);
 
                 if (!sol_user.interact_last)
                 {
                     interact->state |= INTERACT_JUSTDOWN;
 
                     if (hook && hook->pressed)
-                        hook->pressed(world, sol_user.target, sol_user.view_ent, hook->data);
+                        hook->pressed(world, sol_user.target, sol_user.view_ent);
                 }
             }
             else if (sol_user.interact_last)
@@ -84,7 +84,7 @@ static void User_Update(World *world)
                 if (hook && hook->release)
                 {
                     interact->state |= INTERACT_ACTIVE;
-                    hook->release(world, sol_user.target, sol_user.view_ent, hook->data);
+                    hook->release(world, sol_user.target, sol_user.view_ent);
                 }
             }
         }
@@ -127,7 +127,7 @@ static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
         int best_id          = 0;
         float best_dot       = 0.0f;
         ScInteract *interact = NULL;
-        for (j = 0; j < set_interact->cnt; j++)
+        for (j = set_interact->cnt - 1; j >=0; j--)
         {
             int idB = set_interact->dense[j];
             if (id == idB)
@@ -180,17 +180,17 @@ static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
             if (!(cmd->action_state_prev & BITC(ACTION_INTERACT)))
             {
                 if (hook && hook->pressed)
-                    hook->pressed(world, best_id, id, hook->data);
+                    hook->pressed(world, best_id, id);
             }
 
             if (hook && hook->held)
-                hook->held(world, best_id, id, hook->data);
+                hook->held(world, best_id, id);
         }
         else if (cmd->action_state_prev & BITC(ACTION_INTERACT))
         {
             best_interact->interactor = id;
             if (hook && hook->release)
-                hook->release(world, best_id, id, hook->data);
+                hook->release(world, best_id, id);
         }
     }
 }

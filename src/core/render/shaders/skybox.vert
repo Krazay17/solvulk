@@ -16,13 +16,11 @@ void main() {
         (gl_VertexIndex == 2) ? 3.0 : -1.0
     );
     
-    gl_Position = vec4(pos, 0.999, 1.0);  // doesn't matter with depthTest off
+    gl_Position = vec4(pos, 0.999, 1.0);
     
-    // Strip translation from view
-    mat4 viewNoTrans = scene.view;
-    viewNoTrans[3] = vec4(0, 0, 0, 1);
-    mat4 invVP = inverse(scene.proj * viewNoTrans);
+    // Reconstruct view space ray directly from projection matrix (no GPU inverse needed)
+    vec3 rayView = vec3(pos.x / scene.proj[0][0], pos.y / scene.proj[1][1], -1.0);
     
-    vec4 worldDir = invVP * vec4(pos, 1.0, 1.0);
-    viewDir = worldDir.xyz / worldDir.w;
+    // Rotate into world space using view transpose (exact, jitter-free inverse rotation)
+    viewDir = transpose(mat3(scene.view)) * rayView;
 }

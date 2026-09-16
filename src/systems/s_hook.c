@@ -17,6 +17,6 @@ void Hook_Tick(World *world, double dt)
         ScHook *hook = &set->data[i];
 
         if (hook->update)
-            hook->update(world, id, 0, hook->data);
+            hook->update(world, id, 0);
     }
 }

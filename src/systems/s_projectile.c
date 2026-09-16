@@ -34,12 +34,12 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
                                .effectMask = EFFECTMASK_KNOCKUP,
                            });
         }
-        Emitter emitter = emitter_kinds[EMITTERKIND_SPHERE_BURST_FRACTAL];
-        emitter.p_scale = projectile->power * 2.0f;
-        emitter.p_speed = projectile->power * 10.0f;
+        Emitter emitter    = emitter_kinds[EMITTERKIND_SPHERE_BURST_FRACTAL];
+        emitter.p_scale    = projectile->power * 2.0f;
+        emitter.p_speed    = projectile->power * 10.0f;
         emitter.p_lifespan = 0.5f;
-        emitter.burst = 15;
-        emitter.ttl = 0;
+        emitter.burst      = 15;
+        emitter.ttl        = 0;
         Sol_Emitter_Push(w, hit.pos, emitter);
     }
     // if (Sol_Comp_Has(w, hit.entB, ScStage))
@@ -73,10 +73,11 @@ void Projectile_Step(World *world)
             .dist      = speed * fdt,
             .mask      = projectile->mask,
             .ignoreEnt = id,
+            .radius    = body3->dims.x,
         };
 
         SolRayResult results[16];
-        int hits = Sol_SpherecastD(world, ray, results, 16, body3->dims.x, 0.2f);
+        int hits = Sol_SpherecastD(world, ray, results, 16, 0.2f);
 
         if (hits == 0)
             continue;

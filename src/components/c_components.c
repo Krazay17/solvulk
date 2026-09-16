@@ -16,7 +16,7 @@ void SlEmitter_Deinit(SlEmitter *self)
 
 void SlHitgen_Init(World *world, SlHitgen *self)
 {
-    memset(self->matrix, 0, sizeof(self->matrix));
+    memset(self->rows, 0, sizeof(self->rows)); // hit_targets == NULL for every row until first use
     self->global = 1;
 }
 
@@ -80,7 +80,7 @@ u32 Sol_Hitgen_Start(World *world, int id)
     single->global++;
     if (single->global == 0)
     {
-        memset(single->matrix, 0, sizeof(single->matrix));
+        memset(single->rows, 0, sizeof(single->rows));
         single->global = 1;
     }
     return single->global;
@@ -89,11 +89,19 @@ u32 Sol_Hitgen_Start(World *world, int id)
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
 {
     SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
+    HitgenRow *row = &single->rows[id];
 
-    if (single->matrix[id][target] == sessionGen)
-        return false;
+    if (row->gen != sessionGen)
+    {
+        // new session for this attacker — reset its target list
+        solb_set_count(row->hit_targets, 0);
+        row->gen = sessionGen;
+    }
 
-    single->matrix[id][target] = sessionGen;
+    for (uint32_t i = 0; i < solb_count(row->hit_targets); i++)
+        if (row->hit_targets[i] == (u32)target)
+            return false; // already hit this target this session
 
+    solb_push(row->hit_targets, (u32)target);
     return true;
 }

@@ -31,7 +31,7 @@ typedef struct
     uint32_t stamp;
 } HashSlot;
 
-typedef struct
+typedef struct SpatialGrid
 {
     vec3s min, max;
     float cell_size;

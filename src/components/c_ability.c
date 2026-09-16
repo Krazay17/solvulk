@@ -5,7 +5,6 @@
  * Created: 2026-09-11
  *
  */
-#include "components.h"
 #include "world.h"
 
 const char *ability_state_name[ABILITY_STATE_COUNT] = {

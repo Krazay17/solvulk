@@ -15,6 +15,16 @@ void Create_Sol_Game()
     Create_Game2();
 }
 
+void Destroy_Sol_Game()
+{
+    for(int i =0;i<solState.worldCount;i++)
+    {
+        World *world = solState.worlds[i];
+        World_DeinitSingletons(world); // frees internal solb_ buffers, structs still intact
+        Sol_World_FreeAllComponents(world); // now safely frees the (now-empty) struct storage itself
+    }
+}
+
 void Create_Menu()
 {
     World *world        = World_Create();
@@ -77,6 +87,11 @@ void Create_Hud()
 void Create_Game()
 {
     World *world        = World_Create_AllSys();
+    // SlEmitter *slEmitter = Sol_Comp_Add(world, 0, SlEmitter);
+    // solb_init(slEmitter->emitters, 64);
+    // solb_init(slEmitter->particles, 256);
+
+
     sol_user.game_world = world->index;
 
     { // Player

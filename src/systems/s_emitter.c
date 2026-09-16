@@ -155,7 +155,7 @@ static inline void Particle_Update(World *world, SlEmitter *single, float fdt)
 void Emitter_Update(World *world)
 {
     float fdt         = world->fdt;
-    SlEmitter *single = world->singles[SINGLE_EMITTER];
+    SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
     int count         = solb_count(single->emitters);
 
     int write = 0;
@@ -186,7 +186,7 @@ void Emitter_Update(World *world)
 void Particle_Draw(World *world)
 {
     float fdt         = world->fdt;
-    SlEmitter *single = world->singles[SINGLE_EMITTER];
+    SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
     int count         = solb_count(single->particles);
 
     int write = 0;
@@ -206,7 +206,7 @@ void Particle_Draw(World *world)
 
 void Sol_Emitter_Push(World *world, vec3s pos, Emitter emitter)
 {
-    SlEmitter *single = world->singles[SINGLE_EMITTER];
+    SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
     emitter.pos       = pos;
 
     Particle_Spawn(single, pos, emitter);

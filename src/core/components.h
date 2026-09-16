@@ -497,9 +497,42 @@ typedef struct ScRef
     int index;
 } ScRef;
 
+// #################
+// #### SINGLES ####
+// #################
+
+typedef struct SpatialGrid SpatialGrid;
+typedef struct SlSpatial
+{
+    SpatialGrid *grid_dynamic;
+    SpatialGrid *grid_static;
+    SolContact *contacts;
+    ThreadContactBuffer *threadContacts;
+    IdBuffer *threadIds;
+    SolTri *tris_static;
+    u32 *build_ids;
+    vec3s *build_mins;
+    vec3s *build_maxs;
+} SlSpatial;
+
+typedef struct SlHitgen
+{
+    u32 global;
+    u32 ent_gen[MAX_ENTS];
+    u32 matrix[MAX_ENTS][256];
+} SlHitgen;
+
+typedef struct SlEmitter
+{
+    Emitter *emitters;
+    Particle *particles;
+} SlEmitter;
 
 extern const char *ability_state_name[ABILITY_STATE_COUNT];
 extern const char *move_state_name[MOVE_STATE_COUNT];
 extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
 extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
 extern const ScAnim anim_default;
+
+u32 Sol_Hitgen_Start(World *world, int id);
+bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);

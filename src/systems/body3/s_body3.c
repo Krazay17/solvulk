@@ -536,7 +536,7 @@ void Body3_Update(World *world)
     }
     body_count = set->cnt;
 
-    SlSpatial *spatial = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial); // world->singles[SINGLE_SPATIAL];
     solb_set_count(spatial->contacts, 0);
     for (i = body_count; i-- > 0;)
     {
@@ -812,7 +812,8 @@ int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
-    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
     SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
     SpatialGrid *grid_static    = spatial->grid_static;
 
@@ -929,7 +930,8 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
-    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
     SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
     SpatialGrid *grid_static    = spatial->grid_static;
 
@@ -1046,7 +1048,8 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 {
     float radius                = ray.radius;
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
-    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
     SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
     SpatialGrid *grid_static    = spatial->grid_static;
 
@@ -1168,7 +1171,8 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
     float radius                = ray.radius;
     uint16_t mask               = ray.mask;
     int ignoreEnt               = ray.ignoreEnt;
-    SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
 
     vec3s bmin = glms_vec3_subs(center, radius);

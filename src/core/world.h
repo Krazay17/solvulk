@@ -7,7 +7,6 @@
  */
 #pragma once
 #include "components.h"
-#include "singles.h"
 
 #define WAddTick(w) ((w)->tickSystems[(w)->tickCount++])
 #define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
@@ -47,23 +46,39 @@ typedef enum
     WORLDSYS_COUNT,
 } WorldSystems;
 
-#define SINGLES_LIST(X)                                                                                                \
-    X(SINGLE_SPATIAL, Sl_Spatial_Init)                                                                                 \
-    X(SINGLE_EMITTER, Sl_Emitter_Init)                                                                                 \
-    X(SINGLE_HITGEN, Sl_Hitgen_Init)
+// Only list types that need init/deinit beyond the zero-init Sol_Comp_Add already does.
+#define SINGLETON_LIFECYCLE_LIST(X)                                                                                    \
+    X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
+    X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
+    X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
 
-#define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
-SINGLES_LIST(SINGLES_FWD)
-#undef SINGLES_FWD
-typedef enum
-{
-#define SINGLES_ENUM(ENUM, FUNC) ENUM,
-    SINGLES_LIST(SINGLES_ENUM)
-#undef SINGLES_ENUM
-    SINGLE_COUNT,
-} WorldSingles;
+#define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
+    void InitFn(World *world, Type *self);                                                                             \
+    void DeinitFn(Type *self);
+SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
+#undef SINGLETON_FWD
+
+// #define SINGLES_LIST(X)                                                                                                \
+//     X(SINGLE_SPATIAL, Sl_Spatial_Init)                                                                                 \
+//     X(SINGLE_EMITTER, Sl_Emitter_Init)                                                                                 \
+//     X(SINGLE_HITGEN, Sl_Hitgen_Init)
+
+// #define SINGLES_FWD(ENUM, FUNC) void FUNC(World *world);
+// SINGLES_LIST(SINGLES_FWD)
+// #undef SINGLES_FWD
+// typedef enum
+// {
+// #define SINGLES_ENUM(ENUM, FUNC) ENUM,
+//     SINGLES_LIST(SINGLES_ENUM)
+// #undef SINGLES_ENUM
+//     SINGLE_COUNT,
+// } WorldSingles;
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
+    X(SlSpatial, HAS_SlSpatial)                                                                                        \
+    X(SlHitgen, HAS_SlHitgen)                                                                                          \
+    X(SlEmitter, HAS_SlEmitter)                                                                                        \
+                                                                                                                       \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScHook, HAS_ScHook)                                                                                              \
     X(ScCmd, HAS_ScCmd)                                                                                                \
@@ -169,7 +184,6 @@ struct World
     u64 system_mask;
     void *components[COMPONENT_COUNT];
     void *systems[WORLDSYS_COUNT];
-    void *singles[SINGLE_COUNT];
 
     int tickCount;
     int stepCount;
@@ -215,14 +229,14 @@ struct World
         }                                                                                                              \
         if (set->cnt >= set->cap)                                                                                      \
         {                                                                                                              \
-            set->cap   = (set->cap == 0) ? 2 : set->cap * 2;                                                           \
+            set->cap   = (set->cap == 0) ? 1 : set->cap * 2;                                                           \
             set->dense = realloc(set->dense, set->cap * sizeof(int));                                                  \
             set->data  = realloc(set->data, set->cap * sizeof(T));                                                     \
         }                                                                                                              \
         int denseIdx         = set->cnt++;                                                                             \
         set->sparse[entId]   = denseIdx;                                                                               \
         set->dense[denseIdx] = entId;                                                                                  \
-        set->data[denseIdx]  = (T){0};                                                                                 \
+        memset(&set->data[denseIdx], 0, sizeof(T));                                                                    \
         w->masks[entId] |= BITC(ENUM_FLAG);                                                                            \
         return (T *)&set->data[denseIdx];                                                                              \
     }                                                                                                                  \
@@ -280,6 +294,29 @@ static inline void Sol_World_InitAllComponents(World *w, int maxEntities)
 #define ALLOC_SPARSE_SET(type, flag) w->components[flag] = Sol_SparseSet_Alloc_##type(maxEntities);
     SOL_COMPONENT_LIST(ALLOC_SPARSE_SET)
 #undef ALLOC_SPARSE_SET
+}
+
+static inline void World_InitSingletons(World *world)
+{
+#define SINGLETON_INIT(Type, InitFn, DeinitFn)                                                                         \
+    {                                                                                                                  \
+        Type *self = Sol_Comp_Add(world, 0, Type);                                                                     \
+        InitFn(world, self);                                                                                           \
+    }
+    SINGLETON_LIFECYCLE_LIST(SINGLETON_INIT)
+#undef SINGLETON_INIT
+}
+
+static inline void World_DeinitSingletons(World *world)
+{
+#define SINGLETON_DEINIT(Type, InitFn, DeinitFn)                                                                       \
+    {                                                                                                                  \
+        Type *self = Sol_Comp_Get(world, 0, Type);                                                                     \
+        if (self)                                                                                                      \
+            DeinitFn(self);                                                                                            \
+    }
+    SINGLETON_LIFECYCLE_LIST(SINGLETON_DEINIT)
+#undef SINGLETON_DEINIT
 }
 
 static const size_t COMP_SIZES[COMPONENT_COUNT] = {

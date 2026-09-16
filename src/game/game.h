@@ -11,6 +11,7 @@
 #include "prefabs.h"
 
 void Create_Sol_Game();
+void Destroy_Sol_Game();
 
 void QuitApp(int flags);
 void W_Set_Ontop(int flags);

@@ -64,11 +64,11 @@ const struct SystemDef
         },
 };
 
-SystemInit singles_init[SINGLE_COUNT] = {
-#define SINGLES_INIT(ENUM, FUNC) [ENUM] = FUNC,
-    SINGLES_LIST(SINGLES_INIT)
-#undef SINGLES_INIT
-};
+// SystemInit singles_init[SINGLE_COUNT] = {
+// #define SINGLES_INIT(ENUM, FUNC) [ENUM] = FUNC,
+//     SINGLES_LIST(SINGLES_INIT)
+// #undef SINGLES_INIT
+// };
 
 World *World_Create()
 {
@@ -89,11 +89,11 @@ World *World_Create()
     return world;
 }
 
-void Sol_Single_Add(World *world, WorldSingles single)
-{
-    if (singles_init[single])
-        singles_init[single](world);
-}
+// void Sol_Single_Add(World *world, WorldSingles single)
+// {
+//     if (singles_init[single])
+//         singles_init[single](world);
+// }
 
 World *World_Create_AllSys()
 {
@@ -104,8 +104,10 @@ World *World_Create_AllSys()
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
         Sol_Sys_Add(world, (WorldSystems)sys);
 
-    for (int i = 0; i < SINGLE_COUNT; i++)
-        singles_init[i](world);
+    // for (int i = 0; i < SINGLE_COUNT; i++)
+    //     singles_init[i](world);
+
+    World_InitSingletons(world);
 
     return world;
 }

@@ -123,21 +123,13 @@ static inline void Hook_SpawnEmitter(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
+
+    Sol_Prefab_PlasmaOrb(world, pos);
 }
 static inline void Hook_SpawnEmitter2(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
 
-    Emitter *e = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
-    e->pos     = pos;
-    e->p_scale = 10.0f;
-
-    for (int i = 0; i < 25; i++)
-    {
-        Emitter *e = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
-        e->pos     = pos;
-        e->pos.y += i;
-        e->p_scale = 10.0f;
-    }
+    Sol_Prefab_DragonOrb(world, pos);
 }

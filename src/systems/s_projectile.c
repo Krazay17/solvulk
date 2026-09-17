@@ -12,47 +12,49 @@ typedef bool isDestroyed;
 
 static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile, SolHit hit)
 {
-    float explode_radius = 2.0f * projectile->power;
-    ScOwner *owner = Sol_Comp_Get(w, a, ScOwner);
-    int ownerId    = owner ? owner->ownerId : 0;
+    float explode_radius = projectile->radius * 3.0f;
+    ScOwner *owner       = Sol_Comp_Get(w, a, ScOwner);
+    int ownerId          = owner ? owner->ownerId : 0;
+    Xform xform          = Xform_Get(w, a);
 
     if (Sol_Hitgen_Try(w, a, hit.entB, projectile->hitgen))
     {
         Sol_Combat_Hit(w, hit.entB, hit);
 
-        SolRay ray = {.start     = w->xform.pos[a],
-                      .ignoreEnt = a,
-                      .dir       = WORLD_DOWN,
-                      .mask      = COLLAYER_ALL,
-                      .radius    = explode_radius};
+        SolRay ray = {
+            .start = xform.pos, .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = explode_radius};
         SolRayResult results[512];
         int hits = Sol_SphereOverlap(w, ray, results, 512);
         for (int i = 0; i < hits; i++)
         {
             int hit_id = results[i].entId;
-            if (hit_id == ownerId)
+            if (hit_id == ownerId || Sol_Comp_Has(w, hit_id, ScStage))
                 continue;
+            Xform hit_xform = Xform_Get(w, hit_id);
+            vec3s explode_hit_pos =
+                Sol_AddScaledDir(ray.start, vecNorm(vecSub(hit_xform.pos, xform.pos)), results[i].t);
             Sol_Combat_Hit(w, hit_id,
                            (SolHit){
                                .damage     = 50.0f,
-                               .pos        = Sol_AddScaledDir(ray.start, ray.dir, results[i].t),
+                               .pos        = explode_hit_pos,
                                .effectMask = EFFECTMASK_KNOCKUP,
+                           });
+
+            Sol_Event_Push(w, EVENTKIND_FX,
+                           (SolEvent){
+                               .as.fx.kind     = EVENTFX_FIREBALL_HIT,
+                               .as.fx.pos      = explode_hit_pos,
+                               .as.fx.color    = {1.0f, 0.9f, 0.0f, 1.0f},
+                               .as.fx.duration = 0.3f,
+                               .as.fx.scale    = explode_radius,
                            });
         }
         Sol_Event_Push(w, EVENTKIND_FX,
                        (SolEvent){
-                           .as.fx.kind     = EMITTERKIND_SMOKE_BURST,
-                           .as.fx.pos      = hit.pos,
-                           .as.fx.color    = {1, 1, 1, 1},
-                           .as.fx.duration = 1.0f,
-                           .as.fx.scale    = 1.0f,
-                       });
-        Sol_Event_Push(w, EVENTKIND_FX,
-                       (SolEvent){
-                           .as.fx.kind     = EMITTERKIND_SPHERE,
-                           .as.fx.pos      = hit.pos,
-                           .as.fx.color    = {1, 1, 1, 1},
-                           .as.fx.duration = 0.2f,
+                           .as.fx.kind     = EVENTFX_FIREBALL_EXPLODE,
+                           .as.fx.pos      = xform.pos,
+                           .as.fx.color    = {1.0f, 0.4f, 8.0f, 0.7f},
+                           .as.fx.duration = 0.3f,
                            .as.fx.scale    = explode_radius,
                        });
 
@@ -80,7 +82,7 @@ void Projectile_Step(World *world)
         vec3s dir   = (speed > 0.001f) ? vecSca(vel, 1.0f / speed) : (vec3s){0, 0, 1};
 
         SolRay ray = {
-            .start     = vecSub(xform.pos, vecSca(dir, -speed * fdt)),
+            .start     = vecSub(xform.pos, vecSca(dir, speed * fdt)),
             .dir       = dir,
             .dist      = speed * fdt,
             .mask      = projectile->mask,

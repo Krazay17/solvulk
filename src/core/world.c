@@ -40,14 +40,17 @@ const struct SystemDef
     [WORLDSYS_BODY2]      = {.update = {Body2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ABILITY]    = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_ZONE]       = {.update = {Zone_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_COMBAT]     = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
+    [WORLDSYS_FX]      = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_HOOK]    = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FACING]  = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_CAMERA]  = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_ANIM]    = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_TIMER]   = {.update = {Timer_Update, UPDATEPHASE_POSTTICK}},
 
     [WORLDSYS_MODEL] = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
     [WORLDSYS_VIEW3] = {.update = {View3_Draw, UPDATEPHASE_RENDER3}},
@@ -110,7 +113,7 @@ void World_Destroy(World *world)
     if (world)
     {
         World_FreeAllComponents(world);
-        World_DeinitSingletons(world);      // frees internal solb_ buffers, structs still intact
+        World_DeinitSingletons(world); // frees internal solb_ buffers, structs still intact
 
         // Swap-with-back removal to keep solState.worlds contiguous
         for (int i = 0; i < solState.worldCount; i++)

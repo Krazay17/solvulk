@@ -19,9 +19,9 @@ static void OnRespawn(World *world, int id, ScCombat *combat)
 
 static void OnDeath(World *world, int id, ScCombat *combat)
 {
-    if(!combat->is_dead)
+    if (!combat->is_dead)
     {
-        combat->is_dead = true;
+        combat->is_dead   = true;
         combat->deathTime = world->tickTime;
     }
     if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
@@ -57,8 +57,9 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
     if (!Sol_Comp_Has(world, id, ScCombat))
         return 0.0f;
-    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-    float damage     = hit.damage;
+    ScCombat *combat  = Sol_Comp_Get(world, id, ScCombat);
+    float damage_done = 0;
+    float damage      = hit.damage;
     if (!hit.isHeal)
     {
         if (hit.effectMask & EFFECTMASK_KNOCKBACK)
@@ -90,9 +91,15 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     }
 
     if (hit.isHeal)
-        return Sol_Combat_Heal(world, id, combat, damage);
+        damage_done = Sol_Combat_Heal(world, id, combat, damage);
     else
-        return Sol_Combat_Damage(world, id, combat, damage);
+        damage_done = Sol_Combat_Damage(world, id, combat, damage);
+
+    ScCombat *combatA = Sol_Comp_Get(world, hit.entA, ScCombat);
+    if (combatA)
+        combatA->damageDone += damage_done;
+
+    return damage_done;
 }
 
 float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)
@@ -103,6 +110,7 @@ float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)
     float damage_done = (amount > combat->health) ? combat->health : amount;
     combat->health -= damage_done;
     combat->damageTaken += damage_done;
+    combat->lastHitTime = world->tickTime;
 
     return damage_done;
 }

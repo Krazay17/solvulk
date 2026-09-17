@@ -67,7 +67,8 @@ void main() {
         worldPos = q.pos.xyz + rotateByQuat(q.rot, vec3(localPos, 0.0));
     }
 
-    fragUV        = q.uv.xy + (corner + 0.5) * q.uv.zw;
+    vec2 uvCorner = vec2(corner.x + 0.5, 0.5 - corner.y);
+    fragUV        = q.uv.xy + uvCorner * q.uv.zw;
     fragColor     = q.color;
     fragExtra     = q.extra;
     fragTextureId = q.textureId;

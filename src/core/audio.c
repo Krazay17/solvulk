@@ -22,44 +22,44 @@
 
 typedef struct SolAudio
 {
-    void     *pcmData;
+    void *pcmData;
     ma_uint64 frameCount;
-    bool      loaded;
-    float     duration;
+    bool loaded;
+    float duration;
 } SolAudio;
 
 typedef struct
 {
     ma_audio_buffer_ref bufferRef; // per-instance view into shared pcmData
-    ma_sound            sound;
-    ScAudioId           id;
-    u32                 generation;
-    bool                inUse;
+    ma_sound sound;
+    ScAudioId id;
+    u32 generation;
+    bool inUse;
 } PlayingSound;
 
-static SolAudio     loaded_audio[SOL_AUDIO_COUNT];
-static ma_engine    audio_engine;
+static SolAudio loaded_audio[SOL_AUDIO_COUNT];
+static ma_engine audio_engine;
 static PlayingSound playing_pool[MAX_PLAYING_SOUNDS];
 const ScAudioHandle INVALID_AUDIO_HANDLE = {.index = 0, .generation = 0};
 
 static const char *audio_path[SOL_AUDIO_COUNT] = {
-    [SOL_AUDIO_BEEP1] = "Beep1.wav",
-    [SOL_AUDIO_BEEP2] = "Beep2.wav",
-    // [SOL_AUDIO_DIGILOAD]       = "DigiLoad.mp3",
-    // [SOL_AUDIO_HIT]            = "Hit.wav",
-    // [SOL_AUDIO_MENUMUSIC]      = "MenuMusic.mp3",
-    // [SOL_AUDIO_SPACEGUN]       = "SpaceGun.mp3",
-    // [SOL_AUDIO_WOONG]          = "Woong1.wav",
-    // [SOL_AUDIO_FIREBALL]       = "fireballUse.mp3",
-    // [SOL_AUDIO_DASH]           = "dash.mp3",
-    // [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
-    // [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
-    // [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
-    // [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
-    // [SOL_AUDIO_PARRY]          = "Parry.mp3",
-    // [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
-    // [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
-    // [SOL_AUDIO_LASER]          = "Laser.mp3",
+    [SOL_AUDIO_BEEP1]          = "Beep1.wav",
+    [SOL_AUDIO_BEEP2]          = "Beep2.wav",
+    [SOL_AUDIO_DIGILOAD]       = "DigiLoad.mp3",
+    [SOL_AUDIO_HIT]            = "Hit.wav",
+    [SOL_AUDIO_MENUMUSIC]      = "MenuMusic.mp3",
+    [SOL_AUDIO_SPACEGUN]       = "SpaceGun.mp3",
+    [SOL_AUDIO_WOONG]          = "Woong1.wav",
+    [SOL_AUDIO_FIREBALL]       = "fireballUse.mp3",
+    [SOL_AUDIO_DASH]           = "dash.mp3",
+    [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
+    [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
+    [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
+    [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
+    [SOL_AUDIO_PARRY]          = "Parry.mp3",
+    [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
+    [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
+    [SOL_AUDIO_LASER]          = "Laser.mp3",
 };
 
 int Sol_Audio_Init(void)
@@ -136,9 +136,9 @@ static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 
         maxConcurrent = MAX_PLAYING_SOUNDS;
 
     // --- Pass 1: reap finished sounds, count active, track oldest ---
-    u32           activeCount    = 0;
+    u32 activeCount              = 0;
     PlayingSound *evictCandidate = NULL;
-    ma_uint64     oldestCursor   = UINT64_MAX;
+    ma_uint64 oldestCursor       = UINT64_MAX;
 
     for (int i = 0; i < MAX_PLAYING_SOUNDS; i++)
     {
@@ -204,7 +204,7 @@ static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 
         if (ps->generation == 0)
             ps->generation = 1; // never emit generation 0
 
-        u32   totalInstances   = activeCount + 1; // includes the one just allocated
+        u32 totalInstances     = activeCount + 1; // includes the one just allocated
         float equalPowerVolume = volume / sqrtf((float)totalInstances);
 
         // Retroactively level all active instances of this sound
@@ -238,7 +238,7 @@ SolAudio *Parse_Audio(SolResource res, u32 id)
 {
     SolAudio *audio = &loaded_audio[id];
 
-    ma_decoder        decoder;
+    ma_decoder decoder;
     ma_decoder_config decCfg = ma_decoder_config_init(DEVICE_FORMAT, DEVICE_CHANNELS, DEVICE_SAMPLE_RATE);
     if (ma_decoder_init_memory(res.data, res.size, &decCfg, &decoder) != MA_SUCCESS)
     {
@@ -250,7 +250,7 @@ SolAudio *Parse_Audio(SolResource res, u32 id)
     ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
 
     size_t pcmSize = frameCount * DEVICE_CHANNELS * sizeof(float);
-    void  *pcmData = malloc(pcmSize);
+    void *pcmData  = malloc(pcmSize);
     ma_decoder_read_pcm_frames(&decoder, pcmData, frameCount, NULL);
     ma_decoder_uninit(&decoder);
 

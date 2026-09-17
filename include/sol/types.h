@@ -1,3 +1,10 @@
+/*
+ * File: types.h
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-16
+ *
+ */
 #pragma once
 #include "base.h"
 
@@ -29,8 +36,6 @@
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
-typedef struct SolHit SolHit;
-
 typedef void (*SystemFunc)(World *);
 typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemInit)(World *);
@@ -40,7 +45,7 @@ typedef void (*TickEnt)(World *, int);
 typedef float (*GetterFunc)(World *world, int id);
 typedef void (*Hook)(World *, int, int);
 
-struct SolHit
+typedef struct SolHit
 {
     int entA; // Attacker
     int entB; // Victim
@@ -53,7 +58,29 @@ struct SolHit
 
     u32 buffMask;
     u32 effectMask;
-};
+} SolHit;
+
+typedef struct DamagePayload
+{
+    float damage;
+    float power;
+    bool isHeal;
+    u32 buffMask;
+    u32 effectMask;
+} DamagePayload;
+static inline SolHit SolHit_FromPayload(DamagePayload p, int entA, int entB, vec3s pos, vec3s normal)
+{
+    return (SolHit){
+        .pos        = pos,
+        .normal     = normal,
+        .entA       = entA,
+        .entB       = entB,
+        .damage     = p.damage,
+        .isHeal     = p.isHeal,
+        .buffMask   = p.buffMask,
+        .effectMask = p.effectMask,
+    };
+}
 
 typedef struct
 {
@@ -112,6 +139,9 @@ typedef enum
 {
     PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
+    PARTICLE_SPARK,
+    PARTICLE_PLASMA,
+    PARTICLE_BLOOD,
     PARTICLE_SPHERE_INOUT,
     PARTICLE_SMOKE,
     PARTICLE_COUNT,
@@ -131,6 +161,7 @@ typedef struct
 
 typedef enum
 {
+    EMITTERKIND_BURST,
     EMITTERKIND_SPHERE,
     EMITTERKIND_SPHERE_BURST_FRACTAL,
     EMITTERKIND_SMOKE_BURST,
@@ -180,6 +211,8 @@ typedef enum
     VIEW3KIND_FIREBALL,
     VIEW3KIND_HEALTHBAR,
     VIEW3KIND_PYRAMID,
+    VIEW3KIND_DRAGONORB,
+    VIEW3KIND_PLASMAORB,
     VIEW3KIND_COUNT,
 } View3Kind;
 
@@ -735,6 +768,12 @@ typedef enum
     EVENTKIND_SCORE,
     EVENTKIND_COUNT,
 } EventKind;
+typedef enum
+{
+    EVENTFX_FIREBALL_HIT,
+    EVENTFX_FIREBALL_EXPLODE,
+    EVENTFX_CLAW_HIT,
+} EventFx;
 typedef struct SolEvent
 {
     EventKind kind;
@@ -752,9 +791,10 @@ typedef struct SolEvent
         } death;
         struct
         {
+            u32 kind;
+            u32 entA, entB;
             vec3s pos;
             vec4s color;
-            u32 kind, entA, entB;
             float scale, duration;
         } fx;
         struct
@@ -787,3 +827,8 @@ typedef struct SolEvent
         } interact;
     } as;
 } SolEvent;
+
+typedef enum
+{
+    ZONEKIND_FIREBALL,
+} ZoneKind;

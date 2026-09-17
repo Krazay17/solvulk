@@ -438,8 +438,48 @@ bool Collide_Capsule_Tri(World *world, int idA, int idB, const SolTri *tri, SolC
     return true;
 }
 
-void Build_Tables(World *world, SlSpatial *spatial)
+bool Collide_Capsule_Sphere(World *world, ScBody3 *bodyA, Xform xformA, ScBody3 *bodyB, Xform xformB,
+                            SolContact *contact)
 {
+    float aRadius   = bodyA->dims.x;
+    float aHalfSpan = (bodyA->dims.y * 0.5f) - aRadius;
+    if (aHalfSpan < 0.0f)
+        aHalfSpan = 0.0f;
+
+    float bRadius = bodyB->dims.x;
+
+    vec3s aTop    = {{xformA.pos.x, xformA.pos.y + aHalfSpan, xformA.pos.z}};
+    vec3s aBottom = {{xformA.pos.x, xformA.pos.y - aHalfSpan, xformA.pos.z}};
+
+    // Find closest point on capsule A's spine to sphere B's center
+    vec3s closestA = Closest_Point_Segment_Point(aBottom, aTop, xformB.pos);
+
+    // Sphere-sphere collision test between closest point on Capsule A and Sphere B
+    vec3s delta     = glms_vec3_sub(closestA, xformB.pos);
+    float distSq    = glms_vec3_dot(delta, delta);
+    float radiusSum = aRadius + bRadius;
+
+    if (distSq >= (radiusSum * radiusSum) || distSq < 0.0001f)
+        return false;
+
+    float distance = sqrtf(distSq);
+
+    contact->normal      = glms_vec3_scale(delta, 1.0f / distance); // Points from B (Sphere) to A (Capsule)
+    contact->penetration = radiusSum - distance;
+    contact->pos         = glms_vec3_add(xformB.pos, glms_vec3_scale(contact->normal, bRadius));
+
+    return true;
+}
+
+bool Collide_Sphere_Capsule(World *world, ScBody3 *bodyA, Xform xformA, ScBody3 *bodyB, Xform xformB,
+                            SolContact *contact)
+{
+    if (Collide_Capsule_Sphere(world, bodyB, xformB, bodyA, xformA, contact))
+    {
+        contact->normal = vecSca(contact->normal, -1.0f);
+        return true;
+    }
+    return false;
 }
 
 void Resolve_Contact(World *world, SolContact contact)
@@ -448,6 +488,10 @@ void Resolve_Contact(World *world, SolContact contact)
     int idB        = contact.idB;
     ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
     ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
+    bool sensorA = bodyA ? bodyA->is_sensor : false;
+    bool sensorB = bodyB ? bodyB->is_sensor : false;
+    if (sensorA || sensorB)
+        return;
 
     float invMassA = bodyA ? bodyA->invMass : 0.0f;
     float invMassB = bodyB ? bodyB->invMass : 0.0f;
@@ -463,7 +507,7 @@ void Resolve_Contact(World *world, SolContact contact)
     float velAlongNormal = glms_vec3_dot(relativeVel, contact.normal);
 
     const float slack   = 0.01f;
-    const float percent = 0.8f;
+    const float percent = 0.5f;
 
     float pen = fmaxf(contact.penetration - slack, 0.0f);
     if (pen > 0.0f)
@@ -500,8 +544,8 @@ typedef bool (*ShapePairTest)(World *world, ScBody3 *, Xform, ScBody3 *, Xform, 
 const ShapePairTest shape_pair_test[SHAPE3_CNT][SHAPE3_CNT] = {
     [SHAPE3_SPH][SHAPE3_SPH] = Collide_Sphere_Sphere,
     [SHAPE3_CAP][SHAPE3_CAP] = Collide_Capsule_Capsule,
-    // [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere,
-    // [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
+    [SHAPE3_CAP][SHAPE3_SPH] = Collide_Capsule_Sphere,
+    [SHAPE3_SPH][SHAPE3_CAP] = Collide_Sphere_Capsule,
 };
 typedef bool (*ShapeTriTest)(World *world, int idA, int idB, const SolTri *tri, SolContact *contact);
 const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
@@ -542,9 +586,6 @@ void Body3_Update(World *world)
     {
         int id         = set->dense[i];
         ScBody3 *body3 = &set->data[i];
-
-        if (body3->mass == 0.0f)
-            continue;
 
         XformP xform   = Xform_GetP(world, id);
         body3->vel     = glms_vec3_scale(body3->vel, 0.999f);
@@ -630,7 +671,7 @@ void Body3_Update(World *world)
         solb_set_count(local_buf->contacts, 0);
         IdBuffer *id_buf = &spatial->threadIds[thread_num];
 #pragma omp for schedule(dynamic)
-        for (i = body_count - 1; i >= 0;i--)
+        for (i = body_count - 1; i >= 0; i--)
         {
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
@@ -660,7 +701,7 @@ void Body3_Update(World *world)
         }
 
 #pragma omp for schedule(dynamic)
-        for (i = body_count - 1; i >= 0;i--)
+        for (i = body_count - 1; i >= 0; i--)
         {
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
@@ -813,9 +854,9 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
     // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
-    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
-    SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
-    SpatialGrid *grid_static    = spatial->grid_static;
+    SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
+    SpatialGrid *grid_dynamic = spatial->grid_dynamic;
+    SpatialGrid *grid_static  = spatial->grid_static;
 
     outResult->hit = false;
     outResult->t   = ray.dist; // shrinks as closer hits are found; also our search limit
@@ -931,9 +972,9 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
     // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
-    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
-    SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
-    SpatialGrid *grid_static    = spatial->grid_static;
+    SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
+    SpatialGrid *grid_dynamic = spatial->grid_dynamic;
+    SpatialGrid *grid_static  = spatial->grid_static;
 
     int count = 0;
 
@@ -1049,9 +1090,9 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
     float radius                = ray.radius;
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
     // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
-    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
-    SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
-    SpatialGrid *grid_static    = spatial->grid_static;
+    SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
+    SpatialGrid *grid_dynamic = spatial->grid_dynamic;
+    SpatialGrid *grid_static  = spatial->grid_static;
 
     int count = 0;
 
@@ -1083,7 +1124,7 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
                 ScBody3 *body = &set_body->data[set_body->sparse[id]];
                 if (!body)
                     continue;
-                    
+
                 if (ray.mask != 0 && ((body->mask >> 16) & ray.mask) == 0)
                     continue;
 
@@ -1167,12 +1208,12 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 
 int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 {
-    vec3s center                = ray.start;
-    float radius                = ray.radius;
-    uint16_t mask               = ray.mask;
-    int ignoreEnt               = ray.ignoreEnt;
+    vec3s center  = ray.start;
+    float radius  = ray.radius;
+    uint16_t mask = ray.mask;
+    int ignoreEnt = ray.ignoreEnt;
     // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
-    SlSpatial *spatial = Sol_Comp_Get(world, 0, SlSpatial);
+    SlSpatial *spatial          = Sol_Comp_Get(world, 0, SlSpatial);
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
 
     vec3s bmin = glms_vec3_subs(center, radius);

@@ -158,34 +158,12 @@ set(SHADER_DIR "${CMAKE_SOURCE_DIR}/src/core/render/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
-set(SHADERS
-    ${SHADER_DIR}/model.vert
-    ${SHADER_DIR}/model_skinned.vert
-    ${SHADER_DIR}/model.frag
-    ${SHADER_DIR}/rect.vert
-    ${SHADER_DIR}/rect.frag
-    ${SHADER_DIR}/text.vert
-    ${SHADER_DIR}/text.frag
-    ${SHADER_DIR}/line.vert
-    ${SHADER_DIR}/line.frag
-    ${SHADER_DIR}/sphere.vert
-    ${SHADER_DIR}/sphere.frag
-    ${SHADER_DIR}/skybox.vert
-    ${SHADER_DIR}/skybox.frag
-    ${SHADER_DIR}/fireball.frag
-    ${SHADER_DIR}/ribbon.vert
-    ${SHADER_DIR}/coral_reef.frag
-    ${SHADER_DIR}/particle_dragon.frag
-    ${SHADER_DIR}/fractal_pyramid.frag
-    
-    ${SHADER_DIR}/font2d.vert
-    ${SHADER_DIR}/font.frag
-
-    ${SHADER_DIR}/quad.vert
-    ${SHADER_DIR}/healthbar.frag
-    ${SHADER_DIR}/sprite.frag
-    ${SHADER_DIR}/text3d.frag
+file(GLOB_RECURSE SHADERS
+    CONFIGURE_DEPENDS
+    "${SHADER_DIR}/*.vert"
+    "${SHADER_DIR}/*.frag"
 )
+
 if(WIN32)
     set(GLSLC_PATH "$ENV{VULKAN_SDK}/Bin/glslc.exe")
 else()

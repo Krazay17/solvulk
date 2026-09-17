@@ -29,15 +29,18 @@ void Body2_Step(World *world);
 
 void Ability_Step(World *world);
 void Projectile_Step(World *world);
+void Zone_Update(World *world);
 void Combat_Step(World *world);
 void Ai_Step(World *world);
 void Interact_Step(World *world);
 
+void Fx_Update(World *world);
 void Hook_Tick(World *world);
 void Anim_Tick(World *world);
 void Facing_Tick(World *world);
 void Camera_Tick(World *world);
 void Emitter_Update(World *world);
+void Timer_Update(World *world);
 
 void Particle_Draw(World *world);
 void Scoreboard_Draw(World *world);

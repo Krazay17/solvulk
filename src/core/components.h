@@ -83,7 +83,7 @@ typedef struct ScAi
 typedef struct ScBody3
 {
     Shape3 shape;
-    bool ignoreFriendly;
+    bool ignoreFriendly, is_sensor;
     u32 ignoreEnt;
     vec3s vel, impulse, force, dims, gravity;
     float mass, invMass, restitution;
@@ -271,6 +271,7 @@ typedef struct ScBuff
 typedef struct ScTimer
 {
     float elapsed, duration;
+    bool destroy;
 } ScTimer;
 
 typedef struct ScAudio
@@ -405,6 +406,10 @@ typedef struct ScZone
     u32 kind;
     float duration, rate, value, radius;
     float accum;
+    float expand_rate;
+
+    SolHit hit;
+    u32 hitgen;
 } ScZone;
 
 typedef struct ScSlider

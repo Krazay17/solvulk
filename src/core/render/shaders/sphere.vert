@@ -5,9 +5,8 @@ struct SphereData {
     vec4 color;
     vec4 extra;
 };
-
-layout(std430, set = 2, binding = 0) readonly buffer SphereBuffer {
-    SphereData spheres[];
+layout(set = 0, binding = 0) uniform Game {
+    double time;
 };
 
 layout(set = 1, binding = 0) uniform Scene {
@@ -17,6 +16,11 @@ layout(set = 1, binding = 0) uniform Scene {
     vec4 cameraPos;
     vec4 sun;
 } scene;
+
+layout(set = 2, binding = 0) readonly buffer SphereBuffer {
+    SphereData spheres[];
+};
+
 
 layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec3 fragCenter;

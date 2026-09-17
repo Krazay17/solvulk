@@ -11,7 +11,7 @@
 #include "sol_math.h"
 #include "render/render.h"
 
-#define HITDELAY 0.25f
+#define HITDELAY 0.15f
 #define HITINTERVAL 0.025f
 #define MELEE_RANGE 2.0f
 
@@ -51,7 +51,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             .mask      = COLLAYER_ALL,
         };
         SolRayResult results[8];
-        int hits = Sol_RaycastD(world, ray, results, 8, 1.0f);
+        int hits = Sol_Raycast(world, ray, results, 8);
         for (int i = 0; i < hits; i++)
         {
             SolRayResult result = results[i];
@@ -72,7 +72,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 .vel        = cmd->aimdir,
             };
 
-            combat->damageDone += Sol_Combat_Hit(world, result.entId, hit);
+            Sol_Combat_Hit(world, result.entId, hit);
             if (combat->hitPauseDiminish < 4)
             {
                 combat->hitPause = 1.0f;
@@ -80,12 +80,10 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             }
             body->vel.y = fmaxf(body->vel.y, 1.0f);
 
-            // Debug knockup
-            // if (Sol_Comp_Has(world, result.entId, ScBody3))
-            // {
-            //     ScBody3 *body = Sol_Comp_Get(world, result.entId, ScBody3);
-            //     body->vel.y += 50.0f;
-            // }
+            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){
+                .as.fx.pos = hit_pos,
+                .as.fx.kind = EVENTFX_CLAW_HIT,
+            });
         }
     }
 }

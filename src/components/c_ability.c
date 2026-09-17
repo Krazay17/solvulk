@@ -72,7 +72,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_CLAW] =
         {
-            .duration   = 0.8f,
+            .duration   = 0.5f,
             .cooldown   = 0.1f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,

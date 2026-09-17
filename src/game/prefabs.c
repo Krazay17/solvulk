@@ -51,6 +51,16 @@ static const ScBody3 dude_body = {
     .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
+static const ScBody3 sphere_body = {
+    .shape       = SHAPE3_SPH,
+    .mass        = 1.0f,
+    .invMass     = 1.0f,
+    .restitution = 0.5f,
+    .gravity     = SOL_GRAVITY,
+    .dims        = {1.0f, 1.0f, 1.0f},
+    .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+};
+
 static const ScMove3 dude_move = {
     .kind       = MOVEMENTKIND_DUDE,
     .baseHeight = 1.8f,
@@ -356,14 +366,12 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     u32 targetFilter = COLLAYER_ALL;
 
     *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
-        .dims        = dims,
-        .gravity     = (vec3s)SOL_GRAVITY,
-        .mass        = 1.0f,
-        .invMass     = 0.0f,
-        .restitution = 0.5f,
-        .ignoreEnt   = owner,
-        .vel         = vecSca(dir, speed),
-        .mask        = PHYSXMASK(COLLAYER_PROJECTILE, 1),
+        .dims      = dims,
+        .gravity   = (vec3s)SOL_GRAVITY,
+        .is_sensor = true,
+        .ignoreEnt = owner,
+        .vel       = vecSca(dir, speed),
+        .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 1),
     };
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
@@ -436,4 +444,30 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
     };
 
     return id;
+}
+
+int Sol_Prefab_DragonOrb(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    *Sol_Comp_Add(world, id, ScBody3) = sphere_body;
+
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind  = VIEW3KIND_DRAGONORB,
+        .color = {1, 1, 1, 1},
+        .scale = 1.0f,
+    };
+}
+
+int Sol_Prefab_PlasmaOrb(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    *Sol_Comp_Add(world, id, ScBody3) = sphere_body;
+
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind  = VIEW3KIND_PLASMAORB,
+        .color = {1, 1, 1, 1},
+        .scale = 1.0f,
+    };
 }

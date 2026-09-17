@@ -127,6 +127,7 @@ void Anim_Tick(World *world)
                 ability_anim.layerId = ANIM_LAYER_UPPER;
                 ability_anim.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
                 ability_anim.seek    = 0.16f;
+                ability_anim.speed    = 1.05f;
             }
             break;
             case ABILITY_STATE_FIREBALL: {

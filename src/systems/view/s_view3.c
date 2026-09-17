@@ -6,10 +6,26 @@ typedef void (*View3KindDraw)(World *, int, ScView3 *);
 
 static void Sphere_Draw(World *world, int id, ScView3 *view)
 {
-    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_BASIC);
     Xform xform        = Xform_GetDraw(world, id);
-    sphere->color      = view->color;
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_BASIC);
     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
+    sphere->color      = view->color;
+}
+
+static void DragonOrb_Draw(World *world, int id, ScView3 *view)
+{
+    Xform xform        = Xform_GetDraw(world, id);
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_PARTICLE_DRAGON);
+    sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
+    sphere->color      = view->color;
+}
+
+static void PlasmaOrb_Draw(World *world, int id, ScView3 *view)
+{
+    Xform xform        = Xform_GetDraw(world, id);
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_PLASMA);
+    sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
+    sphere->color      = view->color;
 }
 
 static void Fireball_Draw(World *world, int id, ScView3 *view)
@@ -91,6 +107,12 @@ void View3_Draw(World *world, double dt)
             break;
         case VIEW3KIND_PYRAMID:
             Pyramid_Draw(world, id, view);
+            break;
+        case VIEW3KIND_DRAGONORB:
+            DragonOrb_Draw(world, id, view);
+            break;
+        case VIEW3KIND_PLASMAORB:
+            PlasmaOrb_Draw(world, id, view);
             break;
         }
         // if (func)

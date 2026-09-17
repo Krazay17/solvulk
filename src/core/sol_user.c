@@ -12,6 +12,7 @@
 #include "sol_math.h"
 #include "platform/platform.h"
 #include "render/render.h"
+#include "audio.h"
 #include "prefabs.h"
 
 #define USER_SETTINGS_FILENAME "UserData"
@@ -332,6 +333,16 @@ void Sol_User_PostTick(double dt)
         g_solView.fov    = cam->fov;
         g_solView.up     = cam->up;
         g_solView.target = vecAdd(cam->pos, cam->dir);
+    }
+    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+    if(combat)
+    {
+        static float last_damage =0;
+        if(combat->damageDone != last_damage) 
+        {
+            last_damage = combat->damageDone;
+            Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
+        }
     }
 
     // if (Sol_Comp_Has(world, id, ScCmd))

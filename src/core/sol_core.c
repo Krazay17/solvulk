@@ -15,6 +15,9 @@
 #include "font.h"
 #include "render/render.h"
 
+#define SOL_MATH_IMPLEMENTATION
+#include "sol_math.h"
+
 SolState solState;
 
 static double accumulator = SOL_TIMESTEP;

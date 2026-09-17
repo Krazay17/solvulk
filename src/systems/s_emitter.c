@@ -19,27 +19,43 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
         },
     [EMITTERKIND_SPHERE_BURST_FRACTAL] =
         {
-            .ttl        = 5.0f,
-            .burst      = 1,
-            .rate       = 0.1f,
-            .speed      = 2.0f,
-            .kind       = EMITKIND_SPHERE,
-            .p_kind     = PARTICLE_FRACTAL,
-            .p_lifespan = 5.0f,
-            .p_scale    = 5.0f,
-            .p_color    = {1, 1, 1, 1},
+            .ttl         = 0.3f,
+            .burst       = 10,
+            .rate        = 0.1f,
+            .speed       = 5.0f,
+            .kind        = EMITKIND_SPHERE,
+            .p_kind      = PARTICLE_FRACTAL,
+            .p_lifespan  = 1.0f,
+            .p_scale     = 3.0f,
+            .p_color     = {1, 1, 1, 1},
+            .alpha_curve = CURVE_EASE_OUT,
+            .scale_curve = CURVE_QUICKIN_SLOWOUT,
         },
     [EMITTERKIND_SMOKE_BURST] =
         {
-            .ttl        = 0.3f,
-            .burst      = 25,
-            .rate       = 0.1f,
-            .speed      = 3.0f,
-            .kind       = EMITKIND_SPHERE,
-            .p_kind     = PARTICLE_SMOKE,
-            .p_lifespan = 1.0f,
-            .p_scale    = 2.0f,
-            .p_color    = {1, 0, 0, 1},
+            .ttl         = 0.3f,
+            .burst       = 25,
+            .rate        = 0.1f,
+            .speed       = 3.0f,
+            .kind        = EMITKIND_SPHERE,
+            .p_kind      = PARTICLE_SMOKE,
+            .p_lifespan  = 1.0f,
+            .p_scale     = 2.0f,
+            .p_color     = {1, 0, 0, 1},
+            .alpha_curve = CURVE_EASE_OUT,
+            .scale_curve = CURVE_QUICKIN_SLOWOUT,
+        },
+    [EMITTERKIND_BURST] =
+        {
+            .ttl         = 0.3f,
+            .burst       = 20,
+            .rate        = 0.1f,
+            .speed       = 3.0f,
+            .kind        = EMITKIND_SPHERE,
+            .p_kind      = PARTICLE_SMOKE,
+            .p_lifespan  = 1.0f,
+            .p_scale     = 1.0f,
+            .p_color     = {1, 1, 1, 1},
             .alpha_curve = CURVE_EASE_OUT,
             .scale_curve = CURVE_QUICKIN_SLOWOUT,
         },
@@ -54,17 +70,21 @@ const u32 particle_pipekind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = RENDERKIND_QUAD,
     [PARTICLE_SMOKE]   = RENDERKIND_QUAD,
     [PARTICLE_SPHERE]  = RENDERKIND_SPHERE,
+    [PARTICLE_SPARK]  = RENDERKIND_QUAD,
+    [PARTICLE_PLASMA] = RENDERKIND_SPHERE,
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = QUADKIND_FRACTAL_PYRAMID,
     [PARTICLE_SMOKE]   = QUADKIND_SPRITE,
     [PARTICLE_SPHERE]  = SPHEREKIND_BASIC,
+    [PARTICLE_PLASMA] = SPHEREKIND_PLASMA,
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
-    [PARTICLE_SPHERE] = SOL_TEXTURE_CLOUDPARTICLE,
     [PARTICLE_SMOKE]  = SOL_TEXTURE_CLOUDPARTICLE,
+    [PARTICLE_SPARK]  = SOL_TEXTURE_SHOCKPARTICLE,
+    [PARTICLE_BLOOD]  = SOL_TEXTURE_BLOODPARTICLE,
 };
 
 static inline vec3s RandomVel_Sphere(float speed)
@@ -169,19 +189,6 @@ void Emitter_Update(World *world)
 {
     float fdt         = world->fdt;
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
-    SlEvent *events   = Sol_Comp_Get(world, 0, SlEvent);
-    for (int i = 0; i < solb_count(events->events); i++)
-    {
-        SolEvent event = events->events[i];
-        if (event.kind != EVENTKIND_FX)
-            continue;
-        Emitter emitter    = emitter_kinds[event.as.fx.kind];
-        emitter.pos        = event.as.fx.pos;
-        emitter.p_color    = event.as.fx.color;
-        emitter.p_lifespan = event.as.fx.duration;
-        emitter.p_scale    = event.as.fx.scale;
-        Sol_Emitter_Push(world, &emitter, 1);
-    }
 
     int count = solb_count(single->emitters);
     int write = 0;
@@ -232,6 +239,7 @@ void Particle_Draw(World *world)
             };
             break;
         case RENDERKIND_SPHERE:
+            sollog(particle_renderkind[p.kind]);
             *Sol_Render_GetNextSphere(particle_renderkind[p.kind]) = (SphereSSBO){
                 .pos   = {p.pos.x, p.pos.y, p.pos.z, final_scale},
                 .color = final_color,

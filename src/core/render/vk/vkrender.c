@@ -190,6 +190,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
+    [PIPE_PLASMA] =
+        {
+            .vertResource      = "ID_SHADER_SPHERE_V",
+            .fragResource      = "ID_SHADER_PLASMA2_F",
+            .depthTest         = 1,
+            .depthWrite        = 1,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_BACK_BIT,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+            .descCount         = 3,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        },
     [PIPE_SPRITE] =
         {
             .vertResource      = "ID_SHADER_QUAD_V",

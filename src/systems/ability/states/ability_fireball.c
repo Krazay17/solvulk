@@ -101,7 +101,7 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
     //     .pos   = (vec4s){pos.x, pos.y, pos.z, data->power},
     //     .rect  = {0, 0, 7.0f, 7.0f},
     //     .color = {1, 1, 1, 1},
-    //     .uv    = (vec4s){0, 0, 1, 1},
+    //     .uv    = (vec4s){0, 0, 1.0f, 1.0f},
     // };
 }
 

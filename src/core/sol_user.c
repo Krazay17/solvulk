@@ -199,7 +199,7 @@ void Entity_Actions()
         if (Sol_Input_KeyDown(i))
         {
             SolActions action = user_data.key_binds[i];
-            if (action != ACTION_NONE)
+            if (action != 0)
                 sol_user.actions |= BITC(action);
         }
     }

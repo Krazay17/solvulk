@@ -38,10 +38,6 @@ int Sol_Init(void *hwnd, void *hInstance)
     if (result != 0)
         printf("Audio failed to init, code:%d\n", result);
 
-    result = Sol_Render_Init(hwnd, hInstance);
-    if (result != 0)
-        printf("Render failed to init, code:%d\n", result);
-
     result = Sol_Textures_Init();
     if (result != 0)
         printf("Texturesult failed to init, code:%d\n", result);
@@ -53,6 +49,14 @@ int Sol_Init(void *hwnd, void *hInstance)
     result = Sol_Models_Init();
     if (result != 0)
         printf("Models failed to init, code:%d\n", result);
+        
+    result = Sol_Render_Init();
+    if (result != 0)
+        printf("Render failed to init, code:%d\n", result);
+
+    result = Sol_Render_GPU_Init(hwnd, hInstance);
+    if (result != 0)
+        printf("Render failed to init, code:%d\n", result);
 
     solState.debug     = false;
     solState.isRunning = true;

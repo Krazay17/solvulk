@@ -107,7 +107,7 @@ typedef struct ScModelData
     SolSkeleton skeleton;
 
     mat4s *jointMatrices;
-
+    bool needsGpuUpload;
 } ScModelData;
 
 typedef struct BoneMask

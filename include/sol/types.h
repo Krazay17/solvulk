@@ -651,7 +651,6 @@ typedef struct
 
 typedef enum
 {
-    ACTION_NONE,
     ACTION_ABILITY1,
     ACTION_ABILITY2,
     ACTION_ABILITY3,

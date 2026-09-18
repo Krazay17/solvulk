@@ -3,40 +3,6 @@
 #include "sol_math.h"
 #include "render/render.h"
 
-typedef void (*DrawFunc)(World *, int, float, View2 *, vec3s, u32);
-
-static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
-static void DrawSliderFill(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
-static void DrawSlider(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
-static void DrawCircle(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
-static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer);
-
-DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
-    [VIEW2KIND_RECT] = DrawRect,     [VIEW2KIND_SLIDER] = DrawSlider, [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
-    [VIEW2KIND_CIRCLE] = DrawCircle, [VIEW2KIND_TEXT] = DrawText,
-};
-
-void Sol_View2d_Init(World *world)
-{
-}
-
-void View2_Draw(World *world)
-{
-    float fdt              = world->fdt;
-    SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
-    for (int i = 0; i < set->cnt; i++)
-    {
-        int id            = set->dense[i];
-        ScView2 *viewComp = &set->data[i];
-
-        for (int j = 0; j < viewComp->count; j++)
-        {
-            View2 *view = &viewComp->views[j];
-            draw_funcs[view->kind](world, id, fdt, view, world->xform.draw_pos[id], viewComp->layer);
-        }
-    }
-}
-
 static void DrawRect(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer)
 {
     vec4s drawCol = view->color;
@@ -153,4 +119,27 @@ static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u3
                                           .color = view->color,
                                           .kind  = SOL_FONT_ICE,
                                       });
+}
+
+typedef void (*DrawFunc)(World *, int, float, View2 *, vec3s, u32);
+DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
+    [VIEW2KIND_RECT] = DrawRect,     [VIEW2KIND_SLIDER] = DrawSlider, [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
+    [VIEW2KIND_CIRCLE] = DrawCircle, [VIEW2KIND_TEXT] = DrawText,
+};
+
+void View2_Draw(World *world)
+{
+    float fdt              = world->fdt;
+    SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id            = set->dense[i];
+        ScView2 *viewComp = &set->data[i];
+
+        for (int j = 0; j < viewComp->count; j++)
+        {
+            View2 *view = &viewComp->views[j];
+            draw_funcs[view->kind](world, id, fdt, view, world->xform.draw_pos[id], viewComp->layer);
+        }
+    }
 }

@@ -7,25 +7,20 @@ const char *font_path[SOL_FONT_COUNT] = {
     [SOL_FONT_ICE] = "atlas.json",
 };
 
-SolFont loaded_fonts[SOL_FONT_COUNT];
-
 static void       Parse_Font(SolResource metrics, int id);
 static TextBounds ParseBounds(const char *p, const char *end);
+
+SolFont loaded_fonts[SOL_FONT_COUNT];
 
 int Sol_Fonts_Init()
 {
     for (int i = 0; i < SOL_FONT_COUNT; i++)
     {
-        SolResource res = Sol_LoadResource(font_path[i]);
+        SolResource res = Sol_LoadResource(font_path[i], "fonts/");
         if (res.data)
             Parse_Font(res, i);
     }
     return 0;
-}
-
-SolFont *Sol_GetFont(SolFontKind kind)
-{
-    return &loaded_fonts[kind];
 }
 
 static void Parse_Font(SolResource metrics, int id)
@@ -127,7 +122,7 @@ ShaderPushTexts Prepare_Text(const char *str, SolFontDesc desc)
     float       size  = desc.size;
     vec4s       color = desc.color;
     SolFontKind kind  = desc.kind;
-    SolFont    *font  = Sol_GetFont(kind);
+    SolFont    *font  = &loaded_fonts[kind];
     u32         len   = (u32)strlen(str);
 
     static ShaderPushText push[256] = {0};
@@ -188,7 +183,7 @@ float Sol_MeasureText(const char *str, float size, SolFontKind kind)
         int id = (int)*c;
         if (id < 0 || id >= 128)
             continue;
-        width += Sol_GetFont(kind)->glyph[id].yadvance * size;
+        width += loaded_fonts[kind].glyph[id].yadvance * size;
     }
     return width;
 }

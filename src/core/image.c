@@ -16,7 +16,8 @@
 #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT]          = "atlas.raw",
+    [SOL_TEXTURE_ICEFONT]          = "font_ice_atlas.png",
+
     [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
     [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
     [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
@@ -54,7 +55,7 @@ int Sol_Textures_Init()
         if (!image_path[i])
             continue;
 
-        SolResource res   = Sol_LoadResource(image_path[i]);
+        SolResource res   = Sol_LoadResource(image_path[i], "images/");
         const char *ext   = strrchr(image_path[i], '.');
         SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
 
@@ -132,19 +133,14 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
         return 0;
     }
 
-    // Deduplicate by checking if we've already loaded this exact asset data chunk
-    for (int i = 0; i < next_free_texture_idx; i++)
-    {
-        if (loaded_images[i].data == data)
-            return i;
-
-        // FIX: Verify size matches perfectly AND is greater than zero to prevent junk collisions
-        if (loaded_images[i].loaded && loaded_images[i].size > 0 && loaded_images[i].size == size)
-        {
-            if (loaded_images[i].data && memcmp(loaded_images[i].data, data, 16) == 0)
-                return i;
-        }
-    }
+for (int i = SOL_TEXTURE_COUNT; i < next_free_texture_idx; i++)
+{
+    if (loaded_images[i].data == data)
+        return i;
+    if (loaded_images[i].loaded && loaded_images[i].size == size &&
+        memcmp(loaded_images[i].data, data, size) == 0)
+        return i;
+}
 
     uint32_t assignedSlot = next_free_texture_idx++;
 

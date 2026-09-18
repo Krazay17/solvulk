@@ -64,7 +64,7 @@ bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
     return data->cooldownRemaining <= 0.0f;
 }
 
-extern const AbilityStateFunc dash_state = {
+extern const AbilityStateFunc ability_dash_state = {
     .update   = Ability_Dash_Update,
     .enter    = Ability_Dash_Enter,
     .exit     = Ability_Dash_Exit,

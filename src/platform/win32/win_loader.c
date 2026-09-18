@@ -54,11 +54,14 @@ int Sol_DeleteFile(const char *filename)
     // FILE *file = fopen
 }
 
-SolResource Sol_LoadResource(const char *resourceName)
+SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
 {
     SolResource res = {0};
 
-    FILE *file = fopen(resourceName, "rb");
+    static char disk_path[128];
+    snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, resourceName);
+    FILE *file = fopen(disk_path, "rb");
+    
     if (file)
     {
         fseek(file, 0, SEEK_END);

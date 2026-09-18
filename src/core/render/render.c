@@ -10,6 +10,7 @@
 #include "render_i.h"
 #include "render/vk/vkrender.h"
 #include "image.h"
+#include "model.h"
 #include "string.h"
 
 ViewSSBO g_solView = {
@@ -24,21 +25,30 @@ ViewSSBO g_solView = {
 
 ModelSubmission modelQueue;
 ModelSkinnedSubmission skinningQueue;
-QuadQueue quadQueues[QUADKIND_COUNT];
-SphereQueue sphereQueues[SPHEREKIND_COUNT];
+
 RectQueue rectQueue[UILAYER_COUNT];
 FontQueue font2dQueue[UILAYER_COUNT];
 
-RibbonQueue ribbonQueue;
-RibbonQueue ribbonQueueAdd;
-RibbonQueue ribbonQueueFront;
+QuadQueue quadQueues[PIPE_QUAD_COUNT];
+SphereQueue sphereQueues[PIPE_SPHERE_COUNT];
+RibbonQueue ribbonQueues[PIPE_RIBBON_COUNT];
 
-// QuadQueue healthQueue;
-// QuadQueue spriteQueue0;
-// QuadQueue spriteQueue1;
-// QuadQueue spriteQueueFront;
-// QuadQueue text3dQueue;
-// QuadQueue text3dFrontQueue;
+int Sol_Render_Init()
+{
+    for (int i = 0; i < PIPE_SPHERE_COUNT; i++)
+    {
+        solb_init(sphereQueues[i].instances, 128);
+    }
+    for (int i = 0; i < PIPE_QUAD_COUNT; i++)
+    {
+        solb_init(quadQueues[i].instances, 128);
+    }
+    for (int i = 0; i < PIPE_RIBBON_COUNT; i++)
+    {
+        solb_init(ribbonQueues[i].instances, 128);
+    }
+    return 0;
+}
 
 static void Flush_View()
 {
@@ -108,7 +118,7 @@ void Sol_Render_Flush2D(void)
             // Pointer arithmetic advances destination by (font_offset * sizeof(FontSSBO)) bytes
             memcpy(font_gpu + font_offset, font2dQueue[layer].instances, sizeof(FontSSBO) * f_count);
 
-            Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT_2D);
+            Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT);
             vkCmdDraw(cmd, 6, f_count, 0, font_offset);
 
             font_offset += f_count;
@@ -133,6 +143,15 @@ void Sol_Render_CheckGpuUploads()
         {
             Sol_Render_UploadImage(texture->width, texture->height, texture->pixels, i, texture->unorm);
             texture->needsGpuUpload = false;
+        }
+    }
+    for (int i = 0; i < MODELKIND_COUNT; i++)
+    {
+        ScModelData *model = &loaded_models[i];
+        if (model->needsGpuUpload)
+        {
+            Sol_Render_UploadModel(model, i);
+            model->needsGpuUpload = false;
         }
     }
 }
@@ -268,14 +287,6 @@ void Flush_Models(void)
     }
 }
 
-const PipelineId sphere_pipe_map[SPHEREKIND_COUNT] = {
-    [SPHEREKIND_BASIC]    = PIPE_SPHERE,
-    [SPHEREKIND_BASICFX]  = PIPE_SPHERE_FX,
-    [SPHEREKIND_FIREBALL] = PIPE_FIREBALL,
-    [SPHEREKIND_PARTICLE_DRAGON] = PIPE_PARTICLE_DRAGON,
-    [SPHEREKIND_DEBUG]    = PIPE_DEBUG_SPHERE,
-    [SPHEREKIND_PLASMA] = PIPE_PLASMA,
-};
 void Flush_Spheres(void)
 {
 
@@ -283,88 +294,85 @@ void Flush_Spheres(void)
     VkCommandBuffer cmd = Command_Buffer_Get();
     u32 currentOffset   = 0;
 
-    for (int i = 0; i < SPHEREKIND_COUNT; i++)
+    for (int pipe = PIPE_SPHERE_START; pipe < PIPE_SPHERE_END; pipe++)
     {
-        SphereQueue *q = &sphereQueues[i];
-        if (q->count > 0 && currentOffset + q->count < MAX_QUAD_INSTANCES)
+        SphereQueue *q = &sphereQueues[pipe - PIPE_SPHERE_START];
+        u32 count      = solb_count(q->instances);
+        if (count > 0 && currentOffset + count < MAX_QUAD_INSTANCES)
         {
-            memcpy(gpu + currentOffset, q->instances, sizeof(SphereSSBO) * q->count);
-            Sol_Render_Bind_Pipeline(cmd, sphere_pipe_map[i]);
-            vkCmdDraw(cmd, 6, q->count, 0, currentOffset);
+            memcpy(gpu + currentOffset, q->instances, sizeof(SphereSSBO) * count);
+            Sol_Render_Bind_Pipeline(cmd, pipe);
+            vkCmdDraw(cmd, 6, count, 0, currentOffset);
 
-            currentOffset += q->count;
-            q->count = 0;
+            currentOffset += count;
+            solb_set_count(q->instances, 0);
         }
     }
 }
 
-const u32 quad_pipe_map[QUADKIND_COUNT] = {
-    [QUADKIND_HEALTH] = PIPE_HEALTHBAR,      [QUADKIND_SPRITE] = PIPE_SPRITE,
-    [QUADKIND_SPRITE_ADD] = PIPE_SPRITE_ADD, [QUADKIND_SPRITE_FRONT] = PIPE_SPRITE_FRONT,
-    [QUADKIND_TEXT] = PIPE_TEXT_3D,          [QUADKIND_TEXT_FRONT] = PIPE_TEXT_3D_FRONT,
-    [QUADKIND_FRACTAL_PYRAMID] = PIPE_FRACTAL_PYRAMID,
-};
 void Flush_Quads()
 {
     QuadSSBO *gpu       = Sol_GetDescriptorMapping(DESC_QUAD_SSBO);
     VkCommandBuffer cmd = Command_Buffer_Get();
     u32 currentOffset   = 0;
 
-    for (int i = 0; i < QUADKIND_COUNT; i++)
+    for (int pipe = PIPE_QUAD_START; pipe < PIPE_QUAD_END; pipe++)
     {
-        QuadQueue *q = &quadQueues[i];
-        if (q->count > 0)
+        QuadQueue *q = &quadQueues[pipe - PIPE_QUAD_START];
+        u32 count    = solb_count(q->instances);
+        if (count > 0 && currentOffset + count < MAX_QUAD_INSTANCES)
         {
-            memcpy(gpu + currentOffset, q->instances, sizeof(QuadSSBO) * q->count);
-            Sol_Render_Bind_Pipeline(cmd, quad_pipe_map[i]);
-            vkCmdDraw(cmd, 6, q->count, 0, currentOffset);
-            currentOffset += q->count;
-            q->count = 0;
+            memcpy(gpu + currentOffset, q->instances, sizeof(QuadSSBO) * count);
+            Sol_Render_Bind_Pipeline(cmd, pipe);
+            vkCmdDraw(cmd, 6, count, 0, currentOffset);
+
+            currentOffset += count;
+            solb_set_count(q->instances, 0);
         }
     }
 }
 
 void Flush_Ribbons()
 {
-    if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0 && ribbonQueueAdd.count == 0)
-        return;
-    RibbonSegSSBO *gpu  = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    u32 currentOffset   = 0;
+    // if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0 && ribbonQueueAdd.count == 0)
+    //     return;
+    // RibbonSegSSBO *gpu  = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+    // VkCommandBuffer cmd = Command_Buffer_Get();
+    // u32 currentOffset   = 0;
 
-    u32 regularCount = ribbonQueue.count;
-    if (regularCount > 0)
-    {
-        memcpy(gpu + currentOffset, ribbonQueue.instances, sizeof(RibbonSegSSBO) * regularCount);
-        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON);
+    // u32 regularCount = ribbonQueue.count;
+    // if (regularCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, ribbonQueue.instances, sizeof(RibbonSegSSBO) * regularCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON);
 
-        vkCmdDraw(cmd, 6, regularCount, 0, currentOffset);
-        currentOffset += regularCount;
+    //     vkCmdDraw(cmd, 6, regularCount, 0, currentOffset);
+    //     currentOffset += regularCount;
 
-        ribbonQueue.count = 0;
-    }
+    //     ribbonQueue.count = 0;
+    // }
 
-    u32 addCount = ribbonQueueAdd.count;
-    if (addCount > 0)
-    {
-        memcpy(gpu + currentOffset, ribbonQueueAdd.instances, sizeof(RibbonSegSSBO) * addCount);
-        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
+    // u32 addCount = ribbonQueueAdd.count;
+    // if (addCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, ribbonQueueAdd.instances, sizeof(RibbonSegSSBO) * addCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
 
-        vkCmdDraw(cmd, 6, addCount, 0, currentOffset);
-        currentOffset += addCount;
+    //     vkCmdDraw(cmd, 6, addCount, 0, currentOffset);
+    //     currentOffset += addCount;
 
-        ribbonQueueAdd.count = 0;
-    }
+    //     ribbonQueueAdd.count = 0;
+    // }
 
-    u32 frontCount = ribbonQueueFront.count;
-    if (frontCount > 0)
-    {
-        memcpy(gpu + currentOffset, ribbonQueueFront.instances, sizeof(RibbonSegSSBO) * frontCount);
-        Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
-        vkCmdDraw(cmd, 6, frontCount, 0, currentOffset);
-        currentOffset += frontCount;
-        ribbonQueueFront.count = 0;
-    }
+    // u32 frontCount = ribbonQueueFront.count;
+    // if (frontCount > 0)
+    // {
+    //     memcpy(gpu + currentOffset, ribbonQueueFront.instances, sizeof(RibbonSegSSBO) * frontCount);
+    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
+    //     vkCmdDraw(cmd, 6, frontCount, 0, currentOffset);
+    //     currentOffset += frontCount;
+    //     ribbonQueueFront.count = 0;
+    // }
 }
 
 void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
@@ -374,7 +382,7 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
     if (desc.size <= 0.0f)
         return;
 
-    SolFont *font      = Sol_GetFont(desc.font);
+    SolFont *font      = &loaded_fonts[desc.font];
     SolTextureId atlas = font->textureId;
 
     // Total width in world units (advance * size) for horizontal centering
@@ -449,8 +457,8 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
         float halfWidth  = gw * 0.5f;
         float halfHeight = gh * 0.5f;
         // OUTLINE
-        QuadKind quadKind = desc.inFront ? QUADKIND_TEXT_FRONT : QUADKIND_TEXT;
-        QuadSSBO *q       = Sol_Render_GetNextQuad(quadKind);
+        PipelineId pipe = desc.inFront ? PIPE_TEXT_3D_FRONT : PIPE_TEXT_3D;
+        QuadSSBO *q     = Sol_Render_GetNextQuad(pipe);
         if (!q)
             break;
 
@@ -464,7 +472,7 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
         q->textureId = atlas;
         q->flags     = 0;
 
-        q = Sol_Render_GetNextQuad(quadKind);
+        q = Sol_Render_GetNextQuad(pipe);
         if (!q)
             break;
 
@@ -489,7 +497,7 @@ void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
     if (desc.size <= 0.0f)
         return;
 
-    SolFont *font = Sol_GetFont(desc.kind);
+    SolFont *font = &loaded_fonts[desc.kind];
 
     float cursorX  = desc.x;
     float baseSize = desc.size / 32.0f;

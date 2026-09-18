@@ -93,7 +93,7 @@ void Sol_Debug_Draw(double dt)
             .color = (vec4s){ 255, 0, 122, 255 },
             .kind  = SOL_FONT_ICE,
         };
-        Sol_Render_DrawText(buffer, fontDesc);
+        Sol_Render_DrawText2D(buffer, fontDesc);
     }
 
     SolFontDesc fontDesc = {
@@ -104,7 +104,7 @@ void Sol_Debug_Draw(double dt)
         .color = (vec4s){ 0, 1, 0, 1 },
         .kind  = SOL_FONT_ICE,
     };
-    Sol_Render_DrawText(fpsbuffer, fontDesc);
+    Sol_Render_DrawText2D(fpsbuffer, fontDesc);
 }
 
 void Sol_FPS(double dt)

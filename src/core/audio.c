@@ -85,7 +85,7 @@ int Sol_Audio_Init(void)
         if (!audio_path[i])
             continue;
 
-        SolResource res = Sol_LoadResource(audio_path[i]);
+        SolResource res = Sol_LoadResource(audio_path[i], "audio/");
         if (!res.data)
             continue;
         Parse_Audio(res, i);

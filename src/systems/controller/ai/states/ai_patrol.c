@@ -26,3 +26,10 @@ bool Ai_Patrol_CanEnter(World *world, int id, ScAi *ai, u32 last)
     return true;
 }
 
+const AiStateFuncs ai_patrol_state = {
+    .update= Ai_Patrol_Update,
+    .enter = Ai_Patrol_Enter,
+    .exit = Ai_Patrol_Enter,
+    .canExit = Ai_Patrol_CanExit,
+    .canEnter = Ai_Patrol_CanEnter,
+};

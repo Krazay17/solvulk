@@ -780,6 +780,7 @@ float Sol_Body3_GetSpeed(World *world, int id)
     }
     return speed;
 }
+
 vec3s Sol_Body3_GetHead(World *world, int id)
 {
     vec3s pos      = world->xform.draw_pos[id];
@@ -853,7 +854,6 @@ int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
-    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
     SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
     SpatialGrid *grid_dynamic = spatial->grid_dynamic;
     SpatialGrid *grid_static  = spatial->grid_static;

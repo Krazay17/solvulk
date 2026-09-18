@@ -6,7 +6,6 @@ void Ability_Idle_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 }
 void Ability_Idle_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    ability->activeSlot = -1;
 }
 void Ability_Idle_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
@@ -20,7 +19,7 @@ bool Ability_Idle_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
     return true;
 }
 
-extern const AbilityStateFunc idle_state = {
+extern const AbilityStateFunc ability_idle_state = {
     .update   = Ability_Idle_Update,
     .enter    = Ability_Idle_Enter,
     .exit     = Ability_Idle_Exit,

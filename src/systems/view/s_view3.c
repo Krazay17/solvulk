@@ -7,7 +7,7 @@ typedef void (*View3KindDraw)(World *, int, ScView3 *);
 static void Sphere_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
-    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_BASIC);
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_SPHERE);
     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
     sphere->color      = view->color;
 }
@@ -15,7 +15,7 @@ static void Sphere_Draw(World *world, int id, ScView3 *view)
 static void DragonOrb_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
-    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_PARTICLE_DRAGON);
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PARTICLE_DRAGON);
     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
     sphere->color      = view->color;
 }
@@ -23,7 +23,7 @@ static void DragonOrb_Draw(World *world, int id, ScView3 *view)
 static void PlasmaOrb_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
-    SphereSSBO *sphere = Sol_Render_GetNextSphere(SPHEREKIND_PLASMA);
+    SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PLASMA);
     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
     sphere->color      = view->color;
 }
@@ -33,7 +33,7 @@ static void Fireball_Draw(World *world, int id, ScView3 *view)
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
 
-    *Sol_Render_GetNextSphere(SPHEREKIND_FIREBALL) = (SphereSSBO){
+    *Sol_Render_GetNextSphere(PIPE_FIREBALL) = (SphereSSBO){
         .color = view->color,
         .pos   = pos,
     };
@@ -53,7 +53,7 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
 
     float fill = combat->health / combat->healthMax;
 
-    *Sol_Render_GetNextQuad(QUADKIND_HEALTH) = (QuadSSBO){
+    *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
         .pos   = pos,
         .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
         .color = view->color,
@@ -68,7 +68,7 @@ static void Pyramid_Draw(World *world, int id, ScView3 *view)
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
 
-    QuadSSBO *push = Sol_Render_GetNextQuad(QUADKIND_FRACTAL_PYRAMID);
+    QuadSSBO *push = Sol_Render_GetNextQuad(PIPE_FRACTAL_PYRAMID);
     *push          = (QuadSSBO){
         .pos   = (vec4s){pos.x, pos.y, pos.z, view->scale},
         .rect  = {0, 0, 7.0f, 7.0f},

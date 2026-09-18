@@ -49,6 +49,7 @@ typedef struct SolFont
     SolTextureId textureId;
 } SolFont;
 
+extern SolFont loaded_fonts[SOL_FONT_COUNT];
+
 int      Sol_Fonts_Init();
-SolFont *Sol_GetFont(SolFontKind kind);
 float    Sol_MeasureText(const char *str, float size, SolFontKind id);

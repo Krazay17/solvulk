@@ -74,7 +74,6 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .action_map = {ABILITY_STATE_CLAW, ABILITY_STATE_FIREBALL, 0, 0, 0, 0, 0, 0, 0, ABILITY_STATE_DASH},
     .slots      = 10,
-    .activeSlot = -1,
 };
 
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
@@ -118,6 +117,10 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
+
+    ScAbility *ability     = Sol_Comp_Add(world, id, ScAbility);
+    ability->action_map[0] = ABILITY_STATE_FIREBALL;
+    ability->action_map[1] = ABILITY_STATE_CLAW;
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
     Sol_Comp_Add(world, id, ScCmd);
@@ -329,7 +332,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
         .color      = {1.0f, 0.0f, 0.0f, 1.0f},
-        .fillSpeed  = 4.0f,
+        .fillSpeed  = 1.5f,
         .hoverColor = {1, 1, 0, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
     };
@@ -337,7 +340,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
         .color      = {0.0f, 1.0f, 0.0f, 1.0f},
-        .fillSpeed  = 4.0f,
+        .fillSpeed  = 10.0f,
         .hoverColor = {1, 1, 0, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
     };

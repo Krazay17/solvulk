@@ -74,20 +74,27 @@ static inline void Hook_Healthbar(World *w, int id, int interactor)
     float totalHealth    = 0.0f;
 
     SparseSet_ScPlayer *player_set = Sol_Comp_Set(game_world, ScPlayer);
+
     for (int i = 0; i < player_set->cnt; i++)
     {
-        int id = player_set->dense[i];
-
+        int id           = player_set->dense[i];
         ScCombat *combat = Sol_Comp_Get(game_world, id, ScCombat);
         if (!combat)
             continue;
         totalHealth += combat->health;
         totalMaxHealth += combat->healthMax;
     }
+
     if (totalMaxHealth > 0.0f)
-        view2->views[0].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);
+    {
+        view2->views[2].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);
+        view2->views[3].targetFill = clamp(totalHealth / totalMaxHealth, 0.0f, 1.0f);
+    }
     else
-        view2->views[0].targetFill = 0.0f;
+    {
+        view2->views[2].targetFill = 0.0f;
+        view2->views[3].targetFill = 0.0f;
+    }
 }
 
 static inline void Hook_SetVolume(World *w, int id, int interactor)
@@ -131,5 +138,12 @@ static inline void Hook_SpawnEmitter2(World *w, int a, int b)
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
 
-    Sol_Prefab_DragonOrb(world, pos);
+    SparseSet_ScPlayer *player_set = Sol_Comp_Set(world, ScPlayer);
+    for (int i = 0; i < player_set->cnt; i++)
+    {
+        int id           = player_set->dense[i];
+        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+        combat->health -= 10.0f;
+        sollog(combat->health);
+    }
 }

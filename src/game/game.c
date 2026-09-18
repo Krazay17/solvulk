@@ -77,11 +77,6 @@ void Create_Hud()
 void Create_Game()
 {
     World *world        = World_Create_AllSys();
-    // SlEmitter *slEmitter = Sol_Comp_Add(world, 0, SlEmitter);
-    // solb_init(slEmitter->emitters, 64);
-    // solb_init(slEmitter->particles, 256);
-
-
     sol_user.game_world = world->index;
 
     { // Player
@@ -98,11 +93,6 @@ void Create_Game()
         levelModel->kind    = MODELKIND_WORLD10;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
-    }
-    { // Drainable Crystal
-        int id = Sol_Create_Ent(world, (vec3s){5, 5, 0});
-        Sol_Comp_Add(world, id, ScInteract);
-        Sol_Comp_Add(world, id, ScHook)->held = Hook_CrystalDrain;
     }
 }
 

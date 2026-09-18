@@ -30,6 +30,10 @@ static void OnDeath(World *world, int id, ScCombat *combat)
     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
     if (body3)
         body3->flag_destroy = true;
+    if (Sol_Comp_Has(world, id, ScAbility))
+    {
+        Sol_Ability_SetState(world, id, 0, 0, true);
+    }
 }
 
 void Combat_Init(World *world)

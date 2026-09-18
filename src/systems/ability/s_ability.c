@@ -9,16 +9,16 @@
 #include "estate.h"
 #include "sol_core.h"
 
-extern const AbilityStateFunc idle_state;
-extern const AbilityStateFunc claw_state;
-extern const AbilityStateFunc fireball_state;
-extern const AbilityStateFunc dash_state;
+extern const AbilityStateFunc ability_idle_state;
+extern const AbilityStateFunc ability_claw_state;
+extern const AbilityStateFunc ability_fireball_state;
+extern const AbilityStateFunc ability_dash_state;
 
 const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
-    [ABILITY_STATE_IDLE]     = &idle_state,
-    [ABILITY_STATE_CLAW]     = &claw_state,
-    [ABILITY_STATE_FIREBALL] = &fireball_state,
-    [ABILITY_STATE_DASH]     = &dash_state,
+    [ABILITY_STATE_IDLE]     = &ability_idle_state,
+    [ABILITY_STATE_CLAW]     = &ability_claw_state,
+    [ABILITY_STATE_FIREBALL] = &ability_fireball_state,
+    [ABILITY_STATE_DASH]     = &ability_dash_state,
 };
 
 void Ability_Step(World *world)
@@ -33,19 +33,21 @@ void Ability_Step(World *world)
         ScCmd *cmd         = Sol_Comp_Get(world, id, ScCmd);
         if (!cmd)
             continue;
-        for (int j = 0; j < ability->slots; j++)
+        bool is_idle = (ability->state == ABILITY_STATE_IDLE);
+        for (int j = 0; j < ABILITY_SLOTS; j++)
         {
             AbilityStateData *data     = &ability->stateData[j];
             data->cooldownRemaining    = fmaxf(0.0f, data->cooldownRemaining - fdt);
-            int mask                   = BITC(ACTION_ABILITY1 + j);
+            int mask                   = BITC(j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
-            if (held && ability->activeSlot != j)
+            if (held && (is_idle || ability->activeSlot != j))
             {
                 Sol_Ability_SetState(world, id, ability->action_map[j], j, false);
+                break;
             }
         }
-        
+
         const AbilityStateFunc *state_func = ability_state_func[ability->state];
         if (state_func && state_func->update)
             state_func->update(world, id, ability, cmd, fdt);
@@ -63,7 +65,7 @@ void Ability_Draw(World *world)
         if (!Sol_Comp_Has(world, id, ScCmd))
             continue;
         ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-        
+
         const AbilityStateFunc *state_func = ability_state_func[ability->state];
         if (state_func && state_func->draw)
             state_func->draw(world, id, ability, cmd);
@@ -80,6 +82,7 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     const AbilityStateFunc *nextfunc = ability_state_func[target_state];
     if (!prevfunc || !nextfunc)
         return false;
+
     if (!force)
     {
         if (!prevfunc->canExit || !prevfunc->canExit(world, id, ability, cmd, target_state))
@@ -87,6 +90,7 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability, cmd, ability->state, slot))
             return false;
     }
+
     if (prevfunc->exit)
         prevfunc->exit(world, id, ability, cmd);
 

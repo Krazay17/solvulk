@@ -18,7 +18,6 @@ set(EXTERN_DIR "${CMAKE_SOURCE_DIR}/extern")
 
 # --- Dependencies ---
 find_package(Vulkan REQUIRED)
-#find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 add_library(enet STATIC IMPORTED)
@@ -91,7 +90,6 @@ PUBLIC
 target_link_libraries(solvulk
     PUBLIC 
         Vulkan::Vulkan
-        #OpenMP::OpenMP_C
         enet
         webp_lib
         cglm_headers
@@ -107,7 +105,7 @@ if(WIN32)
    add_executable(solapp 
        "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
        "${CMAKE_SOURCE_DIR}/src/game/game.c"
-       "${CMAKE_SOURCE_DIR}/assets/res.rc"
+       #"${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")
@@ -131,14 +129,18 @@ set_target_properties(solapp PROPERTIES
    OUTPUT_NAME "SolApp"
 )
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    "${CMAKE_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:solapp>/assets"
+)
+
 #--------------------------------------
 # Build App2
 #--------------------------------------
 if(BUILD_APP2)
 if(WIN32)
     add_executable(solapp2
-        "${CMAKE_SOURCE_DIR}/app/win_main.c"
-        "${CMAKE_SOURCE_DIR}/app/game2.c"
         "${CMAKE_SOURCE_DIR}/assets/res.rc"
     )
     if(MSVC)
@@ -160,8 +162,8 @@ file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
 file(GLOB_RECURSE SHADERS
     CONFIGURE_DEPENDS
-    "${SHADER_DIR}/*.vert"
-    "${SHADER_DIR}/*.frag"
+    "${SHADER_DIR}/vert/*.vert"
+    "${SHADER_DIR}/frag/*.frag"
 )
 
 if(WIN32)

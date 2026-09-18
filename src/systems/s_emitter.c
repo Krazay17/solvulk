@@ -69,16 +69,19 @@ enum RenderKind
 const u32 particle_pipekind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = RENDERKIND_QUAD,
     [PARTICLE_SMOKE]   = RENDERKIND_QUAD,
-    [PARTICLE_SPHERE]  = RENDERKIND_SPHERE,
     [PARTICLE_SPARK]  = RENDERKIND_QUAD,
+    [PARTICLE_BLOOD] = RENDERKIND_QUAD,
+    [PARTICLE_SPHERE]  = RENDERKIND_SPHERE,
     [PARTICLE_PLASMA] = RENDERKIND_SPHERE,
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] = QUADKIND_FRACTAL_PYRAMID,
-    [PARTICLE_SMOKE]   = QUADKIND_SPRITE,
-    [PARTICLE_SPHERE]  = SPHEREKIND_BASIC,
-    [PARTICLE_PLASMA] = SPHEREKIND_PLASMA,
+    [PARTICLE_FRACTAL] = PIPE_FRACTAL_PYRAMID,
+    [PARTICLE_SMOKE]   = PIPE_QUAD,
+    [PARTICLE_BLOOD] = PIPE_QUAD,
+    [PARTICLE_SPHERE]  = PIPE_SPHERE,
+    [PARTICLE_PLASMA] = PIPE_PLASMA,
+    [PARTICLE_SPARK] = PIPE_QUAD,
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
@@ -239,7 +242,6 @@ void Particle_Draw(World *world)
             };
             break;
         case RENDERKIND_SPHERE:
-            sollog(particle_renderkind[p.kind]);
             *Sol_Render_GetNextSphere(particle_renderkind[p.kind]) = (SphereSSBO){
                 .pos   = {p.pos.x, p.pos.y, p.pos.z, final_scale},
                 .color = final_color,

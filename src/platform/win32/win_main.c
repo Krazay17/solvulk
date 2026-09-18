@@ -18,6 +18,16 @@ static POINT dragStartPos;
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+
+    BOOL CALLBACK EnumProc(HMODULE hModule, LPCSTR lpType, LPSTR lpName, LONG_PTR lParam)
+{
+    if (IS_INTRESOURCE(lpName))
+        printf("  [ordinal %d]\n", (int)(INT_PTR)lpName);
+    else
+        printf("  \"%s\"\n", lpName);
+    return TRUE;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,7 +37,7 @@ int main(int argc, char *argv[])
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
     int nShowCmd        = SW_SHOWDEFAULT;
-    HICON hIcon         = LoadIcon(hInstance, "MAINICON");
+    HICON hIcon         = LoadIcon(hInstance, "SolEngine.ico");
 
     const char CLASS_NAME[] = "SolVulk";
     WNDCLASS wc             = {0};
@@ -45,6 +55,12 @@ int main(int argc, char *argv[])
         MessageBoxA(NULL, "Window Creation Failed!", "SolVulk Fatal Error", MB_ICONERROR | MB_OK);
         return 1;
     }
+
+
+
+EnumResourceNamesA(NULL, RT_RCDATA, EnumProc, 0);
+
+
 
     MARGINS margins = {-1}; // -1 extends to the entire window
     DwmExtendFrameIntoClientArea(g_hwnd, &margins);

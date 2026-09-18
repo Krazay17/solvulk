@@ -7,6 +7,7 @@
  */
 #pragma once
 #include "sol/types.h"
+#include "sol_buffer.h"
 
 #include "font.h"
 #include "model.h"
@@ -19,38 +20,66 @@
 
 typedef struct ScModelData ScModelData;
 
+// 1. Define category pipeline lists
+#define SOL_TEXT_PIPELINES(X)                                                                                          \
+    X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")                                                                 \
+    X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                                \
+    X(PIPE_TEXT_3D_FRONT, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")
+
+#define SOL_SPHERE_PIPELINES(X)                                                                                        \
+    X(PIPE_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")                                                               \
+    X(PIPE_DEBUG_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere_debug.frag.spv")                                                   \
+    X(PIPE_SPHERE_FX, "shaders/sphere.vert.spv", "shaders/sphere_fx.frag.spv")                                                         \
+    X(PIPE_FIREBALL, "shaders/sphere.vert.spv", "shaders/sphere_fireball.frag.spv")                                                    \
+    X(PIPE_PLASMA, "shaders/sphere.vert.spv", "shaders/sphere_plasma.frag.spv")                                                        \
+    X(PIPE_PARTICLE_DRAGON, "shaders/sphere.vert.spv", "shaders/sphere_dragon.frag.spv")                                               \
+    X(PIPE_FRACTAL_PYRAMID, "shaders/sphere.vert.spv", "shaders/sphere_pyramid.frag.spv")
+
+#define SOL_QUAD_PIPELINES(X)                                                                                          \
+    X(PIPE_QUAD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                                   \
+    X(PIPE_QUAD_ADD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                               \
+    X(PIPE_QUAD_FRONT, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                             \
+    X(PIPE_HEALTHBAR, "shaders/quad.vert.spv", "shaders/healthbar.frag.spv")
+
+#define SOL_RIBBON_PIPELINES(X)                                                                                        \
+    X(PIPE_RIBBON, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                                               \
+    X(PIPE_RIBBON_ADD, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                                           \
+    X(PIPE_RIBBON_FRONT, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")
+
+// 2. Compile-time element counter trick
+#define X_COUNT(id, ...) +1
+#define PIPE_TEXT_COUNT (0 SOL_TEXT_PIPELINES(X_COUNT))
+#define PIPE_SPHERE_COUNT (0 SOL_SPHERE_PIPELINES(X_COUNT))
+#define PIPE_QUAD_COUNT (0 SOL_QUAD_PIPELINES(X_COUNT))
+#define PIPE_RIBBON_COUNT (0 SOL_RIBBON_PIPELINES(X_COUNT))
+
+// 3. Enum expansion macro
+#define X_ENUM(id, ...) id,
+
 typedef enum
 {
+    PIPE_SKYBOX,
     PIPE_MODEL,
     PIPE_MODEL_SKINNED,
-
-    PIPE_TEXT,
-    PIPE_TEXT_3D,
-    PIPE_TEXT_3D_FRONT,
-    PIPE_TEXT_2D,
     PIPE_RECT,
     PIPE_LINE,
 
-    PIPE_DEBUG_SPHERE,
+    SOL_TEXT_PIPELINES(X_ENUM)
+    SOL_SPHERE_PIPELINES(X_ENUM) SOL_QUAD_PIPELINES(X_ENUM) SOL_RIBBON_PIPELINES(X_ENUM)
 
-    PIPE_SPHERE,
-    PIPE_SPHERE_FX,
-    PIPE_FIREBALL,
-    PIPE_PLASMA,
-    PIPE_PARTICLE_DRAGON,
-    PIPE_FRACTAL_PYRAMID,
+        PIPE_COUNT,
 
-    PIPE_SPRITE,
-    PIPE_SPRITE_ADD,
-    PIPE_SPRITE_FRONT,
-    PIPE_HEALTHBAR,
-    PIPE_RIBBON,
-    PIPE_RIBBON_ADD,
-    PIPE_RIBBON_FRONT,
+    PIPE_TEXT_START = PIPE_TEXT,
+    PIPE_TEXT_END   = PIPE_TEXT_START + PIPE_TEXT_COUNT,
 
-    PIPE_SKYBOX,
+    PIPE_SPHERE_START = PIPE_SPHERE,
+    PIPE_SPHERE_END   = PIPE_SPHERE_START + PIPE_SPHERE_COUNT,
 
-    PIPE_COUNT,
+    PIPE_QUAD_START = PIPE_QUAD,
+    PIPE_QUAD_END   = PIPE_QUAD_START + PIPE_QUAD_COUNT,
+
+    PIPE_RIBBON_START = PIPE_RIBBON,
+    PIPE_RIBBON_END   = PIPE_RIBBON_START + PIPE_RIBBON_COUNT,
 } PipelineId;
 
 typedef struct ViewSSBO
@@ -140,35 +169,6 @@ static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
     return &font2dQueue[layer].instances[font2dQueue[layer].count++];
 }
 
-// typedef enum
-// {
-//     SPRITE_CAMFACE,
-//     SPRITE_3D,
-// } SpriteKind;
-// typedef struct
-// {
-//     vec4s pos;
-//     versors rotation;
-//     vec4s color;
-//     vec4s uv;
-//     SpriteKind kind;
-//     SolTextureId textureId;
-//     bool isfx;
-// } SpriteDesc;
-
-// typedef struct ModelPushDesc
-// {
-//     ModelKind handle;
-//     vec4s position;
-//     vec4s scale;
-//     vec4s rotation;
-//     vec4s color;
-//     vec4s material;
-//     u32 flags;
-//     bool hasAnim;
-//     mat4 *bones;
-// } ModelPushDesc;
-
 typedef struct
 {
     vec4s position;
@@ -229,32 +229,19 @@ typedef struct SphereSSBO
     vec4s extra;
 } SphereSSBO;
 
-typedef enum
-{
-    SPHEREKIND_BASIC,
-    SPHEREKIND_BASICFX,
-    SPHEREKIND_FIREBALL,
-    SPHEREKIND_PLASMA,
-    SPHEREKIND_PARTICLE_DRAGON,
-    SPHEREKIND_DEBUG,
-    SPHEREKIND_COUNT,
-} SphereKind;
-
 typedef struct
 {
-    SphereSSBO instances[MAX_QUAD_INSTANCES];
-    u32 count;
+    SphereSSBO *instances;
 } SphereQueue;
 
-extern SphereQueue sphereQueues[SPHEREKIND_COUNT];
-static inline SphereSSBO *Sol_Render_GetNextSphere(SphereKind kind)
+extern SphereQueue sphereQueues[PIPE_SPHERE_COUNT];
+static inline SphereSSBO *Sol_Render_GetNextSphere(PipelineId kind)
 {
-    SphereQueue *q = &sphereQueues[kind];
-    if (q->count >= MAX_QUAD_INSTANCES)
-        return NULL;
-    SphereSSBO *ssbo = &q->instances[q->count++];
+    u32 idx = kind - PIPE_SPHERE_START;
+    assert(idx < PIPE_SPHERE_COUNT);
+    SphereQueue *q   = &sphereQueues[idx];
+    SphereSSBO *ssbo = solb_next(q->instances);
     *ssbo            = (SphereSSBO){0};
-
     return ssbo;
 }
 
@@ -270,55 +257,21 @@ typedef struct
     u32 textureId, _pad0, _pad1, _pad2;
 } RibbonSegSSBO;
 
-#define MAX_RIBBON_SEGS_TOTAL (1 << 16)
-
 typedef struct
 {
-    u32 count;
-    RibbonSegSSBO instances[MAX_RIBBON_SEGS_TOTAL];
+    RibbonSegSSBO *instances;
 } RibbonQueue;
 
-extern RibbonQueue ribbonQueue;
-extern RibbonQueue ribbonQueueAdd;
-extern RibbonQueue ribbonQueueFront;
-
-static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(u8 kind)
+extern RibbonQueue ribbonQueues[PIPE_RIBBON_COUNT];
+static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(PipelineId kind)
 {
-    u32 totalSegCount = ribbonQueue.count + ribbonQueueAdd.count + ribbonQueueFront.count;
-    if (totalSegCount >= MAX_RIBBON_SEGS_TOTAL)
-        return NULL;
-    switch (kind)
-    {
-    case 0:
-        return &ribbonQueue.instances[ribbonQueue.count++];
-    case 1:
-        return &ribbonQueueFront.instances[ribbonQueueFront.count++];
-    case 2:
-        return &ribbonQueueAdd.instances[ribbonQueueAdd.count++];
-    }
-    return NULL;
+    u32 idx = kind - PIPE_RIBBON_START;
+    assert(idx < PIPE_RIBBON_COUNT && "Ribbon idx OOB");
+    RibbonQueue *q      = &ribbonQueues[idx];
+    RibbonSegSSBO *ssbo = solb_next(q->instances);
+    *ssbo               = (RibbonSegSSBO){0};
+    return ssbo;
 }
-
-typedef enum
-{
-    QUADFLAG_NONE,
-    QUADFLAG_FILL_VERTICAL,
-    QUADFLAG_FILL_INVERT,
-} QuadFlags;
-
-typedef enum
-{
-    QUADKIND_SPRITE,
-    QUADKIND_SPRITE_ADD,
-    QUADKIND_SPRITE_FRONT,
-    QUADKIND_HEALTH,
-    QUADKIND_TEXT,
-    QUADKIND_TEXT_FRONT,
-    QUADKIND_RECT,
-    QUADKIND_TEXT2D,
-    QUADKIND_FRACTAL_PYRAMID,
-    QUADKIND_COUNT,
-} QuadKind;
 
 typedef enum
 {
@@ -340,21 +293,17 @@ typedef struct QuadSSBO
 } QuadSSBO;
 typedef struct
 {
-    u32 count;
-    QuadSSBO instances[MAX_QUAD_INSTANCES];
+    QuadSSBO *instances;
 } QuadQueue;
 
-extern QuadQueue quadQueues[QUADKIND_COUNT];
-static inline QuadSSBO *Sol_Render_GetNextQuad(QuadKind kind)
+extern QuadQueue quadQueues[PIPE_QUAD_COUNT];
+static inline QuadSSBO *Sol_Render_GetNextQuad(PipelineId kind)
 {
-    if (kind >= QUADKIND_COUNT)
-        return NULL;
-    QuadQueue *q = &quadQueues[kind];
-    if (!q || q->count >= MAX_QUAD_INSTANCES)
-        return NULL;
-    QuadSSBO *ssbo = &q->instances[q->count++];
+    u32 idx = kind - PIPE_QUAD_START;
+    assert(idx < PIPE_QUAD_COUNT && "QuadKind OOB");
+    QuadQueue *q   = &quadQueues[idx];
+    QuadSSBO *ssbo = solb_next(q->instances);
     *ssbo          = (QuadSSBO){0};
-
     return ssbo;
 }
 
@@ -370,7 +319,8 @@ typedef struct
 
 SceneUBO *Sol_Render_GetNext_Scene();
 
-int Sol_Render_Init(void *hwnd, void *hInstance);
+int Sol_Render_Init();
+int Sol_Render_GPU_Init(void *hwnd, void *hInstance);
 
 void Sol_Begin_Draw();
 void Sol_End_Draw();
@@ -383,7 +333,6 @@ void Sol_Render_CheckGpuUploads();
 float Sol_Render_GetAspect(void);
 void Sol_Render_DrawSkybox(void);
 void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride);
-void Sol_Render_DrawText(const char *str, SolFontDesc desc);
 void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
 void Sol_Render_UploadModel(ScModelData *model, u32 kind);
 void Sol_Render_DrawText2D(const char *str, SolFontDesc desc);

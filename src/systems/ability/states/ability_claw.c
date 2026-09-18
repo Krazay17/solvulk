@@ -124,7 +124,7 @@ void Ability_Claw_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 }
 
-const AbilityStateFunc claw_state = {
+const AbilityStateFunc ability_claw_state = {
     .update   = Ability_Claw_Update,
     .enter    = Ability_Claw_Enter,
     .exit     = Ability_Claw_Exit,

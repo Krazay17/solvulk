@@ -57,10 +57,23 @@ static SolFrameBufferConfig buffer_config[FRAMEBUFFER_COUNT] = {
 };
 
 static SolPipelineConfig pipe_config[PIPE_COUNT] = {
+    [PIPE_SKYBOX] =
+        {
+            .vertResource      = "skybox.vert.spv",
+            .fragResource      = "coral_reef.frag.spv",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_NONE,
+            .depthCompareOp    = VK_COMPARE_OP_LESS_OR_EQUAL,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .descId            = {DESC_SCENE_UBO, DESC_IMAGES, DESC_GAME_UBO},
+            .descCount         = 3,
+        },
     [PIPE_MODEL] =
         {
-            .vertResource      = "ID_SHADER_MODEL_V",
-            .fragResource      = "ID_SHADER_MODEL_F",
+            .vertResource      = "model.vert.spv",
+            .fragResource      = "model.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -74,8 +87,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_MODEL_SKINNED] =
         {
-            .vertResource      = "ID_SHADER_SKINNED_V",
-            .fragResource      = "ID_SHADER_MODEL_F",
+            .vertResource      = "model_skinned.vert.spv",
+            .fragResource      = "model.frag.spv",
             .type              = VERTEX_SKINNED,
             .depthTest         = 1,
             .depthWrite        = 1,
@@ -89,19 +102,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_TEXT] =
         {
-            .vertResource      = "ID_SHADER_TEXT_V",
-            .fragResource      = "ID_SHADER_TEXT_F",
+            .vertResource      = "text2d.vert.spv",
+            .fragResource      = "text2d.frag.spv",
+            .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
-            .pushRangeSize     = sizeof(ShaderPushText),
-            .pushStageFlags    = VK_SHADER_STAGE_VERTEX_BIT,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO, DESC_IMAGES},
-            .descCount         = 2,
+            .descId            = {DESC_ORTHO_UBO, DESC_FONT_SSBO, DESC_IMAGES},
+            .descCount         = 3,
         },
     [PIPE_RECT] =
         {
-            .vertResource      = "ID_SHADER_RECT_V",
-            .fragResource      = "ID_SHADER_RECT_F",
+            .vertResource      = "rect.vert.spv",
+            .fragResource      = "rect.frag.spv",
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -110,8 +122,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_TEXT_3D] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_TEXT3D_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "text3d.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -122,8 +134,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_TEXT_3D_FRONT] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_TEXT3D_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "text3d.frag.spv",
             .depthTest         = 0,
             .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
@@ -132,20 +144,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
-    [PIPE_TEXT_2D] =
-        {
-            .vertResource      = "ID_SHADER_FONT2D_V",
-            .fragResource      = "ID_SHADER_FONT_F",
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_ORTHO_UBO, DESC_FONT_SSBO, DESC_IMAGES},
-            .descCount         = 3,
-        },
     [PIPE_DEBUG_SPHERE] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_SPHERE_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "sphere.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -156,8 +158,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_SPHERE] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_SPHERE_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "sphere.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -168,8 +170,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_SPHERE_FX] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_SPHERE_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "sphere.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
@@ -180,8 +182,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_FIREBALL] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_FIREBALL_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "fireball.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -192,8 +194,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_PLASMA] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_PLASMA2_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "plasma2.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -202,10 +204,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
-    [PIPE_SPRITE] =
+    [PIPE_QUAD] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
@@ -216,8 +218,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_FRACTAL_PYRAMID] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_FRACTAL_PYRAMID_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "fractal_pyramid.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
@@ -226,10 +228,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 4,
         },
-    [PIPE_SPRITE_ADD] =
+    [PIPE_QUAD_ADD] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
@@ -238,10 +240,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 4,
         },
-    [PIPE_SPRITE_FRONT] =
+    [PIPE_QUAD_FRONT] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 0,
             .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
@@ -252,8 +254,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_RIBBON] =
         {
-            .vertResource      = "ID_SHADER_RIBBON_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "ribbon.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ALPHA,
@@ -264,8 +266,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_RIBBON_ADD] =
         {
-            .vertResource      = "ID_SHADER_RIBBON_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "ribbon.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
@@ -276,8 +278,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_RIBBON_FRONT] =
         {
-            .vertResource      = "ID_SHADER_RIBBON_V",
-            .fragResource      = "ID_SHADER_SPRITE_F",
+            .vertResource      = "ribbon.vert.spv",
+            .fragResource      = "sprite.frag.spv",
             .depthTest         = 0,
             .depthWrite        = 0,
             .blendMode         = BLEND_ADDITIVE,
@@ -288,8 +290,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_HEALTHBAR] =
         {
-            .vertResource      = "ID_SHADER_QUAD_V",
-            .fragResource      = "ID_SHADER_HEALTHBAR_F",
+            .vertResource      = "quad.vert.spv",
+            .fragResource      = "healthbar.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -300,8 +302,8 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         },
     [PIPE_LINE] =
         {
-            .vertResource      = "ID_SHADER_LINE_V",
-            .fragResource      = "ID_SHADER_LINE_F",
+            .vertResource      = "line.vert.spv",
+            .fragResource      = "line.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -313,23 +315,10 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO},
             .descCount         = 1,
         },
-    [PIPE_SKYBOX] =
-        {
-            .vertResource      = "ID_SHADER_SKYBOX_V",
-            .fragResource      = "ID_SHADER_CORAL_REEF_F",
-            .depthTest         = 1,
-            .depthWrite        = 0,
-            .blendMode         = BLEND_NONE,
-            .depthCompareOp    = VK_COMPARE_OP_LESS_OR_EQUAL,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_IMAGES, DESC_GAME_UBO},
-            .descCount         = 3,
-        },
     [PIPE_PARTICLE_DRAGON] =
         {
-            .vertResource      = "ID_SHADER_SPHERE_V",
-            .fragResource      = "ID_SHADER_PARTICLE_DRAGON_F",
+            .vertResource      = "sphere.vert.spv",
+            .fragResource      = "particle_dragon.frag.spv",
             .depthTest         = 1,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
@@ -381,21 +370,21 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES * SPHEREKIND_COUNT,
+                                    .size = sizeof(SphereSSBO) * MAX_QUAD_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_QUAD_SSBO]     = {.kind       = DESC_KIND_BUFFER,
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES * 2,
+                                    .size = sizeof(QuadSSBO) * MAX_QUAD_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_RIBBON_SSBO]   = {.kind       = DESC_KIND_BUFFER,
                             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                             .as.buffer =
                                 {
-                                    .size = sizeof(RibbonSegSSBO) * MAX_RIBBON_SEGS_TOTAL,
+                                    .size = sizeof(RibbonSegSSBO) * MAX_QUAD_INSTANCES,
                                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                 }},
     [DESC_FONT_SSBO]     = {.kind       = DESC_KIND_BUFFER,
@@ -417,7 +406,7 @@ static SolDescriptorConfig desc_config[DESC_COUNT] = {
                             .as.image   = {.count = SOL_TEXTURE_COUNT}},
 };
 
-int Sol_Render_Init(void *hwnd, void *hInstance)
+int Sol_Render_GPU_Init(void *hwnd, void *hInstance)
 {
     solvkstate.currentFrame = 0;
     if (SolVkInstance(&solvkstate) != 0)
@@ -442,6 +431,8 @@ int Sol_Render_Init(void *hwnd, void *hInstance)
     //        return 10;
     if (Sol_Render_BuildPipes() != 0)
         return 11;
+
+
 
     return 0;
 }
@@ -614,19 +605,19 @@ void Render_Model_Skinned(ModelKind handle, uint32_t instanceCount, uint32_t fir
     }
 }
 
-void Sol_Render_DrawText(const char *str, SolFontDesc desc)
-{
-    VkCommandBuffer cmd = Command_Buffer_Get();
-    Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT);
+// void Sol_Render_DrawText(const char *str, SolFontDesc desc)
+// {
+//     VkCommandBuffer cmd = Command_Buffer_Get();
+//     Sol_Render_Bind_Pipeline(cmd, PIPE_TEXT);
 
-    ShaderPushTexts texts = Prepare_Text(str, desc);
-    for (int i = 0; i < texts.count; i++)
-    {
-        vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText),
-                           (texts.push + i));
-        vkCmdDraw(cmd, 6, 1, 0, 0);
-    }
-}
+//     ShaderPushTexts texts = Prepare_Text(str, desc);
+//     for (int i = 0; i < texts.count; i++)
+//     {
+//         vkCmdPushConstants(cmd, pipes[PIPE_TEXT].layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShaderPushText),
+//                            (texts.push + i));
+//         vkCmdDraw(cmd, 6, 1, 0, 0);
+//     }
+// }
 
 void Sol_Begin_Draw()
 {
@@ -777,6 +768,8 @@ void Sol_End_Draw()
 
 int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *out)
 {
+    if (!config)
+        return 0;
     VkDescriptorSetLayout layouts[DESC_COUNT];
     u32 layoutCount = 0;
     for (int i = 0; i < config->descCount; i++)
@@ -789,8 +782,8 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     }
 
     // --- load shader bytecode ---
-    SolResource vertRes = Sol_LoadResource(config->vertResource);
-    SolResource fragRes = Sol_LoadResource(config->fragResource);
+    SolResource vertRes = Sol_LoadResource(config->vertResource, "shaders/");
+    SolResource fragRes = Sol_LoadResource(config->fragResource, "shaders/");
 
     if (!vertRes.data || !fragRes.data)
         return 1;

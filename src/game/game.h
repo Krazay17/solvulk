@@ -43,9 +43,11 @@ static inline void Hook_SwitchWorld2(World *w, int a, int b)
     Sol_User_EnterGameWorld(3, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_Test(World *w, int a, int b)
+static inline void Hook_Possess(World *w, int a, int b)
 {
+    Sol_Comp_Rem(w, a, ScAi);
     Sol_Comp_Add(w, a, ScPlayer);
+    Sol_Comp_Add(w, a, ScCamera);
 }
 
 static inline void Hook_SpawnWizard(World *w, int a, int b)
@@ -53,7 +55,7 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
     World *world = Sol_User_GetGameWorld();
     int wizard   = Sol_Prefab_Wizard(world, (vec3s){0, 20.f, 0}, 1.0f);
 
-    Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Test;
+    Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Possess;
 }
 
 static inline void Hook_DebugToggle(World *w, int a, int b)
@@ -127,7 +129,7 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItem(&(SolItem){.ability.state = ABILITY_STATE_CLAW});
+    Sol_User_AddItem(&(SolItem){.ability.state = ABILITY_STATE_CLAW, .ability.cooldown = 1.0f});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)

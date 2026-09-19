@@ -1,5 +1,12 @@
 #include "move3/s_move3.h"
 
+const char *move_state_name[MOVE_STATE_COUNT] = {
+    [MOVE_IDLE] = "Idle",         [MOVE_WALK] = "Walk",     [MOVE_STUN] = "Stun",       [MOVE_FALL] = "Fall",
+    [MOVE_JUMP] = "Jump",         [MOVE_CROUCH] = "Crouch", [MOVE_SLIDE] = "Slide",     [MOVE_WALLRUN] = "Wallrun",
+    [MOVE_WALLJUMP] = "Walljump", [MOVE_MANTLE] = "Mantle", [MOVE_LANDING] = "Landing", [MOVE_FLY] = "Fly",
+    [MOVE_DEAD] = "Dead",
+};
+
 const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
     MOVE_DEAD,     //
     MOVE_STUN,     //
@@ -133,6 +140,7 @@ const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Move_Dead_Exit,
             Move_Dead_CanExit,
             Move_Dead_CanEnter,
+            .override_level = 10,
         },
     [MOVE_STUN] =
         {
@@ -141,6 +149,7 @@ const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Move_Stun_Exit,
             Move_Stun_CanExit,
             Move_Stun_CanEnter,
+            .override_level = 9,
         },
     [MOVE_MANTLE] =
         {

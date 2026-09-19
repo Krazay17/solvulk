@@ -18,7 +18,7 @@ typedef struct SolUser
     float yaw, pitch;
     SolActions actions;
     bool mouse_locked;
-    vec2s mouse_pos, focus_start;
+    vec2s mouse_pos, mouse_pos_ui, focus_start;
     bool interact;
     bool interact_last;
     bool grab, grab_last;
@@ -54,3 +54,4 @@ void Sol_User_ClearUserSettings();
 World *Sol_User_GetGameWorld();
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);
 void Sol_User_AddItem(SolItem *item);
+void Sol_Tooltip_Draw(World *world, int id, float fdt);

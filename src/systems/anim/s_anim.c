@@ -5,9 +5,12 @@
 
 #include <omp.h>
 
-void Anim_Init(World *world)
-{
-}
+const ScAnim anim_default = {.layers = {
+                                 [0] = {.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f},
+                                 [1] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                                 [2] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                                 [3] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+                             }};
 
 static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
 {
@@ -127,7 +130,7 @@ void Anim_Tick(World *world)
                 ability_anim.layerId = ANIM_LAYER_UPPER;
                 ability_anim.anim    = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
                 ability_anim.seek    = 0.16f;
-                ability_anim.speed    = 1.05f;
+                ability_anim.speed   = 1.05f;
             }
             break;
             case ABILITY_STATE_FIREBALL: {

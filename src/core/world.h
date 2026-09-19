@@ -410,10 +410,6 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
 {
     for (int i = 0; i < solb_count(w->on_destroy_ent); i++)
         w->on_destroy_ent[i](w, entId);
-    Sol_Event_Push(w, EVENTKIND_ENT_DESTROY,
-                   (SolEvent){
-                       .as.ent_destroy.id = entId,
-                   });
     u64 mask = w->masks[entId];
     while (mask != 0)
     {
@@ -461,6 +457,13 @@ static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, ve
     world->xform.draw_sca[id] = sca;
     world->xform.last_sca[id] = sca;
 }
+
+extern const char *ability_state_name[ABILITY_STATE_COUNT];
+extern const char *move_state_name[MOVE_STATE_COUNT];
+extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
+extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
+extern const ScAnim anim_default;
+
 
 void Worlds_Tick(World **worlds, int count, double dt);
 void Worlds_Step(World **worlds, int count);
@@ -530,3 +533,7 @@ extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
 void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s vel, vec3s dir);
 Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);
+
+u32 Sol_Hitgen_Start(World *world, int id);
+bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
+void Sol_Event_Push(World *world, EventKind kind, SolEvent event);

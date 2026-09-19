@@ -4,13 +4,15 @@
 
 void Ai_Idle_Update(World *world, int id, ScAi *ai, float dt)
 {
-    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-    if (cmd)
-        cmd->wishdir = (vec3s){0, 0, 0};
 }
 
 void Ai_Idle_Enter(World *world, int id, ScAi *ai)
 {
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    if (!cmd)
+        return;
+    cmd->wishdir     = (vec3s){0, 0, 0};
+    cmd->actionState = 0;
 }
 
 void Ai_Idle_Exit(World *world, int id, ScAi *ai)

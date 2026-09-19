@@ -29,7 +29,7 @@ static void User_Update(World *world)
             interact->state |= INTERACT_DRAGGING;
             if (!(interact->state_prev & INTERACT_DRAGGING))
             {
-                vec3s mouse3          = (vec3s){sol_user.mouse_pos.x, sol_user.mouse_pos.y, 0};
+                vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
                 interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
             }
             return;
@@ -72,7 +72,7 @@ static void User_Update(World *world)
                 if (!sol_user.interact_last)
                 {
                     interact->state |= INTERACT_JUSTDOWN;
-                    interact->down_pos = (vec3s){sol_user.mouse_pos.x, sol_user.mouse_pos.y, 0};
+                    interact->down_pos = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
                     if (hook && hook->pressed)
                         hook->pressed(world, sol_user.target, sol_user.view_ent);
                 }
@@ -105,7 +105,7 @@ static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
         if (!(interact->state & (INTERACT_DOWN)))
             continue;
         vec3s origin   = glms_vec3_add(xform.pos, slider->offset); // world-space start of track
-        vec3s to_mouse = glms_vec3_sub((vec3s){sol_user.mouse_pos.x, sol_user.mouse_pos.y, 0}, origin);
+        vec3s to_mouse = glms_vec3_sub((vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0}, origin);
         float t        = glms_vec3_dot(to_mouse, slider->axis) / slider->track_len;
         t              = glm_clamp(t, 0.0f, 1.0f);
 
@@ -129,7 +129,7 @@ static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
         int best_id          = 0;
         float best_dot       = 0.0f;
         ScInteract *interact = NULL;
-        for (j = set_interact->cnt - 1; j >=0; j--)
+        for (j = set_interact->cnt - 1; j >= 0; j--)
         {
             int idB = set_interact->dense[j];
             if (id == idB)
@@ -270,7 +270,7 @@ void Interact_Step(World *world)
         {
             vec3s xform_pos = world->xform.pos[interact_id];
             vec2s target_pos =
-                glms_vec2_sub(sol_user.mouse_pos, (vec2s){interact->drag_offset.x, interact->drag_offset.y});
+                glms_vec2_sub(sol_user.mouse_pos_ui, (vec2s){interact->drag_offset.x, interact->drag_offset.y});
             float factor = 40.0f - expf(-25.0f * fdt);
             vec2s delta  = glms_vec2_sub(target_pos, (vec2s){xform_pos.x, xform_pos.y});
             vec2s vel2   = glms_vec2_scale(delta, factor);
@@ -288,18 +288,14 @@ int Sol_Interact_FindTopmost(World *world, vec2s point)
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
     for (int i = 0; i < set->cnt; i++)
     {
-        int id = set->dense[i];
-
-        if (Sol_Comp_Has(world, id, ScBody2) && Sol_Body2_ContainsPoint(world, id, point))
+        int id         = set->dense[i];
+        ScBody2 *body2 = Sol_Comp_Get(world, id, ScBody2);
+        if (body2 && Sol_Body2_ContainsPoint(world, id, point))
         {
             // Default to layer 0 for interactables without an explicit View2 component
             int z = 0;
 
-            if (Sol_Comp_Has(world, id, ScView2))
-            {
-                ScView2 *view = Sol_Comp_Get(world, id, ScView2);
-                z             = (int)view->layer;
-            }
+            z = body2->zindex;
 
             // Use >= so newer/topmost elements on the same layer take priority
             if (z >= bestZ)

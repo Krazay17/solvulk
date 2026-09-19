@@ -73,8 +73,6 @@ void Sol_Debug_Draw(double dt)
     RectSSBO *rect    = Sol_Render_GetNext_Rect(UILAYER_2);
     rect->rect        = (vec4s){ 0, 0, 200.0f, offset + spacing * debuggers.count };
     rect->color       = (vec4s){ 0.1f, 0.0f, 0.3f, 0.7f };
-    rect->scale       = 1.0f;
-    rect->fill        = 1.0f;
     rect->flags       = 0;
     for (int i = 0; i < debuggers.count; ++i)
     {

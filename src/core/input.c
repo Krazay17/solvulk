@@ -143,6 +143,11 @@ SolMouse Sol_Input_GetMouse()
     return m;
 }
 
+vec2s Sol_Input_GetMousePos()
+{
+    return (vec2s){mouseX, mouseY};
+}
+
 void Sol_Input_SetLocked(bool lock)
 {
     if (lock)

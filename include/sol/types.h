@@ -203,6 +203,7 @@ typedef enum
     VIEW2KIND_SLIDER,
     VIEW2KIND_SLIDER_FILL,
     VIEW2KIND_HEALTHBAR,
+    VIEW2KIND_ABILITYBAR,
     VIEW2KIND_COUNT,
 } View2Kind;
 
@@ -561,6 +562,7 @@ typedef enum
     UILAYER_0,
     UILAYER_1,
     UILAYER_2,
+    UILAYER_3,
     UILAYER_COUNT,
 } UiLayer;
 

@@ -7,7 +7,7 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MAX_POWER 3.5f
+#define MAX_POWER 3.0f
 
 static vec3s GetProjectilePos(World *world, int id, ScCmd *cmd, float power)
 {
@@ -37,7 +37,7 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
         
         { // Spawn fireball
-            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 20.0f, data->power);
             ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit          = (SolHit){
                 .entA       = id,

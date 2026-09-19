@@ -63,6 +63,7 @@ typedef struct
     MoveStateCanExit canExit;
     MoveStateCanEnter canEnter;
     MoveStateDraw draw;
+    u32 override_level;
 } MoveStateFuncs;
 
 typedef struct

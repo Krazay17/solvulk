@@ -42,7 +42,6 @@ static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
 bool consume_mouse;
 bool consume_key;
 UserData user_data = {.look_sens = 0.001f};
-static float tooltipAlpha;
 
 void Find_User_Hit(double dt, SolMouse mouse)
 {
@@ -192,7 +191,7 @@ void Sol_User_SyncUI()
                 x = 500.0f;
                 y = 700.0f;
             }
-            int abilitybar_id = Sol_Prefab_AbilityBar(hud, (vec3s){x, y, 0});
+            int abilitybar_id = Sol_Prefab_AbilityBar(hud, (vec3s){x, y, 0}, 7);
 
             *Sol_Comp_Add(hud, abilitybar_id, ScRef) = (ScRef){
                 .kind      = REFKIND_ABILITYBAR,
@@ -223,24 +222,6 @@ int Sol_User_Init(void)
         LoadDefaults();
 
     return 0;
-}
-
-void Tooltip_Update(double dt)
-{
-    const float stiffness = 5.0f;
-    float alpha           = 1.0f - expf(-stiffness * dt);
-    int id                = sol_user.target;
-    int worldidx          = sol_user.target_w;
-    World *world          = Sol_GetWorldByIdx(worldidx);
-    if (world && id >= 0)
-    {
-        if (Sol_Comp_Has(world, id, ScTooltip))
-        {
-            //            tooltipAlpha = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
-            return;
-        }
-    }
-    tooltipAlpha = 0;
 }
 
 void Entity_Actions()
@@ -362,7 +343,8 @@ void User_Debug(dt)
 void Sol_User_Tick(double dt)
 {
     SolMouse mouse         = Sol_Input_GetMouse();
-    sol_user.mouse_pos     = Sol_Input_GetMouseUI();
+    sol_user.mouse_pos     = Sol_Input_GetMousePos();
+    sol_user.mouse_pos_ui  = Sol_Input_GetMouseUI();
     sol_user.interact_last = sol_user.interact;
     sol_user.interact      = mouse.buttons[SOL_MOUSE_LEFT];
     sol_user.grab_last     = sol_user.drag;
@@ -373,8 +355,6 @@ void Sol_User_Tick(double dt)
     consume_key   = false;
 
     Find_User_Hit(dt, mouse);
-    Tooltip_Update(dt);
-
     Sol_User_SyncUI();
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
@@ -456,10 +436,11 @@ void Sol_User_PostTick(double dt)
     //     }
     // }
 }
-
 void Sol_User_Draw(double dt)
 {
-    // Sol_Tooltip_Draw(user_hit, tooltipAlpha, dt, time);
+    World *world = Sol_GetWorldByIdx(sol_user.target_w);
+    int id       = sol_user.target;
+    Sol_Tooltip_Draw(world, id, (float)dt);
 }
 
 void Sol_User_SaveUserSettings()

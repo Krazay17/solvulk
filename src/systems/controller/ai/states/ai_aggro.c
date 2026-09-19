@@ -1,5 +1,6 @@
 #include "controller/ai/s_ai.h"
 #include "world.h"
+#include "sol_math.h"
 
 void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 {
@@ -32,11 +33,35 @@ void Ai_Wizard_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     ScCmd *cmd        = Sol_Comp_Get(world, id, ScCmd);
     if (!cmd)
         return;
-    cmd->wishdir = ai->dirToTarget;
-    cmd->aimdir  = ai->dirToTarget;
-    cmd->aimpos  = Xform_Get(world, ai->target).pos;
-    cmd->actionState |= BITC(ACTION_ABILITY2);
-    // bool abil    = Sol_Ability_SetState(world, id, ABILITY_STATE_FIREBALL, 1, false);
+    cmd->actionState = 0;
+    cmd->wishdir     = ai->dirToTarget;
+    cmd->aimdir      = ai->dirToTarget;
+    cmd->aimpos      = Xform_Get(world, ai->target).pos;
+    vec3s pos = Xform_Get(world, id).pos;
+    float dist = glms_vec3_norm(glms_vec3_sub(cmd->aimpos, pos));
+
+    ScBody3 *target_body = Sol_Comp_Get(world, ai->target, ScBody3);
+    if (target_body)
+    {
+        vec3s target_vel = target_body->vel;
+        target_vel.y =  min(1.0f, max(-1.0f,target_vel.y));
+        cmd->aimpos = vecAdd(cmd->aimpos, target_vel);
+        cmd->aimpos.y += dist * 0.1f;
+    }
+    SolLine *line = Sol_Debug_NewLine(world, 0.1f);
+    line->a = pos;
+    line->b = cmd->aimpos;
+    line->aColor = VEC4_GREEN;
+    line->bColor = VEC4_GREEN;
+
+    data->accum += dt;
+    if (data->accum >= data->attacktimer)
+    {
+        data->accum -= data->attacktimer;
+        data->attacktimer = Sol_Math_RandRange2(0.5f, 3.0f);
+    }
+    else
+        cmd->actionState |= BITC(ACTION_ABILITY2);
 }
 
 const AiStateFuncs ai_aggro_state = {

@@ -348,15 +348,14 @@ typedef struct
     float hoverAnim, downAnim, activeAnim;
     float fill, scale, textWidth, border;
     float targetFill, fillSpeed;
-    u8 textureID, flags;
-    vec2s textureUV;
+    u8 textureID, flags, layer;
+    vec4s textureUV;
     char text[64];
 } View2;
 typedef struct ScView2
 {
     View2 views[MAX_VIEWS];
     u8 count;
-    u32 layer;
 } ScView2;
 
 typedef struct ScView3
@@ -519,13 +518,3 @@ typedef struct SlContacts2
 {
     SolContact *contacts;
 } SlContacts2;
-
-extern const char *ability_state_name[ABILITY_STATE_COUNT];
-extern const char *move_state_name[MOVE_STATE_COUNT];
-extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
-extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
-extern const ScAnim anim_default;
-
-u32 Sol_Hitgen_Start(World *world, int id);
-bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
-void Sol_Event_Push(World *world, EventKind kind, SolEvent event);

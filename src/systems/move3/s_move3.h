@@ -217,11 +217,11 @@ void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
 void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
 bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-void Move_Mantle_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd, double dt);
+void Move_Mantle_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd);
 
 void Move_Landing_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
 void Move_Landing_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
 void Move_Landing_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
 bool Move_Landing_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 bool Move_Landing_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-void Move_Landing_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd, double dt);
+void Move_Landing_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd);

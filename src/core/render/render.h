@@ -22,28 +22,28 @@ typedef struct ScModelData ScModelData;
 
 // 1. Define category pipeline lists
 #define SOL_TEXT_PIPELINES(X)                                                                                          \
-    X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")                                                                 \
-    X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                                \
+    X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")                                                 \
+    X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                \
     X(PIPE_TEXT_3D_FRONT, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")
 
 #define SOL_SPHERE_PIPELINES(X)                                                                                        \
-    X(PIPE_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")                                                               \
-    X(PIPE_DEBUG_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere_debug.frag.spv")                                                   \
-    X(PIPE_SPHERE_FX, "shaders/sphere.vert.spv", "shaders/sphere_fx.frag.spv")                                                         \
-    X(PIPE_FIREBALL, "shaders/sphere.vert.spv", "shaders/sphere_fireball.frag.spv")                                                    \
-    X(PIPE_PLASMA, "shaders/sphere.vert.spv", "shaders/sphere_plasma.frag.spv")                                                        \
-    X(PIPE_PARTICLE_DRAGON, "shaders/sphere.vert.spv", "shaders/sphere_dragon.frag.spv")                                               \
+    X(PIPE_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")                                               \
+    X(PIPE_DEBUG_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere_debug.frag.spv")                                   \
+    X(PIPE_SPHERE_FX, "shaders/sphere.vert.spv", "shaders/sphere_fx.frag.spv")                                         \
+    X(PIPE_FIREBALL, "shaders/sphere.vert.spv", "shaders/sphere_fireball.frag.spv")                                    \
+    X(PIPE_PLASMA, "shaders/sphere.vert.spv", "shaders/sphere_plasma.frag.spv")                                        \
+    X(PIPE_PARTICLE_DRAGON, "shaders/sphere.vert.spv", "shaders/sphere_dragon.frag.spv")                               \
     X(PIPE_FRACTAL_PYRAMID, "shaders/sphere.vert.spv", "shaders/sphere_pyramid.frag.spv")
 
 #define SOL_QUAD_PIPELINES(X)                                                                                          \
-    X(PIPE_QUAD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                                   \
-    X(PIPE_QUAD_ADD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                               \
-    X(PIPE_QUAD_FRONT, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                             \
+    X(PIPE_QUAD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                   \
+    X(PIPE_QUAD_ADD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                               \
+    X(PIPE_QUAD_FRONT, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                             \
     X(PIPE_HEALTHBAR, "shaders/quad.vert.spv", "shaders/healthbar.frag.spv")
 
 #define SOL_RIBBON_PIPELINES(X)                                                                                        \
-    X(PIPE_RIBBON, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                                               \
-    X(PIPE_RIBBON_ADD, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                                           \
+    X(PIPE_RIBBON, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                               \
+    X(PIPE_RIBBON_ADD, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                           \
     X(PIPE_RIBBON_FRONT, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")
 
 // 2. Compile-time element counter trick
@@ -129,14 +129,15 @@ typedef struct
 
 typedef struct
 {
-    Rect rect;
-    float scale, zindex, spin, fill;
-    vec4s color, uv;
-    float border;
-    // 1 fill vertical, 2 invert fill
-    u32 flags;
-    u32 textureID;
-    u32 _pad;
+    vec4s pos;     // xy = screen position, z = depth, w = uniform scale
+    vec4s rect;    // xy = local pivot offset, zw = dimensions (width, height)
+    vec4s color;   // tint / base color
+    vec4s uv;      // xy = UV offset, zw = UV scale
+    vec4s extra;   // custom fragment parameters (x=border, y=radius, etc.)
+    float spin;    // rotation angle in radians
+    u32 flags;     // UI flags / state
+    u32 textureId; // texture slot index
+    u32 _pad;      // explicit std430 16-byte alignment (total: 96 bytes)
 } RectSSBO;
 typedef struct
 {
@@ -149,6 +150,7 @@ static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
     assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
     RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
     *ssbo          = (RectSSBO){0};
+    ssbo->uv       = (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
     return ssbo;
 }
 

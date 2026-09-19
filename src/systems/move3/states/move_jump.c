@@ -10,8 +10,8 @@
 
 void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
-    MoveStateData *data  = &move->stateData[MOVE_JUMP];
+    ScBody3 *body3      = Sol_Comp_Get(world, id, ScBody3);
+    MoveStateData *data = &move->stateData[MOVE_JUMP];
 
     // if (data->elapsed >= JUMP_DURATION)
     // {
@@ -29,12 +29,25 @@ void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 
 void Move_Jump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
-    ScBody3       *body3 = Sol_Comp_Get(world, id, ScBody3);
-    MoveStateData *data  = &move->stateData[MOVE_JUMP];
-    move->wantsJump      = false;
-    move->groundtime     = 0;
-    move->airtime        = JUMP_BUFFER;
+    MoveStateData *data = &move->stateData[MOVE_JUMP];
 
+    data->as.jump.airJump = false;
+    move->wantsJump       = false;
+
+    if (move->airtime >= JUMP_BUFFER)
+    {
+        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+        if (combat)
+            combat->energy -= 25.0f;
+        data->as.jump.airJump = true;
+    }
+
+    move->groundtime = 0;
+    move->airtime    = JUMP_BUFFER;
+
+    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+    if (!body3)
+        return;
     if (body3->vel.y < 0)
         body3->vel.y = 0;
     vec3s dir  = glms_vec3_normalize(glms_vec3_lerp(move->groundNorm, WORLD_UP, 0.9f));
@@ -61,27 +74,16 @@ bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
 {
     if (move->wantsJump)
     {
-        MoveStateData *data = &move->stateData[MOVE_JUMP];
-
         if (move->airtime >= JUMP_BUFFER)
         {
             if (Sol_Comp_Has(world, id, ScCombat))
             {
                 ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-                if (combat->energy < 25.0f)
-                    return false;
-                else
-                {
-                    combat->energy -= 25.0f;
-                    data->as.jump.airJump = true;
-                    return true;
-                }
+                return combat->energy >= 25.0f;
             }
             return false;
         }
-        data->as.jump.airJump = false;
         return true;
     }
-
     return false;
 }

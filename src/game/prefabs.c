@@ -119,8 +119,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
     ScAbility *ability     = Sol_Comp_Add(world, id, ScAbility);
-    ability->action_map[0] = ABILITY_STATE_FIREBALL;
-    ability->action_map[1] = ABILITY_STATE_CLAW;
+    ability->action_map[0] = ABILITY_STATE_CLAW;
+    ability->action_map[1] = ABILITY_STATE_FIREBALL;
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
     Sol_Comp_Add(world, id, ScCmd);
@@ -142,6 +142,7 @@ int Sol_Prefab_Crosshair(World *world)
         .scale      = 1.0f,
         .targetFill = 1.0f,
         .hoverColor = {1, 1, 1, 1},
+        .textureUV  = {0, 0, 1, 1},
     };
 
     return id;
@@ -398,15 +399,16 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
     return 0;
 }
 
-int Sol_Prefab_AbilityBar(World *world, vec3s pos)
+int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
 {
-    vec3s dims = {300.0f, 62.0f};
-    int id     = Sol_Create_Ent(world, pos);
+    vec3s dims = {434.0f, 62.0f};
+
+    int id = Sol_Create_Ent(world, pos);
 
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
-    *Sol_Comp_Add(world, id, ScAbilitybar) = (ScAbilitybar){
-        .slots = 7,
-        .slot_dims = {300.0f / 7.0f, 62.0f},
+    *Sol_Comp_Add(world, id, ScAbilitybar)     = (ScAbilitybar){
+        .slots     = slots,
+        .slot_dims = {dims.x / (float)slots, dims.y},
     };
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
@@ -418,23 +420,23 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos)
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    *Sol_Comp_Add(world, id, ScTooltip) = (ScTooltip){
-        .kind = TOOLTIPKIND_CARD,
-    };
-
-    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
-        .layer = UILAYER_1,
-        .count = 1,
-        .views[0] =
-            {
-                .kind        = VIEW2KIND_RECT,
-                .dims        = {dims.x, dims.y},
-                .color       = {1, 1, 1, 1},
-                .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
-                .activeColor = {1, 1, 1, 1},
-                .downColor   = {1, 1, 1, 1},
-            },
-    };
+    *Sol_Comp_Add(world, id, ScView2) = (ScView2){.count = 3,
+                                                  .views = {
+                                                      {
+                                                          .kind  = VIEW2KIND_RECT,
+                                                          .dims  = {dims.x, dims.y},
+                                                          .color = {0, 0, 0, 1},
+                                                      },
+                                                      {
+                                                          .kind       = VIEW2KIND_ABILITYBAR,
+                                                          .layer      = UILAYER_2,
+                                                          .dims       = {dims.x, dims.y},
+                                                          .flags      = 0b111,
+                                                          .color      = {0, 1, 0, 0.5f},
+                                                          .hoverColor = {0.5f, 0.5f, 0.5f, 1.0f},
+                                                          .textureID  = SOL_TEXTURE_SWIRLFRAME,
+                                                      },
+                                                  }};
 
     return id;
 }
@@ -463,15 +465,15 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
     };
 
     *Sol_Comp_Add(world, id, ScView2) = (ScView2){
-        .layer = UILAYER_1,
         .count = 2,
         .views[0] =
             {
-                .kind      = VIEW2KIND_RECT,
-                .dims      = {dims.x, dims.y},
-                .textureID = texture,
-                .textureUV = {1.0f, 0.816f},
-
+                .kind        = VIEW2KIND_RECT,
+                .dims        = {dims.x, dims.y},
+                .textureID   = texture,
+                .textureUV   = {0, 0, 1.0f, 0.816f},
+                .flags       = 1,
+                .targetFill  = 1.0f,
                 .color       = {1, 1, 1, 1},
                 .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
                 .activeColor = {1, 1, 1, 1},
@@ -479,10 +481,9 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
             },
         .views[1] =
             {
-                .kind      = VIEW2KIND_RECT,
-                .dims      = {dims.x, dims.y},
-                .textureID = SOL_TEXTURE_BORDER,
-
+                .kind        = VIEW2KIND_RECT,
+                .dims        = {dims.x, dims.y},
+                .textureID   = SOL_TEXTURE_BORDER,
                 .color       = {0.0f, 0.0f, 0.0f, 1.0f},
                 .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
                 .activeColor = {1, 1, 1, 1},

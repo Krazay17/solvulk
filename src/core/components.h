@@ -97,8 +97,8 @@ typedef struct ScBody2
     Shape2 shape;
     vec3s vel, dims, gravity, force, impulse;
     u32 mask;
-    float restitution;
-    bool ignoreWindow;
+    float mass, invMass, restitution;
+    bool ignoreWindow, isStatic, isSensor;
     int zindex;
 } ScBody2;
 
@@ -165,6 +165,7 @@ typedef struct
             vec3s velocity;
         } fall;
     } as;
+    float coyote;
     double lastEntered, lastExited;
     float elapsed, accum;
     vec3s vel;
@@ -446,8 +447,15 @@ typedef struct ScHook
 typedef struct ScRef
 {
     u32 kind;
+    u32 ent_world, ent_id;
     int index;
 } ScRef;
+
+typedef struct ScAbilitybar
+{
+    int slots;
+    vec2s slot_dims;
+}ScAbilitybar;
 
 // #################
 // #### SINGLES ####
@@ -457,6 +465,23 @@ typedef struct SlEvent
 {
     SolEvent *events;
 } SlEvent;
+
+typedef struct DebugLine
+{
+    SolLine line;
+    float ttl;
+} DebugLine;
+
+typedef struct DebugSphere
+{
+    SolSphere sphere;
+    float ttl;
+} DebugSphere;
+typedef struct SlDebug
+{
+    DebugLine *lines;
+    DebugSphere *spheres;
+} SlDebug;
 
 typedef struct SpatialGrid SpatialGrid;
 typedef struct SlSpatial
@@ -474,7 +499,7 @@ typedef struct SlSpatial
 
 typedef struct
 {
-    u32 gen;       // this attacker's current session generation
+    u32 gen;          // this attacker's current session generation
     u32 *hit_targets; // solb_ buffer: which target ids have been marked this session
 } HitgenRow;
 
@@ -489,6 +514,11 @@ typedef struct SlEmitter
     Emitter *emitters;
     Particle *particles;
 } SlEmitter;
+
+typedef struct SlContacts2
+{
+    SolContact *contacts;
+} SlContacts2;
 
 extern const char *ability_state_name[ABILITY_STATE_COUNT];
 extern const char *move_state_name[MOVE_STATE_COUNT];

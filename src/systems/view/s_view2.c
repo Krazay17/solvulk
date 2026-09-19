@@ -121,10 +121,34 @@ static void DrawText(World *world, int id, float fdt, View2 *view, vec3s pos, u3
                                       });
 }
 
+static void DrawHealthbar(World *world, int id, float fdt, View2 *view, vec3s pos, u32 layer)
+{
+    ScRef *ref       = Sol_Comp_Get(world, id, ScRef);
+    ScCombat *combat = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScCombat);
+    if (!ref || !combat || combat->health <= 0.0f)
+        return;
+    float speed      = -view->fillSpeed;
+    float factor     = 1.0f - expf(speed * fdt);
+    view->targetFill = combat->health / combat->healthMax;
+    view->fill       = Sol_Math_Lerp(view->fill, view->targetFill, factor);
+    RectSSBO *ssbo   = Sol_Render_GetNext_Rect(layer);
+    *ssbo            = (RectSSBO){0};
+    ssbo->rect       = (vec4s){UISCALE(pos.x + view->offset.x), UISCALE(pos.y + view->offset.y), UISCALE(view->dims.x),
+                               UISCALE(view->dims.y)};
+    ssbo->scale      = 1.0f;
+    ssbo->fill       = view->fill;
+    ssbo->color      = view->color;
+    ssbo->flags      = view->flags;
+    ssbo->textureID  = view->textureID;
+    ssbo->uv         = (view->textureUV.x > 0.0f || view->textureUV.y > 0.0f)
+                           ? (vec4s){0.0f, 0.0f, view->textureUV.x, view->textureUV.y}
+                           : (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
+}
+
 typedef void (*DrawFunc)(World *, int, float, View2 *, vec3s, u32);
 DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
     [VIEW2KIND_RECT] = DrawRect,     [VIEW2KIND_SLIDER] = DrawSlider, [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
-    [VIEW2KIND_CIRCLE] = DrawCircle, [VIEW2KIND_TEXT] = DrawText,
+    [VIEW2KIND_CIRCLE] = DrawCircle, [VIEW2KIND_TEXT] = DrawText,     [VIEW2KIND_HEALTHBAR] = DrawHealthbar,
 };
 
 void View2_Draw(World *world)

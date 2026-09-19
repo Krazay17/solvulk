@@ -82,6 +82,27 @@ void SlSpatial_Deinit(SlSpatial *self)
     solb_free(self->build_maxs);
 }
 
+void SlContacts2_Init(World *world, SlContacts2 *self)
+{
+    solb_init(self->contacts, 16);
+}
+
+void SlContacts2_Deinit(SlContacts2 *self)
+{
+    solb_free(self->contacts);
+}
+
+void SlDebug_Init(World *world, SlDebug *self)
+{
+    solb_init(self->lines, 32);
+    solb_init(self->spheres, 32);
+}
+
+void SlDebug_Deinit(SlDebug *self)
+{
+
+}
+
 u32 Sol_Hitgen_Start(World *world, int id)
 {
     SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);

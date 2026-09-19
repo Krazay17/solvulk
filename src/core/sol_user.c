@@ -96,36 +96,109 @@ static void Sol_User_LoadUserSettings()
 
 void Sol_User_SyncUI()
 {
-    World *world = Sol_GetWorldByIdx(WORLDID_HUD);
-    if (!world)
+    World *hud = Sol_GetWorldByIdx(WORLDID_HUD);
+    if (!hud)
         return;
-
-    bool spawned[MAX_USER_ITEMS] = {0};
-
-    SparseSet_ScRef *set = Sol_Comp_Set(world, ScRef);
-    for (int i = set->cnt - 1; i >= 0; i--)
+    SparseSet_ScRef *ref_set   = Sol_Comp_Set(hud, ScRef);
+    bool items[MAX_USER_ITEMS] = {0};
+    for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
-        ScRef *ref = &set->data[i];
+        int id     = ref_set->dense[i];
+        ScRef *ref = &ref_set->data[i];
         if (ref->kind != REFKIND_ITEM)
             continue;
-
-        int id = set->dense[i];
         if (ref->index < 0 || ref->index >= user_data.itemCount)
         {
-            Sol_Destroy_Ent(world, id);
+            Sol_Destroy_Ent(hud, id);
             continue;
         }
-        spawned[ref->index] = true;
+        items[ref->index] = true;
     }
 
+    // Spawn new refs
     for (int i = 0; i < user_data.itemCount; i++)
     {
-        if (!spawned[i])
+        if (!items[i])
         {
             SolItem *item = &user_data.items[i];
             float x       = 100.0f + (i % 5) * 64.0f;
             float y       = 100.0f + (i / 5) * 64.0f;
-            Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item->ability.state, i);
+            Sol_Prefab_AbilityCard(hud, (vec3s){x, y, 0}, item->ability.state, i);
+        }
+    }
+
+    World *game = Sol_User_GetGameWorld();
+    if (!game)
+        return;
+    SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
+    bool player_healthbars[32]     = {0};
+    bool player_abilitybars[32]    = {0};
+    // Cleanup UI from destroyed player ents
+    for (int i = ref_set->cnt - 1; i >= 0; i--)
+    {
+        ScRef *ref = &ref_set->data[i];
+        if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR)
+            continue;
+        int ref_id     = ref_set->dense[i];
+        int ent_id     = ref->ent_id;
+        int player_idx = player_set->sparse[ent_id];
+        bool is_alive  = (player_idx >= 0 && player_idx < player_set->cnt && player_set->dense[player_idx] == ent_id);
+        if (!is_alive)
+        {
+            Sol_Destroy_Ent(hud, ref_id);
+            continue;
+        }
+        if (player_idx < 32)
+        {
+            if (ref->kind == REFKIND_HEALTHBAR)
+                player_healthbars[player_idx] = true;
+            else if (ref->kind == REFKIND_ABILITYBAR)
+                player_abilitybars[player_idx] = true;
+        }
+    }
+
+    int view_id = sol_user.view_ent;
+    // Spawn missing healthbars
+    for (int p = 0; p < player_set->cnt; p++)
+    {
+        if (p < 32 && !player_healthbars[p])
+        {
+            int player_ent = player_set->dense[p];
+            float x        = 0.0f;
+            float y        = 50.0f + (p * 30.0f);
+            if (player_ent == view_id)
+            {
+                x = 500.0f;
+                y = 620.0f;
+            }
+            int healthbar_id = Sol_Prefab_Healthbar(hud, (vec3s){x, y, 0});
+
+            *Sol_Comp_Add(hud, healthbar_id, ScRef) = (ScRef){
+                .kind      = REFKIND_HEALTHBAR,
+                .ent_world = game->index,
+                .ent_id    = player_ent,
+            };
+        }
+    }
+    for (int p = 0; p < player_set->cnt; p++)
+    {
+        if (p < 32 && !player_abilitybars[p])
+        {
+            int player_ent = player_set->dense[p];
+            float x        = 200.0f;
+            float y        = 50.0f + (p * 50.0f);
+            if (player_ent == view_id)
+            {
+                x = 500.0f;
+                y = 700.0f;
+            }
+            int abilitybar_id = Sol_Prefab_AbilityBar(hud, (vec3s){x, y, 0});
+
+            *Sol_Comp_Add(hud, abilitybar_id, ScRef) = (ScRef){
+                .kind      = REFKIND_ABILITYBAR,
+                .ent_world = game->index,
+                .ent_id    = player_ent,
+            };
         }
     }
 }
@@ -320,11 +393,11 @@ void Sol_User_Tick(double dt)
 void Sol_User_PostTick(double dt)
 {
     SolMouse mouse = Sol_Input_GetMouse();
-    World *world   = Sol_User_GetGameWorld();
+    World *game    = Sol_User_GetGameWorld();
     int id         = sol_user.view_ent;
-    if (!world || id <= 0)
+    if (!game || id <= 0)
         return;
-    ScCamera *cam = Sol_Comp_Get(world, id, ScCamera);
+    ScCamera *cam = Sol_Comp_Get(game, id, ScCamera);
     if (cam)
     {
         g_solView.pos    = cam->pos;
@@ -334,16 +407,34 @@ void Sol_User_PostTick(double dt)
         g_solView.up     = cam->up;
         g_solView.target = vecAdd(cam->pos, cam->dir);
     }
-    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-    if(combat)
+    ScCombat *combat = Sol_Comp_Get(game, id, ScCombat);
+    if (combat)
     {
-        static float last_damage =0;
-        if(combat->damageDone != last_damage) 
+        static float last_damage = 0;
+        if (combat->damageDone != last_damage)
         {
             last_damage = combat->damageDone;
             Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
         }
     }
+
+    // World *hud               = Sol_GetWorldByIdx(WORLDID_HUD);
+    // SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
+    // SlEvent *events          = Sol_Comp_Get(game, 0, SlEvent);
+    // for (int i = 0; i < solb_count(events->events); i++)
+    // {
+    //     SolEvent event = events->events[i];
+    //     if (event.kind != EVENTKIND_ENT_DESTROY)
+    //         continue;
+    //     for (int j = ref_set->cnt - 1; j >= 0; j--)
+    //     {
+    //         ScRef *ref = &ref_set->data[j];
+    //         if (ref->ent_world == game->index && ref->ent_id == event.as.ent_destroy.id)
+    //         {
+    //             Sol_Destroy_Ent(hud, ref_set->dense[j]);
+    //         }
+    //     }
+    // }
 
     // if (Sol_Comp_Has(world, id, ScCmd))
     // {
@@ -413,4 +504,9 @@ void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)
 void Sol_User_AddItem(SolItem *item)
 {
     user_data.items[user_data.itemCount++] = *item;
+}
+
+SolItem *Sol_User_GetItemAtIdx(int idx)
+{
+    return &user_data.items[idx];
 }

@@ -12,3 +12,4 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int ref);
 int Sol_Prefab_DragonOrb(World *world, vec3s pos);
 int Sol_Prefab_PlasmaOrb(World *world, vec3s pos);
+int Sol_Prefab_AbilityBar(World *world, vec3s pos);

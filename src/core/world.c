@@ -26,13 +26,12 @@ typedef struct
 #define SYSTEMUPDATEDEF_COUNT 3
 const struct SystemDef
 {
-    SystemInit init;
-    SystemDeinit deinit;
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
     [WORLDSYS_PARENT]   = {.update = {Parent_Update, UPDATEPHASE_TICK}},
+    [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
     [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},
@@ -41,7 +40,7 @@ const struct SystemDef
     [WORLDSYS_ABILITY]    = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ZONE]       = {.update = {Zone_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_COMBAT]     = {.init = Combat_Init, .update = {Combat_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_COMBAT]     = {.update = {Combat_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
     [WORLDSYS_FX]      = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
@@ -60,7 +59,6 @@ const struct SystemDef
 
     [WORLDSYS_DEBUG] =
         {
-            .init      = Debug_Init,
             .update[0] = {Debug_Tick, UPDATEPHASE_TICK},
             .update[1] = {Debug_Draw3, UPDATEPHASE_RENDER3},
             .update[2] = {Debug_Draw2, UPDATEPHASE_RENDER2},
@@ -80,16 +78,10 @@ World *World_Create()
     world->doesRender      = true;
     world->index           = index;
     solState.worlds[index] = world;
+    solb_init(world->on_destroy_ent, 16);
 
     Sol_World_InitAllComponents(world, world->maxEntities);
-
-#define CORE_SINGLETON_INIT(Type, InitFn, DeinitFn)                                                                    \
-    {                                                                                                                  \
-        Type *self = Sol_Comp_Add(world, 0, Type);                                                                     \
-        InitFn(world, self);                                                                                           \
-    }
-    CORE_SINGLETON_LIFECYCLE_LIST(CORE_SINGLETON_INIT)
-#undef CORE_SINGLETON_INIT
+    World_InitSingletons(world);
 
     return world;
 }
@@ -102,8 +94,6 @@ World *World_Create_AllSys()
 
     for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
         Sol_Sys_Add(world, (WorldSystems)sys);
-
-    World_InitSingletons(world);
 
     return world;
 }
@@ -134,8 +124,6 @@ void Sol_Sys_Add(World *world, WorldSystems system)
 {
     if (world->system_mask & BITC(system))
         return;
-    if (system_inits[system].init)
-        system_inits[system].init(world);
     if (system_inits[system].update)
         for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
         {
@@ -182,9 +170,6 @@ void Sol_Sys_Remove(World *world, WorldSystems system)
 {
     if (!(world->system_mask & BITC(system)))
         return;
-
-    if (system_inits[system].deinit)
-        system_inits[system].deinit(world);
 
     for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
     {

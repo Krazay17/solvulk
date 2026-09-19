@@ -41,7 +41,7 @@ typedef void (*SystemFuncId)(World *, int id);
 typedef void (*SystemInit)(World *);
 typedef void (*SystemDeinit)(World *);
 typedef void (*SystemUpdate)(World *);
-typedef void (*TickEnt)(World *, int);
+typedef void (*EntUpdate)(World *, int);
 typedef float (*GetterFunc)(World *world, int id);
 typedef void (*Hook)(World *, int, int);
 
@@ -202,6 +202,7 @@ typedef enum
     VIEW2KIND_CIRCLE,
     VIEW2KIND_SLIDER,
     VIEW2KIND_SLIDER_FILL,
+    VIEW2KIND_HEALTHBAR,
     VIEW2KIND_COUNT,
 } View2Kind;
 
@@ -277,6 +278,8 @@ typedef enum
 typedef enum
 {
     REFKIND_ITEM,
+    REFKIND_HEALTHBAR,
+    REFKIND_ABILITYBAR,
 } RefKind;
 
 typedef enum
@@ -765,6 +768,7 @@ typedef enum
     EVENTKIND_SOUND,
     EVENTKIND_EQUIP,
     EVENTKIND_SCORE,
+    EVENTKIND_ENT_DESTROY,
     EVENTKIND_COUNT,
 } EventKind;
 typedef enum
@@ -824,6 +828,10 @@ typedef struct SolEvent
             u32 kind;
             u32 interactor, interactee;
         } interact;
+        struct
+        {
+            u32 id;
+        } ent_destroy;
     } as;
 } SolEvent;
 

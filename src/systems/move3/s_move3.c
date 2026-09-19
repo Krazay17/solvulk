@@ -34,6 +34,8 @@ void Move3_Step(World *world)
             move->wantsJump = false;
 
         move->jumpPressedLastFrame = isJumpDown;
+        for (int j = 0; j < MOVE_STATE_COUNT; j++)
+            move->stateData[j].coyote = fmaxf(0.0f, move->stateData[j].coyote - fdt);
 
         Move3_EvaluateState(world, id, move, cmd);
 

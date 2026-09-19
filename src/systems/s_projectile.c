@@ -7,6 +7,7 @@
  */
 #include "world.h"
 #include "sol_math.h"
+#include "sol_core.h"
 
 typedef bool isDestroyed;
 
@@ -91,7 +92,11 @@ void Projectile_Step(World *world)
         };
 
         SolRayResult results[16];
-        int hits = Sol_Spherecast(world, ray, results, 16);
+        int hits;
+        if (solState.debug)
+            hits = Sol_SpherecastD(world, ray, results, 16, 0.2f);
+        else
+            hits = Sol_Spherecast(world, ray, results, 16);
 
         if (hits == 0)
             continue;

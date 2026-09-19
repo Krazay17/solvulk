@@ -24,6 +24,7 @@ typedef enum
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
 
+    WORLDSYS_ABILITYBAR,
     WORLDSYS_MOVE3,
     WORLDSYS_MOVE2,
     WORLDSYS_BODY3,
@@ -53,8 +54,11 @@ typedef enum
 #define CORE_SINGLETON_LIFECYCLE_LIST(X) X(SlEvent, SlEvent_Init, SlEvent_Deinit)
 
 #define SINGLETON_LIFECYCLE_LIST(X)                                                                                    \
-    X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
+    X(SlEvent, SlEvent_Init, SlEvent_Deinit)                                                                           \
+    X(SlDebug, SlDebug_Init, SlDebug_Deinit)                                                                           \
     X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
+    X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
+    X(SlContacts2, SlContacts2_Init, SlContacts2_Deinit)                                                               \
     X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
 
 #define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
@@ -65,9 +69,11 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
     X(SlEvent, HAS_SlEvent)                                                                                            \
+    X(SlDebug, HAS_SlDebug)                                                                                            \
     X(SlSpatial, HAS_SlSpatial)                                                                                        \
     X(SlHitgen, HAS_SlHitgen)                                                                                          \
     X(SlEmitter, HAS_SlEmitter)                                                                                        \
+    X(SlContacts2, HAS_SlContacts2)                                                                                    \
                                                                                                                        \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScHook, HAS_ScHook)                                                                                              \
@@ -106,6 +112,7 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScTooltip, HAS_ScTooltip)                                                                                        \
     X(ScZone, HAS_ScZone)                                                                                              \
     X(ScRef, HAS_ScRef)                                                                                                \
+    X(ScAbilitybar, HAS_ScAbilitybar)                                                                                  \
     X(ScBuilder, HAS_ScBuilder)
 
 typedef enum
@@ -166,6 +173,8 @@ struct World
     SystemUpdate posttickSystems[MAX_SYSTEMS];
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
+
+    EntUpdate *on_destroy_ent;
 
     WorldXform xform;
 
@@ -333,7 +342,7 @@ static inline void *Sol_Comp_AddE(World *w, int entId, int enum_idx)
     // 2. Grow backing buffers if full
     if (set->cnt >= set->cap)
     {
-        set->cap   = (set->cap == 0) ? 2 : set->cap * 2;
+        set->cap   = (set->cap == 0) ? 1 : set->cap * 2;
         set->dense = realloc(set->dense, set->cap * sizeof(int));
         set->data  = realloc(set->data, set->cap * comp_size);
     }
@@ -399,6 +408,12 @@ static inline void World_FreeAllComponents(World *w)
 
 static inline void Sol_Destroy_Ent(World *w, int entId)
 {
+    for (int i = 0; i < solb_count(w->on_destroy_ent); i++)
+        w->on_destroy_ent[i](w, entId);
+    Sol_Event_Push(w, EVENTKIND_ENT_DESTROY,
+                   (SolEvent){
+                       .as.ent_destroy.id = entId,
+                   });
     u64 mask = w->masks[entId];
     while (mask != 0)
     {
@@ -428,7 +443,8 @@ static inline Xform Xform_Get(const World *world, int id)
 
 static inline XformP Xform_GetP(World *world, int id)
 {
-    return (XformP){.pos = &world->xform.pos[id], .rot = &world->xform.rot[id], .sca = &world->xform.sca[id]};
+    WorldXform *x = &world->xform;
+    return (XformP){.pos = &x->pos[id], .rot = &x->rot[id], .sca = &x->sca[id]};
 }
 
 static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, vec3s sca)
@@ -497,6 +513,7 @@ int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, fl
 int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_hits);
 int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max_hits, float time);
 
+int Sol_Body2_GetOverlaps(World *world, int id, int *ids, int max_counts);
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
 bool Sol_Body2_ContainsPoint(World *world, int id, vec2s point);
 

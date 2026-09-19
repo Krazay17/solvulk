@@ -311,6 +311,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .shape       = SHAPE2_REC,
         .restitution = 1.0f,
         .dims        = {dims.x, dims.y, 0},
+        .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
@@ -329,7 +330,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[2] = (View2){
-        .kind       = VIEW2KIND_RECT,
+        .kind       = VIEW2KIND_HEALTHBAR,
         .dims       = {dims.x, dims.y},
         .color      = {1.0f, 0.0f, 0.0f, 1.0f},
         .fillSpeed  = 1.5f,
@@ -337,7 +338,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[3] = (View2){
-        .kind       = VIEW2KIND_RECT,
+        .kind       = VIEW2KIND_HEALTHBAR,
         .dims       = {dims.x, dims.y},
         .color      = {0.0f, 1.0f, 0.0f, 1.0f},
         .fillSpeed  = 10.0f,
@@ -397,6 +398,47 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
     return 0;
 }
 
+int Sol_Prefab_AbilityBar(World *world, vec3s pos)
+{
+    vec3s dims = {300.0f, 62.0f};
+    int id     = Sol_Create_Ent(world, pos);
+
+    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
+    *Sol_Comp_Add(world, id, ScAbilitybar) = (ScAbilitybar){
+        .slots = 7,
+        .slot_dims = {300.0f / 7.0f, 62.0f},
+    };
+
+    *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .shape    = SHAPE2_REC,
+        .dims.x   = dims.x,
+        .dims.y   = dims.y,
+        .zindex   = 1,
+        .isSensor = true,
+        .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    *Sol_Comp_Add(world, id, ScTooltip) = (ScTooltip){
+        .kind = TOOLTIPKIND_CARD,
+    };
+
+    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
+        .layer = UILAYER_1,
+        .count = 1,
+        .views[0] =
+            {
+                .kind        = VIEW2KIND_RECT,
+                .dims        = {dims.x, dims.y},
+                .color       = {1, 1, 1, 1},
+                .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
+                .activeColor = {1, 1, 1, 1},
+                .downColor   = {1, 1, 1, 1},
+            },
+    };
+
+    return id;
+}
+
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int ref)
 {
     vec2s dims  = {62.0f, 62.0f};
@@ -408,10 +450,12 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
     *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ITEM, .index = ref};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
-        .dims.x = dims.x,
-        .dims.y = dims.y,
-        .zindex = 1,
-        .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
+        .shape    = SHAPE2_REC,
+        .dims.x   = dims.x,
+        .dims.y   = dims.y,
+        .zindex   = 1,
+        .isSensor = true,
+        .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
     *Sol_Comp_Add(world, id, ScTooltip) = (ScTooltip){

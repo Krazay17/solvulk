@@ -9,28 +9,10 @@
 #include "world.h"
 #include "render/render.h"
 
-typedef struct DebugLine
-{
-    SolLine line;
-    float ttl;
-} DebugLine;
-
-typedef struct DebugSphere
-{
-    SolSphere sphere;
-    float ttl;
-} DebugSphere;
-
-typedef struct SysDebug
-{
-    DebugLine   *lines;
-    DebugSphere *spheres;
-} SysDebug;
-
 void Debug_Tick(World *world)
 {
     float fdt = world->fdt;
-    SysDebug *sys = world->systems[WORLDSYS_DEBUG];
+    SlDebug *sys = Sol_Comp_Get(world, 0, SlDebug);
     if (!sys)
         return;
 
@@ -65,7 +47,7 @@ void Debug_Tick(World *world)
 
 void Debug_Draw3(World *world, double dt)
 {
-    SysDebug *sys = world->systems[WORLDSYS_DEBUG];
+    SlDebug *sys = Sol_Comp_Get(world, 0, SlDebug);
     if (!sys)
         return;
 
@@ -88,17 +70,9 @@ void Debug_Draw2(World *world, double dt)
 {
 }
 
-void Debug_Init(World *world)
-{
-    SysDebug *ws                   = malloc(sizeof(SysDebug));
-    world->systems[WORLDSYS_DEBUG] = ws;
-    solb_init(ws->lines, 32);
-    solb_init(ws->spheres, 32);
-}
-
 SolLine *Sol_Debug_NewLine(World *world, float ttl)
 {
-    SysDebug *sys = world->systems[WORLDSYS_DEBUG];
+    SlDebug *sys = Sol_Comp_Get(world, 0, SlDebug);
     if (!world || !sys)
         return NULL;
 
@@ -116,7 +90,7 @@ void Sol_Line_Push(World *world, SolLine desc, float ttl)
 
 SolSphere *Sol_Debug_NewSphere(World *world, float ttl)
 {
-    SysDebug *sys = world->systems[WORLDSYS_DEBUG];
+    SlDebug *sys = Sol_Comp_Get(world, 0, SlDebug);
     if (!world || !sys)
         return NULL;
 

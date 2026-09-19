@@ -9,17 +9,16 @@
 #include "sol/types.h"
 
 // Systems
-void Combat_Init(World *world);
 void Player_Init(World *world);
 void Move3_Init(World *world);
 void Anim_Init(World *world);
 void Camera_Init(World *world);
 void Model_Init(World *world);
-void Debug_Init(World *world);
 
 void Player_Tick(World *world);
 void Interact_Update(World *world);
 void Parent_Update(World *world);
+void Abilitybar_Update(World *world);
 
 void Move3_Step(World *world);
 void Move2_Step(World *world);

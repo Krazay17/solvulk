@@ -19,7 +19,6 @@ void Worlds_Xform_Snapshot(World **worlds, int count)
 
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha)
 {
-    int i;
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
@@ -27,8 +26,7 @@ void Worlds_Xform_Interpolate(World **worlds, int count, float alpha)
             continue;
 
         WorldXform *xform = &world->xform;
-#pragma omp parallel for
-        for (i = 0; i < MAX_ENTS; i++)
+        for (int i = 0; i < MAX_ENTS; i++)
         {
             xform->draw_pos[i] = glms_vec3_lerp(xform->last_pos[i], xform->pos[i], alpha);
             xform->draw_sca[i] = glms_vec3_lerp(xform->last_sca[i], xform->sca[i], alpha);

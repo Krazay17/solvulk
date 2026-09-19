@@ -21,22 +21,34 @@ void Create_Hud();
 void Create_Game();
 void Create_Game2();
 
-static inline void Hook_SwitchWorld(World *w, int id, int interactor)
+static inline void Hook_SpawnPlayer(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+
+    int id = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
+    Sol_Comp_Add(game, id, ScPlayer);
+    sol_user.view_ent = id;
+    ScMeta *meta      = Sol_Comp_Add(game, id, ScMeta);
+    snprintf(meta->name, sizeof(meta->name), "Player");
+    Sol_Debug_Add("Player Ent", (float)id);
+}
+
+static inline void Hook_SwitchWorld(World *w, int a, int b)
 {
     Sol_User_EnterGameWorld(2, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_SwitchWorld2(World *w, int id, int interactor)
+static inline void Hook_SwitchWorld2(World *w, int a, int b)
 {
     Sol_User_EnterGameWorld(3, true, (vec3s){0, 5, 0});
 }
 
-static inline void Hook_Test(World *w, int id, int interactor)
+static inline void Hook_Test(World *w, int a, int b)
 {
-    Sol_Comp_Add(w, id, ScPlayer);
+    Sol_Comp_Add(w, a, ScPlayer);
 }
 
-static inline void Hook_SpawnWizard(World *w, int id, int interactor)
+static inline void Hook_SpawnWizard(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     int wizard   = Sol_Prefab_Wizard(world, (vec3s){0, 20.f, 0}, 1.0f);
@@ -44,29 +56,29 @@ static inline void Hook_SpawnWizard(World *w, int id, int interactor)
     Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Test;
 }
 
-static inline void Hook_DebugToggle(World *w, int id, int interactor)
+static inline void Hook_DebugToggle(World *w, int a, int b)
 {
-    solState.debug = (Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED) != 0;
+    solState.debug = (Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED) != 0;
 }
 
-static inline void Hook_CrystalDrain(World *w, int id, int interactor)
+static inline void Hook_CrystalDrain(World *w, int a, int b)
 {
 }
 
-static inline void Hook_Quit(World *w, int id, int interactor)
+static inline void Hook_Quit(World *w, int a, int b)
 {
     QuitApp(0);
 }
 
-static inline void Hook_Fullscreen(World *w, int id, int interactor)
+static inline void Hook_Fullscreen(World *w, int a, int b)
 {
-    W_Set_Fullscreen(Sol_Comp_Get(w, id, ScInteract)->state & INTERACT_TOGGLED);
+    W_Set_Fullscreen(Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED);
 }
 
-static inline void Hook_Healthbar(World *w, int id, int interactor)
+static inline void Hook_Healthbar(World *w, int a, int b)
 {
     World *game_world = Sol_User_GetGameWorld();
-    ScView2 *view2    = Sol_Comp_Get(w, id, ScView2);
+    ScView2 *view2    = Sol_Comp_Get(w, a, ScView2);
     if (!game_world || !view2)
         return;
 
@@ -97,11 +109,11 @@ static inline void Hook_Healthbar(World *w, int id, int interactor)
     }
 }
 
-static inline void Hook_SetVolume(World *w, int id, int interactor)
+static inline void Hook_SetVolume(World *w, int a, int b)
 {
 }
 
-static inline void Hook_SunAngle(World *w, int id, int interactor)
+static inline void Hook_SunAngle(World *w, int a, int b)
 {
 }
 

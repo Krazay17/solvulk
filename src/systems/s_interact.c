@@ -39,12 +39,14 @@ static void User_Update(World *world)
         interact->state |= INTERACT_HOVERED;
         interact->is_local = true;
 
-        ScHook *hook = Sol_Comp_Get(world, sol_user.focus, ScHook);
-        if (!(interact->state_prev & INTERACT_DOWN))
-        {
-            if (hook && hook->pressed)
-                hook->pressed(world, sol_user.target, sol_user.view_ent);
-        }
+        // ScHook *hook = Sol_Comp_Get(world, sol_user.focus, ScHook);
+        // if (!(interact->state_prev & INTERACT_DOWN))
+        // {
+        //             sollog("focus pressed");
+
+        //     if (hook && hook->pressed)
+        //         hook->pressed(world, sol_user.target, sol_user.view_ent);
+        // }
     }
 
     if (world->index == sol_user.target_w && sol_user.target > 0)
@@ -70,7 +72,7 @@ static void User_Update(World *world)
                 if (!sol_user.interact_last)
                 {
                     interact->state |= INTERACT_JUSTDOWN;
-
+                    interact->down_pos = (vec3s){sol_user.mouse_pos.x, sol_user.mouse_pos.y, 0};
                     if (hook && hook->pressed)
                         hook->pressed(world, sol_user.target, sol_user.view_ent);
                 }

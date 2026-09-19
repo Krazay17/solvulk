@@ -8,7 +8,7 @@
 #include "world.h"
 #include "sol_math.h"
 
-#define DESTROY_TIMER 10.0f
+#define DESTROY_TIMER 3.0f
 
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
@@ -34,10 +34,6 @@ static void OnDeath(World *world, int id, ScCombat *combat)
     {
         Sol_Ability_SetState(world, id, 0, 0, true);
     }
-}
-
-void Combat_Init(World *world)
-{
 }
 
 void Combat_Step(World *world)

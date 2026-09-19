@@ -1395,3 +1395,38 @@ const AbilityStateFunc ability_state_func[ABILITY_STATE_COUNT] = {
     //         currentOffset = MAX_QUAD_INSTANCES - sizeof(QuadSSBO);
     //     text3dFrontQueue.count = 0;
     // }
+
+        float slot_w = abilitybar->slot_dims.x;
+        float slot_h = abilitybar->slot_dims.y;
+        float half_w = slot_w * 0.5f;
+        float half_h = slot_h * 0.5f;
+        int count    = abilitybar->slots <= 12 ? abilitybar->slots : 12;
+
+        vec2s slot_centers[12] = {0};
+
+        for (int j = 0; j < count; j++)
+        {
+            slot_centers[j].x = xform.pos.x + (slot_w * j) + half_w;
+            slot_centers[j].y = xform.pos.y + half_h;
+        }
+        if (interact->state & INTERACT_JUSTDOWN)
+        {
+            int slot_clicked = -1;
+            float closest2    = 1e9f;
+            for (int j = 0; j < count; j++)
+            {
+                float dx = fabsf(slot_centers[j].x - interact->down_pos.x);
+                float dy = fabsf(slot_centers[j].y - interact->down_pos.y);
+                if (dx <= half_w && dy <= half_h)
+                {
+                    float d2 = (dx * dx) + (dy * dy);
+                    if(d2 < closest2)
+                    {
+                        closest2 = d2;
+                        slot_clicked = j;
+                    }
+                }
+            }
+            if (slot_clicked >= 0)
+                sollog(slot_clicked);
+        }

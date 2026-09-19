@@ -58,7 +58,7 @@ SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
 {
     SolResource res = {0};
 
-    static char disk_path[128];
+    char disk_path[128];
     snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, resourceName);
     FILE *file = fopen(disk_path, "rb");
     

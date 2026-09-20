@@ -3,7 +3,7 @@
 #include "sol_user.h"
 #include "sol_math.h"
 
-void Abilitybar_Update(World *world)
+void Abilitybar_Update(World *world, double dt)
 {
     SparseSet_ScAbilitybar *set = Sol_Comp_Set(world, ScAbilitybar);
     for (int i = 0; i < set->cnt; i++)

@@ -30,11 +30,12 @@ const struct SystemDef
 {
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
-    [WORLDSYS_PLAYER]   = {.update = {Player_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT] = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
-    [WORLDSYS_PARENT]   = {.update = {Parent_Update, UPDATEPHASE_TICK}},
+    [WORLDSYS_PLAYER]     = {.update = {Player_Tick, UPDATEPHASE_TICK}},
+    [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
+    [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
+    [WORLDSYS_BUFF]       = {.update = {Buff_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY3]      = {.update = {Body3_Update, UPDATEPHASE_STEP}},
@@ -202,9 +203,9 @@ void Sol_Sys_Remove(World *world, WorldSystems system)
     world->system_mask &= ~BITC(system);
 }
 
-void Worlds_Tick(World **worlds, int worldCount, double dt)
+void Worlds_Tick(World **worlds, int count, double dt)
 {
-    for (int w = 0; w < worldCount; w++)
+    for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
         if (world->doesSimulate)
@@ -216,57 +217,67 @@ void Worlds_Tick(World **worlds, int worldCount, double dt)
             world->tickTime += world_dt;
 
             for (int i = 0; i < world->tickCount; i++)
-                world->tickSystems[i](world);
+                world->tickSystems[i](world, world_dt);
         }
     }
 }
 
-void Worlds_Step(World **worlds, int count)
+void Worlds_Step(World **worlds, int count, double dt)
 {
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
         if (world->doesSimulate)
         {
+            double world_dt = dt * world->timescale;
             world->currentStep++;
             world->stepTime += world->timestep;
 
             for (int i = 0; i < world->stepCount; i++)
-                world->stepSystems[i](world);
+                world->stepSystems[i](world, world_dt);
         }
     }
 }
 
-void Worlds_PostTick(World **worlds, int count)
+void Worlds_PostTick(World **worlds, int count, double dt)
 {
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
         if (world->doesSimulate)
+        {
+            double world_dt = dt * world->timescale;
             for (int i = 0; i < world->posttickCount; i++)
-                world->posttickSystems[i](world);
+                world->posttickSystems[i](world, world_dt);
+        }
     }
 }
 
-void Worlds_Draw3d(World **worlds, int count)
+void Worlds_Draw3d(World **worlds, int count, double dt)
 {
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
         if (world->doesRender)
+        {
+            double world_dt = dt * world->timescale;
             for (int i = 0; i < world->draw3dCount; i++)
-                world->draw3dSystems[i](world);
+                world->draw3dSystems[i](world, world_dt);
+        }
     }
 }
 
-void Worlds_Draw2d(World **worlds, int count)
+void Worlds_Draw2d(World **worlds, int count, double dt)
 {
     for (int w = count - 1; w >= 0; w--)
     {
         World *world = worlds[w];
         if (world->doesRender)
+        {
+            double world_dt = dt * world->timescale;
             for (int i = 0; i < world->draw2dCount; i++)
-                world->draw2dSystems[i](world);
+                world->draw2dSystems[i](world, world_dt);
+        }
     }
 }
 
@@ -329,7 +340,6 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
 
     return new_id;
 }
-
 
 void SlEvent_Init(World *world, SlEvent *self)
 {
@@ -429,7 +439,6 @@ void SlDebug_Init(World *world, SlDebug *self)
 
 void SlDebug_Deinit(SlDebug *self)
 {
-
 }
 
 u32 Sol_Hitgen_Start(World *world, int id)
@@ -468,6 +477,6 @@ bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
 void Sol_Event_Push(World *world, EventKind kind, SolEvent event)
 {
     SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
-    event.kind = kind;
+    event.kind      = kind;
     solb_push(single->events, event);
 }

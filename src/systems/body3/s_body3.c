@@ -564,10 +564,10 @@ static SolProfiler prof_dynamic     = {.name = "Dynamic"};
 static SolProfiler prof_static      = {.name = "StaticTable"};
 static SolProfiler prof_static_test = {.name = "StaticTest"};
 
-void Body3_Update(World *world)
+void Body3_Update(World *world, double dt)
 {
     Prof_Begin(&prof_body3);
-    float fdt = world->timestep;
+    float fdt = (float)dt;
     int i, body_count;
 
     SparseSet_ScBody3 *set = Sol_Comp_Set(world, ScBody3);

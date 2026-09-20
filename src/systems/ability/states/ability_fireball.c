@@ -41,14 +41,16 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
             int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 20.0f, data->power);
             ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit          = (SolHit){
-                .entA       = id,
-                .damage     = data->conf.damage,
+                .entA   = id,
+                .damage = data->conf.damage,
+                .power  = data->power,
             };
             projectile->aoe_hit = (SolHit){
                 .entA       = id,
                 .effectMask = data->conf.effectMask,
                 .buffMask   = data->conf.buffMask,
                 .damage     = data->conf.damage,
+                .power      = data->power,
             };
             projectile->power = data->power;
         }
@@ -56,22 +58,21 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
     case 2:
         data->recoverRemaining += dt;
         if (data->recoverRemaining > data->conf.recover)
-            Sol_Ability_SetState(world, id, 0, 0, true);
+            Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
         break;
     }
 }
 
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
-    
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
     data->cooldownRemaining = data->conf.cooldown;
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
 }
 
 bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)

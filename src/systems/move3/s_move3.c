@@ -4,9 +4,9 @@
 #include "sol_core.h"
 #include <omp.h>
 
-void Move3_Step(World *world)
+void Move3_Step(World *world, double dt)
 {
-    float fdt = world->timestep;
+    float fdt = (float)dt;
     int i;
 
     SparseSet_ScMove3 *set = Sol_Comp_Set(world, ScMove3);

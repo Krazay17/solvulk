@@ -31,7 +31,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 
     if (data->elapsed >= data->conf.duration)
     {
-        Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
+        Sol_Ability_SetState(world, id, 0, ability->activeSlot, 1);
         return;
     }
 

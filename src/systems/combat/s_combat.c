@@ -36,7 +36,7 @@ static void OnDeath(World *world, int id, ScCombat *combat)
     }
 }
 
-void Combat_Step(World *world)
+void Combat_Step(World *world, double dt)
 {
     SparseSet_ScCombat *set = Sol_Comp_Set(world, ScCombat);
     for (int i = 0; i < set->cnt; i++)
@@ -59,9 +59,13 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         return 0.0f;
     ScCombat *combat  = Sol_Comp_Get(world, id, ScCombat);
     float damage_done = 0;
-    float damage      = hit.damage;
+    float damage      = hit.damage * hit.power;
     if (!hit.isHeal)
     {
+        if (hit.buffMask > 0)
+        {
+            Sol_Buff_AddMask(world, id, hit.buffMask, hit.entA, hit.power);
+        }
         if (hit.effectMask & EFFECTMASK_KNOCKBACK)
         {
             ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);

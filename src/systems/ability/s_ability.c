@@ -41,7 +41,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 1.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_FIREBALL] =
@@ -50,7 +50,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .recover  = 0.5f,
             .cooldown = 1.0f,
             .damage   = 10.0f,
-            .buffMask = BUFFKIND_FIRE,
+            .buffMask = BITC(BUFFKIND_FIRE),
             .maxpower = 2.0f,
         },
     [ABILITY_STATE_DASH] =
@@ -59,7 +59,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 1.5f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_PISTOL] =
@@ -68,7 +68,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 0.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_SPINSLASH] =
@@ -77,7 +77,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 0.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_SHIELD] =
@@ -86,7 +86,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 0.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_LASER] =
@@ -95,7 +95,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown   = 0.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
+            .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
 };
@@ -112,9 +112,9 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_DASH]     = &ability_dash_state,
 };
 
-void Ability_Step(World *world)
+void Ability_Step(World *world, double dt)
 {
-    float fdt = world->timestep;
+    float fdt = (float)dt;
 
     SparseSet_ScAbility *set = Sol_Comp_Set(world, ScAbility);
     for (int i = 0; i < set->cnt; i++)
@@ -135,13 +135,12 @@ void Ability_Step(World *world)
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
             u32 state = ability->slotted_actions[j] ? ability->slotted_actions[j] : ability->base_actions[j];
-            if (held && (is_idle || ability->activeSlot != j))
+            if (held && is_idle)
             {
                 Sol_Ability_SetState(world, id, state, j, false);
                 break;
             }
         }
-
         const AbilityStateFunc *state_func = ability_state_func[ability->state];
         if (state_func && state_func->update)
             state_func->update(world, id, ability, cmd, fdt);

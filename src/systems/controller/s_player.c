@@ -43,9 +43,9 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
     return aim;
 }
 
-void Player_Tick(World *world)
+void Player_Tick(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
 
     SparseSet_ScPlayer *set = Sol_Comp_Set(world, ScPlayer);
     for (int i = 0; i < set->cnt; i++)

@@ -36,13 +36,8 @@
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
-typedef void (*SystemFunc)(World *);
-typedef void (*SystemFuncId)(World *, int id);
-typedef void (*SystemInit)(World *);
-typedef void (*SystemDeinit)(World *);
-typedef void (*SystemUpdate)(World *);
+typedef void (*SystemUpdate)(World *, double);
 typedef void (*EntUpdate)(World *, int);
-typedef float (*GetterFunc)(World *world, int id);
 typedef void (*Hook)(World *, int, int);
 
 typedef struct DamagePayload
@@ -543,6 +538,7 @@ typedef enum
     SOL_TEXTURE_FOGSTRIP,
     SOL_TEXTURE_SHIELD,
     SOL_TEXTURE_GRID,
+    SOL_TEXTURE_TRIBOOKEND,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
 

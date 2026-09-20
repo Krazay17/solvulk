@@ -100,9 +100,9 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
     }
 }
 
-void Anim_Tick(World *world)
+void Anim_Tick(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
     int i;
 
     SparseSet_ScAnim *set = Sol_Comp_Set(world, ScAnim);

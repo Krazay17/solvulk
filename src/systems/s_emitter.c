@@ -188,9 +188,9 @@ static inline void Particle_Update(World *world, SlEmitter *single, float fdt)
     solb_set_count(single->particles, write);
 }
 
-void Emitter_Update(World *world)
+void Emitter_Update(World *world, double dt)
 {
-    float fdt         = world->fdt;
+    float fdt         = (float)dt;
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
 
     int count = solb_count(single->emitters);

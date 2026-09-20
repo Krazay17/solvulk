@@ -143,9 +143,9 @@ const Resolver shape_resolver[SHAPE2_CNT][SHAPE2_CNT] = {
 const vec3s bounds_min = {0.0f, 0.0f, 0.0f};
 const vec3s bounds_max = {WINDOW_WIDTH, WINDOW_HEIGHT, 0.0f};
 
-void Body2_Step(World *world)
+void Body2_Step(World *world, double dt)
 {
-    float fdt = world->timestep;
+    float fdt = (float)dt;
     int i, j;
     SparseSet_ScBody2 *set = Sol_Comp_Set(world, ScBody2);
     int count              = set->cnt;

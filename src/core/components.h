@@ -9,12 +9,9 @@
 
 #include "sol/types.h"
 
-#define MAX_SYSTEMS 64
-#define MAX_BUFFS 64
+#define MAX_BUFFS 32
 #define MAX_VIEWS 10
-#define MAX_TRACKER_GETTERS 2
 #define MAX_EMITTERS 8
-#define MAX_INTERACTS 32
 
 typedef struct ScActive
 {
@@ -263,10 +260,11 @@ typedef struct ScAbility
 
 typedef struct
 {
-    u8 kind, inf, harmful;
+    u8 kind, inf;
+    bool hasUpdated;
     u32 source;
-    float ttl, duration, accum;
-    float freq, power;
+    float duration, rate, power, damage;
+    float elapsed, accum;
 } Buff;
 typedef struct ScBuff
 {
@@ -372,13 +370,6 @@ typedef struct ScView3
     vec4s color;
     float scale;
 } ScView3;
-
-typedef struct ScTracker
-{
-    World *world;
-    u32 entId;
-    GetterFunc getters[MAX_TRACKER_GETTERS];
-} ScTracker;
 
 typedef struct ScProjectile
 {

@@ -423,15 +423,16 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
 
 int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
 {
-    vec3s dims = {434.0f, 62.0f};
-    u32 layer  = UILAYER_0;
+    vec3s dims     = {434.0f, 62.0f};
+    u32 layer      = UILAYER_0;
+    float slotSize = dims.x / (float)slots;
 
     int id = Sol_Create_Ent(world, pos);
 
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
     *Sol_Comp_Add(world, id, ScAbilitybar)     = (ScAbilitybar){
         .slots     = slots,
-        .slot_dims = {dims.x / (float)slots, dims.y},
+        .slot_dims = {slotSize, dims.y},
     };
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
@@ -443,7 +444,7 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    *Sol_Comp_Add(world, id, ScView2) = (ScView2){.count = 3,
+    *Sol_Comp_Add(world, id, ScView2) = (ScView2){.count = 5,
                                                   .views = {
                                                       {
                                                           .layer = layer,
@@ -466,6 +467,25 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
                                                           .color      = {1, 0, 0, 1.0f},
                                                           .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
                                                           .textureID  = SOL_TEXTURE_SWIRLFRAME,
+                                                      },
+                                                      {
+                                                          .layer      = UILAYER_3,
+                                                          .kind       = VIEW2KIND_RECT,
+                                                          .dims       = {slotSize, slotSize + 7.0f},
+                                                          .offset     = {-slotSize, -7.0f},
+                                                          .textureID  = SOL_TEXTURE_TRIBOOKEND,
+                                                          .color      = {1, 1, 1, 1},
+                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
+                                                      },
+                                                      {
+                                                          .layer      = UILAYER_3,
+                                                          .kind       = VIEW2KIND_RECT,
+                                                          .dims       = {slotSize, slotSize + 7.0f},
+                                                          .offset     = {dims.x, -7.0f},
+                                                          .textureUV  = {0.0f, 0, -1.0f, 0},
+                                                          .textureID  = SOL_TEXTURE_TRIBOOKEND,
+                                                          .color      = {1, 1, 1, 1},
+                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
                                                       },
                                                   }};
 

@@ -133,7 +133,7 @@ typedef struct
     vec4s rect;    // xy = local pivot offset, zw = dimensions (width, height)
     vec4s color;   // tint / base color
     vec4s uv;      // xy = UV offset, zw = UV scale
-    vec4s extra;   // custom fragment parameters (x=border, y=radius, etc.)
+    vec4s extra;   // x=border, y=radius, z=desat
     float spin;    // rotation angle in radians
     u32 flags;     // UI flags / state
     u32 textureId; // texture slot index

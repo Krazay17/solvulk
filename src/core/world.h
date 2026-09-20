@@ -8,6 +8,8 @@
 #pragma once
 #include "components.h"
 
+#define MAX_SYSTEMS 64
+
 #define WAddTick(w) ((w)->tickSystems[(w)->tickCount++])
 #define WAddStep(w) ((w)->stepSystems[(w)->stepCount++])
 #define WAddPosttick(w) (w->posttickSystems[w->posttickCount++])
@@ -24,6 +26,7 @@ typedef enum
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
 
+    WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
     WORLDSYS_MOVE3,
     WORLDSYS_MOVE2,
@@ -105,7 +108,6 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScSlider, HAS_ScSlider)                                                                                          \
     X(ScView2, HAS_ScView2)                                                                                            \
     X(ScView3, HAS_ScView3)                                                                                            \
-    X(ScTracker, HAS_ScTracker)                                                                                        \
     X(ScProjectile, HAS_ScProjectile)                                                                                  \
     X(ScHudslot, HAS_ScHudslot)                                                                                        \
     X(ScHuditem, HAS_ScHuditem)                                                                                        \
@@ -465,10 +467,10 @@ extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
 extern const ScAnim anim_default;
 
 void Worlds_Tick(World **worlds, int count, double dt);
-void Worlds_Step(World **worlds, int count);
-void Worlds_Draw3d(World **worlds, int count);
-void Worlds_Draw2d(World **worlds, int count);
-void Worlds_PostTick(World **worlds, int count);
+void Worlds_Step(World **worlds, int count, double dt);
+void Worlds_Draw3d(World **worlds, int count, double dt);
+void Worlds_Draw2d(World **worlds, int count, double dt);
+void Worlds_PostTick(World **worlds, int count, double dt);
 
 void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
@@ -539,3 +541,6 @@ Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);
 u32 Sol_Hitgen_Start(World *world, int id);
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
 void Sol_Event_Push(World *world, EventKind kind, SolEvent event);
+
+void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power);
+void Sol_Buff_AddMask(World *world, int id, u32 mask, u32 source, float power);

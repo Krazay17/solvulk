@@ -245,7 +245,7 @@ static void Interact_Final(World *world, SparseSet_ScInteract *set)
     }
 }
 
-void Interact_Update(World *world)
+void Interact_Update(World *world, double dt)
 {
     Prof_Begin(&profile);
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
@@ -264,9 +264,9 @@ void Interact_Update(World *world)
     Prof_EndEz(&profile, true, world->dt / solState.worldCount);
 }
 
-void Interact_Step(World *world)
+void Interact_Step(World *world, double dt)
 {
-    float fdt = world->timestep;
+    float fdt = (float)dt;
 
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
 

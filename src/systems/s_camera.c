@@ -1,9 +1,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Camera_Tick(World *world)
+void Camera_Tick(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
     SparseSet_ScCamera *set = Sol_Comp_Set(world, ScCamera);
     for (int i = 0; i < set->cnt; i++)
     {

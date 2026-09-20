@@ -63,7 +63,7 @@ static inline void Claw_Hit(World *world, SolEvent event)
     Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, pos, 1.0f, 0.0f, 16);
 }
 
-void Fx_Update(World *world)
+void Fx_Update(World *world, double dt)
 {
     SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
     for (int i = 0; i < solb_count(events->events); i++)

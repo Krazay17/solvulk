@@ -16,7 +16,7 @@
 #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT]          = "font_ice_atlas.png",
+    [SOL_TEXTURE_ICEFONT] = "font_ice_atlas.png",
 
     [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
     [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
@@ -43,10 +43,11 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
     [SOL_TEXTURE_SHIELD]           = "Shield.png",
     [SOL_TEXTURE_GRID]             = "Grid.png",
+    [SOL_TEXTURE_TRIBOOKEND]       = "TriangleBookend.png",
 };
 
 SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
-uint32_t   next_free_texture_idx = SOL_TEXTURE_COUNT;
+uint32_t next_free_texture_idx = SOL_TEXTURE_COUNT;
 
 int Sol_Textures_Init()
 {
@@ -133,14 +134,13 @@ uint32_t Sol_Texture_RegisterRuntime(void *data, size_t size, const char *hint_e
         return 0;
     }
 
-for (int i = SOL_TEXTURE_COUNT; i < next_free_texture_idx; i++)
-{
-    if (loaded_images[i].data == data)
-        return i;
-    if (loaded_images[i].loaded && loaded_images[i].size == size &&
-        memcmp(loaded_images[i].data, data, size) == 0)
-        return i;
-}
+    for (int i = SOL_TEXTURE_COUNT; i < next_free_texture_idx; i++)
+    {
+        if (loaded_images[i].data == data)
+            return i;
+        if (loaded_images[i].loaded && loaded_images[i].size == size && memcmp(loaded_images[i].data, data, size) == 0)
+            return i;
+    }
 
     uint32_t assignedSlot = next_free_texture_idx++;
 

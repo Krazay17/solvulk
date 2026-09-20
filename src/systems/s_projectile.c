@@ -64,9 +64,9 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
     return false;
 }
 
-void Projectile_Step(World *world)
+void Projectile_Step(World *world, double dt)
 {
-    float fdt                   = world->timestep;
+    float fdt                   = (float)dt;
     SparseSet_ScProjectile *set = Sol_Comp_Set(world, ScProjectile);
     for (int i = set->cnt; i-- > 0;)
     {

@@ -1,8 +1,8 @@
 #include "world.h"
 
-void Timer_Update(World *world)
+void Timer_Update(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
 
     SparseSet_ScTimer *set = Sol_Comp_Set(world, ScTimer);
 

@@ -159,6 +159,5 @@ static inline void Hook_SpawnEmitter2(World *w, int a, int b)
         int id           = player_set->dense[i];
         ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
         combat->health -= 10.0f;
-        sollog(combat->health);
     }
 }

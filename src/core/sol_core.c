@@ -88,7 +88,7 @@ void Sol_Tick(double dt, double time)
     while (accumulator >= SOL_TIMESTEP)
     {
         Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
-        Worlds_Step(solState.worlds, solState.worldCount);
+        Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP);
         // Sol_Net_Step(solState.worlds, solState.worldCount, time);
         // Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
@@ -98,7 +98,7 @@ void Sol_Tick(double dt, double time)
     Worlds_Xform_Interpolate(solState.worlds, solState.worldCount, alpha);
     // ######### END STEP AND INTERP #########
 
-    Worlds_PostTick(solState.worlds, solState.worldCount);
+    Worlds_PostTick(solState.worlds, solState.worldCount, dt);
     Sol_User_PostTick(dt);
 
     Sol_Update_Audio_FromView();
@@ -106,10 +106,10 @@ void Sol_Tick(double dt, double time)
 
     Sol_Begin_Draw();
     Sol_Render_DrawSkybox();
-    Worlds_Draw3d(solState.worlds, solState.worldCount);
+    Worlds_Draw3d(solState.worlds, solState.worldCount, dt);
     Sol_Render_Flush3D();
 
-    Worlds_Draw2d(solState.worlds, solState.worldCount);
+    Worlds_Draw2d(solState.worlds, solState.worldCount, dt);
     Sol_User_Draw(dt);
     Sol_Render_Flush2D();
 

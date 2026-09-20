@@ -87,9 +87,9 @@ static void Evaluate_State(World *world, int id, ScAi *ai)
     }
 }
 
-void Ai_Step(World *world)
+void Ai_Step(World *world, double dt)
 {
-    float fdt = world->timestep;
+    float fdt = (float)dt;
 
     SparseSet_ScAi *set = Sol_Comp_Set(world, ScAi);
 

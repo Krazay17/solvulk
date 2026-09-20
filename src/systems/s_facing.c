@@ -1,9 +1,9 @@
 #include "world.h"
 #include "sol_math.h"
 
-void Facing_Tick(World *world)
+void Facing_Tick(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
 
     SparseSet_ScCmd *set = Sol_Comp_Set(world, ScCmd);
     for (int i = 0; i < set->cnt; i++)

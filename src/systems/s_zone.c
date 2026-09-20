@@ -40,9 +40,9 @@ static inline void Fireball(World *world, int id, ScZone *zone)
     }
 }
 
-void Zone_Update(World *world)
+void Zone_Update(World *world, double dt)
 {
-    float fdt = world->fdt;
+    float fdt = (float)dt;
 
     SparseSet_ScZone *set = Sol_Comp_Set(world, ScZone);
 

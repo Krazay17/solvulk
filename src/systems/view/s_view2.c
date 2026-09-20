@@ -22,13 +22,14 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     float fill  = 0;
     for (int i = 0; i < count; i++)
     {
-        RectSSBO *rect  = Sol_Render_GetNext_Rect(view->layer);
-        u32 texture = view->textureID;
+        RectSSBO *rect = Sol_Render_GetNext_Rect(view->layer);
+        u32 texture    = view->textureID;
         if (view->layer == 0)
         {
-            texture = ability_texture_map[ability->base_actions[i]];
+            texture         = ability_texture_map[ability->base_actions[i]];
+            view->textureUV = (vec4s){0, 0, 1.0f, 0.816f};
         }
-        rect->extra.z = view->desat;
+        rect->extra.z   = view->desat;
         fill            = ability->stateData[i].cooldownRemaining > 0.0f
                               ? ability->stateData[i].cooldownRemaining / ability->stateData[i].conf.cooldown
                               : 0.0f;
@@ -79,7 +80,7 @@ static void DrawRect(World *world, int id, float fdt, View2 *view)
     ssbo->textureId  = view->textureID;
     ssbo->extra.x    = view->border * (1.0f + view->activeAnim); // border thickness in pixels
     ssbo->extra.y    = view->fill;
-    ssbo->uv         = view->textureUV.z > 0 ? view->textureUV : (vec4s){0, 0, 1, 1};
+    ssbo->uv         = view->textureUV;
 }
 
 static void DrawSliderFill(World *world, int id, float fdt, View2 *view)

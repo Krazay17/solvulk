@@ -14,6 +14,7 @@
 #include "profiler.h"
 
 static SolProfiler profile = {.name = "Interact"};
+const float drag_dist2     = 100.0f;
 
 static void User_Update(World *world)
 {
@@ -24,7 +25,19 @@ static void User_Update(World *world)
         if (!interact)
             return;
 
-        if ((interact->state & INTERACT_DRAGGABLE) && sol_user.grab)
+        if ((interact->state & (INTERACT_DRAGGABLE | INTERACT_ONLYDRAGGABLE)) && sol_user.grab)
+        {
+            interact->state |= INTERACT_DRAGGING;
+            if (!(interact->state_prev & INTERACT_DRAGGING))
+            {
+                vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
+                interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
+            }
+            return;
+        }
+        else if (interact->state & INTERACT_ONLYDRAGGABLE &&
+                 glms_vec2_distance2(sol_user.mouse_pos_ui, (vec2s){interact->down_pos.x, interact->down_pos.y}) >
+                     drag_dist2)
         {
             interact->state |= INTERACT_DRAGGING;
             if (!(interact->state_prev & INTERACT_DRAGGING))
@@ -240,7 +253,7 @@ void Interact_Update(World *world)
     {
         ScInteract *interact = &set->data[i];
         interact->state_prev = interact->state;
-        interact->state &= (INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGABLE);
+        interact->state &= (INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGABLE | INTERACT_ONLYDRAGGABLE);
     }
 
     User_Update(world);
@@ -292,15 +305,10 @@ int Sol_Interact_FindTopmost(World *world, vec2s point)
         ScBody2 *body2 = Sol_Comp_Get(world, id, ScBody2);
         if (body2 && Sol_Body2_ContainsPoint(world, id, point))
         {
-            // Default to layer 0 for interactables without an explicit View2 component
-            int z = 0;
-
-            z = body2->zindex;
-
             // Use >= so newer/topmost elements on the same layer take priority
-            if (z >= bestZ)
+            if (body2->zindex >= bestZ)
             {
-                bestZ = z;
+                bestZ = body2->zindex;
                 best  = id;
             }
         }

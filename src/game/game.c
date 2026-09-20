@@ -26,35 +26,35 @@ void Create_Menu()
 
     { // QUIT BUTTON
         int id =
-            Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE, UILAYER_2, Hook_Quit);
+            Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE, UILAYER_4, Hook_Quit);
     }
     { // DEBUG BUTTON
         int id = Sol_Prefab_Button(world, (vec3s){1130.0f, 150.0f, 0}, "Debug",
-                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, 0, Hook_DebugToggle);
+                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4, Hook_DebugToggle);
     }
     { // FULLSCREEN BUTTON
         int id = Sol_Prefab_Button(world, (vec3s){1130.0f, 200.0f, 0}, "FULLSCREEN",
-                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, 0, Hook_Fullscreen);
+                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4, Hook_Fullscreen);
     }
     { // WIZARD BUTTON
-        int id = Sol_Prefab_Button(world, (vec3s){0, 350.0f, 0}, "Wizard", INTERACT_DRAGGABLE, 0, Hook_SpawnWizard);
+        int id = Sol_Prefab_Button(world, (vec3s){0, 350.0f, 0}, "Wizard", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnWizard);
     }
     { // WIZARDS BUTTON
-        int id       = Sol_Prefab_Button(world, (vec3s){0, 400.0f, 0}, "Wizards", INTERACT_DRAGGABLE, 0, NULL);
+        int id       = Sol_Prefab_Button(world, (vec3s){0, 400.0f, 0}, "Wizards", INTERACT_DRAGGABLE, UILAYER_4, NULL);
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->held   = Hook_SpawnWizard;
     }
 
-    Sol_Prefab_Button(world, (vec3s){0, 450.0f, 0}, "World1", INTERACT_DRAGGABLE, 0, Hook_SwitchWorld);
-    Sol_Prefab_Button(world, (vec3s){0, 500.0f, 0}, "World2", INTERACT_DRAGGABLE, 0, Hook_SwitchWorld2);
-    Sol_Prefab_Slider(world, (vec3s){0.0f, 550.0f, 0}, "Volume", INTERACT_DRAGGABLE, 0, Hook_SetVolume);
-    Sol_Prefab_Button(world, (vec3s){0, 600.0f, 0}, "Clone", INTERACT_DRAGGABLE, 0, Hook_Clone);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 350.0f, 0}, "AddItem", INTERACT_DRAGGABLE, 0, Hook_AddItem);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 400.0f, 0}, "Save", INTERACT_DRAGGABLE, 0, Hook_SaveUser);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 450.0f, 0}, "Save Clear", INTERACT_DRAGGABLE, 0, Hook_SaveClear);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 500.0f, 0}, "Emitter", INTERACT_DRAGGABLE, 0, Hook_SpawnEmitter);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 550.0f, 0}, "Emitter", INTERACT_DRAGGABLE, 0, Hook_SpawnEmitter2);
-    Sol_Prefab_Button(world, (vec3s){150.0f, 600.0f, 0}, "Spawn Player", INTERACT_DRAGGABLE, 0, Hook_SpawnPlayer);
+    Sol_Prefab_Button(world, (vec3s){0, 450.0f, 0}, "World1", INTERACT_DRAGGABLE, UILAYER_4, Hook_SwitchWorld);
+    Sol_Prefab_Button(world, (vec3s){0, 500.0f, 0}, "World2", INTERACT_DRAGGABLE, UILAYER_4, Hook_SwitchWorld2);
+    Sol_Prefab_Slider(world, (vec3s){0.0f, 550.0f, 0}, "Volume", INTERACT_DRAGGABLE, UILAYER_4, Hook_SetVolume);
+    Sol_Prefab_Button(world, (vec3s){0, 600.0f, 0}, "Clone", INTERACT_DRAGGABLE, UILAYER_4, Hook_Clone);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 350.0f, 0}, "AddItem", INTERACT_DRAGGABLE, UILAYER_4, Hook_AddItem);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 400.0f, 0}, "Save", INTERACT_DRAGGABLE, UILAYER_4, Hook_SaveUser);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 450.0f, 0}, "Save Clear", INTERACT_DRAGGABLE, UILAYER_4, Hook_SaveClear);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 500.0f, 0}, "Emitter", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnEmitter);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 550.0f, 0}, "Emitter", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnEmitter2);
+    Sol_Prefab_Button(world, (vec3s){150.0f, 600.0f, 0}, "Spawn Player", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnPlayer);
 }
 
 void Create_Hud()

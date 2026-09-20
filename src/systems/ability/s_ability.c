@@ -35,9 +35,9 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         {
             0,
         },
-    [ABILITY_STATE_DASH] =
+    [ABILITY_STATE_CLAW] =
         {
-            .duration   = 0.3f,
+            .duration   = 0.5f,
             .cooldown   = 1.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
@@ -46,13 +46,21 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_FIREBALL] =
         {
-            .duration        = 3.0f,
-            .recoverDuration = 0.5f,
-            .cooldown        = 1.0f,
-            .damage          = 10.0f,
-            .effectMask      = EFFECTMASK_KNOCKBACK,
-            .buffMask        = BUFFKIND_FIRE,
-            .maxpower        = 2.0f,
+            .duration = 3.0f,
+            .recover  = 0.5f,
+            .cooldown = 1.0f,
+            .damage   = 10.0f,
+            .buffMask = BUFFKIND_FIRE,
+            .maxpower = 2.0f,
+        },
+    [ABILITY_STATE_DASH] =
+        {
+            .duration   = 0.3f,
+            .cooldown   = 1.5f,
+            .damage     = 10.0f,
+            .effectMask = EFFECTMASK_KNOCKBACK,
+            .buffMask   = BUFFKIND_FIRE,
+            .maxpower   = 4.0f,
         },
     [ABILITY_STATE_PISTOL] =
         {
@@ -67,15 +75,6 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         {
             .duration   = 0.5f,
             .cooldown   = 0.0f,
-            .damage     = 10.0f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
-            .maxpower   = 4.0f,
-        },
-    [ABILITY_STATE_CLAW] =
-        {
-            .duration   = 0.5f,
-            .cooldown   = 1.0f,
             .damage     = 10.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
             .buffMask   = BUFFKIND_FIRE,
@@ -99,26 +98,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .buffMask   = BUFFKIND_FIRE,
             .maxpower   = 4.0f,
         },
-    [ABILITY_STATE_WHIP] =
-        {
-            .duration   = 0.5f,
-            .cooldown   = 0.0f,
-            .damage     = 10.0f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
-            .maxpower   = 4.0f,
-        },
-    [ABILITY_STATE_FIREBALLVOLLEY] =
-        {
-            .duration   = 0.5f,
-            .cooldown   = 0.0f,
-            .damage     = 10.0f,
-            .effectMask = EFFECTMASK_KNOCKBACK,
-            .buffMask   = BUFFKIND_FIRE,
-            .maxpower   = 4.0f,
-        },
 };
-
 
 extern const AbilityStateFunc ability_idle_state;
 extern const AbilityStateFunc ability_claw_state;
@@ -144,17 +124,20 @@ void Ability_Step(World *world)
         ScCmd *cmd         = Sol_Comp_Get(world, id, ScCmd);
         if (!cmd)
             continue;
+
+        int slots    = ability->slots;
         bool is_idle = (ability->state == ABILITY_STATE_IDLE);
         for (int j = 0; j < ABILITY_SLOTS; j++)
         {
             AbilityStateData *data     = &ability->stateData[j];
             data->cooldownRemaining    = fmaxf(0.0f, data->cooldownRemaining - fdt);
-            int mask                   = BITC(j);
+            int mask                   = BITC(ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
+            u32 state = ability->slotted_actions[j] ? ability->slotted_actions[j] : ability->base_actions[j];
             if (held && (is_idle || ability->activeSlot != j))
             {
-                Sol_Ability_SetState(world, id, ability->action_map[j], j, false);
+                Sol_Ability_SetState(world, id, state, j, false);
                 break;
             }
         }
@@ -173,13 +156,9 @@ void Ability_Draw(World *world)
         int id             = set->dense[i];
         ScAbility *ability = &set->data[i];
 
-        if (!Sol_Comp_Has(world, id, ScCmd))
-            continue;
-        ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-
         const AbilityStateFunc *state_func = ability_state_func[ability->state];
         if (state_func && state_func->draw)
-            state_func->draw(world, id, ability, cmd);
+            state_func->draw(world, id, ability);
     }
 }
 
@@ -212,11 +191,41 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     data->elapsed          = 0;
     data->accum            = 0;
     data->stage            = 0;
-    data->recover          = 0;
     data->power            = 0;
+    data->recoverRemaining = 0;
 
     if (nextfunc->enter)
         nextfunc->enter(world, id, ability, cmd);
 
     return true;
+}
+
+void Sol_Ability_Equip(World *world, int id, int slot, SolItem item)
+{
+}
+
+AbilityConfig Sol_Ability_GetConf(SolItem item)
+{
+    AbilityConfig conf = ability_base[item.kind];
+    if (item.kind > 0 && item.kind < ABILITY_STATE_COUNT)
+    {
+        conf.cooldown *= 1.0f - (0.1f * (float)item.rarity);
+        conf.recover *= 1.0f - (0.1f * (float)item.rarity);
+
+        conf.damage *= 1.0f + (0.2f * (float)item.rarity);
+        conf.maxpower *= 1.0f + (0.5f * (float)item.rarity);
+        conf.duration *= 1.0f + (0.1f * (float)item.rarity);
+        conf.buffMask |= item.buffs;
+        conf.effectMask |= item.effects;
+    }
+    return conf;
+}
+
+AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)
+{
+    if (!ability || slot < 0 || slot >= ABILITY_SLOTS)
+        return (AbilityConfig){0};
+    if (ability->slotted_actions[slot] > 0)
+        return Sol_Ability_GetConf(ability->slotted_items[slot]);
+    return ability_base[ability->base_actions[slot]];
 }

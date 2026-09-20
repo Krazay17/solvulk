@@ -464,7 +464,6 @@ extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
 extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
 extern const ScAnim anim_default;
 
-
 void Worlds_Tick(World **worlds, int count, double dt);
 void Worlds_Step(World **worlds, int count);
 void Worlds_Draw3d(World **worlds, int count);
@@ -498,6 +497,9 @@ void Sol_Anim_SetSpeed(World *world, int id, AnimLayerId layerId, float rate);
 void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
+
+AbilityConfig Sol_Ability_GetConf(SolItem item);
+AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot);
 
 bool Sol_Move3_SetState(World *world, int id, MoveState state);
 float Sol_Move3_GetBaseSpeed(World *world, int id);

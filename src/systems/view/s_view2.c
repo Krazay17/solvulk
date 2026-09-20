@@ -22,15 +22,21 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     float fill  = 0;
     for (int i = 0; i < count; i++)
     {
-        fill            = ability->stateData[i].cooldownRemaining > 0.0f
-                              ? ability->stateData[i].cooldownRemaining / ability->stateData[i].cooldown
-                              : 1.0f;
         RectSSBO *rect  = Sol_Render_GetNext_Rect(view->layer);
+        u32 texture = view->textureID;
+        if (view->layer == 0)
+        {
+            texture = ability_texture_map[ability->base_actions[i]];
+        }
+        rect->extra.z = view->desat;
+        fill            = ability->stateData[i].cooldownRemaining > 0.0f
+                              ? ability->stateData[i].cooldownRemaining / ability->stateData[i].conf.cooldown
+                              : 0.0f;
         rect->flags     = view->flags;
         rect->extra.y   = fill;
         rect->pos       = (vec4s){UISCALE(pos.x + width * i), UISCALE(pos.y)};
         rect->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(view->dims.y)};
-        rect->textureId = view->textureID;
+        rect->textureId = texture;
         rect->color     = view->color;
         rect->uv        = view->textureUV;
     }
@@ -64,7 +70,6 @@ static void DrawRect(World *world, int id, float fdt, View2 *view)
     float factor     = 1.0f - expf(speed * fdt);
     view->targetFill = view->targetFill == 0 ? 1.0f : view->targetFill;
     view->fill       = Sol_Math_Lerp(view->fill, view->targetFill, factor);
-    // float width      = view->dims.x * view->fill;
     vec3s pos        = world->xform.draw_pos[id];
     RectSSBO *ssbo   = Sol_Render_GetNext_Rect(view->layer);
     ssbo->pos        = (vec4s){UISCALE(pos.x + view->offset.x), UISCALE(pos.y + view->offset.y), 0, 1.0f};
@@ -83,22 +88,18 @@ static void DrawSliderFill(World *world, int id, float fdt, View2 *view)
     if (!slider)
         return;
     vec3s pos = world->xform.draw_pos[id];
-    float t   = slider->value;
 
+    float t            = slider->value;
     float track_origin = pos.x + view->offset.x;
-
-    float right = view->dims.x * t;
-    float y     = pos.y + view->offset.y;
+    float y            = pos.y + view->offset.y;
+    float right        = view->dims.x * t;
 
     RectSSBO *ssbo  = Sol_Render_GetNext_Rect(view->layer);
-    ssbo->pos       = (vec4s){UISCALE(pos.x), UISCALE(pos.y), pos.z, 1.0f};
-    ssbo->rect      = (vec4s){UISCALE(track_origin), UISCALE(y), UISCALE(right), UISCALE(view->dims.y)};
-    ssbo->extra.x   = 1.0f;
-    ssbo->extra.y   = view->border * (1.0f + view->activeAnim);
+    ssbo->pos       = (vec4s){UISCALE(track_origin), UISCALE(pos.y), pos.z, 1.0f};
+    ssbo->rect      = (vec4s){0, 0, UISCALE(right), UISCALE(view->dims.y)};
     ssbo->color     = view->color;
     ssbo->flags     = view->flags;
     ssbo->textureId = view->textureID;
-    ssbo->uv        = view->textureUV.z > 0 ? view->textureUV : (vec4s){0, 0, 1, 1};
 }
 
 static void DrawSlider(World *world, int id, float fdt, View2 *view)
@@ -106,9 +107,9 @@ static void DrawSlider(World *world, int id, float fdt, View2 *view)
     ScSlider *slider = Sol_Comp_Get(world, id, ScSlider);
     if (!slider)
         return;
-    vec3s pos = world->xform.draw_pos[id];
 
-    float t = slider->value;
+    vec3s pos = world->xform.draw_pos[id];
+    float t   = slider->value;
 
     float width        = view->dims.x * 0.15f;
     float track_origin = pos.x + view->offset.x;
@@ -119,13 +120,12 @@ static void DrawSlider(World *world, int id, float fdt, View2 *view)
     float y = pos.y + view->offset.y;
 
     RectSSBO *ssbo  = Sol_Render_GetNext_Rect(view->layer);
-    ssbo->pos       = (vec4s){pos.x, pos.y, pos.z, 1.0f};
-    ssbo->rect      = (vec4s){UISCALE(x), UISCALE(y), UISCALE(width), UISCALE(view->dims.y)};
+    ssbo->pos       = (vec4s){UISCALE(x), UISCALE(y), UISCALE(pos.z), 1.0f};
+    ssbo->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(view->dims.y)};
     ssbo->color     = view->color;
     ssbo->flags     = view->flags;
     ssbo->textureId = view->textureID;
-    ssbo->extra.y   = view->border * (1.0f + view->activeAnim);
-    ssbo->uv        = view->textureUV.z > 0 ? view->textureUV : (vec4s){0, 0, 1, 1};
+    ssbo->extra.x   = view->border * (1.0f + view->activeAnim);
 }
 
 static void DrawCircle(World *world, int id, float fdt, View2 *view)

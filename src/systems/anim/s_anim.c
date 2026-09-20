@@ -122,7 +122,7 @@ void Anim_Tick(World *world)
             {
             case ABILITY_STATE_DASH: {
                 ability_anim.anim  = dash_map[data->as.dash.strafe];
-                ability_anim.speed = 1.1f - data->duration;
+                ability_anim.speed = 1.1f - data->conf.duration;
                 ability_anim.seek  = 0.05f;
             }
             break;

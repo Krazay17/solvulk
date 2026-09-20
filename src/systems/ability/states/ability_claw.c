@@ -21,6 +21,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 
     if (!Sol_Comp_Has(world, id, ScCombat))
         return;
+
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
     ScBody3 *body    = Sol_Comp_Get(world, id, ScBody3);
 
@@ -28,7 +29,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
     if (combat->hitPause == 0)
         data->elapsed += dt;
 
-    if (data->elapsed >= data->duration)
+    if (data->elapsed >= data->conf.duration)
     {
         Sol_Ability_SetState(world, id, ABILITY_STATE_IDLE, 0, 1);
         return;
@@ -63,9 +64,9 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 continue;
 
             SolHit hit = {
-                .damage     = ability_base[ABILITY_STATE_CLAW].damage,
-                .buffMask   = ability_base[ABILITY_STATE_CLAW].buffMask,
-                .effectMask = ability_base[ABILITY_STATE_CLAW].effectMask,
+                .damage     = data->conf.damage,
+                .buffMask   = data->conf.buffMask,
+                .effectMask = data->conf.effectMask,
                 .entA       = id,
                 .entB       = result.entId,
                 .pos        = hit_pos,
@@ -80,10 +81,11 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             }
             body->vel.y = fmaxf(body->vel.y, 1.0f);
 
-            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){
-                .as.fx.pos = hit_pos,
-                .as.fx.kind = EVENTFX_CLAW_HIT,
-            });
+            Sol_Event_Push(world, EVENTKIND_FX,
+                           (SolEvent){
+                               .as.fx.pos  = hit_pos,
+                               .as.fx.kind = EVENTFX_CLAW_HIT,
+                           });
         }
     }
 }
@@ -91,17 +93,18 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->accum            = HITINTERVAL;
-    data->duration         = ability_base[ABILITY_STATE_CLAW].duration;
-    data->cooldown         = ability_base[ABILITY_STATE_CLAW].cooldown;
-    data->hitgen           = Sol_Hitgen_Start(world, id);
+    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+
+    data->accum  = HITINTERVAL;
+    data->hitgen = Sol_Hitgen_Start(world, id);
+
+    data->cooldownRemaining = data->conf.cooldown;
+
 }
 
 void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-
-    data->cooldownRemaining = data->cooldown;
     Sol_Anim_Stop(world, id, ANIM_LAYER_UPPER, 0);
 }
 
@@ -109,7 +112,7 @@ bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, 
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 
-    return data->elapsed >= data->duration * 0.8f;
+    return data->elapsed >= data->conf.duration * 0.8f;
 }
 
 bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
@@ -119,7 +122,7 @@ bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
     return data->cooldownRemaining <= 0.0f;
 }
 
-void Ability_Claw_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Claw_Draw(World *world, int id, ScAbility *ability)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 }

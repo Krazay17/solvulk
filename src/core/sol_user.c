@@ -17,8 +17,6 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-const float drag_dist2 = 100.0f;
-
 SolUser sol_user = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
 static SolResource user_settings_file;
 
@@ -28,7 +26,6 @@ static const SolActions key_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_1] = ACTION_ABILITY3, [SOL_KEY_2] = ACTION_ABILITY4, [SOL_KEY_3] = ACTION_ABILITY5,
     [SOL_KEY_4] = ACTION_ABILITY6,
 
-    [SOL_KEY_5] = ACTION_ABILITY7, [SOL_KEY_6] = ACTION_ABILITY8, [SOL_KEY_7] = ACTION_ABILITY9,
     [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
     [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = ACTION_INTERACT, [SOL_KEY_SPACE] = ACTION_JUMP,
     [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
@@ -122,7 +119,7 @@ void Sol_User_SyncUI()
             SolItem *item = &user_data.items[i];
             float x       = 100.0f + (i % 5) * 64.0f;
             float y       = 100.0f + (i / 5) * 64.0f;
-            Sol_Prefab_AbilityCard(hud, (vec3s){x, y, 0}, item->ability.state, i);
+            Sol_Prefab_AbilityCard(hud, (vec3s){x, y, 0}, item->kind, i);
         }
     }
 
@@ -167,7 +164,7 @@ void Sol_User_SyncUI()
             float y        = 50.0f + (p * 30.0f);
             if (player_ent == view_id)
             {
-                x = 500.0f;
+                x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
                 y = 620.0f;
             }
             int healthbar_id = Sol_Prefab_Healthbar(hud, (vec3s){x, y, 0});
@@ -188,7 +185,7 @@ void Sol_User_SyncUI()
             float y        = 50.0f + (p * 50.0f);
             if (player_ent == view_id)
             {
-                x = 500.0f;
+                x = (WINDOW_WIDTH * 0.5f) - (434.0f * 0.5f);
                 y = 700.0f;
             }
             int abilitybar_id = Sol_Prefab_AbilityBar(hud, (vec3s){x, y, 0}, 7);

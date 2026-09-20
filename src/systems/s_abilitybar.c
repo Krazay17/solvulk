@@ -1,4 +1,5 @@
 #include "world.h"
+#include "sol_core.h"
 #include "sol_user.h"
 #include "sol_math.h"
 
@@ -11,6 +12,16 @@ void Abilitybar_Update(World *world)
         ScAbilitybar *abilitybar = &set->data[i];
         ScInteract *interact     = Sol_Comp_Get(world, id, ScInteract);
         Xform xform              = Xform_Get(world, id);
+        ScRef *ref               = Sol_Comp_Get(world, id, ScRef);
+        if (!ref)
+            continue;
+
+        World *game_world    = Sol_GetWorldByIdx(ref->ent_world);
+        ScAbility *abilities = Sol_Comp_Get(game_world, ref->ent_id, ScAbility);
+        if (abilities)
+        {
+            memset(abilities->slotted_actions, 0, sizeof(abilities->slotted_actions));
+        }
 
         float slot_w  = abilitybar->slot_dims.x;
         float slot_h  = abilitybar->slot_dims.y;
@@ -26,7 +37,7 @@ void Abilitybar_Update(World *world)
             slot_centers[j] = (vec3s){
                 .x = xform.pos.x + (slot_w * j) + half_w,
                 .y = xform.pos.y + half_h,
-                .z = xform.pos.z
+                .z = xform.pos.z,
             };
         }
 
@@ -57,19 +68,20 @@ void Abilitybar_Update(World *world)
                     if (slot < count)
                     {
                         // Target item top-left = slot_center - item_half_dims
-                        vec3s target_pos = {
-                            .x = slot_centers[slot].x - item_half_w,
-                            .y = slot_centers[slot].y - item_half_h,
-                            .z = item_xform.pos.z
-                        };
+                        vec3s target_pos = {.x = slot_centers[slot].x - item_half_w,
+                                            .y = slot_centers[slot].y - item_half_h,
+                                            .z = item_xform.pos.z};
 
                         // Magnetic velocity pull toward target top-left
-                        vec3s diff = glms_vec3_sub(target_pos, item_xform.pos);
+                        vec3s diff     = glms_vec3_sub(target_pos, item_xform.pos);
                         item_body->vel = glms_vec3_scale(diff, 12.0f);
 
-                        // Assign slot to player/item state
-                        // user_data.items[item_ref->index] = slot;
-                        sollog(item_id);
+                        SolItem *user_item = &user_data.items[item_ref->index];
+                        if (user_item)
+                        {                            
+                            abilities->slotted_actions[slot] = user_item->kind;
+                            abilities->slotted_items[slot]   = *user_item;
+                        }
                     }
                 }
             }

@@ -34,12 +34,11 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
             Xform hit_xform = Xform_Get(w, hit_id);
             vec3s explode_hit_pos =
                 Sol_AddScaledDir(ray.start, vecNorm(vecSub(hit_xform.pos, xform.pos)), results[i].t);
-            Sol_Combat_Hit(w, hit_id,
-                           (SolHit){
-                               .damage     = 50.0f,
-                               .pos        = explode_hit_pos,
-                               .effectMask = EFFECTMASK_KNOCKUP,
-                           });
+                
+            SolHit aoe_hit = projectile->aoe_hit;
+            aoe_hit.entB   = hit_id;
+            aoe_hit.pos    = explode_hit_pos;
+            Sol_Combat_Hit(w, hit_id, aoe_hit);
 
             Sol_Event_Push(w, EVENTKIND_FX,
                            (SolEvent){

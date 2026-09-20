@@ -45,6 +45,15 @@ void main() {
     vec4 tex = (fragTextureId != 0u)
         ? texture(textures[fragTextureId], fragUV)
         : vec4(1.0);
+        
+    // Standard luminance weights for RGB
+    float luminance = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 gray = vec3(luminance);
     
-    outColor = tex * fragColor;
+    // Interpolate between original color and grayscale
+    vec3 color = mix(tex.rgb, gray, fragExtra.z);
+    
+    vec4 finalColor = vec4(color, tex.a);
+
+    outColor = finalColor * fragColor;
 }

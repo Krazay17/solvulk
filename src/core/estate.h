@@ -26,14 +26,14 @@ typedef void (*MoveStateEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd);
 typedef void (*MoveStateExit)(World *world, int id, ScMove3 *move, ScCmd *cmd);
 typedef bool (*MoveStateCanExit)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 typedef bool (*MoveStateCanEnter)(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-typedef void (*MoveStateDraw)(World *world, int id, ScMove3 *move, ScCmd *cmd);
+typedef void (*MoveStateDraw)(World *world, int id, ScMove3 *move);
 
 typedef void (*AbilityStateUpdate)(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt);
 typedef void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 typedef void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 typedef bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
 typedef bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
-typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, ScCmd *cmd);
+typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability);
 
 typedef struct
 {

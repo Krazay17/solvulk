@@ -32,7 +32,7 @@
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define PHYSX_GET_LAYER(packed) (((u32)(packed) >> 16) & 0xFFFF)
 #define PHYSX_GET_FILTER(packed) ((u32)(packed) & 0xFFFF)
-#define ABILITY_SLOTS 10
+#define ABILITY_SLOTS 7
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
@@ -44,6 +44,28 @@ typedef void (*SystemUpdate)(World *);
 typedef void (*EntUpdate)(World *, int);
 typedef float (*GetterFunc)(World *world, int id);
 typedef void (*Hook)(World *, int, int);
+
+typedef struct DamagePayload
+{
+    float damage;
+    float power;
+    bool isHeal;
+    u32 buffMask;
+    u32 effectMask;
+} DamagePayload;
+// static inline SolHit SolHit_FromPayload(DamagePayload p, int entA, int entB, vec3s pos, vec3s normal)
+// {
+//     return (SolHit){
+//         .pos        = pos,
+//         .normal     = normal,
+//         .entA       = entA,
+//         .entB       = entB,
+//         .damage     = p.damage,
+//         .isHeal     = p.isHeal,
+//         .buffMask   = p.buffMask,
+//         .effectMask = p.effectMask,
+//     };
+// }
 
 typedef struct SolHit
 {
@@ -59,28 +81,6 @@ typedef struct SolHit
     u32 buffMask;
     u32 effectMask;
 } SolHit;
-
-typedef struct DamagePayload
-{
-    float damage;
-    float power;
-    bool isHeal;
-    u32 buffMask;
-    u32 effectMask;
-} DamagePayload;
-static inline SolHit SolHit_FromPayload(DamagePayload p, int entA, int entB, vec3s pos, vec3s normal)
-{
-    return (SolHit){
-        .pos        = pos,
-        .normal     = normal,
-        .entA       = entA,
-        .entB       = entB,
-        .damage     = p.damage,
-        .isHeal     = p.isHeal,
-        .buffMask   = p.buffMask,
-        .effectMask = p.effectMask,
-    };
-}
 
 typedef struct
 {
@@ -512,6 +512,7 @@ typedef enum
     INTERACT_JUSTUNHOVERED = (1 << 10),
     INTERACT_TOGGLEABLE    = (1 << 11),
     INTERACT_DRAGGABLE     = (1 << 12),
+    INTERACT_ONLYDRAGGABLE = (1 << 13),
 } InteractState;
 
 typedef enum
@@ -563,6 +564,7 @@ typedef enum
     UILAYER_1,
     UILAYER_2,
     UILAYER_3,
+    UILAYER_4,
     UILAYER_COUNT,
 } UiLayer;
 
@@ -662,9 +664,6 @@ typedef enum
     ACTION_ABILITY4,
     ACTION_ABILITY5,
     ACTION_ABILITY6,
-    ACTION_ABILITY7,
-    ACTION_ABILITY8,
-    ACTION_ABILITY9,
     ACTION_DASH,
     ACTION_FWD,
     ACTION_BWD,
@@ -751,16 +750,31 @@ typedef enum
 
 typedef struct
 {
-    u32 state, rarity;
-    float damage, maxpower;
-    float cooldown, duration, recoverDuration;
+    float damage;
+    float cooldown;
+    float maxpower;
+
+    float duration;
+    float recover;
     u32 buffMask;
     u32 effectMask;
 } AbilityConfig;
 
+typedef enum ItemRarity
+{
+    ITEMRARITY_NORMAL,
+    ITEMRARITY_DECENT,
+    ITEMRARITY_GOOD,
+    ITEMRARITY_EPIC,
+    ITEMRARITY_LEGENDARY,
+    ITEMRARITY_COUNT,
+}ItemRarity;
 typedef struct SolItem
 {
-    AbilityConfig ability;
+    u16 kind;
+    u16 rarity;
+    u32 buffs;
+    u32 effects;
 } SolItem;
 
 typedef enum

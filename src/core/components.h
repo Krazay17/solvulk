@@ -57,6 +57,8 @@ typedef struct ScTeam
 typedef struct ScPlayer
 {
     int level;
+    SolItem slotted_items[ABILITY_SLOTS];
+    int ability_states[ABILITY_SLOTS];
 } ScPlayer;
 
 typedef struct ScRemote
@@ -222,6 +224,10 @@ typedef struct
     union {
         struct
         {
+            float explode_damage;
+        } fireball;
+        struct
+        {
             vec3s dir;
             StrafeDir strafe;
         } dash;
@@ -239,19 +245,19 @@ typedef struct
         } whip;
     } as;
 
-    float accum, power;
+    float elapsed, accum, power, recoverRemaining, cooldownRemaining;
 
-    float elapsed, duration;
-    float recover, recoverDuration;
-    float cooldown, cooldownRemaining;
     u32 hitgen;
     u8 stage;
     bool held;
+    AbilityConfig conf;
 } AbilityStateData;
 typedef struct ScAbility
 {
     int state, activeSlot, slots;
-    int action_map[ABILITY_SLOTS];
+    int base_actions[ABILITY_SLOTS];
+    int slotted_actions[ABILITY_SLOTS];
+    SolItem slotted_items[ABILITY_SLOTS];
     AbilityStateData stateData[ABILITY_SLOTS];
 } ScAbility;
 
@@ -348,6 +354,7 @@ typedef struct
     float hoverAnim, downAnim, activeAnim;
     float fill, scale, textWidth, border;
     float targetFill, fillSpeed;
+    float desat;
     u8 textureID, flags, layer;
     vec4s textureUV;
     char text[64];
@@ -380,6 +387,7 @@ typedef struct ScProjectile
     u32 hitgen;
     u32 bounces;
     SolHit hit;
+    SolHit aoe_hit;
     float radius;
     float power;
     Hook hook;
@@ -454,7 +462,7 @@ typedef struct ScAbilitybar
 {
     int slots;
     vec2s slot_dims;
-}ScAbilitybar;
+} ScAbilitybar;
 
 // #################
 // #### SINGLES ####

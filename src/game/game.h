@@ -129,7 +129,8 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItem(&(SolItem){.ability.state = ABILITY_STATE_CLAW, .ability.cooldown = 1.0f});
+    Sol_User_AddItem(&(SolItem){.kind = ABILITY_STATE_CLAW, .effects = EFFECTMASK_KNOCKUP});
+    Sol_User_AddItem(&(SolItem){.kind = ABILITY_STATE_FIREBALL, .effects = EFFECTMASK_KNOCKUP});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)

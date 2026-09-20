@@ -37,9 +37,10 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
 
     // Track the raw width maximums
     float maxWidth = 0.0f;
+    AbilityConfig cfg = Sol_Ability_GetConf(item);
 
     // 1. Measure and buffer Header
-    const char *headerText = ability_state_name[item.ability.state];
+    const char *headerText = ability_state_name[item.kind];
     float headerSize       = 15.0f;
     float headerWidth      = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
     if (headerWidth > maxWidth)
@@ -48,30 +49,29 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
     // 2. Buffer & Measure body lines
     float bodyTextSize = 10.0f;
 
-    if (item.ability.cooldown > 0.0f && lineCount < MAX_TOOLTIP_LINES)
+    if (cfg.cooldown > 0.0f && lineCount < MAX_TOOLTIP_LINES)
     {
-        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Cooldown: %.1fs", item.ability.cooldown);
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Cooldown: %.1fs", cfg.cooldown);
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;
         lineCount++;
     }
-    if (item.ability.duration > 0.0f && lineCount < MAX_TOOLTIP_LINES)
+    if (cfg.duration > 0.0f && lineCount < MAX_TOOLTIP_LINES)
     {
-        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Duration: %.1fs", item.ability.duration);
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Duration: %.1fs", cfg.duration);
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;
         lineCount++;
     }
 
-    float totalDamage = item.ability.damage + ability_base[item.ability.state].damage;
+    float totalDamage = cfg.damage;
     if (totalDamage > 0 && lineCount < MAX_TOOLTIP_LINES)
     {
-        if (item.ability.damage > 0)
+        if (cfg.damage > 0)
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f (+%.0f)", totalDamage,
-                     item.ability.damage);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f", totalDamage);
         }
         else
         {
@@ -83,7 +83,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
         lineCount++;
     }
 
-    u8 totalBuffs = item.ability.buffMask | ability_base[item.ability.state].buffMask;
+    u8 totalBuffs = cfg.buffMask;
     if ((totalBuffs & BITC(BUFFKIND_FIRE)) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Ignite");
@@ -101,7 +101,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
         lineCount++;
     }
 
-    u32 totalEffects = item.ability.effectMask | ability_base[item.ability.state].effectMask;
+    u32 totalEffects = cfg.effectMask;
     if ((totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG)) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Knockback");

@@ -7,14 +7,15 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MAX_POWER 3.0f
+#define MAX_POWER 2.5f
 
-static vec3s GetProjectilePos(World *world, int id, ScCmd *cmd, float power)
+static vec3s GetProjectilePos(World *world, int id, float power)
 {
-    vec3s pos = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
+    vec3s lookdir = Sol_RotFromQuat(Xform_GetDraw(world, id).rot);
+    vec3s pos     = Sol_Model_GetBoneXform(world, id, "hand.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
-    pos = vecAdd(pos, vecSca(cmd->aimdir, (power - (MIN_POWER + 0.2f))));
+    pos = vecAdd(pos, vecSca(lookdir, (power - (MIN_POWER + 0.2f))));
     pos = vecAdd(pos, vecSca(WORLD_UP, (power - (MIN_POWER + 0.6f))));
     return pos;
 }
@@ -26,30 +27,35 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
     switch (data->stage)
     {
     case 0:
-        data->power = Sol_Math_Lerp_Clamped(MIN_POWER, MAX_POWER, data->elapsed / data->duration);
+        data->power = Sol_Math_Lerp_Clamped(MIN_POWER, data->conf.maxpower, data->elapsed / data->conf.duration);
 
         if (!data->held)
             data->stage++;
         break;
     case 1:
         data->stage++;
-        vec3s pos = GetProjectilePos(world, id, cmd, data->power);
+        vec3s pos = GetProjectilePos(world, id, data->power);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
-        
+
         { // Spawn fireball
             int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 20.0f, data->power);
             ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit          = (SolHit){
                 .entA       = id,
-                .effectMask = ability_base[ABILITY_STATE_FIREBALL].effectMask,
-                .damage     = 10.0f,
+                .damage     = data->conf.damage,
+            };
+            projectile->aoe_hit = (SolHit){
+                .entA       = id,
+                .effectMask = data->conf.effectMask,
+                .buffMask   = data->conf.buffMask,
+                .damage     = data->conf.damage,
             };
             projectile->power = data->power;
         }
         break;
     case 2:
-        data->recover += dt;
-        if (data->recover > data->recoverDuration)
+        data->recoverRemaining += dt;
+        if (data->recoverRemaining > data->conf.recover)
             Sol_Ability_SetState(world, id, 0, 0, true);
         break;
     }
@@ -58,23 +64,20 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->duration         = ability_base[ABILITY_STATE_FIREBALL].duration;
-    data->cooldown         = ability_base[ABILITY_STATE_FIREBALL].cooldown;
-    data->recoverDuration  = ability_base[ABILITY_STATE_FIREBALL].recoverDuration;
-
-    Sol_Comp_Get(world, id, ScCombat)->hitPause = 0;
+    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    
+    data->cooldownRemaining = data->conf.cooldown;
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->cooldownRemaining = data->cooldown;
 }
 
 bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    return data->elapsed > data->duration * 0.8f;
+    return data->elapsed > data->conf.duration * 0.8f;
 }
 
 bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
@@ -83,14 +86,14 @@ bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *
     return data->cooldownRemaining <= 0.0f;
 }
 
-void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Fireball_Draw(World *world, int id, ScAbility *ability)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 
     if (data->stage > 0)
         return;
 
-    vec3s pos = GetProjectilePos(world, id, cmd, data->power);
+    vec3s pos = GetProjectilePos(world, id, data->power);
 
     *Sol_Render_GetNextSphere(PIPE_FIREBALL) = (SphereSSBO){
         .color = VEC4_RED,

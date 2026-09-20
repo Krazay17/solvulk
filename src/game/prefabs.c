@@ -72,8 +72,17 @@ static const ScCombat dude_combat = {
 };
 
 static const ScAbility dude_ability = {
-    .action_map = {ABILITY_STATE_CLAW, ABILITY_STATE_FIREBALL, 0, 0, 0, 0, 0, 0, 0, ABILITY_STATE_DASH},
-    .slots      = 10,
+    .base_actions =
+        {
+            ABILITY_STATE_CLAW,
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_DASH,
+        },
+    .slots = 7,
 };
 
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
@@ -118,9 +127,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
-    ScAbility *ability     = Sol_Comp_Add(world, id, ScAbility);
-    ability->action_map[0] = ABILITY_STATE_CLAW;
-    ability->action_map[1] = ABILITY_STATE_FIREBALL;
+    *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {3, 3, 3, 3, 3, 3, 3}};
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
     Sol_Comp_Add(world, id, ScCmd);
@@ -163,14 +170,16 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
-        .shape = SHAPE2_REC,
-        .dims  = {dims.x, dims.y, 0},
-        .mask  = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
+        .zindex = layer,
+        .shape  = SHAPE2_REC,
+        .dims   = {dims.x, dims.y, 0},
+        .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
     };
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
     view->count    = 4;
     view->views[0] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.1f, 0.1f, 0.1f, 1.0f},
@@ -179,6 +188,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     view->views[1] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.9f, 0.1f, 0.1f, 1.0f},
@@ -188,6 +198,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[2] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -196,6 +207,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .border      = 3.0f,
     };
     view->views[3] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
         .dims        = {16.0f},
         .color       = {0.0f, 1.0f, 0.0f, 1.0f},
@@ -215,15 +227,17 @@ static void Hook_PrintValue(World *w, int a, int b)
 int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook func)
 {
     vec2s dims = {150.0f, 50.0f};
-    int id     = Sol_Create_Ent(world, pos);
+
+    int id = Sol_Create_Ent(world, pos);
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->state |= interact_flags;
 
     ScBody2 body = {
-        .shape = SHAPE2_REC,
-        .dims  = {dims.x, dims.y, 0},
-        .mask  = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
+        .zindex = layer,
+        .shape  = SHAPE2_REC,
+        .dims   = {dims.x, dims.y, 0},
+        .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
     };
     *Sol_Comp_Add(world, id, ScBody2) = body;
 
@@ -239,6 +253,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
     view->count    = 8;
     view->views[0] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.1f, 0.1f, 0.1f, 1.0f},
@@ -247,11 +262,13 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
     view->views[1] = (View2){
+        .layer = layer,
         .kind  = VIEW2KIND_SLIDER_FILL,
         .dims  = {dims.x, dims.y},
-        .color = {0.0f, 1.0f, 0.0f, 1.0f},
+        .color = {0.1f, 0.1f, 0.7f, 1.0f},
     };
     view->views[2] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.9f, 0.1f, 0.1f, 1.0f},
@@ -261,6 +278,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[3] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
         .color       = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -270,23 +288,27 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     };
 
     view->views[4] = (View2){
+        .layer = layer,
         .kind  = VIEW2KIND_SLIDER,
         .dims  = {dims.x, dims.y},
         .color = {0.1f, 0.1f, 0.7f, 1.0f},
     };
     view->views[5] = (View2){
+        .layer     = layer,
         .kind      = VIEW2KIND_SLIDER,
         .dims      = {dims.x, dims.y},
         .color     = {0.5f, 0.1f, 0.7f, 1.0f},
         .textureID = SOL_TEXTURE_SWIRLFRAME,
     };
     view->views[6] = (View2){
+        .layer  = layer,
         .kind   = VIEW2KIND_SLIDER,
         .dims   = {dims.x, dims.y},
         .color  = {0.0f, 0.0f, 0.0f, 1.0f},
         .border = 3.0f,
     };
     view->views[7] = (View2){
+        .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
         .dims        = {16.0f},
         .color       = {0.0f, 1.0f, 0.0f, 1.0f},
@@ -402,6 +424,7 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
 int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
 {
     vec3s dims = {434.0f, 62.0f};
+    u32 layer  = UILAYER_0;
 
     int id = Sol_Create_Ent(world, pos);
 
@@ -412,10 +435,10 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
     };
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .zindex   = layer,
         .shape    = SHAPE2_REC,
         .dims.x   = dims.x,
         .dims.y   = dims.y,
-        .zindex   = 1,
         .isSensor = true,
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
@@ -423,17 +446,25 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
     *Sol_Comp_Add(world, id, ScView2) = (ScView2){.count = 3,
                                                   .views = {
                                                       {
+                                                          .layer = layer,
                                                           .kind  = VIEW2KIND_RECT,
                                                           .dims  = {dims.x, dims.y},
                                                           .color = {0, 0, 0, 1},
                                                       },
                                                       {
-                                                          .kind       = VIEW2KIND_ABILITYBAR,
+                                                          .layer = layer,
+                                                          .kind  = VIEW2KIND_ABILITYBAR,
+                                                          .dims  = {dims.x, dims.y},
+                                                          .color = {1.0f, 1.0f, 1.0f, 1.0f},
+                                                          .desat = 1.0f,
+                                                      },
+                                                      {
                                                           .layer      = UILAYER_2,
+                                                          .kind       = VIEW2KIND_ABILITYBAR,
                                                           .dims       = {dims.x, dims.y},
                                                           .flags      = 0b111,
-                                                          .color      = {0, 1, 0, 0.5f},
-                                                          .hoverColor = {0.5f, 0.5f, 0.5f, 1.0f},
+                                                          .color      = {1, 0, 0, 1.0f},
+                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
                                                           .textureID  = SOL_TEXTURE_SWIRLFRAME,
                                                       },
                                                   }};
@@ -445,17 +476,19 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
 {
     vec2s dims  = {62.0f, 62.0f};
     u32 texture = ability_texture_map[ability];
-    int id      = Sol_Create_Ent(world, pos);
+    u32 layer   = UILAYER_1;
 
-    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
+    int id = Sol_Create_Ent(world, pos);
+
+    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_ONLYDRAGGABLE;
 
     *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ITEM, .index = ref};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .zindex   = layer,
         .shape    = SHAPE2_REC,
         .dims.x   = dims.x,
         .dims.y   = dims.y,
-        .zindex   = 1,
         .isSensor = true,
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
@@ -468,6 +501,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
         .count = 2,
         .views[0] =
             {
+                .layer       = layer,
                 .kind        = VIEW2KIND_RECT,
                 .dims        = {dims.x, dims.y},
                 .textureID   = texture,
@@ -481,6 +515,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int re
             },
         .views[1] =
             {
+                .layer       = layer,
                 .kind        = VIEW2KIND_RECT,
                 .dims        = {dims.x, dims.y},
                 .textureID   = SOL_TEXTURE_BORDER,

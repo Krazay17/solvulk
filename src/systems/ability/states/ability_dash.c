@@ -11,12 +11,12 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
 
-    if (data->elapsed >= data->duration)
+    if (data->elapsed >= data->conf.duration)
     {
         Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
         return;
     }
-    float alpha = DASH_ALPHAMOD - (data->elapsed / data->duration);
+    float alpha = DASH_ALPHAMOD - (data->elapsed / data->conf.duration);
 
     if (Sol_Comp_Has(world, id, ScBody3))
     {
@@ -28,8 +28,7 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
 void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->duration         = ability_base[ABILITY_STATE_DASH].duration;
-    data->cooldown         = ability_base[ABILITY_STATE_DASH].cooldown;
+    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
 
     vec3s flat_lookdir   = cmd->lookdir;
     flat_lookdir.y       = 0;
@@ -43,18 +42,19 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
     data->as.dash.strafe =
         Sol_GetStrafedirYaw(data->as.dash.dir.x, data->as.dash.dir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
+        
+    data->cooldownRemaining = data->conf.cooldown;
 }
 
 void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
     AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->cooldownRemaining = data->cooldown;
 }
 
 bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    return data->elapsed > data->duration * 0.8f;
+    return data->elapsed > data->conf.duration * 0.8f;
 }
 
 bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)

@@ -39,17 +39,17 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         {
             .duration   = 0.5f,
             .cooldown   = 1.0f,
-            .damage     = 10.0f,
+            .damage     = 30.0f,
             .effectMask = EFFECTMASK_KNOCKBACK,
             .buffMask   = BITC(BUFFKIND_FIRE),
             .maxpower   = 4.0f,
         },
     [ABILITY_STATE_FIREBALL] =
         {
-            .duration = 3.0f,
+            .duration = 4.0f,
             .recover  = 0.5f,
             .cooldown = 1.0f,
-            .damage   = 10.0f,
+            .damage   = 15.0f,
             .buffMask = BITC(BUFFKIND_FIRE),
             .maxpower = 2.0f,
         },
@@ -147,7 +147,7 @@ void Ability_Step(World *world, double dt)
     }
 }
 
-void Ability_Draw(World *world)
+void Ability_Draw(World *world, double dt)
 {
     SparseSet_ScAbility *set = Sol_Comp_Set(world, ScAbility);
     for (int i = 0; i < set->cnt; i++)

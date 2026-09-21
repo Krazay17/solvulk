@@ -54,8 +54,6 @@ typedef struct ScTeam
 typedef struct ScPlayer
 {
     int level;
-    SolItem slotted_items[ABILITY_SLOTS];
-    int ability_states[ABILITY_SLOTS];
 } ScPlayer;
 
 typedef struct ScRemote
@@ -68,15 +66,56 @@ typedef struct
     float lastEntered, elapsed, duration, accum;
     float attacktimer;
 } AiStateData;
+
+// #define AIKNOWS_LIST(X)                                                                                                \
+//     X(STEPFRONT)                                                                                                       \
+//     X(LEDGEFRONT)                                                                                                      \
+//     X(WALLFRONT)                                                                                                       \
+//     X(WALLLEFT)                                                                                                        \
+//     X(WALLRIGHT)                                                                                                       \
+//     X(WALLBACK)                                                                                                        \
+//     X(TARGETFRONT)                                                                                                     \
+//     X(TARGETLEFT)                                                                                                      \
+//     X(TARGETRIGHT)                                                                                                     \
+//     X(TARGETBACK)                                                                                                      \
+//     X(TARGETABOVE)                                                                                                     \
+//     X(TARGETBELOW)                                                                                                     \
+//     X(TARGETCLOSE)                                                                                                     \
+//     X(TARGETMID)                                                                                                       \
+//     X(TARGETFAR)
+
+// typedef enum
+// {
+// #define X(name) AIKNOWS_BIT_##name,
+//     AIKNOWS_LIST(X)
+// #undef X
+//     AIKNOWS_COUNT,
+// } AiKnowsBit;
+
+// typedef enum
+// {
+// #define X(name) AIKNOWS_##name = (1 << AIKNOWS_BIT_##name),
+//     AIKNOWS_LIST(X)
+// #undef X
+// AIKNOWS_STATE_COUNT,
+// } AiKnows;
+
+typedef struct AiBrain
+{
+    u32 target, justHitUs;
+    vec3s target_pos;
+    vec3s target_dir;
+    float target_dist;
+    float dropAggroTimer;
+} AiBrain;
 typedef struct ScAi
 {
     u8 kind;
     AiState state;
-    vec3s dirToTarget;
-    u32 target, last_target, justHitUs;
-    float aggroRange;
-    float distToTarget, dropAggroTimer, lastHit;
+    AiKnows knows;
     AiStateData stateData[AISTATE_COUNT];
+    AiBrain brain;
+    float aggroRange;
 } ScAi;
 
 typedef struct ScBody3

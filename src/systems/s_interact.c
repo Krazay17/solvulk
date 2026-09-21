@@ -133,7 +133,7 @@ static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
 {
     int i, j;
     SparseSet_ScCmd *set_cmd = Sol_Comp_Set(world, ScCmd);
-#pragma omp parallel for schedule(dynamic)
+// #pragma omp parallel for schedule(dynamic)
     for (i = 0; i < set_cmd->cnt; i++)
     {
         int id               = set_cmd->dense[i];

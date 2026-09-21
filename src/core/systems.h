@@ -14,6 +14,7 @@ void Move3_Init(World *world);
 void Camera_Init(World *world);
 void Model_Init(World *world);
 
+void Cmd_Update(World *world, double dt);
 void Player_Tick(World *world, double dt);
 void Interact_Update(World *world, double dt);
 void Parent_Update(World *world, double dt);
@@ -33,6 +34,7 @@ void Combat_Step(World *world, double dt);
 void Ai_Step(World *world, double dt);
 void Interact_Step(World *world, double dt);
 
+void Ref_Update(World *world, double dt);
 void Fx_Update(World *world, double dt);
 void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
@@ -41,12 +43,12 @@ void Camera_Tick(World *world, double dt);
 void Emitter_Update(World *world, double dt);
 void Timer_Update(World *world, double dt);
 
-void Particle_Draw(World *world);
-void Scoreboard_Draw(World *world);
-void Model_Render(World *world);
-void Ability_Draw(World *world);
-void View3_Draw(World *world);
-void View2_Draw(World *world);
-void Debug_Tick(World *world);
-void Debug_Draw3(World *world);
-void Debug_Draw2(World *world);
+void Particle_Draw(World *world, double dt);
+void Scoreboard_Draw(World *world, double dt);
+void Model_Render(World *world, double dt);
+void Ability_Draw(World *world, double dt);
+void View3_Draw(World *world, double dt);
+void View2_Draw(World *world, double dt);
+void Debug_Tick(World *world, double dt);
+void Debug_Draw3(World *world, double dt);
+void Debug_Draw2(World *world, double dt);

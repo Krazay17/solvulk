@@ -1,9 +1,17 @@
 #include "world.h"
 
+const Buff buff_kinds[BUFFKIND_COUNT] = {
+    [BUFFKIND_FIRE] =
+        {
+            .damage   = 2.0f,
+            .rate     = 0.5f,
+            .duration = 4.0f,
+            .power    = 1.0f,
+        },
+};
+
 const char *buff_names[BUFFKIND_COUNT] = {
-    [0]             = "NoBuff",
-    [BUFFKIND_FIRE] = "FireBuff",
-    [2]             = "2Buff",
+    [BUFFKIND_FIRE] = "BUFFKIND_FIRE",
 };
 
 static inline void Fire_OnApply(World *world, int id, Buff *buff)
@@ -19,7 +27,13 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
         buff->accum -= buff->rate;
         ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
         if (combat)
-            Sol_Combat_Damage(world, id, combat, buff->power * buff->damage);
+            Sol_Combat_Hit(world, id,
+                           (SolHit){
+                               .entA   = buff->source,
+                               .entB   = id,
+                               .damage = buff->damage,
+                               .power  = buff->power,
+                           });
     }
 }
 
@@ -35,16 +49,6 @@ static const struct
             .apply  = Fire_OnApply,
             .remove = Fire_OnRemove,
             .update = Fire_OnUpdate,
-        },
-};
-
-const Buff buff_kinds[BUFFKIND_COUNT] = {
-    [BUFFKIND_FIRE] =
-        {
-            .damage   = 2.0f,
-            .rate     = 0.2f,
-            .duration = 4.0f,
-            .power    = 1.0f,
         },
 };
 
@@ -71,13 +75,17 @@ void Buff_Update(World *world, double dt)
             }
             if (ons[buff->kind].update)
                 ons[buff->kind].update(world, id, buff);
-            if (buff->elapsed > buff->duration)
+            if (!buff->inf && (buff->elapsed > buff->duration))
             {
                 if (ons[buff->kind].remove)
                     ons[buff->kind].remove(world, id, buff);
+                buffs->activeKindsMask &= ~BITC(buff->kind);
             }
             else
+            {
                 buffs->buffs[write++] = *buff;
+                buffs->activeKindsMask |= BITC(buff->kind);
+            }
         }
         buffs->count = write;
         if (buffs->count <= 0)
@@ -90,10 +98,50 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power)
     ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
     if (buffs->count < MAX_BUFFS)
     {
-        Buff base                    = buff_kinds[kind];
-        base.kind                    = kind;
-        base.source                  = source;
-        buffs->buffs[buffs->count++] = base;
+        Buff b                       = buff_kinds[kind];
+        b.kind                       = kind;
+        b.source                     = source;
+        buffs->buffs[buffs->count++] = b;
+    }
+}
+
+void Sol_Buff_AddE(World *world, int id, BuffKind kind, u32 source, float power, float duration)
+{
+    ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
+    if (buffs->count < MAX_BUFFS)
+    {
+        Buff b                       = buff_kinds[kind];
+        b.kind                       = kind;
+        b.source                     = source;
+        b.duration                   = duration;
+        buffs->buffs[buffs->count++] = b;
+    }
+}
+
+Buff *Sol_Buff_Next(World *world, int id, BuffKind kind)
+{
+    ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
+    if (buffs->count < MAX_BUFFS)
+    {
+        Buff *b = &buffs->buffs[buffs->count++];
+        *b      = buff_kinds[kind];
+        b->kind = kind;
+        return b;
+    }
+    return NULL;
+}
+
+void Sol_Buff_Rem(World *world, int id, BuffKind kind)
+{
+    ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
+    for (int i = 0; i < buffs->count; i++)
+    {
+        Buff *buff = &buffs->buffs[i];
+        if (buff->kind == kind)
+        {
+            buff->inf     = 0;
+            buff->elapsed = buff->duration;
+        }
     }
 }
 

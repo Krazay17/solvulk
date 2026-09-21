@@ -52,6 +52,7 @@ int Sol_WriteFile(const char *filename, const void *buffer, const size_t size)
 int Sol_DeleteFile(const char *filename)
 {
     // FILE *file = fopen
+    remove(filename);
 }
 
 SolResource Sol_LoadResource(const char *resourceName, const char *prefix)

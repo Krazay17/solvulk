@@ -3,16 +3,18 @@
 
 void Camera_Tick(World *world, double dt)
 {
-    float fdt = (float)dt;
+    float fdt               = (float)dt;
     SparseSet_ScCamera *set = Sol_Comp_Set(world, ScCamera);
-    for (int i = 0; i < set->cnt; i++)
+
+    int count = set->cnt;
+    for (int i = count; i-- > 0;)
     {
         int id           = set->dense[i];
         ScCamera *camera = &set->data[i];
-        Xform xform = Xform_GetDraw(world, id);
+        Xform xform      = Xform_GetDraw(world, id);
         ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
-        vec3s head = Sol_Body3_GetHead(world, id);
+        vec3s head    = Sol_Body3_GetHead(world, id);
         vec3s lookdir = (vec3s){0, 0, 1.0f};
 
         if (Sol_Comp_Has(world, id, ScCmd))
@@ -35,8 +37,15 @@ void Camera_Tick(World *world, double dt)
             float factor = 1.0f - expf(-camera->lerpspeed * fdt);
 
             SolRayResult anchortrace = {0};
-            bool offsetHit           = Sol_Raycast1(
-                world, (SolRay){.start = head, .dir = offsetvec, .dist = camera->desired_offset, .mask = 1, .ignoreEnt = id}, &anchortrace);
+            bool offsetHit           = Sol_Raycast1(world,
+                                                    (SolRay){
+                                                        .start     = head,
+                                                        .dir       = offsetvec,
+                                                        .dist      = camera->desired_offset,
+                                                        .mask      = 0,
+                                                        .ignoreEnt = id,
+                                                    },
+                                                    &anchortrace);
 
             float target_offset = camera->desired_offset;
             if (offsetHit)
@@ -56,8 +65,15 @@ void Camera_Tick(World *world, double dt)
             camera->anchor = vecAdd(head, vecSca(offsetvec, camera->current_offset));
 
             SolRayResult dist_trace = {0};
-            bool distanceHit        = Sol_Raycast1(
-                world, (SolRay){.start = camera->anchor, .dir = invDir, .dist = camera->desired_distance, .mask = 1, .ignoreEnt = id}, &dist_trace);
+            bool distanceHit        = Sol_Raycast1(world,
+                                                   (SolRay){
+                                                       .start     = camera->anchor,
+                                                       .dir       = invDir,
+                                                       .dist      = camera->desired_distance,
+                                                       .mask      = 0,
+                                                       .ignoreEnt = id,
+                                                   },
+                                                   &dist_trace);
 
             float target_dist = camera->desired_distance;
             if (distanceHit)

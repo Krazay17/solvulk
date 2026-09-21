@@ -16,8 +16,10 @@
 #include "render/render.h"
 
 #define SOL_MATH_IMPLEMENTATION
+#define QTABLE_RES_NAME "qtables"
 #include "sol_math.h"
 
+SolData solData;
 SolState solState;
 
 static double accumulator = SOL_TIMESTEP;
@@ -29,6 +31,10 @@ int Sol_Init(void *hwnd, void *hInstance)
 
     solState.g_hwnd = hwnd;
     int result;
+
+    result = Sol_Core_Init();
+    if (result != 0)
+        printf("Core failed to init, code: %d\n", result);
 
     result = Sol_User_Init();
     if (result != 0)
@@ -49,7 +55,7 @@ int Sol_Init(void *hwnd, void *hInstance)
     result = Sol_Models_Init();
     if (result != 0)
         printf("Models failed to init, code:%d\n", result);
-        
+
     result = Sol_Render_Init();
     if (result != 0)
         printf("Render failed to init, code:%d\n", result);
@@ -118,18 +124,24 @@ void Sol_Tick(double dt, double time)
     Sol_End_Draw();
 
     Worlds_Event_Clear(solState.worlds, solState.worldCount);
+    if (solState.destroy_qued)
+    {
+        Sol_Destroy();
+    }
 }
 
 void Sol_Destroy()
 {
     // Net_DeInit();
 
-    for (int i = 0; i < solState.worldCount; i++)
+    for (int i = solState.worldCount - 1; i >= 0; i--)
     {
         World *world = solState.worlds[i];
         World_Destroy(world);
     }
+    Sol_Core_Deinit();
     solState.isRunning = false;
+    Sol_Quit();
 }
 
 static void Sol_OnResize()
@@ -165,4 +177,15 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
     solState.uiScale = fminf(sx, sy);
 
     solState.needsResize = true; // game thread picks this up in Sol_OnResize
+}
+int Sol_Core_Init()
+{
+    SolResource res = Sol_LoadResource(QTABLE_RES_NAME, NULL);
+    if (res.data)
+        memcpy(res.data, &solData.qtable, sizeof(solData.qtable));
+    return 0;
+}
+void Sol_Core_Deinit()
+{
+    Sol_WriteFile(QTABLE_RES_NAME, &solData.qtable, sizeof(solData.qtable));
 }

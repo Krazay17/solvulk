@@ -26,6 +26,7 @@ typedef struct SolState
     volatile bool isRunning;
     volatile bool needsResize;
     bool debug;
+    bool destroy_qued;
 
     double dt;
     float fdt;
@@ -38,6 +39,12 @@ typedef struct SolState
     void *g_hwnd;
 } SolState;
 
+typedef struct SolData
+{
+    QTable qtable;
+} SolData;
+
+extern SolData solData;
 extern SolState solState;
 
 #define UIUNSCALE(v) ((v) / solState.uiScale)
@@ -74,8 +81,10 @@ static inline World *Sol_GetWorldByIdx(WorldIdx idx)
 }
 
 int Sol_Init(void *hwnd, void *hInstance);
-void Sol_Tick(double dt, double time);
 void Sol_Destroy();
+void Sol_Tick(double dt, double time);
+int Sol_Core_Init();
+void Sol_Core_Deinit();
 
 void Sol_Window_OnResize(int x, int y, int width, int height);
 

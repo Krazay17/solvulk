@@ -9,7 +9,7 @@
 #include "world.h"
 #include "render/render.h"
 
-void Debug_Tick(World *world)
+void Debug_Tick(World *world, double dt)
 {
     float fdt = world->fdt;
     SlDebug *sys = Sol_Comp_Get(world, 0, SlDebug);

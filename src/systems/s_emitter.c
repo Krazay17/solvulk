@@ -214,7 +214,7 @@ void Emitter_Update(World *world, double dt)
     Particle_Update(world, single, fdt);
 }
 
-void Particle_Draw(World *world)
+void Particle_Draw(World *world, double dt)
 {
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
 

@@ -150,7 +150,6 @@ static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
     assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
     RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
     *ssbo          = (RectSSBO){0};
-    ssbo->uv       = (vec4s){0.0f, 0.0f, 1.0f, 1.0f};
     return ssbo;
 }
 

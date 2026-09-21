@@ -18,8 +18,7 @@ static POINT dragStartPos;
 static DWORD WINAPI GameThreadProc(LPVOID lpParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-
-    BOOL CALLBACK EnumProc(HMODULE hModule, LPCSTR lpType, LPSTR lpName, LONG_PTR lParam)
+BOOL CALLBACK EnumProc(HMODULE hModule, LPCSTR lpType, LPSTR lpName, LONG_PTR lParam)
 {
     if (IS_INTRESOURCE(lpName))
         printf("  [ordinal %d]\n", (int)(INT_PTR)lpName);
@@ -56,11 +55,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-
-
-EnumResourceNamesA(NULL, RT_RCDATA, EnumProc, 0);
-
-
+    EnumResourceNamesA(NULL, RT_RCDATA, EnumProc, 0);
 
     MARGINS margins = {-1}; // -1 extends to the entire window
     DwmExtendFrameIntoClientArea(g_hwnd, &margins);
@@ -172,7 +167,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         Sol_Input_SetLocked(false);
         Sol_Input_Clear();
         break;
+    case WM_CLOSE:
+        solState.destroy_qued = true;
+        return 0;
     case WM_DESTROY:
+        solState.destroy_qued = true;
         InterlockedExchange(&g_running, 0);
         PostQuitMessage(0);
         return 0;
@@ -282,6 +281,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void Sol_Quit()
+{
+    PostMessage(g_hwnd, WM_DESTROY, 0, 0);
 }
 
 void QuitApp(int flags)

@@ -199,6 +199,7 @@ typedef enum
     VIEW2KIND_SLIDER_FILL,
     VIEW2KIND_HEALTHBAR,
     VIEW2KIND_ABILITYBAR,
+    VIEW2KIND_ABILITYBAR_BASEICON,
     VIEW2KIND_COUNT,
 } View2Kind;
 
@@ -332,6 +333,19 @@ typedef enum
     STRAFE_FWD_RIGHT,
     STRAFE_COUNT,
 } StrafeDir;
+
+typedef enum
+{
+    SECTOR_FWD,
+    SECTOR_FWD_LEFT,
+    SECTOR_LEFT,
+    SECTOR_BWD_LEFT,
+    SECTOR_BWD,
+    SECTOR_BWD_RIGHT,
+    SECTOR_RIGHT,
+    SECTOR_FWD_RIGHT,
+    SECTOR_COUNT,
+} AngleSector;
 
 typedef enum
 {
@@ -561,6 +575,7 @@ typedef enum
     UILAYER_2,
     UILAYER_3,
     UILAYER_4,
+    UILAYER_5,
     UILAYER_COUNT,
 } UiLayer;
 
@@ -654,6 +669,17 @@ typedef struct
 
 typedef enum
 {
+    ACTION_INTERACT,
+    ACTION_ZOOMIN,
+    ACTION_ZOOMOUT,
+    ACTION_BUILD,
+    ACTION_SCORE,
+    ACTION_DEBUGTELE,
+    ACTION_EXTRA_COUNT,
+} SolExtraActions;
+
+typedef enum
+{
     ACTION_ABILITY1,
     ACTION_ABILITY2,
     ACTION_ABILITY3,
@@ -661,18 +687,64 @@ typedef enum
     ACTION_ABILITY5,
     ACTION_ABILITY6,
     ACTION_DASH,
+    ACTION_COMBAT_COUNT,
+} SolCombatActions;
+
+typedef enum
+{
     ACTION_FWD,
     ACTION_BWD,
     ACTION_LEFT,
     ACTION_RIGHT,
     ACTION_JUMP,
     ACTION_CROUCH,
-    ACTION_INTERACT,
-    ACTION_ZOOMIN,
-    ACTION_ZOOMOUT,
-    ACTION_BUILD,
-    ACTION_SCORE,
-    ACTION_DEBUGTELE,
+    ACTION_MOVE_COUNT,
+} SolMoveActions;
+
+typedef enum
+{
+    AIKNOWS_STEPFRONT   = (1 << 0),
+    AIKNOWS_LEDGEFRONT  = (1 << 1),
+    AIKNOWS_WALLFRONT   = (1 << 2),
+    AIKNOWS_WALLLEFT    = (1 << 3),
+    AIKNOWS_WALLRIGHT   = (1 << 4),
+    AIKNOWS_WALLBACK    = (1 << 5),
+    AIKNOWS_TARGETCLOSE = (1 << 6),
+    AIKNOWS_TARGETMID   = (1 << 7),
+    AIKNOWS_TARGETFAR   = (1 << 8),
+    AIKNOWS_GROUNDED    = (1 << 9),
+    AIKNOWS_AIRBORNE    = (1 << 10),
+    AIKNOWS_COUNT       = (1 << 11),
+} AiKnows;
+
+typedef struct QTable
+{
+    float qcombat[AIKNOWS_COUNT][ACTION_COMBAT_COUNT];
+    float qmove[AIKNOWS_COUNT][ACTION_MOVE_COUNT];
+} QTable;
+
+typedef enum
+{
+    // ACTION_ABILITY1,
+    // ACTION_ABILITY2,
+    // ACTION_ABILITY3,
+    // ACTION_ABILITY4,
+    // ACTION_ABILITY5,
+    // ACTION_ABILITY6,
+    // ACTION_DASH,
+    // ACTION_FWD,
+    // ACTION_BWD,
+    // ACTION_LEFT,
+    // ACTION_RIGHT,
+    // ACTION_JUMP,
+    // ACTION_CROUCH,
+
+    // ACTION_INTERACT,
+    // ACTION_ZOOMIN,
+    // ACTION_ZOOMOUT,
+    // ACTION_BUILD,
+    // ACTION_SCORE,
+    // ACTION_DEBUGTELE,
     ACTION_COUNT,
 } SolActions;
 
@@ -764,7 +836,7 @@ typedef enum ItemRarity
     ITEMRARITY_EPIC,
     ITEMRARITY_LEGENDARY,
     ITEMRARITY_COUNT,
-}ItemRarity;
+} ItemRarity;
 typedef struct SolItem
 {
     u16 kind;

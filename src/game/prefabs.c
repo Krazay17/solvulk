@@ -9,12 +9,12 @@
 #include "world.h"
 #include "sol_math.h"
 
-static const ScCamera player_camera = {
-    .fov              = 80.0f,
+const ScCamera player_camera = {
+    .fov              = 75.0f,
     .up.y             = 1.0f,
     .lerpspeed        = 10.0f,
     .desired_offset   = 1.0f,
-    .desired_distance = 2.0f,
+    .desired_distance = 3.0f,
 };
 
 static const ScBody3 wizard_body = {
@@ -97,6 +97,12 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
     *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
 
+        *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind  = VIEW3KIND_HEALTHBAR,
+        .color = {0.1f, 0.9f, 0.1f, 1.0f},
+    };
+
+
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
 
@@ -155,9 +161,9 @@ int Sol_Prefab_Crosshair(World *world)
     return id;
 }
 
-int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook func)
+int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook on_click)
 {
-    vec2s dims = {150.0f, 50.0f};
+    vec2s dims = {120.0f, 40.0f};
 
     int id = Sol_Create_Ent(world, pos);
     if (id < 0)
@@ -166,7 +172,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
     interact->state |= interact_flags;
 
     ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-    hook->release = func;
+    hook->release = on_click;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -209,7 +215,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
     view->views[3] = (View2){
         .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
-        .dims        = {16.0f},
+        .dims        = {14.0f},
         .color       = {0.0f, 1.0f, 0.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -226,7 +232,7 @@ static void Hook_PrintValue(World *w, int a, int b)
 }
 int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook func)
 {
-    vec2s dims = {150.0f, 50.0f};
+    vec2s dims = {120.0f, 40.0f};
 
     int id = Sol_Create_Ent(world, pos);
 
@@ -248,7 +254,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     };
     *Sol_Comp_Add(world, id, ScSlider) = slider;
 
-    *Sol_Comp_Add(world, id, ScHook) = (ScHook){.held = Hook_PrintValue};
+    *Sol_Comp_Add(world, id, ScHook) = (ScHook){.held = func};
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
     view->count    = 8;
@@ -310,7 +316,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     view->views[7] = (View2){
         .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
-        .dims        = {16.0f},
+        .dims        = {14.0f},
         .color       = {0.0f, 1.0f, 0.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -338,7 +344,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
     };
 
     ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
-    view->count    = 5;
+    view->count    = 6;
     view->views[0] = (View2){
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
@@ -373,6 +379,13 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .dims   = {dims.x, dims.y},
         .color  = {0.0f, 0.0f, 0.0f, 1.0f},
         .border = 2.0f,
+    };
+    view->views[5] = (View2){
+        .layer  = UILAYER_3,
+        .kind   = VIEW2KIND_TEXT,
+        .dims   = {dims.y * 0.5f},
+        .offset = {dims.x * 0.5f, dims.y * 0.5f},
+        .color  = {1.0f, 0.0f, 0.0f, 1.0f},
     };
 
     return id;
@@ -409,7 +422,7 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_FIREBALL,
-        .radius = size * 0.8f,
+        .radius = size,
         .hitgen = Sol_Hitgen_Start(world, id),
     };
 
@@ -454,7 +467,7 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
                                                       },
                                                       {
                                                           .layer = layer,
-                                                          .kind  = VIEW2KIND_ABILITYBAR,
+                                                          .kind  = VIEW2KIND_ABILITYBAR_BASEICON,
                                                           .dims  = {dims.x, dims.y},
                                                           .color = {1.0f, 1.0f, 1.0f, 1.0f},
                                                           .desat = 1.0f,
@@ -469,19 +482,20 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
                                                           .textureID  = SOL_TEXTURE_SWIRLFRAME,
                                                       },
                                                       {
-                                                          .layer      = UILAYER_3,
+                                                          .layer      = UILAYER_2,
                                                           .kind       = VIEW2KIND_RECT,
-                                                          .dims       = {slotSize, slotSize + 7.0f},
-                                                          .offset     = {-slotSize, -7.0f},
+                                                          .dims       = {slotSize, slotSize},
+                                                          .offset     = {-slotSize},
                                                           .textureID  = SOL_TEXTURE_TRIBOOKEND,
                                                           .color      = {1, 1, 1, 1},
                                                           .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
+                                                          .textureUV  = {0.01f, 0.0f, 1.0f, 1.0f},
                                                       },
                                                       {
-                                                          .layer      = UILAYER_3,
+                                                          .layer      = UILAYER_2,
                                                           .kind       = VIEW2KIND_RECT,
-                                                          .dims       = {slotSize, slotSize + 7.0f},
-                                                          .offset     = {dims.x, -7.0f},
+                                                          .dims       = {slotSize, slotSize},
+                                                          .offset     = {dims.x},
                                                           .textureUV  = {0.0f, 0, -1.0f, 0},
                                                           .textureID  = SOL_TEXTURE_TRIBOOKEND,
                                                           .color      = {1, 1, 1, 1},

@@ -25,7 +25,9 @@ void Facing_Tick(World *world, double dt)
             float turn_speed = 10.0f;
             float factor     = 1.0f - expf(-turn_speed * fdt);
 
-            world->xform.rot[id] = glms_quat_slerp(world->xform.rot[id], target_quat, factor);
+            versors rot = glms_quat_slerp(world->xform.rot[id], target_quat, factor);
+            cmd->yaw = Sol_YawFromQuat(rot.raw);
+            world->xform.rot[id] = rot;
         }
     }
 }

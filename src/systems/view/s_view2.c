@@ -22,11 +22,16 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     float fill  = 0;
     for (int i = 0; i < count; i++)
     {
-        RectSSBO *rect = Sol_Render_GetNext_Rect(view->layer);
-        u32 texture    = view->textureID;
-        if (view->layer == 0)
+        RectSSBO *rect    = Sol_Render_GetNext_Rect(view->layer);
+        u32 texture       = view->textureID;
+        vec4s final_color = view->color;
+        if (view->kind == VIEW2KIND_ABILITYBAR_BASEICON)
         {
-            texture         = ability_texture_map[ability->base_actions[i]];
+            texture = ability_texture_map[ability->base_actions[i]];
+            if (texture == 0)
+            {
+                final_color = (vec4s){0, 0, 0, 1};
+            }
             view->textureUV = (vec4s){0, 0, 1.0f, 0.816f};
         }
         rect->extra.z   = view->desat;
@@ -38,7 +43,7 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
         rect->pos       = (vec4s){UISCALE(pos.x + width * i), UISCALE(pos.y)};
         rect->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(view->dims.y)};
         rect->textureId = texture;
-        rect->color     = view->color;
+        rect->color     = final_color;
         rect->uv        = view->textureUV;
     }
 }
@@ -174,16 +179,17 @@ static void DrawHealthbar(World *world, int id, float fdt, View2 *view)
 
 typedef void (*DrawFunc)(World *, int, float, View2 *);
 DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
-    [VIEW2KIND_RECT]        = DrawRect,
-    [VIEW2KIND_SLIDER]      = DrawSlider,
-    [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
-    [VIEW2KIND_CIRCLE]      = DrawCircle,
-    [VIEW2KIND_TEXT]        = DrawText,
-    [VIEW2KIND_HEALTHBAR]   = DrawHealthbar,
-    [VIEW2KIND_ABILITYBAR]  = DrawAbilitybar,
+    [VIEW2KIND_RECT]                = DrawRect,
+    [VIEW2KIND_SLIDER]              = DrawSlider,
+    [VIEW2KIND_SLIDER_FILL]         = DrawSliderFill,
+    [VIEW2KIND_CIRCLE]              = DrawCircle,
+    [VIEW2KIND_TEXT]                = DrawText,
+    [VIEW2KIND_HEALTHBAR]           = DrawHealthbar,
+    [VIEW2KIND_ABILITYBAR]          = DrawAbilitybar,
+    [VIEW2KIND_ABILITYBAR_BASEICON] = DrawAbilitybar,
 };
 
-void View2_Draw(World *world)
+void View2_Draw(World *world, double dt)
 {
     float fdt              = world->fdt;
     SparseSet_ScView2 *set = Sol_Comp_Set(world, ScView2);

@@ -96,6 +96,14 @@ static inline uint32_t SpatialGrid_Init(SpatialGrid *grid, vec3s min, vec3s max,
     return SpatialGrid_Resize(grid, min, max, cell_size);
 }
 
+static inline void SpatialGrid_Deinit(SpatialGrid *grid)
+{
+    solb_free(grid->ids);
+    solb_free(grid->cell_offsets);
+    solb_free(grid->cursor);
+    free(grid);
+}
+
 static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *mins, vec3s *maxs,
                                                 uint32_t item_count)
 {

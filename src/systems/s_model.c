@@ -29,7 +29,7 @@ const ModelKindData model_kinds[MODELKIND_COUNT] = {
         },
 };
 
-void Model_Render(World *world)
+void Model_Render(World *world, double dt)
 {
     float fdt = world->fdt;
 

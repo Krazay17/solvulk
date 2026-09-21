@@ -22,6 +22,7 @@ typedef struct World World;
 typedef enum
 {
     WORLDSYS_EVENT,
+    WORLDSYS_CMD,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
@@ -39,6 +40,7 @@ typedef enum
     WORLDSYS_HOOK,
     WORLDSYS_AI,
 
+    WORLDSYS_REF,
     WORLDSYS_FX,
     WORLDSYS_EMITTER,
     WORLDSYS_FACING,
@@ -53,8 +55,6 @@ typedef enum
     WORLDSYS_DEBUG,
     WORLDSYS_COUNT,
 } WorldSystems;
-
-#define CORE_SINGLETON_LIFECYCLE_LIST(X) X(SlEvent, SlEvent_Init, SlEvent_Deinit)
 
 #define SINGLETON_LIFECYCLE_LIST(X)                                                                                    \
     X(SlEvent, SlEvent_Init, SlEvent_Deinit)                                                                           \
@@ -530,8 +530,8 @@ SolLine *Sol_Debug_NewLine(World *world, float ttl);
 SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
 
 float Sol_Combat_Hit(World *world, int id, SolHit hit);
-float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount);
-float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount);
+float Sol_Combat_Damage(World *world, int id, int dealer, ScCombat *combat, float amount);
+float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount);
 
 extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
@@ -544,3 +544,6 @@ void Sol_Event_Push(World *world, EventKind kind, SolEvent event);
 
 void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power);
 void Sol_Buff_AddMask(World *world, int id, u32 mask, u32 source, float power);
+void Sol_Buff_AddE(World *world, int id, BuffKind kind, u32 source, float power, float duration);
+Buff *Sol_Buff_Next(World *world, int id, BuffKind kind);
+void Sol_Buff_Rem(World *world, int id, BuffKind kind);

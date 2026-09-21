@@ -21,11 +21,15 @@ void Create_Hud();
 void Create_Game();
 void Create_Game2();
 
+extern const ScCamera player_camera;
+
 static inline void Hook_SpawnPlayer(World *w, int a, int b)
 {
     World *game = Sol_User_GetGameWorld();
 
-    int id = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
+    SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
+    player_set->cnt                = 0;
+    int id                         = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
     Sol_Comp_Add(game, id, ScPlayer);
     sol_user.view_ent = id;
     ScMeta *meta      = Sol_Comp_Add(game, id, ScMeta);
@@ -45,15 +49,22 @@ static inline void Hook_SwitchWorld2(World *w, int a, int b)
 
 static inline void Hook_Possess(World *w, int a, int b)
 {
-    Sol_Comp_Rem(w, a, ScAi);
+    Sol_Comp_Rem(w, sol_user.view_ent, ScPlayer);
+
+    *Sol_Comp_Add(w, a, ScCamera) = player_camera;
+    sol_user.view_ent             = a;
     Sol_Comp_Add(w, a, ScPlayer);
-    Sol_Comp_Add(w, a, ScCamera);
+    Sol_Comp_Rem(w, a, ScAi);
+
+    Sol_Debug_Add("Player Ent", (float)a);
 }
 
 static inline void Hook_SpawnWizard(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
-    int wizard   = Sol_Prefab_Wizard(world, (vec3s){0, 20.f, 0}, 1.0f);
+    float fdt    = world->fdt;
+
+    int wizard = Sol_Prefab_Wizard(world, (vec3s){sinf(fdt), 20.f, cosf(fdt)}, 1.0f);
 
     Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Possess;
 }
@@ -69,7 +80,7 @@ static inline void Hook_CrystalDrain(World *w, int a, int b)
 
 static inline void Hook_Quit(World *w, int a, int b)
 {
-    QuitApp(0);
+    solState.destroy_qued = true;
 }
 
 static inline void Hook_Fullscreen(World *w, int a, int b)
@@ -148,16 +159,21 @@ static inline void Hook_SpawnEmitter(World *w, int a, int b)
 
     Sol_Prefab_PlasmaOrb(world, pos);
 }
-static inline void Hook_SpawnEmitter2(World *w, int a, int b)
+static inline void Hook_SetPlayerFov(World *w, int a, int b)
 {
-    World *world = Sol_User_GetGameWorld();
-    vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
 
-    SparseSet_ScPlayer *player_set = Sol_Comp_Set(world, ScPlayer);
-    for (int i = 0; i < player_set->cnt; i++)
-    {
-        int id           = player_set->dense[i];
-        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-        combat->health -= 10.0f;
-    }
+    ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
+    ScCamera *camera = Sol_Comp_Get(game, id, ScCamera);
+    if (camera && slider)
+        camera->fov = Sol_Math_MapRange(60.0f, 120.f, 0, 1.0f, slider->value);
+}
+
+static inline void Hook_Test(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
+    vec3s pos   = Xform_Get(game, sol_user.view_ent).pos;
+    Sol_Buff_AddMask(game, id, 1, 0, 1.0f);
 }

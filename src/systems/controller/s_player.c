@@ -55,11 +55,11 @@ void Player_Tick(World *world, double dt)
         ScCmd *cmd       = Sol_Comp_Get(world, id, ScCmd);
         if (!cmd)
             continue;
-        cmd->action_state_prev = cmd->actionState;
-        cmd->yaw               = sol_user.yaw;
-        cmd->pitch             = sol_user.pitch;
-        cmd->isStrafing        = sol_user.mouse_locked;
-        cmd->actionState       = sol_user.actions;
+        cmd->actionState = 0;
+        cmd->yaw         = sol_user.yaw;
+        cmd->pitch       = sol_user.pitch;
+        cmd->isStrafing  = sol_user.mouse_locked;
+        cmd->actionState = sol_user.actions;
 
         cmd->lookdir  = vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch));
         cmd->aimdir   = cmd->lookdir;

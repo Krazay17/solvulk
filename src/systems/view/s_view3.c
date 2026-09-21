@@ -1,6 +1,7 @@
 #include "world.h"
 #include "sol_math.h"
 #include "render/render.h"
+#include "sol_user.h"
 
 typedef void (*View3KindDraw)(World *, int, ScView3 *);
 
@@ -42,11 +43,17 @@ static void Fireball_Draw(World *world, int id, ScView3 *view)
 static void Healthbar_Draw(World *world, int id, ScView3 *view)
 {
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+
     if (!combat || combat->health <= 0.0f)
         return;
 
-    Xform xform   = Xform_GetDraw(world, id);
-    vec4s pos     = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    if (id == sol_user.view_ent)
+        return;
+    vec3s player_pos = world->xform.pos[sol_user.view_ent];
+    Xform xform      = Xform_GetDraw(world, id);
+    vec4s pos        = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    if (glms_vec3_norm(vecSub(xform.pos, player_pos)) > 15.0f)
+        return;
     ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
     if (body)
         pos.y += body->dims.y;

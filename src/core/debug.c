@@ -70,7 +70,7 @@ void Sol_Debug_Draw(double dt)
 
     float     offset  = 48.0f;
     float     spacing = 24.0f;
-    RectSSBO *rect    = Sol_Render_GetNext_Rect(UILAYER_2);
+    RectSSBO *rect    = Sol_Render_GetNext_Rect(UILAYER_5);
     rect->rect        = (vec4s){ 0, 0, 200.0f, offset + spacing * debuggers.count };
     rect->color       = (vec4s){ 0.1f, 0.0f, 0.3f, 0.7f };
     rect->flags       = 0;
@@ -84,7 +84,7 @@ void Sol_Debug_Draw(double dt)
         else
             sprintf(buffer, "%s: %.4f", debuggers.label[i], debuggers.value[i]);
         SolFontDesc fontDesc = {
-            .layer = UILAYER_2,
+            .layer = UILAYER_5,
             .x     = 6.0f,
             .y     = i * spacing + offset,
             .size  = 16.0f,
@@ -95,7 +95,7 @@ void Sol_Debug_Draw(double dt)
     }
 
     SolFontDesc fontDesc = {
-        .layer = UILAYER_2,
+        .layer = UILAYER_5,
         .x     = 6.0f,
         .y     = 24.0f,
         .size  = 24.0f,

@@ -6,8 +6,8 @@
 #include "render/render.h"
 #include "prefabs.h"
 
-#define MIN_POWER 0.2f
-#define MAX_POWER 2.5f
+#define MIN_POWER 0.1f
+#define MAX_POWER 2.0f
 
 static vec3s GetProjectilePos(World *world, int id, float power)
 {
@@ -53,6 +53,7 @@ void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cm
                 .power      = data->power,
             };
             projectile->power = data->power;
+            
         }
         break;
     case 2:

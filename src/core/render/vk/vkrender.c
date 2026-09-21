@@ -292,7 +292,7 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
         {
             .vertResource      = "quad.vert.spv",
             .fragResource      = "healthbar.frag.spv",
-            .depthTest         = 1,
+            .depthTest         = 0,
             .depthWrite        = 1,
             .blendMode         = BLEND_ALPHA,
             .cullMode          = VK_CULL_MODE_BACK_BIT,

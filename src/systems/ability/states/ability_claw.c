@@ -67,6 +67,7 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
                 .damage     = data->conf.damage,
                 .buffMask   = data->conf.buffMask,
                 .effectMask = data->conf.effectMask,
+                .power = 1.0f,
                 .entA       = id,
                 .entB       = result.entId,
                 .pos        = hit_pos,

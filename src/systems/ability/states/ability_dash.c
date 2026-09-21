@@ -42,13 +42,14 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
     data->as.dash.strafe =
         Sol_GetStrafedirYaw(data->as.dash.dir.x, data->as.dash.dir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
-        
+
+    Sol_Buff_AddE(world, id, BUFFKIND_INVULN, id, 1.0f, 0.5f);
     data->cooldownRemaining = data->conf.cooldown;
 }
 
 void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
 }
 
 bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)

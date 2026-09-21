@@ -57,56 +57,60 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
     if (!Sol_Comp_Has(world, id, ScCombat))
         return 0.0f;
-    ScCombat *combat  = Sol_Comp_Get(world, id, ScCombat);
-    float damage_done = 0;
-    float damage      = hit.damage * hit.power;
-    if (!hit.isHeal)
-    {
-        if (hit.buffMask > 0)
-        {
-            Sol_Buff_AddMask(world, id, hit.buffMask, hit.entA, hit.power);
-        }
-        if (hit.effectMask & EFFECTMASK_KNOCKBACK)
-        {
-            ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
-            move3->knockVel    = vecSca(hit.vel, 10.0f);
-            move3->knockDur    = 0.4f;
-            move3->frictionMod = 0.0f;
-        }
-        if (hit.effectMask & EFFECTMASK_KNOCKUP)
-        {
-            ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
-            move3->knockVel    = vecSca(WORLD_UP, 10.0f);
-            move3->knockDur    = 0.4f;
-            move3->frictionMod = 0.0f;
-        }
-        if (hit.effectMask & EFFECTMASK_LIFESTEAL)
-        {
-            Sol_Combat_Heal(world, hit.entA, Sol_Comp_Get(world, hit.entA, ScCombat), damage * 0.2f);
-        }
-        if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
-        {
-            ScProjectile *projectile = Sol_Comp_Get(world, id, ScProjectile);
-            ScTeam *team             = Sol_Comp_Get(world, id, ScTeam);
-            ScTeam *attacker_team    = Sol_Comp_Get(world, hit.entA, ScTeam);
-
-            team->team = attacker_team->team;
-        }
-    }
-
+    ScCombat *dealer_combat = Sol_Comp_Get(world, hit.entA, ScCombat);
+    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
+    float damage_done       = 0;
+    float damage            = hit.damage * hit.power;
     if (hit.isHeal)
-        damage_done = Sol_Combat_Heal(world, id, combat, damage);
-    else
-        damage_done = Sol_Combat_Damage(world, id, combat, damage);
+        damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, damage);
+    else if (!Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
+    {
+        if (!hit.isHeal)
+        {
+            if (hit.buffMask > 0)
+            {
+                Sol_Buff_AddMask(world, id, hit.buffMask, hit.entA, hit.power);
+            }
+            if (hit.effectMask & EFFECTMASK_KNOCKBACK)
+            {
+                ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
+                move3->knockVel    = vecSca(hit.vel, 10.0f);
+                move3->knockDur    = 0.4f;
+                move3->frictionMod = 0.0f;
+            }
+            if (hit.effectMask & EFFECTMASK_KNOCKUP)
+            {
+                ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
+                move3->knockVel    = vecSca(WORLD_UP, 10.0f);
+                move3->knockDur    = 0.4f;
+                move3->frictionMod = 0.0f;
+            }
+            if (hit.effectMask & EFFECTMASK_LIFESTEAL)
+            {
+                if (dealer_combat)
+                    Sol_Combat_Heal(world, hit.entA, hit.entA, dealer_combat, damage * 0.2f);
+            }
+            if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
+            {
+                ScProjectile *projectile = Sol_Comp_Get(world, id, ScProjectile);
+                ScTeam *team             = Sol_Comp_Get(world, id, ScTeam);
+                ScTeam *attacker_team    = Sol_Comp_Get(world, hit.entA, ScTeam);
 
-    ScCombat *combatA = Sol_Comp_Get(world, hit.entA, ScCombat);
-    if (combatA)
-        combatA->damageDone += damage_done;
+                team->team = attacker_team->team;
+            }
+        }
+
+        damage_done = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
+    }
+    else
+    {
+        damage_done = 0;
+    }
 
     return damage_done;
 }
 
-float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)
+float Sol_Combat_Damage(World *world, int id, int source, ScCombat *combat, float amount)
 {
     if (combat->health <= 0.0f || amount <= 0.0f)
         return 0.0f;
@@ -116,10 +120,14 @@ float Sol_Combat_Damage(World *world, int id, ScCombat *combat, float amount)
     combat->damageTaken += damage_done;
     combat->lastHitTime = world->tickTime;
 
+    ScCombat *combatA = Sol_Comp_Get(world, source, ScCombat);
+    if (combatA)
+        combatA->damageDone += damage_done;
+
     return damage_done;
 }
 
-float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount)
+float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount)
 {
     if (combat->health <= 0.0f || amount <= 0.0f)
         return 0.0f;
@@ -128,6 +136,10 @@ float Sol_Combat_Heal(World *world, int id, ScCombat *combat, float amount)
     float healing_done   = (amount > missing_health) ? missing_health : amount;
     combat->health += healing_done;
     combat->healingTaken += healing_done;
+
+    ScCombat *combatA = Sol_Comp_Get(world, dealer, ScCombat);
+    if (combatA)
+        combatA->healingDone += healing_done;
 
     return healing_done;
 }

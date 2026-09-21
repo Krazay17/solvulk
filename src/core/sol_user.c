@@ -275,7 +275,7 @@ void Entity_Actions()
 
         if (mouse.wheelV && camera)
         {
-            float changeDist = -((float)mouse.wheelV * 0.01f);
+            float changeDist = -((float)mouse.wheelV / 240.0f);
             camera->desired_distance += changeDist;
         }
     }
@@ -374,6 +374,7 @@ void Sol_User_PostTick(double dt)
     int id         = sol_user.view_ent;
     if (!game || id <= 0)
         return;
+
     ScCamera *cam = Sol_Comp_Get(game, id, ScCamera);
     if (cam)
     {
@@ -384,6 +385,7 @@ void Sol_User_PostTick(double dt)
         g_solView.up     = cam->up;
         g_solView.target = vecAdd(cam->pos, cam->dir);
     }
+
     ScCombat *combat = Sol_Comp_Get(game, id, ScCombat);
     if (combat)
     {
@@ -392,6 +394,16 @@ void Sol_User_PostTick(double dt)
         {
             last_damage = combat->damageDone;
             Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
+        }
+    }
+
+    if (Sol_Input_KeyPressed(SOL_KEY_5))
+    {
+        if (Sol_Buff_HasBuff(game, id, BUFFKIND_INVULN))
+            Sol_Buff_Rem(game, id, BUFFKIND_INVULN);
+        else
+        {
+            Sol_Buff_Next(game, id, BUFFKIND_INVULN)->inf = true;
         }
     }
 

@@ -111,6 +111,11 @@ static inline versors Sol_Quat_FromLookDira(vec3s lookDir)
     return (versors){q[0], q[1], q[2], q[3]};
 }
 
+static inline Sol_GetAngleSector(float dot)
+{
+    return (AngleSector)((int)floorf(dot * 7) & 7);
+}
+
 static inline StrafeDir Sol_GetStrafedirYaw(float x, float z, float yaw)
 {
     // 1. Get the relative angle between velocity and facing direction
@@ -273,7 +278,11 @@ static inline float Sol_Quat_ToYaw(versors q)
 
 static inline float Sol_YawFromQuat(versor q)
 {
-    return atan2f(2.0f * (q[1] * q[2] + q[3] * q[0]), q[3] * q[3] - q[0] * q[0] - q[1] * q[1] + q[2] * q[2]);
+    // Index mapping: q[0] = x, q[1] = y, q[2] = z, q[3] = w
+    float siny_cosp = 2.0f * (q[3] * q[1] - q[0] * q[2]);
+    float cosy_cosp = q[3] * q[3] + q[0] * q[0] - q[1] * q[1] - q[2] * q[2];
+    
+    return atan2f(siny_cosp, cosy_cosp);
 }
 
 static inline float Sol_YawFromVec(vec3s v)
@@ -601,6 +610,18 @@ static inline vec3s Sol_AddScaledDir(vec3s start, vec3s dir, float dist)
     return glms_vec3_add(start, glms_vec3_scale(dir, dist));
 }
 
+static inline vec2s Sol_GridMaker(int counter, int row, int col, vec2s start, vec2s spacing)
+{
+    return (vec2s){start.x + (counter % row) * spacing.x, start.y + (counter / col) * spacing.y};
+}
+
+static inline vec3s Sol_GridMakerInc(int *counter, int row, int col, vec2s start, vec2s spacing)
+{
+    vec3s pos = {start.x + (float)(*counter % row) * spacing.x, start.y + (float)(*counter / col) * spacing.y, 0};
+    (*counter)++;
+    return pos;
+}
+
 typedef enum
 {
     CURVE_CONSTANT, // Always 1.0
@@ -620,14 +641,14 @@ static inline float EvaluateCurve(CurveTypes type, float t)
 {
     switch (type)
     {
-        case CURVE_LATEPULSE: {
-            float c = 149.01161f;
-            float a = powf(t, 8.0f);
-            float b = powf(1.0f - t, 2.0f);
-            float z = c * a * b;
-            return z;
-        }
-    case CURVE_SCURVEY:{
+    case CURVE_LATEPULSE: {
+        float c = 149.01161f;
+        float a = powf(t, 8.0f);
+        float b = powf(1.0f - t, 2.0f);
+        float z = c * a * b;
+        return z;
+    }
+    case CURVE_SCURVEY: {
 
         float a = powf(t, 8.0f);
         float b = powf(1.0f - t, 1.5f);

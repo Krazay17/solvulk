@@ -10,7 +10,9 @@
 #include "systems.h"
 #include "sol_core.h"
 #include "spatial_grid.h"
+#include "platform/platform.h"
 #include <omp.h>
+
 
 typedef enum
 {
@@ -30,6 +32,7 @@ const struct SystemDef
 {
     SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
+    [WORLDSYS_CMD]        = {.update = {Cmd_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_PLAYER]     = {.update = {Player_Tick, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
     [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
@@ -46,6 +49,7 @@ const struct SystemDef
     [WORLDSYS_COMBAT]     = {.update = {Combat_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
+    [WORLDSYS_REF]     = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FX]      = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_HOOK]    = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
@@ -105,8 +109,8 @@ void World_Destroy(World *world)
 {
     if (world)
     {
-        World_FreeAllComponents(world);
         World_DeinitSingletons(world); // frees internal solb_ buffers, structs still intact
+        World_FreeAllComponents(world);
 
         // Swap-with-back removal to keep solState.worlds contiguous
         for (int i = 0; i < solState.worldCount; i++)
@@ -208,7 +212,7 @@ void Worlds_Tick(World **worlds, int count, double dt)
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (world->doesSimulate)
+        if (world && world->doesSimulate)
         {
             double world_dt = dt * world->timescale;
             world->dt       = world_dt;
@@ -227,7 +231,7 @@ void Worlds_Step(World **worlds, int count, double dt)
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (world->doesSimulate)
+        if (world && world->doesSimulate)
         {
             double world_dt = dt * world->timescale;
             world->currentStep++;
@@ -244,7 +248,7 @@ void Worlds_PostTick(World **worlds, int count, double dt)
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (world->doesSimulate)
+        if (world && world->doesSimulate)
         {
             double world_dt = dt * world->timescale;
             for (int i = 0; i < world->posttickCount; i++)
@@ -258,7 +262,7 @@ void Worlds_Draw3d(World **worlds, int count, double dt)
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (world->doesRender)
+        if (world && world->doesRender)
         {
             double world_dt = dt * world->timescale;
             for (int i = 0; i < world->draw3dCount; i++)
@@ -272,7 +276,7 @@ void Worlds_Draw2d(World **worlds, int count, double dt)
     for (int w = count - 1; w >= 0; w--)
     {
         World *world = worlds[w];
-        if (world->doesRender)
+        if (world && world->doesRender)
         {
             double world_dt = dt * world->timescale;
             for (int i = 0; i < world->draw2dCount; i++)
@@ -286,10 +290,11 @@ void Worlds_Event_Clear(World **worlds, int count)
     for (int w = 0; w < count; w++)
     {
         World *world = worlds[w];
-        if (!world->doesSimulate)
-            continue;
-        SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
-        solb_set_count(single->events, 0);
+        if (world && world->doesSimulate)
+        {
+            SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
+            solb_set_count(single->events, 0);
+        }
     }
 }
 
@@ -411,8 +416,8 @@ void SlSpatial_Init(World *world, SlSpatial *self)
 
 void SlSpatial_Deinit(SlSpatial *self)
 {
-    solb_free(self->grid_dynamic);
-    solb_free(self->grid_static);
+    SpatialGrid_Deinit(self->grid_dynamic);
+    SpatialGrid_Deinit(self->grid_static);
     solb_free(self->contacts);
     solb_free(self->threadIds);
     solb_free(self->tris_static);

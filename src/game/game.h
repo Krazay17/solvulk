@@ -27,8 +27,8 @@ static inline void Hook_SpawnPlayer(World *w, int a, int b)
 {
     World *game = Sol_User_GetGameWorld();
 
-    SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
-    player_set->cnt                = 0;
+    // SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
+    // player_set->cnt                = 0;
     int id                         = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
     Sol_Comp_Add(game, id, ScPlayer);
     sol_user.view_ent = id;
@@ -68,26 +68,33 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
 
     Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Possess;
 }
+static inline void Hook_SpawnDude(World *w, int a, int b)
+{
+    World *world = Sol_User_GetGameWorld();
+    float fdt    = world->fdt;
 
+    vec3s spawn_pos                           = {sinf(fdt), 10.f, cosf(fdt)};
+    int id                                    = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    Sol_Comp_Add(world, id, ScAi)->aggroRange = 20.0f;
+    ScCombat *combat                          = Sol_Comp_Add(world, id, ScCombat);
+    combat->respawnTime                       = 2.0f;
+    combat->respawnPos                        = spawn_pos;
+}
 static inline void Hook_DebugToggle(World *w, int a, int b)
 {
     solState.debug = (Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED) != 0;
 }
-
 static inline void Hook_CrystalDrain(World *w, int a, int b)
 {
 }
-
 static inline void Hook_Quit(World *w, int a, int b)
 {
     solState.destroy_qued = true;
 }
-
 static inline void Hook_Fullscreen(World *w, int a, int b)
 {
     W_Set_Fullscreen(Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED);
 }
-
 static inline void Hook_Healthbar(World *w, int a, int b)
 {
     World *game_world = Sol_User_GetGameWorld();
@@ -168,6 +175,32 @@ static inline void Hook_SetPlayerFov(World *w, int a, int b)
     ScCamera *camera = Sol_Comp_Get(game, id, ScCamera);
     if (camera && slider)
         camera->fov = Sol_Math_MapRange(60.0f, 120.f, 0, 1.0f, slider->value);
+}
+static inline void Hook_ClearEnts(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+    int i       = 1;
+    while (i < game->entCount)
+    {
+        int id = game->dense[i];
+        if (Sol_Comp_Has(game, id, ScPlayer) || Sol_Comp_Has(game, id, ScStage))
+        {
+            i++;
+        }
+        else
+        {
+            Sol_Destroy_Ent(game, id);
+        }
+    }
+}
+static inline void Hook_SetTimescale(World *w, int a, int b)
+{
+    World *game      = Sol_User_GetGameWorld();
+    ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
+    if (game && slider)
+    {
+        game->timescale = Sol_Math_MapRange(0.0f, 5.0f, 0, 1.0f, slider->value);
+    }
 }
 
 static inline void Hook_Test(World *w, int a, int b)

@@ -102,14 +102,15 @@ void Ai_Step(World *world, double dt)
         Xform xform = Xform_Get(world, id);
         if (!cmd)
             continue;
-        cmd->actionState = 0;
-
         Fill_Brain(world, id, ai, cmd, fdt);
-        Fill_Knows(world, id, ai, cmd);
-        cmd->lookdir = Sol_Vec3_FromYawPitch(cmd->yaw, 0);
-
+        if (ai->brain.target)
+        {
+            vec3s fwd    = ai->brain.target_dir;
+            cmd->lookdir = fwd;
+            cmd->leftdir = glms_vec3_cross(WORLD_UP, fwd);
+            cmd->yaw     = Sol_YawFromVec(fwd);
+        }
         Evaluate_State(world, id, ai);
-
         AiStateFuncs funcs = Ai_Get_Funcs(ai->kind, ai->state);
         if (funcs.update)
             funcs.update(world, id, ai, fdt);

@@ -193,8 +193,9 @@ struct World
     int draw3dCount;
     int draw2dCount;
 
-    int activeEnts[MAX_ENTS];
     int entCount;
+    int sparse[MAX_ENTS];
+    int dense[MAX_ENTS];
 
     double dt, timestep;
     float fdt, timescale;
@@ -424,8 +425,11 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
         Sol_Comp_RemE(w, entId, compEnum);
         mask &= mask - 1; // Clear lowest bit
     }
+    int removedDense       = w->sparse[entId];
+    int lastEntity         = w->dense[w->entCount - 1];
+    w->dense[removedDense] = lastEntity;
+    w->sparse[lastEntity]  = removedDense;
     w->entCount--;
-    w->activeEnts[entId] = false;
 }
 
 static inline Xform Xform_GetDraw(const World *world, int id)

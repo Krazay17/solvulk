@@ -25,7 +25,7 @@ int Sol_ReadFile(const char *filename, SolResource *outRes)
     rewind(file);
 
     outRes->data = malloc(outRes->size);
-    if(!outRes->data)
+    if (!outRes->data)
     {
         fclose(file);
         return 0;
@@ -37,9 +37,11 @@ int Sol_ReadFile(const char *filename, SolResource *outRes)
     return 1;
 }
 
-int Sol_WriteFile(const char *filename, const void *buffer, const size_t size)
+int Sol_WriteFile(const char *prefix, const char *filename, const void *buffer, const size_t size)
 {
-    FILE *file = fopen(filename, "wb");
+    char disk_path[128];
+    snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, filename);
+    FILE *file = fopen(disk_path, "wb");
     if (!file)
         return 0;
 
@@ -49,10 +51,11 @@ int Sol_WriteFile(const char *filename, const void *buffer, const size_t size)
     return written == size;
 }
 
-int Sol_DeleteFile(const char *filename)
+int Sol_DeleteFile(const char *prefix, const char *filename)
 {
-    // FILE *file = fopen
-    remove(filename);
+    char disk_path[128];
+    snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, filename);
+    remove(disk_path);
 }
 
 SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
@@ -62,7 +65,7 @@ SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
     char disk_path[128];
     snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, resourceName);
     FILE *file = fopen(disk_path, "rb");
-    
+
     if (file)
     {
         fseek(file, 0, SEEK_END);

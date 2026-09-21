@@ -7,7 +7,7 @@ int Find_Target(World *world, int id, ScAi *ai, ScCmd *cmd, int team)
 {
     int bestId       = 0;
     float aggroRange = ai->aggroRange;
-    float distSq     = aggroRange * aggroRange;
+    float closest_sq = aggroRange * aggroRange; // Track squared distance to avoid premature sqrtf
     vec3s head       = Sol_Body3_GetHead(world, id);
 
     SparseSet_ScTeam *set_team = Sol_Comp_Set(world, ScTeam);
@@ -16,30 +16,45 @@ int Find_Target(World *world, int id, ScAi *ai, ScCmd *cmd, int team)
         int idB = set_team->dense[i];
         if (id == idB)
             continue;
+
         ScTeam *teamB = &set_team->data[i];
         if (team != 0 && teamB->team == team)
             continue;
-        Xform xformB = Xform_Get(world, idB);
-        vec3s to_ent = glms_vec3_sub(xformB.pos, head);
-        float dist2  = glms_vec3_norm2(to_ent);
-        if (dist2 <= distSq)
-        {
-            float inv_dist = 1.0f / dist2;
 
-            SolRay ray = {
-                .start = head, .dir = glms_vec3_scale(to_ent, inv_dist), .dist = dist2, .mask = COLLAYER_WORLD};
-            SolRayResult result = {0};
-            bool hit            = false;
-            if (solState.debug)
-                hit = Sol_Raycast1D(world, ray, &result, 0.2f);
-            else
-                hit = Sol_Raycast1(world, ray, &result);
-            if (!hit)
-            {
-                bestId = idB;
-            }
+        Xform xformB = Xform_Get(world, idB);
+
+        vec3s delta = glms_vec3_sub(xformB.pos, head);
+        float d2    = glms_vec3_norm2(delta);
+
+        // 1. Skip targets outside current closest range
+        if (d2 <= 0.0001f || d2 >= closest_sq)
+            continue;
+
+        // 2. Only compute sqrtf for candidates that are actually closer
+        float dist = sqrtf(d2);
+        vec3s dir  = glms_vec3_scale(delta, 1.0f / dist); // Clean unit direction
+
+        // 3. Trace ray exactly from head to target pos (dist = actual distance)
+        SolRay ray = {
+            .start     = head,
+            .dir       = dir,   // Normalized direction vector
+            .dist      = dist,  // Max trace distance = distance to target
+            .ignoreEnt = id,
+            .mask      = COLLAYER_WORLD
+        };
+
+        SolRayResult result = {0};
+        bool hit = solState.debug ? Sol_Raycast1D(world, ray, &result, 0.2f)
+                                  : Sol_Raycast1(world, ray, &result);
+
+        // If no world obstruction, this is our new best target
+        if (!hit)
+        {
+            closest_sq = d2;
+            bestId     = idB;
         }
     }
+
     return bestId;
 }
 
@@ -74,9 +89,47 @@ void Fill_Brain(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
 
 void Fill_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
-    ai->knows  = 0;
-    int target = ai->brain.target;
-    vec3s pos  = world->xform.pos[id];
+    AiBrain *brain = &ai->brain;
+    ai->knows      = 0;
+    int target     = brain->target;
+    vec3s pos      = world->xform.pos[id];
+
+    if (brain->target_dist < 5.0f)
+        ai->knows |= AIKNOWS_TARGETCLOSE;
+    else if (brain->target_dist < 10.0f)
+        ai->knows |= AIKNOWS_TARGETMID;
+    else
+        ai->knows |= AIKNOWS_TARGETFAR;
+
+    if (cmd->actionState & (BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2)))
+        ai->knows |= AIKNOWS_CHARGING;
+
+    SparseSet_ScProjectile *projectile_set = Sol_Comp_Set(world, ScProjectile);
+    for (int i = 0; i < projectile_set->cnt; i++)
+    {
+        int projectile_id    = projectile_set->dense[i];
+        vec3s projectile_pos = world->xform.pos[projectile_id];
+        vec3s delta          = glms_vec3_sub(projectile_pos, pos);
+        float d2             = glms_vec3_norm2(delta);
+        if (d2 <= 0.0001f || d2 > 100.0f)
+            continue;
+        float dot   = vecDot(delta, cmd->leftdir);
+        float inv_d = 1.0f / sqrtf(d2);
+        dot *= inv_d;
+        if (dot > 0.0f)
+            ai->knows |= AIKNOWS_DANGERLEFT;
+        else
+            ai->knows |= AIKNOWS_DANGERRIGHT;
+    }
+
+    ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
+    if (move3)
+    {
+        if (move3->groundtime > 0)
+            ai->knows |= AIKNOWS_GROUNDED;
+        else
+            ai->knows |= AIKNOWS_AIRBORNE;
+    }
 
     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
     if (body3)
@@ -112,76 +165,163 @@ void Fill_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     }
 }
 
+void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
+{
+    SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
+    int count       = solb_count(events->events);
+    for (int i = 0; i < count; i++)
+    {
+        SolEvent *event = &events->events[i];
+        if (event->kind != EVENTKIND_HIT)
+            continue;
+        if (event->entA == id)
+            ai->reward += event->as.hit.damage;
+        else if (event->entB == id)
+            ai->reward -= event->as.hit.damage;
+    }
+
+    AiBrain *brain = &ai->brain;
+    ai->reward -= brain->target_dist * fdt;
+    if (ai->knows & (AIKNOWS_WALLLEFT | AIKNOWS_DANGERLEFT))
+    {
+        if (ai->aiaction & AIACTION_DODGELEFT)
+            ai->reward -= 10.0f * fdt;
+        else if (ai->aiaction & AIACTION_DODGERIGHT)
+            ai->reward += 10.0f * fdt;
+    }
+    if (ai->knows & (AIKNOWS_WALLRIGHT | AIKNOWS_DANGERRIGHT))
+    {
+        if (ai->aiaction & AIACTION_DODGERIGHT)
+            ai->reward -= 10.0f * fdt;
+        else if (ai->aiaction & AIACTION_DODGELEFT)
+            ai->reward += 10.0f * fdt;
+    }
+}
+
 // Combat Selection
-int Q_SelectCombatAction(QTable *qt, u32 state, float epsilon)
+u32 Q_SelectCombatAction(QTable *qt, u32 state, float epsilon)
 {
     if (Sol_Math_RandRange2(0.0f, 100.0f) < epsilon)
     {
-        return rand() % ACTION_COMBAT_COUNT;
+        return rand() % AIACTION_COUNT;
     }
 
-    int best_action = 0;
-    float best_q = -FLT_MAX;
+    u32 best_action = 0;
+    float best_q    = -FLT_MAX;
 
-    for (int a = 0; a < ACTION_COMBAT_COUNT; a++)
+    for (int a = 0; a < AIACTION_COUNT; a++)
     {
-        float q_val = qt->qcombat[state][a];
+        float q_val = qt->q[state][a];
         if (q_val > best_q)
         {
-            best_q = q_val;
+            best_q      = q_val;
             best_action = a;
         }
     }
     return best_action;
 }
 
-// Movement Selection
-int Q_SelectMoveAction(QTable *qt, u32 state, float epsilon)
+void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float reward, float alpha, float gamma)
 {
-    if (Sol_Math_RandRange2(0.0f, 100.0f) < epsilon)
-    {
-        return rand() % ACTION_MOVE_COUNT;
-    }
-
-    int best_action = 0;
-    float best_q = -FLT_MAX;
-
-    for (int a = 0; a < ACTION_MOVE_COUNT; a++)
-    {
-        float q_val = qt->qmove[state][a];
-        if (q_val > best_q)
-        {
-            best_q = q_val;
-            best_action = a;
-        }
-    }
-    return best_action;
-}
-
-void Q_Learn_Table(float *table, int num_actions, u32 s, int a, float reward, u32 s_next, float alpha, float gamma)
-{
-    // Stride calculation: row index is (state * num_actions)
-    int next_state_offset = s_next * num_actions;
-
     float max_q_next = -FLT_MAX;
-    for (int na = 0; na < num_actions; na++)
+    for (int na = 0; na < AIACTION_COUNT; na++)
     {
-        float q_next = table[next_state_offset + na];
+        float q_next = qt->q[next_state][na];
         if (q_next > max_q_next)
         {
             max_q_next = q_next;
         }
     }
 
-    int current_idx = s * num_actions + a;
-    float current_q = table[current_idx];
+    float current_q = qt->q[state][action];
     float target_q  = reward + gamma * max_q_next;
 
-    table[current_idx] += alpha * (target_q - current_q);
+    qt->q[state][action] += alpha * (target_q - current_q);
 }
 
-void Fill_Learn(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
+void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
-    // cmd->actionState
-    // ailearn->actionWeights
+    AiKnows known = ai->knows;
+    Fill_Knows(world, id, ai, cmd);
+    Q_Learn_Table(&solData.qtable, known, ai->aiaction, ai->knows, ai->reward, 0.4f, 0.9f);
+    ai->reward   = 0;
+    ai->aiaction = Q_SelectCombatAction(&solData.qtable, ai->knows, 33.3f);
+}
+
+const u32 slot_action[4] = {ACTION_ABILITY3, ACTION_ABILITY4, ACTION_ABILITY5, ACTION_ABILITY6};
+void Convert_AiActions(ScAi *ai, ScCmd *cmd)
+{
+    cmd->actionState &= (BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
+    cmd->isStrafing = true;
+    AiBrain *brain  = &ai->brain;
+    vec3s fwd       = cmd->lookdir;
+    vec3s bwd       = glms_vec3_scale(fwd, -1.0f);
+    vec3s left      = cmd->leftdir;
+    vec3s right     = glms_vec3_scale(left, -1.0f);
+    switch (ai->aiaction)
+    {
+    case AIACTION_NONE:
+        cmd->wishdir = (vec3s){0};
+        break;
+    case AIACTION_FWD:
+        cmd->wishdir = fwd;
+        break;
+    case AIACTION_BWD:
+        cmd->wishdir = bwd;
+        break;
+    case AIACTION_LEFT:
+        cmd->wishdir = left;
+        break;
+    case AIACTION_RIGHT:
+        cmd->wishdir = right;
+        break;
+    case AIACTION_JUMPFWD:
+    case AIACTION_JUMPBWD:
+    case AIACTION_JUMPLEFT:
+    case AIACTION_JUMPRIGHT:
+        cmd->actionState |= BITC(ACTION_JUMP);
+        cmd->wishdir = (ai->aiaction == AIACTION_JUMPBWD)     ? bwd
+                       : (ai->aiaction == AIACTION_JUMPLEFT)  ? left
+                       : (ai->aiaction == AIACTION_JUMPRIGHT) ? right
+                                                              : fwd;
+        break;
+    case AIACTION_CROUCHFWD:
+    case AIACTION_CROUCHBWD:
+    case AIACTION_CROUCHLEFT:
+    case AIACTION_CROUCHRIGHT:
+        cmd->actionState |= BITC(ACTION_CROUCH);
+        cmd->wishdir = (ai->aiaction == AIACTION_CROUCHBWD)     ? bwd
+                       : (ai->aiaction == AIACTION_CROUCHLEFT)  ? left
+                       : (ai->aiaction == AIACTION_CROUCHRIGHT) ? right
+                                                                : fwd;
+
+        break;
+    case AIACTION_DODGEFWD:
+    case AIACTION_DODGEBWD:
+    case AIACTION_DODGELEFT:
+    case AIACTION_DODGERIGHT:
+        cmd->actionState |= BITC(ACTION_DASH);
+        cmd->wishdir = (ai->aiaction == AIACTION_DODGEBWD)     ? bwd
+                       : (ai->aiaction == AIACTION_DODGELEFT)  ? left
+                       : (ai->aiaction == AIACTION_DODGERIGHT) ? right
+                                                               : fwd;
+        break;
+    case AIACTION_CHARGE:
+        cmd->actionState |= rand() % 2 ? BITC(ACTION_ABILITY1) : BITC(ACTION_ABILITY2);
+        break;
+    case AIACTION_RELEASEFWD:
+    case AIACTION_RELEASEBWD:
+    case AIACTION_RELEASELEFT:
+    case AIACTION_RELEASERIGHT:
+        cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
+        cmd->wishdir = (ai->aiaction == AIACTION_RELEASERIGHT)  ? right
+                       : (ai->aiaction == AIACTION_RELEASEBWD)  ? bwd
+                       : (ai->aiaction == AIACTION_RELEASELEFT) ? left
+                                                                : fwd;
+        break;
+    case AIACTION_ABILITY:
+        u32 slot = rand() % 4;
+        cmd->actionState |= BITC(slot_action[slot]);
+        break;
+    }
 }

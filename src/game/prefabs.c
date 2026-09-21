@@ -74,12 +74,12 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
+            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_FIREBALL,
             ABILITY_STATE_CLAW,
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_FIREBALL,
+            ABILITY_STATE_CLAW,
+            ABILITY_STATE_CLAW,
+            ABILITY_STATE_CLAW,
             ABILITY_STATE_DASH,
         },
     .slots = 7,

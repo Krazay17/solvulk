@@ -10,17 +10,17 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     vec3s pos         = world->xform.pos[id];
     vec3s target_pos  = world->xform.pos[target];
 
-    ScCmd *cmd   = Sol_Comp_Get(world, id, ScCmd);
-    cmd->wishdir = ai->brain.target_dir;
-    cmd->aimpos  = target_pos;
+    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+
+    cmd->aimpos = target_pos;
 
     ScBody3 *target_body = Sol_Comp_Get(world, target, ScBody3);
     if (target_body)
     {
         vec3s target_vel = target_body->vel;
-        target_vel.y     = min(1.0f, max(-1.0f, target_vel.y));
+        target_vel       = glms_vec3_clamp(target_vel, -5.0f, 5.0f);
         cmd->aimpos      = vecAdd(cmd->aimpos, target_vel);
-        float mapped     = Sol_Math_MapRange(-1.0f, 15.0f, 1.0f, 50.0f, ai->brain.target_dist);
+        float mapped     = Sol_Math_MapRange(-1.0f, 10.0f, 1.0f, 50.0f, ai->brain.target_dist);
         cmd->aimpos.y += mapped;
     }
 
@@ -33,15 +33,15 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
         line->bColor  = VEC4_GREEN;
     }
 
+    Fill_Reward(world, id, ai, dt);
     data->accum += dt;
     if (data->accum >= data->attacktimer)
     {
         data->accum -= data->attacktimer;
-        data->attacktimer = Sol_Math_RandRange2(0.001f, 0.2f);
-    }
-    else
-    {
-        
+        data->attacktimer = Sol_Math_RandRange2(0.1f, 0.3f);
+        // Sol_Debug_Add("AiReward", ai->reward);
+        Submit_Learn(world, id, ai, cmd);
+        Convert_AiActions(ai, cmd);
     }
 }
 

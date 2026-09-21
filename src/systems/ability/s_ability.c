@@ -122,7 +122,8 @@ void Ability_Step(World *world, double dt)
         int id             = set->dense[i];
         ScAbility *ability = &set->data[i];
         ScCmd *cmd         = Sol_Comp_Get(world, id, ScCmd);
-        if (!cmd)
+        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+        if (!cmd || !combat || combat->is_dead)
             continue;
 
         int slots    = ability->slots;

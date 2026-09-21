@@ -13,7 +13,6 @@
 #include "platform/platform.h"
 #include <omp.h>
 
-
 typedef enum
 {
     UPDATEPHASE_TICK,
@@ -307,8 +306,9 @@ int Sol_Create_Ent(World *world, vec3s pos)
     if (id >= world->maxEntities)
         return 0;
 
-    world->activeEnts[id] = true;
-    world->entCount++;
+    int dense                  = world->entCount++;
+    world->sparse[id]          = dense;
+    world->dense[dense]        = id;
     ScActive *sol_active       = Sol_Comp_Add(world, id, ScActive);
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = world->tickTime;

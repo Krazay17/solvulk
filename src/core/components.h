@@ -35,7 +35,7 @@ typedef struct ScCmd
     u32 reaction_state;
     int target, interact;
     float yaw, pitch;
-    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir;
+    vec3s wishdir, wishdir2, aimdir, aimpos, lookdir, leftdir;
 } ScCmd;
 
 typedef struct ScMeta
@@ -113,9 +113,11 @@ typedef struct ScAi
     u8 kind;
     AiState state;
     AiKnows knows;
+    AiActions aiaction;
     AiStateData stateData[AISTATE_COUNT];
     AiBrain brain;
     float aggroRange;
+    float reward;
 } ScAi;
 
 typedef struct ScBody3

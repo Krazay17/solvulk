@@ -669,40 +669,6 @@ typedef struct
 
 typedef enum
 {
-    ACTION_INTERACT,
-    ACTION_ZOOMIN,
-    ACTION_ZOOMOUT,
-    ACTION_BUILD,
-    ACTION_SCORE,
-    ACTION_DEBUGTELE,
-    ACTION_EXTRA_COUNT,
-} SolExtraActions;
-
-typedef enum
-{
-    ACTION_ABILITY1,
-    ACTION_ABILITY2,
-    ACTION_ABILITY3,
-    ACTION_ABILITY4,
-    ACTION_ABILITY5,
-    ACTION_ABILITY6,
-    ACTION_DASH,
-    ACTION_COMBAT_COUNT,
-} SolCombatActions;
-
-typedef enum
-{
-    ACTION_FWD,
-    ACTION_BWD,
-    ACTION_LEFT,
-    ACTION_RIGHT,
-    ACTION_JUMP,
-    ACTION_CROUCH,
-    ACTION_MOVE_COUNT,
-} SolMoveActions;
-
-typedef enum
-{
     AIKNOWS_STEPFRONT   = (1 << 0),
     AIKNOWS_LEDGEFRONT  = (1 << 1),
     AIKNOWS_WALLFRONT   = (1 << 2),
@@ -714,37 +680,67 @@ typedef enum
     AIKNOWS_TARGETFAR   = (1 << 8),
     AIKNOWS_GROUNDED    = (1 << 9),
     AIKNOWS_AIRBORNE    = (1 << 10),
-    AIKNOWS_COUNT       = (1 << 11),
+    AIKNOWS_CHARGING    = (1 << 11),
+    AIKNOWS_DANGERLEFT  = (1 << 12),
+    AIKNOWS_DANGERRIGHT = (1 << 13),
+    AIKNOWS_COUNT       = (1 << 14),
 } AiKnows;
+
+typedef enum AiActions
+{
+    AIACTION_NONE,
+    AIACTION_FWD,
+    AIACTION_BWD,
+    AIACTION_LEFT,
+    AIACTION_RIGHT,
+    AIACTION_JUMPFWD,
+    AIACTION_JUMPBWD,
+    AIACTION_JUMPLEFT,
+    AIACTION_JUMPRIGHT,
+    AIACTION_CROUCHFWD,
+    AIACTION_CROUCHBWD,
+    AIACTION_CROUCHLEFT,
+    AIACTION_CROUCHRIGHT,
+    AIACTION_DODGEFWD,
+    AIACTION_DODGEBWD,
+    AIACTION_DODGELEFT,
+    AIACTION_DODGERIGHT,
+    AIACTION_CHARGE,
+    AIACTION_RELEASEFWD,
+    AIACTION_RELEASEBWD,
+    AIACTION_RELEASELEFT,
+    AIACTION_RELEASERIGHT,
+    AIACTION_ABILITY,
+    AIACTION_COUNT,
+} AiActions;
 
 typedef struct QTable
 {
-    float qcombat[AIKNOWS_COUNT][ACTION_COMBAT_COUNT];
-    float qmove[AIKNOWS_COUNT][ACTION_MOVE_COUNT];
+    float q[AIKNOWS_COUNT][AIACTION_COUNT];
 } QTable;
 
 typedef enum
 {
-    // ACTION_ABILITY1,
-    // ACTION_ABILITY2,
-    // ACTION_ABILITY3,
-    // ACTION_ABILITY4,
-    // ACTION_ABILITY5,
-    // ACTION_ABILITY6,
-    // ACTION_DASH,
-    // ACTION_FWD,
-    // ACTION_BWD,
-    // ACTION_LEFT,
-    // ACTION_RIGHT,
-    // ACTION_JUMP,
-    // ACTION_CROUCH,
+    ACTION_ABILITY1,
+    ACTION_ABILITY2,
+    ACTION_ABILITY3,
+    ACTION_ABILITY4,
+    ACTION_ABILITY5,
+    ACTION_ABILITY6,
+    ACTION_DASH,
+    ACTION_FWD,
+    ACTION_BWD,
+    ACTION_LEFT,
+    ACTION_RIGHT,
+    ACTION_JUMP,
+    ACTION_CROUCH,
 
-    // ACTION_INTERACT,
-    // ACTION_ZOOMIN,
-    // ACTION_ZOOMOUT,
-    // ACTION_BUILD,
-    // ACTION_SCORE,
-    // ACTION_DEBUGTELE,
+    ACTION_INTERACT,
+    ACTION_ZOOMIN,
+    ACTION_ZOOMOUT,
+    ACTION_BUILD,
+    ACTION_SCORE,
+    ACTION_DEBUGTELE,
     ACTION_COUNT,
 } SolActions;
 
@@ -853,6 +849,7 @@ typedef enum
     EVENTKIND_EQUIP,
     EVENTKIND_SCORE,
     EVENTKIND_ENT_DESTROY,
+    EVENTKIND_HIT,
     EVENTKIND_COUNT,
 } EventKind;
 typedef enum
@@ -866,6 +863,10 @@ typedef struct SolEvent
     EventKind kind;
     u32 entA, entB;
     union {
+        struct
+        {
+            float damage;
+        } hit;
         struct
         {
             vec3s pos, normal, vel;

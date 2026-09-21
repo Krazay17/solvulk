@@ -38,7 +38,7 @@ void Create_Menu()
     }
 
     int counter   = 0;
-    vec2s start   = {0, 0.0f};
+    vec2s start   = {0.0f, 100.0f};
     vec2s spacing = {120.0f, 40.0f};
     { // WIZARD BUTTON
         int id = Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Wizard",
@@ -56,6 +56,8 @@ void Create_Menu()
                       Hook_SwitchWorld2);
     Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Volume", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SetVolume);
+    Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Timescale", INTERACT_DRAGGABLE, UILAYER_4,
+                      Hook_SetTimescale);
     Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Fov", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SetPlayerFov);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Clone", INTERACT_DRAGGABLE, UILAYER_4,
@@ -72,6 +74,10 @@ void Create_Menu()
                       Hook_Test);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Respawn", INTERACT_DRAGGABLE,
                       UILAYER_4, Hook_SpawnPlayer);
+    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dude", INTERACT_DRAGGABLE, UILAYER_4,
+                      Hook_SpawnDude);
+    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "ClearEnts", INTERACT_DRAGGABLE, UILAYER_4,
+                      Hook_ClearEnts);
 }
 
 void Create_Hud()
@@ -102,9 +108,12 @@ void Create_Game()
         Sol_Debug_Add("Player Ent", (float)id);
     }
     { // Ai Dude
-        int id = Sol_Prefab_Dude(world, (vec3s){0, 6, 15}, 1.0f);
-        Sol_Comp_Add(world, id, ScTeam);
+        vec3s spawn_pos                           = {0, 6, 15};
+        int id                                    = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
         Sol_Comp_Add(world, id, ScAi)->aggroRange = 20.0f;
+        ScCombat *combat                          = Sol_Comp_Add(world, id, ScCombat);
+        combat->respawnTime                       = 2.0f;
+        combat->respawnPos                        = spawn_pos;
     }
     { // Level
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});

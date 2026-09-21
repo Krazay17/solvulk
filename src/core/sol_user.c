@@ -454,12 +454,12 @@ void Sol_User_Draw(double dt)
 
 void Sol_User_SaveUserSettings()
 {
-    Sol_WriteFile(USER_SETTINGS_FILENAME, &user_data, sizeof(UserData));
+    Sol_WriteFile("data/", USER_SETTINGS_FILENAME, &user_data, sizeof(UserData));
 }
 
 void Sol_User_ClearUserSettings()
 {
-    remove(USER_SETTINGS_FILENAME);
+    Sol_DeleteFile("data/", USER_SETTINGS_FILENAME);
     LoadDefaults();
 }
 

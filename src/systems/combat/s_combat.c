@@ -15,6 +15,7 @@ static void OnRespawn(World *world, int id, ScCombat *combat)
     combat->health = combat->healthMax;
     combat->energy = combat->energyMax;
     combat->mana   = combat->manaMax;
+    combat->is_dead = false;
 }
 
 static void OnDeath(World *world, int id, ScCombat *combat)
@@ -25,11 +26,12 @@ static void OnDeath(World *world, int id, ScCombat *combat)
         combat->deathTime = world->tickTime;
     }
     if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+    {
         Sol_Destroy_Ent(world, id);
-
-    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-    if (body3)
-        body3->flag_destroy = true;
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+            body3->flag_destroy = true;
+    }
     if (Sol_Comp_Has(world, id, ScAbility))
     {
         Sol_Ability_SetState(world, id, 0, 0, true);
@@ -106,6 +108,8 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     {
         damage_done = 0;
     }
+
+    Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit.damage = damage_done});
 
     return damage_done;
 }

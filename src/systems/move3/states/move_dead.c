@@ -26,7 +26,7 @@ bool Move_Dead_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     if (Sol_Comp_Has(world, id, ScCombat))
     {
         ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-        return combat->health == 0.0f;
+        return combat->is_dead;
     }
     return false;
 }

@@ -180,12 +180,17 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
 }
 int Sol_Core_Init()
 {
-    SolResource res = Sol_LoadResource(QTABLE_RES_NAME, NULL);
+    SolResource res = Sol_LoadResource(QTABLE_RES_NAME, "data/");
     if (res.data)
-        memcpy(res.data, &solData.qtable, sizeof(solData.qtable));
+        memcpy(&solData.qtable, res.data, sizeof(solData.qtable));
+    if (res.isHeap)
+    {
+        free(res.data);
+        res.data = NULL;
+    }
     return 0;
 }
 void Sol_Core_Deinit()
 {
-    Sol_WriteFile(QTABLE_RES_NAME, &solData.qtable, sizeof(solData.qtable));
+    Sol_WriteFile("data/", QTABLE_RES_NAME, &solData.qtable, sizeof(solData.qtable));
 }

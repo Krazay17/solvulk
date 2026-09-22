@@ -3,6 +3,32 @@
 #include "sol_math.h"
 #include "sol_core.h"
 
+const char *aiaction_name[AIACTION_COUNT] = {
+    [AIACTION_NONE]         = "AIACTION_NONE",
+    [AIACTION_FWD]          = "AIACTION_FWD",
+    [AIACTION_BWD]          = "AIACTION_BWD",
+    [AIACTION_LEFT]         = "AIACTION_LEFT",
+    [AIACTION_RIGHT]        = "AIACTION_RIGHT",
+    [AIACTION_JUMPFWD]      = "AIACTION_JUMPFWD",
+    [AIACTION_JUMPBWD]      = "AIACTION_JUMPBWD",
+    [AIACTION_JUMPLEFT]     = "AIACTION_JUMPLEFT",
+    [AIACTION_JUMPRIGHT]    = "AIACTION_JUMPRIGHT",
+    [AIACTION_CROUCHFWD]    = "AIACTION_CROUCHFWD",
+    [AIACTION_CROUCHBWD]    = "AIACTION_CROUCHBWD",
+    [AIACTION_CROUCHLEFT]   = "AIACTION_CROUCHLEFT",
+    [AIACTION_CROUCHRIGHT]  = "AIACTION_CROUCHRIGHT",
+    [AIACTION_DODGEFWD]     = "AIACTION_DODGEFWD",
+    [AIACTION_DODGEBWD]     = "AIACTION_DODGEBWD",
+    [AIACTION_DODGELEFT]    = "AIACTION_DODGELEFT",
+    [AIACTION_DODGERIGHT]   = "AIACTION_DODGERIGHT",
+    [AIACTION_CHARGE]       = "AIACTION_CHARGE",
+    [AIACTION_RELEASEFWD]   = "AIACTION_RELEASEFWD",
+    [AIACTION_RELEASEBWD]   = "AIACTION_RELEASEBWD",
+    [AIACTION_RELEASELEFT]  = "AIACTION_RELEASELEFT",
+    [AIACTION_RELEASERIGHT] = "AIACTION_RELEASERIGHT",
+    [AIACTION_ABILITY]      = "AIACTION_ABILITY",
+};
+
 void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 {
     AiStateData *data = &ai->stateData[ai->state];
@@ -18,9 +44,9 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     if (target_body)
     {
         vec3s target_vel = target_body->vel;
-        target_vel       = glms_vec3_clamp(target_vel, -5.0f, 5.0f);
+        target_vel       = glms_vec3_clamp(target_vel, -1.5f, 1.5f);
         cmd->aimpos      = vecAdd(cmd->aimpos, target_vel);
-        float mapped     = Sol_Math_MapRange(-1.0f, 10.0f, 1.0f, 50.0f, ai->brain.target_dist);
+        float mapped     = Sol_Math_MapRange(-target_body->dims.y, 10.0f, 1.0f, 50.0f, ai->brain.target_dist);
         cmd->aimpos.y += mapped;
     }
 
@@ -38,10 +64,11 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     if (data->accum >= data->attacktimer)
     {
         data->accum -= data->attacktimer;
-        data->attacktimer = Sol_Math_RandRange2(0.1f, 0.3f);
+        data->attacktimer = Sol_Math_RandRange2(0.1f, 0.4f);
         // Sol_Debug_Add("AiReward", ai->reward);
         Submit_Learn(world, id, ai, cmd);
         Convert_AiActions(ai, cmd);
+        // Sol_Debug_AddText("AiAction", aiaction_name[ai->aiaction]);
     }
 }
 

@@ -488,8 +488,8 @@ void Resolve_Contact(World *world, SolContact contact)
     int idB        = contact.idB;
     ScBody3 *bodyA = Sol_Comp_Get(world, idA, ScBody3);
     ScBody3 *bodyB = Sol_Comp_Get(world, idB, ScBody3);
-    bool sensorA = bodyA ? bodyA->is_sensor : false;
-    bool sensorB = bodyB ? bodyB->is_sensor : false;
+    bool sensorA   = bodyA ? bodyA->is_sensor : false;
+    bool sensorB   = bodyB ? bodyB->is_sensor : false;
     if (sensorA || sensorB)
         return;
 
@@ -564,7 +564,7 @@ static SolProfiler prof_dynamic     = {.name = "Dynamic"};
 static SolProfiler prof_static      = {.name = "StaticTable"};
 static SolProfiler prof_static_test = {.name = "StaticTest"};
 
-void Body3_Update(World *world, double dt)
+void Body3_UpdateSub(World *world, double dt)
 {
     Prof_Begin(&prof_body3);
     float fdt = (float)dt;
@@ -741,19 +741,29 @@ void Body3_Update(World *world, double dt)
         Resolve_Contact(world, spatial->contacts[i]);
     }
 
-    for (i = body_count; i-- > 0;)
-    {
-        int id        = set->dense[i];
-        ScBody3 *body = &set->data[i];
-        Xform xform   = Xform_Get(world, id);
+    // for (i = body_count; i-- > 0;)
+    // {
+    //     int id        = set->dense[i];
+    //     ScBody3 *body = &set->data[i];
+    //     Xform xform   = Xform_Get(world, id);
 
-        if (xform.pos.y <= -15.0f)
-        {
-            world->xform.pos[id] = (vec3s){0, 5.0f, 0};
-            body->vel            = (vec3s){0, 5.0f, 0};
-        }
-    }
+    //     if (xform.pos.y <= -15.0f)
+    //     {
+    //         world->xform.pos[id] = (vec3s){0, 5.0f, 0};
+    //         body->vel            = (vec3s){0, 5.0f, 0};
+    //     }
+    // }
     Prof_EndEz(&prof_body3, true, fdt);
+}
+
+#define SUBSTEPS 3
+void Body3_Update(World *world, double dt)
+{
+    double substep_dt = (dt / (double)SUBSTEPS);
+    for (int i = 0; i < SUBSTEPS; i++)
+    {
+        Body3_UpdateSub(world, substep_dt);
+    }
 }
 
 vec3s Sol_Body3_GetGround(World *world, int id)
@@ -854,9 +864,9 @@ int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 {
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
-    SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
-    SpatialGrid *grid_dynamic = spatial->grid_dynamic;
-    SpatialGrid *grid_static  = spatial->grid_static;
+    SlSpatial *spatial          = Sol_Comp_Get(world, 0, SlSpatial);
+    SpatialGrid *grid_dynamic   = spatial->grid_dynamic;
+    SpatialGrid *grid_static    = spatial->grid_static;
 
     outResult->hit = false;
     outResult->t   = ray.dist; // shrinks as closer hits are found; also our search limit

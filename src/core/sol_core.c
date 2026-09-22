@@ -59,20 +59,22 @@ int Sol_Init(void *hwnd, void *hInstance)
     result = Sol_Render_Init();
     if (result != 0)
         printf("Render failed to init, code:%d\n", result);
+    printf("Passed Render Init\n");
 
     result = Sol_Render_GPU_Init(hwnd, hInstance);
     if (result != 0)
         printf("Render failed to init, code:%d\n", result);
+    printf("Passed Render GPU Init\n");
 
     solState.debug     = false;
     solState.isRunning = true;
     return result;
 }
 
-#define MAX_ACCUMULATOR (SOL_TIMESTEP * 5.0)
+#define MAX_ACCUMULATOR (SOL_TIMESTEP * 4.0)
 void Sol_Tick(double dt, double time)
 {
-    if (dt < 0.0 || dt > 1.0)
+    if (dt < 0.0)
         dt = 0.0166666;
 
     dt *= solState.timescale;
@@ -91,7 +93,7 @@ void Sol_Tick(double dt, double time)
 
     // ######### STEP AND INTERP #########
     accumulator = accumulator > MAX_ACCUMULATOR ? MAX_ACCUMULATOR : accumulator + dt;
-    while (accumulator >= SOL_TIMESTEP)
+    while (accumulator >= SOL_TIMESTEP && dt < 1.0f)
     {
         Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
         Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP);

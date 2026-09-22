@@ -55,6 +55,7 @@ void Move3_Step(World *world, double dt)
         {
         case MOVE_MANTLE:
         case MOVE_LANDING:
+        case MOVE_DASH:
             break;
         case MOVE_STUN:
             body3->gravity.y *= 1.33f;

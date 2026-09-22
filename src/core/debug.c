@@ -46,7 +46,7 @@ void Sol_Debug_AddText(const char *label, const char *value)
         if (strncmp(label, debuggers.label[i], MAX_STR_LEN) == 0)
         {
             strncpy(debuggers.textValue[i], value, MAX_STR_LEN - 1);
-            debuggers.textValue[i][MAX_STR_LEN - 1] = '\0';
+           debuggers.textValue[i][MAX_STR_LEN - 1] = '\0';
 
             return;
         }

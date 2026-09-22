@@ -78,7 +78,6 @@ World *World_Create()
         return NULL;
     int index              = solState.worldCount++;
     world->timescale       = 1.0f;
-    world->timestep        = SOL_TIMESTEP;
     world->maxEntities     = MAX_ENTS;
     world->doesSimulate    = true;
     world->doesRender      = true;
@@ -234,7 +233,7 @@ void Worlds_Step(World **worlds, int count, double dt)
         {
             double world_dt = dt * world->timescale;
             world->currentStep++;
-            world->stepTime += world->timestep;
+            world->stepTime += world_dt;
 
             for (int i = 0; i < world->stepCount; i++)
                 world->stepSystems[i](world, world_dt);

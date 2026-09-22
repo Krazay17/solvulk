@@ -356,6 +356,7 @@ typedef struct ScCombat
     vec3s respawnPos;
     float respawnTime;
 
+    u32 lastHitBy;
     u32 hitPauseDiminish;
     float hitPause;
 
@@ -424,6 +425,13 @@ typedef struct ScProjectile
     float power;
     Hook hook;
 } ScProjectile;
+
+typedef struct ScAilearn
+{
+    u32 knows;
+    u32 action;
+    float reward;
+} ScAilearn;
 
 typedef struct ScHuditem
 {

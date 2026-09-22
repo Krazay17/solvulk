@@ -17,19 +17,28 @@ extern const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
 extern const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
 extern const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT];
 
+// static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
+// {
+//     const float speed = glms_vec3_norm(prevvel);
+//     if (speed < 0.1f)
+//         return GLMS_VEC3_ZERO;
+//     vec3s vel            = prevvel;
+//     const float drop     = speed * friction * dt;
+//     const float newspeed = fmaxf(0.0f, speed - drop);
+//     vel                  = glms_vec3_scale(vel, newspeed / speed);
+
+//     return vel;
+// }
 static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 {
     const float speed = glms_vec3_norm(prevvel);
     if (speed < 0.1f)
         return GLMS_VEC3_ZERO;
-    vec3s vel            = prevvel;
-    const float drop     = speed * friction * dt;
-    const float newspeed = fmaxf(0.0f, speed - drop);
-    vel                  = glms_vec3_scale(vel, newspeed / speed);
 
-    return vel;
+    // Exact exponential decay: frame-rate and timescale independent
+    const float dropFactor = expf(-friction * dt);
+    return glms_vec3_scale(prevvel, dropFactor);
 }
-
 static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float accel, float dt)
 {
     float wishlen2 = glms_vec3_norm2(wishdir);
@@ -217,11 +226,15 @@ void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
 void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
 bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-void Move_Mantle_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd);
 
 void Move_Landing_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
 void Move_Landing_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
 void Move_Landing_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
 bool Move_Landing_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
 bool Move_Landing_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
-void Move_Landing_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd);
+
+void Move_Dash_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+void Move_Dash_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+void Move_Dash_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+bool Move_Dash_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+bool Move_Dash_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);

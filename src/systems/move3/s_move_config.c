@@ -4,12 +4,13 @@ const char *move_state_name[MOVE_STATE_COUNT] = {
     [MOVE_IDLE] = "Idle",         [MOVE_WALK] = "Walk",     [MOVE_STUN] = "Stun",       [MOVE_FALL] = "Fall",
     [MOVE_JUMP] = "Jump",         [MOVE_CROUCH] = "Crouch", [MOVE_SLIDE] = "Slide",     [MOVE_WALLRUN] = "Wallrun",
     [MOVE_WALLJUMP] = "Walljump", [MOVE_MANTLE] = "Mantle", [MOVE_LANDING] = "Landing", [MOVE_FLY] = "Fly",
-    [MOVE_DEAD] = "Dead",
+    [MOVE_DEAD] = "Dead",         [MOVE_DASH] = "Dash",
 };
 
 const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
-    MOVE_DEAD,     //
-    MOVE_STUN,     //
+    MOVE_DEAD, //
+    MOVE_STUN, //
+    MOVE_DASH,
     MOVE_LANDING,  //
     MOVE_JUMP,     //
     MOVE_MANTLE,   //
@@ -24,7 +25,7 @@ const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
 };
 
 const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
-{
+    {
         [MOVEMENTKIND_DUDE] =
             {
                 [MOVE_IDLE]     = {.speed = 0.0f, .accell = 0.0f, .friction = 10.0f, .gravity = -13.0f},
@@ -158,7 +159,6 @@ const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Move_Mantle_Exit,
             Move_Mantle_CanExit,
             Move_Mantle_CanEnter,
-            Move_Mantle_Draw,
         },
     [MOVE_LANDING] =
         {
@@ -167,6 +167,13 @@ const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
             Move_Landing_Exit,
             Move_Landing_CanExit,
             Move_Landing_CanEnter,
-            Move_Landing_Draw,
+        },
+    [MOVE_DASH] =
+        {
+            Move_Dash_Update,
+            Move_Dash_Enter,
+            Move_Dash_Exit,
+            Move_Dash_CanExit,
+            Move_Dash_CanEnter,
         },
 };

@@ -28,8 +28,9 @@ typedef struct SolState
     bool debug;
     bool destroy_qued;
 
-    double dt;
     float fdt;
+    float volume_master;
+    double dt;
     double appTime, timescale, fps;
     double uiScale, aspectRatio;
     u32 tickCounter, stepCounter;

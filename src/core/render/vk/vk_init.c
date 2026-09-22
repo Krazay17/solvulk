@@ -72,7 +72,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     {
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(devices[i], &props);
-        printf("Found GPU Device: %s\n", props.deviceName);
+        printf("Found GPU Device: %s %d\n", props.deviceName, i);
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
             vkstate->physicalDevice = devices[i];
@@ -81,6 +81,7 @@ int SolVkPhysicalDevice(SolVkState *vkstate)
     }
     if (vkstate->physicalDevice == VK_NULL_HANDLE)
     {
+        printf("Fallback to Device 0\n");
         vkstate->physicalDevice = devices[0]; // fallback
     }
 

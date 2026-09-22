@@ -413,26 +413,32 @@ int Sol_Render_GPU_Init(void *hwnd, void *hInstance)
         return 1;
     if (SolVkSurface(&solvkstate, hwnd, hInstance) != 0)
         return 2;
+    printf("RenderGPU step 2 passed\n");
     if (SolVkPhysicalDevice(&solvkstate) != 0)
         return 3;
+    printf("RenderGPU step 3 passed\n");
     if (SolVkDevice(&solvkstate) != 0)
         return 4;
+    printf("RenderGPU step 4 passed\n");
     if (SolVkSwapchain(&solvkstate) != 0)
         return 5;
+    printf("RenderGPU step 5 passed\n");
     if (SolVkImageViews(&solvkstate) != 0)
         return 6;
+    printf("RenderGPU step 6 passed\n");
     if (SolVkDepthResources(&solvkstate) != 0)
         return 7;
+    printf("RenderGPU step 7 passed\n");
     if (SolVkCommandPool(&solvkstate) != 0)
         return 8;
+    printf("RenderGPU step 8 passed\n");
     if (SolVkSyncObjects(&solvkstate) != 0)
         return 9;
     //    if (Sol_Render_UploadAll() != 0)
     //        return 10;
+    printf("RenderGPU step 9 passed\n");
     if (Sol_Render_BuildPipes() != 0)
         return 11;
-
-
 
     return 0;
 }
@@ -453,6 +459,7 @@ int Sol_Render_UploadAll()
 
 int Sol_Render_BuildPipes()
 {
+    printf("Building descriptors\n");
     for (int i = 0; i < DESC_COUNT; i++)
     {
         SolDescriptorConfig *cfg = &desc_config[i];
@@ -466,6 +473,7 @@ int Sol_Render_BuildPipes()
             // Sol_ImageDescriptor_Build(&solvkstate, gpuImages, &image_array_descriptor);
         }
     }
+    printf("Building pipelines\n");
     for (int i = 0; i < PIPE_COUNT; i++)
     {
         if (Sol_Pipeline_Build(&solvkstate, &pipe_config[i], &pipes[i]) != 0)
@@ -475,6 +483,7 @@ int Sol_Render_BuildPipes()
         }
     }
 
+    printf("Building framebuffers\n");
     for (int i = 0; i < FRAMEBUFFER_COUNT; i++)
     {
         Sol_CreateFrameBuffer(&solvkstate, buffer_config[i].size, buffer_config[i].stage, &frameBuffers[i]);

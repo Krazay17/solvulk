@@ -6,6 +6,8 @@
  * 
 */
 //ID_NAME               TYPE            PATH
+qtables                 RCDATA          "data/qtables"
+
 atlas.json              RCDATA          "fonts/atlas.json"
 atlas.raw               RCDATA          "fonts/atlas.raw"
 
@@ -37,8 +39,7 @@ LaserCard.webp          RCDATA          "images/LaserCard.webp"
 FogStrip.png            RCDATA          "images/FogStrip.png"
 Shield.png              RCDATA          "images/Shield.png"
 Grid.png                RCDATA          "images/Grid.png"
-// TriangleBookend.png RCDATA "images/TriangleBookend.png"
-
+TriangleBookend.png     RCDATA          "images/TriangleBookend.png"
 
 
 Dude.glb                   RCDATA          "models/Dude.glb"

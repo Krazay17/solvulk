@@ -23,6 +23,11 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
         ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
         body->vel     = glms_vec3_scale(data->as.dash.dir, alpha * DASH_VEL);
     }
+    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
+    if(move)
+    {
+        // move->frictionMod = 0.0f;
+    }
 }
 
 void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)

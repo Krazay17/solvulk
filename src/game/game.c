@@ -38,7 +38,7 @@ void Create_Menu()
     }
 
     int counter   = 0;
-    vec2s start   = {0.0f, 100.0f};
+    vec2s start   = {20.0f, 120.0f};
     vec2s spacing = {120.0f, 40.0f};
     { // WIZARD BUTTON
         int id = Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Wizard",
@@ -74,8 +74,9 @@ void Create_Menu()
                       Hook_Test);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Respawn", INTERACT_DRAGGABLE,
                       UILAYER_4, Hook_SpawnPlayer);
-    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dude", INTERACT_DRAGGABLE, UILAYER_4,
+    int dudebutton = Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dude", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SpawnDude);
+                      // Sol_Comp_Get(world, dudebutton, ScHook)->held = Hook_SpawnDude;
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "ClearEnts", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_ClearEnts);
 }

@@ -12,29 +12,35 @@
 
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
-    combat->health = combat->healthMax;
-    combat->energy = combat->energyMax;
-    combat->mana   = combat->manaMax;
+    Sol_Xform_Teleport(world, id, combat->respawnPos);
+    combat->health  = combat->healthMax;
+    combat->energy  = combat->energyMax;
+    combat->mana    = combat->manaMax;
     combat->is_dead = false;
 }
 
-static void OnDeath(World *world, int id, ScCombat *combat)
+static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
 {
     if (!combat->is_dead)
     {
         combat->is_dead   = true;
         combat->deathTime = world->tickTime;
+        Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.entA = combat->lastHitBy, .entB = id});
     }
-    if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+    if (body3)
     {
-        Sol_Destroy_Ent(world, id);
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-        if (body3)
-            body3->flag_destroy = true;
+        body3->vel = GLMS_VEC3_ZERO;
     }
     if (Sol_Comp_Has(world, id, ScAbility))
     {
         Sol_Ability_SetState(world, id, 0, 0, true);
+    }
+    if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+    {
+        Sol_Destroy_Ent(world, id);
+        if (body3)
+            body3->flag_destroy = true;
     }
 }
 
@@ -48,9 +54,14 @@ void Combat_Step(World *world, double dt)
 
         if (combat->health <= 0)
         {
-            OnDeath(world, id, combat);
+            OnDeath(world, id, combat, 0);
             if (combat->respawnTime && (world->tickTime >= (combat->deathTime + combat->respawnTime)))
                 OnRespawn(world, id, combat);
+        }
+        vec3s pos = world->xform.pos[id];
+        if (pos.y < -15.0f)
+        {
+            combat->health = 0;
         }
     }
 }
@@ -101,8 +112,8 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
                 team->team = attacker_team->team;
             }
         }
-
-        damage_done = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
+        combat->lastHitBy = hit.entA;
+        damage_done       = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
     }
     else
     {

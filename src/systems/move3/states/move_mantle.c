@@ -109,7 +109,3 @@ bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 l
         return CheckWall(world, id, move, cmd);
     return false;
 }
-
-void Move_Mantle_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd)
-{
-}

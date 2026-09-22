@@ -67,8 +67,9 @@ static const ScMove3 dude_move = {
 };
 
 static const ScCombat dude_combat = {
-    .healthMax = 100.0f,
-    .health    = 100.0f,
+    .healthMax   = 100.0f,
+    .health      = 100.0f,
+    .respawnTime = 2.0f,
 };
 
 static const ScAbility dude_ability = {
@@ -89,19 +90,22 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, pos);
 
-    *Sol_Comp_Add(world, id, ScModel)   = dude_model;
-    *Sol_Comp_Add(world, id, ScAnim)    = anim_default;
-    *Sol_Comp_Add(world, id, ScBody3)   = dude_body;
-    *Sol_Comp_Add(world, id, ScCombat)  = dude_combat;
+    *Sol_Comp_Add(world, id, ScModel) = dude_model;
+    *Sol_Comp_Add(world, id, ScAnim)  = anim_default;
+    *Sol_Comp_Add(world, id, ScBody3) = dude_body;
+
+    ScCombat *combat   = Sol_Comp_Add(world, id, ScCombat);
+    *combat            = dude_combat;
+    combat->respawnPos = pos;
+
     *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
     *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
     *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
 
-        *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
         .kind  = VIEW3KIND_HEALTHBAR,
         .color = {0.1f, 0.9f, 0.1f, 1.0f},
     };
-
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
@@ -425,6 +429,15 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .radius = size,
         .hitgen = Sol_Hitgen_Start(world, id),
     };
+
+    ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
+    if (ai)
+    {
+        ScAilearn *ailearn = Sol_Comp_Add(world, id, ScAilearn);
+        ailearn->knows     = ai->knows;
+        ailearn->action    = ai->aiaction;
+        ailearn->reward    = 10.0f;
+    }
 
     return id;
 }

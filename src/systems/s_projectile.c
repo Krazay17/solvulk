@@ -34,7 +34,7 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
             Xform hit_xform = Xform_Get(w, hit_id);
             vec3s explode_hit_pos =
                 Sol_AddScaledDir(ray.start, vecNorm(vecSub(hit_xform.pos, xform.pos)), results[i].t);
-                
+
             SolHit aoe_hit = projectile->aoe_hit;
             aoe_hit.entB   = hit_id;
             aoe_hit.pos    = explode_hit_pos;
@@ -76,6 +76,8 @@ void Projectile_Step(World *world, double dt)
         ScOwner *owner           = Sol_Comp_Get(world, id, ScOwner);
         int ownerId              = owner ? owner->ownerId : 0;
         Xform xform              = Xform_Get(world, id);
+        if (xform.pos.y < -15.0f)
+            Sol_Destroy_Ent(world, id);
 
         vec3s vel   = body3->vel;
         float speed = glms_vec3_norm(vel);
@@ -113,6 +115,16 @@ void Projectile_Step(World *world, double dt)
             hit.normal = result.norm;
             hit.pos    = Sol_AddScaledDir(ray.start, ray.dir, result.t);
             hit.vel    = vecNorm(vel);
+
+            ScCombat *owner_combat = Sol_Comp_Get(world, ownerId, ScCombat);
+            bool owner_alive = owner_combat ? !owner_combat->is_dead : false;
+            ScAi *ai           = Sol_Comp_Get(world, id, ScAi);
+            ScAilearn *ailearn = Sol_Comp_Get(world, id, ScAilearn);
+            if (owner_alive && ailearn && ai)
+            {
+                Q_Learn_Table(&solData.qtable, ailearn->action, ailearn->action, ai->knows, ailearn->reward, 0.1f,
+                              0.9f);
+            }
 
             bool destroyed = false;
             switch (projectile->kind)

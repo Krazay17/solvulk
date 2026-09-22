@@ -62,7 +62,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c17 /W2 /openmp:experimental)
+    target_compile_options(solvulk PRIVATE /std:c17 /W2 /openmp:experimental /O2)
     #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -105,7 +105,7 @@ if(WIN32)
    add_executable(solapp 
        "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
        "${CMAKE_SOURCE_DIR}/src/game/game.c"
-       #"${CMAKE_SOURCE_DIR}/assets/res.rc"
+       "${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")

@@ -87,6 +87,7 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \
     X(ScAi, HAS_ScAi)                                                                                                  \
+    X(ScAilearn, HAS_ScAilearn)                                                                                         \
     X(ScBody2, HAS_ScBody2)                                                                                            \
     X(ScBody3, HAS_ScBody3)                                                                                            \
     X(ScStage, HAS_ScStage)                                                                                            \
@@ -197,7 +198,7 @@ struct World
     int sparse[MAX_ENTS];
     int dense[MAX_ENTS];
 
-    double dt, timestep;
+    double dt;
     float fdt, timescale;
     u32 currentTick, currentStep;
     double tickTime, stepTime;
@@ -551,3 +552,4 @@ void Sol_Buff_AddMask(World *world, int id, u32 mask, u32 source, float power);
 void Sol_Buff_AddE(World *world, int id, BuffKind kind, u32 source, float power, float duration);
 Buff *Sol_Buff_Next(World *world, int id, BuffKind kind);
 void Sol_Buff_Rem(World *world, int id, BuffKind kind);
+void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float reward, float alpha, float gamma);

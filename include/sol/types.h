@@ -268,6 +268,7 @@ typedef enum
     MOVE_MANTLE,
     MOVE_LANDING,
     MOVE_FLY,
+    MOVE_DASH,
     MOVE_DEAD,
     MOVE_STATE_COUNT
 } MoveState;
@@ -669,21 +670,24 @@ typedef struct
 
 typedef enum
 {
-    AIKNOWS_STEPFRONT   = (1 << 0),
-    AIKNOWS_LEDGEFRONT  = (1 << 1),
-    AIKNOWS_WALLFRONT   = (1 << 2),
-    AIKNOWS_WALLLEFT    = (1 << 3),
-    AIKNOWS_WALLRIGHT   = (1 << 4),
-    AIKNOWS_WALLBACK    = (1 << 5),
-    AIKNOWS_TARGETCLOSE = (1 << 6),
-    AIKNOWS_TARGETMID   = (1 << 7),
-    AIKNOWS_TARGETFAR   = (1 << 8),
-    AIKNOWS_GROUNDED    = (1 << 9),
-    AIKNOWS_AIRBORNE    = (1 << 10),
-    AIKNOWS_CHARGING    = (1 << 11),
-    AIKNOWS_DANGERLEFT  = (1 << 12),
-    AIKNOWS_DANGERRIGHT = (1 << 13),
-    AIKNOWS_COUNT       = (1 << 14),
+    AIKNOWS_LEDGENEAR    = (1 << 0),
+    AIKNOWS_WALLFRONT     = (1 << 1),
+    AIKNOWS_WALLLEFT      = (1 << 2),
+    AIKNOWS_WALLRIGHT     = (1 << 3),
+    AIKNOWS_WALLBACK      = (1 << 4),
+    AIKNOWS_TARGETLOS     = (1 << 5),
+    AIKNOWS_TARGETCLOSE   = (1 << 6),
+    AIKNOWS_TARGETMID     = (1 << 7),
+    AIKNOWS_TARGETFAR     = (1 << 8),
+    AIKNOWS_TARGETHIGH    = (1 << 9),
+    AIKNOWS_TARGETATTACK  = (1 << 10),
+    AIKNOWS_AIRBORNE      = (1 << 11),
+    AIKNOWS_CHARGING      = (1 << 12),
+    AIKNOWS_CHARGINGLONG  = (1 << 13),
+    AIKNOWS_DODGECOOLDOWN = (1 << 14),
+    AIKNOWS_DANGERLEFT    = (1 << 15),
+    AIKNOWS_DANGERRIGHT   = (1 << 16),
+    AIKNOWS_COUNT         = (1 << 17),
 } AiKnows;
 
 typedef enum AiActions
@@ -849,7 +853,9 @@ typedef enum
     EVENTKIND_EQUIP,
     EVENTKIND_SCORE,
     EVENTKIND_ENT_DESTROY,
+    EVENTKIND_AILEARN,
     EVENTKIND_HIT,
+    EVENTKIND_DEATH,
     EVENTKIND_COUNT,
 } EventKind;
 typedef enum
@@ -861,7 +867,8 @@ typedef enum
 typedef struct SolEvent
 {
     EventKind kind;
-    u32 entA, entB;
+    u32 entA; // Attacker
+    u32 entB; // Victim
     union {
         struct
         {

@@ -29,7 +29,7 @@ static inline void Hook_SpawnPlayer(World *w, int a, int b)
 
     // SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
     // player_set->cnt                = 0;
-    int id                         = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
+    int id = Sol_Prefab_Dude(game, (vec3s){0, 5, 0}, 1.0f);
     Sol_Comp_Add(game, id, ScPlayer);
     sol_user.view_ent = id;
     ScMeta *meta      = Sol_Comp_Add(game, id, ScMeta);
@@ -71,14 +71,16 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
 static inline void Hook_SpawnDude(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
-    float fdt    = world->fdt;
+    float time    = world->tickTime;
 
-    vec3s spawn_pos                           = {sinf(fdt), 10.f, cosf(fdt)};
-    int id                                    = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-    Sol_Comp_Add(world, id, ScAi)->aggroRange = 20.0f;
-    ScCombat *combat                          = Sol_Comp_Add(world, id, ScCombat);
-    combat->respawnTime                       = 2.0f;
-    combat->respawnPos                        = spawn_pos;
+    vec3s spawn_pos     = {sinf(time) * 90.0f, 100.f, cosf(time) * 90.0f};
+    int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    ScAi *ai            = Sol_Comp_Add(world, id, ScAi);
+    ai->aggroRange      = 100.0f;
+    
+    ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+    combat->respawnTime = 3.0f;
+    combat->respawnPos  = spawn_pos;
 }
 static inline void Hook_DebugToggle(World *w, int a, int b)
 {
@@ -131,6 +133,9 @@ static inline void Hook_Healthbar(World *w, int a, int b)
 
 static inline void Hook_SetVolume(World *w, int a, int b)
 {
+    ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
+    if (slider)
+        Sol_Audio_SetVolume(slider->value);
 }
 
 static inline void Hook_SunAngle(World *w, int a, int b)

@@ -16,34 +16,56 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
     float explode_radius = projectile->radius * 3.0f;
     ScOwner *owner       = Sol_Comp_Get(w, a, ScOwner);
     int ownerId          = owner ? owner->ownerId : 0;
-    Xform xform          = Xform_Get(w, a);
+    vec3s pos            = w->xform.pos[a];
 
     if (Sol_Hitgen_Try(w, a, hit.entB, projectile->hitgen))
     {
         Sol_Combat_Hit(w, hit.entB, hit);
 
-        SolRay ray = {
-            .start = xform.pos, .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = explode_radius};
+        SolRay ray = {.start = pos, .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = explode_radius};
         SolRayResult results[512];
         int hits = Sol_SphereOverlap(w, ray, results, 512);
+
         for (int i = 0; i < hits; i++)
         {
             int hit_id = results[i].entId;
             if (hit_id == ownerId || Sol_Comp_Has(w, hit_id, ScStage))
                 continue;
-            Xform hit_xform = Xform_Get(w, hit_id);
-            vec3s explode_hit_pos =
-                Sol_AddScaledDir(ray.start, vecNorm(vecSub(hit_xform.pos, xform.pos)), results[i].t);
 
+            vec3s hit_pos = w->xform.pos[hit_id];
+            vec3s delta   = vecSub(hit_pos, pos);
+            float d2      = glms_vec3_norm2(delta);
+
+            // Only run LoS raycast if entity isn't sitting directly on the explosion origin
+            if (d2 >= 0.000001f)
+            {
+                float dist = sqrtf(d2);
+                vec3s dir  = vecSca(delta, 1.0f / dist);
+
+                SolRayResult los_result = {0};
+                bool is_blocked =
+                    Sol_Raycast1D(w,
+                                  (SolRay){.start     = pos,
+                                           .dir       = dir,
+                                           .dist      = dist - 0.01f, // Stop slightly short to avoid self-intersection
+                                           .mask      = COLLAYER_WORLD,
+                                           .ignoreEnt = a},
+                                  &los_result, 5.4f);
+
+                if (is_blocked)
+                    continue;
+            }
+
+            // Single hit & event dispatch for both zero-dist and unblocked targets
             SolHit aoe_hit = projectile->aoe_hit;
             aoe_hit.entB   = hit_id;
-            aoe_hit.pos    = explode_hit_pos;
+            aoe_hit.pos    = hit_pos;
             Sol_Combat_Hit(w, hit_id, aoe_hit);
 
             Sol_Event_Push(w, EVENTKIND_FX,
                            (SolEvent){
                                .as.fx.kind     = EVENTFX_FIREBALL_HIT,
-                               .as.fx.pos      = explode_hit_pos,
+                               .as.fx.pos      = hit_pos,
                                .as.fx.color    = {1.0f, 0.9f, 0.0f, 1.0f},
                                .as.fx.duration = 0.3f,
                                .as.fx.scale    = explode_radius,
@@ -52,7 +74,7 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
         Sol_Event_Push(w, EVENTKIND_FX,
                        (SolEvent){
                            .as.fx.kind     = EVENTFX_FIREBALL_EXPLODE,
-                           .as.fx.pos      = xform.pos,
+                           .as.fx.pos      = pos,
                            .as.fx.color    = {1.0f, 0.4f, 8.0f, 0.7f},
                            .as.fx.duration = 0.3f,
                            .as.fx.scale    = explode_radius,
@@ -117,12 +139,12 @@ void Projectile_Step(World *world, double dt)
             hit.vel    = vecNorm(vel);
 
             ScCombat *owner_combat = Sol_Comp_Get(world, ownerId, ScCombat);
-            bool owner_alive = owner_combat ? !owner_combat->is_dead : false;
-            ScAi *ai           = Sol_Comp_Get(world, id, ScAi);
-            ScAilearn *ailearn = Sol_Comp_Get(world, id, ScAilearn);
+            bool owner_alive       = owner_combat ? !owner_combat->is_dead : false;
+            ScAi *ai               = Sol_Comp_Get(world, id, ScAi);
+            ScAilearn *ailearn     = Sol_Comp_Get(world, id, ScAilearn);
             if (owner_alive && ailearn && ai)
             {
-                Q_Learn_Table(&solData.qtable, ailearn->action, ailearn->action, ai->knows, ailearn->reward, 0.1f,
+                Q_Learn_Table(&solData.qtable, ailearn->knows, ailearn->action, ai->prev_knows, ailearn->reward, 0.1f,
                               0.9f);
             }
 

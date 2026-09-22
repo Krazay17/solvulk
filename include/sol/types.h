@@ -670,61 +670,6 @@ typedef struct
 
 typedef enum
 {
-    AIKNOWS_LEDGENEAR    = (1 << 0),
-    AIKNOWS_WALLFRONT     = (1 << 1),
-    AIKNOWS_WALLLEFT      = (1 << 2),
-    AIKNOWS_WALLRIGHT     = (1 << 3),
-    AIKNOWS_WALLBACK      = (1 << 4),
-    AIKNOWS_TARGETLOS     = (1 << 5),
-    AIKNOWS_TARGETCLOSE   = (1 << 6),
-    AIKNOWS_TARGETMID     = (1 << 7),
-    AIKNOWS_TARGETFAR     = (1 << 8),
-    AIKNOWS_TARGETHIGH    = (1 << 9),
-    AIKNOWS_TARGETATTACK  = (1 << 10),
-    AIKNOWS_AIRBORNE      = (1 << 11),
-    AIKNOWS_CHARGING      = (1 << 12),
-    AIKNOWS_CHARGINGLONG  = (1 << 13),
-    AIKNOWS_DODGECOOLDOWN = (1 << 14),
-    AIKNOWS_DANGERLEFT    = (1 << 15),
-    AIKNOWS_DANGERRIGHT   = (1 << 16),
-    AIKNOWS_COUNT         = (1 << 17),
-} AiKnows;
-
-typedef enum AiActions
-{
-    AIACTION_NONE,
-    AIACTION_FWD,
-    AIACTION_BWD,
-    AIACTION_LEFT,
-    AIACTION_RIGHT,
-    AIACTION_JUMPFWD,
-    AIACTION_JUMPBWD,
-    AIACTION_JUMPLEFT,
-    AIACTION_JUMPRIGHT,
-    AIACTION_CROUCHFWD,
-    AIACTION_CROUCHBWD,
-    AIACTION_CROUCHLEFT,
-    AIACTION_CROUCHRIGHT,
-    AIACTION_DODGEFWD,
-    AIACTION_DODGEBWD,
-    AIACTION_DODGELEFT,
-    AIACTION_DODGERIGHT,
-    AIACTION_CHARGE,
-    AIACTION_RELEASEFWD,
-    AIACTION_RELEASEBWD,
-    AIACTION_RELEASELEFT,
-    AIACTION_RELEASERIGHT,
-    AIACTION_ABILITY,
-    AIACTION_COUNT,
-} AiActions;
-
-typedef struct QTable
-{
-    float q[AIKNOWS_COUNT][AIACTION_COUNT];
-} QTable;
-
-typedef enum
-{
     ACTION_ABILITY1,
     ACTION_ABILITY2,
     ACTION_ABILITY3,
@@ -931,3 +876,101 @@ typedef enum
 {
     ZONEKIND_FIREBALL,
 } ZoneKind;
+
+typedef enum
+{
+    AIKNOWS_WALLFRONT   = (1 << 0),
+    AIKNOWS_WALLLEFT    = (1 << 1),
+    AIKNOWS_WALLRIGHT   = (1 << 2),
+    AIKNOWS_WALLBACK    = (1 << 3),
+    AIKNOWS_TARGETLOS   = (1 << 4),
+    AIKNOWS_AIRBORNE    = (1 << 5),
+    // AIKNOWS_CANDODGE    = (1 << 6),
+    AIKNOWS_DANGERLEFT  = (1 << 6),
+    AIKNOWS_DANGERRIGHT = (1 << 7),
+    AIKNOWS_LEDGENEAR   = (1 << 8),
+    AIKNOWS_COUNT       = (1 << 9),
+} AiKnows;
+
+typedef enum
+{
+    AITARGETDIST_CLOSE,
+    AITARGETDIST_MID,
+    AITARGETDIST_FAR,
+    AITARGETDIST_COUNT,
+} AiTargetDist;
+
+typedef enum
+{
+    AIMOTION_STILL,
+    AIMOTION_TOWARD,
+    AIMOTION_AWAY,
+    AIMOTION_COUNT,
+} AiTargetMotion;
+
+typedef enum
+{
+    AIHEIGHT_SAME,
+    AIHEIGHT_ABOVE,
+    AIHEIGHT_BELOW,
+    AIHEIGHT_COUNT,
+} AiTargetHeight;
+
+typedef enum
+{
+    AITARGET_CHARGING,
+    AITARGET_FIRING,
+    AITARGET_COUNT,
+} AiTargetCombat;
+
+typedef enum
+{
+    AISELF_CHARGING,
+    AISELF_CHARGINGLONG,
+    AISELF_CANDODGE,
+    AISELF_COUNT,
+} AiSelfState;
+
+typedef struct
+{
+    AiTargetDist dist;
+    AiTargetMotion motion;
+    AiTargetHeight height;
+    AiTargetCombat targetCombat;
+    AiSelfState self;
+
+    u32 knows;
+} AiStateInputs;
+
+#define AI_TOTAL_STATES                                                                                                \
+    (AITARGETDIST_COUNT * AIMOTION_COUNT * AIHEIGHT_COUNT * AITARGET_COUNT * AISELF_COUNT * AIKNOWS_COUNT)
+
+typedef enum AiActions
+{
+    AIACTION_NONE,
+    AIACTION_FWD,
+    AIACTION_BWD,
+    AIACTION_LEFT,
+    AIACTION_RIGHT,
+    AIACTION_JUMPFWD,
+    AIACTION_JUMPBWD,
+    AIACTION_JUMPLEFT,
+    AIACTION_JUMPRIGHT,
+    AIACTION_CROUCHFWD,
+    AIACTION_CROUCHBWD,
+    AIACTION_CROUCHLEFT,
+    AIACTION_CROUCHRIGHT,
+    AIACTION_DODGEFWD,
+    AIACTION_DODGEBWD,
+    AIACTION_DODGELEFT,
+    AIACTION_DODGERIGHT,
+    AIACTION_CHARGE,
+    AIACTION_RELEASE,
+    AIACTION_ABILITY,
+    AIACTION_COUNT,
+} AiActions;
+
+typedef struct QTable
+{
+    float q[AI_TOTAL_STATES][AIACTION_COUNT];
+} QTable;

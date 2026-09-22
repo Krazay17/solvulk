@@ -434,7 +434,7 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     if (ai)
     {
         ScAilearn *ailearn = Sol_Comp_Add(world, id, ScAilearn);
-        ailearn->knows     = ai->knows;
+        ailearn->knows     = ai->prev_knows;
         ailearn->action    = ai->aiaction;
         ailearn->reward    = 10.0f;
     }

@@ -106,18 +106,23 @@ typedef struct AiBrain
     vec3s target_pos;
     vec3s target_dir;
     float target_dist;
+    float target_prev_dist;
     float dropAggroTimer;
 } AiBrain;
 typedef struct ScAi
 {
     u8 kind;
     AiState state;
-    AiKnows knows;
-    AiActions aiaction;
     AiStateData stateData[AISTATE_COUNT];
     AiBrain brain;
     float aggroRange;
+    
+    float actionTimer;
     float reward;
+    u32 prev_knows;
+    bool hasPrevKnows;
+    AiActions prev_action;
+    AiActions aiaction;
 } ScAi;
 
 typedef struct ScBody3

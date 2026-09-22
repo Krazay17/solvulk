@@ -42,7 +42,7 @@ void Camera_Tick(World *world, double dt)
                                                         .start     = head,
                                                         .dir       = offsetvec,
                                                         .dist      = camera->desired_offset,
-                                                        .mask      = 0,
+                                                        .mask      = COLLAYER_WORLD,
                                                         .ignoreEnt = id,
                                                     },
                                                     &anchortrace);
@@ -70,7 +70,7 @@ void Camera_Tick(World *world, double dt)
                                                        .start     = camera->anchor,
                                                        .dir       = invDir,
                                                        .dist      = camera->desired_distance,
-                                                       .mask      = 0,
+                                                       .mask      = COLLAYER_WORLD,
                                                        .ignoreEnt = id,
                                                    },
                                                    &dist_trace);

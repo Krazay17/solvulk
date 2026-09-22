@@ -22,10 +22,7 @@ const char *aiaction_name[AIACTION_COUNT] = {
     [AIACTION_DODGELEFT]    = "AIACTION_DODGELEFT",
     [AIACTION_DODGERIGHT]   = "AIACTION_DODGERIGHT",
     [AIACTION_CHARGE]       = "AIACTION_CHARGE",
-    [AIACTION_RELEASEFWD]   = "AIACTION_RELEASEFWD",
-    [AIACTION_RELEASEBWD]   = "AIACTION_RELEASEBWD",
-    [AIACTION_RELEASELEFT]  = "AIACTION_RELEASELEFT",
-    [AIACTION_RELEASERIGHT] = "AIACTION_RELEASERIGHT",
+    [AIACTION_RELEASE] = "AIACTION_RELEASE",
     [AIACTION_ABILITY]      = "AIACTION_ABILITY",
 };
 
@@ -61,10 +58,10 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 
     Fill_Reward(world, id, ai, dt);
     data->accum += dt;
-    if (data->accum >= data->attacktimer)
+    if (data->accum >= ai->actionTimer)
     {
-        data->accum -= data->attacktimer;
-        data->attacktimer = Sol_Math_RandRange2(0.1f, 0.4f);
+        data->accum -= ai->actionTimer;
+        ai->actionTimer = Sol_Math_RandRange2(0.05f, 0.3f);
         // Sol_Debug_Add("AiReward", ai->reward);
         Submit_Learn(world, id, ai, cmd);
         Convert_AiActions(ai, cmd);

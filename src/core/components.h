@@ -116,12 +116,10 @@ typedef struct ScAi
     AiStateData stateData[AISTATE_COUNT];
     AiBrain brain;
     float aggroRange;
-    
+
     float actionTimer;
     float reward;
-    u32 prev_knows;
-    bool hasPrevKnows;
-    AiActions prev_action;
+    AiKnowState knows;
     AiActions aiaction;
 } ScAi;
 
@@ -433,7 +431,7 @@ typedef struct ScProjectile
 
 typedef struct ScAilearn
 {
-    u32 knows;
+    AiKnowState knows;
     u32 action;
     float reward;
 } ScAilearn;

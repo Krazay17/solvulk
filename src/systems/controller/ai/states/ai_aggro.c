@@ -4,36 +4,38 @@
 #include "sol_core.h"
 
 const char *aiaction_name[AIACTION_COUNT] = {
-    [AIACTION_NONE]         = "AIACTION_NONE",
-    [AIACTION_FWD]          = "AIACTION_FWD",
-    [AIACTION_BWD]          = "AIACTION_BWD",
-    [AIACTION_LEFT]         = "AIACTION_LEFT",
-    [AIACTION_RIGHT]        = "AIACTION_RIGHT",
-    [AIACTION_JUMPFWD]      = "AIACTION_JUMPFWD",
-    [AIACTION_JUMPBWD]      = "AIACTION_JUMPBWD",
-    [AIACTION_JUMPLEFT]     = "AIACTION_JUMPLEFT",
-    [AIACTION_JUMPRIGHT]    = "AIACTION_JUMPRIGHT",
-    [AIACTION_CROUCHFWD]    = "AIACTION_CROUCHFWD",
-    [AIACTION_CROUCHBWD]    = "AIACTION_CROUCHBWD",
-    [AIACTION_CROUCHLEFT]   = "AIACTION_CROUCHLEFT",
-    [AIACTION_CROUCHRIGHT]  = "AIACTION_CROUCHRIGHT",
-    [AIACTION_DODGEFWD]     = "AIACTION_DODGEFWD",
-    [AIACTION_DODGEBWD]     = "AIACTION_DODGEBWD",
-    [AIACTION_DODGELEFT]    = "AIACTION_DODGELEFT",
-    [AIACTION_DODGERIGHT]   = "AIACTION_DODGERIGHT",
-    [AIACTION_CHARGE]       = "AIACTION_CHARGE",
-    [AIACTION_RELEASE] = "AIACTION_RELEASE",
-    [AIACTION_ABILITY]      = "AIACTION_ABILITY",
+    [AIACTION_NONE]        = "AIACTION_NONE",
+    [AIACTION_FWD]         = "AIACTION_FWD",
+    [AIACTION_BWD]         = "AIACTION_BWD",
+    [AIACTION_LEFT]        = "AIACTION_LEFT",
+    [AIACTION_RIGHT]       = "AIACTION_RIGHT",
+    [AIACTION_JUMPFWD]     = "AIACTION_JUMPFWD",
+    [AIACTION_JUMPBWD]     = "AIACTION_JUMPBWD",
+    [AIACTION_JUMPLEFT]    = "AIACTION_JUMPLEFT",
+    [AIACTION_JUMPRIGHT]   = "AIACTION_JUMPRIGHT",
+    [AIACTION_CROUCHFWD]   = "AIACTION_CROUCHFWD",
+    [AIACTION_CROUCHBWD]   = "AIACTION_CROUCHBWD",
+    [AIACTION_CROUCHLEFT]  = "AIACTION_CROUCHLEFT",
+    [AIACTION_CROUCHRIGHT] = "AIACTION_CROUCHRIGHT",
+    [AIACTION_DODGEFWD]    = "AIACTION_DODGEFWD",
+    [AIACTION_DODGEBWD]    = "AIACTION_DODGEBWD",
+    [AIACTION_DODGELEFT]   = "AIACTION_DODGELEFT",
+    [AIACTION_DODGERIGHT]  = "AIACTION_DODGERIGHT",
+    [AIACTION_CHARGE]      = "AIACTION_CHARGE",
+    [AIACTION_RELEASE]     = "AIACTION_RELEASE",
+    [AIACTION_ABILITY]     = "AIACTION_ABILITY",
 };
 
 void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 {
     AiStateData *data = &ai->stateData[ai->state];
-    int target        = ai->brain.target;
-    vec3s pos         = world->xform.pos[id];
-    vec3s target_pos  = world->xform.pos[target];
+    ScCmd *cmd        = Sol_Comp_Get(world, id, ScCmd);
+    if (!cmd)
+        return;
 
-    ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+    int target       = ai->brain.target;
+    vec3s pos        = world->xform.pos[id];
+    vec3s target_pos = world->xform.pos[target];
 
     cmd->aimpos = target_pos;
 
@@ -60,12 +62,13 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     data->accum += dt;
     if (data->accum >= ai->actionTimer)
     {
+        Sol_Debug_Add("AiReward", ai->reward);
         data->accum -= ai->actionTimer;
-        ai->actionTimer = Sol_Math_RandRange2(0.05f, 0.3f);
-        // Sol_Debug_Add("AiReward", ai->reward);
+        // ai->actionTimer = Sol_Math_RandRange2(0.04f, 0.2f);
+        ai->actionTimer = 0.1f;
         Submit_Learn(world, id, ai, cmd);
         Convert_AiActions(ai, cmd);
-        // Sol_Debug_AddText("AiAction", aiaction_name[ai->aiaction]);
+        Sol_Debug_AddText("AiAction", aiaction_name[ai->aiaction]);
     }
 }
 

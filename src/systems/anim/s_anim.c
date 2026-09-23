@@ -138,13 +138,11 @@ void Anim_Tick(World *world, double dt)
                 switch (data->stage)
                 {
                 case 0:
-                    ability_anim.anim =
-                        ANIM_CHARGE_LEFT; // ability->activeSlot == 1 ? ANIM_CHARGE_RIGHT : ANIM_CHARGE_LEFT;
+                    ability_anim.anim = ability->activeSlot == 1 ? ANIM_CHARGE_RIGHT : ANIM_CHARGE_LEFT;
                     break;
                 case 1:
                 case 2:
-                    ability_anim.anim =
-                        ANIM_ATTACK_LEFT; // ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
+                    ability_anim.anim = ability->activeSlot == 1 ? ANIM_ATTACK_RIGHT : ANIM_ATTACK_LEFT;
                     ability_anim.seek = 0.16f;
                     break;
                 }

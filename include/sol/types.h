@@ -62,11 +62,24 @@ typedef struct DamagePayload
 //     };
 // }
 
+typedef enum
+{
+    HITKIND_NORMAL,
+    HITKIND_MELEE_HIT,
+    HITKIND_BULLET,
+    HITKIND_FIRE,
+    HITKIND_FIREBALL,
+    HITKIND_FIREBALL_EXPLODE,
+    HITKIND_ICE,
+    HITKIND_SHIELD_PULSE,
+    HITKIND_COUNT,
+} HitKind;
 typedef struct SolHit
 {
     int entA; // Attacker
     int entB; // Victim
     float damage;
+    HitKind kind;
     vec3s pos;
     vec3s normal;
     vec3s vel;
@@ -559,18 +572,6 @@ typedef enum
 
 typedef enum
 {
-    HITKIND_NORMAL,
-    HITKIND_BULLET,
-    HITKIND_FIRE,
-    HITKIND_FIREBALL,
-    HITKIND_FIREBALL_EXPLODE,
-    HITKIND_ICE,
-    HITKIND_SHIELD_PULSE,
-    HITKIND_COUNT,
-} HitKind;
-
-typedef enum
-{
     UILAYER_0,
     UILAYER_1,
     UILAYER_2,
@@ -815,10 +816,7 @@ typedef struct SolEvent
     u32 entA; // Attacker
     u32 entB; // Victim
     union {
-        struct
-        {
-            float damage;
-        } hit;
+        SolHit hit;
         struct
         {
             vec3s pos, normal, vel;
@@ -831,7 +829,7 @@ typedef struct SolEvent
         } death;
         struct
         {
-            u32 kind;
+            EventFx kind;
             u32 entA, entB;
             vec3s pos;
             vec4s color;
@@ -879,33 +877,9 @@ typedef enum
 
 typedef enum
 {
-    AIKNOWS_WALLFRONT   = (1 << 0),
-    AIKNOWS_WALLLEFT    = (1 << 1),
-    AIKNOWS_WALLRIGHT   = (1 << 2),
-    AIKNOWS_WALLBACK    = (1 << 3),
-    AIKNOWS_TARGETLOS   = (1 << 4),
-    AIKNOWS_AIRBORNE    = (1 << 5),
-    // AIKNOWS_CANDODGE    = (1 << 6),
-    AIKNOWS_DANGERLEFT  = (1 << 6),
-    AIKNOWS_DANGERRIGHT = (1 << 7),
-    AIKNOWS_LEDGENEAR   = (1 << 8),
-    AIKNOWS_COUNT       = (1 << 9),
-} AiKnows;
-
-typedef enum
-{
-    AITARGETDIST_CLOSE,
-    AITARGETDIST_MID,
-    AITARGETDIST_FAR,
-    AITARGETDIST_COUNT,
-} AiTargetDist;
-
-typedef enum
-{
     AIMOTION_STILL,
     AIMOTION_TOWARD,
     AIMOTION_AWAY,
-    AIMOTION_COUNT,
 } AiTargetMotion;
 
 typedef enum
@@ -913,37 +887,24 @@ typedef enum
     AIHEIGHT_SAME,
     AIHEIGHT_ABOVE,
     AIHEIGHT_BELOW,
-    AIHEIGHT_COUNT,
 } AiTargetHeight;
 
 typedef enum
 {
-    AITARGET_CHARGING,
-    AITARGET_FIRING,
-    AITARGET_COUNT,
+    AITARGETCOMBAT_NONE,
+    AITARGETCOMBAT_CHARGING,
+    AITARGETCOMBAT_FIRING,
+    AITARGETCOMBAT_DODGING,
+    AITARGETCOMBAT_COUNT,
 } AiTargetCombat;
 
 typedef enum
 {
+    AISELF_NONE,
+    AISELF_CANDODGE,
     AISELF_CHARGING,
     AISELF_CHARGINGLONG,
-    AISELF_CANDODGE,
-    AISELF_COUNT,
 } AiSelfState;
-
-typedef struct
-{
-    AiTargetDist dist;
-    AiTargetMotion motion;
-    AiTargetHeight height;
-    AiTargetCombat targetCombat;
-    AiSelfState self;
-
-    u32 knows;
-} AiStateInputs;
-
-#define AI_TOTAL_STATES                                                                                                \
-    (AITARGETDIST_COUNT * AIMOTION_COUNT * AIHEIGHT_COUNT * AITARGET_COUNT * AISELF_COUNT * AIKNOWS_COUNT)
 
 typedef enum AiActions
 {
@@ -960,17 +921,63 @@ typedef enum AiActions
     AIACTION_CROUCHBWD,
     AIACTION_CROUCHLEFT,
     AIACTION_CROUCHRIGHT,
-    AIACTION_DODGEFWD,
-    AIACTION_DODGEBWD,
-    AIACTION_DODGELEFT,
-    AIACTION_DODGERIGHT,
-    AIACTION_CHARGE,
-    AIACTION_RELEASE,
-    AIACTION_ABILITY,
     AIACTION_COUNT,
 } AiActions;
 
+typedef enum
+{
+    AIACTIONCOMBAT_DODGE,
+    AIACTIONCOMBAT_CHARGE,
+    AIACTIONCOMBAT_RELEASE,
+    AIACTIONCOMBAT_ABILITY,
+    AIACTIONCOMBAT_COUNT,
+} AiActionsCombat;
+
+typedef enum
+{
+    AIMOVE_NORMAL,
+    AIMOVE_STUCK,
+    AIMOVE_LEDGEFRONT,
+    AIMOVE_LEDGEBACK,
+} AiMove;
+#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (5 + 5 + 4 + 2))
+typedef union {
+    struct
+    {
+        u32 self : 2; // 4 unique options
+        u32 move : 2;
+        u32 airborne : 1;
+
+        u32 targetDist : 3; // 8 unique options
+        u32 targetMotion : 1;
+        u32 targetAbove : 1;
+
+        u32 wallFront : 1;
+        u32 wallLeft : 1;
+        u32 wallBack : 1;
+        u32 wallRight : 1;
+
+        u32 dangerLeft : 1;
+        u32 dangerRight : 1;
+    };
+    u32 raw;
+} AiKnowStatem;
+#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 6 + 1))
+typedef union {
+    struct
+    {
+        u32 self : 2; // 4 unique options
+
+        u32 targetDist : 3; // 8 unique options
+        u32 targetCombat : 2;
+        u32 targetLos : 1;
+
+        u32 winning : 1;
+    };
+    u32 raw;
+} AiKnowStatec;
 typedef struct QTable
 {
-    float q[AI_TOTAL_STATES][AIACTION_COUNT];
+    float q[AIKNOW_MOVEMENTSTATE_COUNT][AIACTION_COUNT];
+    float qc[AIKNOW_COMBATSTATE_COUNT][AIACTION_COUNT];
 } QTable;

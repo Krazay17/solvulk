@@ -8,6 +8,7 @@
 #include "s_ai.h"
 #include "world.h"
 #include "sol_math.h"
+#include "sol_core.h"
 
 const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
     AISTATE_AGGRO, //
@@ -114,5 +115,24 @@ void Ai_Step(World *world, double dt)
         AiStateFuncs funcs = Ai_Get_Funcs(ai->kind, ai->state);
         if (funcs.update)
             funcs.update(world, id, ai, fdt);
+    }
+}
+
+void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once)
+{
+    ScAilearn *ailearn = Sol_Comp_Get(world, id, ScAilearn);
+    ScAi *ai           = Sol_Comp_Get(world, ownerId, ScAi);
+    if (!ailearn || !ai)
+        return;
+    ScCombat *owner_combat = Sol_Comp_Get(world, ownerId, ScCombat);
+    bool owner_alive       = owner_combat ? !owner_combat->is_dead : false;
+    if (owner_alive)
+    {
+        float *q = &solData.qtable.q[ailearn->knows.raw][ailearn->action];
+        *q += (10.0f - *q);
+    }
+    if (once)
+    {
+        Sol_Comp_Rem(world, id, ScAilearn);
     }
 }

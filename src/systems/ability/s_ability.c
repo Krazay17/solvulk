@@ -46,12 +46,12 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_FIREBALL] =
         {
-            .duration = 4.0f,
+            .duration = 3.0f,
             .recover  = 0.5f,
             .cooldown = 1.0f,
             .damage   = 15.0f,
             .buffMask = BITC(BUFFKIND_FIRE),
-            .maxpower = 2.0f,
+            .maxpower = 1.0f,
         },
     [ABILITY_STATE_DASH] =
         {
@@ -122,7 +122,7 @@ void Ability_Step(World *world, double dt)
         int id             = set->dense[i];
         ScAbility *ability = &set->data[i];
         ScCmd *cmd         = Sol_Comp_Get(world, id, ScCmd);
-        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+        ScCombat *combat   = Sol_Comp_Get(world, id, ScCombat);
         if (!cmd || !combat || combat->is_dead)
             continue;
 
@@ -136,10 +136,10 @@ void Ability_Step(World *world, double dt)
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
             u32 state = ability->slotted_actions[j] ? ability->slotted_actions[j] : ability->base_actions[j];
-            if (held && is_idle)
+            if (held && (is_idle || j == 6)) // || (j != ability->activeSlot)
             {
-                Sol_Ability_SetState(world, id, state, j, false);
-                break;
+                if (Sol_Ability_SetState(world, id, state, j, false))
+                    break;
             }
         }
         const AbilityStateFunc *state_func = ability_state_func[ability->state];

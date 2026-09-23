@@ -20,6 +20,7 @@ void Create_Menu();
 void Create_Hud();
 void Create_Game();
 void Create_Game2();
+void Create_Game3();
 
 extern const ScCamera player_camera;
 
@@ -46,6 +47,10 @@ static inline void Hook_SwitchWorld2(World *w, int a, int b)
 {
     Sol_User_EnterGameWorld(3, true, (vec3s){0, 5, 0});
 }
+static inline void Hook_SwitchWorld3(World *w, int a, int b)
+{
+    Sol_User_EnterGameWorld(4, true, (vec3s){0, 5, 0});
+}
 
 static inline void Hook_Possess(World *w, int a, int b)
 {
@@ -71,16 +76,31 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
 static inline void Hook_SpawnDude(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
-    float time    = world->tickTime;
+    float time   = world->tickTime;
 
-    vec3s spawn_pos     = {sinf(time) * 90.0f, 100.f, cosf(time) * 90.0f};
-    int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-    ScAi *ai            = Sol_Comp_Add(world, id, ScAi);
-    ai->aggroRange      = 100.0f;
-    
+    vec3s spawn_pos = {sinf(time) * 2, 5.0f, cosf(time) * 2.0f};
+    int id          = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    ScAi *ai        = Sol_Comp_Add(world, id, ScAi);
+    ai->aggroRange  = 100.0f;
+
     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
     combat->respawnTime = 3.0f;
     combat->respawnPos  = spawn_pos;
+}
+static inline void Hook_SpawnDudes(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+    for (int i = 0; i < 200; i++)
+    {
+        vec3s spawn_pos = {sinf(i) * 80.0f, 100.f, cosf(i) * 80.0f};
+        int id          = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
+        ScAi *ai        = Sol_Comp_Add(game, id, ScAi);
+        ai->aggroRange  = 100.0f;
+
+        ScCombat *combat    = Sol_Comp_Add(game, id, ScCombat);
+        combat->respawnTime = 3.0f;
+        combat->respawnPos  = spawn_pos;
+    }
 }
 static inline void Hook_DebugToggle(World *w, int a, int b)
 {

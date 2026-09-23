@@ -13,6 +13,7 @@ void Create_Sol_Game()
     Create_Hud();
     Create_Game();
     Create_Game2();
+    Create_Game3();
 }
 
 void Create_Menu()
@@ -54,10 +55,12 @@ void Create_Menu()
                       Hook_SwitchWorld);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "World2", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SwitchWorld2);
+    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "World3", INTERACT_DRAGGABLE, UILAYER_4,
+                      Hook_SwitchWorld3);
     Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Volume", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SetVolume);
-    Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Timescale", INTERACT_DRAGGABLE, UILAYER_4,
-                      Hook_SetTimescale);
+    Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Timescale", INTERACT_DRAGGABLE,
+                      UILAYER_4, Hook_SetTimescale);
     Sol_Prefab_Slider(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Fov", INTERACT_DRAGGABLE, UILAYER_4,
                       Hook_SetPlayerFov);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Clone", INTERACT_DRAGGABLE, UILAYER_4,
@@ -74,11 +77,13 @@ void Create_Menu()
                       Hook_Test);
     Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Respawn", INTERACT_DRAGGABLE,
                       UILAYER_4, Hook_SpawnPlayer);
-    int dudebutton = Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dude", INTERACT_DRAGGABLE, UILAYER_4,
-                      Hook_SpawnDude);
-                      // Sol_Comp_Get(world, dudebutton, ScHook)->held = Hook_SpawnDude;
-    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "ClearEnts", INTERACT_DRAGGABLE, UILAYER_4,
-                      Hook_ClearEnts);
+    int dudebutton = Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dude",
+                                       INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnDude);
+    // Sol_Comp_Get(world, dudebutton, ScHook)->held = Hook_SpawnDude;
+    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "ClearEnts", INTERACT_DRAGGABLE,
+                      UILAYER_4, Hook_ClearEnts);
+    Sol_Prefab_Button(world, Sol_GridMakerInc(&counter, 4, 12, start, spacing), "Dudes", INTERACT_DRAGGABLE, UILAYER_4,
+                      Hook_SpawnDudes);
 }
 
 void Create_Hud()
@@ -123,6 +128,22 @@ void Create_Game()
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
     }
+    // for (int j = -2; j < 2; j++)
+    // {
+    //     vec3s spawn_pos     = {-10, 4, j * 2};
+    //     int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    //     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+    //     combat->respawnTime = 2.0f;
+    //     combat->respawnPos  = spawn_pos;
+    // }
+    // for (int j = -2; j < 2; j++)
+    // {
+    //     vec3s spawn_pos     = {10, 4, j * 2};
+    //     int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    //     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+    //     combat->respawnTime = 2.0f;
+    //     combat->respawnPos  = spawn_pos;
+    // }
 }
 
 void Create_Game2()
@@ -135,6 +156,21 @@ void Create_Game2()
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
         ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
         levelModel->kind    = MODELKIND_WORLD1;
+        ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
+        stage->isDirty      = true;
+    }
+}
+
+void Create_Game3()
+{
+    World *world        = World_Create_AllSys();
+    world->doesSimulate = false;
+    world->doesRender   = false;
+
+    { // Level
+        int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
+        ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
+        levelModel->kind    = MODELKIND_WORLD10;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
     }

@@ -7,6 +7,7 @@
  */
 #include "world.h"
 #include "sol_math.h"
+#include "sol_core.h"
 
 #define DESTROY_TIMER 3.0f
 
@@ -120,7 +121,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         damage_done = 0;
     }
 
-    Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit.damage = damage_done});
+    Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit = hit});
 
     return damage_done;
 }
@@ -157,4 +158,84 @@ float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float 
         combatA->healingDone += healing_done;
 
     return healing_done;
+}
+
+void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits)
+{
+    vec3s pos = ray.start;
+    int hits  = Sol_SphereOverlap(world, ray, results, max_hits);
+
+    for (int i = 0; i < hits; i++)
+    {
+        int hit_id = results[i].entId;
+        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage))
+            continue;
+
+        vec3s hit_pos = world->xform.pos[hit_id];
+        vec3s delta   = vecSub(hit_pos, pos);
+        float d2      = glms_vec3_norm2(delta);
+
+        // Only run LoS raycast if entity isn't sitting directly on the explosion origin
+        if (d2 >= 0.000001f)
+        {
+            float dist = sqrtf(d2);
+            vec3s dir  = vecSca(delta, 1.0f / dist);
+
+            SolRayResult los_result = {0};
+            bool is_blocked =
+                Sol_Raycast1(world,
+                             (SolRay){.start     = pos,
+                                      .dir       = dir,
+                                      .dist      = dist - 0.01f, // Stop slightly short to avoid self-intersection
+                                      .mask      = COLLAYER_WORLD,
+                                      .ignoreEnt = id},
+                             &los_result);
+
+            if (is_blocked)
+                continue;
+        }
+        hit.entB = hit_id;
+        hit.pos  = hit_pos;
+        Sol_Combat_Hit(world, hit_id, hit);
+    }
+}
+
+int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits, u32 hitgen)
+{
+    vec3s pos = ray.start;
+    int hits  = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
+                               : Sol_Spherecast(world, ray, results, max_hits);
+
+    for (int i = 0; i < hits; i++)
+    {
+        int hit_id = results[i].entId;
+        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage) || !Sol_Hitgen_Try(world, id, hit_id, hitgen))
+            continue;
+        vec3s hit_pos = world->xform.pos[hit_id];
+        vec3s delta   = vecSub(hit_pos, pos);
+        float d2      = glms_vec3_norm2(delta);
+
+        if (d2 >= 0.000001f)
+        {
+            float dist = sqrtf(d2);
+            vec3s dir  = vecSca(delta, 1.0f / dist);
+
+            SolRayResult los_result = {0};
+            bool is_blocked =
+                Sol_Raycast1(world,
+                             (SolRay){.start     = pos,
+                                      .dir       = dir,
+                                      .dist      = dist - 0.01f, // Stop slightly short to avoid self-intersection
+                                      .mask      = COLLAYER_WORLD,
+                                      .ignoreEnt = id},
+                             &los_result);
+            if (is_blocked)
+                continue;
+        }
+        hit.entB = hit_id;
+        hit.pos  = hit_pos;
+        Sol_Combat_Hit(world, hit_id, hit);
+
+    }
+    return hits;
 }

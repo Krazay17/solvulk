@@ -1095,6 +1095,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
     return count;
 }
 
+// Put radius into SolRay
 int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 {
     float radius                = ray.radius;

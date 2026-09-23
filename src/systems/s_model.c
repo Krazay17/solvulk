@@ -139,6 +139,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_identity(entityWorld);
 
     // Apply position (including your yOffset adjustment)
+    xform.pos.y += model_kinds[model->kind].y_offset;
     vec3 actualDrawPos = {xform.pos.x, xform.pos.y + (model->yOffset * xform.sca.y), xform.pos.z};
     glm_translate(entityWorld, actualDrawPos);
 

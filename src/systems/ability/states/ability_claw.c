@@ -113,7 +113,7 @@ bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, 
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
 
-    return data->elapsed >= data->conf.duration * 0.8f;
+    return !data->recoverRemaining;
 }
 
 bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)

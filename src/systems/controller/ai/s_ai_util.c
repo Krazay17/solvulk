@@ -73,7 +73,7 @@ void Fill_Brain(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
     if (found_target)
     {
         brain->target         = found_target;
-        brain->dropAggroTimer = 200.0f;
+        brain->dropAggroTimer = 1e9f;
     }
     else if (brain->target)
     {
@@ -93,118 +93,6 @@ void Fill_Brain(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
     }
 }
 
-// void Fill_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
-// {
-//     AiBrain *brain = &ai->brain;
-//     ai->knows      = 0;
-//     int target     = brain->target;
-//     vec3s pos      = world->xform.pos[id];
-
-//     if (brain->target_dist < 5.0f)
-//         ai->knows |= AIKNOWS_TARGETCLOSE;
-//     else if (brain->target_dist < 12.0f)
-//         ai->knows |= AIKNOWS_TARGETMID;
-//     else
-//         ai->knows |= AIKNOWS_TARGETFAR;
-//     if (brain->target_pos.y > pos.y + 1.0f)
-//         ai->knows |= AIKNOWS_TARGETHIGH;
-
-//     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
-//     if (target_ability->stateData[target_ability->activeSlot].stage > 0)
-//         ai->knows |= AIKNOWS_TARGETATTACK;
-
-//     if (cmd->actionState & (BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2)))
-//         ai->knows |= AIKNOWS_CHARGING;
-
-//     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-//     if (ability)
-//     {
-//         if (ability->stateData[ability->activeSlot].power >= 1.0f)
-//         {
-//             ai->knows |= AIKNOWS_CHARGINGLONG;
-//         }
-//         if (ability->stateData[6].cooldownRemaining > 0.0f)
-//         {
-//             ai->knows |= AIKNOWS_DODGECOOLDOWN;
-//         }
-//     }
-
-//     SparseSet_ScProjectile *projectile_set = Sol_Comp_Set(world, ScProjectile);
-//     for (int i = 0; i < projectile_set->cnt; i++)
-//     {
-//         int projectile_id    = projectile_set->dense[i];
-//         vec3s projectile_pos = world->xform.pos[projectile_id];
-//         vec3s delta          = glms_vec3_sub(projectile_pos, pos);
-//         float d2             = glms_vec3_norm2(delta);
-//         if (d2 <= 0.0001f || d2 > 200.0f)
-//             continue;
-//         float dot   = vecDot(delta, cmd->leftdir);
-//         float inv_d = 1.0f / sqrtf(d2);
-//         dot *= inv_d;
-//         if (dot > 0.0f)
-//             ai->knows |= AIKNOWS_DANGERLEFT;
-//         else
-//             ai->knows |= AIKNOWS_DANGERRIGHT;
-//     }
-
-//     ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
-//     if (move3)
-//     {
-//         if (move3->airtime > 0)
-//             ai->knows |= AIKNOWS_AIRBORNE;
-//     }
-
-//     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-//     if (body3)
-//     {
-//         float height   = body3->dims.y;
-//         float radius   = body3->dims.x;
-//         vec3s fwd      = Sol_Vec3_FromYawPitch(cmd->yaw, 0);
-//         vec3s foot_pos = pos;
-
-//         foot_pos.y -= body3->dims.y * 0.8f;
-
-//         SolRayResult result;
-//         if (!Sol_Raycast1(world,
-//                           (SolRay){
-//                               .start     = Sol_Body3_GetHead(world, id),
-//                               .mask      = COLLAYER_WORLD,
-//                               .ignoreEnt = id,
-//                               .dir       = cmd->lookdir,
-//                               .dist      = ai->brain.target_dist,
-//                           },
-//                           &result))
-//             ai->knows |= AIKNOWS_TARGETLOS;
-
-//         u32 hitmap[4] = {AIKNOWS_WALLFRONT, AIKNOWS_WALLBACK, AIKNOWS_WALLRIGHT, AIKNOWS_WALLLEFT};
-//         for (int k = -1; k < 1; k++)
-//         {
-//             for (int j = 1; j < 5; j++)
-//             {
-//                 vec3s finalPos = pos;
-//                 finalPos.y += (height * 0.8f) * k;
-//                 float final_dist     = radius + 3.5f;
-//                 vec3s rotated_offset = glms_quat_rotatev(world->xform.rot[id], VECTOR_RADIAL_DIRECTIONS[j]);
-//                 SolRay ray = {.start = finalPos, .dist = final_dist, .dir = rotated_offset, .ignoreEnt = id, .mask =
-//                 1}; bool hit   = Sol_Raycast1(world, ray, &result); if (hit)
-//                 {
-//                     ai->knows |= hitmap[j - 1];
-//                 }
-//                 if (k < 0)
-//                     if (!Sol_Raycast1(world,
-//                                       (SolRay){
-//                                           .start     = vecAdd(finalPos, vecSca(rotated_offset, final_dist)),
-//                                           .dir       = WORLD_DOWN,
-//                                           .dist      = 5.0f,
-//                                           .ignoreEnt = id,
-//                                       },
-//                                       &result))
-//                         ai->knows |= AIKNOWS_LEDGENEAR;
-//             }
-//         }
-//     }
-// }
-
 void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
 {
     SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
@@ -216,84 +104,96 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
         {
             if (event->entA == id)
             {
-                ai->reward += event->as.hit.damage;
+                ai->reward += event->as.hit.damage * 2.0f;
             }
             else if (event->entB == id)
-                ai->reward -= event->as.hit.damage;
+                ai->reward -= event->as.hit.damage * 1.0f;
         }
         else if (event->kind == EVENTKIND_DEATH)
         {
             if (event->entA == id)
-                ai->reward -= 10.0f;
+                ai->reward -= 20.0f;
             else if (event->entB == id)
-                ai->reward += 10.0f;
+                ai->reward += 20.0f;
         }
     }
 
-    AiBrain *brain      = &ai->brain;
-    float closer_reward = (brain->target_prev_dist - brain->target_dist);
-    ai->reward += closer_reward;
+    AiBrain *brain = &ai->brain;
+    vec3s last_pos = world->xform.last_pos[id];
+    vec3s pos      = world->xform.pos[id];
 
-    // if (ai->knows & AIKNOWS_WALLLEFT)
-    // {
-    //     switch (ai->aiaction)
-    //     {
-    //     case AIACTION_JUMPLEFT:
-    //         ai->reward += 5.0f * fdt;
-    //         break;
-    //     }
-    // }
-    // if (ai->knows & AIKNOWS_WALLRIGHT)
-    // {
-    //     switch (ai->aiaction)
-    //     {
-    //     case AIACTION_JUMPRIGHT:
-    //         ai->reward += 5.0f * fdt;
-    //         break;
-    //     }
-    // }
-    // if (ai->knows & AIKNOWS_WALLFRONT)
-    // {
-    //     switch (ai->aiaction)
-    //     {
-    //     case AIACTION_JUMPFWD:
-    //         ai->reward += 10.0f * fdt;
-    //         break;
-    //     }
-    // }
-    // if (ai->knows & AIKNOWS_DANGERLEFT)
-    // {
-    //     switch (ai->aiaction)
-    //     {
-    //     case AIACTION_DODGERIGHT:
-    //         ai->reward += 5.0f * fdt;
-    //         break;
-    //     }
-    // }
-    // if (ai->knows & AIKNOWS_DANGERRIGHT)
-    // {
-    //     switch (ai->aiaction)
-    //     {
-    //     case AIACTION_DODGELEFT:
-    //         ai->reward += 5.0f * fdt;
-    //         break;
-    //     }
-    // }
+    float closer_reward = (brain->target_prev_dist - brain->target_dist);
+    ai->reward += closer_reward * 0.8f;
+    ai->reward -= brain->target_dist * 0.6f * fdt;
+
+    if ((ai->knows.self >= AISELF_CHARGING) && (ai->aiaction == AIACTION_RELEASE))
+    {
+        float release_reward = ai->knows.self == AISELF_CHARGINGLONG ? 4.0f : 2.0f;
+        if (ai->knows.targetLos)
+            ai->reward += release_reward * fdt;
+    }
 }
 
-// Combat Selection
-u32 Q_SelectCombatAction(QTable *qt, u32 state, float epsilon)
+u32 Ai_GetValidActionMask(World *world, int id, ScAi *ai)
 {
-    if (Sol_Math_RandRange2(0.0f, 100.0f) < epsilon)
+    u32 mask = 0;
+    mask |= BITC(AIACTION_NONE);
+    mask |= BITC(AIACTION_FWD) | BITC(AIACTION_BWD) | BITC(AIACTION_LEFT) | BITC(AIACTION_RIGHT);
+    mask |= BITC(AIACTION_JUMPFWD) | BITC(AIACTION_JUMPBWD) | BITC(AIACTION_JUMPLEFT) | BITC(AIACTION_JUMPRIGHT);
+    mask |=
+        BITC(AIACTION_CROUCHFWD) | BITC(AIACTION_CROUCHBWD) | BITC(AIACTION_CROUCHLEFT) | BITC(AIACTION_CROUCHRIGHT);
+
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    bool is_charging   = (ai->knows.self >= AISELF_CHARGING);
+    if (ability && ability->stateData[6].cooldownRemaining <= 0.0f)
     {
-        return rand() % AIACTION_COUNT;
+        mask |=
+            BITC(AIACTION_DODGEFWD) | BITC(AIACTION_DODGEBWD) | BITC(AIACTION_DODGELEFT) | BITC(AIACTION_DODGERIGHT);
+    }
+    if (is_charging)
+    {
+        mask |= BITC(AIACTION_RELEASE);
+    }
+    else
+    {
+        mask |= BITC(AIACTION_CHARGE);
+        // mask |= BITC(AIACTION_ABILITY);
     }
 
-    u32 best_action = 0;
-    float best_q    = -FLT_MAX;
+    return mask;
+}
+
+u32 Q_SelectCombatAction(QTable *qt, u32 state, float epsilon, u32 valid_mask)
+{
+    // Collect list of currently valid action indices
+    u32 valid_actions[AIACTION_COUNT];
+    int valid_count = 0;
 
     for (int a = 0; a < AIACTION_COUNT; a++)
     {
+        if (valid_mask & BITC(a))
+        {
+            valid_actions[valid_count++] = a;
+        }
+    }
+
+    // Fallback if mask is somehow empty
+    if (valid_count == 0)
+        return AIACTION_NONE;
+
+    // 1. Exploration: Pick randomly ONLY from physically valid actions
+    if (((float)rand() / (float)RAND_MAX) < epsilon)
+    {
+        return valid_actions[rand() % valid_count];
+    }
+
+    // 2. Exploitation: Pick highest Q-value ONLY among valid actions
+    u32 best_action = valid_actions[0];
+    float best_q    = -FLT_MAX;
+
+    for (int i = 0; i < valid_count; i++)
+    {
+        u32 a       = valid_actions[i];
         float q_val = qt->q[state][a];
         if (q_val > best_q)
         {
@@ -301,6 +201,7 @@ u32 Q_SelectCombatAction(QTable *qt, u32 state, float epsilon)
             best_action = a;
         }
     }
+
     return best_action;
 }
 
@@ -322,44 +223,58 @@ void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float rewa
     qt->q[state][action] += alpha * (target_q - current_q);
 }
 
-u32 Ai_GetKnowState(World *world, int id, ScAi *ai, ScCmd *cmd)
+static const float dist_map[7] = {2.0f, 5.0f, 8.0f, 12.0f, 14.0f, 18.0f, 22.0f};
+AiKnowState Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
-    AiStateInputs inputs = {0};
-
-    AiBrain *brain = &ai->brain;
-    int target     = brain->target;
-    vec3s pos      = world->xform.pos[id];
-
-    if (brain->target_dist < 5.0f)
-        inputs.dist = AITARGETDIST_CLOSE;
-    else if (brain->target_dist < 12.0f)
-        inputs.dist = AITARGETDIST_MID;
-    else
-        inputs.dist = AITARGETDIST_FAR;
-
-    if (brain->target_pos.y > pos.y + 1.0f)
-        inputs.height = AIHEIGHT_ABOVE;
-    else if (brain->target_pos.y < pos.y - 1.0f)
-        inputs.height = AIHEIGHT_BELOW;
-    else
-        inputs.height = AIHEIGHT_SAME;
+    AiKnowState knows = {0};
+    AiBrain *brain    = &ai->brain;
+    vec3s pos         = world->xform.pos[id];
+    int target        = brain->target;
+    vec3s target_pos  = world->xform.pos[target];
+    knows.targetDist  = 7;
+    for (int i = 0; i < 7; i++)
+    {
+        if (brain->target_dist < dist_map[i])
+        {
+            knows.targetDist = i;
+            break;
+        }
+    }
+    if ((pos.y + 0.5f) < target_pos.y)
+        knows.targetAbove = true;
 
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
-    if (target_ability && target_ability->stateData[target_ability->activeSlot].stage > 0)
-        inputs.targetCombat = AITARGET_FIRING;
+    if (target_ability)
+    {
+        if (target_ability->stateData[target_ability->activeSlot].stage > 0)
+            knows.targetCombat = AITARGETCOMBAT_FIRING;
+        else if (target_ability->stateData[target_ability->activeSlot].power > 0.0f)
+            knows.targetCombat = AITARGETCOMBAT_CHARGING;
+        else if (target_ability->state == ABILITY_STATE_DASH)
+            knows.targetCombat = AITARGETCOMBAT_DODGING;
+    }
+
+    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
+    ScCombat *target_combat = Sol_Comp_Get(world, target, ScCombat);
+    if (combat && target_combat)
+    {
+        knows.winning = combat->health > target_combat->health;
+    }
 
     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
     if (ability)
     {
-        if (ability->stateData[ability->activeSlot].power >= 1.0f)
+        if (ability->stateData[ability->activeSlot].power >= 0.85f)
         {
-            inputs.self = AISELF_CHARGINGLONG;
+            knows.self = AISELF_CHARGINGLONG;
         }
         else if (ability->stateData[ability->activeSlot].power > 0.0f)
-            inputs.self = AISELF_CHARGING;
+        {
+            knows.self = AISELF_CHARGING;
+        }
         else if (ability->stateData[6].cooldownRemaining <= 0.0f)
         {
-            inputs.self = AISELF_CANDODGE;
+            knows.self = AISELF_CANDODGE;
         }
     }
 
@@ -378,16 +293,15 @@ u32 Ai_GetKnowState(World *world, int id, ScAi *ai, ScCmd *cmd)
         float inv_d = 1.0f / sqrtf(d2);
         dot *= inv_d;
         if (dot > 0.0f)
-            inputs.knows |= AIKNOWS_DANGERLEFT;
+            knows.dangerLeft = 1;
         else
-            inputs.knows |= AIKNOWS_DANGERRIGHT;
+            knows.dangerRight = 1;
     }
-
     ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
     if (move3)
     {
         if (move3->airtime > 0)
-            inputs.knows |= AIKNOWS_AIRBORNE;
+            knows.airborne = 1;
     }
 
     ScBody3 *target_body = Sol_Comp_Get(world, target, ScBody3);
@@ -405,14 +319,12 @@ u32 Ai_GetKnowState(World *world, int id, ScAi *ai, ScCmd *cmd)
             // Negative dot product means velocity points back toward AI
             if (approach_speed < -1.0f)
             {
-                inputs.motion = AIMOTION_TOWARD;
+                knows.targetMotion = 1;
             }
-            else if (approach_speed > 1.0f)
-            {
-                inputs.motion = AIMOTION_AWAY;
-            }
-            else
-                inputs.motion = AIMOTION_STILL;
+            // else if (approach_speed > 1.0f)
+            // {
+            //     knows.targetMotion = AIMOTION_AWAY;
+            // }
         }
     }
 
@@ -433,53 +345,52 @@ u32 Ai_GetKnowState(World *world, int id, ScAi *ai, ScCmd *cmd)
                               .dist      = ai->brain.target_dist,
                           },
                           &result))
-            inputs.knows |= AIKNOWS_TARGETLOS;
+            knows.targetLos = 1;
 
-        u32 hitmap[4] = {AIKNOWS_WALLFRONT, AIKNOWS_WALLBACK, AIKNOWS_WALLRIGHT, AIKNOWS_WALLLEFT};
-        for (int k = -1; k < 1; k++)
+        u32 wall_mask = 0;
+        for (int j = 1; j < 5; j++)
         {
-            for (int j = 1; j < 5; j++)
+            vec3s finalPos       = pos;
+            float final_dist     = radius * 2.0f;
+            vec3s rotated_offset = glms_quat_rotatev(world->xform.rot[id], VECTOR_RADIAL_DIRECTIONS[j]);
+            SolRay ray = {.start = finalPos, .dist = final_dist, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
+            bool hit   = Sol_Raycast1(world, ray, &result);
+            if (hit)
             {
-                vec3s finalPos = pos;
-                finalPos.y += (height * 0.8f) * k;
-                float final_dist     = radius + 3.5f;
-                vec3s rotated_offset = glms_quat_rotatev(world->xform.rot[id], VECTOR_RADIAL_DIRECTIONS[j]);
-                SolRay ray = {.start = finalPos, .dist = final_dist, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
-                bool hit   = Sol_Raycast1(world, ray, &result);
-                if (hit)
-                {
-                    inputs.knows |= hitmap[j - 1];
-                }
-                if (k < 0)
-                    if (!Sol_Raycast1(world,
-                                      (SolRay){
-                                          .start     = vecAdd(finalPos, vecSca(rotated_offset, final_dist)),
-                                          .dir       = WORLD_DOWN,
-                                          .dist      = 5.0f,
-                                          .ignoreEnt = id,
-                                      },
-                                      &result))
-                        inputs.knows |= AIKNOWS_LEDGENEAR;
+                wall_mask = (1 << j - 1);
             }
+            else if (j == 1 || j == 2)
+                if (!Sol_Raycast1(world,
+                                  (SolRay){
+                                      .start     = vecAdd(finalPos, vecSca(rotated_offset, final_dist)),
+                                      .dir       = WORLD_DOWN,
+                                      .dist      = 5.0f,
+                                      .ignoreEnt = id,
+                                  },
+                                  &result))
+                    knows.move = j == 1 ? AIMOVE_LEDGEFRONT : AIMOVE_LEDGEBACK;
         }
+        if (glms_vec3_norm(body3->vel) < 1.0f && glms_vec3_norm(cmd->wishdir) > 0.001f)
+            knows.move = AIMOVE_STUCK;
+        knows.wallFront = (wall_mask >> 0) & 1;
+        knows.wallBack  = (wall_mask >> 1) & 1;
+        knows.wallRight = (wall_mask >> 2) & 1;
+        knows.wallLeft  = (wall_mask >> 3) & 1;
     }
 
-    return Ai_GetStateIndex(&inputs);
+    return knows;
 }
 void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
-    // AiKnows known = ai->knows;
-    u32 knows = Ai_GetKnowState(world, id, ai, cmd);
-    if (ai->hasPrevKnows)
+    AiKnowState current_knows = Get_Knows(world, id, ai, cmd);
+    if (current_knows.raw && ai->knows.raw)
     {
-        Q_Learn_Table(&solData.qtable, ai->prev_knows, ai->prev_action, knows, ai->reward, 0.3f, 0.95f);
+        Q_Learn_Table(&solData.qtable, current_knows.raw, ai->aiaction, ai->knows.raw, ai->reward, AI_ALPHA, AI_GAMMA);
     }
-    ai->reward       = 0;
-    u32 next_action  = Q_SelectCombatAction(&solData.qtable, knows, 10.0f);
-    ai->prev_knows   = knows;
-    ai->prev_action  = next_action;
-    ai->aiaction     = next_action;
-    ai->hasPrevKnows = true;
+    ai->reward    = 0;
+    ai->knows.raw = current_knows.raw;
+    ai->aiaction =
+        Q_SelectCombatAction(&solData.qtable, ai->knows.raw, AI_EXPLORE, Ai_GetValidActionMask(world, id, ai));
 }
 
 const u32 slot_action[4] = {ACTION_ABILITY3, ACTION_ABILITY4, ACTION_ABILITY5, ACTION_ABILITY6};
@@ -515,10 +426,11 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd)
     case AIACTION_JUMPLEFT:
     case AIACTION_JUMPRIGHT:
         cmd->actionState |= BITC(ACTION_JUMP);
-        cmd->wishdir = (ai->aiaction == AIACTION_JUMPBWD)     ? bwd
-                       : (ai->aiaction == AIACTION_JUMPLEFT)  ? left
-                       : (ai->aiaction == AIACTION_JUMPRIGHT) ? right
-                                                              : fwd;
+        cmd->wishdir    = (ai->aiaction == AIACTION_JUMPBWD)     ? bwd
+                          : (ai->aiaction == AIACTION_JUMPLEFT)  ? left
+                          : (ai->aiaction == AIACTION_JUMPRIGHT) ? right
+                                                                 : fwd;
+        ai->actionTimer = 0.4f;
         break;
     case AIACTION_CROUCHFWD:
     case AIACTION_CROUCHBWD:
@@ -529,17 +441,17 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd)
                        : (ai->aiaction == AIACTION_CROUCHLEFT)  ? left
                        : (ai->aiaction == AIACTION_CROUCHRIGHT) ? right
                                                                 : fwd;
-
         break;
     case AIACTION_DODGEFWD:
     case AIACTION_DODGEBWD:
     case AIACTION_DODGELEFT:
     case AIACTION_DODGERIGHT:
         cmd->actionState |= BITC(ACTION_DASH);
-        cmd->wishdir = (ai->aiaction == AIACTION_DODGEBWD)     ? bwd
-                       : (ai->aiaction == AIACTION_DODGELEFT)  ? left
-                       : (ai->aiaction == AIACTION_DODGERIGHT) ? right
-                                                               : fwd;
+        cmd->wishdir    = (ai->aiaction == AIACTION_DODGEBWD)     ? bwd
+                          : (ai->aiaction == AIACTION_DODGELEFT)  ? left
+                          : (ai->aiaction == AIACTION_DODGERIGHT) ? right
+                                                                  : fwd;
+        ai->actionTimer = 0.3f;
         break;
     case AIACTION_CHARGE:
         cmd->actionState |= rand() % 2 ? BITC(ACTION_ABILITY1) : BITC(ACTION_ABILITY2);

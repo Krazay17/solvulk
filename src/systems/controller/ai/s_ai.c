@@ -128,8 +128,10 @@ void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once)
     bool owner_alive       = owner_combat ? !owner_combat->is_dead : false;
     if (owner_alive)
     {
-        float *q = &solData.qtable.q[ailearn->knows.raw][ailearn->action];
-        *q += (10.0f - *q);
+        Learn_Table(&solData.qtable.q, AIACTION_COUNT, ailearn->prev_knows_move.raw, ailearn->action_move,
+                    ai->learning.prev_knows_move.raw, ailearn->reward_move, AI_ALPHA, AI_GAMMA);
+        Learn_Table(&solData.qtable.qc, AIACTIONC_COUNT, ailearn->prev_knows_combat.raw, ailearn->action_combat,
+                    ai->learning.prev_knows_combat.raw, ailearn->reward_combat, AI_ALPHA, AI_GAMMA);
     }
     if (once)
     {

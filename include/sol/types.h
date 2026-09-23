@@ -272,10 +272,10 @@ typedef enum
     MOVE_IDLE,
     MOVE_WALK,
     MOVE_STUN,
-    MOVE_FALL,
-    MOVE_JUMP,
     MOVE_CROUCH,
     MOVE_SLIDE,
+    MOVE_FALL,
+    MOVE_JUMP,
     MOVE_WALLRUN,
     MOVE_WALLJUMP,
     MOVE_MANTLE,
@@ -875,37 +875,6 @@ typedef enum
     ZONEKIND_FIREBALL,
 } ZoneKind;
 
-typedef enum
-{
-    AIMOTION_STILL,
-    AIMOTION_TOWARD,
-    AIMOTION_AWAY,
-} AiTargetMotion;
-
-typedef enum
-{
-    AIHEIGHT_SAME,
-    AIHEIGHT_ABOVE,
-    AIHEIGHT_BELOW,
-} AiTargetHeight;
-
-typedef enum
-{
-    AITARGETCOMBAT_NONE,
-    AITARGETCOMBAT_CHARGING,
-    AITARGETCOMBAT_FIRING,
-    AITARGETCOMBAT_DODGING,
-    AITARGETCOMBAT_COUNT,
-} AiTargetCombat;
-
-typedef enum
-{
-    AISELF_NONE,
-    AISELF_CANDODGE,
-    AISELF_CHARGING,
-    AISELF_CHARGINGLONG,
-} AiSelfState;
-
 typedef enum AiActions
 {
     AIACTION_NONE,
@@ -921,63 +890,56 @@ typedef enum AiActions
     AIACTION_CROUCHBWD,
     AIACTION_CROUCHLEFT,
     AIACTION_CROUCHRIGHT,
+    AIACTION_DODGEFWD,
+    AIACTION_DODGEBWD,
+    AIACTION_DODGELEFT,
+    AIACTION_DODGERIGHT,
+
     AIACTION_COUNT,
 } AiActions;
-
-typedef enum
-{
-    AIACTIONCOMBAT_DODGE,
-    AIACTIONCOMBAT_CHARGE,
-    AIACTIONCOMBAT_RELEASE,
-    AIACTIONCOMBAT_ABILITY,
-    AIACTIONCOMBAT_COUNT,
-} AiActionsCombat;
-
-typedef enum
-{
-    AIMOVE_NORMAL,
-    AIMOVE_STUCK,
-    AIMOVE_LEDGEFRONT,
-    AIMOVE_LEDGEBACK,
-} AiMove;
-#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (5 + 5 + 4 + 2))
+#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (6 + 6 + 4 + 1))
 typedef union {
     struct
     {
-        u32 self : 2; // 4 unique options
-        u32 move : 2;
-        u32 airborne : 1;
+        u32 self : 2; // READY, CANDODGE, CHARGING CHARGINGLONG
+        u32 surrounding : 2; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
+        u32 moveState : 2;   // GROUNDED, FALL, WALLRUN, SLIDING
 
-        u32 targetDist : 3; // 8 unique options
-        u32 targetMotion : 1;
-        u32 targetAbove : 1;
+        u32 targetDist : 3;  // 8 Distances
+        u32 targetState : 3; // STILL, TOWARDS, AWAY, ABOVE, CHARGING, FIRING, DODGING
 
         u32 wallFront : 1;
         u32 wallLeft : 1;
         u32 wallBack : 1;
         u32 wallRight : 1;
 
-        u32 dangerLeft : 1;
-        u32 dangerRight : 1;
+        u32 danger : 1;
     };
     u32 raw;
-} AiKnowStatem;
-#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 6 + 1))
+} AiKnowStateM;
+typedef enum
+{
+    AIACTIONC_NONE,
+    AIACTIONC_CHARGE,
+    AIACTIONC_RELEASE,
+    AIACTIONC_ABILITY,
+    AIACTIONC_COUNT,
+} AiActionsC;
+#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 4 + 1))
 typedef union {
     struct
     {
-        u32 self : 2; // 4 unique options
+        u32 self : 2; // READY, ATTACKING, CHARGING, CHARGINGLONG
 
-        u32 targetDist : 3; // 8 unique options
-        u32 targetCombat : 2;
+        u32 targetDist : 3; // 8 Distances
         u32 targetLos : 1;
 
         u32 winning : 1;
     };
     u32 raw;
-} AiKnowStatec;
+} AiKnowStateC;
 typedef struct QTable
 {
     float q[AIKNOW_MOVEMENTSTATE_COUNT][AIACTION_COUNT];
-    float qc[AIKNOW_COMBATSTATE_COUNT][AIACTION_COUNT];
+    float qc[AIKNOW_COMBATSTATE_COUNT][AIACTIONC_COUNT];
 } QTable;

@@ -109,18 +109,25 @@ typedef struct AiBrain
     float target_prev_dist;
     float dropAggroTimer;
 } AiBrain;
+typedef struct AiLearning
+{
+    float actionTimer;
+    float reward_move;
+    float reward_combat;
+    AiKnowStateM prev_knows_move;
+    AiKnowStateC prev_knows_combat;
+    AiActions action_move;
+    AiActionsC action_combat;
+} AiLearning;
 typedef struct ScAi
 {
     u8 kind;
     AiState state;
     AiStateData stateData[AISTATE_COUNT];
+
     AiBrain brain;
     float aggroRange;
-
-    float actionTimer;
-    float reward;
-    AiKnowState knows;
-    AiActions aiaction;
+    AiLearning learning;
 } ScAi;
 
 typedef struct ScBody3
@@ -431,9 +438,12 @@ typedef struct ScProjectile
 
 typedef struct ScAilearn
 {
-    AiKnowState knows;
-    u32 action;
-    float reward;
+    AiKnowStateM prev_knows_move;
+    AiKnowStateC prev_knows_combat;
+    u32 action_move;
+    u32 action_combat;
+    float reward_move;
+    float reward_combat;
 } ScAilearn;
 
 typedef struct ScHuditem

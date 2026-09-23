@@ -433,10 +433,13 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
     if (ai)
     {
-        ScAilearn *ailearn = Sol_Comp_Add(world, id, ScAilearn);
-        ailearn->knows.raw = ai->knows.raw;
-        ailearn->action    = ai->aiaction;
-        ailearn->reward    = 10.0f;
+        ScAilearn *ailearn             = Sol_Comp_Add(world, id, ScAilearn);
+        ailearn->prev_knows_move.raw   = ai->learning.prev_knows_move.raw;
+        ailearn->prev_knows_combat.raw = ai->learning.prev_knows_combat.raw;
+        ailearn->action_move           = ai->learning.action_move;
+        ailearn->action_combat         = ai->learning.action_combat;
+        ailearn->reward_move           = 5.0f;
+        ailearn->reward_combat         = 10.0f;
     }
 
     return id;

@@ -28,6 +28,7 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
         combat->deathTime = world->tickTime;
         Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.entA = combat->lastHitBy, .entB = id});
     }
+    Sol_Comp_Rem(world, id, ScBuff);
     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
     if (body3)
     {
@@ -67,6 +68,24 @@ void Combat_Step(World *world, double dt)
     }
 }
 
+bool Sol_Combat_Hostile(World *world, int idA, int idB)
+{
+    if (idA == idB)
+        return false;
+    ScOwner *ownerA = Sol_Comp_Get(world, idA, ScOwner);
+    ScOwner *ownerB = Sol_Comp_Get(world, idB, ScOwner);
+    int final_A     = ownerA ? ownerA->ownerId : idA;
+    int final_B     = ownerB ? ownerB->ownerId : idB;
+    if (final_A == final_B)
+        return false;
+    ScTeam *teamA = Sol_Comp_Get(world, final_A, ScTeam);
+    ScTeam *teamB = Sol_Comp_Get(world, final_B, ScTeam);
+    if (teamA && teamB && teamA->team != 0 && teamB->team != 0 && teamA->team == teamB->team)
+        return false;
+
+    return true;
+}
+
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
     if (!Sol_Comp_Has(world, id, ScCombat))
@@ -77,7 +96,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     float damage            = hit.damage * hit.power;
     if (hit.isHeal)
         damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, damage);
-    else if (!Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
+    else if (Sol_Combat_Hostile(world, hit.entA, id) && !Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
     {
         if (!hit.isHeal)
         {
@@ -109,19 +128,32 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
                 ScProjectile *projectile = Sol_Comp_Get(world, id, ScProjectile);
                 ScTeam *team             = Sol_Comp_Get(world, id, ScTeam);
                 ScTeam *attacker_team    = Sol_Comp_Get(world, hit.entA, ScTeam);
+                ScOwner *owner           = Sol_Comp_Get(world, id, ScOwner);
+                if (owner)
+                    owner->ownerId = hit.entA;
+                if (team)
+                    team->team = attacker_team->team;
 
-                team->team = attacker_team->team;
+                ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+                ScCmd *cmd     = Sol_Comp_Get(world, hit.entA, ScCmd);
+                if (body3 && cmd)
+                {
+                    body3->vel = Sol_RedirectVel(body3->vel, cmd->aimdir);
+                }
+                Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.pos});
+                return 0.0f;
             }
         }
         combat->lastHitBy = hit.entA;
         damage_done       = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
+
+        Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit = hit});
     }
     else
     {
         damage_done = 0;
+        Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_INVULNHIT, .as.fx.pos = hit.pos});
     }
-
-    Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit = hit});
 
     return damage_done;
 }
@@ -200,19 +232,27 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, SolRa
     }
 }
 
-int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits, u32 hitgen)
+int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen)
 {
-    vec3s pos = ray.start;
-    int hits  = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
-                               : Sol_Spherecast(world, ray, results, max_hits);
+    SolRayResult results[64];
+    int max_hits = 64;
 
+    int hits = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
+                              : Sol_Spherecast(world, ray, results, max_hits);
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
-        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage) || !Sol_Hitgen_Try(world, id, hit_id, hitgen))
+        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage) || !Sol_Comp_Has(world, hit_id, ScCombat))
             continue;
+
+        if (!Sol_Hitgen_Try(world, id, hit_id, hitgen))
+            continue;
+
+        if (!hit.isHeal && !Sol_Combat_Hostile(world, id, hit_id))
+            continue;
+
         vec3s hit_pos = world->xform.pos[hit_id];
-        vec3s delta   = vecSub(hit_pos, pos);
+        vec3s delta   = vecSub(hit_pos, ray.start);
         float d2      = glms_vec3_norm2(delta);
 
         if (d2 >= 0.000001f)
@@ -223,7 +263,7 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, SolRayRe
             SolRayResult los_result = {0};
             bool is_blocked =
                 Sol_Raycast1(world,
-                             (SolRay){.start     = pos,
+                             (SolRay){.start     = ray.start,
                                       .dir       = dir,
                                       .dist      = dist - 0.01f, // Stop slightly short to avoid self-intersection
                                       .mask      = COLLAYER_WORLD,
@@ -235,7 +275,6 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, SolRayRe
         hit.entB = hit_id;
         hit.pos  = hit_pos;
         Sol_Combat_Hit(world, hit_id, hit);
-
     }
     return hits;
 }

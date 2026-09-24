@@ -27,13 +27,17 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
         buff->accum -= buff->rate;
         ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
         if (combat)
+        {
+            vec3s pos = world->xform.pos[id];
             Sol_Combat_Hit(world, id,
                            (SolHit){
                                .entA   = buff->source,
                                .entB   = id,
                                .damage = buff->damage,
                                .power  = buff->power,
+                               .pos    = pos,
                            });
+        }
     }
 }
 
@@ -54,7 +58,8 @@ static const struct
 
 void Buff_Update(World *world, double dt)
 {
-    float fdt             = (float)dt;
+    float fdt = (float)dt;
+
     SparseSet_ScBuff *set = Sol_Comp_Set(world, ScBuff);
     int count             = set->cnt;
     for (int i = count; i-- > 0;)

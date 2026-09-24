@@ -46,6 +46,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
 
         { // Spawn fireball
             int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, data->power);
+            ScBody3 *pBody                 = Sol_Comp_Get(world, fireball, ScBody3);
             ScProjectile *projectile       = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit                = hit;
             projectile->aoe_hit            = hit;
@@ -56,12 +57,17 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         }
         break;
     case 2:
-        hit.power = 1.0f;
-        hit.kind = HITKIND_MELEE_HIT;
-        SolRayResult results[256];
-        Sol_Combat_DamageCast(
-            world, id, (SolRay){.start = pos, .dir = cmd->aimdir, .dist = MELEE_DIST, .radius = 0.25f, .ignoreEnt = id},
-            hit, results, 256, data->hitgen);
+        hit.power      = 1.0f;
+        hit.kind       = HITKIND_MELEE_HIT;
+        hit.effectMask = EFFECTMASK_REFLECTPROJECTILE;
+        Sol_Combat_DamageCast(world, id,
+                              (SolRay){.start     = pos,
+                                       .dir       = cmd->aimdir,
+                                       .dist      = MELEE_DIST,
+                                       .radius    = 0.25f,
+                                       .ignoreEnt = id,
+                                       .mask      = COLLAYER_ALL},
+                              hit, data->hitgen);
         data->recoverRemaining += dt;
         if (data->recoverRemaining > data->conf.recover)
             Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);

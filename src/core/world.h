@@ -554,4 +554,4 @@ Buff *Sol_Buff_Next(World *world, int id, BuffKind kind);
 void Sol_Buff_Rem(World *world, int id, BuffKind kind);
 void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once);
 void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits);
-int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits, u32 hitgen);
+int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);

@@ -90,11 +90,21 @@ static void Evaluate_State(World *world, int id, ScAi *ai)
 
 void Ai_Step(World *world, double dt)
 {
-    float fdt = (float)dt;
+    float fdt       = (float)dt;
+    SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
+    for (int i = 0; i < solb_count(events->events); i++)
+    {
+        SolEvent *event = &events->events[i];
+        if (event->kind == EVENTKIND_DEATH)
+        {
+            ScAi *ai = Sol_Comp_Get(world, event->entA, ScAi);
+            if (ai && ai->brain.target == event->entB)
+                ai->brain.target = 0;
+        }
+    }
 
     SparseSet_ScAi *set = Sol_Comp_Set(world, ScAi);
-
-    int count = set->cnt;
+    int count           = set->cnt;
     for (int i = 0; i < count; i++)
     {
         int id      = set->dense[i];
@@ -128,9 +138,9 @@ void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once)
     bool owner_alive       = owner_combat ? !owner_combat->is_dead : false;
     if (owner_alive)
     {
-        Learn_Table(&solData.qtable.q, AIACTION_COUNT, ailearn->prev_knows_move.raw, ailearn->action_move,
+        Learn_Table((float *)solData.qtable.q, AIACTION_COUNT, ailearn->prev_knows_move.raw, ailearn->action_move,
                     ai->learning.prev_knows_move.raw, ailearn->reward_move, AI_ALPHA, AI_GAMMA);
-        Learn_Table(&solData.qtable.qc, AIACTIONC_COUNT, ailearn->prev_knows_combat.raw, ailearn->action_combat,
+        Learn_Table((float *)solData.qtable.qc, AIACTIONC_COUNT, ailearn->prev_knows_combat.raw, ailearn->action_combat,
                     ai->learning.prev_knows_combat.raw, ailearn->reward_combat, AI_ALPHA, AI_GAMMA);
     }
     if (once)

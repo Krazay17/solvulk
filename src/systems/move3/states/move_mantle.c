@@ -34,7 +34,12 @@ static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay ray = {
-            .start = pos, .dist = body->dims.x * 1.5f, .ignoreEnt = id, .dir = Sol_Vec3_FromYawPitch(cmd->yaw, 0)};
+            .start     = pos,
+            .dist      = body->dims.x * 1.5f,
+            .ignoreEnt = id,
+            .dir       = Sol_Vec3_FromYawPitch(cmd->yaw, 0),
+            .mask      = 1,
+        };
         SolRayResult rayResult;
         bool hit = Sol_Raycast1(world, ray, &rayResult);
         // No hit indicates there is space above

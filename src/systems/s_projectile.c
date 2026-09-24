@@ -80,7 +80,7 @@ void Projectile_Step(World *world, double dt)
         ScOwner *owner           = Sol_Comp_Get(world, id, ScOwner);
         int ownerId              = owner ? owner->ownerId : 0;
         Xform xform              = Xform_Get(world, id);
-        if (xform.pos.y < -15.0f)
+        if (xform.pos.y < -15.0f || fabs(xform.pos.x) > 500.0f || fabs(xform.pos.z) > 500.0f)
             Sol_Destroy_Ent(world, id);
 
         vec3s vel   = body3->vel;
@@ -88,10 +88,10 @@ void Projectile_Step(World *world, double dt)
         vec3s dir   = (speed > 0.001f) ? vecSca(vel, 1.0f / speed) : (vec3s){0, 0, 1};
 
         SolRay ray = {
-            .start     = vecSub(xform.pos, vecSca(dir, speed * fdt)),
+            .start     = vecSub(xform.pos, vecSca(vel, fdt)),
             .dir       = dir,
             .dist      = speed * fdt,
-            .mask      = projectile->mask,
+            .mask      = (COLLAYER_ALL & ~COLLAYER_PROJECTILE),
             .ignoreEnt = id,
             .radius    = projectile->radius,
         };

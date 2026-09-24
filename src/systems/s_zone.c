@@ -29,14 +29,6 @@ static inline void Fireball(World *world, int id, ScZone *zone)
         hit.entB   = hit_id;
         hit.normal = normal;
         Sol_Combat_Hit(world, hit.entB, hit);
-
-        Sol_Event_Push(world, EVENTKIND_FX,
-                       (SolEvent){
-                           .as.fx.kind     = EVENTFX_FIREBALL_HIT,
-                           .as.fx.pos      = hit.pos,
-                           .as.fx.color    = {1.0f, 0.66f, 0.0f, 0.66f},
-                           .as.fx.duration = 0.3f,
-                       });
     }
 }
 

@@ -82,11 +82,6 @@ void Ability_Claw_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
             }
             body->vel.y = fmaxf(body->vel.y, 1.0f);
 
-            Sol_Event_Push(world, EVENTKIND_FX,
-                           (SolEvent){
-                               .as.fx.pos  = hit_pos,
-                               .as.fx.kind = EVENTFX_CLAW_HIT,
-                           });
         }
     }
 }

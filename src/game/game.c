@@ -100,10 +100,57 @@ void Create_Hud()
     Sol_Prefab_Crosshair(world);
 }
 
+void RandomizeSpawn(World *w, double dt)
+{
+    SlEvent *events = Sol_Comp_Get(w, 0, SlEvent);
+    for (int i = 0; i < solb_count(events->events); i++)
+    {
+        SolEvent *event = &events->events[i];
+        if (event->kind != EVENTKIND_DEATH)
+            continue;
+        int id           = event->entB;
+        ScCombat *combat = Sol_Comp_Get(w, id, ScCombat);
+        if (combat)
+        {
+            vec3s pos  = {0};
+            bool found = false;
+            float start_y = 200.0f;
+            // Cap attempts to prevent frame freezes
+            const int MAX_TRIES = 20;
+            for (int attempt = 0; attempt < MAX_TRIES && !found; attempt++)
+            {
+                pos.x = Sol_Math_RandRange2(-300.0f, 300.0f);
+                pos.z = Sol_Math_RandRange2(-300.0f, 300.0f);
+                pos.y = start_y;
+
+                SolRayResult result;
+                // Extended ray distance to reach ground below Y = 0
+                SolRay ray = {.start = pos, .dir = WORLD_DOWN, .dist = start_y + 10.0f};
+
+                if (Sol_Raycast1D(w, ray, &result, 0.5f) && result.t > 0.0f)
+                {
+                    // Snap Y to the actual ground hit position + slight offset
+                    pos.y = pos.y - result.t + 0.5f;
+                    found = true;
+                }
+            }
+
+            // Fallback location if all random attempts miss ground
+            if (!found)
+            {
+                pos = (vec3s){0.0f, 5.0f, 0.0f}; // Default safe spawn point
+            }
+
+            combat->respawnPos = pos;
+        }
+    }
+}
+
 void Create_Game()
 {
     World *world        = World_Create_AllSys();
     sol_user.game_world = world->index;
+    // WAddStep(world)     = RandomizeSpawn;
 
     { // Player
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
@@ -113,14 +160,14 @@ void Create_Game()
         snprintf(meta->name, sizeof(meta->name), "Player");
         Sol_Debug_Add("Player Ent", (float)id);
     }
-    { // Ai Dude
-        vec3s spawn_pos                           = {0, 6, 15};
-        int id                                    = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-        Sol_Comp_Add(world, id, ScAi)->aggroRange = 20.0f;
-        ScCombat *combat                          = Sol_Comp_Add(world, id, ScCombat);
-        combat->respawnTime                       = 2.0f;
-        combat->respawnPos                        = spawn_pos;
-    }
+    // { // Ai Dude
+    //     vec3s spawn_pos                           = {0, 6, 15};
+    //     int id                                    = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+    //     Sol_Comp_Add(world, id, ScAi)->aggroRange = 100.0f;
+    //     ScCombat *combat                          = Sol_Comp_Add(world, id, ScCombat);
+    //     combat->respawnTime                       = 2.0f;
+    //     combat->respawnPos                        = spawn_pos;
+    // }
     { // Level
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
         ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
@@ -151,6 +198,7 @@ void Create_Game2()
     World *world        = World_Create_AllSys();
     world->doesSimulate = false;
     world->doesRender   = false;
+    // WAddStep(world)     = RandomizeSpawn;
 
     { // Level
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});

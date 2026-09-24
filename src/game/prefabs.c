@@ -415,7 +415,7 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .is_sensor = true,
         .ignoreEnt = owner,
         .vel       = vecSca(dir, speed),
-        .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 1),
+        .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 0),
     };
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
@@ -441,6 +441,8 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_move           = 5.0f;
         ailearn->reward_combat         = 10.0f;
     }
+
+    *Sol_Comp_Add(world, id, ScCombat) = (ScCombat){.health = 100.0f, .healthMax = 100.0f};
 
     return id;
 }

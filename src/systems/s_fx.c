@@ -100,19 +100,18 @@ void Fx_Update(World *world, double dt)
             sollog("No Hit event Fx handler", event.kind);
         }
 
-        // if (event.kind != EVENTKIND_FX)
-        //     continue;
-        // switch (event.as.fx.kind)
-        // {
-        // case EVENTFX_FIREBALL_EXPLODE:
-        //     Fireball_Explode(world, event);
-        //     break;
-        // case EVENTFX_FIREBALL_HIT:
-        //     Fireball_Hit(world, event);
-        //     break;
-        // case EVENTFX_CLAW_HIT:
-        //     Claw_Hit(world, event);
-        //     break;
-        // }
+        if (event.kind != EVENTKIND_FX)
+            continue;
+        switch (event.as.fx.kind)
+        {
+        case FXKIND_INVULNHIT:
+            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.16f, 8);
+            break;
+            case FXKIND_PARRY:
+            Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
+        case FXKIND_TEST:
+            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 8);
+            break;
+        }
     }
 }

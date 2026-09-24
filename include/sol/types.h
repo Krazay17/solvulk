@@ -804,12 +804,14 @@ typedef enum
     EVENTKIND_DEATH,
     EVENTKIND_COUNT,
 } EventKind;
+
 typedef enum
 {
-    EVENTFX_FIREBALL_HIT,
-    EVENTFX_FIREBALL_EXPLODE,
-    EVENTFX_CLAW_HIT,
-} EventFx;
+    FXKIND_INVULNHIT,
+    FXKIND_PARRY,
+    FXKIND_TEST,
+}FxKind;
+
 typedef struct SolEvent
 {
     EventKind kind;
@@ -829,7 +831,7 @@ typedef struct SolEvent
         } death;
         struct
         {
-            EventFx kind;
+            FxKind kind;
             u32 entA, entB;
             vec3s pos;
             vec4s color;
@@ -901,12 +903,13 @@ typedef enum AiActions
 typedef union {
     struct
     {
-        u32 self : 2; // READY, CANDODGE, CHARGING CHARGINGLONG
+        u32 self : 2;        // READY, CANDODGE, CHARGING CHARGINGLONG
         u32 surrounding : 2; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
         u32 moveState : 2;   // GROUNDED, FALL, WALLRUN, SLIDING
 
-        u32 targetDist : 3;  // 8 Distances
-        u32 targetState : 3; // STILL, TOWARDS, AWAY, ABOVE, CHARGING, FIRING, DODGING
+        u32 targetDist : 2;  // 4 Distances
+        u32 targetState : 3; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, FIRING, CHARGING, DODGING
+        u32 targetLos : 1;
 
         u32 wallFront : 1;
         u32 wallLeft : 1;
@@ -925,19 +928,36 @@ typedef enum
     AIACTIONC_ABILITY,
     AIACTIONC_COUNT,
 } AiActionsC;
-#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 4 + 1))
+#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 3 + 1))
 typedef union {
     struct
     {
-        u32 self : 2; // READY, ATTACKING, CHARGING, CHARGINGLONG
+        u32 attack : 2; // READY, ATTACKING, CHARGING, CHARGINGLONG
 
-        u32 targetDist : 3; // 8 Distances
+        u32 targetDist : 2; // 4 Distances
         u32 targetLos : 1;
 
         u32 winning : 1;
     };
     u32 raw;
 } AiKnowStateC;
+
+typedef struct
+{
+    u32 self;        // READY, CANTDODGE
+    u32 attack;      // READY, ATTACKING, CHARGING, CHARGINGLONG
+    u32 surrounding; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
+    u32 moveState;   // GROUNDED, FALL, WALLRUN, SLIDING
+
+    u32 targetDist;  // 4 Distances
+    u32 targetState; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, CHARGING, FIRING, DODGING
+    bool targetLos;  // Line of sight
+    bool winning;    // Combat health lead
+
+    u32 wallMask; // Bitmask for walls: Front(1), Back(2), Right(4), Left(8)
+    bool danger;  // Nearby projectile threat
+} AiKnows;
+
 typedef struct QTable
 {
     float q[AIKNOW_MOVEMENTSTATE_COUNT][AIACTION_COUNT];

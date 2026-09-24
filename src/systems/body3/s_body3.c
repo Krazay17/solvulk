@@ -922,6 +922,19 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
                     }
                     break;
                 }
+                case SHAPE3_SPH: {
+
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
+                    {
+                        outResult->hit   = true;
+                        outResult->t     = t;
+                        outResult->norm  = norm;
+                        outResult->entId = id;
+                    }
+                }
+                break;
                 }
             }
 
@@ -1033,6 +1046,20 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
                     float t;
                     vec3s norm;
                     if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, radius, &t, &norm))
+                    {
+                        out_hits[count].hit   = true;
+                        out_hits[count].t     = t;
+                        out_hits[count].norm  = norm;
+                        out_hits[count].entId = id;
+                        count++;
+                    }
+                    break;
+                }
+                case SHAPE3_SPH: {
+
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
                     {
                         out_hits[count].hit   = true;
                         out_hits[count].t     = t;
@@ -1164,6 +1191,20 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
                     }
                     break;
                 }
+                case SHAPE3_SPH: {
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
+                    {
+                        results[count].hit   = true;
+                        results[count].t     = t;
+                        results[count].norm  = norm;
+                        results[count].entId = id;
+                        count++;
+                    }
+                }
+                break;
+
                 default:
                     break;
                 }

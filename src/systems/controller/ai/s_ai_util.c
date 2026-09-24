@@ -17,13 +17,9 @@ int Find_Target(World *world, int id, ScAi *ai, ScCmd *cmd, int team)
         if (id == idB)
             continue;
         ScCombat *combat = Sol_Comp_Get(world, idB, ScCombat);
-        if (combat)
+        if (combat && combat->is_dead)
         {
-            if (combat->is_dead)
-            {
-                ai->brain.dropAggroTimer = 0.0f;
-                continue;
-            }
+            continue;
         }
         ScTeam *teamB = &set_team->data[i];
         if (team != 0 && teamB->team == team)
@@ -133,14 +129,14 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
     vec3s pos      = world->xform.pos[id];
 
     float closer_reward = (brain->target_prev_dist - brain->target_dist);
-    ai->learning.reward_move += closer_reward * 0.5f;
-    ai->learning.reward_move -= brain->target_dist * 0.5f * fdt;
+    ai->learning.reward_move += closer_reward;
+    ai->learning.reward_move -= brain->target_dist * 0.2f * fdt;
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
 {
     u32 mask         = 0;
-    bool is_charging = (ai->learning.prev_knows_combat.self >= 2);
+    bool is_charging = (ai->learning.prev_knows_combat.attack >= 2);
     if (is_charging)
     {
         mask |= BITC(AIACTIONC_NONE);
@@ -226,18 +222,19 @@ void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float rewa
     qt->q[state][action] += alpha * (target_q - current_q);
 }
 
-static const float dist_map[7] = {2.0f, 5.0f, 8.0f, 12.0f, 14.0f, 18.0f, 22.0f};
-AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
+static const float dist_map[3] = {2.0f, 6.0f, 12.0f};
+AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
-    AiKnowStateM knows = {0};
-    AiBrain *brain     = &ai->brain;
-    vec3s pos          = world->xform.pos[id];
-    int target         = brain->target;
-    vec3s target_pos   = world->xform.pos[target];
-    knows.targetDist   = 7;
-    for (int i = 0; i < 7; i++)
+    AiKnows knows    = {0};
+    AiBrain *brain   = &ai->brain;
+    vec3s pos        = world->xform.pos[id];
+    int target       = brain->target;
+    vec3s target_pos = world->xform.pos[target];
+
+    knows.targetDist = 3;
+    for (int i = 0; i < 3; i++)
     {
-        if (brain->target_dist < dist_map[i])
+        if (brain->target_dist <= dist_map[i])
         {
             knows.targetDist = i;
             break;
@@ -248,32 +245,37 @@ AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
     if (ability)
     {
         if (ability->stateData[ability->activeSlot].power >= 0.8f)
-            knows.self = 3;
-        else if (ability->stateData[ability->activeSlot].power > 0.0f)
-            knows.self = 2;
-        else if (ability->stateData[6].cooldownRemaining > 0.0f)
+            knows.attack = 3;
+        else if (ability->stateData[ability->activeSlot].held)
+            knows.attack = 2;
+        else if (ability->state != 0)
+            knows.attack = 1;
+
+        if (ability->stateData[6].cooldownRemaining > 0.0f)
             knows.self = 1;
     }
 
     SparseSet_ScProjectile *projectile_set = Sol_Comp_Set(world, ScProjectile);
-    float min_d2                           = 200.0f;
+    float min_d2                           = 50.0f;
     for (int i = 0; i < projectile_set->cnt; i++)
     {
-        int projectile_id    = projectile_set->dense[i];
+        int projectile_id = projectile_set->dense[i];
+        ScOwner *pOwner   = Sol_Comp_Get(world, projectile_id, ScOwner);
+        if (pOwner->ownerId == id)
+            continue;
         vec3s projectile_pos = world->xform.pos[projectile_id];
         vec3s delta          = glms_vec3_sub(projectile_pos, pos);
         float d2             = glms_vec3_norm2(delta);
         if (d2 <= 0.0001f || d2 > min_d2)
             continue;
-        min_d2       = d2;
-        knows.danger = 1;
-        // float dot   = vecDot(delta, cmd->leftdir);
-        // float inv_d = 1.0f / sqrtf(d2);
-        // dot *= inv_d;
-        // if (dot > 0.0f)
-        //     knows.dangerLeft = 1;
-        // else
-        //     knows.dangerRight = 1;
+        min_d2      = d2;
+        float dot   = vecDot(delta, cmd->leftdir);
+        float inv_d = 1.0f / sqrtf(d2);
+        dot *= inv_d;
+        if (dot > 0.0f)
+            knows.danger = 1;
+        else
+            knows.danger = 2;
     }
     ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
     if (move3)
@@ -287,40 +289,82 @@ AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
     }
 
     // TARGET STATE
+    SolRayResult result;
+    if (!Sol_Raycast1(world,
+                      (SolRay){
+                          .start     = Sol_Body3_GetHead(world, id),
+                          .mask      = COLLAYER_WORLD,
+                          .ignoreEnt = id,
+                          .dir       = cmd->lookdir,
+                          .dist      = ai->brain.target_dist,
+                      },
+                      &result))
+        knows.targetLos = 1;
+
     ScBody3 *target_body = Sol_Comp_Get(world, target, ScBody3);
     if (target_body)
     {
-        vec3s target_vel = target_body->vel; // or derived from position delta
+        vec3s target_vel = target_body->vel;
         vec3s to_target  = glms_vec3_sub(brain->target_pos, pos);
         float dist_sq    = glms_vec3_norm2(to_target);
 
         if (dist_sq > 0.0001f)
         {
-            vec3s dir_to_target  = glms_vec3_scale(to_target, 1.0f / sqrtf(dist_sq));
-            float approach_speed = glms_vec3_dot(target_vel, dir_to_target);
+            // 1. Line of sight unit vector (AI -> Target)
+            vec3s dir_to_target = glms_vec3_scale(to_target, 1.0f / sqrtf(dist_sq));
+            vec3s world_up      = (vec3s){0.0f, 1.0f, 0.0f};
 
-            // Negative dot product means velocity points back toward AI
-            if (approach_speed < -1.0f)
+            // 2. Right vector relative to the sight line
+            vec3s right_dir = glms_vec3_cross(dir_to_target, world_up);
+            float right_len = glms_vec3_norm(right_dir);
+
+            // Handle edge case where target is directly above/below AI
+            if (right_len > 0.001f)
             {
-                knows.targetState = 1;
+                right_dir = glms_vec3_scale(right_dir, 1.0f / right_len);
             }
-            else if (approach_speed > 1.0f)
+
+            // 3. Measure movement along sight line vs horizontal strafe
+            float forward_speed = glms_vec3_dot(target_vel, dir_to_target); // > 0: Away,     < 0: Towards
+            float right_speed   = glms_vec3_dot(target_vel, right_dir);     // > 0: Right,    < 0: Left
+
+            float abs_forward           = fabsf(forward_speed);
+            float abs_right             = fabsf(right_speed);
+            const float SPEED_THRESHOLD = 1.0f; // Minimum speed to register movement
+
+            // 4. Assign targetState based on dominant direction
+            if (abs_right > SPEED_THRESHOLD && abs_right > abs_forward)
             {
-                knows.targetState = 2;
+                // Lateral strafe dominates
+                knows.targetState = (right_speed > 0.0f) ? 3 /* RIGHT */ : 2 /* LEFT */;
+            }
+            else if (abs_forward > SPEED_THRESHOLD)
+            {
+                // Forward/Backward movement dominates
+                knows.targetState = (forward_speed > 0.0f) ? 0 /* AWAY */ : 1 /* TOWARDS */;
             }
         }
     }
+
     if ((pos.y + 0.5f) < target_pos.y)
-        knows.targetState = 3;
+        knows.targetState = 4;
+
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
-        if (target_ability->stateData[target_ability->activeSlot].stage > 0)
-            knows.targetState = 4;
+        if (target_ability->state == ABILITY_STATE_DASH)
+            knows.targetState = 7;
+        else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
+            knows.targetState = 6;
         else if (target_ability->stateData[target_ability->activeSlot].power > 0.0f)
             knows.targetState = 5;
-        else if (target_ability->state == ABILITY_STATE_DASH)
-            knows.targetState = 6;
+    }
+
+    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
+    ScCombat *target_combat = Sol_Comp_Get(world, target, ScCombat);
+    if (combat && target_combat)
+    {
+        knows.winning = combat->health > target_combat->health;
     }
 
     ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
@@ -331,7 +375,6 @@ AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
         vec3s fwd    = Sol_Vec3_FromYawPitch(cmd->yaw, 0);
 
         SolRayResult result;
-        u32 wall_mask = 0;
         for (int j = 1; j < 5; j++)
         {
             vec3s finalPos       = pos;
@@ -341,7 +384,7 @@ AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
             bool hit   = Sol_Raycast1(world, ray, &result);
             if (hit)
             {
-                wall_mask |= (1 << j - 1);
+                knows.wallMask |= (1 << j - 1);
             }
             else if (j == 1 || j == 2)
                 if (!Sol_Raycast1(world,
@@ -356,60 +399,39 @@ AiKnowStateM Get_KnowsM(World *world, int id, ScAi *ai, ScCmd *cmd)
         }
         if (glms_vec3_norm(body3->vel) < 1.0f && glms_vec3_norm(cmd->wishdir) > 0.001f)
             knows.surrounding = 3;
-        knows.wallFront = (wall_mask >> 0) & 1;
-        knows.wallBack  = (wall_mask >> 1) & 1;
-        knows.wallRight = (wall_mask >> 2) & 1;
-        knows.wallLeft  = (wall_mask >> 3) & 1;
     }
 
     return knows;
 }
-AiKnowStateC Get_KnowsC(World *world, int id, ScAi *ai, ScCmd *cmd)
+
+AiKnowStateM KnowsM(AiKnows *s)
+{
+    AiKnowStateM knows = {0};
+
+    knows.self        = s->self;
+    knows.moveState   = s->moveState;
+    knows.danger      = s->danger;
+    knows.targetState = s->targetState;
+    knows.targetLos   = s->targetLos;
+    knows.surrounding = s->surrounding;
+    knows.targetDist  = s->targetDist;
+
+    knows.wallFront = (s->wallMask >> 0) & 1;
+    knows.wallBack  = (s->wallMask >> 1) & 1;
+    knows.wallRight = (s->wallMask >> 2) & 1;
+    knows.wallLeft  = (s->wallMask >> 3) & 1;
+
+    return knows;
+}
+
+AiKnowStateC KnowsC(AiKnows *s)
 {
     AiKnowStateC knows = {0};
-    AiBrain *brain     = &ai->brain;
-    vec3s pos          = world->xform.pos[id];
-    int target         = brain->target;
-    vec3s target_pos   = world->xform.pos[target];
-    knows.targetDist   = 7;
-    for (int i = 0; i < 7; i++)
-    {
-        if (brain->target_dist < dist_map[i])
-        {
-            knows.targetDist = i;
-            break;
-        }
-    }
 
-    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-    if (ability)
-    {
-        if (ability->stateData[ability->activeSlot].power >= 0.8f)
-            knows.self = 3;
-        else if (ability->stateData[ability->activeSlot].power > 0.0f)
-            knows.self = 2;
-        else if (ability->state != 0)
-            knows.self = 1;
-    }
-
-    SolRayResult result;
-    if (!Sol_Raycast1(world,
-                      (SolRay){
-                          .start     = Sol_Body3_GetHead(world, id),
-                          .mask      = COLLAYER_WORLD,
-                          .ignoreEnt = id,
-                          .dir       = cmd->lookdir,
-                          .dist      = ai->brain.target_dist,
-                      },
-                      &result))
-        knows.targetLos = 1;
-
-    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
-    ScCombat *target_combat = Sol_Comp_Get(world, target, ScCombat);
-    if (combat && target_combat)
-    {
-        knows.winning = combat->health > target_combat->health;
-    }
+    knows.attack     = s->attack;
+    knows.targetLos  = s->targetLos;
+    knows.targetDist = s->targetDist;
+    knows.winning    = s->winning;
 
     return knows;
 }
@@ -434,8 +456,9 @@ void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
     if (!solData.qtable.q || !solData.qtable.qc)
         return;
-    AiKnowStateM next_knows_move   = Get_KnowsM(world, id, ai, cmd);
-    AiKnowStateC next_knows_combat = Get_KnowsC(world, id, ai, cmd);
+    AiKnows knows                  = Get_Knows(world, id, ai, cmd);
+    AiKnowStateM next_knows_move   = KnowsM(&knows);
+    AiKnowStateC next_knows_combat = KnowsC(&knows);
     if (next_knows_move.raw && ai->learning.prev_knows_move.raw)
         Learn_Table((float *)solData.qtable.q, AIACTION_COUNT, next_knows_move.raw, ai->learning.action_move,
                     ai->learning.prev_knows_move.raw, ai->learning.reward_move, AI_ALPHA, AI_GAMMA);
@@ -462,8 +485,8 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
     cmd->isStrafing = true;
     AiBrain *brain  = &ai->brain;
     vec3s fwd       = cmd->lookdir;
-    fwd.y = 0;
-    fwd = vecNorm(fwd);
+    fwd.y           = 0;
+    fwd             = vecNorm(fwd);
     vec3s bwd       = glms_vec3_scale(fwd, -1.0f);
     vec3s left      = cmd->leftdir;
     vec3s right     = glms_vec3_scale(left, -1.0f);
@@ -522,7 +545,7 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
     switch (ai->learning.action_combat)
     {
     case AIACTIONC_NONE:
-        if (next_knows_combat.self < 2)
+        if (next_knows_combat.attack < 2)
         {
             cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
         }
@@ -533,7 +556,7 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
         break;
     case AIACTIONC_RELEASE:
         cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
-        if (ai->learning.prev_knows_combat.self == 3)
+        if (ai->learning.prev_knows_combat.attack == 3)
             ai->learning.reward_combat += 30.0f;
         break;
     case AIACTIONC_ABILITY:

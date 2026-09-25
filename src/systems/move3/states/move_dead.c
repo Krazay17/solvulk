@@ -30,3 +30,11 @@ bool Move_Dead_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     }
     return false;
 }
+
+const MoveStateFuncs move_dead_funcs = {
+    .update   = Move_Dead_Update,
+    .enter    = Move_Dead_Enter,
+    .exit     = Move_Dead_Exit,
+    .canExit  = Move_Dead_CanExit,
+    .canEnter = Move_Dead_CanEnter,
+};

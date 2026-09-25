@@ -24,3 +24,11 @@ bool Move_Fly_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last
 {
     return false;
 }
+
+const MoveStateFuncs move_fly_funcs = {
+    .update   = Move_Fly_Update,
+    .enter    = Move_Fly_Enter,
+    .exit     = Move_Fly_Exit,
+    .canExit  = Move_Fly_CanExit,
+    .canEnter = Move_Fly_CanEnter,
+};

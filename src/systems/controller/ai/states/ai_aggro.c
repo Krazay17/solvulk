@@ -60,18 +60,21 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     data->accum += dt;
     if (data->accum >= ai->learning.actionTimer)
     {
-        // sollog(ai->learning.reward_move, ai->learning.reward_combat);
         data->accum -= ai->learning.actionTimer;
-        // ai->actionTimer = Sol_Math_RandRange2(0.04f, 0.2f);
+        // ai->learning.actionTimer = Sol_Math_RandRange2(0.05f, 0.2f);
         ai->learning.actionTimer = 0.1f;
         Submit_Learn(world, id, ai, cmd);
-        // Sol_Debug_AddText("AiAction", aiaction_name[ai->aiaction]);
     }
 }
 
 void Ai_Aggro_Enter(World *world, int id, ScAi *ai)
 {
     AiStateData *data = &ai->stateData[ai->state];
+    ScCmd *cmd        = Sol_Comp_Get(world, id, ScCmd);
+    if (!cmd)
+        return;
+    cmd->isWalking  = false;
+    cmd->isStrafing = true;
 }
 
 void Ai_Aggro_Exit(World *world, int id, ScAi *ai)

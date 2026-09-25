@@ -14,8 +14,8 @@ const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
     AISTATE_AGGRO, //
     // AISTATE_RETREAT, //
     // AISTATE_SEARCH,  //
-    // AISTATE_PATROL,  //
-    AISTATE_IDLE, //
+    AISTATE_PATROL, //
+    AISTATE_IDLE,   //
 };
 
 extern const AiStateFuncs ai_idle_state;
@@ -97,9 +97,9 @@ void Ai_Step(World *world, double dt)
         SolEvent *event = &events->events[i];
         if (event->kind == EVENTKIND_DEATH)
         {
-            ScAi *ai = Sol_Comp_Get(world, event->entA, ScAi);
-            if (ai && ai->brain.target == event->entB)
-                ai->brain.target = 0;
+            // ScAi *ai = Sol_Comp_Get(world, event->entA, ScAi);
+            // if (ai && ai->brain.target == event->entB)
+            //     ai->brain.target = 0;
         }
     }
 

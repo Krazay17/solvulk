@@ -49,3 +49,11 @@ bool Move_Crouch_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 l
         return true;
     return false;
 }
+
+const MoveStateFuncs move_crouch_funcs = {
+    .update   = Move_Crouch_Update,
+    .enter    = Move_Crouch_Enter,
+    .exit     = Move_Crouch_Exit,
+    .canExit  = Move_Crouch_CanExit,
+    .canEnter = Move_Crouch_CanEnter,
+};

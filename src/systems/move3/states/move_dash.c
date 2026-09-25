@@ -19,7 +19,14 @@ bool Move_Dash_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
     if (ability)
     {
-        return ability->state == ABILITY_STATE_DASH;
+        return Sol_Ability_GetIsDashing(ability);
     }
     return false;
 }
+const MoveStateFuncs move_dash_funcs = {
+    .update   = Move_Dash_Update,
+    .enter    = Move_Dash_Enter,
+    .exit     = Move_Dash_Exit,
+    .canExit  = Move_Dash_CanExit,
+    .canEnter = Move_Dash_CanEnter,
+};

@@ -29,6 +29,7 @@ ModelSkinnedSubmission skinningQueue;
 RectQueue rectQueue[UILAYER_COUNT];
 FontQueue font2dQueue[UILAYER_COUNT];
 
+ModelQueue modelQueues[1];
 QuadQueue quadQueues[PIPE_QUAD_COUNT];
 SphereQueue sphereQueues[PIPE_SPHERE_COUNT];
 RibbonQueue ribbonQueues[PIPE_RIBBON_COUNT];
@@ -47,6 +48,8 @@ int Sol_Render_Init()
     {
         solb_init(ribbonQueues[i].instances, 128);
     }
+    // solb_init(modelQueues[0].instances, 128);
+    // solb_init(modelQueues[0].handles, 128);
     return 0;
 }
 
@@ -184,6 +187,46 @@ void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
+
+void Flush_ModelsTransparent(u32 *model_que_offset)
+{
+    int count = modelQueues[0].count;
+    if (count == 0)
+        return;
+
+    ModelSSBO *ssbo = Sol_GetDescriptorMapping(DESC_MODEL_SSBO);
+
+    uint32_t counts[MODELKIND_COUNT] = {0};
+    for (int i = 0; i < count; i++)
+        counts[modelQueues[0].handles[i]]++;
+
+    uint32_t offsets[MODELKIND_COUNT] = {0};
+    for (int i = 1; i < MODELKIND_COUNT; i++)
+        offsets[i] = offsets[i - 1] + counts[i - 1];
+
+    uint32_t cursors[MODELKIND_COUNT];
+    memcpy(cursors, offsets, sizeof(offsets));
+
+    for (int i = 0; i < count; i++)
+    {
+        ModelKind h        = modelQueues[0].handles[i];
+        uint32_t globalIdx = *model_que_offset + cursors[h];
+        ssbo[globalIdx]    = modelQueues[0].instances[i];
+        cursors[h]++;
+    }
+
+    for (int h = 0; h < MODELKIND_COUNT; h++)
+    {
+        if (counts[h] > 0)
+        {
+            Render_ModelTransparent((ModelKind)h, counts[h], *model_que_offset + offsets[h]);
+        }
+    }
+
+    *model_que_offset += count;
+    modelQueues[0].count = 0;
+}
+
 void Flush_Models(void)
 {
     // Always reset the frame allocation tracker to 0 at the start of flushing
@@ -285,7 +328,9 @@ void Flush_Models(void)
         model_que_offset += skinningQueue.count;
         skinningQueue.count = 0;
     }
+    Flush_ModelsTransparent(&model_que_offset);
 }
+
 
 void Flush_Spheres(void)
 {

@@ -148,7 +148,7 @@ typedef struct ScModelDataMasks
 extern ScModelData      loaded_models[MODELKIND_COUNT];
 extern ScModelDataMasks model_masks[MODELKIND_COUNT];
 extern const char       *model_path[MODELKIND_COUNT];
-extern const i32         model_anim_map[MODELKIND_COUNT][ANIM_COUNT];
+extern const u32         model_anim_map[MODELKIND_COUNT][ANIM_COUNT];
 
 int  Sol_Models_Init();
 void Init_Anim_Masks(ModelKind kind, SolSkeleton *skele);

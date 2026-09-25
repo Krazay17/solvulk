@@ -85,7 +85,6 @@ static inline void Hook_SpawnDude(World *w, int a, int b)
 
     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
     combat->respawnTime = 3.0f;
-    combat->respawnPos  = spawn_pos;
 }
 static inline void Hook_SpawnDudes(World *w, int a, int b)
 {
@@ -99,7 +98,6 @@ static inline void Hook_SpawnDudes(World *w, int a, int b)
 
         ScCombat *combat    = Sol_Comp_Add(game, id, ScCombat);
         combat->respawnTime = 3.0f;
-        combat->respawnPos  = spawn_pos;
     }
 }
 static inline void Hook_DebugToggle(World *w, int a, int b)
@@ -172,8 +170,8 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItem(&(SolItem){.kind = ABILITY_STATE_CLAW, .effects = EFFECTMASK_KNOCKUP});
-    Sol_User_AddItem(&(SolItem){.kind = ABILITY_STATE_FIREBALL, .effects = EFFECTMASK_KNOCKUP});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .effectMask = EFFECTMASK_KNOCKUP});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .effectMask = EFFECTMASK_KNOCKUP});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)

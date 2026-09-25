@@ -9,11 +9,12 @@
 #include "cgltf/cgltf.h"
 
 const char *model_path[MODELKIND_COUNT] = {
-    [MODELKIND_DUDE]    = "Dude.glb",
-    [MODELKIND_WIZARD]  = "Wizard.glb",
-    [MODELKIND_WORLD0]  = "World0.glb",
-    [MODELKIND_WORLD1]  = "World1.glb",
-    [MODELKIND_WORLD10] = "World10.glb",
+    [MODELKIND_DUDE]    = "Dude.glb",    //
+    [MODELKIND_WIZARD]  = "Wizard.glb",  //
+    [MODELKIND_WORLD0]  = "World0.glb",  //
+    [MODELKIND_WORLD1]  = "World1.glb",  //
+    [MODELKIND_WORLD10] = "World10.glb", //
+    [MODELKIND_CONE]    = "Cone.glb",    //
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
     // [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
@@ -34,8 +35,8 @@ const char *model_path[MODELKIND_COUNT] = {
 ScModelData loaded_models[MODELKIND_COUNT];
 
 static ScModelData *Parse_Model(SolResource res, u32 id);
-static SolSkeleton  ParseSkeleton(cgltf_data *data);
-ScModelDataMasks    model_masks[MODELKIND_COUNT];
+static SolSkeleton ParseSkeleton(cgltf_data *data);
+ScModelDataMasks model_masks[MODELKIND_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
@@ -57,8 +58,8 @@ int Sol_Models_Init()
     {
         if (!model_path[i])
             continue;
-        SolResource  res   = Sol_LoadResource(model_path[i], "models/");
-        ScModelData *model = Parse_Model(res, i);
+        SolResource res       = Sol_LoadResource(model_path[i], "models/");
+        ScModelData *model    = Parse_Model(res, i);
         model->needsGpuUpload = true;
     }
     return 0;
@@ -69,7 +70,7 @@ static ScModelData *Parse_Model(SolResource res, u32 id)
     ScModelData *model = &loaded_models[id];
 
     cgltf_options options = {0};
-    cgltf_data   *data    = NULL;
+    cgltf_data *data      = NULL;
     if (cgltf_parse(&options, res.data, res.size, &data) != cgltf_result_success)
         return model;
 
@@ -179,7 +180,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
     // For each joint, find its parent's index in the joints array.
     for (int i = 0; i < skel.boneCount; i++)
     {
-        SolBone    *bone = &skel.bones[i];
+        SolBone *bone    = &skel.bones[i];
         cgltf_node *node = skin->joints[i];
 
         if (node->name)
@@ -238,8 +239,8 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
 
         for (int a = 0; a < skel.animationCount; a++)
         {
-            cgltf_animation *src  = &data->animations[a];
-            ScAnimation     *anim = &skel.animations[a];
+            cgltf_animation *src = &data->animations[a];
+            ScAnimation *anim    = &skel.animations[a];
 
             if (src->name)
             {
@@ -254,7 +255,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             for (int c = 0; c < anim->channelCount; c++)
             {
                 cgltf_animation_channel *srcCh = &src->channels[c];
-                ScAnimChannel           *dstCh = &anim->channels[c];
+                ScAnimChannel *dstCh           = &anim->channels[c];
 
                 // Map target node → bone index
                 dstCh->boneIndex = -1;
@@ -286,9 +287,9 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
                 }
 
                 // Keyframe data
-                cgltf_animation_sampler *sampler  = srcCh->sampler;
-                int                      keyCount = (int)sampler->input->count;
-                dstCh->keyCount                   = keyCount;
+                cgltf_animation_sampler *sampler = srcCh->sampler;
+                int keyCount                     = (int)sampler->input->count;
+                dstCh->keyCount                  = keyCount;
 
                 dstCh->times = malloc(keyCount * sizeof(float));
                 for (int k = 0; k < keyCount; k++)
@@ -323,8 +324,8 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
     {
         for (cgltf_size p = 0; p < node->mesh->primitives_count; p++)
         {
-            cgltf_primitive *prim   = &node->mesh->primitives[p];
-            cgltf_accessor  *posAcc = NULL;
+            cgltf_primitive *prim  = &node->mesh->primitives[p];
+            cgltf_accessor *posAcc = NULL;
             for (cgltf_size a = 0; a < prim->attributes_count; a++)
                 if (prim->attributes[a].type == cgltf_attribute_type_position)
                     posAcc = prim->attributes[a].data;
@@ -408,21 +409,21 @@ static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx,
                     dst->material.fogTextureId      = (int)Sol_GetExtrasFloat(extrasJson, "fog_id", 0);
                 }
 
-                if (prim->material->emissive_texture.texture)
+                if (prim->material->emissive_texture.texture && prim->material->emissive_texture.texture->image)
                 {
-                    cgltf_buffer_view *view              = prim->material->emissive_texture.texture->image->buffer_view;
-                    void              *data              = (uint8_t *)view->buffer->data + view->offset;
-                    int                emissiveTextureId = Sol_Texture_RegisterRuntime(
+                    cgltf_buffer_view *view = prim->material->emissive_texture.texture->image->buffer_view;
+                    void *data              = (uint8_t *)view->buffer->data + view->offset;
+                    int emissiveTextureId   = Sol_Texture_RegisterRuntime(
                         data, view->size, prim->material->emissive_texture.texture->image->mime_type);
                     if (emissiveTextureId)
                         dst->material.emissiveTextureId = emissiveTextureId;
                 }
 
-                if (prim->material->normal_texture.texture)
+                if (prim->material->normal_texture.texture && prim->material->normal_texture.texture->image)
                 {
-                    cgltf_buffer_view *view            = prim->material->normal_texture.texture->image->buffer_view;
-                    void              *data            = (uint8_t *)view->buffer->data + view->offset;
-                    int                normalTextureId = Sol_Texture_RegisterUnormTexture(
+                    cgltf_buffer_view *view = prim->material->normal_texture.texture->image->buffer_view;
+                    void *data              = (uint8_t *)view->buffer->data + view->offset;
+                    int normalTextureId     = Sol_Texture_RegisterUnormTexture(
                         data, view->size, prim->material->normal_texture.texture->image->mime_type);
                     if (normalTextureId)
                     {
@@ -432,8 +433,8 @@ static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx,
 
                 if (prim->material->has_pbr_metallic_roughness)
                 {
-                    cgltf_pbr_metallic_roughness *pbr     = &prim->material->pbr_metallic_roughness;
-                    cgltf_texture                *texture = pbr->base_color_texture.texture;
+                    cgltf_pbr_metallic_roughness *pbr = &prim->material->pbr_metallic_roughness;
+                    cgltf_texture *texture            = pbr->base_color_texture.texture;
                     if (texture)
                     {
                         cgltf_image *image = NULL;
@@ -448,11 +449,11 @@ static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx,
 
                         if (image && image->buffer_view)
                         {
-                            cgltf_buffer_view *view      = image->buffer_view;
-                            void              *data      = (uint8_t *)view->buffer->data + view->offset;
-                            size_t             size      = view->size;
-                            const char        *mime_type = image->mime_type;
-                            int                textureId = Sol_Texture_RegisterRuntime(data, size, mime_type);
+                            cgltf_buffer_view *view = image->buffer_view;
+                            void *data              = (uint8_t *)view->buffer->data + view->offset;
+                            size_t size             = view->size;
+                            const char *mime_type   = image->mime_type;
+                            int textureId           = Sol_Texture_RegisterRuntime(data, size, mime_type);
                             if (textureId)
                             {
                                 dst->material.textureId = textureId;
@@ -547,9 +548,9 @@ static void Sample_Channel(ScAnimChannel *ch, float t, float *out)
     float t1 = ch->times[k1];
     float a  = (t - t0) / (t1 - t0);
 
-    int    valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
-    float *v0           = &ch->values[k0 * valuesPerKey];
-    float *v1           = &ch->values[k1 * valuesPerKey];
+    int valuesPerKey = (ch->path == ANIM_PATH_ROTATION) ? 4 : 3;
+    float *v0        = &ch->values[k0 * valuesPerKey];
+    float *v1        = &ch->values[k1 * valuesPerKey];
 
     if (ch->path == ANIM_PATH_ROTATION)
     {
@@ -582,7 +583,7 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
         return;
 
     ScAnimation *anim = &skel->animations[animIndex];
-    float        t    = fmodf(time, anim->duration);
+    float t           = fmodf(time, anim->duration);
 
     for (int c = 0; c < anim->channelCount; c++)
     {
@@ -611,13 +612,13 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
 // Thread-local scratch storage moves ~23KB off the stack entirely
 typedef struct
 {
-    vec3   poseT[MAX_BONES];
+    vec3 poseT[MAX_BONES];
     versor poseR[MAX_BONES];
-    vec3   poseS[MAX_BONES];
-    vec3   currT[MAX_BONES];
+    vec3 poseS[MAX_BONES];
+    vec3 currT[MAX_BONES];
     versor currR[MAX_BONES];
-    vec3   currS[MAX_BONES];
-    mat4   worldTransforms[MAX_BONES];
+    vec3 currS[MAX_BONES];
+    mat4 worldTransforms[MAX_BONES];
 } AnimScratchBuffer;
 
 static _Thread_local AnimScratchBuffer g_animScratch;
@@ -638,8 +639,8 @@ void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, So
 
     for (int L = 0; L < ANIM_LAYER_COUNT; L++)
     {
-        AnimLayer *layer  = &layers[L];
-        float      weight = layer->weight;
+        AnimLayer *layer = &layers[L];
+        float weight     = layer->weight;
 
         if (layer->currentAnim == -1 || weight <= 0.0f)
             continue;
@@ -777,10 +778,10 @@ void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind ha
                                  vec3s pos)
 {
     ScModelData *model = &loaded_models[handle];
-    mat3s        rot   = glms_quat_mat3(quat);
+    mat3s rot          = glms_quat_mat3(quat);
     for (int i = 0; i < model->tri_count; i++)
     {
-        SolTri  src = model->tris[i];
+        SolTri src  = model->tris[i];
         SolTri *dst = &group[offset + i];
         dst->entId  = id;
 

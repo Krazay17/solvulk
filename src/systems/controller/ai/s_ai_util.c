@@ -113,8 +113,8 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
         {
             if (event->entA == id)
             {
-                ai->learning.reward_move -= 10.0f;
-                ai->learning.reward_combat -= 10.0f;
+                ai->learning.reward_move -= 15.0f;
+                ai->learning.reward_combat -= 5.0f;
             }
             else if (event->entB == id)
             {
@@ -131,40 +131,56 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
     float closer_reward = (brain->target_prev_dist - brain->target_dist);
     ai->learning.reward_move += closer_reward;
     ai->learning.reward_move -= brain->target_dist * 0.2f * fdt;
+
+    if(ai->learning.prev_knows_combat.attack & 2)
+    ai->learning.reward_combat -= 1.0f * fdt;
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
 {
-    u32 mask         = 0;
+    u32 mask           = 0;
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (ability)
+    {
+        if (Sol_Ability_GetIsDashing(ability))
+            return mask;
+    }
     bool is_charging = (ai->learning.prev_knows_combat.attack >= 2);
     if (is_charging)
     {
         mask |= BITC(AIACTIONC_NONE);
         mask |= BITC(AIACTIONC_RELEASE);
     }
-    else
+    else if (!(ability->stateData[ability->activeSlot].elapsed > 0.0f))
     {
         mask |= BITC(AIACTIONC_NONE);
         mask |= BITC(AIACTIONC_CHARGE);
-        // mask |= BITC(AIACTION_ABILITY);
+        mask |= BITC(AIACTIONC_ABILITY_AOE);
+        // mask |= BITC(AIACTIONC_ABILITY_MELEE);
+        // mask |= BITC(AIACTIONC_ABILITY_DASH_FWD);
     }
     return mask;
 }
 u32 GetMoveActionMask(World *world, int id, ScAi *ai)
 {
-    u32 mask = 0;
+    u32 mask           = 0;
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (ability)
+    {
+        if (Sol_Ability_GetIsDashing(ability))
+            return mask;
+        if (ability->stateData[6].cooldownRemaining <= 0.0f)
+        {
+            mask |= BITC(AIACTION_DODGEFWD) | BITC(AIACTION_DODGEBWD) | BITC(AIACTION_DODGELEFT) |
+                    BITC(AIACTION_DODGERIGHT);
+        }
+    }
     mask |= BITC(AIACTION_NONE);
     mask |= BITC(AIACTION_FWD) | BITC(AIACTION_BWD) | BITC(AIACTION_LEFT) | BITC(AIACTION_RIGHT);
     mask |= BITC(AIACTION_JUMPFWD) | BITC(AIACTION_JUMPBWD) | BITC(AIACTION_JUMPLEFT) | BITC(AIACTION_JUMPRIGHT);
     mask |=
         BITC(AIACTION_CROUCHFWD) | BITC(AIACTION_CROUCHBWD) | BITC(AIACTION_CROUCHLEFT) | BITC(AIACTION_CROUCHRIGHT);
 
-    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-    if (ability && ability->stateData[6].cooldownRemaining <= 0.0f)
-    {
-        mask |=
-            BITC(AIACTION_DODGEFWD) | BITC(AIACTION_DODGEBWD) | BITC(AIACTION_DODGELEFT) | BITC(AIACTION_DODGERIGHT);
-    }
     return mask;
 }
 
@@ -222,7 +238,7 @@ void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float rewa
     qt->q[state][action] += alpha * (target_q - current_q);
 }
 
-static const float dist_map[3] = {2.0f, 6.0f, 12.0f};
+static const float dist_map[3] = {5.0f, 15.0f, 30.0f};
 AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
     AiKnows knows    = {0};
@@ -352,7 +368,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
-        if (target_ability->state == ABILITY_STATE_DASH)
+        if (target_ability->state == ABILITY_STATE_CLAW_DASH)
             knows.targetState = 7;
         else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
             knows.targetState = 6;
@@ -378,10 +394,10 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
         for (int j = 1; j < 5; j++)
         {
             vec3s finalPos       = pos;
-            float final_dist     = radius * 2.0f;
+            float final_dist     = radius * 3.0f;
             vec3s rotated_offset = glms_quat_rotatev(world->xform.rot[id], VECTOR_RADIAL_DIRECTIONS[j]);
             SolRay ray = {.start = finalPos, .dist = final_dist, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
-            bool hit   = Sol_Raycast1(world, ray, &result);
+            bool hit   = Sol_Raycast1D(world, ray, &result, 0.2f);
             if (hit)
             {
                 knows.wallMask |= (1 << j - 1);
@@ -391,7 +407,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
                                   (SolRay){
                                       .start     = vecAdd(finalPos, vecSca(rotated_offset, final_dist)),
                                       .dir       = WORLD_DOWN,
-                                      .dist      = 5.0f,
+                                      .dist      = 25.0f,
                                       .ignoreEnt = id,
                                   },
                                   &result))
@@ -558,10 +574,12 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
         cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
         if (ai->learning.prev_knows_combat.attack == 3)
             ai->learning.reward_combat += 30.0f;
+
         break;
-    case AIACTIONC_ABILITY:
-        u32 slot = rand() % 4;
-        cmd->actionState |= BITC(slot_action[slot]);
+    case AIACTIONC_ABILITY_AOE:
+        // u32 slot = rand() % 4;
+        cmd->actionState |= BITC(slot_action[0]);
+        ai->learning.reward_combat -= 5.0f;
         break;
     }
 }

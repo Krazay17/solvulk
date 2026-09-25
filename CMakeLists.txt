@@ -80,7 +80,6 @@ PUBLIC
     "${CMAKE_SOURCE_DIR}/src/core"
     "${CMAKE_SOURCE_DIR}/src/game"
     "${CMAKE_SOURCE_DIR}/src/systems"
-    "${CMAKE_SOURCE_DIR}/include/sol"
     "${EXTERN_DIR}"
     "${EXTERN_DIR}/cglm/include"
     "${EXTERN_DIR}/enet/include"
@@ -105,7 +104,7 @@ if(WIN32)
    add_executable(solapp 
        "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
        "${CMAKE_SOURCE_DIR}/src/game/game.c"
-       #"${CMAKE_SOURCE_DIR}/assets/res.rc"
+       "${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")

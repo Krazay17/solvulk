@@ -34,3 +34,11 @@ bool Move_Stun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     }
     return false;
 }
+
+const MoveStateFuncs move_stun_funcs = {
+    .update   = Move_Stun_Update,
+    .enter    = Move_Stun_Enter,
+    .exit     = Move_Stun_Exit,
+    .canExit  = Move_Stun_CanExit,
+    .canEnter = Move_Stun_CanEnter,
+};

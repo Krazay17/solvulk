@@ -55,3 +55,11 @@ bool Move_Slide_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 la
         return true;
     return false;
 }
+
+const MoveStateFuncs move_slide_funcs = {
+    .update   = Move_Slide_Update,
+    .enter    = Move_Slide_Enter,
+    .exit     = Move_Slide_Exit,
+    .canExit  = Move_Slide_CanExit,
+    .canEnter = Move_Slide_CanEnter,
+};

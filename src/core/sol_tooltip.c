@@ -36,11 +36,11 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
     int lineCount = 0;
 
     // Track the raw width maximums
-    float maxWidth = 0.0f;
+    float maxWidth    = 0.0f;
     AbilityConfig cfg = Sol_Ability_GetConf(item);
 
     // 1. Measure and buffer Header
-    const char *headerText = ability_state_name[item.kind];
+    const char *headerText = ability_name[item.abilityKind];
     float headerSize       = 15.0f;
     float headerWidth      = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
     if (headerWidth > maxWidth)

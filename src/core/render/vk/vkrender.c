@@ -85,6 +85,21 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
             .descCount         = 5,
         },
+    [PIPE_MODEL_TRANSPARENT] =
+        {
+            .vertResource      = "model.vert.spv",
+            .fragResource      = "model.frag.spv",
+            .depthTest         = 1,
+            .depthWrite        = 0,
+            .blendMode         = BLEND_ALPHA,
+            .cullMode          = VK_CULL_MODE_NONE,
+            .pushRangeSize     = sizeof(SolMaterial),
+            .pushStageFlags    = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .type              = VERTEX_TRI,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_MODEL_SSBO, DESC_ORTHO_UBO, DESC_IMAGES},
+            .descCount         = 5,
+        },
     [PIPE_MODEL_SKINNED] =
         {
             .vertResource      = "model_skinned.vert.spv",
@@ -463,12 +478,14 @@ int Sol_Render_BuildPipes()
     for (int i = 0; i < DESC_COUNT; i++)
     {
         SolDescriptorConfig *cfg = &desc_config[i];
+        printf("Desc:%d Size:%zu\n", i, cfg->as.buffer.size);
         if (cfg->kind == DESC_KIND_BUFFER)
         {
             Sol_BufferDescriptor_Build(&solvkstate, cfg, &descriptors[i]);
         }
         else if (cfg->kind == DESC_KIND_IMAGES)
         {
+            printf("Image Descriptor build\n");
             Sol_ImageDescriptor_BuildLayout(&solvkstate, &image_array_descriptor);
             // Sol_ImageDescriptor_Build(&solvkstate, gpuImages, &image_array_descriptor);
         }
@@ -476,6 +493,7 @@ int Sol_Render_BuildPipes()
     printf("Building pipelines\n");
     for (int i = 0; i < PIPE_COUNT; i++)
     {
+        printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].vertResource);
         if (Sol_Pipeline_Build(&solvkstate, &pipe_config[i], &pipes[i]) != 0)
         {
             Sol_MessageBox("PIPE ERROR", NULL);
@@ -486,9 +504,10 @@ int Sol_Render_BuildPipes()
     printf("Building framebuffers\n");
     for (int i = 0; i < FRAMEBUFFER_COUNT; i++)
     {
+        printf("Buffer:%d\n", i);
         Sol_CreateFrameBuffer(&solvkstate, buffer_config[i].size, buffer_config[i].stage, &frameBuffers[i]);
     }
-
+    printf("Setting Ortho\n");
     Sol_Render_SetOrtho(solvkstate.swapchainExtent.width, solvkstate.swapchainExtent.height);
 
     return 0;
@@ -578,6 +597,22 @@ void Remake_Swapchain(uint32_t width, uint32_t height)
     SolVkSwapchain(&solvkstate);
     SolVkImageViews(&solvkstate);
     SolVkDepthResources(&solvkstate);
+}
+
+void Render_ModelTransparent(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)
+{
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    Sol_Render_Bind_Pipeline(cmd, PIPE_MODEL_TRANSPARENT);
+    SolGpuModel *model = &gpuModels[handle];
+    for (int m = 0; m < model->mesh_count; m++)
+    {
+        vkCmdPushConstants(cmd, pipes[PIPE_MODEL_TRANSPARENT].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
+                           &model->meshes[m].material);
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
+        vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmd, model->meshes[m].indexCount, instanceCount, 0, 0, firstInstance);
+    }
 }
 
 void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance)

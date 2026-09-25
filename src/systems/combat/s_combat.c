@@ -13,7 +13,7 @@
 
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
-    Sol_Xform_Teleport(world, id, combat->respawnPos);
+    Sol_Xform_Teleport(world, id, world->xform.home_pos[id]);
     combat->health  = combat->healthMax;
     combat->energy  = combat->energyMax;
     combat->mana    = combat->manaMax;
@@ -86,6 +86,29 @@ bool Sol_Combat_Hostile(World *world, int idA, int idB)
     return true;
 }
 
+void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
+{
+    // ScProjectile *pComp = Sol_Comp_Get(world, projectile, ScProjectile);
+    ScBody3 *body3         = Sol_Comp_Get(world, projectile, ScBody3);
+    ScTeam *team           = Sol_Comp_Get(world, projectile, ScTeam);
+    ScOwner *owner         = Sol_Comp_Get(world, projectile, ScOwner);
+    ScTeam *reflector_team = Sol_Comp_Get(world, reflector, ScTeam);
+    ScCmd *cmd             = Sol_Comp_Get(world, reflector, ScCmd);
+
+    if (owner)
+        owner->ownerId = reflector;
+    if (team)
+        team->team = reflector_team->team;
+
+    if (body3 && cmd)
+    {
+        body3->vel       = Sol_RedirectVel(body3->vel, cmd->aimdir);
+        body3->ignoreEnt = reflector;
+    }
+
+    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = pos});
+}
+
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
     if (!Sol_Comp_Has(world, id, ScCombat))
@@ -125,22 +148,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             }
             if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
             {
-                ScProjectile *projectile = Sol_Comp_Get(world, id, ScProjectile);
-                ScTeam *team             = Sol_Comp_Get(world, id, ScTeam);
-                ScTeam *attacker_team    = Sol_Comp_Get(world, hit.entA, ScTeam);
-                ScOwner *owner           = Sol_Comp_Get(world, id, ScOwner);
-                if (owner)
-                    owner->ownerId = hit.entA;
-                if (team)
-                    team->team = attacker_team->team;
-
-                ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-                ScCmd *cmd     = Sol_Comp_Get(world, hit.entA, ScCmd);
-                if (body3 && cmd)
-                {
-                    body3->vel = Sol_RedirectVel(body3->vel, cmd->aimdir);
-                }
-                Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.pos});
+                Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
                 return 0.0f;
             }
         }
@@ -192,15 +200,23 @@ float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float 
     return healing_done;
 }
 
-void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits)
+void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 hitgen)
 {
-    vec3s pos = ray.start;
-    int hits  = Sol_SphereOverlap(world, ray, results, max_hits);
+    SolRayResult results[64];
+    int max_hits = 64;
+    vec3s pos    = ray.start;
+    int hits     = Sol_SphereOverlap(world, ray, results, max_hits);
 
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
-        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage))
+        if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage) || !Sol_Comp_Has(world, hit_id, ScCombat))
+            continue;
+
+        if (!Sol_Hitgen_Try(world, id, hit_id, hitgen))
+            continue;
+
+        if (!hit.isHeal && !Sol_Combat_Hostile(world, id, hit_id))
             continue;
 
         vec3s hit_pos = world->xform.pos[hit_id];

@@ -73,6 +73,8 @@ static inline void Claw_Hit(World *world, SolEvent event)
 
 void Fx_Update(World *world, double dt)
 {
+    if (!world->doesRender)
+        return;
     SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
     for (int i = 0; i < solb_count(events->events); i++)
     {
@@ -96,8 +98,8 @@ void Fx_Update(World *world, double dt)
             break;
         case EVENTKIND_DEATH:
             break;
-        default:
-            sollog("No Hit event Fx handler", event.kind);
+            // default:
+            //     sollog("No Hit event Fx handler", event.kind);
         }
 
         if (event.kind != EVENTKIND_FX)
@@ -105,9 +107,9 @@ void Fx_Update(World *world, double dt)
         switch (event.as.fx.kind)
         {
         case FXKIND_INVULNHIT:
-            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.16f, 8);
+            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.6f, 0.1f, 8);
             break;
-            case FXKIND_PARRY:
+        case FXKIND_PARRY:
             Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
         case FXKIND_TEST:
             Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 8);

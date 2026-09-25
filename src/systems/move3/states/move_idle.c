@@ -28,3 +28,11 @@ bool Move_Idle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
 {
     return true;
 }
+
+const MoveStateFuncs move_idle_funcs = {
+    .update   = Move_Idle_Update,
+    .enter    = Move_Idle_Enter,
+    .exit     = Move_Idle_Exit,
+    .canExit  = Move_Idle_CanExit,
+    .canEnter = Move_Idle_CanEnter,
+};

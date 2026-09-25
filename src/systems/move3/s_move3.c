@@ -4,6 +4,24 @@
 #include "sol_core.h"
 #include <omp.h>
 
+const MoveStateFuncs *MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
+    [MOVE_IDLE]     = &move_idle_funcs,     //
+    [MOVE_WALK]     = &move_walk_funcs,     //
+    [MOVE_RUN]      = &move_run_funcs,      //
+    [MOVE_FALL]     = &move_fall_funcs,     //
+    [MOVE_CROUCH]   = &move_crouch_funcs,   //
+    [MOVE_JUMP]     = &move_jump_funcs,     //
+    [MOVE_FLY]      = &move_fly_funcs,      //
+    [MOVE_DASH]     = &move_dash_funcs,     //
+    [MOVE_DEAD]     = &move_dead_funcs,     //
+    [MOVE_LANDING]  = &move_landing_funcs,  //
+    [MOVE_MANTLE]   = &move_mantle_funcs,   //
+    [MOVE_SLIDE]    = &move_slide_funcs,    //
+    [MOVE_STUN]     = &move_stun_funcs,     //
+    [MOVE_WALLJUMP] = &move_walljump_funcs, //
+    [MOVE_WALLRUN]  = &move_wallrun_funcs,  //
+};
+
 void Move3_Step(World *world, double dt)
 {
     float fdt = (float)dt;
@@ -22,11 +40,7 @@ void Move3_Step(World *world, double dt)
         ScCmd *cmd     = Sol_Comp_Get(world, id, ScCmd);
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
 
-        const MoveStateForce *forces = &MOVE_STATE_FORCES[move->kind][move->state];
-        bool isJumpDown              = cmd->actionState & BITC(ACTION_JUMP);
-
-        GroundCheck(world, id, move, fdt);
-
+        bool isJumpDown = cmd->actionState & BITC(ACTION_JUMP);
         if (isJumpDown && !move->jumpPressedLastFrame)
             move->wantsJump = true;
         else if (!isJumpDown)
@@ -36,20 +50,22 @@ void Move3_Step(World *world, double dt)
         for (int j = 0; j < MOVE_STATE_COUNT; j++)
             move->stateData[j].coyote = fmaxf(0.0f, move->stateData[j].coyote - fdt);
 
+        GroundCheck(world, id, move, fdt);
         Move3_EvaluateState(world, id, move, cmd);
 
-        MoveStateFuncs funcs = MOVE_STATE_FUNCS[move->state];
+        const MoveStateFuncs *funcs = MOVE_STATE_FUNCS[move->state];
         move->stateData[move->state].elapsed += fdt;
-        if (funcs.update)
-            funcs.update(world, id, move, cmd, fdt);
+        if (funcs->update)
+            funcs->update(world, id, move, cmd, fdt);
 
         vec3s vel         = body3->vel;
         vec3s wishdir     = cmd->wishdir;
         move->lastMoveDir = wishdir;
 
-        float finalSpeed    = forces->speed; // * move->speedMod;
-        float finalFriction = forces->friction * move->frictionMod;
-        body3->gravity.y    = forces->gravity; // * move->gravityMod;
+        const MoveStateForce forces = MOVE_STATE_FORCES[move->kind][move->state];
+        float finalSpeed            = forces.speed; // * move->speedMod;
+        float finalFriction         = forces.friction * move->frictionMod;
+        body3->gravity.y            = forces.gravity; // * move->gravityMod;
 
         switch (move->state)
         {
@@ -64,29 +80,30 @@ void Move3_Step(World *world, double dt)
             break;
         case MOVE_IDLE:
         case MOVE_WALK:
+        case MOVE_RUN:
         case MOVE_CROUCH:
             vec3s slopeDir = ProjectOntoGround(move->groundNorm, wishdir);
             vel            = ApplyFriction3(slopeDir, vel, finalFriction, fdt);
-            vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces->accell, fdt);
+            vel            = ApplyAccel3(slopeDir, vel, finalSpeed, forces.accell, fdt);
             body3->vel     = vel;
             break;
         case MOVE_FLY:
             wishdir    = cmd->wishdir;
             vel        = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-            vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces.accell, fdt);
             body3->vel = vel;
             break;
         case MOVE_FALL:
             if (vel.y < 0)
                 body3->gravity.y *= 1.33f;
             vel          = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-            vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces.accell, fdt);
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
             break;
         default:
             vel          = ApplyFriction3(wishdir, vel, finalFriction, fdt);
-            vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces->accell, fdt);
+            vel          = ApplyAccel3(wishdir, vel, finalSpeed, forces.accell, fdt);
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
@@ -96,18 +113,12 @@ void Move3_Step(World *world, double dt)
             move->knockDur -= fdt;
             body3->vel = glms_vec3_lerp(body3->vel, move->knockVel, 0.5f);
         }
-
-        // Framerate-independent friction modifier recovery
         if (move->frictionMod != 1.0f)
         {
             const float fricFactor = 1.0f - expf(-1.0f * fdt);
             move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
         }
     }
-}
-
-void Move3_Init(World *world)
-{
 }
 
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
@@ -190,11 +201,11 @@ void GroundCheck(World *world, int id, ScMove3 *move, float fdt)
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     MoveState current_state                  = move->state;
-    const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
+    const MoveStateFuncs *current_state_func = MOVE_STATE_FUNCS[current_state];
     for (int i = 0; i < MOVE_STATE_COUNT; i++)
     {
         MoveState target_state                  = MOVE_STATE_PRIORITY[i];
-        const MoveStateFuncs *target_state_func = &MOVE_STATE_FUNCS[target_state];
+        const MoveStateFuncs *target_state_func = MOVE_STATE_FUNCS[target_state];
         if (target_state_func->override_level <= current_state_func->override_level)
             if (current_state_func->canExit && !current_state_func->canExit(world, id, move, cmd, target_state))
                 continue;
@@ -230,8 +241,8 @@ bool Sol_Move3_SetState(World *world, int id, MoveState target_state)
     ScCmd *cmd    = Sol_Comp_Get(world, id, ScCmd);
 
     const MoveState current_state            = move->state;
-    const MoveStateFuncs *current_state_func = &MOVE_STATE_FUNCS[current_state];
-    const MoveStateFuncs *target_state_func  = &MOVE_STATE_FUNCS[target_state];
+    const MoveStateFuncs *current_state_func = MOVE_STATE_FUNCS[current_state];
+    const MoveStateFuncs *target_state_func  = MOVE_STATE_FUNCS[target_state];
 
     if (current_state_func->canExit && !current_state_func->canExit(world, id, move, cmd, target_state))
         return false;

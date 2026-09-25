@@ -13,9 +13,25 @@ typedef struct
     float speed, accell, friction, gravity, duration;
 } MoveStateForce;
 
-extern const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
-extern const MoveStateFuncs MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
+extern const MoveStateFuncs move_walk_funcs;
+extern const MoveStateFuncs move_run_funcs;
+extern const MoveStateFuncs move_dash_funcs;
+extern const MoveStateFuncs move_dead_funcs;
+extern const MoveStateFuncs move_crouch_funcs;
+extern const MoveStateFuncs move_fall_funcs;
+extern const MoveStateFuncs move_fly_funcs;
+extern const MoveStateFuncs move_idle_funcs;
+extern const MoveStateFuncs move_jump_funcs;
+extern const MoveStateFuncs move_landing_funcs;
+extern const MoveStateFuncs move_mantle_funcs;
+extern const MoveStateFuncs move_slide_funcs;
+extern const MoveStateFuncs move_stun_funcs;
+extern const MoveStateFuncs move_walljump_funcs;
+extern const MoveStateFuncs move_wallrun_funcs;
+
+extern const MoveStateFuncs *MOVE_STATE_FUNCS[MOVE_STATE_COUNT];
 extern const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT];
+extern const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT];
 
 // static inline vec3s ApplyFriction3(vec3s wishdir, vec3s prevvel, float friction, float dt)
 // {
@@ -52,7 +68,7 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
     {
         float accelspeed = accel * speed * dt;
         float finaladd   = fminf(accelspeed, addspeed);
-        prevvel = glms_vec3_add(prevvel, glms_vec3_scale(wishdir, finaladd));
+        prevvel          = glms_vec3_add(prevvel, glms_vec3_scale(wishdir, finaladd));
     }
 
     // --- 4. adjustVelocityDirection Logic ---
@@ -66,8 +82,8 @@ static inline vec3s ApplyAccel3(vec3s wishdir, vec3s prevvel, float speed, float
             vec3s targetVel2D = glms_vec3_scale(wishdir, speed2D);
 
             // Lerp towards the target direction
-            const float blendFactor = 1.0f * dt; 
-            prevvel = glms_vec3_lerp(prevvel, targetVel2D, fminf(1.0f, blendFactor));
+            const float blendFactor = 1.0f * dt;
+            prevvel                 = glms_vec3_lerp(prevvel, targetVel2D, fminf(1.0f, blendFactor));
         }
     }
 
@@ -147,94 +163,91 @@ static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 }
 
 void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd);
-
 void Move3_CommitState(World *world, int id, MoveState target_state, const MoveStateFuncs *current_state_func,
                        const MoveStateFuncs *target_state_func, ScMove3 *move, ScCmd *cmd);
-void Knockback(World *world, int id, ScMove3 *move, float fdt);
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt);
-void RestoreFriction(World *world, int id, ScMove3 *move, float fdt);
 void GroundCheck(World *world, int id, ScMove3 *move, float fdt);
 
-void Move_Idle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Idle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Idle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Idle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Idle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Idle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Idle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Idle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Idle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Idle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Walk_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Walk_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Walk_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Walk_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Walk_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Walk_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Walk_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Walk_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Walk_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Walk_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Jump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Jump_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Jump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Jump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Jump_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Jump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Fall_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Fall_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Fall_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Fall_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Fall_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Fall_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Fall_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Fall_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Fall_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Fall_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Fly_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Fly_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Fly_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Fly_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Fly_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Fly_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Fly_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Fly_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Fly_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Fly_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Crouch_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Crouch_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Crouch_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Crouch_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Crouch_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Crouch_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Crouch_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Crouch_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Crouch_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Crouch_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Slide_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Slide_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Slide_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Slide_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Slide_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Slide_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Slide_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Slide_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Wallrun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Wallrun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Wallrun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Wallrun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Walljump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Walljump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Walljump_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Walljump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Walljump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Walljump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Walljump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Walljump_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Walljump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Walljump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Dead_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Dead_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Dead_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Dead_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Dead_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Dead_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Dead_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Dead_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Dead_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Stun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Stun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Stun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Stun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Stun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Stun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Stun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Stun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Stun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Stun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Mantle_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Mantle_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Mantle_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Landing_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Landing_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Landing_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Landing_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Landing_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Landing_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Landing_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Landing_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Landing_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Landing_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
 
-void Move_Dash_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
-void Move_Dash_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
-void Move_Dash_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
-bool Move_Dash_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
-bool Move_Dash_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);
+// void Move_Dash_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt);
+// void Move_Dash_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// void Move_Dash_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd);
+// bool Move_Dash_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next);
+// bool Move_Dash_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last);

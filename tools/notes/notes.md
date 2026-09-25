@@ -86,6 +86,7 @@ _mm_storeu_si128((__m128i*)tmp, vi);
 return (ivec3s){ tmp[0], tmp[1], tmp[2] };
 What it does: Writes the 4 integers from the vector register vi into a local integer array tmp so you can return your ivec3s struct.Breakdown: _mm_storeu_si128 takes a 128-bit integer vector and dumps its 16 bytes straight into memory at &tmp[0].Why this is worth the weird syntaxInstead of making the CPU bounce between scalar registers and float units 9 different times, this entire function compiles down to 5 to 7 raw assembly instructions total, running with zero conditional branches.
 
+```c
 // Insertion sort (Fastest for small hit buffers like 8-64 elements)
 for (int i = 1; i < hits; i++)
 {
@@ -98,3 +99,8 @@ for (int i = 1; i < hits; i++)
     }
     result[j + 1] = key;
 }
+
+vec3s delta   = vecSub(target, pos);
+float d2      = glms_vec3_norm2(delta);
+float dist    = sqrtf(d2);
+vec3s dir     = vecSca(delta, 1.0f / dist);

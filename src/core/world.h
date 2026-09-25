@@ -7,6 +7,7 @@
  */
 #pragma once
 #include "components.h"
+#include "configs.h"
 
 #define MAX_SYSTEMS 64
 
@@ -167,6 +168,7 @@ typedef struct WorldXform
     versors rot[MAX_ENTS];
     versors last_rot[MAX_ENTS];
     versors draw_rot[MAX_ENTS];
+    vec3s home_pos[MAX_ENTS];
 } WorldXform;
 
 struct World
@@ -465,12 +467,6 @@ static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, ve
     world->xform.last_sca[id] = sca;
 }
 
-extern const char *ability_state_name[ABILITY_STATE_COUNT];
-extern const char *move_state_name[MOVE_STATE_COUNT];
-extern const u32 ability_texture_map[ABILITY_STATE_COUNT];
-extern const AbilityConfig ability_base[ABILITY_STATE_COUNT];
-extern const ScAnim anim_default;
-
 void Worlds_Tick(World **worlds, int count, double dt);
 void Worlds_Step(World **worlds, int count, double dt);
 void Worlds_Draw3d(World **worlds, int count, double dt);
@@ -553,5 +549,7 @@ void Sol_Buff_AddE(World *world, int id, BuffKind kind, u32 source, float power,
 Buff *Sol_Buff_Next(World *world, int id, BuffKind kind);
 void Sol_Buff_Rem(World *world, int id, BuffKind kind);
 void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once);
-void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, SolRayResult *results, int max_hits);
+void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
 int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
+bool Sol_Ability_GetIsDashing(const ScAbility *ability);
+bool Sol_Combat_Hostile(World *world, int idA, int idB);

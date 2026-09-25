@@ -25,13 +25,12 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
-        if (hit_id == ownerId || Sol_Comp_Has(w, hit_id, ScStage))
+        if (!Sol_Combat_Hostile(w, a, hit_id))
             continue;
 
         vec3s hit_pos = w->xform.pos[hit_id];
         vec3s delta   = vecSub(hit_pos, pos);
         float d2      = glms_vec3_norm2(delta);
-        Sol_Ai_QuickLearn(w, a, ownerId, true);
         if (d2 >= 0.000001f)
         {
             float dist = sqrtf(d2);
@@ -54,6 +53,7 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
         aoe_hit.entB   = hit_id;
         aoe_hit.pos    = hit_pos;
         Sol_Combat_Hit(w, hit_id, aoe_hit);
+        Sol_Ai_QuickLearn(w, a, ownerId, false);
     }
     Sol_Event_Push(w, EVENTKIND_HIT,
                    (SolEvent){
@@ -115,7 +115,7 @@ void Projectile_Step(World *world, double dt)
             hit.entB   = result.entId;
             hit.normal = result.norm;
             hit.pos    = Sol_AddScaledDir(ray.start, ray.dir, result.t);
-            hit.vel    = vecNorm(vel);
+            hit.vel    = vel;
 
             Sol_Ai_QuickLearn(world, id, ownerId, false);
 

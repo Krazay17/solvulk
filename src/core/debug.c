@@ -5,18 +5,18 @@
 
 typedef struct Debuggers
 {
-    int   characterCount[MAX_DEBUGS];
-    char  label[MAX_DEBUGS][MAX_STR_LEN];
+    int characterCount[MAX_DEBUGS];
+    char label[MAX_DEBUGS][MAX_STR_LEN];
     float value[MAX_DEBUGS];
-    char  textValue[MAX_DEBUGS][MAX_STR_LEN];
-    int   count;
+    char textValue[MAX_DEBUGS][MAX_STR_LEN];
+    int count;
 } Debuggers;
 
 static Debuggers debuggers;
-static double    fps;
-static double    total, throttle;
-static char      fpsbuffer[64];
-static int       count;
+static double fps;
+static double total, throttle;
+static char fpsbuffer[64];
+static int count;
 
 void Sol_Debug_Add(const char *label, float value)
 {
@@ -41,12 +41,14 @@ void Sol_Debug_Add(const char *label, float value)
 
 void Sol_Debug_AddText(const char *label, const char *value)
 {
+    if (!value)
+        return;
     for (int i = 0; i < debuggers.count; ++i)
     {
         if (strncmp(label, debuggers.label[i], MAX_STR_LEN) == 0)
         {
             strncpy(debuggers.textValue[i], value, MAX_STR_LEN - 1);
-           debuggers.textValue[i][MAX_STR_LEN - 1] = '\0';
+            debuggers.textValue[i][MAX_STR_LEN - 1] = '\0';
 
             return;
         }
@@ -68,12 +70,12 @@ void Sol_Debug_Draw(double dt)
     if (!solState.debug)
         return;
 
-    float     offset  = 48.0f;
-    float     spacing = 24.0f;
-    RectSSBO *rect    = Sol_Render_GetNext_Rect(UILAYER_5);
-    rect->rect        = (vec4s){ 0, 0, 200.0f, offset + spacing * debuggers.count };
-    rect->color       = (vec4s){ 0.1f, 0.0f, 0.3f, 0.7f };
-    rect->flags       = 0;
+    float offset   = 48.0f;
+    float spacing  = 24.0f;
+    RectSSBO *rect = Sol_Render_GetNext_Rect(UILAYER_5);
+    rect->rect     = (vec4s){0, 0, 200.0f, offset + spacing * debuggers.count};
+    rect->color    = (vec4s){0.1f, 0.0f, 0.3f, 0.7f};
+    rect->flags    = 0;
     for (int i = 0; i < debuggers.count; ++i)
     {
         char buffer[MAX_STR_LEN * 2];
@@ -88,7 +90,7 @@ void Sol_Debug_Draw(double dt)
             .x     = 6.0f,
             .y     = i * spacing + offset,
             .size  = 16.0f,
-            .color = (vec4s){ 255, 0, 122, 255 },
+            .color = (vec4s){255, 0, 122, 255},
             .kind  = SOL_FONT_ICE,
         };
         Sol_Render_DrawText2D(buffer, fontDesc);
@@ -99,7 +101,7 @@ void Sol_Debug_Draw(double dt)
         .x     = 6.0f,
         .y     = 24.0f,
         .size  = 24.0f,
-        .color = (vec4s){ 0, 1, 0, 1 },
+        .color = (vec4s){0, 1, 0, 1},
         .kind  = SOL_FONT_ICE,
     };
     Sol_Render_DrawText2D(fpsbuffer, fontDesc);

@@ -153,3 +153,11 @@ bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 
     }
     return false;
 }
+
+const MoveStateFuncs move_wallrun_funcs = {
+    .update   = Move_Wallrun_Update,
+    .enter    = Move_Wallrun_Enter,
+    .exit     = Move_Wallrun_Exit,
+    .canExit  = Move_Wallrun_CanExit,
+    .canEnter = Move_Wallrun_CanEnter,
+};

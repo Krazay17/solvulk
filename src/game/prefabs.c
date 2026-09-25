@@ -75,15 +75,24 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_FIREBALL,
-            ABILITY_STATE_CLAW,
-            ABILITY_STATE_CLAW,
-            ABILITY_STATE_CLAW,
-            ABILITY_STATE_CLAW,
-            ABILITY_STATE_DASH,
+            ABILITYKIND_FIREBALL,
+            ABILITYKIND_FIREBALL,
+            ABILITYKIND_SHIELD,
+            ABILITYKIND_SHIELD,
+            ABILITYKIND_SHIELD,
+            ABILITYKIND_SHIELD,
+            ABILITYKIND_CLAW,
         },
-    .slots = 7,
+};
+
+static const ScAnim anim_default = {
+    .layers =
+        {
+            [0] = {.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f},
+            [1] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+            [2] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+            [3] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
+        },
 };
 
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
@@ -94,9 +103,9 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAnim)  = anim_default;
     *Sol_Comp_Add(world, id, ScBody3) = dude_body;
 
-    ScCombat *combat   = Sol_Comp_Add(world, id, ScCombat);
-    *combat            = dude_combat;
-    combat->respawnPos = pos;
+    ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+    *combat             = dude_combat;
+    combat->respawnTime = 2.0f;
 
     *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
     *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
@@ -524,10 +533,10 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
     return id;
 }
 
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int ref)
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
 {
     vec2s dims  = {62.0f, 62.0f};
-    u32 texture = ability_texture_map[ability];
+    u32 texture = ability_texture_map[item->abilityKind];
     u32 layer   = UILAYER_1;
 
     int id = Sol_Create_Ent(world, pos);

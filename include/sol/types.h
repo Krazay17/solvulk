@@ -271,6 +271,7 @@ typedef enum
 {
     MOVE_IDLE,
     MOVE_WALK,
+    MOVE_RUN,
     MOVE_STUN,
     MOVE_CROUCH,
     MOVE_SLIDE,
@@ -446,6 +447,7 @@ typedef enum
     ANIM_WALLRUN_RIGHT,
     ANIM_BACKFLIP,
     ANIM_HARDLAND,
+    ANIM_2HANDCASTUP,
     ANIM_MANTLE,
     ANIM_MANTLE_ROLL,
     ANIM_ATTACK_LEFT,
@@ -480,6 +482,7 @@ typedef enum
     MODELKIND_EVANRIGGED,
     MODELKIND_WORLD4,
     MODELKIND_BOX,
+    MODELKIND_CONE,
     MODELKIND_WORLD0,
     MODELKIND_WORLD1,
     MODELKIND_WORLD2,
@@ -750,17 +753,28 @@ typedef enum
 typedef enum
 {
     ABILITY_STATE_IDLE,
-    ABILITY_STATE_DASH,
+
     ABILITY_STATE_CLAW,
+    ABILITY_STATE_CLAW_CHARGE,
+    ABILITY_STATE_CLAW_DASH,
+
     ABILITY_STATE_FIREBALL,
-    ABILITY_STATE_PISTOL,
-    ABILITY_STATE_SPINSLASH,
+    ABILITY_STATE_FIREBALL_CHARGE,
+    ABILITY_STATE_FIREBALL_DASH,
+
     ABILITY_STATE_SHIELD,
-    ABILITY_STATE_LASER,
-    ABILITY_STATE_WHIP,
-    ABILITY_STATE_FIREBALLVOLLEY,
+
     ABILITY_STATE_COUNT,
 } AbilityState;
+
+typedef enum
+{
+    ABILITYKIND_IDLE,
+    ABILITYKIND_CLAW,
+    ABILITYKIND_FIREBALL,
+    ABILITYKIND_SHIELD,
+    ABILITYKIND_COUNT,
+} AbilityKind;
 
 typedef struct
 {
@@ -783,12 +797,19 @@ typedef enum ItemRarity
     ITEMRARITY_LEGENDARY,
     ITEMRARITY_COUNT,
 } ItemRarity;
+typedef enum
+{
+    ABILITYSLOT_CHARGE,
+    ABILITYSLOT_SPELL,
+    ABILITYSLOT_DASH,
+} AbilitySlotKind;
 typedef struct SolItem
 {
-    u16 kind;
-    u16 rarity;
-    u32 buffs;
-    u32 effects;
+    AbilityKind abilityKind;
+    int slot;
+    ItemRarity rarity;
+    u32 buffMask;
+    u32 effectMask;
 } SolItem;
 
 typedef enum
@@ -810,7 +831,7 @@ typedef enum
     FXKIND_INVULNHIT,
     FXKIND_PARRY,
     FXKIND_TEST,
-}FxKind;
+} FxKind;
 
 typedef struct SolEvent
 {
@@ -925,7 +946,9 @@ typedef enum
     AIACTIONC_NONE,
     AIACTIONC_CHARGE,
     AIACTIONC_RELEASE,
-    AIACTIONC_ABILITY,
+    AIACTIONC_ABILITY_MELEE,
+    AIACTIONC_ABILITY_AOE,
+    AIACTIONC_ABILITY_DASH_FWD,
     AIACTIONC_COUNT,
 } AiActionsC;
 #define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 3 + 1))

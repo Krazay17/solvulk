@@ -33,7 +33,7 @@ typedef void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCm
 typedef void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 typedef bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
 typedef bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
-typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability);
+typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, float dt);
 
 typedef struct
 {

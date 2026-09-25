@@ -56,3 +56,11 @@ bool Move_Walljump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32
     }
     return false;
 }
+
+const MoveStateFuncs move_walljump_funcs = {
+    .update   = Move_Walljump_Update,
+    .enter    = Move_Walljump_Enter,
+    .exit     = Move_Walljump_Exit,
+    .canExit  = Move_Walljump_CanExit,
+    .canEnter = Move_Walljump_CanEnter,
+};

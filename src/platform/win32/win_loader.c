@@ -103,6 +103,14 @@ SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
         return res;
     }
 
+    if (!res.isHeap && res.data && res.size > 0)
+    {
+        void *heap = malloc(res.size);
+        memcpy(heap, res.data, res.size);
+        res.data = heap;
+        res.isHeap = true;
+    }
+
     res.data = LockResource(hLoaded);
     res.size = SizeofResource(hmod, hResource);
 

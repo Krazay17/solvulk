@@ -114,3 +114,11 @@ bool Move_Mantle_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 l
         return CheckWall(world, id, move, cmd);
     return false;
 }
+
+const MoveStateFuncs move_mantle_funcs = {
+    .update   = Move_Mantle_Update,
+    .enter    = Move_Mantle_Enter,
+    .exit     = Move_Mantle_Exit,
+    .canExit  = Move_Mantle_CanExit,
+    .canEnter = Move_Mantle_CanEnter,
+};

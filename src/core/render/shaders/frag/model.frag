@@ -13,6 +13,7 @@ layout(location = 0) out vec4 outColor;
 layout(set = 0, binding = 0) uniform Util {
     double time;
 };
+
 layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProj;
     mat4 view;
@@ -86,46 +87,35 @@ void main()
 {
     float fTime = float(time);
 
-    // --- Albedo & alpha ---
-    vec2 scaledUV = fragUV * material.textureScale;
-    vec4 baseTex  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
+    // --- Standard Albedo & Alpha ---
+    vec2 scaledUV  = fragUV * material.textureScale;
+    vec4 texColor  = (material.textureId != 0u) ? texture(textures[material.textureId], scaledUV) : vec4(1.0);
+    vec4 baseColor = material.baseColor * texColor;
 
-    vec3 albedo = (fragColor.a > 0.0) ? mix(material.baseColor.rgb, fragColor.rgb, fragColor.a) : material.baseColor.rgb;
-    albedo *= baseTex.rgb;
-
-    float rawAlpha = (fragColor.a > 0.0) ? fragColor.a : material.baseColor.a;
-    if (rawAlpha <= 0.0) {
-        rawAlpha = 1.0;
+    // Standard vertex color modulation (if vertex color alpha is present)
+    if (fragColor.a > 0.0)
+    {
+        baseColor.rgb *= fragColor.rgb;
+        baseColor.a   *= fragColor.a;
     }
 
-    float texAlpha = (material.textureId != 0u) ? baseTex.a : 1.0;
-    if (texAlpha <= 0.0) {
-        texAlpha = 1.0;
-    }
+    vec3 albedo = baseColor.rgb;
+    float alpha = baseColor.a; // Pure material * texture * vertex alpha
 
-    float alpha = rawAlpha * texAlpha;
-
-    vec3 hybridFogEmmisive = vec3(0.0);
+    // --- Fog / Overlay (Modulates Albedo Color Only) ---
     if (material.fogTextureId != 0u)
     {
-        vec2 fogUV     = fragUV * material.fogTextureScale + vec2(1, fTime * 0.05);
+        vec2 fogUV     = fragUV * material.fogTextureScale + vec2(1.0, fTime * 0.05);
         vec4 fogSample = texture(textures[material.fogTextureId], fogUV);
 
-        float invAlpha = 1.0 - baseTex.a;
+        float invAlpha = 1.0 - texColor.a;
         float glowMask = invAlpha * fogSample.a;
 
         albedo = mix(albedo, fogSample.rgb, glowMask);
-        hybridFogEmmisive = fogSample.rgb * glowMask * 1.0;
-
-        alpha = max(alpha, glowMask);
-        float pulse = 3.75 + 0.25 * sin(fTime * 0.2);
-        alpha *= pulse;
     }
 
-    // --- Vectors ---
+    // --- Lighting Vectors ---
     vec3 V = normalize(scene.cameraPos.xyz - fragWorldPos);
-    
-    // Normal map is plugged back in safely here
     vec3 N = (material.normalTextureId != 0u)
                  ? PerturbNormal(normalize(fragNormal), V, scaledUV, material.normalTextureId)
                  : normalize(fragNormal);
@@ -136,10 +126,9 @@ void main()
     float NdotV = max(dot(N, V), 0.0001);
     float NdotL = max(dot(N, L), 0.0);
 
-    // --- Reflectivity ---
+    // --- Reflectivity & Ambient ---
     vec3 F0 = mix(vec3(0.04), albedo, material.metallic);
 
-    // --- Ambient Lighting Calculation ---
     vec3 ambientSpecular = vec3(0.0);
     vec3 ambientFill = vec3(0.02, 0.025, 0.035);
     if (material.metallic > 0.01)
@@ -152,7 +141,7 @@ void main()
     vec3 ambientDiffuse = ambientFill * albedo * mix(0.33, 1.0, NdotL);
     vec3 ambient = mix(ambientDiffuse, ambientSpecular, material.metallic);
 
-    // --- Direct Light Assembly (Cleaned up and protected) ---
+    // --- Direct Lighting ---
     vec3 directLighting = vec3(0.0);
     if (NdotL > 0.0) 
     {
@@ -173,11 +162,9 @@ void main()
     if (material.emissiveTextureId != 0u)
         emissive *= texture(textures[material.emissiveTextureId], fragUV).rgb;
 
-    emissive += fragColor.rgb;
     finalRGB += emissive;
-    finalRGB += hybridFogEmmisive;
 
-    // --- Visual Flags ---
+    // --- Visual Flags & Hit FX ---
     if ((flags & FLAG_FRESNEL) != 0u)
     {
         float rim = pow(1.0 - NdotV, 3.0);
@@ -195,7 +182,7 @@ void main()
         finalRGB = mix(finalRGB, vec3(1.0), flashAlpha * 0.85);
     }
 
-    // --- Tonemap & Gamma ---
+    // --- Tonemap & Gamma Correction ---
     finalRGB = TonemapPunchy(finalRGB);
     finalRGB = pow(finalRGB, vec3(1.0 / 2.2));
 

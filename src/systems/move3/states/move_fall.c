@@ -28,3 +28,11 @@ bool Move_Fall_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
         return true;
     return false;
 }
+
+const MoveStateFuncs move_fall_funcs = {
+    .update   = Move_Fall_Update,
+    .enter    = Move_Fall_Enter,
+    .exit     = Move_Fall_Exit,
+    .canExit  = Move_Fall_CanExit,
+    .canEnter = Move_Fall_CanEnter,
+};

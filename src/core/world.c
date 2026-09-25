@@ -315,6 +315,7 @@ int Sol_Create_Ent(World *world, vec3s pos)
     world->xform.pos[id]      = pos;
     world->xform.last_pos[id] = pos;
     world->xform.draw_pos[id] = pos;
+    world->xform.home_pos[id] = pos;
     world->xform.rot[id]      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
     world->xform.last_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};
     world->xform.draw_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};

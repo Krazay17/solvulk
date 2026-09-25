@@ -87,3 +87,11 @@ bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     }
     return false;
 }
+
+const MoveStateFuncs move_jump_funcs = {
+    .update   = Move_Jump_Update,
+    .enter    = Move_Jump_Enter,
+    .exit     = Move_Jump_Exit,
+    .canExit  = Move_Jump_CanExit,
+    .canEnter = Move_Jump_CanEnter,
+};

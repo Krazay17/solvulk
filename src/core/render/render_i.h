@@ -61,5 +61,6 @@ void Flush_Ribbons(void);
 
 void Render_Model(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
 void Render_Model_Skinned(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
+void Render_ModelTransparent(ModelKind handle, uint32_t instanceCount, uint32_t firstInstance);
 
 ShaderPushTexts Prepare_Text(const char *str, SolFontDesc desc);

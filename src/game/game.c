@@ -141,7 +141,7 @@ void RandomizeSpawn(World *w, double dt)
                 pos = (vec3s){0.0f, 5.0f, 0.0f}; // Default safe spawn point
             }
 
-            combat->respawnPos = pos;
+            w->xform.home_pos[id] = pos;
         }
     }
 }
@@ -150,7 +150,7 @@ void Create_Game()
 {
     World *world        = World_Create_AllSys();
     sol_user.game_world = world->index;
-    // WAddStep(world)     = RandomizeSpawn;
+    WAddStep(world)     = RandomizeSpawn;
 
     { // Player
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
@@ -181,7 +181,6 @@ void Create_Game()
     //     int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
     //     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
     //     combat->respawnTime = 2.0f;
-    //     combat->respawnPos  = spawn_pos;
     // }
     // for (int j = -2; j < 2; j++)
     // {
@@ -189,7 +188,6 @@ void Create_Game()
     //     int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
     //     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
     //     combat->respawnTime = 2.0f;
-    //     combat->respawnPos  = spawn_pos;
     // }
 }
 

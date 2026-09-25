@@ -34,3 +34,11 @@ bool Move_Landing_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 
 void Move_Landing_Draw(World *world, int id, ScMove3 *move, ScCmd *cmd, double dt)
 {
 }
+
+const MoveStateFuncs move_landing_funcs = {
+    .update   = Move_Landing_Update,
+    .enter    = Move_Landing_Enter,
+    .exit     = Move_Landing_Exit,
+    .canExit  = Move_Landing_CanExit,
+    .canEnter = Move_Landing_CanEnter,
+};

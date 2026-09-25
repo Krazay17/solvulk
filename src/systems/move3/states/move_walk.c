@@ -25,7 +25,15 @@ bool Move_Walk_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next
 }
 bool Move_Walk_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    if (move->groundtime > 0 && glms_vec3_norm2(cmd->wishdir) > 0.0f)
+    if (move->groundtime > 0 && glms_vec3_norm2(cmd->wishdir) > 0.0f && cmd->isWalking)
         return true;
     return false;
 }
+
+const MoveStateFuncs move_walk_funcs = {
+    .update   = Move_Walk_Update,
+    .enter    = Move_Walk_Enter,
+    .exit     = Move_Walk_Exit,
+    .canExit  = Move_Walk_CanExit,
+    .canEnter = Move_Walk_CanEnter,
+};

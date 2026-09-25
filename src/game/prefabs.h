@@ -9,7 +9,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
 int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_flags, u32 layer, Hook on_hold);
 int Sol_Prefab_Healthbar(World *world, vec3s pos);
 int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float speed, float size);
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, AbilityState ability, int ref);
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref);
 int Sol_Prefab_DragonOrb(World *world, vec3s pos);
 int Sol_Prefab_PlasmaOrb(World *world, vec3s pos);
 int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots);

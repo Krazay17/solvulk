@@ -6,7 +6,7 @@
 #define DASH_VEL 20.0f
 #define DASH_ALPHAMOD 1.5f
 
-void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
     data->elapsed += dt;
@@ -22,11 +22,6 @@ void Ability_Dash_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, f
     {
         ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
         body->vel     = glms_vec3_scale(data->as.dash.dir, alpha * DASH_VEL);
-    }
-    ScMove3 *move = Sol_Comp_Get(world, id, ScMove3);
-    if(move)
-    {
-        // move->frictionMod = 0.0f;
     }
 }
 
@@ -70,8 +65,8 @@ bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
     return data->cooldownRemaining <= 0.0f;
 }
 
-extern const AbilityStateFunc ability_dash_state = {
-    .update   = Ability_Dash_Update,
+const AbilityStateFunc ability_dash_state = {
+    .update   = Spell,
     .enter    = Ability_Dash_Enter,
     .exit     = Ability_Dash_Exit,
     .canExit  = Ability_Dash_CanExit,

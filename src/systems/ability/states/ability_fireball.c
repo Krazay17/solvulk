@@ -20,6 +20,10 @@ static vec3s GetProjectilePos(World *world, int id, float power, int slot)
     return pos;
 }
 
+static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+{
+}
+
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
@@ -45,29 +49,31 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
         { // Spawn fireball
-            int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, data->power);
+            int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
             ScBody3 *pBody                 = Sol_Comp_Get(world, fireball, ScBody3);
             ScProjectile *projectile       = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit                = hit;
             projectile->aoe_hit            = hit;
             projectile->aoe_hit.effectMask = data->conf.effectMask;
             projectile->aoe_hit.buffMask   = data->conf.buffMask;
-
-            projectile->power = data->power;
+            projectile->power              = data->power;
         }
         break;
     case 2:
-        hit.power      = 1.0f;
-        hit.kind       = HITKIND_MELEE_HIT;
-        hit.effectMask = EFFECTMASK_REFLECTPROJECTILE;
-        Sol_Combat_DamageCast(world, id,
-                              (SolRay){.start     = pos,
-                                       .dir       = cmd->aimdir,
-                                       .dist      = MELEE_DIST,
-                                       .radius    = 0.25f,
-                                       .ignoreEnt = id,
-                                       .mask      = COLLAYER_ALL},
-                              hit, data->hitgen);
+        if (data->recoverRemaining > data->conf.recover * 0.3f)
+        {
+            hit.power      = 1.0f;
+            hit.kind       = HITKIND_MELEE_HIT;
+            hit.effectMask = EFFECTMASK_REFLECTPROJECTILE;
+            Sol_Combat_DamageCast(world, id,
+                                  (SolRay){.start     = pos,
+                                           .dir       = cmd->aimdir,
+                                           .dist      = MELEE_DIST,
+                                           .radius    = 0.3f,
+                                           .ignoreEnt = id,
+                                           .mask      = COLLAYER_ALL},
+                                  hit, data->hitgen);
+        }
         data->recoverRemaining += dt;
         if (data->recoverRemaining > data->conf.recover)
             Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
@@ -101,29 +107,6 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
 
     Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
 }
-static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
-{
-}
-
-void Ability_Fireball_Update(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
-{
-    switch (ability->activeSlot)
-    {
-    case 0:
-    case 1:
-        Charge(world, id, ability, cmd, dt);
-        break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-        Spell(world, id, ability, cmd, dt);
-        break;
-    case 6:
-        Dash(world, id, ability, cmd, dt);
-        break;
-    }
-}
 
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
@@ -150,11 +133,17 @@ bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *
     return data->cooldownRemaining <= 0.0f;
 }
 
-void Ability_Fireball_Draw(World *world, int id, ScAbility *ability)
+void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    ScCmd *cmd             = Sol_Comp_Get(world, id, ScCmd);
 
     vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+    vec4s rot = {Sol_Quat_FromLookDir(cmd->aimdir).x, Sol_Quat_FromLookDir(cmd->aimdir).y,
+                 Sol_Quat_FromLookDir(cmd->aimdir).z, Sol_Quat_FromLookDir(cmd->aimdir).w};
+
+    // vec4s rot = {world->xform.draw_rot[id].x, world->xform.draw_rot[id].y, world->xform.draw_rot[id].z,
+    //              world->xform.draw_rot[id].w};
     switch (data->stage)
     {
     case 0: {
@@ -166,17 +155,43 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability)
     break;
     case 1:
     case 2: {
-        *Sol_Render_GetNextSphere(PIPE_PLASMA) = (SphereSSBO){
-            .color = VEC4_RED,
-            .pos   = (vec4s){pos.x, pos.y, pos.z, 0.25f},
-        };
+        // *Sol_Render_GetNextSphere(PIPE_PLASMA) = (SphereSSBO){
+        //     .color = VEC4_RED,
+        //     .pos   = (vec4s){pos.x, pos.y, pos.z, 0.25f},
+        // };
+        if (data->recoverRemaining > data->conf.recover * 0.3f)
+        {
+
+            *Sol_Render_GetNextModel(0, MODELKIND_CONE) = (ModelSSBO){
+                .position = {pos.x, pos.y, pos.z, 1.0f},
+                .rotation = rot,
+                .scale    = {1.0f, 1.0f, 1.0f, 1.0f},
+                .color    = {1, 0, 0, 1},
+            };
+        }
     }
     break;
     }
 }
 
-extern const AbilityStateFunc ability_fireball_state = {
-    .update   = Ability_Fireball_Update,
+const AbilityStateFunc ability_fireball_state = {
+    .update   = Spell,
+    .enter    = Ability_Fireball_Enter,
+    .exit     = Ability_Fireball_Exit,
+    .canExit  = Ability_Fireball_CanExit,
+    .canEnter = Ability_Fireball_CanEnter,
+    .draw     = Ability_Fireball_Draw,
+};
+const AbilityStateFunc ability_fireball_charge_state = {
+    .update   = Charge,
+    .enter    = Ability_Fireball_Enter,
+    .exit     = Ability_Fireball_Exit,
+    .canExit  = Ability_Fireball_CanExit,
+    .canEnter = Ability_Fireball_CanEnter,
+    .draw     = Ability_Fireball_Draw,
+};
+const AbilityStateFunc ability_fireball_dash_state = {
+    .update   = Dash,
     .enter    = Ability_Fireball_Enter,
     .exit     = Ability_Fireball_Exit,
     .canExit  = Ability_Fireball_CanExit,

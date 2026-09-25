@@ -3,6 +3,8 @@
 #include "sol_user.h"
 #include "sol_math.h"
 
+const u32 abilitybar_slot_map[7] = {0, 0, 1, 1, 1, 1, 2};
+
 void Abilitybar_Update(World *world, double dt)
 {
     SparseSet_ScAbilitybar *set = Sol_Comp_Set(world, ScAbilitybar);
@@ -78,9 +80,10 @@ void Abilitybar_Update(World *world, double dt)
 
                         SolItem *user_item = &user_data.items[item_ref->index];
                         if (user_item)
-                        {                            
-                            abilities->slotted_actions[slot] = user_item->kind;
-                            abilities->slotted_items[slot]   = *user_item;
+                        {
+
+                            abilities->slotted_actions[slot] = user_item->abilityKind;
+                            abilities->slotted_items[slot] = *user_item;
                         }
                     }
                 }

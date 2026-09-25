@@ -29,7 +29,7 @@ typedef enum
 typedef struct ScCmd
 {
     u8 kind;
-    bool isStrafing;
+    bool isStrafing, isWalking;
     SolActions actionState;
     SolActions action_state_prev;
     u32 reaction_state;
@@ -125,8 +125,9 @@ typedef struct ScAi
     AiState state;
     AiStateData stateData[AISTATE_COUNT];
 
-    AiBrain brain;
+    float maxHomeRange;
     float aggroRange;
+    AiBrain brain;
     AiLearning learning;
 } ScAi;
 
@@ -151,6 +152,49 @@ typedef struct ScBody2
     bool ignoreWindow, isStatic, isSensor;
     int zindex;
 } ScBody2;
+
+typedef struct
+{
+    union {
+        struct
+        {
+            float explode_damage;
+        } fireball;
+        struct
+        {
+            vec3s dir;
+            StrafeDir strafe;
+        } dash;
+        struct
+        {
+            vec3s laserPoints[16];
+            int laserPointCount;
+            vec3s laserPointsVisual[16];
+            int laserPointCountVisual;
+        } laser;
+        struct
+        {
+            vec3s whipPoints[16];
+            int whipPointCount;
+        } whip;
+    } as;
+
+    float elapsed, accum, power, recoverRemaining, cooldownRemaining;
+    float drawElapsed;
+
+    u32 hitgen;
+    u8 stage;
+    bool held;
+    AbilityConfig conf;
+} AbilityStateData;
+typedef struct ScAbility
+{
+    u32 state, activeSlot;
+    u32 base_actions[ABILITY_SLOTS];
+    u32 slotted_actions[ABILITY_SLOTS];
+    SolItem slotted_items[ABILITY_SLOTS];
+    AbilityStateData stateData[ABILITY_SLOTS];
+} ScAbility;
 
 typedef struct ScCamera
 {
@@ -269,48 +313,6 @@ typedef struct ScAnim
 
 typedef struct
 {
-    union {
-        struct
-        {
-            float explode_damage;
-        } fireball;
-        struct
-        {
-            vec3s dir;
-            StrafeDir strafe;
-        } dash;
-        struct
-        {
-            vec3s laserPoints[16];
-            int laserPointCount;
-            vec3s laserPointsVisual[16];
-            int laserPointCountVisual;
-        } laser;
-        struct
-        {
-            vec3s whipPoints[16];
-            int whipPointCount;
-        } whip;
-    } as;
-
-    float elapsed, accum, power, recoverRemaining, cooldownRemaining;
-
-    u32 hitgen;
-    u8 stage;
-    bool held;
-    AbilityConfig conf;
-} AbilityStateData;
-typedef struct ScAbility
-{
-    int state, activeSlot, slots;
-    int base_actions[ABILITY_SLOTS];
-    int slotted_actions[ABILITY_SLOTS];
-    SolItem slotted_items[ABILITY_SLOTS];
-    AbilityStateData stateData[ABILITY_SLOTS];
-} ScAbility;
-
-typedef struct
-{
     u8 kind, inf;
     bool hasUpdated;
     u32 source;
@@ -363,7 +365,6 @@ typedef struct ScCombat
     float healingDone;
 
     double deathTime, lastHitTime;
-    vec3s respawnPos;
     float respawnTime;
 
     u32 lastHitBy;

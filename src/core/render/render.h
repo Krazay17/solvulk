@@ -61,6 +61,7 @@ typedef enum
     PIPE_SKYBOX,
     PIPE_MODEL,
     PIPE_MODEL_SKINNED,
+    PIPE_MODEL_TRANSPARENT,
     PIPE_RECT,
     PIPE_LINE,
 
@@ -181,6 +182,29 @@ typedef struct
     float hitTime;
     u32 _padding[2];
 } ModelSSBO;
+
+typedef struct
+{
+    u32 count;
+    ModelKind handles[MAX_MODEL_INSTANCES];
+    ModelSSBO instances[MAX_MODEL_INSTANCES];
+} ModelQueue;
+
+extern ModelQueue modelQueues[1];
+
+static inline ModelSSBO *Sol_Render_GetNextModel(u32 pipe, ModelKind handle)
+{
+    ModelQueue *q = &modelQueues[pipe];
+    int count     = q->count;
+    if (count >= MAX_MODEL_INSTANCES)
+        return NULL;
+
+    q->handles[count] = handle;
+    ModelSSBO *buffer = &q->instances[count];
+    *buffer           = (ModelSSBO){0};
+    q->count++;
+    return buffer;
+}
 
 typedef struct
 {

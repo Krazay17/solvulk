@@ -111,12 +111,11 @@ void Sol_Tick(double dt, double time)
 
     Sol_Update_Audio_FromView();
     Sol_Render_CheckGpuUploads();
-
     Sol_Begin_Draw();
     Sol_Render_DrawSkybox();
     Worlds_Draw3d(solState.worlds, solState.worldCount, dt);
     Sol_Render_Flush3D();
-
+    
     Worlds_Draw2d(solState.worlds, solState.worldCount, dt);
     Sol_User_Draw(dt);
     Sol_Render_Flush2D();
@@ -130,6 +129,7 @@ void Sol_Tick(double dt, double time)
     {
         Sol_Destroy();
     }
+
 }
 
 void Sol_Destroy()

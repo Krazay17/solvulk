@@ -1,6 +1,7 @@
 #include "world.h"
 #include "model.h"
 #include "sol_core.h"
+#include "sol_math.h"
 
 #include <omp.h>
 

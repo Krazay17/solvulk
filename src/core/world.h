@@ -88,7 +88,7 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScPlayer, HAS_ScPlayer)                                                                                          \
     X(ScRemote, HAS_ScRemote)                                                                                          \
     X(ScAi, HAS_ScAi)                                                                                                  \
-    X(ScAilearn, HAS_ScAilearn)                                                                                         \
+    X(ScAilearn, HAS_ScAilearn)                                                                                        \
     X(ScBody2, HAS_ScBody2)                                                                                            \
     X(ScBody3, HAS_ScBody3)                                                                                            \
     X(ScStage, HAS_ScStage)                                                                                            \
@@ -307,7 +307,8 @@ static inline void World_InitSingletons(World *world)
 #define SINGLETON_INIT(Type, InitFn, DeinitFn)                                                                         \
     {                                                                                                                  \
         Type *self = Sol_Comp_Add(world, 0, Type);                                                                     \
-        InitFn(world, self);                                                                                           \
+        if (self)                                                                                                      \
+            InitFn(world, self);                                                                                       \
     }
     SINGLETON_LIFECYCLE_LIST(SINGLETON_INIT)
 #undef SINGLETON_INIT

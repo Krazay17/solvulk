@@ -153,6 +153,7 @@ void Sol_Render_CheckGpuUploads()
         ScModelData *model = &loaded_models[i];
         if (model->needsGpuUpload)
         {
+            printf("Upload Model %d of %d\n", i, MODELKIND_COUNT);
             Sol_Render_UploadModel(model, i);
             model->needsGpuUpload = false;
         }

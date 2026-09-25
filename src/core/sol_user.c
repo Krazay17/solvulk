@@ -85,7 +85,7 @@ void Find_User_Hit(double dt, SolMouse mouse)
     }
 }
 
-static void Sol_User_LoadUserSettings()
+void Sol_User_LoadUserSettings()
 {
     Sol_ReadFile(USER_SETTINGS_FILENAME, &user_settings_file);
 }
@@ -294,7 +294,7 @@ void Entity_Actions()
     }
 }
 
-void User_Debug(dt)
+void User_Debug(double dt)
 {
     World *world = Sol_User_GetGameWorld();
     if (!world)
@@ -364,7 +364,7 @@ void Sol_User_Tick(double dt)
     }
 
     Entity_Actions();
-    User_Debug();
+    User_Debug(dt);
 }
 
 void Sol_User_PostTick(double dt)

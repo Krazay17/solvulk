@@ -19,6 +19,7 @@ set(EXTERN_DIR "${CMAKE_SOURCE_DIR}/extern")
 # --- Dependencies ---
 find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenMP REQUIRED)
 
 add_library(enet STATIC IMPORTED)
 set_target_properties(enet PROPERTIES
@@ -32,6 +33,7 @@ if(WIN32)
     )
 endif()
 
+if(MSVC)
 add_library(webp_lib STATIC IMPORTED)
 set_target_properties(webp_lib PROPERTIES
     IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/webp_lib.lib"
@@ -39,6 +41,11 @@ set_target_properties(webp_lib PROPERTIES
 )
 add_library(cglm_headers INTERFACE)
 target_include_directories(cglm_headers INTERFACE "${EXTERN_DIR}/cglm/include")
+
+else()
+add_subdirectory(extern)
+endif()
+
 
 # --- Engine Target (solvulk) ---
 add_library(solvulk "")
@@ -62,8 +69,10 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /std:c17 /W2 /openmp:experimental /O2)
+    target_compile_options(solvulk PRIVATE /std:c17 /W2 /O2)
     #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    #target_compile_options(solvulk PRIVATE -fopenmp)
 endif()
 
 if(BUILD_SHARED_LIBS)
@@ -92,6 +101,7 @@ target_link_libraries(solvulk
         enet
         webp_lib
         cglm_headers
+        OpenMP::OpenMP_C
         ${PLATFORM_LIBS}
 )
 

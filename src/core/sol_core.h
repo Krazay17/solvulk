@@ -76,7 +76,7 @@ static inline void Sol_ToggleDebug(int flag)
 
 static inline World *Sol_GetWorldByIdx(WorldIdx idx)
 {
-    if (idx < 0)
+    if (idx < 0 || idx >= solState.worldCount)
         return NULL;
     return solState.worlds[idx];
 }

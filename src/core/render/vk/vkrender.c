@@ -1173,8 +1173,8 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
     if (gpuModels[kind].meshes != NULL)
         free(gpuModels[kind].meshes);
 
-    // if (!model || model->mesh_count < 1)
-    //     return;
+    if (!model || model->mesh_count < 1)
+        return;
     SolGpuModel gpuModel = {0};
     gpuModel.mesh_count  = model->mesh_count;
     gpuModel.meshes      = malloc(sizeof(SolGpuMesh) * model->mesh_count);
@@ -1258,8 +1258,6 @@ void Sol_Render_UploadModel(ScModelData *model, u32 kind)
 
     gpuModels[kind] = gpuModel;
     printf("SolVk: Uploaded Model %d (%d meshes)\n", kind, gpuModel.mesh_count);
-
-    return;
 }
 
 int Sol_UploadImage(SolTexture *image, SolTextureId id)

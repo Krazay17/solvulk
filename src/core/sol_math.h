@@ -111,7 +111,7 @@ static inline versors Sol_Quat_FromLookDira(vec3s lookDir)
     return (versors){q[0], q[1], q[2], q[3]};
 }
 
-static inline Sol_GetAngleSector(float dot)
+static inline AngleSector Sol_GetAngleSector(float dot)
 {
     return (AngleSector)((int)floorf(dot * 7) & 7);
 }

@@ -76,7 +76,7 @@ static void Draw(World *world, int id, ScAbility *ability, float dt)
     ss->color      = (vec4s){1, 0, 1, 1};
 }
 
-extern const AbilityStateFunc ability_shield_state = {
+const AbilityStateFunc ability_shield_state = {
     .update   = Spell,
     .enter    = Enter,
     .exit     = Exit,

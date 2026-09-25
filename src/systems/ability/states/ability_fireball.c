@@ -16,7 +16,7 @@ static vec3s GetProjectilePos(World *world, int id, float power, int slot)
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
     // pos = vecAdd(pos, vecSca(lookdir, (power - (MIN_POWER + 0.2f))));
-    // pos = vecAdd(pos, vecSca(WORLD_UP, (power - (MIN_POWER + 0.6f))));
+    pos = vecAdd(pos, vecSca(WORLD_UP, (power - (MIN_POWER))));
     return pos;
 }
 

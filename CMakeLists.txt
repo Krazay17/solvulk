@@ -21,29 +21,16 @@ find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 
-add_library(enet STATIC IMPORTED)
-set_target_properties(enet PROPERTIES
-    IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/enet.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/enet/include"
-)
-if(WIN32)
-    # ENet relies on Winsock2 and Windows Multimedia timer APIs
-    set_target_properties(enet PROPERTIES
-        INTERFACE_LINK_LIBRARIES "ws2_32;winmm"
-    )
-endif()
-
 if(MSVC)
-add_library(webp_lib STATIC IMPORTED)
-set_target_properties(webp_lib PROPERTIES
-    IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/webp_lib.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/webp"
-)
-add_library(cglm_headers INTERFACE)
-target_include_directories(cglm_headers INTERFACE "${EXTERN_DIR}/cglm/include")
-
+    add_library(webp_lib STATIC IMPORTED)
+    set_target_properties(webp_lib PROPERTIES
+        IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/webp_lib.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/webp"
+    )
+    add_library(cglm_headers INTERFACE)
+    target_include_directories(cglm_headers INTERFACE "${EXTERN_DIR}/cglm/include")
 else()
-add_subdirectory(extern)
+    add_subdirectory(extern)
 endif()
 
 
@@ -57,15 +44,27 @@ target_sources(solvulk PRIVATE ${SOURCES})
 
 # Platform Logic
 if(WIN32)
+    add_library(enet STATIC IMPORTED)
+    set_target_properties(enet PROPERTIES
+        IMPORTED_LOCATION "${EXTERN_DIR}/build/lib/Debug/enet.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${EXTERN_DIR}/enet/include"
+    )
+    # ENet relies on Winsock2 and Windows Multimedia timer APIs
+    set_target_properties(enet PROPERTIES
+        INTERFACE_LINK_LIBRARIES "ws2_32;winmm"
+    )
+
     file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES} )
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
     set(PLATFORM_LIBS user32 gdi32 dwmapi)
 else()
+    find_package(X11 REQUIRED)
     list(FILTER SOURCES EXCLUDE REGEX "src/platform/win32/*.c")
     file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_XLIB_KHR)
+    set(PLATFORM_LIBS X11::X11 Threads::Threads m dl)
 endif()
 # Compiler Specifics
 if(MSVC)
@@ -126,6 +125,7 @@ else()
        "${CMAKE_SOURCE_DIR}/src/platform/linux/lin_main.c"
        "${CMAKE_SOURCE_DIR}/src/game/game.c"
    )
+
 endif()
 
 if(HOT_RELOAD)
@@ -138,7 +138,7 @@ set_target_properties(solapp PROPERTIES
    OUTPUT_NAME "SolApp"
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_command(TARGET solapp POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E create_symlink
     "${CMAKE_SOURCE_DIR}/assets"
     "$<TARGET_FILE_DIR:solapp>/assets"

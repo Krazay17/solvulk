@@ -1,3 +1,10 @@
+/*
+ * File: win_main.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-25
+ * 
+*/
 #define WIN32_LEAN_AND_MEAN
 #include <dwmapi.h>
 #include <windows.h>

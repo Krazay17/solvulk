@@ -261,11 +261,11 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .fragResource      = "sprite.frag.spv",
             .depthTest         = 0,
             .depthWrite        = 0,
-            .blendMode         = BLEND_ALPHA,
+            .blendMode         = BLEND_ADDITIVE,
             .cullMode          = VK_CULL_MODE_NONE,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
-            .descCount         = 3,
+            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+            .descCount         = 4,
         },
     [PIPE_RIBBON] =
         {

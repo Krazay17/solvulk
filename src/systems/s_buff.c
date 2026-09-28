@@ -1,11 +1,12 @@
 #include "world.h"
+#include "render/render.h"
 
 const Buff buff_kinds[BUFFKIND_COUNT] = {
     [BUFFKIND_FIRE] =
         {
             .damage   = 2.0f,
             .rate     = 0.5f,
-            .duration = 4.0f,
+            .duration = 3.0f,
             .power    = 1.0f,
         },
 };
@@ -14,6 +15,15 @@ const char *buff_names[BUFFKIND_COUNT] = {
     [BUFFKIND_FIRE] = "BUFFKIND_FIRE",
 };
 
+static inline void Fire_OnDraw(World *world, int id, Buff *buff)
+{
+    QuadSSBO *quad = Sol_Render_GetNextQuad(PIPE_QUAD);
+    quad->color    = (vec4s){1, 0.2f, 0, 1};
+    quad->pos = (vec4s){world->xform.draw_pos[id].x, world->xform.draw_pos[id].y, world->xform.draw_pos[id].z, 1.0f};
+    quad->textureId = SOL_TEXTURE_FIREPARTICLE;
+    quad->rect      = (vec4s){0, 0, 1, 1};
+    quad->uv        = (vec4s){0, 0, 1, 1};
+}
 static inline void Fire_OnApply(World *world, int id, Buff *buff)
 {
 }
@@ -31,6 +41,7 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
             vec3s pos = world->xform.pos[id];
             Sol_Combat_Hit(world, id,
                            (SolHit){
+                               .kind   = HITKIND_FIRE,
                                .entA   = buff->source,
                                .entB   = id,
                                .damage = buff->damage,
@@ -47,12 +58,14 @@ static const struct
     On apply;
     On update;
     On remove;
+    On draw;
 } ons[BUFFKIND_COUNT] = {
     [BUFFKIND_FIRE] =
         {
             .apply  = Fire_OnApply,
             .remove = Fire_OnRemove,
             .update = Fire_OnUpdate,
+            .draw   = Fire_OnDraw,
         },
 };
 
@@ -98,6 +111,22 @@ void Buff_Update(World *world, double dt)
     }
 }
 
+void Buff_Draw(World *world, double dt)
+{
+    SparseSet_ScBuff *set = Sol_Comp_Set(world, ScBuff);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id        = set->dense[i];
+        ScBuff buff_c = set->data[i];
+        for (int b = 0; b < buff_c.count; b++)
+        {
+            Buff *buff = &buff_c.buffs[b];
+            if (ons[buff->kind].draw)
+                ons[buff->kind].draw(world, id, buff);
+        }
+    }
+}
+
 void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power)
 {
     ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
@@ -106,6 +135,7 @@ void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power)
         Buff b                       = buff_kinds[kind];
         b.kind                       = kind;
         b.source                     = source;
+        b.power                      = power;
         buffs->buffs[buffs->count++] = b;
     }
 }
@@ -119,6 +149,7 @@ void Sol_Buff_AddE(World *world, int id, BuffKind kind, u32 source, float power,
         b.kind                       = kind;
         b.source                     = source;
         b.duration                   = duration;
+        b.power                      = power;
         buffs->buffs[buffs->count++] = b;
     }
 }

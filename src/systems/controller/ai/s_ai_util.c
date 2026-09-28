@@ -132,8 +132,8 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
     ai->learning.reward_move += closer_reward;
     ai->learning.reward_move -= brain->target_dist * 0.2f * fdt;
 
-    if(ai->learning.prev_knows_combat.attack & 2)
-    ai->learning.reward_combat -= 1.0f * fdt;
+    if (ai->learning.prev_knows_combat.attack & 2)
+        ai->learning.reward_combat -= 0.5f * fdt;
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
@@ -238,7 +238,7 @@ void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float rewa
     qt->q[state][action] += alpha * (target_q - current_q);
 }
 
-static const float dist_map[3] = {5.0f, 15.0f, 30.0f};
+static const float dist_map[3] = {4.0f, 12.0f, 22.0f};
 AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
 {
     AiKnows knows    = {0};
@@ -368,7 +368,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
-        if (target_ability->state == ABILITY_STATE_CLAW_DASH)
+        if (target_ability->state == Sol_Ability_GetIsDashing(target_ability))
             knows.targetState = 7;
         else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
             knows.targetState = 6;

@@ -113,7 +113,3 @@ void Camera_Tick(World *world, double dt)
         camera->up       = glms_vec3_rotate(WORLD_UP, camera->roll, camera->dir); // rotate up around forward
     }
 }
-
-void Camera_Init(World *world)
-{
-}

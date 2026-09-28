@@ -178,14 +178,17 @@ typedef struct
             int whipPointCount;
         } whip;
     } as;
+    
+    AbilityConfig conf;
 
-    float elapsed, accum, power, recoverRemaining, cooldownRemaining;
+    float elapsed, accum, power, cooldownRemaining;
     float drawElapsed;
+    float hitPause;
 
     u32 hitgen;
+    u8 hitPauseDr;
     u8 stage;
     bool held;
-    AbilityConfig conf;
 } AbilityStateData;
 typedef struct ScAbility
 {
@@ -368,10 +371,9 @@ typedef struct ScCombat
     float respawnTime;
 
     u32 lastHitBy;
-    u32 hitPauseDiminish;
-    float hitPause;
 
     bool is_dead;
+    bool random_spawn;
 } ScCombat;
 
 typedef struct ScReplication

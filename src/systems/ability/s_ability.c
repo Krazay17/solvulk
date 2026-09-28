@@ -16,21 +16,22 @@ AbilityConfig ability_base[ABILITYKIND_COUNT] = {
         },
     [ABILITYKIND_CLAW] =
         {
-            .duration   = 0.3f,
-            .cooldown   = 1.0f,
-            .damage     = 30.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_KNOCKBACK,
-            .maxpower   = 4.0f,
+            .duration    = 0.4f,
+            .cooldown    = 1.0f,
+            .damage      = 30.0f,
+            .buffMask    = BITC(BUFFKIND_FIRE),
+            .effectMask  = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+            .maxpower    = 1.0f,
+            .chargespeed = 1.0f,
         },
     [ABILITYKIND_FIREBALL] =
         {
-            .duration = 3.0f,
-            .recover  = 0.5f,
-            .cooldown = 1.0f,
-            .damage   = 15.0f,
-            // .buffMask = BITC(BUFFKIND_FIRE),
-            .maxpower = 1.5f,
+            .maxpower    = 1.1f,
+            .chargespeed = 1.0f,
+            .cooldown    = 1.0f,
+            .damage      = 15.0f,
+            .duration    = 0.6f,
+            .buffMask    = BITC(BUFFKIND_FIRE),
         },
     [ABILITYKIND_SHIELD] =
         {
@@ -40,18 +41,6 @@ AbilityConfig ability_base[ABILITYKIND_COUNT] = {
             .buffMask   = BITC(BUFFKIND_FIRE),
             .effectMask = EFFECTMASK_KNOCKUP,
         },
-};
-
-const u32 abilityState_slot_map[ABILITY_STATE_COUNT] = {
-    [ABILITY_STATE_CLAW]        = ABILITYKIND_CLAW,
-    [ABILITY_STATE_CLAW_CHARGE] = ABILITYKIND_CLAW,
-    [ABILITY_STATE_CLAW_DASH]   = ABILITYKIND_CLAW,
-
-    [ABILITY_STATE_FIREBALL]        = ABILITYKIND_FIREBALL,
-    [ABILITY_STATE_FIREBALL_CHARGE] = ABILITYKIND_FIREBALL,
-    [ABILITY_STATE_FIREBALL_DASH]   = ABILITYKIND_FIREBALL,
-
-    [ABILITY_STATE_SHIELD] = ABILITYKIND_SHIELD,
 };
 
 const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
@@ -174,7 +163,8 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     data->accum            = 0;
     data->stage            = 0;
     data->power            = 0;
-    data->recoverRemaining = 0;
+    data->hitPause         = 0;
+    data->hitPauseDr       = 0;
 
     if (nextfunc->enter)
         nextfunc->enter(world, id, ability, cmd);
@@ -192,7 +182,6 @@ AbilityConfig Sol_Ability_GetConf(SolItem item)
     if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
     {
         conf.cooldown *= 1.0f - (0.1f * (float)item.rarity);
-        conf.recover *= 1.0f - (0.1f * (float)item.rarity);
 
         conf.damage *= 1.0f + (0.2f * (float)item.rarity);
         conf.maxpower *= 1.0f + (0.5f * (float)item.rarity);

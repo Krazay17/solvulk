@@ -9,11 +9,7 @@
 #include "sol/types.h"
 
 // Systems
-void Player_Init(World *world);
-void Move3_Init(World *world);
-void Camera_Init(World *world);
-void Model_Init(World *world);
-
+void Sol_Test(World *world, double dt);
 void Cmd_Update(World *world, double dt);
 void Player_Tick(World *world, double dt);
 void Interact_Update(World *world, double dt);
@@ -44,6 +40,7 @@ void Emitter_Update(World *world, double dt);
 void Timer_Update(World *world, double dt);
 
 void Particle_Draw(World *world, double dt);
+void Buff_Draw(World *world, double dt);
 void Scoreboard_Draw(World *world, double dt);
 void Model_Render(World *world, double dt);
 void Ability_Draw(World *world, double dt);

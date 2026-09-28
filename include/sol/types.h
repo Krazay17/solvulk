@@ -48,19 +48,6 @@ typedef struct DamagePayload
     u32 buffMask;
     u32 effectMask;
 } DamagePayload;
-// static inline SolHit SolHit_FromPayload(DamagePayload p, int entA, int entB, vec3s pos, vec3s normal)
-// {
-//     return (SolHit){
-//         .pos        = pos,
-//         .normal     = normal,
-//         .entA       = entA,
-//         .entB       = entB,
-//         .damage     = p.damage,
-//         .isHeal     = p.isHeal,
-//         .buffMask   = p.buffMask,
-//         .effectMask = p.effectMask,
-//     };
-// }
 
 typedef enum
 {
@@ -74,20 +61,24 @@ typedef enum
     HITKIND_SHIELD_PULSE,
     HITKIND_COUNT,
 } HitKind;
+
 typedef struct SolHit
 {
+    // DamagePayload payload;
+    float damage;
+    float power;
+    u32 buffMask;
+    u32 effectMask;
+    bool isHeal;
+
+    HitKind kind;
     int entA; // Attacker
     int entB; // Victim
-    float damage;
-    HitKind kind;
     vec3s pos;
     vec3s normal;
     vec3s vel;
-    float power;
-    bool isHeal;
-
-    u32 buffMask;
-    u32 effectMask;
+    
+    Hook hook;
 } SolHit;
 
 typedef struct
@@ -148,6 +139,7 @@ typedef enum
     PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
     PARTICLE_SPARK,
+    PARTICLE_FIRE,
     PARTICLE_PLASMA,
     PARTICLE_BLOOD,
     PARTICLE_SPHERE_INOUT,
@@ -660,7 +652,6 @@ typedef struct SolUserHit
 typedef enum
 {
     EFFECTMASK_KNOCKBACK         = (1 << 0),
-    EFFECTMASK_KNOCKBACK_STRONG  = (1 << 1),
     EFFECTMASK_KNOCKUP           = (1 << 2),
     EFFECTMASK_REFLECTPROJECTILE = (1 << 3),
     EFFECTMASK_CHAINLIGHTNING    = (1 << 4),
@@ -781,9 +772,9 @@ typedef struct
     float damage;
     float cooldown;
     float maxpower;
-
+    float chargespeed;
     float duration;
-    float recover;
+
     u32 buffMask;
     u32 effectMask;
 } AbilityConfig;

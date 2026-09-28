@@ -55,7 +55,7 @@ int Sol_DeleteFile(const char *prefix, const char *filename)
 {
     char disk_path[128];
     snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, filename);
-    remove(disk_path);
+    return remove(disk_path) == 0;
 }
 
 SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
@@ -107,7 +107,7 @@ SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
     {
         void *heap = malloc(res.size);
         memcpy(heap, res.data, res.size);
-        res.data = heap;
+        res.data   = heap;
         res.isHeap = true;
     }
 

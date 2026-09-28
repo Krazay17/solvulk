@@ -37,6 +37,8 @@ const struct SystemDef
     [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
+    [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
+
     [WORLDSYS_BUFF]       = {.update = {Buff_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},

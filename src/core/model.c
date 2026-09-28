@@ -9,14 +9,14 @@
 #include "cgltf/cgltf.h"
 
 const char *model_path[MODELKIND_COUNT] = {
-    [MODELKIND_DUDE]    = "Dude.glb",    //
-    [MODELKIND_WIZARD]  = "Wizard.glb",  //
-    [MODELKIND_WORLD0]  = "World0.glb",  //
-    [MODELKIND_WORLD1]  = "World1.glb",  //
-    [MODELKIND_WORLD10] = "World10.glb", //
-    [MODELKIND_CONE]    = "Cone.glb",    //
+    [MODELKIND_DUDE]        = "Dude.glb",    //
+    [MODELKIND_WIZARD]      = "Wizard.glb",  //
+    [MODELKIND_WORLD0]      = "World0.glb",  //
+    [MODELKIND_WORLD1]      = "World1.glb",  //
+    [MODELKIND_WORLD10]     = "World10.glb", //
+    [MODELKIND_CONE]        = "Cone.glb",    //
+    [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
-    // [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
     // [MODELKIND_WALL]        = "Wall.glb",
     // [MODELKIND_WORLD4]      = "World4.glb",

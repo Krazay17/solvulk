@@ -1,3 +1,10 @@
+/*
+ * File: ability_fireball.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-28
+ *
+ */
 #include "world.h"
 #include "estate.h"
 #include "sol_core.h"
@@ -7,16 +14,16 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MELEE_DIST 2.0f
+#define MELEE_DIST 4.0f
+#define HIT_RATE 0.05f
+#define HIT_DELAY 0.1f
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
-    vec3s lookdir = Sol_RotFromQuat(Xform_GetDraw(world, id).rot);
-    vec3s pos     = Sol_Model_GetBoneXform(world, id, slot == 1 ? "hand.R" : "hand.L").pos;
+    vec3s pos = Sol_Model_GetBoneXform(world, id, slot == 1 ? "hand.R" : "hand.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
-    // pos = vecAdd(pos, vecSca(lookdir, (power - (MIN_POWER + 0.2f))));
-    pos = vecAdd(pos, vecSca(WORLD_UP, (power - (MIN_POWER))));
+    pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));
     return pos;
 }
 
@@ -27,26 +34,27 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->elapsed += dt;
-    vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
-
-    SolHit hit = {
-        .entA   = id,
-        .power  = data->power,
-        .damage = data->conf.damage,
-    };
-
     switch (data->stage)
     {
     case 0:
-        data->power = Sol_Math_Lerp_Clamped(MIN_POWER, data->conf.maxpower, data->elapsed / data->conf.duration);
-
         if (!data->held)
+        {
             data->stage++;
+            goto fire;
+        }
+        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.chargespeed));
         break;
     case 1:
+    fire:
         data->stage++;
+        vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+
+        SolHit hit = {
+            .entA   = id,
+            .power  = data->power,
+            .damage = data->conf.damage,
+        };
 
         { // Spawn fireball
             int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
@@ -58,26 +66,43 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             projectile->aoe_hit.buffMask   = data->conf.buffMask;
             projectile->power              = data->power;
         }
-        break;
     case 2:
-        if (data->recoverRemaining > data->conf.recover * 0.3f)
+        if (data->elapsed > HIT_DELAY)
+            data->stage++;
+        break;
+    case 3:
+        data->accum += dt;
+        if (data->accum >= HIT_RATE)
         {
-            hit.power      = 1.0f;
-            hit.kind       = HITKIND_MELEE_HIT;
-            hit.effectMask = EFFECTMASK_REFLECTPROJECTILE;
+            data->accum -= HIT_RATE;
+            vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+            vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+
+            SolHit hit = {
+                .entA       = id,
+                .kind       = HITKIND_MELEE_HIT,
+                .power      = data->power,
+                .damage     = data->conf.damage,
+                .power      = 0.3f,
+                .buffMask   = BITC(BUFFKIND_FIRE),
+            };
             Sol_Combat_DamageCast(world, id,
                                   (SolRay){.start     = pos,
-                                           .dir       = cmd->aimdir,
+                                           .dir       = dir,
                                            .dist      = MELEE_DIST,
-                                           .radius    = 0.3f,
+                                           .radius    = 0.4f,
                                            .ignoreEnt = id,
                                            .mask      = COLLAYER_ALL},
-                                  hit, data->hitgen);
+                                  hit, 0);
         }
-        data->recoverRemaining += dt;
-        if (data->recoverRemaining > data->conf.recover)
-            Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
-        break;
+    }
+
+    if (data->stage > 0)
+        data->elapsed += dt;
+    if (data->elapsed >= data->conf.duration)
+    {
+        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        return;
     }
 }
 
@@ -114,6 +139,7 @@ void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd
     data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
     data->hitgen            = Sol_Hitgen_Start(world, id);
     data->cooldownRemaining = data->conf.cooldown;
+    data->power             = MIN_POWER;
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
@@ -124,13 +150,13 @@ void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    return !data->recoverRemaining;
+    return true;
 }
 
 bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    return data->cooldownRemaining <= 0.0f;
+    return !(data->cooldownRemaining > 0.0f);
 }
 
 void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
@@ -142,8 +168,6 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
     vec4s rot = {Sol_Quat_FromLookDir(cmd->aimdir).x, Sol_Quat_FromLookDir(cmd->aimdir).y,
                  Sol_Quat_FromLookDir(cmd->aimdir).z, Sol_Quat_FromLookDir(cmd->aimdir).w};
 
-    // vec4s rot = {world->xform.draw_rot[id].x, world->xform.draw_rot[id].y, world->xform.draw_rot[id].z,
-    //              world->xform.draw_rot[id].w};
     switch (data->stage)
     {
     case 0: {
@@ -153,22 +177,33 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
         };
     }
     break;
-    case 1:
-    case 2: {
+    case 3: {
         // *Sol_Render_GetNextSphere(PIPE_PLASMA) = (SphereSSBO){
         //     .color = VEC4_RED,
         //     .pos   = (vec4s){pos.x, pos.y, pos.z, 0.25f},
         // };
-        if (data->recoverRemaining > data->conf.recover * 0.3f)
-        {
-
-            *Sol_Render_GetNextModel(0, MODELKIND_CONE) = (ModelSSBO){
-                .position = {pos.x, pos.y, pos.z, 1.0f},
-                .rotation = rot,
-                .scale    = {1.0f, 1.0f, 1.0f, 1.0f},
-                .color    = {1, 0, 0, 1},
-            };
-        }
+        *Sol_Render_GetNextModel(0, MODELKIND_CONE) = (ModelSSBO){
+            .position = {pos.x, pos.y, pos.z, 1.0f},
+            .rotation = rot,
+            .scale    = {1.0f, 1.0f, 1.0f, 1.0f},
+            .color    = {1, 0.1f, 0, 1},
+        };
+        Sol_Emitter_Push(world,
+                         &(Emitter){
+                             .kind        = EMITKIND_CONE,
+                             .pos         = pos,
+                             .dir         = cmd->aimdir,
+                             .speed       = 15.0f,
+                             .cone        = 0.2f,
+                             .p_color     = {1, 0.1f, 0, 1},
+                             .p_kind      = PARTICLE_FIRE,
+                             .p_lifespan  = 0.5f,
+                             .p_scale     = 0.5f,
+                             .burst       = 1,
+                             .scale_curve = CURVE_QUICKIN_SLOWOUT,
+                             .alpha_curve = CURVE_QUICKIN_SLOWOUT,
+                         },
+                         1);
     }
     break;
     }

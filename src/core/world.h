@@ -28,6 +28,8 @@ typedef enum
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
 
+    WORLDSYS_TEST,
+
     WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
     WORLDSYS_MOVE3,
@@ -217,10 +219,10 @@ struct World
                                                                                                                        \
     static inline SparseSet_##T *Sol_SparseSet_Alloc_##T(int maxEnts)                                                  \
     {                                                                                                                  \
-        SparseSet_##T *set = calloc(1, sizeof(SparseSet_##T));                                                         \
+        SparseSet_##T *set = (SparseSet_##T *)calloc(1, sizeof(SparseSet_##T));                                        \
         set->cap           = 0;                                                                                        \
         set->cnt           = 0;                                                                                        \
-        set->sparse        = malloc(maxEnts * sizeof(int));                                                            \
+        set->sparse        = (int *)malloc(maxEnts * sizeof(int));                                                     \
         return (SparseSet_##T *)set;                                                                                   \
     }                                                                                                                  \
                                                                                                                        \
@@ -236,8 +238,8 @@ struct World
         if (set->cnt >= set->cap)                                                                                      \
         {                                                                                                              \
             set->cap   = (set->cap == 0) ? 1 : set->cap * 2;                                                           \
-            set->dense = realloc(set->dense, set->cap * sizeof(int));                                                  \
-            set->data  = realloc(set->data, set->cap * sizeof(T));                                                     \
+            set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));                                           \
+            set->data  = (T *)realloc(set->data, set->cap * sizeof(T));                                                \
         }                                                                                                              \
         int denseIdx         = set->cnt++;                                                                             \
         set->sparse[entId]   = denseIdx;                                                                               \
@@ -350,8 +352,8 @@ static inline void *Sol_Comp_AddE(World *w, int entId, int enum_idx)
     if (set->cnt >= set->cap)
     {
         set->cap   = (set->cap == 0) ? 1 : set->cap * 2;
-        set->dense = realloc(set->dense, set->cap * sizeof(int));
-        set->data  = realloc(set->data, set->cap * comp_size);
+        set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));
+        set->data  = (void *)realloc(set->data, set->cap * comp_size);
     }
 
     // 3. Assign sparse and dense indices
@@ -438,19 +440,30 @@ static inline void Sol_Destroy_Ent(World *w, int entId)
 
 static inline Xform Xform_GetDraw(const World *world, int id)
 {
-    return (Xform){
-        .pos = world->xform.draw_pos[id], .rot = world->xform.draw_rot[id], .sca = world->xform.draw_sca[id]};
+    Xform xform;
+    xform.pos = world->xform.draw_pos[id];
+    xform.rot = world->xform.draw_rot[id];
+    xform.sca = world->xform.draw_sca[id];
+    return xform;
 }
 
 static inline Xform Xform_Get(const World *world, int id)
 {
-    return (Xform){.pos = world->xform.pos[id], .rot = world->xform.rot[id], .sca = world->xform.sca[id]};
+    Xform xform;
+    xform.pos = world->xform.pos[id];
+    xform.rot = world->xform.rot[id];
+    xform.sca = world->xform.sca[id];
+    return xform;
 }
 
 static inline XformP Xform_GetP(World *world, int id)
 {
     WorldXform *x = &world->xform;
-    return (XformP){.pos = &x->pos[id], .rot = &x->rot[id], .sca = &x->sca[id]};
+    XformP xformP;
+    xformP.pos = &x->pos[id];
+    xformP.rot = &x->rot[id];
+    xformP.sca = &x->sca[id];
+    return xformP;
 }
 
 static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, vec3s sca)
@@ -537,7 +550,7 @@ float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float 
 
 extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
-void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s vel, vec3s dir);
+void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s dir, float speed);
 Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);
 
 u32 Sol_Hitgen_Start(World *world, int id);

@@ -102,7 +102,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
     }
 
     u32 totalEffects = cfg.effectMask;
-    if ((totalEffects & (EFFECTMASK_KNOCKBACK | EFFECTMASK_KNOCKBACK_STRONG)) && lineCount < MAX_TOOLTIP_LINES)
+    if ((totalEffects & (EFFECTMASK_KNOCKBACK)) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Knockback");
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);

@@ -36,9 +36,11 @@ static inline void Fireball_Explode(World *world, SolEvent event)
 
 static inline void Fireball_Hit(World *world, SolEvent event)
 {
-    Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
-    e1->pos     = event.as.hit.pos;
-    e1->p_scale = 1.0f;
+    Emitter *e1    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
+    e1->p_color    = (vec4s){1, 0.3f, 0, 1};
+    e1->p_lifespan = 0.3f;
+    e1->pos        = event.as.hit.pos;
+    e1->p_scale    = 1.0f;
 
     Emitter *e2    = Sol_Emitter_Next(world, EMITTERKIND_BURST);
     e2->pos        = event.as.hit.pos;
@@ -48,6 +50,20 @@ static inline void Fireball_Hit(World *world, SolEvent event)
     e2->p_lifespan = 0.5f;
 
     // Sol_Audio_PlayAt(SOL_AUDIO_LASER, event.as.fx.pos, 1.0f, 0.0f, 16);
+}
+
+static inline void Fire_Hit(World *world, SolEvent event)
+{
+    Emitter *e     = Sol_Emitter_Next(world, EMITTERKIND_BURST);
+    e->pos         = event.as.hit.pos;
+    e->p_color     = (vec4s){1, 0.3f, 0, 1};
+    e->p_lifespan  = 0.3f;
+    e->p_scale     = 0.5f;
+    e->burst       = 10;
+    e->alpha_curve = CURVE_QUICKIN_SLOWOUT;
+    e->scale_curve = CURVE_QUICKIN_SLOWOUT;
+    e->speed       = 2.5f;
+    e->p_kind      = PARTICLE_FIRE;
 }
 
 static inline void Claw_Hit(World *world, SolEvent event)
@@ -66,6 +82,25 @@ static inline void Claw_Hit(World *world, SolEvent event)
     e3->p_kind     = PARTICLE_BLOOD;
     e3->p_color    = (vec4s){1, 0, 0, 1};
     e3->p_lifespan = 5.0f;
+
+    if (world->doesRender)
+        Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, pos, 1.0f, 0.0f, 16);
+}
+static inline void Melee_Hit(World *world, SolEvent event)
+{
+    vec3s pos = event.as.hit.pos;
+
+    Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
+    e2->pos     = pos;
+    e2->p_kind  = PARTICLE_SPARK;
+    e2->p_scale = 0.4f;
+
+    Emitter *e3 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
+    e3->pos     = pos;
+    e3->burst   = 5;
+    e3->p_kind  = PARTICLE_BLOOD;
+    e3->p_color = (vec4s){1, 0, 0, 1};
+    e3->p_scale = 0.4f;
 
     if (world->doesRender)
         Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, pos, 1.0f, 0.0f, 16);
@@ -92,7 +127,10 @@ void Fx_Update(World *world, double dt)
                 break;
             case HITKIND_BULLET:
             case HITKIND_MELEE_HIT:
-                Claw_Hit(world, event);
+                Melee_Hit(world, event);
+                break;
+            case HITKIND_FIRE:
+                Fire_Hit(world, event);
                 break;
             }
             break;
@@ -107,7 +145,7 @@ void Fx_Update(World *world, double dt)
         switch (event.as.fx.kind)
         {
         case FXKIND_INVULNHIT:
-            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.6f, 0.1f, 8);
+            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 8);
             break;
         case FXKIND_PARRY:
             Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);

@@ -47,13 +47,11 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
         },
     [EMITTERKIND_BURST] =
         {
-            .ttl         = 0.3f,
-            .burst       = 20,
-            .rate        = 0.1f,
+            .burst       = 10,
             .speed       = 3.0f,
             .kind        = EMITKIND_SPHERE,
             .p_kind      = PARTICLE_SMOKE,
-            .p_lifespan  = 1.0f,
+            .p_lifespan  = 0.5f,
             .p_scale     = 1.0f,
             .p_color     = {1, 1, 1, 1},
             .alpha_curve = CURVE_EASE_OUT,
@@ -67,27 +65,30 @@ enum RenderKind
     RENDERKIND_SPHERE,
 };
 const u32 particle_pipekind[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] = RENDERKIND_QUAD,
-    [PARTICLE_SMOKE]   = RENDERKIND_QUAD,
-    [PARTICLE_SPARK]  = RENDERKIND_QUAD,
-    [PARTICLE_BLOOD] = RENDERKIND_QUAD,
-    [PARTICLE_SPHERE]  = RENDERKIND_SPHERE,
-    [PARTICLE_PLASMA] = RENDERKIND_SPHERE,
+    [PARTICLE_FRACTAL] = RENDERKIND_QUAD,   //
+    [PARTICLE_SMOKE]   = RENDERKIND_QUAD,   //
+    [PARTICLE_SPARK]   = RENDERKIND_QUAD,   //
+    [PARTICLE_BLOOD]   = RENDERKIND_QUAD,   //
+    [PARTICLE_FIRE]    = RENDERKIND_QUAD,   //
+    [PARTICLE_SPHERE]  = RENDERKIND_SPHERE, //
+    [PARTICLE_PLASMA]  = RENDERKIND_SPHERE, //
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] = PIPE_FRACTAL_PYRAMID,
-    [PARTICLE_SMOKE]   = PIPE_QUAD,
-    [PARTICLE_BLOOD] = PIPE_QUAD,
-    [PARTICLE_SPHERE]  = PIPE_SPHERE,
-    [PARTICLE_PLASMA] = PIPE_PLASMA,
-    [PARTICLE_SPARK] = PIPE_QUAD,
+    [PARTICLE_FRACTAL] = PIPE_FRACTAL_PYRAMID, //
+    [PARTICLE_SMOKE]   = PIPE_QUAD,            //
+    [PARTICLE_BLOOD]   = PIPE_QUAD,            //
+    [PARTICLE_FIRE]    = PIPE_QUAD,        //
+    [PARTICLE_SPHERE]  = PIPE_SPHERE,          //
+    [PARTICLE_PLASMA]  = PIPE_PLASMA,          //
+    [PARTICLE_SPARK]   = PIPE_QUAD,            //
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
-    [PARTICLE_SMOKE]  = SOL_TEXTURE_CLOUDPARTICLE,
-    [PARTICLE_SPARK]  = SOL_TEXTURE_SHOCKPARTICLE,
-    [PARTICLE_BLOOD]  = SOL_TEXTURE_BLOODPARTICLE,
+    [PARTICLE_SMOKE] = SOL_TEXTURE_CLOUDPARTICLE, //
+    [PARTICLE_SPARK] = SOL_TEXTURE_SHOCKPARTICLE, //
+    [PARTICLE_BLOOD] = SOL_TEXTURE_BLOODPARTICLE, //
+    [PARTICLE_FIRE]  = SOL_TEXTURE_FIREPARTICLE,  //
 };
 
 static inline vec3s RandomVel_Sphere(float speed)
@@ -247,6 +248,8 @@ void Particle_Draw(World *world, double dt)
                 .color = final_color,
             };
             break;
+        default:
+            sollog("No particle pipe kind ", particle_pipekind[p.kind]);
         }
     }
 }
@@ -269,14 +272,14 @@ void Sol_Emitter_Push(World *world, Emitter *emitters, int count)
     }
 }
 
-void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s vel, vec3s dir)
+void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s dir, float speed)
 {
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
     for (int i = 0; i < count; i++)
     {
         emitters[i].pos = pos;
-        emitters[i].vel = vel;
         emitters[i].dir = dir;
+        emitters[i].speed = speed;
         Particle_Spawn(single, emitters[i]);
         if (emitters[i].ttl > 0)
             solb_push(single->emitters, emitters[i]);

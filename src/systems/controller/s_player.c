@@ -77,11 +77,3 @@ void Player_Tick(World *world, double dt)
         }
     }
 }
-
-void Player_Init(World *world)
-{
-}
-
-void Player_Deinit(World *world)
-{
-}

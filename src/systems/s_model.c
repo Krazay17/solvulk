@@ -96,10 +96,6 @@ void Model_Render(World *world, double dt)
     }
 }
 
-void Model_Init(World *world)
-{
-}
-
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
     Xform result          = {0};

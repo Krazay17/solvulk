@@ -11,9 +11,41 @@
 
 #define DESTROY_TIMER 3.0f
 
+static vec3s RandomSpawn(World *world, int id, ScCombat *combat)
+{
+    vec3s pos     = world->xform.home_pos[id];
+    bool found    = false;
+    float start_y = 200.0f;
+    // Cap attempts to prevent frame freezes
+    const int MAX_TRIES = 20;
+    for (int attempt = 0; attempt < MAX_TRIES && !found; attempt++)
+    {
+        pos.x = Sol_Math_RandRange2(-300.0f, 300.0f);
+        pos.z = Sol_Math_RandRange2(-300.0f, 300.0f);
+        pos.y = start_y;
+
+        SolRayResult result;
+        // Extended ray distance to reach ground below Y = 0
+        SolRay ray = {.start = pos, .dir = WORLD_DOWN, .dist = start_y + 10.0f};
+
+        if (Sol_Raycast1D(world, ray, &result, 0.5f) && result.t > 0.0f)
+        {
+            // Snap Y to the actual ground hit position + slight offset
+            pos.y = pos.y - result.t + 0.5f;
+            found = true;
+        }
+    }
+
+    if (!found)
+    {
+        return world->xform.home_pos[id];
+    }
+    return pos;
+}
+
 static void OnRespawn(World *world, int id, ScCombat *combat)
 {
-    Sol_Xform_Teleport(world, id, world->xform.home_pos[id]);
+    Sol_Xform_Teleport(world, id, combat->random_spawn ? RandomSpawn(world, id, combat) : world->xform.home_pos[id]);
     combat->health  = combat->healthMax;
     combat->energy  = combat->energyMax;
     combat->mana    = combat->manaMax;
@@ -123,6 +155,10 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     {
         if (!hit.isHeal)
         {
+            if (hit.hook)
+            {
+                hit.hook(world, hit.entA, hit.entB);
+            }
             if (hit.buffMask > 0)
             {
                 Sol_Buff_AddMask(world, id, hit.buffMask, hit.entA, hit.power);
@@ -130,14 +166,14 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             if (hit.effectMask & EFFECTMASK_KNOCKBACK)
             {
                 ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
-                move3->knockVel    = vecSca(hit.vel, 10.0f);
-                move3->knockDur    = 0.4f;
+                move3->knockVel    = vecSca(hit.vel, 7.0f);
+                move3->knockDur    = 0.3f;
                 move3->frictionMod = 0.0f;
             }
             if (hit.effectMask & EFFECTMASK_KNOCKUP)
             {
                 ScMove3 *move3     = Sol_Comp_Get(world, id, ScMove3);
-                move3->knockVel    = vecSca(WORLD_UP, 10.0f);
+                move3->knockVel    = vecSca(WORLD_UP, 7.0f);
                 move3->knockDur    = 0.4f;
                 move3->frictionMod = 0.0f;
             }
@@ -261,7 +297,7 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
         if (hit_id == id || Sol_Comp_Has(world, hit_id, ScStage) || !Sol_Comp_Has(world, hit_id, ScCombat))
             continue;
 
-        if (!Sol_Hitgen_Try(world, id, hit_id, hitgen))
+        if (hitgen && !Sol_Hitgen_Try(world, id, hit_id, hitgen))
             continue;
 
         if (!hit.isHeal && !Sol_Combat_Hostile(world, id, hit_id))
@@ -290,6 +326,7 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
         }
         hit.entB = hit_id;
         hit.pos  = hit_pos;
+        hit.vel  = ray.dir;
         Sol_Combat_Hit(world, hit_id, hit);
     }
     return hits;

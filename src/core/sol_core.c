@@ -182,7 +182,7 @@ void Sol_Window_OnResize(int x, int y, int width, int height)
 }
 int Sol_Core_Init()
 {
-    SolResource res = Sol_LoadResource(QTABLE_RES_NAME, "data/");
+    SolResource res = Sol_LoadResource("data/", QTABLE_RES_NAME);
     if (res.data)
         memcpy(&solData.qtable, res.data, sizeof(solData.qtable));
     if (res.isHeap)

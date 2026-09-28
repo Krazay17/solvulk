@@ -81,7 +81,7 @@ static const ScAbility dude_ability = {
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
-            ABILITYKIND_CLAW,
+            ABILITYKIND_SHIELD,
         },
 };
 
@@ -415,12 +415,9 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .ownerId = owner,
     };
 
-    u32 projLayer    = COLLAYER_PROJECTILE; // Default fallback
-    u32 targetFilter = COLLAYER_ALL;
-
     *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
         .dims      = dims,
-        .gravity   = (vec3s)SOL_GRAVITY,
+        .gravity   = SOL_GRAVITY,
         .is_sensor = true,
         .ignoreEnt = owner,
         .vel       = vecSca(dir, speed),
@@ -451,7 +448,56 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_combat         = 10.0f;
     }
 
-    *Sol_Comp_Add(world, id, ScCombat) = (ScCombat){.health = 100.0f, .healthMax = 100.0f};
+    return id;
+}
+
+int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float speed, float size)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    vec3s dims          = {size, size, size};
+    ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
+
+    *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
+        .ownerId = owner,
+    };
+
+    *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
+        .dims      = dims,
+        .gravity   = GLMS_VEC3_ZERO,
+        .is_sensor = true,
+        .ignoreEnt = owner,
+        .vel       = vecSca(dir, speed),
+        .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 0),
+    };
+
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind  = VIEW3KIND_PLASMAORB,
+        .color = VEC4_RED,
+        .scale = size,
+    };
+
+    *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
+        .kind   = PROJECTILEKIND_PLASMAORB,
+        .radius = size,
+        .hitgen = Sol_Hitgen_Start(world, id),
+    };
+
+    ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
+    if (ai)
+    {
+        ScAilearn *ailearn             = Sol_Comp_Add(world, id, ScAilearn);
+        ailearn->prev_knows_move.raw   = ai->learning.prev_knows_move.raw;
+        ailearn->prev_knows_combat.raw = ai->learning.prev_knows_combat.raw;
+        ailearn->action_move           = ai->learning.action_move;
+        ailearn->action_combat         = ai->learning.action_combat;
+        ailearn->reward_move           = 5.0f;
+        ailearn->reward_combat         = 10.0f;
+    }
+
+    ScTimer *timer = Sol_Comp_Add(world, id, ScTimer);
+    timer->destroy = true;
+    timer->duration = 2.0f;
 
     return id;
 }
@@ -598,19 +644,6 @@ int Sol_Prefab_DragonOrb(World *world, vec3s pos)
 
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
         .kind  = VIEW3KIND_DRAGONORB,
-        .color = {1, 1, 1, 1},
-        .scale = 1.0f,
-    };
-}
-
-int Sol_Prefab_PlasmaOrb(World *world, vec3s pos)
-{
-    int id = Sol_Create_Ent(world, pos);
-
-    *Sol_Comp_Add(world, id, ScBody3) = sphere_body;
-
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind  = VIEW3KIND_PLASMAORB,
         .color = {1, 1, 1, 1},
         .scale = 1.0f,
     };

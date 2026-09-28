@@ -125,12 +125,13 @@ void Fx_Update(World *world, double dt)
             case HITKIND_FIREBALL:
                 Fireball_Hit(world, event);
                 break;
-            case HITKIND_BULLET:
-            case HITKIND_MELEE_HIT:
-                Melee_Hit(world, event);
-                break;
             case HITKIND_FIRE:
                 Fire_Hit(world, event);
+                break;
+            case HITKIND_BULLET:
+            case HITKIND_MELEE_HIT:
+            case HITKIND_NORMAL:
+                Melee_Hit(world, event);
                 break;
             }
             break;

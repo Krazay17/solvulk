@@ -16,7 +16,7 @@ int Sol_Fonts_Init()
 {
     for (int i = 0; i < SOL_FONT_COUNT; i++)
     {
-        SolResource res = Sol_LoadResource(font_path[i], "fonts/");
+        SolResource res = Sol_LoadResource("fonts/", font_path[i]);
         if (res.data)
             Parse_Font(res, i);
     }

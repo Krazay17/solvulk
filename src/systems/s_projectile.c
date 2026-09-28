@@ -64,8 +64,29 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
                        .as.hit.power = hit.power,
                    });
 
-    Sol_Destroy_Ent(w, a);
     return true;
+}
+
+static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projectile, SolHit hit)
+{
+
+    ScOwner *owner = Sol_Comp_Get(world, a, ScOwner);
+    int ownerId    = owner ? owner->ownerId : 0;
+
+    Sol_Combat_Hit(world, hit.entB, hit);
+    Sol_Event_Push(world, EVENTKIND_HIT,
+                   (SolEvent){
+                       .entA         = ownerId,
+                       .entB         = hit.entB,
+                       .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
+                       .as.hit.pos   = hit.pos,
+                       .as.hit.power = hit.power,
+                   });
+
+    if (Sol_Comp_Has(world, hit.entB, ScStage))
+        return true;
+
+    return false;
 }
 
 void Projectile_Step(World *world, double dt)
@@ -125,11 +146,17 @@ void Projectile_Step(World *world, double dt)
             case PROJECTILEKIND_FIREBALL:
                 destroyed = FireballHit(world, id, projectile, hit);
                 break;
+            case PROJECTILEKIND_PLASMAORB:
+                destroyed = PlasmaOrbHit(world, id, projectile, hit);
+                break;
             }
             if (hook)
                 hook(world, id, result.entId);
             if (destroyed)
+            {
+                Sol_Destroy_Ent(world, id);
                 break;
+            }
         }
     }
 }

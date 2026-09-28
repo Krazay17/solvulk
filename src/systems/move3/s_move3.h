@@ -115,6 +115,20 @@ static inline vec3s ApplyAccel3_Arcade(vec3s wishdir, vec3s prevvel, float speed
     return glms_vec3_add(prevvel, glms_vec3_scale(diff, step / diffLen));
 }
 
+static inline vec3s Accel_BringTo(vec3s wishdir, vec3s prevvel, float speed)
+{
+    float wishlen2 = glms_vec3_norm2(wishdir);
+    if (wishlen2 <= 0.00001f)
+        return prevvel;
+    float current_speed = glms_vec3_norm(prevvel);
+    if (current_speed > speed)
+    {
+        return glms_vec3_scale(wishdir, current_speed);
+    }
+    else
+        return glms_vec3_scale(wishdir, speed);
+}
+
 static inline vec3s ProjectOntoGround(vec3s ground, vec3s wishdir)
 {
     float dot = glms_vec3_dot(wishdir, ground);

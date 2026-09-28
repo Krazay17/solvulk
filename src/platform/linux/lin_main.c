@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-25
- * 
-*/
+ *
+ */
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -28,8 +28,8 @@
 
 // --- Shared state between threads ---
 static atomic_int g_running = 1;
-static Display *g_display = NULL;
-static Window g_window = 0;
+static Display *g_display   = NULL;
+static Window g_window      = 0;
 static Atom g_wmDeleteMessage;
 static bool isFullscreen = false;
 
@@ -43,7 +43,8 @@ static void ProcessXEvent(XEvent *ev);
 static double GetTimeInSeconds(void);
 
 // Motif hints struct for borderless / undecorated window creation (WS_POPUP equivalent)
-typedef struct {
+typedef struct
+{
     unsigned long flags;
     unsigned long functions;
     unsigned long decorations;
@@ -65,20 +66,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int screen = DefaultScreen(g_display);
+    int screen  = DefaultScreen(g_display);
     Window root = RootWindow(g_display, screen);
 
     XSetWindowAttributes attr = {0};
-    attr.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-                      ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
-                      StructureNotifyMask | FocusChangeMask;
+    attr.event_mask           = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask |
+                                PointerMotionMask | StructureNotifyMask | FocusChangeMask;
 
-    g_window = XCreateWindow(
-        g_display, root,
-        640, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
-        CopyFromParent, InputOutput, CopyFromParent,
-        CWEventMask, &attr
-    );
+    g_window = XCreateWindow(g_display, root, 640, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, CopyFromParent, InputOutput,
+                             CopyFromParent, CWEventMask, &attr);
 
     if (!g_window)
     {
@@ -88,11 +84,12 @@ int main(int argc, char *argv[])
     }
 
     // Borderless / Popup Window Style (MWM_HINTS_DECORATIONS = 2)
-    Hints hints = { .flags = 2, .decorations = 0 };
+    Hints hints        = {.flags = 2, .decorations = 0};
     Atom motifProperty = XInternAtom(g_display, "_MOTIF_WM_HINTS", True);
     if (motifProperty != None)
     {
-        XChangeProperty(g_display, g_window, motifProperty, motifProperty, 32, PropModeReplace, (unsigned char *)&hints, 5);
+        XChangeProperty(g_display, g_window, motifProperty, motifProperty, 32, PropModeReplace, (unsigned char *)&hints,
+                        5);
     }
 
     // Set Window Title
@@ -169,27 +166,25 @@ static double GetTimeInSeconds(void)
 static void *GameThreadProc(void *arg)
 {
     double startTime = GetTimeInSeconds();
-    double lastTime = startTime;
+    double lastTime  = startTime;
 
     while (atomic_load(&g_running))
     {
         double currentTime = GetTimeInSeconds();
-        double dt = currentTime - lastTime;
-        double runTime = currentTime - startTime;
-        lastTime = currentTime;
+        double dt          = currentTime - lastTime;
+        double runTime     = currentTime - startTime;
+        lastTime           = currentTime;
 
         Sol_Tick(dt, runTime);
 
-        double endTime = GetTimeInSeconds();
-        double elapsed = endTime - currentTime;
+        double endTime   = GetTimeInSeconds();
+        double elapsed   = endTime - currentTime;
         double remaining = TARGET_FRAME_TIME - elapsed;
 
         if (remaining > 0.001)
         {
-            struct timespec req = {
-                .tv_sec = (time_t)remaining,
-                .tv_nsec = (long)((remaining - (time_t)remaining) * 1e9)
-            };
+            struct timespec req = {.tv_sec  = (time_t)remaining,
+                                   .tv_nsec = (long)((remaining - (time_t)remaining) * 1e9)};
             nanosleep(&req, NULL);
         }
 
@@ -226,7 +221,7 @@ static void ProcessXEvent(XEvent *ev)
 
     case KeyPress:
     case KeyRelease: {
-        bool isDown = (ev->type == KeyPress);
+        bool isDown   = (ev->type == KeyPress);
         KeySym keysym = XLookupKeysym(&ev->xkey, 0);
         Sol_Input_OnKey((int)keysym, isDown);
         break;
@@ -238,8 +233,8 @@ static void ProcessXEvent(XEvent *ev)
 
         if (isDragging)
         {
-            int rootX = ev->xmotion.x_root;
-            int rootY = ev->xmotion.y_root;
+            int rootX   = ev->xmotion.x_root;
+            int rootY   = ev->xmotion.y_root;
             int newWinX = dragStartWinX + (rootX - dragStartMouseX);
             int newWinY = dragStartWinY + (rootY - dragStartMouseY);
             XMoveWindow(g_display, g_window, newWinX, newWinY);
@@ -248,8 +243,8 @@ static void ProcessXEvent(XEvent *ev)
         static int lastX = 0, lastY = 0;
         int dx = x - lastX;
         int dy = y - lastY;
-        lastX = x;
-        lastY = y;
+        lastX  = x;
+        lastY  = y;
 
         Sol_Input_OnRawMouse(dx, dy);
         Sol_Input_OnMouseMove(x, y);
@@ -258,7 +253,7 @@ static void ProcessXEvent(XEvent *ev)
 
     case ButtonPress:
     case ButtonRelease: {
-        bool isDown = (ev->type == ButtonPress);
+        bool isDown         = (ev->type == ButtonPress);
         unsigned int button = ev->xbutton.button;
 
         if (button == Button1) // Left Click
@@ -266,13 +261,13 @@ static void ProcessXEvent(XEvent *ev)
             Sol_Input_OnMouseButton(SOL_MOUSE_LEFT, isDown);
             if (!isFullscreen && isDown && ev->xbutton.y < 30)
             {
-                isDragging = true;
+                isDragging      = true;
                 dragStartMouseX = ev->xbutton.x_root;
                 dragStartMouseY = ev->xbutton.y_root;
 
                 Window child;
-                XTranslateCoordinates(g_display, g_window, RootWindow(g_display, DefaultScreen(g_display)),
-                                     0, 0, &dragStartWinX, &dragStartWinY, &child);
+                XTranslateCoordinates(g_display, g_window, RootWindow(g_display, DefaultScreen(g_display)), 0, 0,
+                                      &dragStartWinX, &dragStartWinY, &child);
             }
             else if (!isDown && isDragging)
             {
@@ -299,8 +294,7 @@ static void ProcessXEvent(XEvent *ev)
     }
 
     case ConfigureNotify:
-        Sol_Window_OnResize(ev->xconfigure.x, ev->xconfigure.y,
-                            ev->xconfigure.width, ev->xconfigure.height);
+        Sol_Window_OnResize(ev->xconfigure.x, ev->xconfigure.y, ev->xconfigure.width, ev->xconfigure.height);
         break;
     }
 }
@@ -321,38 +315,36 @@ void QuitApp(int flags)
 
 void W_Set_Ontop(int flags)
 {
-    bool toggle = (flags & INTERACT_TOGGLED);
+    bool toggle  = (flags & INTERACT_TOGGLED);
     Atom wmState = XInternAtom(g_display, "_NET_WM_STATE", False);
     Atom wmAbove = XInternAtom(g_display, "_NET_WM_STATE_ABOVE", False);
 
-    XEvent xev = {0};
-    xev.type = ClientMessage;
-    xev.xclient.window = g_window;
+    XEvent xev               = {0};
+    xev.type                 = ClientMessage;
+    xev.xclient.window       = g_window;
     xev.xclient.message_type = wmState;
-    xev.xclient.format = 32;
-    xev.xclient.data.l[0] = toggle ? 1 : 0; // 1 = _NET_WM_STATE_ADD, 0 = _NET_WM_STATE_REMOVE
-    xev.xclient.data.l[1] = wmAbove;
+    xev.xclient.format       = 32;
+    xev.xclient.data.l[0]    = toggle ? 1 : 0; // 1 = _NET_WM_STATE_ADD, 0 = _NET_WM_STATE_REMOVE
+    xev.xclient.data.l[1]    = wmAbove;
 
-    XSendEvent(g_display, DefaultRootWindow(g_display), False,
-               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+    XSendEvent(g_display, DefaultRootWindow(g_display), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
 }
 
 void W_Set_Fullscreen(int flags)
 {
-    isFullscreen = (bool)flags;
-    Atom wmState = XInternAtom(g_display, "_NET_WM_STATE", False);
+    isFullscreen      = (bool)flags;
+    Atom wmState      = XInternAtom(g_display, "_NET_WM_STATE", False);
     Atom wmFullscreen = XInternAtom(g_display, "_NET_WM_STATE_FULLSCREEN", False);
 
-    XEvent xev = {0};
-    xev.type = ClientMessage;
-    xev.xclient.window = g_window;
+    XEvent xev               = {0};
+    xev.type                 = ClientMessage;
+    xev.xclient.window       = g_window;
     xev.xclient.message_type = wmState;
-    xev.xclient.format = 32;
-    xev.xclient.data.l[0] = isFullscreen ? 1 : 0;
-    xev.xclient.data.l[1] = wmFullscreen;
+    xev.xclient.format       = 32;
+    xev.xclient.data.l[0]    = isFullscreen ? 1 : 0;
+    xev.xclient.data.l[1]    = wmFullscreen;
 
-    XSendEvent(g_display, DefaultRootWindow(g_display), False,
-               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+    XSendEvent(g_display, DefaultRootWindow(g_display), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -367,8 +359,11 @@ void Sol_Free_Resource(SolResource *res)
     }
 }
 
-int Sol_ReadFile(const char *filename, SolResource *outRes)
+int Sol_ReadFile(const char *prefix, const char *filename, SolResource *outRes)
 {
+    char disk_path[128];
+    snprintf(disk_path, sizeof(disk_path), "%s%s", prefix, filename);
+
     FILE *file = fopen(filename, "rb");
     if (!file)
         return 0;
@@ -408,19 +403,4 @@ int Sol_DeleteFile(const char *prefix, const char *filename)
     char disk_path[128];
     snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, filename);
     return remove(disk_path) == 0;
-}
-
-SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
-{
-    SolResource res = {0};
-    char disk_path[128];
-    snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, resourceName);
-
-    if (Sol_ReadFile(disk_path, &res))
-    {
-        return res;
-    }
-
-    printf("Failed to find resource %s at %s\n", resourceName, disk_path);
-    return res;
 }

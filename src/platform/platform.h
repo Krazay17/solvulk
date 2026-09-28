@@ -8,8 +8,8 @@ typedef struct SolResource
     int isHeap;
 } SolResource;
 
-SolResource Sol_LoadResource(const char *resourceName, const char *prefix);
-int Sol_ReadFile(const char *filename, SolResource *outRes);
+SolResource Sol_LoadResource(const char *prefix, const char *resourceName);
+int Sol_ReadFile(const char *prefix, const char *filename, SolResource *outRes);
 int Sol_DeleteFile(const char *prefix, const char *filename);
 int Sol_WriteFile(const char *prefix, const char *filename, const void *buffer, const size_t size);
 void Sol_Platform_LockCursor(bool lock);

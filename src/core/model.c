@@ -58,7 +58,7 @@ int Sol_Models_Init()
     {
         if (!model_path[i])
             continue;
-        SolResource res       = Sol_LoadResource(model_path[i], "models/");
+        SolResource res       = Sol_LoadResource("models/", model_path[i]);
         ScModelData *model    = Parse_Model(res, i);
         model->needsGpuUpload = true;
     }

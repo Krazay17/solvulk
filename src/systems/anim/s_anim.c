@@ -227,7 +227,6 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
 struct AnimMap
 {
     u32 hand_anim[2][4];
-    u32 layer;
     float speed;
     float seek;
 } ability_anim_map[ABILITY_STATE_COUNT] = {
@@ -236,6 +235,12 @@ struct AnimMap
             .hand_anim[0][0] = ANIM_ATTACK_LEFT,
             .hand_anim[1][0] = ANIM_ATTACK_RIGHT,
             .seek            = 0.1f,
+        },
+    [ABILITY_STATE_CLAW_DASH] =
+        {
+            .hand_anim[0][0] = ANIM_SPINSLASH,
+            .seek            = 0.6f,
+            .speed           = 2.0f,
         },
     [ABILITY_STATE_CLAW_CHARGE] =
         {
@@ -248,7 +253,7 @@ struct AnimMap
             .hand_anim[0][3] = ANIM_ATTACK_LEFT,
             .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
             .seek            = 0.1f,
-            .speed = 1.05f,
+            .speed           = 1.05f,
         },
     [ABILITY_STATE_FIREBALL] =
         {
@@ -296,20 +301,19 @@ void Anim_Tick(World *world, double dt)
             AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .blendIn = 0.1f, .blendOut = 0.1f};
             ability_anim.anim =
                 ability_anim_map[ability->state].hand_anim[ability->activeSlot == 1 ? 1 : 0][data->stage];
-            ability_anim.seek = ability_anim_map[ability->state].seek;
+            ability_anim.seek  = ability_anim_map[ability->state].seek;
             ability_anim.speed = ability_anim_map[ability->state].speed;
-            ability_anim.speed = ability_anim.speed > 0? ability_anim.speed : 1.0f;
+            ability_anim.speed = ability_anim.speed > 0 ? ability_anim.speed : 1.0f;
             switch (ability->state)
             {
             case ABILITY_STATE_IDLE:
                 break;
             case ABILITY_STATE_CLAW_CHARGE:
-                ability_anim.layerId = ANIM_LAYER_UPPER;
+                ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
                 break;
             case ABILITY_STATE_CLAW_DASH: {
-                ability_anim.anim  = dash_map[data->as.dash.strafe];
-                ability_anim.speed = 1.1f - data->conf.duration;
-                ability_anim.seek  = 0.05f;
+                ability_anim.speed =
+                    1.6 + Sol_Ability_GetCurrentBaseDuration(ability, ability->activeSlot) - data->conf.duration;
             }
             break;
             case ABILITY_STATE_FIREBALL: {
@@ -322,6 +326,12 @@ void Anim_Tick(World *world, double dt)
             break;
             case ABILITY_STATE_SHIELD: {
                 ability_anim.layerId = ANIM_LAYER_UPPER;
+            }
+            break;
+            case ABILITY_STATE_SHIELD_DASH: {
+                ability_anim.anim = dash_map[data->as.dash.strafe];
+                ability_anim.speed =
+                    1.0 + Sol_Ability_GetCurrentBaseDuration(ability, ability->activeSlot) - data->conf.duration;
             }
             break;
             }

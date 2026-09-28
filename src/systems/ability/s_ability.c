@@ -16,7 +16,7 @@ AbilityConfig ability_base[ABILITYKIND_COUNT] = {
         },
     [ABILITYKIND_CLAW] =
         {
-            .duration    = 0.4f,
+            .duration    = 0.45f,
             .cooldown    = 1.0f,
             .damage      = 30.0f,
             .buffMask    = BITC(BUFFKIND_FIRE),
@@ -35,9 +35,9 @@ AbilityConfig ability_base[ABILITYKIND_COUNT] = {
         },
     [ABILITYKIND_SHIELD] =
         {
-            .duration   = 0.33f,
+            .duration   = 0.4f,
             .cooldown   = 4.0f,
-            .damage     = 15.0f,
+            .damage     = 20.0f,
             .buffMask   = BITC(BUFFKIND_FIRE),
             .effectMask = EFFECTMASK_KNOCKUP,
         },
@@ -52,7 +52,9 @@ const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_FIREBALL][1] = ABILITY_STATE_FIREBALL,        //
     [ABILITYKIND_FIREBALL][2] = ABILITY_STATE_FIREBALL_DASH,   //
 
-    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD, //
+    [ABILITYKIND_SHIELD][0] = ABILITY_STATE_FIREBALL_CHARGE, //
+    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,          //
+    [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH,     //
 };
 
 extern const AbilityStateFunc ability_idle_state;
@@ -74,13 +76,14 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
 
     [ABILITY_STATE_CLAW]        = &ability_claw_state,        //
     [ABILITY_STATE_CLAW_CHARGE] = &ability_claw_charge_state, //
-    [ABILITY_STATE_CLAW_DASH]   = &ability_dash_state,        //
+    [ABILITY_STATE_CLAW_DASH]   = &ability_claw_dash_state,   //
 
     [ABILITY_STATE_FIREBALL]        = &ability_fireball_state,        //
     [ABILITY_STATE_FIREBALL_CHARGE] = &ability_fireball_charge_state, //
     [ABILITY_STATE_FIREBALL_DASH]   = &ability_dash_state,            //
 
-    [ABILITY_STATE_SHIELD] = &ability_shield_state, //
+    [ABILITY_STATE_SHIELD]      = &ability_shield_state, //
+    [ABILITY_STATE_SHIELD_DASH] = &ability_dash_state,   //
 };
 
 void Ability_Step(World *world, double dt)
@@ -203,9 +206,14 @@ AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)
 
 bool Sol_Ability_GetIsDashing(const ScAbility *ability)
 {
-    return ability->state == ABILITY_STATE_CLAW_DASH || ability->state == ABILITY_STATE_FIREBALL_DASH;
+    return ability->state == ABILITY_STATE_CLAW_DASH || ability->state == ABILITY_STATE_FIREBALL_DASH ||
+           (ability->state == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[ability->activeSlot].stage > 0));
 }
 
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot)
 {
+    if (ability->slotted_actions[slot] > 0)
+        return ability_base[ability->slotted_actions[slot]].duration;
+    else
+        return ability_base[ability->base_actions[slot]].duration;
 }

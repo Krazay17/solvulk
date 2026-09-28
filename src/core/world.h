@@ -567,3 +567,4 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
 int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
 bool Sol_Ability_GetIsDashing(const ScAbility *ability);
 bool Sol_Combat_Hostile(World *world, int idA, int idB);
+float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot);

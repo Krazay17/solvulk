@@ -18,12 +18,13 @@ void Abilitybar_Update(World *world, double dt)
         if (!ref)
             continue;
 
-        World *game_world    = Sol_GetWorldByIdx(ref->ent_world);
+        World *game_world = Sol_GetWorldByIdx(ref->ent_world);
+        if (!game_world)
+            return;
         ScAbility *abilities = Sol_Comp_Get(game_world, ref->ent_id, ScAbility);
-        if (abilities)
-        {
-            memset(abilities->slotted_actions, 0, sizeof(abilities->slotted_actions));
-        }
+        if (!abilities)
+            return;
+        memset(abilities->slotted_actions, 0, sizeof(abilities->slotted_actions));
 
         float slot_w  = abilitybar->slot_dims.x;
         float slot_h  = abilitybar->slot_dims.y;
@@ -83,7 +84,7 @@ void Abilitybar_Update(World *world, double dt)
                         {
 
                             abilities->slotted_actions[slot] = user_item->abilityKind;
-                            abilities->slotted_items[slot] = *user_item;
+                            abilities->slotted_items[slot]   = *user_item;
                         }
                     }
                 }

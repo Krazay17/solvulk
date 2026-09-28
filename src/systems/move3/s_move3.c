@@ -71,7 +71,10 @@ void Move3_Step(World *world, double dt)
         {
         case MOVE_MANTLE:
         case MOVE_LANDING:
+            break;
         case MOVE_DASH:
+            vel        = ApplyAccel3(wishdir, vel, finalSpeed, forces.accell, fdt);
+            body3->vel = vel;
             break;
         case MOVE_STUN:
             body3->gravity.y *= 1.33f;

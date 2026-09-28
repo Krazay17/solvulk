@@ -826,8 +826,8 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     }
 
     // --- load shader bytecode ---
-    SolResource vertRes = Sol_LoadResource(config->vertResource, "shaders/");
-    SolResource fragRes = Sol_LoadResource(config->fragResource, "shaders/");
+    SolResource vertRes = Sol_LoadResource("shaders/", config->vertResource);
+    SolResource fragRes = Sol_LoadResource("shaders/", config->fragResource);
 
     if (!vertRes.data || !fragRes.data)
         return 1;

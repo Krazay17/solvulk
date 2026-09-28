@@ -56,7 +56,7 @@ int Sol_Textures_Init()
         if (!image_path[i])
             continue;
 
-        SolResource res   = Sol_LoadResource(image_path[i], "images/");
+        SolResource res   = Sol_LoadResource("images/", image_path[i]);
         const char *ext   = strrchr(image_path[i], '.');
         SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
 

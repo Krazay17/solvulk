@@ -173,6 +173,7 @@ static inline void Hook_AddItem(World *w, int a, int b)
 {
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW});
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .effectMask = EFFECTMASK_KNOCKUP});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)
@@ -187,8 +188,6 @@ static inline void Hook_SpawnEmitter(World *w, int a, int b)
 {
     World *world = Sol_User_GetGameWorld();
     vec3s pos    = Xform_Get(world, sol_user.view_ent).pos;
-
-    Sol_Prefab_PlasmaOrb(world, pos);
 }
 static inline void Hook_SetPlayerFov(World *w, int a, int b)
 {
@@ -234,7 +233,7 @@ static inline void Hook_Test(World *w, int a, int b)
     vec3s pos   = game->xform.pos[id];
     ScCmd *cmd  = Sol_Comp_Get(game, id, ScCmd);
     // Sol_Buff_AddMask(game, id, 1, 0, 1.0f);
-    int fireball   = Sol_Prefab_Fireball(game, 6, vecAdd(pos, vecSca(cmd->aimdir, 2.0f)), (vec3s){0, 0, 1.0f}, 0, 1.0f);
+    int fireball   = Sol_Prefab_Fireball(game, 6, vecAdd(pos, vecSca(cmd->aimdir, 2.0f)), (vec3s){0, 0, 1.0f}, 0.2f, 1.0f);
     ScBody3 *body3 = Sol_Comp_Get(game, fireball, ScBody3);
     body3->gravity = (vec3s){0};
 }

@@ -9,13 +9,14 @@
 #include "estate.h"
 #include "sol_core.h"
 #include "sol_math.h"
+#include "move3/s_move3.h"
 
 #include "prefabs.h"
 #include "render/render.h"
 
 #define HITDELAY 0.2f
 #define HITINTERVAL 0.05f
-#define MELEE_RANGE 2.0f
+#define MELEE_RANGE 2.5f
 #define DASH_SPEED 30.0f
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
@@ -29,84 +30,18 @@ static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 
 static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
-    // AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    // data->elapsed += dt;
-    // if (!Sol_Comp_Has(world, id, ScCombat))
-    //     return;
-
-    // ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-
-    // combat->hitPause = fmaxf(0, combat->hitPause - dt * 5.0f);
-    // if (combat->hitPause == 0)
-    //     data->elapsed += dt;
-
-    // if (data->elapsed >= data->conf.duration)
-    // {
-    //     Sol_Ability_SetState(world, id, 0, ability->activeSlot, 1);
-    //     return;
-    // }
-
-    // if (data->elapsed < HITDELAY)
-    //     return;
-
-    // ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
-    // data->accum += dt;
-    // if (data->accum >= HITINTERVAL)
-    // {
-    //     data->accum -= HITINTERVAL;
-    //     vec3s head = Sol_Body3_GetHead(world, id);
-    //     SolRay ray = {
-    //         .start     = head,
-    //         .dir       = cmd->aimdir,
-    //         .dist      = body->dims.x + MELEE_RANGE,
-    //         .ignoreEnt = id,
-    //         .mask      = COLLAYER_ALL,
-    //     };
-    //     SolRayResult results[8];
-    //     int hits = Sol_Raycast(world, ray, results, 8);
-    //     for (int i = 0; i < hits; i++)
-    //     {
-    //         SolRayResult result = results[i];
-    //         vec3s hit_pos       = Sol_AddScaledDir(ray.start, ray.dir, result.t);
-    //         float dot           = glms_vec3_dot(cmd->aimdir, glms_vec3_normalize(glms_vec3_sub(hit_pos, head)));
-    //         if (dot < 0)
-    //             continue;
-    //         if (!Sol_Hitgen_Try(world, id, result.entId, data->hitgen))
-    //             continue;
-
-    //         SolHit hit = {
-    //             .damage     = data->conf.damage,
-    //             .buffMask   = data->conf.buffMask,
-    //             .effectMask = data->conf.effectMask,
-    //             .power      = 1.0f,
-    //             .entA       = id,
-    //             .entB       = result.entId,
-    //             .pos        = hit_pos,
-    //             .vel        = cmd->aimdir,
-    //         };
-
-    //         Sol_Combat_Hit(world, result.entId, hit);
-    //         if (combat->hitPauseDiminish < 4)
-    //         {
-    //             combat->hitPause = 1.0f;
-    //             combat->hitPauseDiminish++;
-    //         }
-    //         body->vel.y = fmaxf(body->vel.y, 1.0f);
-    //     }
-    // }
 }
 
 static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
 {
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->elapsed += dt;
-    ScBody3 *body3       = Sol_Comp_Get(world, id, ScBody3);
+    ScBody3 *body3         = Sol_Comp_Get(world, id, ScBody3);
+    if (!body3)
+        return;
     vec3s pos            = world->xform.pos[id];
     float duration_delta = data->elapsed / data->conf.duration;
-    if (body3)
-    {
-        body3->vel = vecSca(cmd->lookdir, Sol_Math_MapRange(DASH_SPEED, 6.0f, 0, 1.0f, duration_delta));
-    }
+
+    body3->vel = vecSca(cmd->lookdir, Sol_Math_MapRange(DASH_SPEED, 7.0f, 0, 1.0f, duration_delta));
 
     data->accum += dt;
     if (data->accum >= HITINTERVAL)
@@ -125,10 +60,14 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
                                   .damage     = data->conf.damage,
                                   .buffMask   = data->conf.buffMask,
                                   .effectMask = data->conf.effectMask,
-                                  .kind       = HITKIND_NORMAL,
+                                  .power      = 1.0f,
+                                  .kind       = HITKIND_MELEE_HIT,
                               },
                               data->hitgen);
     }
+    data->elapsed += dt;
+    if (data->elapsed >= data->conf.duration)
+        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
 }
 
 static void Hook_OnHit(World *world, int a, int b)
@@ -171,12 +110,18 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         };
 
         { // Spawn fireball
-            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
-            ScBody3 *pBody           = Sol_Comp_Get(world, fireball, ScBody3);
+            int fireball             = Sol_Prefab_PlasmaOrb(world, id, pos, dir, 20.0f, data->power);
             ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit          = hit;
             projectile->aoe_hit      = hit;
             projectile->power        = data->power;
+        }
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+        {
+            vec3s boost = cmd->lookdir; // glms_vec3_norm2(cmd->wishdir) > 0 ? cmd->wishdir :
+            boost.y     = boost.y < 0 ? boost.y : 0;
+            body3->vel  = Accel_BringTo(boost, body3->vel, 8.0f);
         }
         break;
     case 2:
@@ -267,6 +212,11 @@ void Ability_Claw_Draw(World *world, int id, ScAbility *ability, float dt)
         s->position  = pos;
         s->scale     = (vec4s){data->power, data->power, data->power, data->power};
         s->rotation  = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
+
+        SphereSSBO *s2 = Sol_Render_GetNextSphere(PIPE_PLASMA);
+        pos.y += data->power * 0.5f;
+        pos.w   = data->power * 0.5f;
+        s2->pos = pos;
     }
 }
 

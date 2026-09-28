@@ -87,7 +87,7 @@ void Find_User_Hit(double dt, SolMouse mouse)
 
 void Sol_User_LoadUserSettings()
 {
-    Sol_ReadFile(USER_SETTINGS_FILENAME, &user_settings_file);
+    user_settings_file = Sol_LoadResource("data/", USER_SETTINGS_FILENAME);
 }
 
 void Sol_User_SyncUI()

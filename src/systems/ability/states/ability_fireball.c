@@ -14,7 +14,7 @@
 #include "prefabs.h"
 
 #define MIN_POWER 0.2f
-#define MELEE_DIST 4.0f
+#define MELEE_DIST 4.5f
 #define HIT_RATE 0.05f
 #define HIT_DELAY 0.1f
 

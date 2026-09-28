@@ -13,12 +13,16 @@ void Sol_Free_Resource(SolResource *res)
     }
 }
 
-int Sol_ReadFile(const char *filename, SolResource *outRes)
+// 1 = No file, 2 = no data
+int Sol_ReadFile(const char *prefix, const char *filename, SolResource *outRes)
 {
-    FILE *file = fopen(filename, "rb");
+    char disk_path[128];
+    snprintf(disk_path, sizeof(disk_path), "assets/%s%s", prefix, filename);
+
+    FILE *file = fopen(disk_path, "rb");
 
     if (!file)
-        return 0;
+        return 1;
 
     fseek(file, 0, SEEK_END);
     outRes->size = ftell(file);
@@ -28,13 +32,13 @@ int Sol_ReadFile(const char *filename, SolResource *outRes)
     if (!outRes->data)
     {
         fclose(file);
-        return 0;
+        return 2;
     }
 
     fread(outRes->data, 1, outRes->size, file);
     fclose(file);
     outRes->isHeap = 1;
-    return 1;
+    return 0;
 }
 
 int Sol_WriteFile(const char *prefix, const char *filename, const void *buffer, const size_t size)
@@ -58,7 +62,7 @@ int Sol_DeleteFile(const char *prefix, const char *filename)
     return remove(disk_path) == 0;
 }
 
-SolResource Sol_LoadResource(const char *resourceName, const char *prefix)
+SolResource Sol_LoadResource(const char *prefix, const char *resourceName)
 {
     SolResource res = {0};
 

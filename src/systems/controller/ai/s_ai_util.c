@@ -133,7 +133,14 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
     ai->learning.reward_move -= brain->target_dist * 0.2f * fdt;
 
     if (ai->learning.prev_knows_combat.attack & 2)
-        ai->learning.reward_combat -= 0.5f * fdt;
+        ai->learning.reward_combat -= 0.1f * fdt;
+
+    if (ai->learning.prev_knows_move.danger &&
+        ((ai->learning.action_move == AIACTION_DODGEFWD) || (ai->learning.action_move == AIACTION_DODGEBWD) ||
+         (ai->learning.action_move == AIACTION_DODGELEFT) || (ai->learning.action_move == AIACTION_DODGERIGHT)))
+    {
+        ai->learning.reward_move += 10.0f;
+    }
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
@@ -272,7 +279,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     }
 
     SparseSet_ScProjectile *projectile_set = Sol_Comp_Set(world, ScProjectile);
-    float min_d2                           = 50.0f;
+    float min_d2                           = 70.0f;
     for (int i = 0; i < projectile_set->cnt; i++)
     {
         int projectile_id = projectile_set->dense[i];
@@ -397,7 +404,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
             float final_dist     = radius * 3.0f;
             vec3s rotated_offset = glms_quat_rotatev(world->xform.rot[id], VECTOR_RADIAL_DIRECTIONS[j]);
             SolRay ray = {.start = finalPos, .dist = final_dist, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
-            bool hit   = Sol_Raycast1D(world, ray, &result, 0.2f);
+            bool hit   = Sol_Raycast1(world, ray, &result);
             if (hit)
             {
                 knows.wallMask |= (1 << j - 1);
@@ -574,7 +581,6 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
         cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
         if (ai->learning.prev_knows_combat.attack == 3)
             ai->learning.reward_combat += 30.0f;
-
         break;
     case AIACTIONC_ABILITY_AOE:
         // u32 slot = rand() % 4;

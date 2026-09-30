@@ -75,13 +75,13 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
+            ABILITYKIND_CLAW,
             ABILITYKIND_FIREBALL,
-            ABILITYKIND_FIREBALL,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
-            ABILITYKIND_SHIELD,
+            ABILITYKIND_CLAW,
         },
 };
 
@@ -146,7 +146,15 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
-    *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {3, 3, 3, 3, 3, 3, 3}};
+    *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {
+                                                          ABILITYKIND_CLAW,
+                                                          ABILITYKIND_FIREBALL,
+                                                          ABILITYKIND_SHIELD,
+                                                          ABILITYKIND_FIREBALL,
+                                                          ABILITYKIND_FIREBALL,
+                                                          ABILITYKIND_FIREBALL,
+                                                          ABILITYKIND_SHIELD,
+                                                      }};
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
     Sol_Comp_Add(world, id, ScCmd);
@@ -495,8 +503,8 @@ int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float sp
         ailearn->reward_combat         = 10.0f;
     }
 
-    ScTimer *timer = Sol_Comp_Add(world, id, ScTimer);
-    timer->destroy = true;
+    ScTimer *timer  = Sol_Comp_Add(world, id, ScTimer);
+    timer->destroy  = true;
     timer->duration = 2.0f;
 
     return id;

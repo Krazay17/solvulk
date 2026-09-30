@@ -400,7 +400,7 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     }
 
     {
-        float cell_size    = 4.0f;
+        float cell_size    = 5.0f;
         self->grid_dynamic = malloc(sizeof(SpatialGrid));
         vec3s min          = {-512.0f, -512.0f, -32.0f};
         vec3s max          = {512.0f, 512.0f, 128.0f};
@@ -408,7 +408,7 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     }
 
     {
-        float cell_size   = 4.0f;
+        float cell_size   = 5.0f;
         self->grid_static = malloc(sizeof(SpatialGrid));
         vec3s min         = {-512.0f, -512.0f, -32.0f};
         vec3s max         = {512.0f, 512.0f, 128.0f};

@@ -69,20 +69,23 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
 
 static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projectile, SolHit hit)
 {
-
     ScOwner *owner = Sol_Comp_Get(world, a, ScOwner);
     int ownerId    = owner ? owner->ownerId : 0;
 
-    Sol_Combat_Hit(world, hit.entB, hit);
-    Sol_Event_Push(world, EVENTKIND_HIT,
-                   (SolEvent){
-                       .entA         = ownerId,
-                       .entB         = hit.entB,
-                       .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
-                       .as.hit.pos   = hit.pos,
-                       .as.hit.power = hit.power,
-                   });
+    if (Sol_Hitgen_Try(world, a, hit.entB, projectile->hitgen))
+    {
 
+        Sol_Combat_Hit(world, hit.entB, hit);
+
+        Sol_Event_Push(world, EVENTKIND_HIT,
+                       (SolEvent){
+                           .entA         = ownerId,
+                           .entB         = hit.entB,
+                           .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
+                           .as.hit.pos   = hit.pos,
+                           .as.hit.power = hit.power,
+                       });
+    }
     if (Sol_Comp_Has(world, hit.entB, ScStage))
         return true;
 
@@ -98,11 +101,14 @@ void Projectile_Step(World *world, double dt)
         int id                   = set->dense[i];
         ScProjectile *projectile = &set->data[i];
         ScBody3 *body3           = Sol_Comp_Get(world, id, ScBody3);
-        ScOwner *owner           = Sol_Comp_Get(world, id, ScOwner);
-        int ownerId              = owner ? owner->ownerId : 0;
-        Xform xform              = Xform_Get(world, id);
+        if (!body3)
+            continue;
+        Xform xform = Xform_Get(world, id);
         if (xform.pos.y < -15.0f || fabs(xform.pos.x) > 500.0f || fabs(xform.pos.z) > 500.0f)
+        {
             Sol_Destroy_Ent(world, id);
+            continue;
+        }
 
         vec3s vel   = body3->vel;
         float speed = glms_vec3_norm(vel);
@@ -118,25 +124,28 @@ void Projectile_Step(World *world, double dt)
         };
 
         SolRayResult results[16];
-        int hits =
-            solState.debug ? Sol_SpherecastD(world, ray, results, 16, 0.2f) : Sol_Spherecast(world, ray, results, 16);
-
+        int hits = solState.debug ? Sol_SpherecastD(world, dt, ray, results, 16, 0.2f)
+                                  : Sol_Spherecast(world, dt, ray, results, 16);
         if (hits == 0)
             continue;
 
-        Hook hook = projectile->hook;
+        ScOwner *owner = Sol_Comp_Get(world, id, ScOwner);
+        int ownerId    = owner ? owner->ownerId : 0;
+
+        SolHit hit = projectile->hit;
+        hit.entA   = id;
+        hit.vel    = vel;
         for (int j = 0; j < hits; j++)
         {
             SolRayResult result = results[j];
+
             // Skip owner collision
             if (result.entId == ownerId)
                 continue;
 
-            SolHit hit = projectile->hit;
             hit.entB   = result.entId;
             hit.normal = result.norm;
             hit.pos    = Sol_AddScaledDir(ray.start, ray.dir, result.t);
-            hit.vel    = vel;
 
             Sol_Ai_QuickLearn(world, id, ownerId, false);
 
@@ -150,13 +159,53 @@ void Projectile_Step(World *world, double dt)
                 destroyed = PlasmaOrbHit(world, id, projectile, hit);
                 break;
             }
-            if (hook)
-                hook(world, id, result.entId);
+            if (projectile->hook)
+                projectile->hook(world, id, result.entId);
+
             if (destroyed)
             {
                 Sol_Destroy_Ent(world, id);
                 break;
             }
+        }
+    }
+}
+
+void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius)
+{
+    SparseSet_ScProjectile *set = Sol_Comp_Set(world, ScProjectile);
+    for (int i = set->cnt; i-- > 0;)
+    {
+        int id = set->dense[i];
+        if (!Sol_Combat_Hostile(world, attacker, id))
+            continue;
+        ScProjectile *projectile = &set->data[i];
+        ScBody3 *body3           = Sol_Comp_Get(world, id, ScBody3);
+        vec3s vel                = body3->vel;
+
+        vec3s b0 = world->xform.pos[id];
+        vec3s b1 = glms_vec3_add(b0, glms_vec3_scale(vel, dt));
+
+        CapHit hit;
+        if (Sol_CapsuleOverlap(world, a0, a1, b0, b1, radius, projectile->radius, &hit))
+        {
+            ScTeam *team          = Sol_Comp_Get(world, id, ScTeam);
+            ScOwner *owner        = Sol_Comp_Get(world, id, ScOwner);
+            ScTeam *attacker_team = Sol_Comp_Get(world, attacker, ScTeam);
+            ScCmd *cmd            = Sol_Comp_Get(world, attacker, ScCmd);
+
+            if (owner)
+                owner->ownerId = attacker;
+            if (team)
+                team->team = attacker_team->team;
+
+            if (body3 && cmd)
+            {
+                body3->vel       = Sol_RedirectVel(body3->vel, cmd->aimdir);
+                body3->ignoreEnt = attacker;
+            }
+
+            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.contactA});
         }
     }
 }

@@ -109,7 +109,7 @@ void Sol_Debug_Draw(double dt)
 
 void Sol_FPS(double dt)
 {
-    if (dt < FLOATING_EPSILON)
+    if (dt < FLOAT_EPSILON)
         return;
     solState.fps = 1.0 / dt;
     total += solState.fps;

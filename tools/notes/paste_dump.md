@@ -1430,3 +1430,139 @@ const AbilityStateFunc ability_state_func[ABILITY_STATE_COUNT] = {
             if (slot_clicked >= 0)
                 sollog(slot_clicked);
         }
+
+// Put radius into SolRay
+int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
+{
+    float radius                = ray.radius;
+    SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);
+    // SlSpatial *spatial          = world->singles[SINGLE_SPATIAL];
+    SlSpatial *spatial        = Sol_Comp_Get(world, 0, SlSpatial);
+    SpatialGrid *grid_dynamic = spatial->grid_dynamic;
+    SpatialGrid *grid_static  = spatial->grid_static;
+
+    int count = 0;
+
+    static _Thread_local HashSlot hash_slot[QUERY_HASH_SIZE];
+    static _Thread_local uint32_t local_gen = 0;
+
+    uint32_t this_gen = ++local_gen;
+
+    // --- Dynamic bodies ---
+    {
+        GridDDA dda     = GridDDA_Init(grid_dynamic, ray.start, ray.dir);
+        float current_t = 0.0f;
+
+        while (GridDDA_InBounds(&dda, grid_dynamic) && current_t <= ray.dist && count < max)
+        {
+            uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_dynamic, dda.cell.x, dda.cell.y, dda.cell.z);
+            uint32_t start    = grid_dynamic->cell_offsets[cell_idx];
+            uint32_t end      = grid_dynamic->cell_offsets[cell_idx + 1];
+
+            for (uint32_t i = start; i < end && count < max; i++)
+            {
+                int id = grid_dynamic->ids[i];
+                if (id == ray.ignoreEnt)
+                    continue;
+
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, id))
+                    continue;
+
+                ScBody3 *body = &set_body->data[set_body->sparse[id]];
+                if (!body)
+                    continue;
+
+                if (ray.mask != 0 && ((body->mask >> 16) & ray.mask) == 0)
+                    continue;
+
+                Xform xform = Xform_Get(world, id);
+
+                switch (body->shape)
+                {
+                case SHAPE3_CAP: {
+                    vec3s top    = xform.pos;
+                    vec3s bottom = xform.pos;
+                    top.y += body->dims.y;
+                    bottom.y -= body->dims.y;
+
+                    // Expand capsule radius by sphere radius for Minkowski sum
+                    float combined_radius = body->dims.x + radius;
+
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, combined_radius, &t, &norm))
+                    {
+                        results[count].hit   = true;
+                        results[count].t     = t;
+                        results[count].norm  = norm;
+                        results[count].entId = id;
+                        count++;
+                    }
+                    break;
+                }
+                case SHAPE3_SPH: {
+                    float t;
+                    vec3s norm;
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
+                    {
+                        results[count].hit   = true;
+                        results[count].t     = t;
+                        results[count].norm  = norm;
+                        results[count].entId = id;
+                        count++;
+                    }
+                }
+                break;
+
+                default:
+                    break;
+                }
+            }
+
+            current_t = GridDDA_Step(&dda);
+        }
+    }
+
+    // --- Static geometry (triangles) ---
+    {
+        GridDDA dda     = GridDDA_Init(grid_static, ray.start, ray.dir);
+        float current_t = 0.0f;
+
+        while (GridDDA_InBounds(&dda, grid_static) && current_t <= ray.dist && count < max)
+        {
+            uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_static, dda.cell.x, dda.cell.y, dda.cell.z);
+            uint32_t start    = grid_static->cell_offsets[cell_idx];
+            uint32_t end      = grid_static->cell_offsets[cell_idx + 1];
+
+            for (uint32_t i = start; i < end && count < max; i++)
+            {
+                uint32_t packed = grid_static->ids[i];
+                int entId       = SPATIAL_UNPACK_ID(packed);
+                int triIdx      = SPATIAL_UNPACK_IDX(packed);
+
+                if (entId == ray.ignoreEnt)
+                    continue;
+
+                if (!SpatialGrid_HashInsert(hash_slot, this_gen, packed))
+                    continue;
+
+                SolTri *tri = &spatial->tris_static[triIdx];
+
+                float t;
+                vec3s norm;
+                if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &t, &norm))
+                {
+                    results[count].hit   = true;
+                    results[count].t     = t;
+                    results[count].norm  = norm;
+                    results[count].entId = entId;
+                    count++;
+                }
+            }
+
+            current_t = GridDDA_Step(&dda);
+        }
+    }
+
+    return count;
+}

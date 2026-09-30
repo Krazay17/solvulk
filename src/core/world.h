@@ -515,7 +515,6 @@ void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
-AbilityConfig Sol_Ability_GetConf(SolItem item);
 AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot);
 
 bool Sol_Move3_SetState(World *world, int id, MoveState state);
@@ -530,10 +529,12 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *result, int max);
 int Sol_RaycastD(World *world, SolRay ray, SolRayResult *result, int max, float time);
 bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult);
 bool Sol_Raycast1D(World *world, SolRay ray, SolRayResult *result, float time);
-int Sol_Spherecast(World *world, SolRay ray, SolRayResult *result, int max);
-int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float time);
+int Sol_Spherecast(World *world, float dt, SolRay ray, SolRayResult *result, int max);
+int Sol_SpherecastD(World *world, float dt, SolRay ray, SolRayResult *results, int max, float time);
 int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_hits);
 int Sol_SphereOverlapD(World *world, SolRay ray, SolRayResult *out_hits, int max_hits, float time);
+bool Sol_CapsuleOverlap(World *world, vec3s a0, vec3s a1, vec3s b0, vec3s b1, float radiusA, float radiusB,
+                        CapHit *out_hit);
 
 int Sol_Body2_GetOverlaps(World *world, int id, int *ids, int max_counts);
 int Sol_Body2_GetEntAtPoint(World *world, vec2s point);
@@ -564,7 +565,12 @@ Buff *Sol_Buff_Next(World *world, int id, BuffKind kind);
 void Sol_Buff_Rem(World *world, int id, BuffKind kind);
 void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once);
 void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
-int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
+int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit, u32 hitgen);
 bool Sol_Ability_GetIsDashing(const ScAbility *ability);
 bool Sol_Combat_Hostile(World *world, int idA, int idB);
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot);
+void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius);
+AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item);
+AbilityConfig Sol_Item_GetMods(SolItem item);
+DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit);
+void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos);

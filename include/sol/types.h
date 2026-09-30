@@ -77,7 +77,7 @@ typedef struct SolHit
     vec3s pos;
     vec3s normal;
     vec3s vel;
-    
+
     Hook hook;
 } SolHit;
 
@@ -594,6 +594,17 @@ typedef struct SolContact
 
 typedef struct
 {
+    bool hit;
+    float penetration;
+    vec3s normal;
+    vec3s contactA;
+    vec3s contactB;
+    float tA;
+    float tB;
+} CapHit;
+
+typedef struct
+{
     SolContact *contacts;
 } ThreadContactBuffer;
 
@@ -774,7 +785,7 @@ typedef struct
     float damage;
     float cooldown;
     float maxpower;
-    float chargespeed;
+    float speed;
     float duration;
 
     u32 buffMask;
@@ -804,6 +815,12 @@ typedef struct SolItem
     u32 buffMask;
     u32 effectMask;
 } SolItem;
+
+typedef enum
+{
+    DEFENDKIND_NONE,
+    DEFENDKIND_CONSUMED,
+} DefendResult;
 
 typedef enum
 {

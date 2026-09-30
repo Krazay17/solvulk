@@ -49,6 +49,14 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
 
 // INLINES-------------------
 
+static inline float maxf(float a, float b)
+{
+    return (a > b) ? a : b;
+}
+static inline float minf(float a, float b)
+{
+    return (a < b) ? a : b;
+}
 static inline vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch)
 {
     float x = cosf(pitch) * sinf(yaw);
@@ -214,7 +222,7 @@ static inline vec3s ClosestPointOnTriangle(const vec3s p, const vec3s a, const v
     }
 
     const float denom = va + vb + vc;
-    if (denom < FLOATING_EPSILON)
+    if (denom < FLOAT_EPSILON)
         return a;
 
     const float inv = 1.0f / denom;
@@ -281,7 +289,7 @@ static inline float Sol_YawFromQuat(versor q)
     // Index mapping: q[0] = x, q[1] = y, q[2] = z, q[3] = w
     float siny_cosp = 2.0f * (q[3] * q[1] - q[0] * q[2]);
     float cosy_cosp = q[3] * q[3] + q[0] * q[0] - q[1] * q[1] - q[2] * q[2];
-    
+
     return atan2f(siny_cosp, cosy_cosp);
 }
 
@@ -419,104 +427,107 @@ static inline vec3s CalcWishDir2(uint32_t action)
     return glms_vec3_scale(wishdir, 1.0f / sqrtf(len2));
 }
 
-static inline void Closest_Points_Segment_Segment(vec3s p1, vec3s q1, // segment A: p1 → q1
-                                                  vec3s p2, vec3s q2, // segment B: p2 → q2
-                                                  vec3s *outA, vec3s *outB)
+static inline void ClosestTSegmentSegment(vec3s a0, vec3s a1, // Segment A: a0 -> a1
+                                          vec3s b0, vec3s b1, // Segment B: b0 -> b1
+                                          float *outTA, float *outTB)
 {
-    vec3s d1 = glms_vec3_sub(q1, p1); // segment A direction
-    vec3s d2 = glms_vec3_sub(q2, p2); // segment B direction
-    vec3s r  = glms_vec3_sub(p1, p2);
+    vec3s dA = glms_vec3_sub(a1, a0); // Direction of Segment A
+    vec3s dB = glms_vec3_sub(b1, b0); // Direction of Segment B
+    vec3s r  = glms_vec3_sub(a0, b0); // Displacement between starts
 
-    float a = glms_vec3_dot(d1, d1); // squared length of segment A
-    float e = glms_vec3_dot(d2, d2); // squared length of segment B
-    float f = glms_vec3_dot(d2, r);
+    float lenSqA = glms_vec3_dot(dA, dA); // Squared length of Segment A
+    float lenSqB = glms_vec3_dot(dB, dB); // Squared length of Segment B
+    float f      = glms_vec3_dot(dB, r);
 
-    float s, t;
+    float tA, tB;
+
     // Both segments degenerate to points?
-    if (a <= FLOATING_EPSILON && e <= FLOATING_EPSILON)
+    if (lenSqA <= FLOAT_EPSILON && lenSqB <= FLOAT_EPSILON)
     {
-        *outA = p1;
-        *outB = p2;
+        *outTA = 0.0f;
+        *outTB = 0.0f;
         return;
     }
 
-    if (a <= FLOATING_EPSILON)
+    if (lenSqA <= FLOAT_EPSILON)
     {
         // Segment A is a point
-        s = 0.0f;
-        t = f / e;
-        t = fmaxf(0.0f, fminf(1.0f, t));
+        tA = 0.0f;
+        tB = fmaxf(0.0f, fminf(1.0f, f / lenSqB));
     }
     else
     {
-        float c = glms_vec3_dot(d1, r);
+        float c = glms_vec3_dot(dA, r);
 
-        if (e <= FLOATING_EPSILON)
+        if (lenSqB <= FLOAT_EPSILON)
         {
             // Segment B is a point
-            t = 0.0f;
-            s = fmaxf(0.0f, fminf(1.0f, -c / a));
+            tB = 0.0f;
+            tA = fmaxf(0.0f, fminf(1.0f, -c / lenSqA));
         }
         else
         {
-            // General case
-            float b     = glms_vec3_dot(d1, d2);
-            float denom = a * e - b * b;
+            // General non-parallel case
+            float b     = glms_vec3_dot(dA, dB);
+            float denom = lenSqA * lenSqB - b * b;
 
-            // Segments not parallel
             if (denom != 0.0f)
             {
-                s = (b * f - c * e) / denom;
-                s = fmaxf(0.0f, fminf(1.0f, s));
+                tA = fmaxf(0.0f, fminf(1.0f, (b * f - c * lenSqB) / denom));
             }
             else
             {
-                // Parallel — pick s = 0 arbitrarily
-                s = 0.0f;
+                // Parallel — pick tA = 0 arbitrarily
+                tA = 0.0f;
             }
 
-            t = (b * s + f) / e;
+            tB = (b * tA + f) / lenSqB;
 
-            // Clamp t and recompute s if needed
-            if (t < 0.0f)
+            // Clamp tB and recompute tA if needed
+            if (tB < 0.0f)
             {
-                t = 0.0f;
-                s = fmaxf(0.0f, fminf(1.0f, -c / a));
+                tB = 0.0f;
+                tA = fmaxf(0.0f, fminf(1.0f, -c / lenSqA));
             }
-            else if (t > 1.0f)
+            else if (tB > 1.0f)
             {
-                t = 1.0f;
-                s = fmaxf(0.0f, fminf(1.0f, (b - c) / a));
+                tB = 1.0f;
+                tA = fmaxf(0.0f, fminf(1.0f, (b - c) / lenSqA));
             }
         }
     }
 
-    *outA = glms_vec3_add(p1, glms_vec3_scale(d1, s));
-    *outB = glms_vec3_add(p2, glms_vec3_scale(d2, t));
+    *outTA = tA; // Progress along Segment A [0, 1]
+    *outTB = tB; // Progress along Segment B [0, 1]
 }
 
-static inline vec3s Closest_Point_Segment_Point(vec3s s0, vec3s s1, vec3s p)
+static inline void ClosestPointsSegmentSegment(vec3s a0, vec3s a1, 
+                                               vec3s b0, vec3s b1, 
+                                               vec3s *outPointA, vec3s *outPointB)
 {
-    vec3s seg      = glms_vec3_sub(s1, s0);
-    float segLenSq = glms_vec3_dot(seg, seg);
+    float tA, tB;
+    ClosestTSegmentSegment(a0, a1, b0, b1, &tA, &tB);
 
-    if (segLenSq < 0.0001f)
-        return s0;
+    vec3s dA = glms_vec3_sub(a1, a0);
+    vec3s dB = glms_vec3_sub(b1, b0);
 
-    vec3s pDelta = glms_vec3_sub(p, s0);
-    float t      = glms_vec3_dot(pDelta, seg) / segLenSq;
-    t            = glm_clamp(t, 0.0f, 1.0f);
-
-    return glms_vec3_add(s0, glms_vec3_scale(seg, t));
+    *outPointA = glms_vec3_add(a0, glms_vec3_scale(dA, tA));
+    *outPointB = glms_vec3_add(b0, glms_vec3_scale(dB, tB));
 }
 
-static inline vec3s ClosestPointOnSegment(vec3s p, vec3s a, vec3s b)
+static inline float ClosestTOnSegment(vec3s s0, vec3s s1, vec3s p)
 {
-    vec3s ab    = glms_vec3_sub(b, a);
-    float denom = glms_vec3_dot(ab, ab);
-    float t     = denom > FLOATING_EPSILON ? glms_vec3_dot(glms_vec3_sub(p, a), ab) / denom : 0.0f;
-    t           = fmaxf(0.0f, fminf(1.0f, t));
-    return glms_vec3_add(a, glms_vec3_scale(ab, t));
+    vec3s m  = glms_vec3_sub(s1, s0);
+    float d2 = glms_vec3_dot(m, m);
+    if (d2 < FLOAT_EPSILON)
+        return 0.0f;
+    float t = glms_vec3_dot(glms_vec3_sub(p, s0), m) / d2;
+    return maxf(0.0f, minf(1.0f, t));
+}
+static inline vec3s ClosestPointOnSegment(vec3s s0, vec3s s1, vec3s p)
+{
+    float t = ClosestTOnSegment(s0, s1, p);
+    return glms_vec3_add(s0, glms_vec3_scale(glms_vec3_sub(s1, s0), t));
 }
 
 static inline void compose_trs(vec3 pos, versor quat, vec3 scale, mat4 dest)
@@ -547,20 +558,6 @@ static inline mat4s Sol_Transform(vec3s pos, versors quat, vec3s scale)
 
 static inline SolTri SolTri_GetWorldSpace(const SolTri *localTri, const versors quat, const vec3s pos, vec3s scale)
 {
-    // SolTri worldTri    = *localTri;
-    // mat4s  modelMatrix = Sol_Transform(pos, quat, scale);
-
-    // worldTri.a = glms_mat4_mulv3(modelMatrix, localTri->a, 1.0f);
-    // worldTri.b = glms_mat4_mulv3(modelMatrix, localTri->b, 1.0f);
-    // worldTri.c = glms_mat4_mulv3(modelMatrix, localTri->c, 1.0f);
-
-    // // Recalculate normal if non-uniform scale was applied
-    // vec3s edge1     = glms_vec3_sub(worldTri.b, worldTri.a);
-    // vec3s edge2     = glms_vec3_sub(worldTri.c, worldTri.a);
-    // worldTri.normal = glms_vec3_normalize(glms_vec3_cross(edge1, edge2));
-
-    // return worldTri;
-
     SolTri w;
 
     // 1. Scale

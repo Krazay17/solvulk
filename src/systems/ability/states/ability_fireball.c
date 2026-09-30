@@ -42,7 +42,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             data->stage++;
             goto fire;
         }
-        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.chargespeed));
+        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         break;
     case 1:
     fire:
@@ -53,7 +53,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         SolHit hit = {
             .entA   = id,
             .power  = data->power,
-            .damage = data->conf.damage,
+            .damage = data->conf.damage * 0.5f,
         };
 
         { // Spawn fireball
@@ -83,10 +83,10 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
                 .kind       = HITKIND_MELEE_HIT,
                 .power      = data->power,
                 .damage     = data->conf.damage,
-                .power      = 0.3f,
+                .power      = 0.1f,
                 .buffMask   = BITC(BUFFKIND_FIRE),
             };
-            Sol_Combat_DamageCast(world, id,
+            Sol_Combat_DamageCast(world,dt, id,
                                   (SolRay){.start     = pos,
                                            .dir       = dir,
                                            .dist      = MELEE_DIST,
@@ -117,14 +117,14 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
         ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
         projectile->hit          = (SolHit){
             .entA   = id,
-            .damage = data->conf.damage,
+            .damage = data->conf.damage * 0.5f,
             .power  = data->power,
         };
         projectile->aoe_hit = (SolHit){
             .entA       = id,
             .effectMask = data->conf.effectMask,
             .buffMask   = data->conf.buffMask,
-            .damage     = data->conf.damage,
+            .damage     = data->conf.damage * 0.5f,
             .power      = data->power,
         };
         projectile->power = data->power;

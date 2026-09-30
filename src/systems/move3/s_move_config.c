@@ -43,7 +43,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
                 [MOVE_IDLE]     = {.speed = 0.0f, .accell = 0.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_WALK]     = {.speed = 3.0f, .accell = 8.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_RUN]      = {.speed = 7.0f, .accell = 12.0f, .friction = 10.0f, .gravity = -13.0f},
-                [MOVE_DASH]      = {.speed = 7.0f, .accell = 4.0f, .friction = 0.0f, .gravity = -13.0f},
+                [MOVE_DASH]     = {.speed = 7.0f, .accell = 4.0f, .friction = 0.0f, .gravity = -13.0f},
                 [MOVE_CROUCH]   = {.speed = 4.0f, .accell = 20.0f, .friction = 10.0f, .gravity = -13.0f},
                 [MOVE_FALL]     = {.speed = 5.0f, .accell = 3.0f, .friction = 0.1f, .gravity = -13.0f},
                 [MOVE_JUMP]     = {.speed = 5.0f, .accell = 4.0f, .friction = 0.1f, .gravity = -13.0f},
@@ -64,6 +64,7 @@ const MoveStateForce MOVE_STATE_FORCES[MOVEMENTKIND_COUNT][MOVE_STATE_COUNT] =
             {
                 [MOVE_IDLE]    = {.speed = 0.0f, .accell = 0.0f, .friction = 25.0f, .gravity = -13.0f},
                 [MOVE_WALK]    = {.speed = 5.0f, .accell = 20.0f, .friction = 8.0f, .gravity = -13.0f},
+                [MOVE_RUN]     = {.speed = 5.0f, .accell = 20.0f, .friction = 8.0f, .gravity = -13.0f},
                 [MOVE_CROUCH]  = {.speed = 4.0f, .accell = 15.0f, .friction = 8.0f, .gravity = -13.0f},
                 [MOVE_FALL]    = {.speed = 5.0f, .accell = 5.0f, .friction = 0.1f, .gravity = -13.0f},
                 [MOVE_WALLRUN] = {.speed = 8.0f, .accell = 1.0f, .friction = 0.1f, .gravity = -2.0f},

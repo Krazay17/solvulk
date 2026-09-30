@@ -47,10 +47,10 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
 
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
-    data->hitgen           = Sol_Hitgen_Start(world, id);
-    data->drawElapsed      = 0.0f;
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    data->hitgen            = Sol_Hitgen_Start(world, id);
+    data->drawElapsed       = 0.0f;
     data->cooldownRemaining = data->conf.cooldown;
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)

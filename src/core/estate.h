@@ -33,6 +33,7 @@ typedef void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCm
 typedef void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 typedef bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
 typedef bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
+typedef u32 (*AbilityStateDefend)(World *world, int id, ScAbility *ability);
 typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, float dt);
 
 typedef struct
@@ -74,6 +75,7 @@ typedef struct
     AbilityStateCanExit canExit;
     AbilityStateCanEnter canEnter;
     AbilityStateDraw draw;
+    DefendResult (*defense)(World *world, int id, ScAbility *ability, SolHit *hit);
 } AbilityStateFunc;
 
 // void State_Update(World *world, int id, float dt);

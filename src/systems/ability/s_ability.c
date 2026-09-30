@@ -9,39 +9,69 @@
 #include "estate.h"
 #include "sol_core.h"
 
-AbilityConfig ability_base[ABILITYKIND_COUNT] = {
-    [ABILITYKIND_IDLE] =
+const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
+    [ABILITY_STATE_IDLE] =
         {
             0,
         },
-    [ABILITYKIND_CLAW] =
+    [ABILITY_STATE_CLAW_CHARGE] =
         {
-            .duration    = 0.45f,
-            .cooldown    = 1.0f,
-            .damage      = 30.0f,
-            .buffMask    = BITC(BUFFKIND_FIRE),
-            .effectMask  = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
-            .maxpower    = 1.0f,
-            .chargespeed = 1.0f,
+            .duration   = 0.45f,
+            .cooldown   = 1.0f,
+            .maxpower   = 1.0f,
+            .speed      = 1.0f,
+            .damage     = 25.0f,
+            .buffMask   = BITC(BUFFKIND_FIRE),
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
         },
-    [ABILITYKIND_FIREBALL] =
+    [ABILITY_STATE_FIREBALL_CHARGE] =
         {
-            .maxpower    = 1.1f,
-            .chargespeed = 1.0f,
-            .cooldown    = 1.0f,
-            .damage      = 15.0f,
-            .duration    = 0.6f,
-            .buffMask    = BITC(BUFFKIND_FIRE),
+            .duration   = 0.6f,
+            .maxpower   = 1.0f,
+            .speed      = 1.0f,
+            .cooldown   = 1.0f,
+            .damage     = 25.0f,
+            .buffMask   = BITC(BUFFKIND_FIRE),
+            .effectMask = EFFECTMASK_LIFESTEAL,
         },
-    [ABILITYKIND_SHIELD] =
+    [ABILITY_STATE_CLAW_DASH] =
+        {
+            .duration   = 0.6f,
+            .cooldown   = 4.0f,
+            .damage     = 25.0f,
+            .buffMask   = BITC(BUFFKIND_FIRE),
+            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+            .maxpower   = 1.0f,
+            .speed      = 1.0f,
+        },
+    [ABILITY_STATE_FIREBALL] =
+        {
+            .duration = 0.6f,
+            .maxpower = 1.1f,
+            .speed    = 1.0f,
+            .cooldown = 1.0f,
+            .damage   = 25.0f,
+            .buffMask = BITC(BUFFKIND_FIRE),
+        },
+    [ABILITY_STATE_SHIELD] =
         {
             .duration   = 0.4f,
-            .cooldown   = 4.0f,
-            .damage     = 20.0f,
+            .cooldown   = 1.0f,
+            .damage     = 25.0f,
+            .buffMask   = BITC(BUFFKIND_FIRE),
+            .effectMask = EFFECTMASK_KNOCKUP,
+        },
+    [ABILITY_STATE_SHIELD_DASH] =
+        {
+            .duration   = 0.3f,
+            .cooldown   = 1.0f,
+            .damage     = 25.0f,
             .buffMask   = BITC(BUFFKIND_FIRE),
             .effectMask = EFFECTMASK_KNOCKUP,
         },
 };
+
+const u32 slot_kind_map[7] = {0, 0, 1, 1, 1, 1, 2};
 
 const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_CLAW][0] = ABILITY_STATE_CLAW_CHARGE, //
@@ -52,9 +82,9 @@ const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_FIREBALL][1] = ABILITY_STATE_FIREBALL,        //
     [ABILITYKIND_FIREBALL][2] = ABILITY_STATE_FIREBALL_DASH,   //
 
-    [ABILITYKIND_SHIELD][0] = ABILITY_STATE_FIREBALL_CHARGE, //
-    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,          //
-    [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH,     //
+    // [ABILITYKIND_SHIELD][0] = ABILITY_STATE_SHIELD_CHARGE, //
+    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,      //
+    [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH, //
 };
 
 extern const AbilityStateFunc ability_idle_state;
@@ -86,6 +116,12 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_SHIELD_DASH] = &ability_dash_state,   //
 };
 
+static inline u32 Get_SlotState(const ScAbility *ability, int slot)
+{
+    u32 kind = ability->slotted_actions[slot] > 0 ? ability->slotted_actions[slot] : ability->base_actions[slot];
+    return abilityslot_state_map[kind][slot_kind_map[slot]];
+}
+
 void Ability_Step(World *world, double dt)
 {
     float fdt = (float)dt;
@@ -108,11 +144,9 @@ void Ability_Step(World *world, double dt)
             int mask                   = BITC(ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
-            u32 ability_kind  = ability->slotted_actions[j] ? ability->slotted_actions[j] : ability->base_actions[j];
-            u32 ability_state = abilityslot_state_map[ability_kind][abilitybar_slot_map[j]];
             if (held && (is_idle || j == 6))
             {
-                if (Sol_Ability_SetState(world, id, ability_state, j, false))
+                if (Sol_Ability_SetState(world, id, Get_SlotState(ability, j), j, false))
                     break;
             }
         }
@@ -179,29 +213,14 @@ void Sol_Ability_Equip(World *world, int id, int slot, SolItem item)
 {
 }
 
-AbilityConfig Sol_Ability_GetConf(SolItem item)
-{
-    AbilityConfig conf = ability_base[item.abilityKind];
-    if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
-    {
-        conf.cooldown *= 1.0f - (0.1f * (float)item.rarity);
-
-        conf.damage *= 1.0f + (0.2f * (float)item.rarity);
-        conf.maxpower *= 1.0f + (0.5f * (float)item.rarity);
-        conf.duration *= 1.0f + (0.1f * (float)item.rarity);
-        conf.buffMask |= item.buffMask;
-        conf.effectMask |= item.effectMask;
-    }
-    return conf;
-}
-
 AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)
 {
     if (!ability || slot < 0 || slot >= ABILITY_SLOTS)
         return (AbilityConfig){0};
+    AbilityConfig conf = ability_base[Get_SlotState(ability, slot)];
     if (ability->slotted_actions[slot] > 0)
-        return Sol_Ability_GetConf(ability->slotted_items[slot]);
-    return ability_base[ability->base_actions[slot]];
+        return Sol_Item_ApplyMods(conf, ability->slotted_items[slot]);
+    return conf;
 }
 
 bool Sol_Ability_GetIsDashing(const ScAbility *ability)
@@ -212,8 +231,18 @@ bool Sol_Ability_GetIsDashing(const ScAbility *ability)
 
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot)
 {
-    if (ability->slotted_actions[slot] > 0)
-        return ability_base[ability->slotted_actions[slot]].duration;
-    else
-        return ability_base[ability->base_actions[slot]].duration;
+    return ability_base[Get_SlotState(ability, slot)].duration;
+}
+
+DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit)
+{
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (!ability)
+        return DEFENDKIND_NONE;
+
+    AbilityStateFunc *f = ability_state_func[ability->state];
+    if (!f || !f->defense)
+        return DEFENDKIND_NONE;
+
+    return f->defense(world, id, ability, hit);
 }

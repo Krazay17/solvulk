@@ -3,8 +3,6 @@
 #include "sol_user.h"
 #include "sol_math.h"
 
-const u32 abilitybar_slot_map[7] = {0, 0, 1, 1, 1, 1, 2};
-
 void Abilitybar_Update(World *world, double dt)
 {
     SparseSet_ScAbilitybar *set = Sol_Comp_Set(world, ScAbilitybar);

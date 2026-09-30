@@ -37,7 +37,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
 
     // Track the raw width maximums
     float maxWidth    = 0.0f;
-    AbilityConfig cfg = Sol_Ability_GetConf(item);
+    AbilityConfig cfg = Sol_Item_GetMods(item);
 
     // 1. Measure and buffer Header
     const char *headerText = ability_name[item.abilityKind];
@@ -51,31 +51,38 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
 
     if (cfg.cooldown > 0.0f && lineCount < MAX_TOOLTIP_LINES)
     {
-        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Cooldown: %.1fs", cfg.cooldown);
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Cooldown: -%%%.f", cfg.cooldown * 100.0f);
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;
         lineCount++;
     }
-    if (cfg.duration > 0.0f && lineCount < MAX_TOOLTIP_LINES)
+    if (cfg.speed > 0.0f && lineCount < MAX_TOOLTIP_LINES)
     {
-        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Duration: %.1fs", cfg.duration);
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Speed: +%%%.f", cfg.speed * 100.0f);
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
             maxWidth = w;
         lineCount++;
     }
 
-    float totalDamage = cfg.damage;
-    if (totalDamage > 0 && lineCount < MAX_TOOLTIP_LINES)
+    if (cfg.damage > 0 && lineCount < MAX_TOOLTIP_LINES)
     {
         if (cfg.damage > 0)
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f", totalDamage);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: +%%%.f", cfg.damage * 100.0f);
         }
-        else
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
+    if (cfg.maxpower > 0 && lineCount < MAX_TOOLTIP_LINES)
+    {
+        if (cfg.maxpower > 0)
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: %.0f", totalDamage);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Max Power: +%%%.f", cfg.maxpower * 100.0f);
         }
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)

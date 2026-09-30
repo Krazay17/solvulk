@@ -18,6 +18,7 @@
 #define HITINTERVAL 0.05f
 #define MELEE_RANGE 2.5f
 #define DASH_SPEED 30.0f
+#define MIN_POWER 0.2f
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
@@ -40,31 +41,28 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
         return;
     vec3s pos            = world->xform.pos[id];
     float duration_delta = data->elapsed / data->conf.duration;
+    vec3s dir            = cmd->lookdir;
+    dir.y                = dir.y > 0 ? 0 : dir.y;
+    body3->vel           = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 7.0f, 0, 1.0f, duration_delta));
+    float speed          = glms_vec3_norm(body3->vel) * dt;
 
-    body3->vel = vecSca(cmd->lookdir, Sol_Math_MapRange(DASH_SPEED, 7.0f, 0, 1.0f, duration_delta));
+    SolRay ray = {
+        .start     = pos,
+        .dir       = cmd->lookdir,
+        .dist      = 1.0f + speed,
+        .ignoreEnt = id,
+        .radius    = body3->dims.y,
+    };
+    SolHit hit = {
+        .entA       = id,
+        .damage     = data->conf.damage,
+        .buffMask   = data->conf.buffMask,
+        .effectMask = data->conf.effectMask,
+        .power      = 1.0f,
+        .kind       = HITKIND_MELEE_HIT,
+    };
+    Sol_Combat_DamageCast(world, dt, id, ray, hit, data->hitgen);
 
-    data->accum += dt;
-    if (data->accum >= HITINTERVAL)
-    {
-        data->accum -= HITINTERVAL;
-        Sol_Combat_DamageCast(world, id,
-                              (SolRay){
-                                  .start     = pos,
-                                  .dir       = cmd->lookdir,
-                                  .dist      = 1.0f,
-                                  .ignoreEnt = id,
-                                  .radius    = body3->dims.y,
-                              },
-                              (SolHit){
-                                  .entA       = id,
-                                  .damage     = data->conf.damage,
-                                  .buffMask   = data->conf.buffMask,
-                                  .effectMask = data->conf.effectMask,
-                                  .power      = 1.0f,
-                                  .kind       = HITKIND_MELEE_HIT,
-                              },
-                              data->hitgen);
-    }
     data->elapsed += dt;
     if (data->elapsed >= data->conf.duration)
         Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
@@ -76,7 +74,7 @@ static void Hook_OnHit(World *world, int a, int b)
     AbilityStateData *data = &ability->stateData[ability->activeSlot];
     if (data->hitPauseDr < 4)
     {
-        data->hitPause = 1.0f;
+        data->hitPause = data->hitPauseDr > 0 ? 1.0f / data->hitPauseDr : 1.0f;
         data->hitPauseDr++;
     }
     ScBody3 *body = Sol_Comp_Get(world, a, ScBody3);
@@ -95,9 +93,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             data->stage++;
             goto fire;
         }
-        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.chargespeed));
+        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         break;
-    case 1:
+    case 1: {
     fire:
         data->stage++;
         vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
@@ -123,37 +121,35 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             boost.y     = boost.y < 0 ? boost.y : 0;
             body3->vel  = Accel_BringTo(boost, body3->vel, 8.0f);
         }
-        break;
+    }
+    break;
     case 2:
         if (data->elapsed > HITDELAY)
             data->stage++;
         break;
-    case 3:
-        data->accum += dt;
-        if (data->accum >= HITINTERVAL)
-        {
-            data->accum -= HITINTERVAL;
-            vec3s head = Sol_Body3_GetHead(world, id);
-            SolRay ray = {
-                .start     = head,
-                .dir       = cmd->aimdir,
-                .dist      = MELEE_RANGE,
-                .ignoreEnt = id,
-                .mask      = COLLAYER_ALL,
-            };
-            SolHit hit = {
-                .kind       = HITKIND_MELEE_HIT,
-                .damage     = data->conf.damage,
-                .buffMask   = data->conf.buffMask,
-                .effectMask = data->conf.effectMask,
-                .power      = 1.0f,
-                .entA       = id,
-                .vel        = cmd->aimdir,
-                .hook       = Hook_OnHit,
-            };
-            Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
-        }
-        break;
+    case 3: {
+        vec3s head = Sol_Body3_GetHead(world, id);
+        SolRay ray = {
+            .start     = head,
+            .dir       = cmd->aimdir,
+            .dist      = MELEE_RANGE,
+            .ignoreEnt = id,
+            .mask      = COLLAYER_ALL,
+            .radius    = 0.3f,
+        };
+        SolHit hit = {
+            .kind       = HITKIND_MELEE_HIT,
+            .damage     = data->conf.damage,
+            .buffMask   = data->conf.buffMask,
+            .effectMask = data->conf.effectMask,
+            .power      = 1.0f,
+            .entA       = id,
+            .vel        = cmd->aimdir,
+            .hook       = Hook_OnHit,
+        };
+        Sol_Combat_DamageCast(world, dt, id, ray, hit, data->hitgen);
+    }
+    break;
     }
 
     if (data->elapsed >= data->conf.duration)
@@ -172,9 +168,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
 
 void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
-
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    data->power             = MIN_POWER;
     data->accum             = HITINTERVAL;
     data->hitgen            = Sol_Hitgen_Start(world, id);
     data->cooldownRemaining = data->conf.cooldown;
@@ -182,8 +178,6 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
 void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    // Sol_Anim_Stop(world, id, ANIM_LAYER_UPPER, 0);
 }
 
 bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
@@ -220,6 +214,17 @@ void Ability_Claw_Draw(World *world, int id, ScAbility *ability, float dt)
     }
 }
 
+DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit)
+{
+    int attacker = hit->entA;
+    if (Sol_Comp_Has(world, attacker, ScProjectile))
+    {
+        Sol_Combat_Reflect(world, attacker, id, hit->pos);
+        return DEFENDKIND_CONSUMED;
+    }
+    return DEFENDKIND_NONE;
+}
+
 const AbilityStateFunc ability_claw_state = {
     .update   = Spell,
     .enter    = Ability_Claw_Enter,
@@ -244,5 +249,5 @@ const AbilityStateFunc ability_claw_dash_state = {
     .exit     = Ability_Claw_Exit,
     .canExit  = Ability_Claw_CanExit,
     .canEnter = Ability_Claw_CanEnter,
-    .draw     = Ability_Claw_Draw,
+    .defense  = Defend,
 };

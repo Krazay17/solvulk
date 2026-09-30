@@ -73,8 +73,6 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
     if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
     {
         Sol_Destroy_Ent(world, id);
-        if (body3)
-            body3->flag_destroy = true;
     }
 }
 
@@ -128,7 +126,9 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
     ScCmd *cmd             = Sol_Comp_Get(world, reflector, ScCmd);
 
     if (owner)
+    {
         owner->ownerId = reflector;
+    }
     if (team)
         team->team = reflector_team->team;
 
@@ -143,8 +143,14 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
 
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
-    // if (!Sol_Comp_Has(world, id, ScCombat))
+
+    // if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
+    // {
+    //     Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
     //     return 0.0f;
+    // }
+    if (!Sol_Comp_Has(world, id, ScCombat))
+        return 0.0f;
     ScCombat *dealer_combat = Sol_Comp_Get(world, hit.entA, ScCombat);
     ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
     float damage_done       = 0;
@@ -153,6 +159,8 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, damage);
     else
     {
+        if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
+            return 0.0f;
         if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
         {
             Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_INVULNHIT, .as.fx.pos = hit.pos});
@@ -186,11 +194,6 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         {
             if (dealer_combat)
                 Sol_Combat_Heal(world, hit.entA, hit.entA, dealer_combat, damage * 0.2f);
-        }
-        if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
-        {
-            Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
-            return 0.0f;
         }
         if (combat)
         {
@@ -282,13 +285,13 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
     }
 }
 
-int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen)
+int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit, u32 hitgen)
 {
     SolRayResult results[64];
     int max_hits = 64;
 
-    int hits = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
-                              : Sol_Spherecast(world, ray, results, max_hits);
+    int hits = solState.debug ? Sol_SpherecastD(world, dt, ray, results, max_hits, 0.2f)
+                              : Sol_Spherecast(world, dt, ray, results, max_hits);
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;

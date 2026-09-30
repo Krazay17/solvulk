@@ -33,8 +33,8 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
         },
     [EMITTERKIND_SMOKE_BURST] =
         {
-            .ttl         = 0.3f,
-            .burst       = 25,
+            .ttl         = 0.2f,
+            .burst       = 5,
             .rate        = 0.1f,
             .speed       = 3.0f,
             .kind        = EMITKIND_SPHERE,

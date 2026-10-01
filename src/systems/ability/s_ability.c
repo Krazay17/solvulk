@@ -51,7 +51,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
                     .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE,
                 },
         },
-    [ABILITY_STATE_WHIP_CHARGE] =
+    [ABILITY_STATE_BOLT_CHARGE] =
         {
             .duration = 0.6f,
             .maxpower = 1.0f,
@@ -125,7 +125,7 @@ const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,        //
     [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH,   //
 
-    [ABILITYKIND_WHIP][0] = ABILITY_STATE_WHIP_CHARGE, //
+    [ABILITYKIND_BOLT][0] = ABILITY_STATE_BOLT_CHARGE, //
 };
 
 extern const AbilityStateFunc ability_idle_state;
@@ -141,7 +141,7 @@ extern const AbilityStateFunc ability_fireball_dash_state;
 extern const AbilityStateFunc ability_shield_charge_state;
 extern const AbilityStateFunc ability_shield_state;
 
-extern const AbilityStateFunc ability_whip_charge;
+extern const AbilityStateFunc ability_bolt_charge;
 
 extern const AbilityStateFunc ability_dash_state;
 
@@ -160,7 +160,7 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_SHIELD_CHARGE] = &ability_shield_charge_state,
     [ABILITY_STATE_SHIELD_DASH]   = &ability_dash_state, //
 
-    [ABILITY_STATE_WHIP_CHARGE] = &ability_whip_charge, //
+    [ABILITY_STATE_BOLT_CHARGE] = &ability_bolt_charge, //
 };
 
 static inline u32 Get_SlotState(const ScAbility *ability, int slot)
@@ -273,7 +273,8 @@ AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)
 bool Sol_Ability_GetIsDashing(const ScAbility *ability)
 {
     return ability->state == ABILITY_STATE_CLAW_DASH || ability->state == ABILITY_STATE_FIREBALL_DASH ||
-           (ability->state == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[ability->activeSlot].stage > 0));
+           (ability->state == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[ability->activeSlot].stage > 0))||
+           (ability->state == ABILITY_STATE_BOLT_CHARGE && ability->stateData[ability->activeSlot].as.bolt.bolt_state == 1);
 }
 
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot)

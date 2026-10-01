@@ -75,7 +75,7 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
-            ABILITYKIND_CLAW,
+            ABILITYKIND_BOLT,
             ABILITYKIND_FIREBALL,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
@@ -660,11 +660,11 @@ int Sol_Prefab_DragonOrb(World *world, vec3s pos)
     };
 }
 
-int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, Hook hook)
+int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, float scale, Hook hook)
 {
     int id = Sol_Create_Ent(world, pos);
 
-    vec3s dims = {0.2f, 0.2f, 0.2f};
+    vec3s dims = {scale, scale, scale};
     u32 mask   = PHYSXMASK(COLLAYER_PROJECTILE, (COLLAYER_ALL & ~COLLAYER_PROJECTILE));
 
     *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){

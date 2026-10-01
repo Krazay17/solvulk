@@ -102,6 +102,9 @@ bool Sol_Combat_Hostile(World *world, int idA, int idB)
 {
     if (idA == idB)
         return false;
+    ScCombat *combat = Sol_Comp_Get(world, idB, ScCombat);
+    if (combat && combat->is_dead)
+        return false;
     ScOwner *ownerA = Sol_Comp_Get(world, idA, ScOwner);
     ScOwner *ownerB = Sol_Comp_Get(world, idB, ScOwner);
     int final_A     = ownerA ? ownerA->ownerId : idA;

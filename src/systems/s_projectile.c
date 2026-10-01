@@ -94,7 +94,7 @@ static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projec
 
 static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p, SolHit hit)
 {
-    if (Sol_Hitgen_Try(world, id, hit.entB, p->hitgen))
+    if (Sol_Combat_Hostile(world, id, hit.entB) && Sol_Hitgen_Try(world, id, hit.entB, p->hitgen))
     {
         Sol_Combat_Hit(world, hit.entB, hit);
 

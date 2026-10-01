@@ -67,39 +67,6 @@ typedef struct
     float attacktimer;
 } AiStateData;
 
-// #define AIKNOWS_LIST(X)                                                                                                \
-//     X(STEPFRONT)                                                                                                       \
-//     X(LEDGEFRONT)                                                                                                      \
-//     X(WALLFRONT)                                                                                                       \
-//     X(WALLLEFT)                                                                                                        \
-//     X(WALLRIGHT)                                                                                                       \
-//     X(WALLBACK)                                                                                                        \
-//     X(TARGETFRONT)                                                                                                     \
-//     X(TARGETLEFT)                                                                                                      \
-//     X(TARGETRIGHT)                                                                                                     \
-//     X(TARGETBACK)                                                                                                      \
-//     X(TARGETABOVE)                                                                                                     \
-//     X(TARGETBELOW)                                                                                                     \
-//     X(TARGETCLOSE)                                                                                                     \
-//     X(TARGETMID)                                                                                                       \
-//     X(TARGETFAR)
-
-// typedef enum
-// {
-// #define X(name) AIKNOWS_BIT_##name,
-//     AIKNOWS_LIST(X)
-// #undef X
-//     AIKNOWS_COUNT,
-// } AiKnowsBit;
-
-// typedef enum
-// {
-// #define X(name) AIKNOWS_##name = (1 << AIKNOWS_BIT_##name),
-//     AIKNOWS_LIST(X)
-// #undef X
-// AIKNOWS_STATE_COUNT,
-// } AiKnows;
-
 typedef struct AiBrain
 {
     u32 target, justHitUs;
@@ -167,18 +134,19 @@ typedef struct
         } dash;
         struct
         {
-            vec3s laserPoints[16];
-            int laserPointCount;
-            vec3s laserPointsVisual[16];
+            // vec3s laserPoints[16];
+            // int laserPointCount;
+            // vec3s laserPointsVisual[16];
             int laserPointCountVisual;
         } laser;
         struct
         {
-            vec3s whipPoints[16];
-            int whipPointCount;
+#define MAX_BOLT_ANCHORS 8
+            vec3s anchor[MAX_BOLT_ANCHORS];
+            int current_anchor;
             int bolt;
-            bool bolt_hit;
-        } whip;
+            int bolt_state;
+        } bolt;
     } as;
 
     AbilityConfig conf;

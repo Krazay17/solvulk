@@ -113,7 +113,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     }
     if (boneIdx < 0)
     {
-        result.pos = GLMS_VEC3_ZERO;
+        result.pos = xform.pos;
         result.rot = GLMS_QUAT_IDENTITY;
         return result;
     }

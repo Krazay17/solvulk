@@ -2,21 +2,25 @@
 
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec4 outColor;
-layout(location = 2) out vec4 fragExtra;
-layout(location = 3) flat out uint fragType;
-layout(location = 4) flat out uint fragTextureId;
-layout(location = 5) flat out uint fragFlags;
+layout(location = 3) flat out uint fragTextureId;
 
 struct RibbonSeg {
-    vec4 posA; // .xyz = world pos, .w = half-width
-    vec4 posB; // .xyz = world pos, .w = half-width
-    vec4 colorA;
-    vec4 colorB;
-    vec4 uv;
-    uint textureId, _pad0, _pad1, _pad2;
+    vec4 posA;       // .xyz = World Pos A, .w = Half Width A
+    vec4 posB;       // .xyz = World Pos B, .w = Half Width B
+    vec4 colorA;     // RGBA at endpoint A
+    vec4 colorB;     // RGBA at endpoint B
+    vec4 uv;         // .xy = Offset/Pan (U, V), .zw = Scale/Tile (U, V)
+    uint textureId;  // Texture array/bindless index
+    uint flags;      // 0 = Face Camera (Default), 1u = Align World Up
+    float panSpeed;  // U-axis scroll speed per second
+    uint _pad;       // Maintains 96-byte std430 alignment
 };
 
-layout(set = 0, binding = 0) uniform Scene {
+layout(set = 0, binding = 0) uniform Game {
+    double gameTime;
+};
+
+layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProj;
     mat4 view;
     mat4 proj;
@@ -25,73 +29,66 @@ layout(set = 0, binding = 0) uniform Scene {
     float aspect;
 };
 
-layout(set = 1, binding = 0) readonly buffer RibbonSSBO {
+layout(set = 2, binding = 0) readonly buffer RibbonSSBO {
     RibbonSeg segs[];
 };
 
+const vec2 CORNERS[6] = vec2[](
+    vec2(-1.0, 0.0), // Left  A
+    vec2( 1.0, 0.0), // Right A
+    vec2(-1.0, 1.0), // Left  B
+    vec2( 1.0, 0.0), // Right A
+    vec2( 1.0, 1.0), // Right B
+    vec2(-1.0, 1.0)  // Left  B
+);
 
 void main()
 {
     RibbonSeg seg = segs[gl_InstanceIndex];
+    vec2 corner   = CORNERS[gl_VertexIndex];
 
-    // Project both endpoints
-    vec4 clipA = viewProj * vec4(seg.posA.xyz, 1.0);
-    vec4 clipB = viewProj * vec4(seg.posB.xyz, 1.0);
+    float sideSign = corner.x; // -1.0 or +1.0
+    float tSeg     = corner.y; //  0.0 or  1.0
 
-    vec2 ndcA = clipA.xy / clipA.w;
-    vec2 ndcB = clipB.xy / clipB.w;
+    // Interpolate centerline position and width
+    vec3  posA    = seg.posA.xyz;
+    vec3  posB    = seg.posB.xyz;
+    vec3  basePos = mix(posA, posB, tSeg);
+    float halfW   = mix(seg.posA.w, seg.posB.w, tSeg);
 
-    // Correct: work in aspect-corrected space, then convert perp back to NDC
-    vec2 dir  = normalize(vec2((ndcB.x - ndcA.x) * aspect, ndcB.y - ndcA.y));
-    vec2 perp = vec2(-dir.y, dir.x);
-    perp.x   /= aspect;
+    // Segment orientation vector
+    vec3 segDir = posB - posA;
+    float segLen = length(segDir);
+    segDir = (segLen > 0.0001) ? segDir / segLen : vec3(0.0, 1.0, 0.0);
 
+    // Extrusion direction: DEFAULT (0) = Face Camera, OPT-IN (1u) = World Up
+    vec3 sideDir;
+    bool alignWorldUp = (seg.flags & 1u) != 0u;
 
-    // 6 verts = 2 triangles, quad corners:
-    // vtx 0,3 = A-perp   vtx 1 = A+perp
-    // vtx 2,4 = B-perp   vtx 5 = B+perp
-    const vec2 signs[6] = vec2[](
-        vec2(-1, 0), vec2( 1, 0), vec2(-1, 1),
-        vec2( 1, 0), vec2( 1, 1), vec2(-1, 1)
-    );
-    vec2  s      = signs[gl_VertexIndex];
-    bool  isB    = s.y > 0.5;
-    vec4  base   = isB ? clipB : clipA;
-    float halfW  = isB ? seg.posB.w : seg.posA.w;
-    vec4  color  = isB ? seg.colorB : seg.colorA;
+    if (alignWorldUp) {
+        vec3 up = (abs(segDir.y) > 0.99) ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+        sideDir = normalize(cross(segDir, up));
+    } else {
+        vec3 viewDir = normalize(cameraPos.xyz - basePos);
+        sideDir = cross(segDir, viewDir);
+        float lenSq = dot(sideDir, sideDir);
+        sideDir = (lenSq > 0.0001) ? normalize(sideDir) : vec3(1.0, 0.0, 0.0);
+    }
 
-    // Remove * base.w to allow natural hardware perspective division!
-    base.xy += perp * s.x * halfW; 
-    gl_Position = base;
+    // World space position & clip space transform
+    vec3 worldPos = basePos + sideDir * (sideSign * halfW);
+    gl_Position   = viewProj * vec4(worldPos, 1.0);
 
+    // Color & Texture ID
+    outColor      = mix(seg.colorA, seg.colorB, tSeg);
     fragTextureId = seg.textureId;
-    outColor = color;
 
-    // // Isolate the horizontal edge signature coordinate (cross section)
-    // // s.x maps to -1.0 or +1.0 -> converts to 0.0 or 1.0 mapping across the width
-    // float uCoord = s.x * 0.5 + 0.5;
+    // Base UV: U along length [0..1], V across width [0..1]
+    vec2 baseUV = vec2(tSeg, sideSign * 0.5 + 0.5);
 
-    // // Pick the correct accumulated distance milestone depending on whether this vertex belongs to A or B
-    // float vDistance = isB ? seg.uv.y : seg.uv.x;
+    // Apply GPU-side panning over time along U coordinate
+    float time = float(gameTime);
+    vec2 pannedOffset = seg.uv.xy + vec2(seg.panSpeed * time, 0.0);
 
-    // // Optional: Scale vDistance by a texture repeat factor if you want it to wrap tightly
-    // float textureTilingFactor = 1.0f; 
-    // float vCoord = vDistance * textureTilingFactor;
-
-    // // Apply the panning animations to the final output vector coordinates
-    // // Adds your frame-by-frame time delta increments seamlessly
-    // outUV = vec2(uCoord + seg.uv.z, vCoord + seg.uv.w);
-
-    // Width profile across the ribbon (left edge to right edge) maps to V (Y)
-    float vCoord = s.x * 0.5 + 0.5;
-
-    // Accumulated distance along the ribbon length maps to U (X)
-    float uDistance = isB ? seg.uv.y : seg.uv.x;
-
-    float textureTilingFactor = 1.0f; 
-    float uCoord = uDistance * textureTilingFactor;
-
-    // Pass out the swapped coordinates: U is length, V is cross-section width.
-    // Also swap your panning offsets (uv.z for length panning, uv.w for width panning)
-    outUV = vec2(uCoord + seg.uv.z, vCoord + seg.uv.w);
+    outUV = baseUV * seg.uv.zw + pannedOffset;
 }

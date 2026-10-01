@@ -120,7 +120,8 @@ bool Ray_Intersect_Cylinder(vec3s O, vec3s D, float maxDist, vec3s a, vec3s b, f
 }
 
 // Ray vs Triangle Intersection (Möller–Trumbore)
-bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm)
+bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm,
+                       vec3s *outPos)
 {
     const float EPS = 0.000001f;
     vec3s e1        = glms_vec3_sub(tri->v1, tri->v0);
@@ -145,8 +146,12 @@ bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri
     float t = f * glms_vec3_dot(e2, q);
     if (t > EPS && t <= maxDist)
     {
-        *outT    = t;
-        *outNorm = glms_vec3_normalize(glms_vec3_cross(e1, e2));
+        if (outT)
+            *outT = t;
+        if (outNorm)
+            *outNorm = glms_vec3_normalize(glms_vec3_cross(e1, e2));
+        if (outPos)
+            *outPos = glms_vec3_add(origin, glms_vec3_scale(dir, t));
         return true;
     }
     return false;
@@ -1022,11 +1027,13 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 
                 float t    = outResult->t;
                 vec3s norm = {0};
-                if (Ray_Intersect_Tri(ray.start, ray.dir, t, tri, &t, &norm) && t < outResult->t)
+                vec3s pos  = {0};
+                if (Ray_Intersect_Tri(ray.start, ray.dir, t, tri, &t, &norm, &pos) && t < outResult->t)
                 {
                     outResult->hit   = true;
                     outResult->t     = t;
                     outResult->norm  = norm;
+                    outResult->pos   = pos;
                     outResult->entId = entId;
                 }
             }
@@ -1147,11 +1154,13 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 
                 float t;
                 vec3s norm;
-                if (Ray_Intersect_Tri(ray.start, ray.dir, ray.dist, tri, &t, &norm))
+                vec3s pos;
+                if (Ray_Intersect_Tri(ray.start, ray.dir, ray.dist, tri, &t, &norm, &pos))
                 {
                     out_hits[count].hit   = true;
                     out_hits[count].t     = t;
                     out_hits[count].norm  = norm;
+                    out_hits[count].pos   = pos;
                     out_hits[count].entId = entId;
                     count++;
                 }

@@ -175,7 +175,7 @@ static inline void Hook_AddItem(World *w, int a, int b)
     Sol_User_AddItem(
         &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT, .effectMask = EFFECTMASK_KNOCKUP});
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_WHIP});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)

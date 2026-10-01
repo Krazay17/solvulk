@@ -274,12 +274,14 @@ static inline SphereSSBO *Sol_Render_GetNextSphere(PipelineId kind)
 
 typedef struct
 {
-    vec4s posA; // .xyz = world pos, .w = half-width
-    vec4s posB; // .xyz = world pos, .w = half-width
-    vec4s colorA;
-    vec4s colorB;
-    vec4s uv;
-    u32 textureId, _pad0, _pad1, _pad2;
+    vec4s posA;   // 16
+    vec4s posB;   // 32
+    vec4s colorA; // 48
+    vec4s colorB; // 64
+    vec4s uv;     // 80
+    u32 textureId, flags;
+    float panSpeed;
+    u32 _pad;
 } RibbonSegSSBO;
 
 typedef struct

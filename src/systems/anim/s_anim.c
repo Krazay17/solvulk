@@ -287,18 +287,17 @@ struct AnimMap
             .seek            = 0.2f,
             .speed           = 0.7f,
         },
-    [ABILITY_STATE_WHIP_CHARGE] =
+    [ABILITY_STATE_BOLT_CHARGE] =
         {
             .hand_anim[0][0] = ANIM_CHARGE_LEFT,
             .hand_anim[1][0] = ANIM_CHARGE_RIGHT,
-            .hand_anim[0][1] = ANIM_2HANDCASTUP,
-            .hand_anim[1][1] = ANIM_2HANDCASTUP,
+            .hand_anim[0][1] = ANIM_ATTACK_LEFT,
+            .hand_anim[1][1] = ANIM_ATTACK_RIGHT,
             .hand_anim[0][2] = ANIM_ATTACK_LEFT,
             .hand_anim[1][2] = ANIM_ATTACK_RIGHT,
             .hand_anim[0][3] = ANIM_ATTACK_LEFT,
             .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
-            .seek            = 0.2f,
-            .speed           = 0.7f,
+            .seek            = 0.15f,
         },
     [ABILITY_STATE_SHIELD] =
         {
@@ -345,7 +344,7 @@ void Anim_Tick(World *world, double dt)
                 ability_anim.layerId = ANIM_LAYER_UPPER;
             }
             break;
-            case ABILITY_STATE_WHIP_CHARGE: {
+            case ABILITY_STATE_BOLT_CHARGE: {
                 ability_anim.layerId = ANIM_LAYER_UPPER;
             }
             break;
@@ -386,6 +385,10 @@ void Anim_Tick(World *world, double dt)
             AnimDesc move_anim  = {.anim = ANIM_IDLE, .layerId = ANIM_LAYER_BASE, .speed = 1.0f};
             switch (movement->state)
             {
+            case MOVE_DASH: {
+                move_anim.anim = ANIM_FALL;
+            }
+            break;
             case MOVE_LANDING: {
                 move_anim.anim = ANIM_HARDLAND;
             }

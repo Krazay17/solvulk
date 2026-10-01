@@ -1,0 +1,306 @@
+/*
+ * File: ability_bolt.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-01
+ * Throw lightning bolt on charge, on bolt hit pull guy to bolt if charging.
+ * Pickup bolt if touch bolt while charging.
+ * On fire pull bolt if not picked up, else throw bolt.
+ */
+#include "world.h"
+#include "sol_math.h"
+#include "estate.h"
+#include "prefabs.h"
+#include "render/render.h"
+
+const float bolt_speed = 80.0f;
+const float accel      = 12.0f; // speed gained per second
+const float min_speed  = 12.0f; // min grapple speed
+
+const float panspeed           = 6.0f; // texure pan
+const float unwrap_distance_sq = 5.0f;
+const float wrap_distance_sq   = 3.0f;
+
+static float GetBoltD2(World *world, vec3s pos, AbilityStateData *data)
+{
+    vec3s bolt_pos = world->xform.pos[data->as.bolt.bolt];
+    vec3s delta    = glms_vec3_sub(bolt_pos, pos);
+    return glms_vec3_dot(delta, delta);
+}
+
+static void RetractAnchor(World *world, int id, vec3s shoot_pos, AbilityStateData *data)
+{
+    for (int i = 0; i < data->as.bolt.current_anchor; i++)
+    {
+        vec3s anchor = data->as.bolt.anchor[i];
+        vec3s delta  = glms_vec3_sub(anchor, shoot_pos);
+        float d2     = glms_vec3_dot(delta, delta);
+        if (d2 < 0.001f)
+            return;
+        float dist          = sqrt(d2);
+        vec3s dir           = glms_vec3_scale(delta, 1.0f / dist);
+        SolRayResult result = {0};
+        bool hit            = Sol_Raycast1(world,
+                                           (SolRay){
+                                               .start     = shoot_pos,
+                                               .dir       = dir,
+                                               .dist      = dist,
+                                               .ignoreEnt = id,
+                                               .mask      = COLLAYER_ALL,
+                                           },
+                                           &result);
+        float d2_hit        = glms_vec3_norm2(glms_vec3_sub(result.pos, anchor));
+        if (!hit || (d2_hit < unwrap_distance_sq))
+        {
+            data->as.bolt.current_anchor = i;
+            break;
+        }
+    }
+}
+
+static bool FindAnchor(World *world, int id, vec3s shoot_pos, AbilityStateData *data, vec3s *out_to_anchor)
+{
+    RetractAnchor(world, id, shoot_pos, data);
+    data->as.bolt.anchor[0] = world->xform.pos[data->as.bolt.bolt];
+    vec3s delta             = glms_vec3_sub(data->as.bolt.anchor[data->as.bolt.current_anchor], shoot_pos);
+    float d2                = glms_vec3_dot(delta, delta);
+    if (d2 < 0.001f)
+        return false;
+    float dist          = sqrt(d2);
+    vec3s dir           = glms_vec3_scale(delta, 1.0f / dist);
+    SolRayResult result = {0};
+    bool hit            = Sol_Raycast1(world,
+                                       (SolRay){
+                                           .start     = shoot_pos,
+                                           .dir       = dir,
+                                           .dist      = dist,
+                                           .ignoreEnt = id,
+                                           .mask      = COLLAYER_ALL,
+                                       },
+                                       &result);
+    if (hit && data->as.bolt.current_anchor < (MAX_BOLT_ANCHORS - 1))
+    {
+        float d2_hit = glms_vec3_norm2(glms_vec3_sub(result.pos, data->as.bolt.anchor[data->as.bolt.current_anchor]));
+        if (d2_hit > wrap_distance_sq)
+        {
+            data->as.bolt.anchor[++data->as.bolt.current_anchor] = result.pos;
+        }
+    }
+    *out_to_anchor = glms_vec3_normalize(glms_vec3_sub(data->as.bolt.anchor[data->as.bolt.current_anchor], shoot_pos));
+
+    return hit;
+}
+
+static void BoltDelete(World *world, AbilityStateData *data)
+{
+    if (data->as.bolt.bolt > 0)
+    {
+        Sol_Destroy_Ent(world, data->as.bolt.bolt);
+        data->as.bolt.bolt       = 0;
+        data->as.bolt.bolt_state = 0;
+    }
+}
+
+static void BoltHit(World *world, int a, int b)
+{
+    ScRef *ref = Sol_Comp_Get(world, a, ScRef);
+    if (!ref)
+        return;
+    ScAbility *ability = Sol_Comp_Get(world, ref->ent_id, ScAbility);
+    if (!ability || ability->state != ABILITY_STATE_BOLT_CHARGE)
+        return;
+
+    AbilityStateData *data   = &ability->stateData[ref->index];
+    data->as.bolt.anchor[0]  = world->xform.pos[data->as.bolt.bolt];
+    data->as.bolt.bolt_state = 1;
+}
+
+static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+{
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    switch (data->stage)
+    {
+    case 0:
+        if (!data->held)
+        {
+            data->stage++;
+
+            if (data->as.bolt.bolt_state == 2)
+            {
+                BoltDelete(world, data);
+                int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed,
+                                                    data->power, NULL);
+                ScTimer *timer  = Sol_Comp_Add(world, bolt, ScTimer);
+                timer->duration = 2.0f;
+                timer->destroy  = true;
+                ScProjectile *p = Sol_Comp_Get(world, bolt, ScProjectile);
+                p->hit.damage   = data->conf.damage;
+                p->hit.power    = data->power;
+            }
+            else
+            {
+                Sol_Comp_Rem(world, data->as.bolt.bolt, ScParent);
+                data->as.bolt.bolt_state = 3;
+            }
+        }
+
+        data->power = minf(data->conf.maxpower, data->power + dt * data->conf.speed);
+
+        switch (data->as.bolt.bolt_state)
+        {
+        case 1: {
+
+            vec3s pos = Sol_Body3_GetHead(world, id);
+            float d2  = GetBoltD2(world, pos, data);
+            vec3s to_anchor;
+            FindAnchor(world, id, pos, data, &to_anchor);
+
+            ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+            ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
+            if (body3 && move3)
+            {
+                move3->frictionMod = 0.0f;
+                vec3s look         = cmd->lookdir;
+                float align        = glms_vec3_dot(to_anchor, look);
+                vec3s axis         = glms_vec3_cross(to_anchor, look);
+                vec3s tangent      = glms_vec3_cross(axis, to_anchor);
+                vec3s v_side =
+                    glms_vec3_sub(body3->vel, glms_vec3_scale(to_anchor, glms_vec3_dot(body3->vel, to_anchor)));
+                tangent = glms_vec3_norm2(v_side) > 0.0001f ? glms_vec3_normalize(v_side) : to_anchor;
+
+                float t = fabs(align);
+                t       = t * t * t;
+
+                vec3s target_dir = glms_vec3_normalize(glms_vec3_lerpc(tangent, to_anchor, t));
+                float speed      = glms_vec3_norm(body3->vel);
+                speed            = fmaxf(speed, min_speed) + accel * dt;
+                body3->vel       = glms_vec3_scale(target_dir, speed);
+            }
+
+            if (d2 < 10.0f)
+            {
+                BoltDelete(world, data);
+                data->as.bolt.bolt_state = 2;
+            }
+        }
+        break;
+        }
+
+        break;
+    case 1: {
+        if (data->as.bolt.bolt_state == 3)
+        {
+            vec3s pos = Sol_Body3_GetHead(world, id);
+            if (GetBoltD2(world, pos, data) < 0.5f)
+            {
+                BoltDelete(world, data);
+                data->as.bolt.bolt_state = 4;
+            }
+            ScBody3 *body3 = Sol_Comp_Get(world, data->as.bolt.bolt, ScBody3);
+            if (body3)
+            {
+                vec3s to_player = glms_vec3_normalize(
+                    glms_vec3_sub(Sol_Body3_GetHead(world, id), world->xform.pos[data->as.bolt.bolt]));
+                body3->vel = glms_vec3_scale(to_player, bolt_speed);
+            }
+        }
+    }
+    break;
+    }
+    if (data->stage > 0)
+    {
+        data->elapsed += dt;
+        if ((data->elapsed >= data->conf.duration) && data->as.bolt.bolt_state != 3)
+        {
+            Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        }
+    }
+}
+static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+{
+    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    data->cooldownRemaining = data->conf.cooldown;
+
+    int bolt =
+        Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed, 0.33f, BoltHit);
+    ScRef *ref                   = Sol_Comp_Add(world, bolt, ScRef);
+    ref->kind                    = REFKIND_ABILITY;
+    ref->index                   = ability->activeSlot;
+    ref->ent_id                  = id;
+    data->as.bolt.bolt           = bolt;
+    data->as.bolt.bolt_state     = 0;
+    data->as.bolt.current_anchor = 0;
+    ScProjectile *p              = Sol_Comp_Get(world, bolt, ScProjectile);
+    p->hit.damage                = data->conf.damage;
+    p->hit.power                 = 1.0f;
+}
+static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+{
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    BoltDelete(world, data);
+}
+static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
+{
+    return true;
+}
+static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+{
+    AbilityStateData *data = &ability->stateData[slot];
+    return !(data->cooldownRemaining > 0.0f);
+}
+static DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit)
+{
+}
+static void Draw(World *world, int id, ScAbility *ability, float dt)
+{
+    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, ability->activeSlot > 0 ? "hand.R" : "hand.L").pos;
+    vec3s bolt_pos         = world->xform.pos[data->as.bolt.bolt];
+    switch (data->stage)
+    {
+    case 0: {
+        switch (data->as.bolt.bolt_state)
+        {
+        case 1: {
+            vec4s hand_pos4 = {hand_pos.x, hand_pos.y, hand_pos.z, 0.1f};
+            vec4s anchor4   = {bolt_pos.x, bolt_pos.y, bolt_pos.z, 0.3f};
+            for (int i = 1; i < data->as.bolt.current_anchor + 1; i++)
+            {
+                vec3s prev_anchor = data->as.bolt.anchor[i - 1];
+                vec3s anchor3     = data->as.bolt.anchor[i];
+                anchor4           = (vec4s){anchor3.x, anchor3.y, anchor3.z, 0.3f};
+                RibbonSegSSBO *s  = Sol_Render_GetNext_RibbonSeg(PIPE_RIBBON);
+                s->posA           = (vec4s){prev_anchor.x, prev_anchor.y, prev_anchor.z, 0.3f};
+                s->posB           = anchor4;
+                s->colorA         = VEC4_WHITE;
+                s->colorB         = VEC4_WHITE;
+                s->textureId      = SOL_TEXTURE_LIGHTNING;
+                s->uv             = (vec4s){0, 0, 3.0f, 1.0f};
+                s->panSpeed       = 6.0f;
+            }
+            RibbonSegSSBO *s2 = Sol_Render_GetNext_RibbonSeg(PIPE_RIBBON);
+            s2->posA          = hand_pos4;
+            s2->posB          = anchor4;
+            s2->colorA        = VEC4_WHITE;
+            s2->colorB        = VEC4_WHITE;
+            s2->textureId     = SOL_TEXTURE_LIGHTNING;
+            s2->uv            = (vec4s){0, 0, 3.0f, 1.0f};
+            s2->panSpeed      = 6.0f;
+        }
+        break;
+        case 2: {
+            vec4s hand_pos4 = {hand_pos.x, hand_pos.y, hand_pos.z, data->power * 0.4f};
+
+            SphereSSBO *s = Sol_Render_GetNextSphere(PIPE_PLASMA);
+            s->pos        = hand_pos4;
+            s->color      = VEC4_WHITE;
+        }
+        break;
+        }
+    }
+    break;
+    }
+}
+
+const AbilityStateFunc ability_bolt_charge = {Charge, Enter, Exit, CanExit, CanEnter, Draw, Defend};

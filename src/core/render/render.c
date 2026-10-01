@@ -380,45 +380,23 @@ void Flush_Quads()
 
 void Flush_Ribbons()
 {
-    // if (ribbonQueue.count == 0 && ribbonQueueFront.count == 0 && ribbonQueueAdd.count == 0)
-    //     return;
-    // RibbonSegSSBO *gpu  = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
-    // VkCommandBuffer cmd = Command_Buffer_Get();
-    // u32 currentOffset   = 0;
+    RibbonSegSSBO *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+    VkCommandBuffer cmd = Command_Buffer_Get();
+    u32 currentOffset = 0;
 
-    // u32 regularCount = ribbonQueue.count;
-    // if (regularCount > 0)
-    // {
-    //     memcpy(gpu + currentOffset, ribbonQueue.instances, sizeof(RibbonSegSSBO) * regularCount);
-    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON);
-
-    //     vkCmdDraw(cmd, 6, regularCount, 0, currentOffset);
-    //     currentOffset += regularCount;
-
-    //     ribbonQueue.count = 0;
-    // }
-
-    // u32 addCount = ribbonQueueAdd.count;
-    // if (addCount > 0)
-    // {
-    //     memcpy(gpu + currentOffset, ribbonQueueAdd.instances, sizeof(RibbonSegSSBO) * addCount);
-    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_ADD);
-
-    //     vkCmdDraw(cmd, 6, addCount, 0, currentOffset);
-    //     currentOffset += addCount;
-
-    //     ribbonQueueAdd.count = 0;
-    // }
-
-    // u32 frontCount = ribbonQueueFront.count;
-    // if (frontCount > 0)
-    // {
-    //     memcpy(gpu + currentOffset, ribbonQueueFront.instances, sizeof(RibbonSegSSBO) * frontCount);
-    //     Sol_Render_Bind_Pipeline(cmd, PIPE_RIBBON_FRONT);
-    //     vkCmdDraw(cmd, 6, frontCount, 0, currentOffset);
-    //     currentOffset += frontCount;
-    //     ribbonQueueFront.count = 0;
-    // }
+    for(int pipe = PIPE_RIBBON_START;pipe < PIPE_RIBBON_END;pipe++)
+    {
+        RibbonQueue *q = &ribbonQueues[pipe - PIPE_RIBBON_START];
+        u32 count = solb_count(q->instances);
+        if(count > 0)
+        {
+            memcpy(gpu + currentOffset, q->instances, sizeof(RibbonSegSSBO) * count);
+            Sol_Render_Bind_Pipeline(cmd, pipe);
+            vkCmdDraw(cmd, 6, count, 0, currentOffset);
+            currentOffset += count;
+            solb_set_count(q->instances, 0);
+        }
+    }
 }
 
 void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)

@@ -481,6 +481,13 @@ static inline void Xform_SetAll(World *world, int id, vec3s pos, versors rot, ve
     world->xform.last_sca[id] = sca;
 }
 
+static inline void Xform_SetSca(World *world, int id, vec3s sca)
+{
+    world->xform.sca[id]      = sca;
+    world->xform.draw_sca[id] = sca;
+    world->xform.last_sca[id] = sca;
+}
+
 void Worlds_Tick(World **worlds, int count, double dt);
 void Worlds_Step(World **worlds, int count, double dt);
 void Worlds_Draw3d(World **worlds, int count, double dt);

@@ -80,7 +80,6 @@ void Abilitybar_Update(World *world, double dt)
                         SolItem *user_item = &user_data.items[item_ref->index];
                         if (user_item)
                         {
-
                             abilities->slotted_actions[slot] = user_item->abilityKind;
                             abilities->slotted_items[slot]   = *user_item;
                         }

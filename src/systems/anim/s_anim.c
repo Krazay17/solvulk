@@ -274,6 +274,32 @@ struct AnimMap
             .seek            = 0.1f,
             .speed           = 0.7f,
         },
+    [ABILITY_STATE_SHIELD_CHARGE] =
+        {
+            .hand_anim[0][0] = ANIM_CHARGE_LEFT,
+            .hand_anim[1][0] = ANIM_CHARGE_RIGHT,
+            .hand_anim[0][1] = ANIM_2HANDCASTUP,
+            .hand_anim[1][1] = ANIM_2HANDCASTUP,
+            .hand_anim[0][2] = ANIM_ATTACK_LEFT,
+            .hand_anim[1][2] = ANIM_ATTACK_RIGHT,
+            .hand_anim[0][3] = ANIM_ATTACK_LEFT,
+            .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
+            .seek            = 0.2f,
+            .speed           = 0.7f,
+        },
+    [ABILITY_STATE_WHIP_CHARGE] =
+        {
+            .hand_anim[0][0] = ANIM_CHARGE_LEFT,
+            .hand_anim[1][0] = ANIM_CHARGE_RIGHT,
+            .hand_anim[0][1] = ANIM_2HANDCASTUP,
+            .hand_anim[1][1] = ANIM_2HANDCASTUP,
+            .hand_anim[0][2] = ANIM_ATTACK_LEFT,
+            .hand_anim[1][2] = ANIM_ATTACK_RIGHT,
+            .hand_anim[0][3] = ANIM_ATTACK_LEFT,
+            .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
+            .seek            = 0.2f,
+            .speed           = 0.7f,
+        },
     [ABILITY_STATE_SHIELD] =
         {
             .hand_anim[0][0] = ANIM_2HANDCASTUP,
@@ -311,16 +337,24 @@ void Anim_Tick(World *world, double dt)
             case ABILITY_STATE_CLAW_CHARGE:
                 ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
                 break;
+            case ABILITY_STATE_FIREBALL_CHARGE: {
+                ability_anim.layerId = ANIM_LAYER_UPPER;
+            }
+            break;
+            case ABILITY_STATE_SHIELD_CHARGE: {
+                ability_anim.layerId = ANIM_LAYER_UPPER;
+            }
+            break;
+            case ABILITY_STATE_WHIP_CHARGE: {
+                ability_anim.layerId = ANIM_LAYER_UPPER;
+            }
+            break;
             case ABILITY_STATE_CLAW_DASH: {
                 ability_anim.speed =
                     1.6 + Sol_Ability_GetCurrentBaseDuration(ability, ability->activeSlot) - data->conf.duration;
             }
             break;
             case ABILITY_STATE_FIREBALL: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_FIREBALL_CHARGE: {
                 ability_anim.layerId = ANIM_LAYER_UPPER;
             }
             break;

@@ -47,7 +47,7 @@ static const ScBody3 dude_body = {
     .invMass     = 1.0f,
     .restitution = 0.01f,
     .gravity     = SOL_GRAVITY,
-    .dims        = {0.5f, 1.0f, 0.5f},
+    .dims        = {0.35f, 1.0f, 0.35f},
     .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
@@ -98,6 +98,8 @@ static const ScAnim anim_default = {
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, pos);
+
+    Xform_SetSca(world, id, glms_vec3_fill(1.1f));
 
     *Sol_Comp_Add(world, id, ScModel) = dude_model;
     *Sol_Comp_Add(world, id, ScAnim)  = anim_default;
@@ -270,7 +272,8 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
 
     ScSlider slider = {
         .axis      = {1, 0, 0},
-        .track_len = dims.x,
+        .track_len = dims.x * 0.85f,
+        .offset    = dims.x * 0.075f,
         .value     = 0.0f,
     };
     *Sol_Comp_Add(world, id, ScSlider) = slider;
@@ -655,4 +658,38 @@ int Sol_Prefab_DragonOrb(World *world, vec3s pos)
         .color = {1, 1, 1, 1},
         .scale = 1.0f,
     };
+}
+
+int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, Hook hook)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    vec3s dims = {0.2f, 0.2f, 0.2f};
+    u32 mask   = PHYSXMASK(COLLAYER_PROJECTILE, (COLLAYER_ALL & ~COLLAYER_PROJECTILE));
+
+    *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
+        .ownerId = owner,
+    };
+    *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
+        .dims      = dims,
+        .mask      = mask,
+        .mass      = 1.0f,
+        .vel       = glms_vec3_scale(dir, speed),
+        .shape     = SHAPE3_SPH,
+        .is_sensor = 1,
+    };
+    *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
+        .kind   = PROJECTILEKIND_LIGHTNINGBOLT,
+        .radius = dims.x,
+        .mask   = mask,
+        .hook   = hook,
+        .hitgen = Sol_Hitgen_Start(world, id),
+    };
+    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+        .kind  = VIEW3KIND_PLASMAORB,
+        .scale = dims.x,
+        .color = VEC4_WHITE,
+    };
+
+    return id;
 }

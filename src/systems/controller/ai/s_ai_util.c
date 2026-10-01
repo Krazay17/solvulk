@@ -100,13 +100,13 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
         {
             if (event->entA == id)
             {
-                ai->learning.reward_move += event->as.hit.damage;
-                ai->learning.reward_combat += event->as.hit.damage;
+                ai->learning.reward_move += event->as.hit.damage.amount;
+                ai->learning.reward_combat += event->as.hit.damage.amount;
             }
             else if (event->entB == id)
             {
-                ai->learning.reward_move -= event->as.hit.damage;
-                ai->learning.reward_combat -= event->as.hit.damage;
+                ai->learning.reward_move -= event->as.hit.damage.amount;
+                ai->learning.reward_combat -= event->as.hit.damage.amount;
             }
         }
         else if (event->kind == EVENTKIND_DEATH)

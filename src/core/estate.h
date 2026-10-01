@@ -33,8 +33,8 @@ typedef void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCm
 typedef void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
 typedef bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
 typedef bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
-typedef u32 (*AbilityStateDefend)(World *world, int id, ScAbility *ability);
 typedef void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, float dt);
+typedef DefendResult (*AbilityStateDefend)(World *world, int id, ScAbility *ability, SolHit *hit);
 
 typedef struct
 {
@@ -75,8 +75,19 @@ typedef struct
     AbilityStateCanExit canExit;
     AbilityStateCanEnter canEnter;
     AbilityStateDraw draw;
-    DefendResult (*defense)(World *world, int id, ScAbility *ability, SolHit *hit);
+    AbilityStateDefend defend;
 } AbilityStateFunc;
+
+// typedef struct
+// {
+//     void (*AbilityStateUpdate)(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt);
+//     void (*AbilityStateEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd);
+//     void (*AbilityStateExit)(World *world, int id, ScAbility *ability, ScCmd *cmd);
+//     bool (*AbilityStateCanExit)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next);
+//     bool (*AbilityStateCanEnter)(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot);
+//     void (*AbilityStateDraw)(World *world, int id, ScAbility *ability, float dt);
+//     DefendResult (*AbilityStateDefend)(World *world, int id, ScAbility *ability, SolHit *hit);
+// } AbilityStateFunc;
 
 // void State_Update(World *world, int id, float dt);
 // void State_Enter(World *world, int id);

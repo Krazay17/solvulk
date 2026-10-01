@@ -143,20 +143,19 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
 
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
-
-    // if (hit.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
-    // {
-    //     Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
-    //     return 0.0f;
-    // }
+    if (hit.damage.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
+    {
+        Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
+        return 0.0f;
+    }
     if (!Sol_Comp_Has(world, id, ScCombat))
         return 0.0f;
     ScCombat *dealer_combat = Sol_Comp_Get(world, hit.entA, ScCombat);
     ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
     float damage_done       = 0;
-    float damage            = hit.damage * hit.power;
-    if (combat && hit.isHeal)
-        damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, damage);
+    float damage            = hit.damage.amount * hit.power;
+    if (combat && hit.damage.isHeal)
+        damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, hit.damage.amount);
     else
     {
         if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
@@ -170,27 +169,27 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         {
             hit.hook(world, hit.entA, hit.entB);
         }
-        if (hit.buffMask > 0)
+        if (hit.damage.buffMask > 0)
         {
-            Sol_Buff_AddMask(world, id, hit.buffMask, hit.entA, hit.power);
+            Sol_Buff_AddMask(world, id, hit.damage.buffMask, hit.entA, hit.power);
         }
         ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
         if (move3)
         {
-            if (hit.effectMask & EFFECTMASK_KNOCKBACK)
+            if (hit.damage.effectMask & EFFECTMASK_KNOCKBACK)
             {
-                move3->knockVel    = vecSca(hit.vel, 7.0f);
+                move3->knockVel    = vecSca(vecNorm(hit.vel), 7.0f);
                 move3->knockDur    = 0.3f;
                 move3->frictionMod = 0.0f;
             }
-            if (hit.effectMask & EFFECTMASK_KNOCKUP)
+            if (hit.damage.effectMask & EFFECTMASK_KNOCKUP)
             {
                 move3->knockVel    = vecSca(WORLD_UP, 7.0f);
                 move3->knockDur    = 0.4f;
                 move3->frictionMod = 0.0f;
             }
         }
-        if (hit.effectMask & EFFECTMASK_LIFESTEAL)
+        if (hit.damage.effectMask & EFFECTMASK_LIFESTEAL)
         {
             if (dealer_combat)
                 Sol_Combat_Heal(world, hit.entA, hit.entA, dealer_combat, damage * 0.2f);
@@ -251,7 +250,7 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
-        if ((!hit.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
+        if ((!hit.damage.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
             continue;
         if (hitgen && !Sol_Hitgen_Try(world, id, hit_id, hitgen))
             continue;
@@ -295,7 +294,7 @@ int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
-        if ((!hit.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
+        if ((!hit.damage.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
             continue;
         if (hitgen && !Sol_Hitgen_Try(world, id, hit_id, hitgen))
             continue;

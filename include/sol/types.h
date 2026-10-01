@@ -38,16 +38,7 @@
 
 typedef void (*SystemUpdate)(World *, double);
 typedef void (*EntUpdate)(World *, int);
-typedef void (*Hook)(World *, int, int);
-
-typedef struct DamagePayload
-{
-    float damage;
-    float power;
-    bool isHeal;
-    u32 buffMask;
-    u32 effectMask;
-} DamagePayload;
+typedef void (*Hook)(World *, int id, int target);
 
 typedef enum
 {
@@ -62,24 +53,66 @@ typedef enum
     HITKIND_COUNT,
 } HitKind;
 
-typedef struct SolHit
+typedef struct SolDamage
 {
-    // DamagePayload payload;
-    float damage;
-    float power;
+    float amount;
     u32 buffMask;
     u32 effectMask;
     bool isHeal;
-
+} SolDamage;
+typedef struct SolHit
+{
     HitKind kind;
+    SolDamage damage;
+    float power;
+
     int entA; // Attacker
     int entB; // Victim
     vec3s pos;
     vec3s normal;
     vec3s vel;
-
     Hook hook;
 } SolHit;
+
+typedef enum
+{
+    ABILITY_STATE_IDLE,
+
+    ABILITY_STATE_CLAW,
+    ABILITY_STATE_CLAW_CHARGE,
+    ABILITY_STATE_CLAW_DASH,
+
+    ABILITY_STATE_FIREBALL,
+    ABILITY_STATE_FIREBALL_CHARGE,
+    ABILITY_STATE_FIREBALL_DASH,
+
+    ABILITY_STATE_SHIELD,
+    ABILITY_STATE_SHIELD_CHARGE,
+    ABILITY_STATE_SHIELD_DASH,
+
+    ABILITY_STATE_WHIP_CHARGE,
+
+    ABILITY_STATE_COUNT,
+} AbilityState;
+
+typedef enum
+{
+    ABILITYKIND_IDLE,
+    ABILITYKIND_CLAW,
+    ABILITYKIND_FIREBALL,
+    ABILITYKIND_SHIELD,
+    ABILITYKIND_WHIP,
+    ABILITYKIND_COUNT,
+} AbilityKind;
+
+typedef struct
+{
+    SolDamage damage;
+    float cooldown;
+    float maxpower;
+    float speed;
+    float duration;
+} AbilityConfig;
 
 typedef struct
 {
@@ -284,6 +317,7 @@ typedef enum
     REFKIND_ITEM,
     REFKIND_HEALTHBAR,
     REFKIND_ABILITYBAR,
+    REFKIND_ABILITY,
 } RefKind;
 
 typedef enum
@@ -326,6 +360,7 @@ typedef enum
     PROJECTILEKIND_BULLET,
     PROJECTILEKIND_FIREBALL,
     PROJECTILEKIND_PLASMAORB,
+    PROJECTILEKIND_LIGHTNINGBOLT,
     PROJECTILEKIND_COUNT,
 } ProjectileKind;
 
@@ -633,6 +668,7 @@ typedef struct SolRayResult
 {
     bool hit;
     vec3s norm;
+    vec3s pos;
     float t;
     int entId;
 } SolRayResult;
@@ -752,45 +788,6 @@ typedef enum
     BUFFKIND_INVULN,
     BUFFKIND_COUNT,
 } BuffKind;
-
-typedef enum
-{
-    ABILITY_STATE_IDLE,
-
-    ABILITY_STATE_CLAW,
-    ABILITY_STATE_CLAW_CHARGE,
-    ABILITY_STATE_CLAW_DASH,
-
-    ABILITY_STATE_FIREBALL,
-    ABILITY_STATE_FIREBALL_CHARGE,
-    ABILITY_STATE_FIREBALL_DASH,
-
-    ABILITY_STATE_SHIELD,
-    ABILITY_STATE_SHIELD_DASH,
-
-    ABILITY_STATE_COUNT,
-} AbilityState;
-
-typedef enum
-{
-    ABILITYKIND_IDLE,
-    ABILITYKIND_CLAW,
-    ABILITYKIND_FIREBALL,
-    ABILITYKIND_SHIELD,
-    ABILITYKIND_COUNT,
-} AbilityKind;
-
-typedef struct
-{
-    float damage;
-    float cooldown;
-    float maxpower;
-    float speed;
-    float duration;
-
-    u32 buffMask;
-    u32 effectMask;
-} AbilityConfig;
 
 typedef enum ItemRarity
 {

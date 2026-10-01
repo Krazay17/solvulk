@@ -4,13 +4,11 @@
 #include "sol_user.h"
 #include "render/render.h"
 
-typedef struct
+const struct ModelKindData
 {
     float y_offset;
     float yaw_offset;
-} ModelKindData;
-
-const ModelKindData model_kinds[MODELKIND_COUNT] = {
+} model_kinds[MODELKIND_COUNT] = {
     [MODELKIND_DUDE] =
         {
             .y_offset = -1.0f,

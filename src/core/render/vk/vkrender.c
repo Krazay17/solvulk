@@ -494,6 +494,7 @@ int Sol_Render_BuildPipes()
     for (int i = 0; i < PIPE_COUNT; i++)
     {
         printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].vertResource);
+        printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].fragResource);
         if (Sol_Pipeline_Build(&solvkstate, &pipe_config[i], &pipes[i]) != 0)
         {
             Sol_MessageBox("PIPE ERROR", NULL);

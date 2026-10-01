@@ -63,9 +63,9 @@ void Move3_Step(World *world, double dt)
         move->lastMoveDir = wishdir;
 
         const MoveStateForce forces = MOVE_STATE_FORCES[move->kind][move->state];
-        float finalSpeed            = forces.speed; // * move->speedMod;
+        float finalSpeed            = forces.speed * move->speedMod;
         float finalFriction         = forces.friction * move->frictionMod;
-        body3->gravity.y            = forces.gravity; // * move->gravityMod;
+        body3->gravity.y            = forces.gravity * move->gravityMod;
 
         switch (move->state)
         {
@@ -110,16 +110,23 @@ void Move3_Step(World *world, double dt)
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
-
+        const float factor = 1.0f - expf(-10.0f * fdt);
         if (move->knockDur > 0.0f)
         {
-            move->knockDur -= fdt;
-            body3->vel = glms_vec3_lerp(body3->vel, move->knockVel, 0.5f);
+            move->knockDur = maxf(0.0f, move->knockDur - fdt);
+            body3->vel     = glms_vec3_lerp(body3->vel, move->knockVel, 0.5f);
         }
         if (move->frictionMod != 1.0f)
         {
-            const float fricFactor = 1.0f - expf(-1.0f * fdt);
-            move->frictionMod      = Sol_Math_Lerp(move->frictionMod, 1.0f, fricFactor);
+            move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, factor);
+        }
+        if (move->gravityMod != 1.0f)
+        {
+            move->gravityMod = Sol_Math_Lerp(move->gravityMod, 1.0f, factor);
+        }
+        if (move->speedMod != 1.0f)
+        {
+            move->speedMod = Sol_Math_Lerp(move->speedMod, 1.0f, factor);
         }
     }
 }

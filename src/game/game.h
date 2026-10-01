@@ -171,9 +171,11 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .rarity =ITEMRARITY_LEGENDARY});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity =ITEMRARITY_DECENT, .effectMask = EFFECTMASK_KNOCKUP});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .rarity = ITEMRARITY_LEGENDARY});
+    Sol_User_AddItem(
+        &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT, .effectMask = EFFECTMASK_KNOCKUP});
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_WHIP});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)
@@ -226,6 +228,15 @@ static inline void Hook_SetTimescale(World *w, int a, int b)
     }
 }
 
+static inline void Hook_TestReflect(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
+    vec3s pos   = {0, 0, 0};
+    SolHit hit  = {.pos = pos};
+    Sol_Ability_TryDefend(game, id, &hit);
+}
+
 static inline void Hook_Test(World *w, int a, int b)
 {
     World *game = Sol_User_GetGameWorld();
@@ -235,5 +246,5 @@ static inline void Hook_Test(World *w, int a, int b)
     // Sol_Buff_AddMask(game, id, 1, 0, 1.0f);
     int fireball   = Sol_Prefab_Fireball(game, 6, vecAdd(pos, vecSca(cmd->aimdir, 3.0f)), cmd->aimdir, 5.2f, 1.0f);
     ScBody3 *body3 = Sol_Comp_Get(game, fireball, ScBody3);
-    //body3->gravity = (vec3s){0};
+    // body3->gravity = (vec3s){0};
 }

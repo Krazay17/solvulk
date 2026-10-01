@@ -1,3 +1,10 @@
+/*
+ * File: s_parent.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-30
+ * 
+*/
 #include "world.h"
 #include "sol_math.h"
 

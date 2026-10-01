@@ -66,11 +66,11 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
         lineCount++;
     }
 
-    if (cfg.damage > 0 && lineCount < MAX_TOOLTIP_LINES)
+    if (cfg.damage.amount > 0 && lineCount < MAX_TOOLTIP_LINES)
     {
-        if (cfg.damage > 0)
+        if (cfg.damage.amount > 0)
         {
-            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: +%%%.f", cfg.damage * 100.0f);
+            snprintf(lines[lineCount], sizeof(lines[lineCount]), "Damage: +%%%.f", cfg.damage.amount * 100.0f);
         }
         float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
         if (w > maxWidth)
@@ -90,7 +90,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
         lineCount++;
     }
 
-    u8 totalBuffs = cfg.buffMask;
+    u8 totalBuffs = cfg.damage.buffMask;
     if ((totalBuffs & BITC(BUFFKIND_FIRE)) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Ignite");
@@ -108,7 +108,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
         lineCount++;
     }
 
-    u32 totalEffects = cfg.effectMask;
+    u32 totalEffects = cfg.damage.effectMask;
     if ((totalEffects & (EFFECTMASK_KNOCKBACK)) && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Knockback");

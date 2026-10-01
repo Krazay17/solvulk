@@ -53,8 +53,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         SolHit hit = {
             .entA   = id,
             .power  = data->power,
-            .damage = data->conf.damage * 0.5f,
+            .damage = data->conf.damage,
         };
+        hit.damage.amount *= 0.5f;
 
         { // Spawn fireball
             int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
@@ -62,8 +63,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             ScProjectile *projectile       = Sol_Comp_Get(world, fireball, ScProjectile);
             projectile->hit                = hit;
             projectile->aoe_hit            = hit;
-            projectile->aoe_hit.effectMask = data->conf.effectMask;
-            projectile->aoe_hit.buffMask   = data->conf.buffMask;
             projectile->power              = data->power;
         }
     case 2:
@@ -84,7 +83,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
                 .power      = data->power,
                 .damage     = data->conf.damage,
                 .power      = 0.1f,
-                .buffMask   = BITC(BUFFKIND_FIRE),
             };
             Sol_Combat_DamageCast(world,dt, id,
                                   (SolRay){.start     = pos,
@@ -117,16 +115,16 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
         ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
         projectile->hit          = (SolHit){
             .entA   = id,
-            .damage = data->conf.damage * 0.5f,
+            .damage = data->conf.damage,
             .power  = data->power,
         };
+        projectile->hit.damage.amount *= 0.5f;
         projectile->aoe_hit = (SolHit){
             .entA       = id,
-            .effectMask = data->conf.effectMask,
-            .buffMask   = data->conf.buffMask,
-            .damage     = data->conf.damage * 0.5f,
+            .damage     = data->conf.damage,
             .power      = data->power,
         };
+        projectile->aoe_hit.damage.amount *= 0.5f;
         projectile->power = data->power;
     }
 
@@ -193,13 +191,13 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
                              .kind        = EMITKIND_CONE,
                              .pos         = pos,
                              .dir         = cmd->aimdir,
-                             .speed       = 15.0f,
+                             .speed       = 20.0f,
                              .cone        = 0.2f,
                              .p_color     = {1, 0.1f, 0, 1},
                              .p_kind      = PARTICLE_FIRE,
                              .p_lifespan  = 0.5f,
                              .p_scale     = 0.5f,
-                             .burst       = 1,
+                             .burst       = 2,
                              .scale_curve = CURVE_QUICKIN_SLOWOUT,
                              .alpha_curve = CURVE_QUICKIN_SLOWOUT,
                          },

@@ -92,6 +92,50 @@ static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projec
     return false;
 }
 
+static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p, SolHit hit)
+{
+    if (Sol_Hitgen_Try(world, id, hit.entB, p->hitgen))
+    {
+        Sol_Combat_Hit(world, hit.entB, hit);
+
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        body3->vel     = GLMS_VEC3_ZERO;
+
+        // 1. Snap projectile position directly to hit impact point
+        world->xform.pos[id] = hit.pos;
+
+        // 2. Fetch target transform
+        vec3s target_pos     = world->xform.pos[hit.entB];
+        versors target_rot   = world->xform.rot[hit.entB];
+        versors inv_target_r = glms_quat_inv(target_rot);
+
+        // 3. Compute local space offset & rotation (Child_Local = Parent_Inv * Child_World)
+        vec3s world_delta  = glms_vec3_sub(hit.pos, target_pos);
+        vec3s local_offset = glms_quat_rotatev(inv_target_r, world_delta);
+        versors local_quat = glms_quat_mul(inv_target_r, world->xform.rot[id]);
+
+        // 4. Attach ScParent
+        *Sol_Comp_Add(world, id, ScParent) = (ScParent){
+            .parentId    = hit.entB,
+            .localOffset = local_offset,
+            .localQuat   = local_quat,
+            .active      = true,
+        };
+
+        Sol_Event_Push(world, EVENTKIND_HIT,
+                       (SolEvent){
+                           .entB         = hit.entB,
+                           .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
+                           .as.hit.pos   = hit.pos,
+                           .as.hit.power = hit.power,
+                       });
+
+        Sol_Comp_Rem(world, id, ScProjectile);
+    }
+
+    return false;
+}
+
 void Projectile_Step(World *world, double dt)
 {
     float fdt                   = (float)dt;
@@ -134,7 +178,7 @@ void Projectile_Step(World *world, double dt)
 
         SolHit hit = projectile->hit;
         hit.entA   = id;
-        hit.vel    = vel;
+        hit.vel    = glms_vec3_normalize(vel);
         for (int j = 0; j < hits; j++)
         {
             SolRayResult result = results[j];
@@ -145,7 +189,7 @@ void Projectile_Step(World *world, double dt)
 
             hit.entB   = result.entId;
             hit.normal = result.norm;
-            hit.pos    = Sol_AddScaledDir(ray.start, ray.dir, result.t);
+            hit.pos    = result.pos;
 
             Sol_Ai_QuickLearn(world, id, ownerId, false);
 
@@ -157,6 +201,9 @@ void Projectile_Step(World *world, double dt)
                 break;
             case PROJECTILEKIND_PLASMAORB:
                 destroyed = PlasmaOrbHit(world, id, projectile, hit);
+                break;
+            case PROJECTILEKIND_LIGHTNINGBOLT:
+                destroyed = LightningBoltHit(world, id, projectile, hit);
                 break;
             }
             if (projectile->hook)
@@ -171,41 +218,41 @@ void Projectile_Step(World *world, double dt)
     }
 }
 
-void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius)
-{
-    SparseSet_ScProjectile *set = Sol_Comp_Set(world, ScProjectile);
-    for (int i = set->cnt; i-- > 0;)
-    {
-        int id = set->dense[i];
-        if (!Sol_Combat_Hostile(world, attacker, id))
-            continue;
-        ScProjectile *projectile = &set->data[i];
-        ScBody3 *body3           = Sol_Comp_Get(world, id, ScBody3);
-        vec3s vel                = body3->vel;
+// void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius)
+// {
+//     SparseSet_ScProjectile *set = Sol_Comp_Set(world, ScProjectile);
+//     for (int i = set->cnt; i-- > 0;)
+//     {
+//         int id = set->dense[i];
+//         if (!Sol_Combat_Hostile(world, attacker, id))
+//             continue;
+//         ScProjectile *projectile = &set->data[i];
+//         ScBody3 *body3           = Sol_Comp_Get(world, id, ScBody3);
+//         vec3s vel                = body3->vel;
 
-        vec3s b0 = world->xform.pos[id];
-        vec3s b1 = glms_vec3_add(b0, glms_vec3_scale(vel, dt));
+//         vec3s b0 = world->xform.pos[id];
+//         vec3s b1 = glms_vec3_add(b0, glms_vec3_scale(vel, dt));
 
-        CapHit hit;
-        if (Sol_CapsuleOverlap(world, a0, a1, b0, b1, radius, projectile->radius, &hit))
-        {
-            ScTeam *team          = Sol_Comp_Get(world, id, ScTeam);
-            ScOwner *owner        = Sol_Comp_Get(world, id, ScOwner);
-            ScTeam *attacker_team = Sol_Comp_Get(world, attacker, ScTeam);
-            ScCmd *cmd            = Sol_Comp_Get(world, attacker, ScCmd);
+//         CapHit hit;
+//         if (Sol_CapsuleOverlap(world, a0, a1, b0, b1, radius, projectile->radius, &hit))
+//         {
+//             ScTeam *team          = Sol_Comp_Get(world, id, ScTeam);
+//             ScOwner *owner        = Sol_Comp_Get(world, id, ScOwner);
+//             ScTeam *attacker_team = Sol_Comp_Get(world, attacker, ScTeam);
+//             ScCmd *cmd            = Sol_Comp_Get(world, attacker, ScCmd);
 
-            if (owner)
-                owner->ownerId = attacker;
-            if (team)
-                team->team = attacker_team->team;
+//             if (owner)
+//                 owner->ownerId = attacker;
+//             if (team)
+//                 team->team = attacker_team->team;
 
-            if (body3 && cmd)
-            {
-                body3->vel       = Sol_RedirectVel(body3->vel, cmd->aimdir);
-                body3->ignoreEnt = attacker;
-            }
+//             if (body3 && cmd)
+//             {
+//                 body3->vel       = Sol_RedirectVel(body3->vel, cmd->aimdir);
+//                 body3->ignoreEnt = attacker;
+//             }
 
-            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.contactA});
-        }
-    }
-}
+//             Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.contactA});
+//         }
+//     }
+// }

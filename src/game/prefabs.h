@@ -13,3 +13,4 @@ int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float sp
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref);
 int Sol_Prefab_DragonOrb(World *world, vec3s pos);
 int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots);
+int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, Hook hook);

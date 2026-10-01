@@ -176,9 +176,11 @@ typedef struct
         {
             vec3s whipPoints[16];
             int whipPointCount;
+            int bolt;
+            bool bolt_hit;
         } whip;
     } as;
-    
+
     AbilityConfig conf;
 
     float elapsed, accum, power, cooldownRemaining;
@@ -186,6 +188,7 @@ typedef struct
     float hitPause;
 
     u32 hitgen;
+    u32 hitgen2;
     u8 hitPauseDr;
     u8 stage;
     bool held;
@@ -509,7 +512,7 @@ typedef struct ScHook
 
 typedef struct ScRef
 {
-    u32 kind;
+    RefKind kind;
     u32 ent_world, ent_id;
     int index;
 } ScRef;
@@ -560,16 +563,12 @@ typedef struct SlSpatial
     vec3s *build_maxs;
 } SlSpatial;
 
-typedef struct
-{
-    u32 gen;          // this attacker's current session generation
-    u32 *hit_targets; // solb_ buffer: which target ids have been marked this session
-} HitgenRow;
-
+#define MAX_HITGEN_SESSIONS 8
+typedef struct HitgenRow HitgenRow;
 typedef struct SlHitgen
 {
     u32 global;
-    HitgenRow rows[MAX_ENTS]; // one row per potential attacker, allocated lazily
+    HitgenRow *rows[MAX_ENTS];
 } SlHitgen;
 
 typedef struct SlEmitter

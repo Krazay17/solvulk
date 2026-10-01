@@ -32,45 +32,28 @@ static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top,
     return true;
 }
 
-// Ray vs Triangle Intersection (Möller–Trumbore)
-bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm)
+static inline bool Sphere_Overlap_Sphere(vec3s centerA, float radiusA, vec3s centerB, float radiusB, float *outDist,
+                                         vec3s *outNorm)
 {
-    const float EPS = 0.000001f;
-    vec3s e1        = glms_vec3_sub(tri->v1, tri->v0);
-    vec3s e2        = glms_vec3_sub(tri->v2, tri->v0);
-    vec3s h         = glms_vec3_cross(dir, e2);
-    float a         = glms_vec3_dot(e1, h);
+    vec3s delta  = glms_vec3_sub(centerA, centerB);
+    float distSq = glms_vec3_dot(delta, delta);
 
-    if (a > -EPS && a < EPS)
+    float combined = radiusA + radiusB;
+
+    if (distSq >= combined * combined)
         return false;
 
-    float f = 1.0f / a;
-    vec3s s = glms_vec3_sub(origin, tri->v0);
-    float u = f * glms_vec3_dot(s, h);
-    if (u < 0.0f || u > 1.0f)
-        return false;
-
-    vec3s q = glms_vec3_cross(s, e1);
-    float v = f * glms_vec3_dot(dir, q);
-    if (v < 0.0f || u + v > 1.0f)
-        return false;
-
-    float t = f * glms_vec3_dot(e2, q);
-    if (t > EPS && t <= maxDist)
-    {
-        *outT    = t;
-        *outNorm = glms_vec3_normalize(glms_vec3_cross(e1, e2));
-        return true;
-    }
-    return false;
+    float dist = sqrtf(distSq);
+    *outDist   = dist;
+    *outNorm   = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : (vec3s){0.0f, 1.0f, 0.0f};
+    return true;
 }
 
-// Ray vs Sphere Intersection
-bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, float radius, float *outT,
-                          vec3s *outNorm)
+bool Ray_Intersect_Sphere_Raw(vec3s O, vec3s D, float maxDist, vec3s center, float radius, float *outT, vec3s *outNorm,
+                              vec3s *outPos)
 {
-    vec3s oc = glms_vec3_sub(origin, center);
-    float b  = glms_vec3_dot(oc, dir);
+    vec3s oc = glms_vec3_sub(O, center);
+    float b  = glms_vec3_dot(oc, D);
     float c  = glms_vec3_dot(oc, oc) - (radius * radius);
 
     if (c > 0.0f && b > 0.0f)
@@ -86,9 +69,11 @@ bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, 
 
     if (t > 0.0001f && t <= maxDist)
     {
-        *outT        = t;
-        vec3s hitPos = glms_vec3_add(origin, glms_vec3_scale(dir, t));
-        *outNorm     = glms_vec3_normalize(glms_vec3_sub(hitPos, center));
+        vec3s hitPos = glms_vec3_add(O, glms_vec3_scale(D, t));
+
+        *outT    = t;
+        *outPos  = hitPos;
+        *outNorm = glms_vec3_normalize(glms_vec3_sub(hitPos, center));
         return true;
     }
     return false;
@@ -134,52 +119,110 @@ bool Ray_Intersect_Cylinder(vec3s O, vec3s D, float maxDist, vec3s a, vec3s b, f
     return true;
 }
 
-bool Ray_Intersect_Capsule(vec3s O, vec3s D, float maxDist, vec3s top, vec3s bottom, float radius, float *outT,
-                           vec3s *outNorm)
+// Ray vs Triangle Intersection (Möller–Trumbore)
+bool Ray_Intersect_Tri(vec3s origin, vec3s dir, float maxDist, const SolTri *tri, float *outT, vec3s *outNorm)
 {
-    float bestT    = maxDist;
-    bool found     = false;
-    vec3s bestNorm = {0};
+    const float EPS = 0.000001f;
+    vec3s e1        = glms_vec3_sub(tri->v1, tri->v0);
+    vec3s e2        = glms_vec3_sub(tri->v2, tri->v0);
+    vec3s h         = glms_vec3_cross(dir, e2);
+    float a         = glms_vec3_dot(e1, h);
 
+    if (a > -EPS && a < EPS)
+        return false;
+
+    float f = 1.0f / a;
+    vec3s s = glms_vec3_sub(origin, tri->v0);
+    float u = f * glms_vec3_dot(s, h);
+    if (u < 0.0f || u > 1.0f)
+        return false;
+
+    vec3s q = glms_vec3_cross(s, e1);
+    float v = f * glms_vec3_dot(dir, q);
+    if (v < 0.0f || u + v > 1.0f)
+        return false;
+
+    float t = f * glms_vec3_dot(e2, q);
+    if (t > EPS && t <= maxDist)
+    {
+        *outT    = t;
+        *outNorm = glms_vec3_normalize(glms_vec3_cross(e1, e2));
+        return true;
+    }
+    return false;
+}
+
+// Ray vs Sphere Intersection
+bool Ray_Intersect_Sphere(vec3s origin, vec3s dir, float maxDist, vec3s center, float radius, SolRayResult *result)
+{
+    float t;
+    vec3s norm, pos;
+    if (Ray_Intersect_Sphere_Raw(origin, dir, maxDist, center, radius, &t, &norm, &pos))
+    {
+        result->t    = t;
+        result->norm = norm;
+        result->pos  = pos;
+        return true;
+    }
+    return false;
+}
+
+bool Ray_Intersect_Capsule(vec3s O, vec3s D, float maxDist, vec3s top, vec3s bottom, float radius, SolRayResult *result)
+{
+    float best_t    = maxDist;
+    vec3s best_norm = {0};
+    vec3s best_pos  = {0};
+    bool hit        = false;
+
+    // 1. Check Cylinder Body
     float t, s;
-    if (Ray_Intersect_Cylinder(O, D, bestT, top, bottom, radius, &t, &s))
+    if (Ray_Intersect_Cylinder(O, D, best_t, top, bottom, radius, &t, &s))
     {
         vec3s axisP = glms_vec3_lerp(top, bottom, s);
         vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
-        bestT       = t;
-        bestNorm    = glms_vec3_normalize(glms_vec3_sub(P, axisP));
-        found       = true;
+
+        best_t    = t;
+        best_norm = glms_vec3_normalize(glms_vec3_sub(P, axisP));
+        best_pos  = P;
+        hit       = true;
     }
 
+    // 2. Check Both Sphere Caps
     vec3s caps[2] = {top, bottom};
     for (int i = 0; i < 2; i++)
     {
-        float tCap;
-        vec3s nCap;
-        if (Ray_Intersect_Sphere(O, D, bestT, caps[i], radius, &tCap, &nCap))
+        float cap_t;
+        vec3s cap_norm, cap_pos;
+        if (Ray_Intersect_Sphere_Raw(O, D, best_t, caps[i], radius, &cap_t, &cap_norm, &cap_pos))
         {
-            bestT    = tCap;
-            bestNorm = nCap;
-            found    = true;
+            best_t    = cap_t;
+            best_norm = cap_norm;
+            best_pos  = cap_pos;
+            hit       = true;
         }
     }
 
-    if (found)
+    // 3. Commit Closest Hit
+    if (hit)
     {
-        *outT    = bestT;
-        *outNorm = bestNorm;
+        result->t    = best_t;
+        result->norm = best_norm;
+        result->pos  = best_pos;
+        return true;
     }
-    return found;
+
+    return false;
 }
 
-// Sphere-swept ray ("thick ray" / capsule) vs triangle.
-bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri, float r, float *outT, vec3s *outNorm)
+bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri, float r, float *outT, vec3s *outNorm,
+                             vec3s *outPos)
 {
     float bestT    = maxDist;
     bool found     = false;
     vec3s bestNorm = {0};
+    vec3s bestPos  = {0};
 
-    // --- Face (offset plane) test ---
+    // --- 1. Face (Offset Plane) Test ---
     float faceSide = glms_vec3_dot(glms_vec3_sub(O, tri->v0), tri->normal);
     float faceSign = (faceSide >= 0.0f) ? r : -r;
     vec3s planeP0  = glms_vec3_add(tri->v0, glms_vec3_scale(tri->normal, faceSign));
@@ -193,12 +236,17 @@ bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri,
             vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
             vec3s Pflat = glms_vec3_sub(P, glms_vec3_scale(tri->normal, faceSign));
 
+            // Barycentric coordinates test on flattened triangle
             vec3s v0v1 = glms_vec3_sub(tri->v1, tri->v0);
             vec3s v0v2 = glms_vec3_sub(tri->v2, tri->v0);
             vec3s v0p  = glms_vec3_sub(Pflat, tri->v0);
-            float d00 = glms_vec3_dot(v0v1, v0v1), d01 = glms_vec3_dot(v0v1, v0v2);
-            float d11 = glms_vec3_dot(v0v2, v0v2), d20 = glms_vec3_dot(v0p, v0v1);
-            float d21      = glms_vec3_dot(v0p, v0v2);
+
+            float d00 = glms_vec3_dot(v0v1, v0v1);
+            float d01 = glms_vec3_dot(v0v1, v0v2);
+            float d11 = glms_vec3_dot(v0v2, v0v2);
+            float d20 = glms_vec3_dot(v0p, v0v1);
+            float d21 = glms_vec3_dot(v0p, v0v2);
+
             float invDenom = 1.0f / (d00 * d11 - d01 * d01);
             float u        = (d11 * d20 - d01 * d21) * invDenom;
             float v        = (d00 * d21 - d01 * d20) * invDenom;
@@ -207,13 +255,15 @@ bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri,
             {
                 bestT    = t;
                 bestNorm = (faceSide >= 0.0f) ? tri->normal : glms_vec3_scale(tri->normal, -1.0f);
+                bestPos  = P; // P is already O + D*t
                 found    = true;
             }
         }
     }
 
-    // --- Edge cylinder tests ---
+    // --- 2. Edge Cylinder Tests ---
     vec3s edges[3][2] = {{tri->v0, tri->v1}, {tri->v1, tri->v2}, {tri->v2, tri->v0}};
+
     for (int e = 0; e < 3; e++)
     {
         float t, s;
@@ -221,31 +271,37 @@ bool Ray_Intersect_Tri_Thick(vec3s O, vec3s D, float maxDist, const SolTri *tri,
         {
             vec3s axisP = glms_vec3_lerp(edges[e][0], edges[e][1], s);
             vec3s P     = glms_vec3_add(O, glms_vec3_scale(D, t));
-            bestT       = t;
-            bestNorm    = glms_vec3_normalize(glms_vec3_sub(P, axisP));
-            found       = true;
-        }
-    }
 
-    // --- Vertex sphere tests ---
-    vec3s verts[3] = {tri->v0, tri->v1, tri->v2};
-    for (int v = 0; v < 3; v++)
-    {
-        float t;
-        vec3s n;
-        if (Ray_Intersect_Sphere(O, D, bestT, verts[v], r, &t, &n))
-        {
             bestT    = t;
-            bestNorm = n;
+            bestNorm = glms_vec3_normalize(glms_vec3_sub(P, axisP));
+            bestPos  = P; // P is already O + D*t
             found    = true;
         }
     }
 
+    // --- 3. Vertex Sphere Tests ---
+    vec3s verts[3] = {tri->v0, tri->v1, tri->v2};
+    for (int v = 0; v < 3; v++)
+    {
+        float t;
+        vec3s n, p;
+        if (Ray_Intersect_Sphere_Raw(O, D, bestT, verts[v], r, &t, &n, &p))
+        {
+            bestT    = t;
+            bestNorm = n;
+            bestPos  = p;
+            found    = true;
+        }
+    }
+
+    // --- 4. Final Write-Out ---
     if (found)
     {
         *outT    = bestT;
         *outNorm = bestNorm;
+        *outPos  = bestPos;
     }
+
     return found;
 }
 
@@ -912,25 +968,19 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 
                     float t    = outResult->t;
                     vec3s norm = {0};
-                    if (Ray_Intersect_Capsule(ray.start, ray.dir, t, top, bottom, radius, &t, &norm) &&
+                    if (Ray_Intersect_Capsule(ray.start, ray.dir, t, top, bottom, radius, outResult) &&
                         t < outResult->t)
                     {
                         outResult->hit   = true;
-                        outResult->t     = t;
-                        outResult->norm  = norm;
                         outResult->entId = id;
                     }
                     break;
                 }
                 case SHAPE3_SPH: {
 
-                    float t;
-                    vec3s norm;
-                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, outResult))
                     {
                         outResult->hit   = true;
-                        outResult->t     = t;
-                        outResult->norm  = norm;
                         outResult->entId = id;
                     }
                 }
@@ -1043,13 +1093,9 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
                     bottom.y -= body->dims.y;
                     float radius = body->dims.x;
 
-                    float t;
-                    vec3s norm;
-                    if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, radius, &t, &norm))
+                    if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, radius, &out_hits[count]))
                     {
                         out_hits[count].hit   = true;
-                        out_hits[count].t     = t;
-                        out_hits[count].norm  = norm;
                         out_hits[count].entId = id;
                         count++;
                     }
@@ -1057,13 +1103,9 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
                 }
                 case SHAPE3_SPH: {
 
-                    float t;
-                    vec3s norm;
-                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &t, &norm))
+                    if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, &out_hits[count]))
                     {
                         out_hits[count].hit   = true;
-                        out_hits[count].t     = t;
-                        out_hits[count].norm  = norm;
                         out_hits[count].entId = id;
                         count++;
                     }
@@ -1173,14 +1215,9 @@ int Sol_Spherecast(World *world, float dt, SolRay ray, SolRayResult *results, in
                 bottom.y -= body->dims.y;
 
                 float combined_radius = body->dims.x + radius;
-                float t;
-                vec3s norm;
-
-                if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, combined_radius, &t, &norm))
+                if (Ray_Intersect_Capsule(ray.start, ray.dir, ray.dist, top, bottom, combined_radius, &results[count]))
                 {
                     results[count].hit   = true;
-                    results[count].t     = t;
-                    results[count].norm  = norm;
                     results[count].entId = id;
                     count++;
                 }
@@ -1188,14 +1225,9 @@ int Sol_Spherecast(World *world, float dt, SolRay ray, SolRayResult *results, in
             }
             case SHAPE3_SPH: {
                 float combined_radius = body->dims.x + radius;
-                float t;
-                vec3s norm;
-
-                if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, combined_radius, &t, &norm))
+                if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, combined_radius, &results[count]))
                 {
                     results[count].hit   = true;
-                    results[count].t     = t;
-                    results[count].norm  = norm;
                     results[count].entId = id;
                     count++;
                 }
@@ -1224,12 +1256,13 @@ int Sol_Spherecast(World *world, float dt, SolRay ray, SolRayResult *results, in
             SolTri *tri = &spatial->tris_static[triIdx];
 
             float t;
-            vec3s norm;
-            if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &t, &norm))
+            vec3s norm, pos;
+            if (Ray_Intersect_Tri_Thick(ray.start, ray.dir, ray.dist, tri, radius, &t, &norm, &pos))
             {
                 results[count].hit   = true;
                 results[count].t     = t;
                 results[count].norm  = norm;
+                results[count].pos   = pos;
                 results[count].entId = entId;
                 count++;
             }
@@ -1292,6 +1325,21 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
             {
                 out_hits[count].hit   = true;
                 out_hits[count].t     = dist; // distance from center to surface, NOT a ray t
+                out_hits[count].norm  = norm;
+                out_hits[count].entId = id;
+                count++;
+            }
+            break;
+        }
+        case SHAPE3_SPH: {
+            float combined_radius = body->dims.x + radius;
+            float t;
+            vec3s norm;
+
+            if (Sphere_Overlap_Sphere(center, radius, xform.pos, body->dims.x, &t, &norm))
+            {
+                out_hits[count].hit   = true;
+                out_hits[count].t     = t;
                 out_hits[count].norm  = norm;
                 out_hits[count].entId = id;
                 count++;

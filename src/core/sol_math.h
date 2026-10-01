@@ -501,9 +501,8 @@ static inline void ClosestTSegmentSegment(vec3s a0, vec3s a1, // Segment A: a0 -
     *outTB = tB; // Progress along Segment B [0, 1]
 }
 
-static inline void ClosestPointsSegmentSegment(vec3s a0, vec3s a1, 
-                                               vec3s b0, vec3s b1, 
-                                               vec3s *outPointA, vec3s *outPointB)
+static inline void ClosestPointsSegmentSegment(vec3s a0, vec3s a1, vec3s b0, vec3s b1, vec3s *outPointA,
+                                               vec3s *outPointB)
 {
     float tA, tB;
     ClosestTSegmentSegment(a0, a1, b0, b1, &tA, &tB);
@@ -607,16 +606,20 @@ static inline vec3s Sol_AddScaledDir(vec3s start, vec3s dir, float dist)
     return glms_vec3_add(start, glms_vec3_scale(dir, dist));
 }
 
-static inline vec2s Sol_GridMaker(int counter, int row, int col, vec2s start, vec2s spacing)
+typedef struct
 {
-    return (vec2s){start.x + (counter % row) * spacing.x, start.y + (counter / col) * spacing.y};
-}
+    int cols;
+    vec2s start;
+    vec2s spacing;
 
-static inline vec3s Sol_GridMakerInc(int *counter, int row, int col, vec2s start, vec2s spacing)
+    int _counter;
+} GridMaker;
+static inline vec3s Sol_Grid_Next(GridMaker *grid)
 {
-    vec3s pos = {start.x + (float)(*counter % row) * spacing.x, start.y + (float)(*counter / col) * spacing.y, 0};
-    (*counter)++;
-    return pos;
+    int c = grid->_counter++;
+    int col_idx = c % grid->cols;
+    int row_idx = c / grid->cols;
+    return (vec3s){grid->start.x + (float)col_idx * grid->spacing.x, grid->start.y + (float)row_idx * grid->spacing.y, 0};
 }
 
 typedef enum
@@ -639,11 +642,24 @@ static inline float EvaluateCurve(CurveTypes type, float t)
     switch (type)
     {
     case CURVE_LATEPULSE: {
-        float c = 149.01161f;
-        float a = powf(t, 8.0f);
-        float b = powf(1.0f - t, 2.0f);
-        float z = c * a * b;
-        return z;
+        // float c = 149.01161f;
+        // float a = powf(t, 8.0f);
+        // float b = powf(1.0f - t, 2.0f);
+        // float z = c * a * b;
+        // return z;
+
+        // Exponents
+        const float p = 8.0f;
+        const float q = 2.0f;
+
+        // Peak location: p / (p + q) = 8 / 10 = 0.8
+        const float t_max = p / (p + q);
+
+        // Unscaled value at current t and at peak
+        float f_t   = powf(t, p) * powf(1.0f - t, q);
+        float f_max = powf(t_max, p) * powf(1.0f - t_max, q);
+
+        return f_t / f_max;
     }
     case CURVE_SCURVEY: {
 

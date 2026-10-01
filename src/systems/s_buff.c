@@ -44,7 +44,7 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
                                .kind   = HITKIND_FIRE,
                                .entA   = buff->source,
                                .entB   = id,
-                               .damage = buff->damage,
+                               .damage = {.amount = buff->damage},
                                .power  = buff->power,
                                .pos    = pos,
                            });

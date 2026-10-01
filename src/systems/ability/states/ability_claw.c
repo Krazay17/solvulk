@@ -42,9 +42,9 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
     vec3s pos            = world->xform.pos[id];
     float duration_delta = data->elapsed / data->conf.duration;
     vec3s dir            = cmd->lookdir;
-    dir.y                = dir.y > 0 ? 0 : dir.y;
-    body3->vel           = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 7.0f, 0, 1.0f, duration_delta));
-    float speed          = glms_vec3_norm(body3->vel) * dt;
+    // dir.y                = dir.y > 0 ? 0 : dir.y;
+    body3->vel  = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 5.0f, 0, 1.0f, duration_delta));
+    float speed = glms_vec3_norm(body3->vel) * dt;
 
     SolRay ray = {
         .start     = pos,
@@ -56,8 +56,6 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
     SolHit hit = {
         .entA       = id,
         .damage     = data->conf.damage,
-        .buffMask   = data->conf.buffMask,
-        .effectMask = data->conf.effectMask,
         .power      = 1.0f,
         .kind       = HITKIND_MELEE_HIT,
     };
@@ -140,8 +138,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         SolHit hit = {
             .kind       = HITKIND_MELEE_HIT,
             .damage     = data->conf.damage,
-            .buffMask   = data->conf.buffMask,
-            .effectMask = data->conf.effectMask,
             .power      = 1.0f,
             .entA       = id,
             .vel        = cmd->aimdir,
@@ -191,7 +187,7 @@ bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return data->cooldownRemaining <= 0.0f;
+    return !(data->cooldownRemaining > 0.0f);
 }
 
 void Ability_Claw_Draw(World *world, int id, ScAbility *ability, float dt)
@@ -216,8 +212,12 @@ void Ability_Claw_Draw(World *world, int id, ScAbility *ability, float dt)
 
 DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit)
 {
+    ScCmd *cmd   = Sol_Comp_Get(world, id, ScCmd);
     int attacker = hit->entA;
-    if (Sol_Comp_Has(world, attacker, ScProjectile))
+    vec3s delta  = glms_vec3_sub(hit->pos, Sol_Body3_GetHead(world, id));
+
+    float dot = glms_vec3_dot(delta, cmd->lookdir);
+    if (Sol_Comp_Has(world, attacker, ScProjectile) && dot > 0)
     {
         Sol_Combat_Reflect(world, attacker, id, hit->pos);
         return DEFENDKIND_CONSUMED;
@@ -249,5 +249,5 @@ const AbilityStateFunc ability_claw_dash_state = {
     .exit     = Ability_Claw_Exit,
     .canExit  = Ability_Claw_CanExit,
     .canEnter = Ability_Claw_CanEnter,
-    .defense  = Defend,
+    .defend   = Defend,
 };

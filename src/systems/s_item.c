@@ -1,3 +1,10 @@
+/*
+ * File: s_item.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-30
+ *
+ */
 #include "world.h"
 
 enum
@@ -21,12 +28,13 @@ AbilityConfig Sol_Item_GetMods(SolItem item)
     AbilityConfig conf = {0};
     if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
     {
-        conf.cooldown   = (item_rarity_scale[COOLDOWN] * (float)item.rarity);
-        conf.damage     = (item_rarity_scale[DAMAGE] * (float)item.rarity);
-        conf.maxpower   = (item_rarity_scale[MAXPOWER] * (float)item.rarity);
-        conf.speed      = (item_rarity_scale[SPEED] * (float)item.rarity);
-        conf.buffMask   = item.buffMask;
-        conf.effectMask = item.effectMask;
+        conf.cooldown = (item_rarity_scale[COOLDOWN] * (float)item.rarity);
+        conf.maxpower = (item_rarity_scale[MAXPOWER] * (float)item.rarity);
+        conf.speed    = (item_rarity_scale[SPEED] * (float)item.rarity);
+
+        conf.damage.amount     = (item_rarity_scale[DAMAGE] * (float)item.rarity);
+        conf.damage.buffMask   = item.buffMask;
+        conf.damage.effectMask = item.effectMask;
     }
     return conf;
 }
@@ -36,11 +44,11 @@ AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item)
     if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
     {
         conf.cooldown *= 1.0f - (item_rarity_scale[COOLDOWN] * (float)item.rarity);
-        conf.damage *= 1.0f + (item_rarity_scale[DAMAGE] * (float)item.rarity);
         conf.maxpower *= 1.0f + (item_rarity_scale[MAXPOWER] * (float)item.rarity);
         conf.speed *= 1.0f + (item_rarity_scale[SPEED] * (float)item.rarity);
-        conf.buffMask |= item.buffMask;
-        conf.effectMask |= item.effectMask;
+        conf.damage.amount *= 1.0f + (item_rarity_scale[DAMAGE] * (float)item.rarity);
+        conf.damage.buffMask |= item.buffMask;
+        conf.damage.effectMask |= item.effectMask;
     }
     return conf;
 }

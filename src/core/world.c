@@ -313,17 +313,10 @@ int Sol_Create_Ent(World *world, vec3s pos)
     ScActive *sol_active       = Sol_Comp_Add(world, id, ScActive);
     sol_active->active_at_tick = world->currentTick;
     sol_active->time_activated = world->tickTime;
-    Sol_Debug_Add("Entities", world->entCount);
-    world->xform.pos[id]      = pos;
-    world->xform.last_pos[id] = pos;
-    world->xform.draw_pos[id] = pos;
+    Xform_SetAll(world, id, pos, (versors){0.0f, 0.0f, 0.0f, 1.0f}, (vec3s){1.0f, 1.0f, 1.0f});
     world->xform.home_pos[id] = pos;
-    world->xform.rot[id]      = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    world->xform.last_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    world->xform.draw_rot[id] = (versors){0.0f, 0.0f, 0.0f, 1.0f};
-    world->xform.sca[id]      = (vec3s){1.0f, 1.0f, 1.0f};
-    world->xform.last_sca[id] = (vec3s){1.0f, 1.0f, 1.0f};
-    world->xform.draw_sca[id] = (vec3s){1.0f, 1.0f, 1.0f};
+
+    Sol_Debug_Add("Entities", world->entCount);
 
     return id;
 }
@@ -367,16 +360,6 @@ void SlEmitter_Deinit(SlEmitter *self)
 {
     solb_free(self->emitters);
     solb_free(self->particles);
-}
-
-void SlHitgen_Init(World *world, SlHitgen *self)
-{
-    memset(self->rows, 0, sizeof(self->rows)); // hit_targets == NULL for every row until first use
-    self->global = 1;
-}
-
-void SlHitgen_Deinit(SlHitgen *self)
-{
 }
 
 void SlSpatial_Init(World *world, SlSpatial *self)
@@ -446,39 +429,6 @@ void SlDebug_Init(World *world, SlDebug *self)
 
 void SlDebug_Deinit(SlDebug *self)
 {
-}
-
-u32 Sol_Hitgen_Start(World *world, int id)
-{
-    SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
-
-    single->global++;
-    if (single->global == 0)
-    {
-        memset(single->rows, 0, sizeof(single->rows));
-        single->global = 1;
-    }
-    return single->global;
-}
-
-bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
-{
-    SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
-    HitgenRow *row   = &single->rows[id];
-
-    if (row->gen != sessionGen)
-    {
-        // new session for this attacker — reset its target list
-        solb_set_count(row->hit_targets, 0);
-        row->gen = sessionGen;
-    }
-
-    for (uint32_t i = 0; i < solb_count(row->hit_targets); i++)
-        if (row->hit_targets[i] == (u32)target)
-            return false; // already hit this target this session
-
-    solb_push(row->hit_targets, (u32)target);
-    return true;
 }
 
 void Sol_Event_Push(World *world, EventKind kind, SolEvent event)

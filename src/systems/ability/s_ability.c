@@ -16,33 +16,64 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_CLAW_CHARGE] =
         {
-            .duration   = 0.45f,
-            .cooldown   = 1.0f,
-            .maxpower   = 1.0f,
-            .speed      = 1.0f,
-            .damage     = 25.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+            .duration = 0.45f,
+            .cooldown = 1.0f,
+            .maxpower = 1.0f,
+            .speed    = 1.0f,
+            .damage =
+                {
+                    .amount     = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+                },
         },
     [ABILITY_STATE_FIREBALL_CHARGE] =
         {
-            .duration   = 0.6f,
-            .maxpower   = 1.0f,
-            .speed      = 1.0f,
-            .cooldown   = 1.0f,
-            .damage     = 25.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_LIFESTEAL,
+            .duration = 0.6f,
+            .maxpower = 1.0f,
+            .speed    = 1.0f,
+            .cooldown = 1.0f,
+            .damage =
+                {
+                    .amount   = 25.0f,
+                    .buffMask = BITC(BUFFKIND_FIRE),
+                },
+        },
+    [ABILITY_STATE_SHIELD_CHARGE] =
+        {
+            .duration = 0.6f,
+            .maxpower = 1.0f,
+            .speed    = 1.0f,
+            .cooldown = 1.0f,
+            .damage   = 25.0f,
+            .damage =
+                {
+                    .amount     = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE,
+                },
+        },
+    [ABILITY_STATE_WHIP_CHARGE] =
+        {
+            .duration = 0.6f,
+            .maxpower = 1.0f,
+            .speed    = 1.0f,
+            .cooldown = 1.0f,
+            .damage =
+                {
+                    .amount = 25.0f,
+                },
         },
     [ABILITY_STATE_CLAW_DASH] =
         {
-            .duration   = 0.6f,
-            .cooldown   = 4.0f,
-            .damage     = 25.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
-            .maxpower   = 1.0f,
-            .speed      = 1.0f,
+            .duration = 0.6f,
+            .cooldown = 4.0f,
+            .damage   = 25.0f,
+            .maxpower = 1.0f,
+            .speed    = 1.0f,
+            .damage =
+                {
+                    .amount = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+                },
         },
     [ABILITY_STATE_FIREBALL] =
         {
@@ -50,24 +81,32 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .maxpower = 1.1f,
             .speed    = 1.0f,
             .cooldown = 1.0f,
-            .damage   = 25.0f,
-            .buffMask = BITC(BUFFKIND_FIRE),
+            .damage =
+                {
+                    .amount   = 25.0f,
+                    .buffMask = BITC(BUFFKIND_FIRE),
+                },
+
         },
     [ABILITY_STATE_SHIELD] =
         {
-            .duration   = 0.4f,
-            .cooldown   = 1.0f,
-            .damage     = 25.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_KNOCKUP,
+            .duration = 0.4f,
+            .cooldown = 1.0f,
+            .damage =
+                {
+                    .amount     = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE,
+                },
         },
     [ABILITY_STATE_SHIELD_DASH] =
         {
-            .duration   = 0.3f,
-            .cooldown   = 1.0f,
-            .damage     = 25.0f,
-            .buffMask   = BITC(BUFFKIND_FIRE),
-            .effectMask = EFFECTMASK_KNOCKUP,
+            .duration = 0.3f,
+            .cooldown = 1.0f,
+            .damage =
+                {
+                    .amount     = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKUP,
+                },
         },
 };
 
@@ -82,9 +121,11 @@ const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_FIREBALL][1] = ABILITY_STATE_FIREBALL,        //
     [ABILITYKIND_FIREBALL][2] = ABILITY_STATE_FIREBALL_DASH,   //
 
-    // [ABILITYKIND_SHIELD][0] = ABILITY_STATE_SHIELD_CHARGE, //
-    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,      //
-    [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH, //
+    [ABILITYKIND_SHIELD][0] = ABILITY_STATE_SHIELD_CHARGE, //
+    [ABILITYKIND_SHIELD][1] = ABILITY_STATE_SHIELD,        //
+    [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH,   //
+
+    [ABILITYKIND_WHIP][0] = ABILITY_STATE_WHIP_CHARGE, //
 };
 
 extern const AbilityStateFunc ability_idle_state;
@@ -97,7 +138,10 @@ extern const AbilityStateFunc ability_fireball_state;
 extern const AbilityStateFunc ability_fireball_charge_state;
 extern const AbilityStateFunc ability_fireball_dash_state;
 
+extern const AbilityStateFunc ability_shield_charge_state;
 extern const AbilityStateFunc ability_shield_state;
+
+extern const AbilityStateFunc ability_whip_charge;
 
 extern const AbilityStateFunc ability_dash_state;
 
@@ -112,8 +156,11 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_FIREBALL_CHARGE] = &ability_fireball_charge_state, //
     [ABILITY_STATE_FIREBALL_DASH]   = &ability_dash_state,            //
 
-    [ABILITY_STATE_SHIELD]      = &ability_shield_state, //
-    [ABILITY_STATE_SHIELD_DASH] = &ability_dash_state,   //
+    [ABILITY_STATE_SHIELD]        = &ability_shield_state, //
+    [ABILITY_STATE_SHIELD_CHARGE] = &ability_shield_charge_state,
+    [ABILITY_STATE_SHIELD_DASH]   = &ability_dash_state, //
+
+    [ABILITY_STATE_WHIP_CHARGE] = &ability_whip_charge, //
 };
 
 static inline u32 Get_SlotState(const ScAbility *ability, int slot)
@@ -240,9 +287,9 @@ DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit)
     if (!ability)
         return DEFENDKIND_NONE;
 
-    AbilityStateFunc *f = ability_state_func[ability->state];
-    if (!f || !f->defense)
+    const AbilityStateFunc *f = ability_state_func[ability->state];
+    if (!f || !f->defend)
         return DEFENDKIND_NONE;
 
-    return f->defense(world, id, ability, hit);
+    return f->defend(world, id, ability, hit);
 }

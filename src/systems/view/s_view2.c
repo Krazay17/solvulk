@@ -1,27 +1,33 @@
 #include "world.h"
 #include "sol_core.h"
 #include "sol_math.h"
+#include "font.h"
 #include "render/render.h"
 
+const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
 {
-    if (!Sol_Comp_Has(world, id, ScRef) || !Sol_Comp_Has(world, id, ScAbilitybar))
+    ScRef *ref = Sol_Comp_Get(world, id, ScRef);
+    if (!ref)
         return;
-    ScAbilitybar *abilitybar = Sol_Comp_Get(world, id, ScAbilitybar);
-    ScRef *ref               = Sol_Comp_Get(world, id, ScRef);
-    World *ref_world         = Sol_GetWorldByIdx(ref->ent_world);
+    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
     if (!ref_world)
         return;
     ScAbility *ability = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScAbility);
     if (!ability)
         return;
-    vec3s pos = world->xform.draw_pos[id];
+    ScAbilitybar *abilitybar = Sol_Comp_Get(world, id, ScAbilitybar);
+    if (!abilitybar)
+        return;
 
-    int count   = abilitybar->slots;
-    float width = view->dims.x / (float)count;
-    float fill  = 0;
+    vec3s pos        = world->xform.draw_pos[id];
+    int count        = abilitybar->slots;
+    float slot_width = view->dims.x / (float)count;
     for (int i = 0; i < count; i++)
     {
+        vec4s slot_pos  = {UISCALE(pos.x + slot_width * i), UISCALE(pos.y)};
+        vec4s slot_rect = {0, 0, UISCALE(slot_width), UISCALE(view->dims.y)};
+
         RectSSBO *rect    = Sol_Render_GetNext_Rect(view->layer);
         u32 texture       = view->textureID;
         vec4s final_color = view->color;
@@ -35,16 +41,43 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
             view->textureUV = (vec4s){0, 0, 1.0f, 0.816f};
         }
         rect->extra.z   = view->desat;
-        fill            = ability->stateData[i].cooldownRemaining > 0.0f
+        rect->flags     = view->flags;
+        rect->extra.y   = ability->stateData[i].cooldownRemaining > 0.0f
                               ? ability->stateData[i].cooldownRemaining / ability->stateData[i].conf.cooldown
                               : 0.0f;
-        rect->flags     = view->flags;
-        rect->extra.y   = fill;
-        rect->pos       = (vec4s){UISCALE(pos.x + width * i), UISCALE(pos.y)};
-        rect->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(view->dims.y)};
+        rect->pos       = slot_pos;
+        rect->rect      = slot_rect;
         rect->textureId = texture;
         rect->color     = final_color;
         rect->uv        = view->textureUV;
+
+        AbilityStateData *data = &ability->stateData[i];
+        if (ability->state[i] != 0)
+        {
+            RectSSBO *active_panel  = Sol_Render_GetNext_Rect(view->layer);
+            active_panel->flags     = view->flags;
+            active_panel->pos       = slot_pos;
+            active_panel->rect      = slot_rect;
+            active_panel->color     = VEC4_WHITE;
+            active_panel->textureId = SOL_TEXTURE_SWIRLFRAME;
+        }
+
+        if (data->held)
+        {
+            RectSSBO *held_panel  = Sol_Render_GetNext_Rect(view->layer);
+            held_panel->flags     = view->flags;
+            held_panel->pos       = slot_pos;
+            held_panel->rect      = slot_rect;
+            held_panel->color     = VEC4_WHITE;
+            held_panel->textureId = SOL_TEXTURE_SHOCKPARTICLE;
+        }
+
+        float font_size = 16.0f;
+        float font_x    = slot_pos.x + slot_width * 0.5f;
+        float font_y    = slot_pos.y + view->dims.y * 0.5f;
+        Sol_Render_DrawText2D(
+            slot_text[i],
+            (SolFontDesc){.color = VEC4_GREEN, .layer = view->layer, .size = font_size, .x = font_x, .y = font_y, .center = true});
     }
 }
 

@@ -29,9 +29,9 @@ static void Fire(World *world, int id, vec3s pos, const AbilityStateData *data, 
                             data->hitgen);
 }
 
-static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
 
     switch (data->stage)
     {
@@ -44,9 +44,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
         if(move3)
-        {
             move3->speedMod = Sol_Math_Lerp(1.0f, 0.5f, data->power / data->conf.maxpower);
-        }
         break;
     case 1:
     fire:
@@ -84,13 +82,13 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
     {
         data->elapsed += dt;
         if (data->elapsed >= data->conf.duration)
-            Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+            Sol_Ability_SetState(world, id, 0, slot, true);
     }
 }
 
-static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
 
     data->power = 1.0f;
     data->elapsed += dt;
@@ -110,35 +108,36 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
                             data->hitgen);
     if (data->elapsed >= data->conf.duration)
     {
-        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        Sol_Ability_SetState(world, id, 0, slot, true);
     }
 }
 
-static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    AbilityStateData *data  = &ability->stateData[slot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
     data->hitgen            = Sol_Hitgen_Start(world, id);
     data->hitgen2           = Sol_Hitgen_Start(world, id);
     data->drawElapsed       = 0.0f;
-    data->cooldownRemaining = data->conf.cooldown;
     data->power             = MINPOWER;
 }
-static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot)
 {
+    AbilityStateData *data  = &ability->stateData[slot];
+    data->cooldownRemaining = data->conf.cooldown;
 }
-static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
+static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot)
 {
     return true;
 }
-static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd , int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
     return !(data->cooldownRemaining > 0.0f);
 }
-static void Draw(World *world, int id, ScAbility *ability, float dt)
+static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     data->drawElapsed += dt;
     SphereSSBO *ss = Sol_Render_GetNextSphere(PIPE_SPHERE_FX);
     vec4s pos      = {world->xform.draw_pos[id].x, world->xform.draw_pos[id].y, world->xform.draw_pos[id].z,
@@ -146,9 +145,9 @@ static void Draw(World *world, int id, ScAbility *ability, float dt)
     ss->pos        = pos;
     ss->color      = (vec4s){1, 0, 1, 1};
 }
-static void Draw_Charge(World *world, int id, ScAbility *ability, float dt)
+static void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     switch (data->stage)
     {
     case 0:

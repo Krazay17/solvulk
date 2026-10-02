@@ -163,7 +163,7 @@ typedef struct
 } AbilityStateData;
 typedef struct ScAbility
 {
-    u32 state, activeSlot;
+    u32 state[ABILITY_SLOTS];
     u32 base_actions[ABILITY_SLOTS];
     u32 slotted_actions[ABILITY_SLOTS];
     SolItem slotted_items[ABILITY_SLOTS];

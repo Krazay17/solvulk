@@ -188,7 +188,6 @@ void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride)
     vkCmdDraw(cmd, count * 2, 1, 0, 0);
 }
 
-
 void Flush_ModelsTransparent(u32 *model_que_offset)
 {
     int count = modelQueues[0].count;
@@ -332,7 +331,6 @@ void Flush_Models(void)
     Flush_ModelsTransparent(&model_que_offset);
 }
 
-
 void Flush_Spheres(void)
 {
 
@@ -380,15 +378,15 @@ void Flush_Quads()
 
 void Flush_Ribbons()
 {
-    RibbonSegSSBO *gpu = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
+    RibbonSegSSBO *gpu  = Sol_GetDescriptorMapping(DESC_RIBBON_SSBO);
     VkCommandBuffer cmd = Command_Buffer_Get();
-    u32 currentOffset = 0;
+    u32 currentOffset   = 0;
 
-    for(int pipe = PIPE_RIBBON_START;pipe < PIPE_RIBBON_END;pipe++)
+    for (int pipe = PIPE_RIBBON_START; pipe < PIPE_RIBBON_END; pipe++)
     {
         RibbonQueue *q = &ribbonQueues[pipe - PIPE_RIBBON_START];
-        u32 count = solb_count(q->instances);
-        if(count > 0)
+        u32 count      = solb_count(q->instances);
+        if (count > 0)
         {
             memcpy(gpu + currentOffset, q->instances, sizeof(RibbonSegSSBO) * count);
             Sol_Render_Bind_Pipeline(cmd, pipe);
@@ -521,11 +519,11 @@ void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
     if (desc.size <= 0.0f)
         return;
 
-    SolFont *font = &loaded_fonts[desc.kind];
-
-    float cursorX  = desc.x;
-    float baseSize = desc.size / 32.0f;
-    float pad      = 0.2f * baseSize * (224.0f / 32.0f);
+    SolFont *font     = &loaded_fonts[desc.kind];
+    float text_length = Sol_MeasureText(str, desc.size, desc.kind);
+    float cursorX     = desc.x;
+    float baseSize    = desc.size / 32.0f;
+    float pad         = 0.2f * baseSize * (224.0f / 32.0f);
 
     for (const char *c = str; *c; c++)
     {
@@ -546,8 +544,9 @@ void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
             break;
 
         ssbo->pos   = (vec4s){{
-            cursorX + g->xoffset * desc.size - pad,
-            desc.y - g->ytop * desc.size - pad,
+            desc.center ? (cursorX + g->xoffset * desc.size - pad - text_length * 0.5f)
+                        : (cursorX + g->xoffset * desc.size - pad),
+            desc.center ? (desc.y - g->ytop * desc.size * 0.5f - pad) : (desc.y - g->ytop * desc.size - pad),
             g->uw * 224.0f * baseSize + pad * 2.0f,
             g->vh * 224.0f * baseSize + pad * 2.0f,
         }};

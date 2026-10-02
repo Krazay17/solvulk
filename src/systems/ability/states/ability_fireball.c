@@ -20,20 +20,20 @@
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
-    vec3s pos = Sol_Model_GetBoneXform(world, id, slot == 1 ? "hand.R" : "hand.L").pos;
+    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
     pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));
     return pos;
 }
 
-static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
 }
 
-static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     switch (data->stage)
     {
     case 0:
@@ -42,12 +42,16 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             data->stage++;
             goto fire;
         }
-        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
+        data->power    = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
+        ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
+        if (move3)
+            move3->speedMod = Sol_Math_Lerp(1.0f, 0.5f, data->power / data->conf.maxpower);
+
         break;
     case 1:
     fire:
         data->stage++;
-        vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+        vec3s pos = GetProjectilePos(world, id, data->power, slot);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
         SolHit hit = {
@@ -58,12 +62,12 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         hit.damage.amount *= 0.5f;
 
         { // Spawn fireball
-            int fireball                   = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
-            ScBody3 *pBody                 = Sol_Comp_Get(world, fireball, ScBody3);
-            ScProjectile *projectile       = Sol_Comp_Get(world, fireball, ScProjectile);
-            projectile->hit                = hit;
-            projectile->aoe_hit            = hit;
-            projectile->power              = data->power;
+            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+            ScBody3 *pBody           = Sol_Comp_Get(world, fireball, ScBody3);
+            ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
+            projectile->hit          = hit;
+            projectile->aoe_hit      = hit;
+            projectile->power        = data->power;
         }
     case 2:
         if (data->elapsed > HIT_DELAY)
@@ -74,17 +78,17 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         if (data->accum >= HIT_RATE)
         {
             data->accum -= HIT_RATE;
-            vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+            vec3s pos = GetProjectilePos(world, id, data->power, slot);
             vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
             SolHit hit = {
-                .entA       = id,
-                .kind       = HITKIND_MELEE_HIT,
-                .power      = data->power,
-                .damage     = data->conf.damage,
-                .power      = 0.1f,
+                .entA   = id,
+                .kind   = HITKIND_MELEE_HIT,
+                .power  = data->power,
+                .damage = data->conf.damage,
+                .power  = 0.1f,
             };
-            Sol_Combat_DamageCast(world,dt, id,
+            Sol_Combat_DamageCast(world, dt, id,
                                   (SolRay){.start     = pos,
                                            .dir       = dir,
                                            .dist      = MELEE_DIST,
@@ -99,15 +103,15 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         data->elapsed += dt;
     if (data->elapsed >= data->conf.duration)
     {
-        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        Sol_Ability_SetState(world, id, 0, slot, true);
         return;
     }
 }
 
-static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    vec3s pos              = GetProjectilePos(world, id, 1.0f, ability->activeSlot);
+    AbilityStateData *data = &ability->stateData[slot];
+    vec3s pos              = GetProjectilePos(world, id, 1.0f, slot);
     vec3s dir              = vecNorm(vecSub(cmd->aimpos, pos));
 
     { // Spawn fireball
@@ -120,49 +124,49 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
         };
         projectile->hit.damage.amount *= 0.5f;
         projectile->aoe_hit = (SolHit){
-            .entA       = id,
-            .damage     = data->conf.damage,
-            .power      = data->power,
+            .entA   = id,
+            .damage = data->conf.damage,
+            .power  = data->power,
         };
         projectile->aoe_hit.damage.amount *= 0.5f;
         projectile->power = data->power;
     }
 
-    Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+    Sol_Ability_SetState(world, id, 0, slot, true);
 }
 
-void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    AbilityStateData *data  = &ability->stateData[slot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
     data->hitgen            = Sol_Hitgen_Start(world, id);
-    data->cooldownRemaining = data->conf.cooldown;
     data->power             = MIN_POWER;
 }
 
-void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
+    data->cooldownRemaining = data->conf.cooldown;
 }
 
-bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
+bool Ability_Fireball_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     return true;
 }
 
-bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+bool Ability_Fireball_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
     return !(data->cooldownRemaining > 0.0f);
 }
 
-void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, float dt)
+void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     ScCmd *cmd             = Sol_Comp_Get(world, id, ScCmd);
 
-    vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+    vec3s pos = GetProjectilePos(world, id, data->power, slot);
     vec4s rot = {Sol_Quat_FromLookDir(cmd->aimdir).x, Sol_Quat_FromLookDir(cmd->aimdir).y,
                  Sol_Quat_FromLookDir(cmd->aimdir).z, Sol_Quat_FromLookDir(cmd->aimdir).w};
 

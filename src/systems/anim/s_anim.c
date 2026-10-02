@@ -224,6 +224,11 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
     }
 }
 
+enum
+{
+    HAND_LEFT,
+    HAND_RIGHT,
+};
 struct AnimMap
 {
     u32 hand_anim[2][4];
@@ -321,60 +326,66 @@ void Anim_Tick(World *world, double dt)
 
         if (Sol_Comp_Has(world, id, ScAbility))
         {
-            ScAbility *ability     = Sol_Comp_Get(world, id, ScAbility);
-            AbilityStateData *data = &ability->stateData[ability->activeSlot];
-            AnimDesc ability_anim  = {.layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .blendIn = 0.1f, .blendOut = 0.1f};
-            ability_anim.anim =
-                ability_anim_map[ability->state].hand_anim[ability->activeSlot == 1 ? 1 : 0][data->stage];
-            ability_anim.seek  = ability_anim_map[ability->state].seek;
-            ability_anim.speed = ability_anim_map[ability->state].speed;
-            ability_anim.speed = ability_anim.speed > 0 ? ability_anim.speed : 1.0f;
-            switch (ability->state)
+            ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+            for (int j = 0; j < ABILITY_SLOTS; j++)
             {
-            case ABILITY_STATE_IDLE:
+                u32 ability_state = ability->state[j];
+                if (ability_state == 0)
+                    continue;
+                u32 hand               = j > 5 ? HAND_RIGHT : HAND_LEFT;
+                AbilityStateData *data = &ability->stateData[j];
+                AnimDesc ability_anim  = {
+                    .layerId = ANIM_LAYER_OVERRIDE, .speed = 1.0f, .blendIn = 0.1f, .blendOut = 0.1f};
+                ability_anim.anim  = ability_anim_map[ability_state].hand_anim[hand][data->stage];
+                ability_anim.seek  = ability_anim_map[ability_state].seek;
+                ability_anim.speed = ability_anim_map[ability_state].speed;
+                ability_anim.speed = ability_anim.speed > 0 ? ability_anim.speed : 1.0f;
+                switch (ability_state)
+                {
+                case ABILITY_STATE_IDLE:
+                    break;
+                case ABILITY_STATE_CLAW_CHARGE:
+                    ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
+                    break;
+                case ABILITY_STATE_FIREBALL_CHARGE: {
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
                 break;
-            case ABILITY_STATE_CLAW_CHARGE:
-                ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
+                case ABILITY_STATE_SHIELD_CHARGE: {
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
                 break;
-            case ABILITY_STATE_FIREBALL_CHARGE: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_SHIELD_CHARGE: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_BOLT_CHARGE: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_CLAW_DASH: {
-                ability_anim.speed =
-                    1.6 + Sol_Ability_GetCurrentBaseDuration(ability, ability->activeSlot) - data->conf.duration;
-            }
-            break;
-            case ABILITY_STATE_FIREBALL: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_SHIELD: {
-                ability_anim.layerId = ANIM_LAYER_UPPER;
-            }
-            break;
-            case ABILITY_STATE_SHIELD_DASH: {
-                ability_anim.anim = dash_map[data->as.dash.strafe];
-                ability_anim.speed =
-                    1.0 + Sol_Ability_GetCurrentBaseDuration(ability, ability->activeSlot) - data->conf.duration;
-            }
-            break;
-            }
-            if (ability->state != 0)
-                Sol_Anim_Play(world, id, ability_anim);
+                case ABILITY_STATE_BOLT_CHARGE: {
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
+                break;
+                case ABILITY_STATE_CLAW_DASH: {
+                    ability_anim.speed = 1.6 + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                }
+                break;
+                case ABILITY_STATE_FIREBALL: {
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
+                break;
+                case ABILITY_STATE_SHIELD: {
+                    ability_anim.speed   = 0.85f + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
+                break;
+                case ABILITY_STATE_SHIELD_DASH: {
+                    ability_anim.anim  = dash_map[data->as.dash.strafe];
+                    ability_anim.speed = 1.0f + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                }
+                break;
+                }
+                if (ability->state != 0)
+                    Sol_Anim_Play(world, id, ability_anim);
 
-            if (data->hitPause > 0)
-                Sol_Anim_SetSpeed(world, id, ability_anim.layerId, 0.001f);
-            else
-                Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
+                if (data->hitPause > 0)
+                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, 0.001f);
+                else
+                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
+            }
         }
 
         if (Sol_Comp_Has(world, id, ScMove3))

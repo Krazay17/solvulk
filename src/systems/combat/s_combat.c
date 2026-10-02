@@ -291,7 +291,7 @@ int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit
 {
     SolRayResult results[64];
     int max_hits = 64;
-
+    int damaged = 0;
     int hits = solState.debug ? Sol_SpherecastD(world, dt, ray, results, max_hits, 0.2f)
                               : Sol_Spherecast(world, dt, ray, results, max_hits);
     for (int i = 0; i < hits; i++)
@@ -327,6 +327,7 @@ int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit
         hit.pos  = hit_pos;
         hit.vel  = ray.dir;
         Sol_Combat_Hit(world, hit_id, hit);
+        damaged++;
     }
-    return hits;
+    return damaged;
 }

@@ -6,14 +6,14 @@
 #define DASH_VEL 20.0f
 #define DASH_ALPHAMOD 1.5f
 
-static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     data->elapsed += dt;
 
     if (data->elapsed >= data->conf.duration)
     {
-        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        Sol_Ability_SetState(world, id, 0, slot, true);
         return;
     }
     float alpha = DASH_ALPHAMOD - (data->elapsed / data->conf.duration);
@@ -25,10 +25,10 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt
     }
 }
 
-void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    AbilityStateData *data = &ability->stateData[slot];
+    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
 
     vec3s flat_lookdir   = cmd->lookdir;
     flat_lookdir.y       = 0;
@@ -44,25 +44,25 @@ void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
         Sol_GetStrafedirYaw(data->as.dash.dir.x, data->as.dash.dir.z, Sol_Quat_ToYaw(world->xform.rot[id]));
 
     Sol_Buff_AddE(world, id, BUFFKIND_INVULN, id, 1.0f, data->conf.duration);
+}
+
+void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
+{
+    AbilityStateData *data = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
 }
 
-void Ability_Dash_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-}
-
-bool Ability_Dash_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
-{
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     return data->elapsed > data->conf.duration * 0.8f;
 }
 
-bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+bool Ability_Dash_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
 
-    return data->cooldownRemaining <= 0.0f;
+    return !(data->cooldownRemaining > 0.0f);
 }
 
 const AbilityStateFunc ability_dash_state = {

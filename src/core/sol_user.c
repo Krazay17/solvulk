@@ -21,19 +21,27 @@ SolUser sol_user = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_wo
 static SolResource user_settings_file;
 
 static const SolActions key_binds[SOL_KEY_COUNT] = {
-    [SOL_KEY_Q] = ACTION_ABILITY1, [SOL_KEY_E] = ACTION_ABILITY2,
+    [SOL_KEY_1]     = ACTION_ABILITY1, //
+    [SOL_KEY_2]     = ACTION_ABILITY2, //
+    [SOL_KEY_3]     = ACTION_ABILITY3, //
+    [SOL_KEY_4]     = ACTION_ABILITY4, //
+    [SOL_KEY_SHIFT] = ACTION_ABILITY5, //
+    [SOL_KEY_Q]     = ACTION_ABILITY6, //
+    [SOL_KEY_E]     = ACTION_ABILITY7, //
 
-    [SOL_KEY_1] = ACTION_ABILITY3, [SOL_KEY_2] = ACTION_ABILITY4, [SOL_KEY_3] = ACTION_ABILITY5,
-    [SOL_KEY_4] = ACTION_ABILITY6,
-
-    [SOL_KEY_W] = ACTION_FWD,      [SOL_KEY_A] = ACTION_LEFT,     [SOL_KEY_S] = ACTION_BWD,
-    [SOL_KEY_D] = ACTION_RIGHT,    [SOL_KEY_F] = ACTION_INTERACT, [SOL_KEY_SPACE] = ACTION_JUMP,
-    [SOL_KEY_ESCAPE] = 0,          [SOL_KEY_SHIFT] = ACTION_DASH, [SOL_KEY_CTRL] = ACTION_CROUCH,
-    [SOL_KEY_TAB] = ACTION_SCORE,
+    [SOL_KEY_W]      = ACTION_FWD,      //
+    [SOL_KEY_A]      = ACTION_LEFT,     //
+    [SOL_KEY_S]      = ACTION_BWD,      //
+    [SOL_KEY_D]      = ACTION_RIGHT,    //
+    [SOL_KEY_F]      = ACTION_INTERACT, //
+    [SOL_KEY_SPACE]  = ACTION_JUMP,     //
+    [SOL_KEY_CTRL]   = ACTION_CROUCH,   //
+    [SOL_KEY_TAB]    = ACTION_SCORE,    //
+    [SOL_KEY_ESCAPE] = 0,               //
 };
 static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
-    [SOL_MOUSE_LEFT]  = ACTION_ABILITY1,
-    [SOL_MOUSE_RIGHT] = ACTION_ABILITY2,
+    [SOL_MOUSE_LEFT]  = ACTION_ABILITY6,
+    [SOL_MOUSE_RIGHT] = ACTION_ABILITY7,
 };
 
 bool consume_mouse;
@@ -251,7 +259,7 @@ void Entity_Actions()
         {
             SolActions action = user_data.key_binds[i];
             if (action != 0)
-                sol_user.actions |= BITC(action);
+                sol_user.actions |= 1 << action;
         }
     }
 
@@ -320,20 +328,20 @@ void User_Debug(double dt)
                 prev_state = move->state;
             }
         }
-        if (Sol_Comp_Has(world, id, ScAbility))
-        {
-            ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+        // if (Sol_Comp_Has(world, id, ScAbility))
+        // {
+        //     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
 
-            static u32 prev_Astate = 0;
+        //     static u32 prev_Astate = 0;
 
-            bool state_changed = ability->state != prev_Astate;
-            if (state_changed)
-            {
-                Sol_Debug_AddText("AbilityState", ability_state_name[ability->state]);
-                Sol_Debug_AddText("PrevAState", ability_state_name[prev_Astate]);
-                prev_Astate = ability->state;
-            }
-        }
+        //     bool state_changed = ability->state != prev_Astate;
+        //     if (state_changed)
+        //     {
+        //         Sol_Debug_AddText("AbilityState", ability_state_name[ability->state]);
+        //         Sol_Debug_AddText("PrevAState", ability_state_name[prev_Astate]);
+        //         prev_Astate = ability->state;
+        //     }
+        // }
     }
 }
 

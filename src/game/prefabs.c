@@ -75,13 +75,13 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
-            ABILITYKIND_BOLT,
-            ABILITYKIND_FIREBALL,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_SHIELD,
             ABILITYKIND_CLAW,
+            ABILITYKIND_BOLT,
+            ABILITYKIND_FIREBALL,
         },
 };
 

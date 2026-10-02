@@ -107,7 +107,7 @@ static void BoltHit(World *world, int a, int b)
     if (!ref)
         return;
     ScAbility *ability = Sol_Comp_Get(world, ref->ent_id, ScAbility);
-    if (!ability || ability->state != ABILITY_STATE_BOLT_CHARGE)
+    if (!ability)
         return;
 
     AbilityStateData *data   = &ability->stateData[ref->index];
@@ -115,9 +115,10 @@ static void BoltHit(World *world, int a, int b)
     data->as.bolt.bolt_state = 1;
 }
 
-static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+            sollog("Bolt Update");
+    AbilityStateData *data = &ability->stateData[slot];
     switch (data->stage)
     {
     case 0:
@@ -151,7 +152,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         switch (data->as.bolt.bolt_state)
         {
         case 1: {
-
             vec3s pos = Sol_Body3_GetHead(world, id);
             float d2  = GetBoltD2(world, pos, data);
             vec3s to_anchor;
@@ -214,21 +214,20 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
         data->elapsed += dt;
         if ((data->elapsed >= data->conf.duration) && data->as.bolt.bolt_state != 3)
         {
-            Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+            Sol_Ability_SetState(world, id, 0, slot, true);
         }
     }
 }
-static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
-    data->cooldownRemaining = data->conf.cooldown;
+    AbilityStateData *data  = &ability->stateData[slot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
 
     int bolt =
         Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed, 0.33f, BoltHit);
     ScRef *ref                   = Sol_Comp_Add(world, bolt, ScRef);
     ref->kind                    = REFKIND_ABILITY;
-    ref->index                   = ability->activeSlot;
+    ref->index                   = slot;
     ref->ent_id                  = id;
     data->as.bolt.bolt           = bolt;
     data->as.bolt.bolt_state     = 0;
@@ -239,27 +238,29 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
 
     Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
 }
-static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
+    data->cooldownRemaining = data->conf.cooldown;
+
     BoltDelete(world, data);
 }
-static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
+static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     return true;
 }
-static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
     return !(data->cooldownRemaining > 0.0f);
 }
-static DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit)
+static DefendResult Defend(World *world, int id, ScAbility *ability, int slot, SolHit *hit)
 {
 }
-static void Draw(World *world, int id, ScAbility *ability, float dt)
+static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, ability->activeSlot > 0 ? "hand.R" : "hand.L").pos;
+    AbilityStateData *data = &ability->stateData[slot];
+    vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
     vec3s bolt_pos         = world->xform.pos[data->as.bolt.bolt];
     switch (data->stage)
     {

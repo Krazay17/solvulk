@@ -158,7 +158,7 @@ u32 GetCombatActionMask(World *world, int id, ScAi *ai)
         mask |= BITC(AIACTIONC_NONE);
         mask |= BITC(AIACTIONC_RELEASE);
     }
-    else if (!(ability->stateData[ability->activeSlot].elapsed > 0.0f))
+    else
     {
         mask |= BITC(AIACTIONC_NONE);
         mask |= BITC(AIACTIONC_CHARGE);
@@ -267,12 +267,12 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
     if (ability)
     {
-        if (ability->stateData[ability->activeSlot].power >= 0.8f)
-            knows.attack = 3;
-        else if (ability->stateData[ability->activeSlot].held)
-            knows.attack = 2;
-        else if (ability->state != 0)
-            knows.attack = 1;
+        // if (ability->stateData[ability->activeSlot].power >= 0.8f)
+        //     knows.attack = 3;
+        // else if (ability->stateData[ability->activeSlot].held)
+        //     knows.attack = 2;
+        // else if (ability->state != 0)
+        //     knows.attack = 1;
 
         if (ability->stateData[6].cooldownRemaining > 0.0f)
             knows.self = 1;
@@ -375,12 +375,12 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
-        if (target_ability->state == Sol_Ability_GetIsDashing(target_ability))
+        if (Sol_Ability_GetIsDashing(target_ability))
             knows.targetState = 7;
-        else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
-            knows.targetState = 6;
-        else if (target_ability->stateData[target_ability->activeSlot].power > 0.0f)
-            knows.targetState = 5;
+        // else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
+        //     knows.targetState = 6;
+        // else if (target_ability->stateData[target_ability->activeSlot].power > 0.0f)
+        //     knows.targetState = 5;
     }
 
     ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
@@ -556,7 +556,7 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
     case AIACTION_DODGEBWD:
     case AIACTION_DODGELEFT:
     case AIACTION_DODGERIGHT:
-        cmd->actionState |= BITC(ACTION_DASH);
+        cmd->actionState |= BITC(ACTION_ABILITY5);
         cmd->wishdir             = (ai->learning.action_move == AIACTION_DODGEBWD)     ? bwd
                                    : (ai->learning.action_move == AIACTION_DODGELEFT)  ? left
                                    : (ai->learning.action_move == AIACTION_DODGERIGHT) ? right

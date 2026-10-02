@@ -9,22 +9,23 @@ typedef enum
 
 typedef struct
 {
-    float       x, y, size;
-    vec4s       color;
+    float x, y, size;
+    vec4s color;
     SolFontKind kind;
-    u32         zindex;
-    vec4s       outline;
-    u32         layer;
+    u32 zindex;
+    vec4s outline;
+    u32 layer;
+    bool center;
 } SolFontDesc;
 
 typedef struct
 {
-    vec3s       pos;
-    float       size;
-    vec4s       color;
+    vec3s pos;
+    float size;
+    vec4s color;
     SolFontKind font;
-    bool        billboard, inFront, outline; // face camera or use rotation
-    versors     rotation;                    // if not billboard
+    bool billboard, inFront, outline; // face camera or use rotation
+    versors rotation;                 // if not billboard
 } Text3DDesc;
 
 typedef struct
@@ -44,12 +45,12 @@ typedef struct
 
 typedef struct SolFont
 {
-    SolGlyph     glyph[128];
-    TextBounds   bounds;
+    SolGlyph glyph[128];
+    TextBounds bounds;
     SolTextureId textureId;
 } SolFont;
 
 extern SolFont loaded_fonts[SOL_FONT_COUNT];
 
-int      Sol_Fonts_Init();
-float    Sol_MeasureText(const char *str, float size, SolFontKind id);
+int Sol_Fonts_Init();
+float Sol_MeasureText(const char *str, float size, SolFontKind id);

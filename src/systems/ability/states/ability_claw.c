@@ -22,20 +22,20 @@
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
-    vec3s pos = Sol_Model_GetBoneXform(world, id, slot == 1 ? "hand.R" : "hand.L").pos;
+    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
     pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));
     return pos;
 }
 
-static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
 }
 
-static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
+static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     ScBody3 *body3         = Sol_Comp_Get(world, id, ScBody3);
     if (!body3)
         return;
@@ -54,35 +54,21 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
         .radius    = body3->dims.y,
     };
     SolHit hit = {
-        .entA       = id,
-        .damage     = data->conf.damage,
-        .power      = 1.0f,
-        .kind       = HITKIND_MELEE_HIT,
+        .entA   = id,
+        .damage = data->conf.damage,
+        .power  = 1.0f,
+        .kind   = HITKIND_MELEE_HIT,
     };
     Sol_Combat_DamageCast(world, dt, id, ray, hit, data->hitgen);
 
     data->elapsed += dt;
     if (data->elapsed >= data->conf.duration)
-        Sol_Ability_SetState(world, id, 0, ability->activeSlot, true);
+        Sol_Ability_SetState(world, id, 0, slot, true);
 }
 
-static void Hook_OnHit(World *world, int a, int b)
+static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-    ScAbility *ability     = Sol_Comp_Get(world, a, ScAbility);
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    if (data->hitPauseDr < 4)
-    {
-        data->hitPause = data->hitPauseDr > 0 ? 1.0f / data->hitPauseDr : 1.0f;
-        data->hitPauseDr++;
-    }
-    ScBody3 *body = Sol_Comp_Get(world, a, ScBody3);
-    if (body)
-        body->vel.y = fmaxf(body->vel.y, 1.0f);
-}
-
-static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float dt)
-{
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
+    AbilityStateData *data = &ability->stateData[slot];
     switch (data->stage)
     {
     case 0:
@@ -96,7 +82,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
     case 1: {
     fire:
         data->stage++;
-        vec3s pos = GetProjectilePos(world, id, data->power, ability->activeSlot);
+        vec3s pos = GetProjectilePos(world, id, data->power, slot);
         vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
         SolHit hit = {
@@ -136,21 +122,31 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
             .radius    = 0.3f,
         };
         SolHit hit = {
-            .kind       = HITKIND_MELEE_HIT,
-            .damage     = data->conf.damage,
-            .power      = 1.0f,
-            .entA       = id,
-            .vel        = cmd->aimdir,
-            .hook       = Hook_OnHit,
+            .kind   = HITKIND_MELEE_HIT,
+            .damage = data->conf.damage,
+            .power  = 1.0f,
+            .entA   = id,
+            .vel    = cmd->aimdir,
         };
-        Sol_Combat_DamageCast(world, dt, id, ray, hit, data->hitgen);
+        int hits = Sol_Combat_DamageCast(world, dt, id, ray, hit, data->hitgen);
+        if (hits > 0)
+        {
+            if (data->hitPauseDr < 4)
+            {
+                data->hitPause = data->hitPauseDr > 0 ? 1.0f / data->hitPauseDr : 1.0f;
+                data->hitPauseDr++;
+            }
+            ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+            if (body)
+                body->vel.y = fmaxf(body->vel.y, 1.0f);
+        }
     }
     break;
     }
 
     if (data->elapsed >= data->conf.duration)
     {
-        Sol_Ability_SetState(world, id, 0, ability->activeSlot, 1);
+        Sol_Ability_SetState(world, id, 0, slot, 1);
         return;
     }
     if (data->stage > 0)
@@ -162,38 +158,38 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
     }
 }
 
-void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
+void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data  = &ability->stateData[ability->activeSlot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, ability->activeSlot);
+    AbilityStateData *data  = &ability->stateData[slot];
+    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
     data->power             = MIN_POWER;
     data->accum             = HITINTERVAL;
     data->hitgen            = Sol_Hitgen_Start(world, id);
+}
+
+void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
+{
+    AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
 }
 
-void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
+bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-}
-
-bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 next)
-{
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-
+    AbilityStateData *data = &ability->stateData[slot];
     return true;
 }
 
-bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, u32 last, int slot)
+bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
 
     return !(data->cooldownRemaining > 0.0f);
 }
 
-void Ability_Claw_Draw(World *world, int id, ScAbility *ability, float dt)
+void Ability_Claw_Draw(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[ability->activeSlot];
-    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, ability->activeSlot == 1 ? "hand.R" : "hand.L");
+    AbilityStateData *data = &ability->stateData[slot];
+    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L");
     vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, data->power};
     if (data->stage == 0)
     {

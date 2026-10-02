@@ -3,84 +3,90 @@
 #include "sol_math.h"
 #include "font.h"
 #include "render/render.h"
-
+#include "abilitybar/s_abilitybar.h"
 const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
+
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
 {
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
-    if (!ref)
-        return;
+    if (!ref) return;
     World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
-    if (!ref_world)
-        return;
-    ScAbility *ability = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScAbility);
-    if (!ability)
-        return;
+    if (!ref_world) return;
+    ScAbility *ability = Sol_Comp_Get(ref_world, ref->ent_id, ScAbility);
+    if (!ability) return;
     ScAbilitybar *abilitybar = Sol_Comp_Get(world, id, ScAbilitybar);
-    if (!abilitybar)
-        return;
+    if (!abilitybar) return;
 
-    vec3s pos        = world->xform.draw_pos[id];
-    int count        = abilitybar->slots;
-    float slot_width = view->dims.x / (float)count;
-    for (int i = 0; i < count; i++)
+    vec3s pos = world->xform.draw_pos[id];
+    vec4s slots[ABILITY_SLOTS], frames[ABILITY_GROUPS];
+    int total_slots = Abilitybar_Layout(abilitybar, slots, frames);
+
+    // Group frames
+    for (int g = 0; g < ABILITY_GROUPS; g++)
     {
-        vec4s slot_pos  = {UISCALE(pos.x + slot_width * i), UISCALE(pos.y)};
-        vec4s slot_rect = {0, 0, UISCALE(slot_width), UISCALE(view->dims.y)};
+        if (frames[g].z <= 0.0f)
+            continue;
+        RectSSBO *rect  = Sol_Render_GetNext_Rect(view->layer);
+        rect->pos       = (vec4s){UISCALE(pos.x + frames[g].x), UISCALE(pos.y + frames[g].y), 0.0f, 1.0f};
+        rect->color     = VEC4_WHITE;
+        rect->rect      = (vec4s){0, 0, UISCALE(frames[g].z), UISCALE(frames[g].w)};
+        rect->textureId = SOL_TEXTURE_GREENFRAME;
+    }
 
-        RectSSBO *rect    = Sol_Render_GetNext_Rect(view->layer);
+    // Slots
+    for (int s = 0; s < total_slots; s++)
+    {
+        vec4s slot_pos  = {UISCALE(pos.x + slots[s].x), UISCALE(pos.y + slots[s].y)};
+        vec4s slot_rect = {0, 0, UISCALE(slots[s].z), UISCALE(slots[s].w)};
+        AbilityStateData *data = &ability->stateData[s];
+
         u32 texture       = view->textureID;
         vec4s final_color = view->color;
         if (view->kind == VIEW2KIND_ABILITYBAR_BASEICON)
         {
-            texture = ability_texture_map[ability->base_actions[i]];
+            texture = ability_texture_map[ability->base_actions[s]];
             if (texture == 0)
-            {
                 final_color = (vec4s){0, 0, 0, 1};
-            }
             view->textureUV = (vec4s){0, 0, 1.0f, 0.816f};
         }
-        rect->extra.z   = view->desat;
-        rect->flags     = view->flags;
-        rect->extra.y   = ability->stateData[i].cooldownRemaining > 0.0f
-                              ? ability->stateData[i].cooldownRemaining / ability->stateData[i].conf.cooldown
-                              : 0.0f;
-        rect->pos       = slot_pos;
-        rect->rect      = slot_rect;
-        rect->textureId = texture;
-        rect->color     = final_color;
-        rect->uv        = view->textureUV;
 
-        AbilityStateData *data = &ability->stateData[i];
-        if (ability->state[i] != 0)
+        RectSSBO *slot         = Sol_Render_GetNext_Rect(view->layer);
+        slot->extra.z          = view->desat;
+        slot->extra.y          = data->cooldownRemaining > 0.0f ? data->cooldownRemaining / data->conf.cooldown : 0.0f;
+        slot->flags            = view->flags;
+        slot->pos              = slot_pos;
+        slot->rect             = slot_rect;
+        slot->textureId        = texture;
+        slot->color            = final_color;
+        slot->uv               = view->textureUV;
+
+        if (ability->state[s] != 0)
         {
-            RectSSBO *active_panel  = Sol_Render_GetNext_Rect(view->layer);
-            active_panel->flags     = view->flags;
-            active_panel->pos       = slot_pos;
-            active_panel->rect      = slot_rect;
-            active_panel->color     = VEC4_WHITE;
-            active_panel->textureId = SOL_TEXTURE_SWIRLFRAME;
+            RectSSBO *p  = Sol_Render_GetNext_Rect(view->layer);
+            p->flags     = view->flags;
+            p->pos       = slot_pos;
+            p->rect      = slot_rect;
+            p->color     = VEC4_WHITE;
+            p->textureId = SOL_TEXTURE_SWIRLFRAME;
         }
-
         if (data->held)
         {
-            RectSSBO *held_panel  = Sol_Render_GetNext_Rect(view->layer);
-            held_panel->flags     = view->flags;
-            held_panel->pos       = slot_pos;
-            held_panel->rect      = slot_rect;
-            held_panel->color     = VEC4_WHITE;
-            held_panel->textureId = SOL_TEXTURE_SHOCKPARTICLE;
+            RectSSBO *p  = Sol_Render_GetNext_Rect(view->layer);
+            p->flags     = view->flags;
+            p->pos       = slot_pos;
+            p->rect      = slot_rect;
+            p->color     = VEC4_WHITE;
+            p->textureId = SOL_TEXTURE_SHOCKPARTICLE;
         }
 
-        float font_size = 16.0f;
-        float font_x    = slot_pos.x + slot_width * 0.5f;
-        float font_y    = slot_pos.y + view->dims.y * 0.5f;
-        Sol_Render_DrawText2D(
-            slot_text[i],
-            (SolFontDesc){.color = VEC4_GREEN, .layer = view->layer, .size = font_size, .x = font_x, .y = font_y, .center = true});
+        Sol_Render_DrawText2D(slot_text[s], (SolFontDesc){.color  = VEC4_GREEN,
+                                                          .layer  = view->layer,
+                                                          .size   = UISCALE(16.0f),
+                                                          .x      = slot_pos.x + slot_rect.z * 0.5f,
+                                                          .y      = slot_pos.y + slot_rect.w * 0.5f,
+                                                          .center = true});
     }
 }
-
 static void DrawRect(World *world, int id, float fdt, View2 *view)
 {
     vec4s drawCol = view->color;

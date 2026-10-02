@@ -33,7 +33,7 @@ static void Bolt_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
 
-    vec4s pos4 = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    vec4s pos4 = {xform.pos.x, xform.pos.y, xform.pos.z, xform.sca.x};
     vec4s sca4 = {xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
     vec4s rot4 = {xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
 
@@ -43,7 +43,7 @@ static void Bolt_Draw(World *world, int id, ScView3 *view)
     *model           = (ModelSSBO){
         .color    = {0.3f, 0.3f, 1.0f, 1.0f},
         .position = pos4,
-        .scale    = model_sca,
+        .scale    = glms_vec4_scale(model_sca, xform.sca.x),
         .rotation = rot4,
     };
 

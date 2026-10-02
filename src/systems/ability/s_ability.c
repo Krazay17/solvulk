@@ -5,6 +5,7 @@
  * Created: 2026-09-04
  *
  */
+#include "s_ability.h"
 #include "world.h"
 #include "estate.h"
 #include "sol_core.h"
@@ -196,9 +197,11 @@ void Ability_Step(World *world, double dt)
             int mask                   = 1 << (ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
-            if (busy_mask & SHARED_LOCKOUT) // && (1 << j) & SHARED_LOCKOUT
+
+            if (busy_mask & SHARED_LOCKOUT || busy_mask & 1 << j)
                 continue;
-            if (held && (ability->state[j] == ABILITY_STATE_IDLE || j == 4))
+
+            if (held)
             {
                 if (Sol_Ability_SetState(world, id, Get_SlotState(ability, j), j, false))
                     break;
@@ -250,6 +253,13 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
             return false;
         if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability, cmd, slot))
             return false;
+    }
+    if (slot < 5)
+    {
+        if (ability->state[5] != 0)
+            Sol_Ability_SetState(world, id, 0, 5, true);
+        if (ability->state[6] != 0)
+            Sol_Ability_SetState(world, id, 0, 6, true);
     }
 
     if (prevfunc->exit)

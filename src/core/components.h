@@ -105,7 +105,7 @@ typedef struct ScBody3
     u32 ignoreEnt;
     vec3s vel, impulse, force, dims, gravity;
     float mass, invMass, restitution;
-    u32 mask, base_mask;
+    u32 mask, base_mask; // group << 16 | mask << 0
     u32 ray_mask, ray_base_mask;
     u32 flag_destroy;
 } ScBody3;
@@ -304,6 +304,7 @@ typedef struct ScTimer
 {
     float elapsed, duration;
     bool destroy;
+    bool shrinkout;
 } ScTimer;
 
 typedef struct ScAudio
@@ -485,10 +486,16 @@ typedef struct ScRef
     int index;
 } ScRef;
 
+#define ABILITY_GROUPS 3
+
 typedef struct ScAbilitybar
 {
-    int slots;
+    float spacing;       // gap between slots within a group
+    float group_gap;     // gap between group frames (was group_spacing, now excludes padding)
     vec2s slot_dims;
+    vec2s frame_pad;     // padding inside each group frame
+    int slots_per_group[ABILITY_GROUPS];
+    int slotted_ents[ABILITY_SLOTS];   // keep if you already have it
 } ScAbilitybar;
 
 // #################

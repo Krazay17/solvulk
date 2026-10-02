@@ -50,6 +50,13 @@ static void OnRespawn(World *world, int id, ScCombat *combat)
     combat->energy  = combat->energyMax;
     combat->mana    = combat->manaMax;
     combat->is_dead = false;
+
+    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+    if (body3)
+    {
+        body3->vel  = GLMS_VEC3_ZERO;
+        body3->mask = body3->base_mask;
+    }
 }
 
 static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
@@ -59,20 +66,22 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
         combat->is_dead   = true;
         combat->deathTime = world->tickTime;
         Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.entA = combat->lastHitBy, .entB = id});
-    }
-    Sol_Comp_Rem(world, id, ScBuff);
-    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-    if (body3)
-    {
-        body3->vel = GLMS_VEC3_ZERO;
-    }
-    if (Sol_Comp_Has(world, id, ScAbility))
-    {
-        Sol_Ability_SetState(world, id, 0, 0, true);
-    }
-    if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
-    {
-        Sol_Destroy_Ent(world, id);
+        Sol_Comp_Rem(world, id, ScBuff);
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+        {
+            body3->vel       = GLMS_VEC3_ZERO;
+            body3->base_mask = body3->mask;
+            body3->mask      = 0;
+        }
+        if (Sol_Comp_Has(world, id, ScAbility))
+        {
+            Sol_Ability_SetState(world, id, 0, 0, true);
+        }
+        if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+        {
+            Sol_Destroy_Ent(world, id);
+        }
     }
 }
 
@@ -203,7 +212,8 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             damage_done       = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
         }
 
-        Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.as.hit.kind = hit.kind, .entA = hit.entA, .entB = id, .as.hit = hit});
+        Sol_Event_Push(world, EVENTKIND_HIT,
+                       (SolEvent){.as.hit.kind = hit.kind, .entA = hit.entA, .entB = id, .as.hit = hit});
     }
 
     return damage_done;
@@ -291,9 +301,9 @@ int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit
 {
     SolRayResult results[64];
     int max_hits = 64;
-    int damaged = 0;
-    int hits = solState.debug ? Sol_SpherecastD(world, dt, ray, results, max_hits, 0.2f)
-                              : Sol_Spherecast(world, dt, ray, results, max_hits);
+    int damaged  = 0;
+    int hits     = solState.debug ? Sol_SpherecastD(world, dt, ray, results, max_hits, 0.2f)
+                                  : Sol_Spherecast(world, dt, ray, results, max_hits);
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;

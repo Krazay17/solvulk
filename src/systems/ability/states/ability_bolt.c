@@ -117,7 +117,6 @@ static void BoltHit(World *world, int a, int b)
 
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
-            sollog("Bolt Update");
     AbilityStateData *data = &ability->stateData[slot];
     switch (data->stage)
     {
@@ -136,6 +135,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 ScTimer *timer  = Sol_Comp_Add(world, bolt, ScTimer);
                 timer->duration = 2.0f;
                 timer->destroy  = true;
+                timer->shrinkout = true;
                 ScProjectile *p = Sol_Comp_Get(world, bolt, ScProjectile);
                 p->hit.damage   = data->conf.damage;
                 p->hit.power    = data->power;
@@ -218,6 +218,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         }
     }
 }
+
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data  = &ability->stateData[slot];

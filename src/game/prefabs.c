@@ -5,9 +5,10 @@
  * Created: 2026-09-04
  *
  */
-#include "prefabs.h"
-#include "world.h"
-#include "sol_math.h"
+#include "sol/sol.h"
+// #include "prefabs.h"
+// #include "world.h"
+// #include "sol_math.h"
 
 const ScCamera player_camera = {
     .fov              = 75.0f,
@@ -76,12 +77,12 @@ static const ScAbility dude_ability = {
     .base_actions =
         {
             ABILITYKIND_SHIELD,
-            ABILITYKIND_SHIELD,
-            ABILITYKIND_SHIELD,
-            ABILITYKIND_SHIELD,
+            ABILITYKIND_FIREBALL,
+            0,
+            0,
+            ABILITYKIND_CLAW,
             ABILITYKIND_CLAW,
             ABILITYKIND_BOLT,
-            ABILITYKIND_FIREBALL,
         },
 };
 
@@ -518,78 +519,53 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
     return 0;
 }
 
-int Sol_Prefab_AbilityBar(World *world, vec3s pos, int slots)
+
+
+int Sol_Prefab_AbilityBar(World *world, vec3s pos)
 {
-    vec3s dims     = {434.0f, 62.0f};
-    u32 layer      = UILAYER_0;
-    float slotSize = dims.x / (float)slots;
+    u32 layer = UILAYER_0;
+
+    ScAbilitybar bar = {
+        .slots_per_group = {4, 1, 2},
+        .spacing         = 4.0f,
+        .group_gap       = 4.0f,
+        .slot_dims       = {62.0f, 62.0f},
+        .frame_pad       = {10.0f, 2.0f},
+    };
+    vec2s dims2 = Abilitybar_Size(&bar);
+    vec3s dims = {dims2.x, dims2.y, 0};
+    vec4s dims4 = {dims.x, dims.y, 0,0};
 
     int id = Sol_Create_Ent(world, pos);
-
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
-    *Sol_Comp_Add(world, id, ScAbilitybar)     = (ScAbilitybar){
-        .slots     = slots,
-        .slot_dims = {slotSize, dims.y},
-    };
+    *Sol_Comp_Add(world, id, ScAbilitybar)     = bar;
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .zindex   = layer,
         .shape    = SHAPE2_REC,
-        .dims.x   = dims.x,
-        .dims.y   = dims.y,
+        .dims     = dims,
         .isSensor = true,
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    *Sol_Comp_Add(world, id, ScView2) = (ScView2){.count = 5,
-                                                  .views = {
-                                                      {
-                                                          .layer = layer,
-                                                          .kind  = VIEW2KIND_RECT,
-                                                          .dims  = {dims.x, dims.y},
-                                                          .color = {0, 0, 0, 1},
-                                                      },
-                                                      {
-                                                          .layer = layer,
-                                                          .kind  = VIEW2KIND_ABILITYBAR_BASEICON,
-                                                          .dims  = {dims.x, dims.y},
-                                                          .color = {1.0f, 1.0f, 1.0f, 1.0f},
-                                                          .desat = 1.0f,
-                                                      },
-                                                      {
-                                                          .layer      = UILAYER_2,
-                                                          .kind       = VIEW2KIND_ABILITYBAR,
-                                                          .dims       = {dims.x, dims.y},
-                                                          .flags      = 0b111,
-                                                          .color      = {1, 0, 0, 1.0f},
-                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
-                                                          .textureID  = SOL_TEXTURE_SWIRLFRAME,
-                                                      },
-                                                      {
-                                                          .layer      = UILAYER_2,
-                                                          .kind       = VIEW2KIND_RECT,
-                                                          .dims       = {slotSize, slotSize},
-                                                          .offset     = {-slotSize},
-                                                          .textureID  = SOL_TEXTURE_TRIBOOKEND,
-                                                          .color      = {1, 1, 1, 1},
-                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
-                                                          .textureUV  = {0.01f, 0.0f, 1.0f, 1.0f},
-                                                      },
-                                                      {
-                                                          .layer      = UILAYER_2,
-                                                          .kind       = VIEW2KIND_RECT,
-                                                          .dims       = {slotSize, slotSize},
-                                                          .offset     = {dims.x},
-                                                          .textureUV  = {0.0f, 0, -1.0f, 0},
-                                                          .textureID  = SOL_TEXTURE_TRIBOOKEND,
-                                                          .color      = {1, 1, 1, 1},
-                                                          .hoverColor = {0.7f, 0.7f, 0.7f, 1.0f},
-                                                      },
-                                                  }};
-
+    float s = bar.slot_dims.x;
+    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
+        .count = 5,
+        .views = {
+            {.layer = layer, .kind = VIEW2KIND_RECT, .dims = dims4, .color = {0, 0, 0, 1}},
+            {.layer = layer, .kind = VIEW2KIND_ABILITYBAR_BASEICON, .dims = dims4,
+             .color = {1, 1, 1, 1}, .desat = 1.0f},
+            {.layer = UILAYER_2, .kind = VIEW2KIND_ABILITYBAR, .dims = dims4, .flags = 0b111,
+             .color = {1, 0, 0, 1}, .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureID = SOL_TEXTURE_SWIRLFRAME},
+            {.layer = UILAYER_2, .kind = VIEW2KIND_RECT, .dims = {s, s}, .offset = {-s, bar.frame_pad.y},
+             .textureID = SOL_TEXTURE_TRIBOOKEND, .color = {1, 1, 1, 1},
+             .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureUV = {0.01f, 0, 1, 1}},
+            {.layer = UILAYER_2, .kind = VIEW2KIND_RECT, .dims = {s, s}, .offset = {dims.x, bar.frame_pad.y},
+             .textureID = SOL_TEXTURE_TRIBOOKEND, .color = {1, 1, 1, 1},
+             .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureUV = {0, 0, -1, 0}},
+        }};
     return id;
 }
-
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
 {
     vec2s dims  = {62.0f, 62.0f};

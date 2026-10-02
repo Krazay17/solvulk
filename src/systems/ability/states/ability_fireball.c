@@ -5,6 +5,7 @@
  * Created: 2026-09-28
  *
  */
+#include "ability/s_ability.h"
 #include "world.h"
 #include "estate.h"
 #include "sol_core.h"
@@ -17,6 +18,9 @@
 #define MELEE_DIST 4.5f
 #define HIT_RATE 0.05f
 #define HIT_DELAY 0.1f
+
+#define CAST_TIME 0.7f
+#define RECOVER_TIME 0.5f
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
@@ -113,39 +117,60 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     AbilityStateData *data = &ability->stateData[slot];
     vec3s pos              = GetProjectilePos(world, id, 1.0f, slot);
     vec3s dir              = vecNorm(vecSub(cmd->aimpos, pos));
-
-    { // Spawn fireball
-        int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, 1.0f);
-        ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
-        projectile->hit          = (SolHit){
-            .entA   = id,
-            .damage = data->conf.damage,
-            .power  = data->power,
-        };
-        projectile->hit.damage.amount *= 0.5f;
-        projectile->aoe_hit = (SolHit){
-            .entA   = id,
-            .damage = data->conf.damage,
-            .power  = data->power,
-        };
-        projectile->aoe_hit.damage.amount *= 0.5f;
-        projectile->power = data->power;
+    data->accum += dt;
+    switch (data->stage)
+    {
+    case 0:
+        if (data->accum >= CAST_TIME)
+        {
+            data->accum -= CAST_TIME;
+            data->stage++;
+            { // Spawn fireball
+                int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, 1.0f);
+                ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
+                projectile->hit          = (SolHit){
+                    .entA   = id,
+                    .damage = data->conf.damage,
+                    .power  = data->power,
+                };
+                projectile->hit.damage.amount *= 0.5f;
+                projectile->aoe_hit = (SolHit){
+                    .entA   = id,
+                    .damage = data->conf.damage,
+                    .power  = data->power,
+                };
+                projectile->aoe_hit.damage.amount *= 0.5f;
+                projectile->power = data->power;
+            }
+        }
+        break;
+    case 1:
+        if (data->accum >= RECOVER_TIME)
+            Sol_Ability_SetState(world, id, 0, slot, true);
+        break;
     }
-
-    Sol_Ability_SetState(world, id, 0, slot, true);
 }
 
 void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data  = &ability->stateData[slot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
-    data->hitgen            = Sol_Hitgen_Start(world, id);
-    data->power             = MIN_POWER;
+    AbilityStateData *data = &ability->stateData[slot];
+    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->hitgen           = Sol_Hitgen_Start(world, id);
+
+    switch (slot_kind_map[slot])
+    {
+    case 0:
+        data->power = data->conf.maxpower;
+        break;
+    case 1:
+        data->power = MIN_POWER;
+        break;
+    }
 }
 
 void Ability_Fireball_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[slot];
+    AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
 }
 

@@ -45,6 +45,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_GRID]             = "Grid.png",
     [SOL_TEXTURE_TRIBOOKEND]       = "TriangleBookend.png",
     [SOL_TEXTURE_SHOCKSPRITE4]     = "ShockSprite4.png",
+    [SOL_TEXTURE_GREENFRAME]       = "GreenFrame.png",
 };
 
 SolTexture loaded_images[MAX_GLOBAL_TEXTURES];

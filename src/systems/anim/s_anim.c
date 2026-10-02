@@ -95,6 +95,7 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
             [ANIM_BACKFLIP]         = 38,
             [ANIM_HARDLAND]         = 40,
             [ANIM_2HANDCASTUP]      = 42,
+            [ANIM_2HANDCASTFWD]     = 17,
         },
     [MODELKIND_ZORGON] =
         {
@@ -364,7 +365,8 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_FIREBALL: {
-                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                    ability_anim.anim    = ANIM_2HANDCASTFWD;
+                    // ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
                 break;
                 case ABILITY_STATE_SHIELD: {

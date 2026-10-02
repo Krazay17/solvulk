@@ -29,6 +29,7 @@
     }
 
 extern const vec3s VECTOR_RADIAL_DIRECTIONS[9];
+extern const vec4s SPRITEPAGE4[4];
 
 #ifdef SOL_MATH_IMPLEMENTATION
 const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
@@ -45,6 +46,12 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     {-0.7071f, 0.0f, 0.7071f},  // South-West
     {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
+const vec4s SPRITEPAGE4[4] = {
+    {0.0f, 0.0f, 0.5f, 0.5f},
+    {0.5f, 0.0f, 0.5f, 0.5f},
+    {0.0f, 0.5f, 0.5f, 0.5f},
+    {0.5f, 0.5f, 0.5f, 0.5f},
+};
 #endif
 
 // INLINES-------------------
@@ -56,6 +63,14 @@ static inline float maxf(float a, float b)
 static inline float minf(float a, float b)
 {
     return (a < b) ? a : b;
+}
+static inline versors to_versors(vec4s v)
+{
+    return *(versors *)&v;
+}
+static inline vec4s to_vec4s(versors v)
+{
+    return *(vec4s *)&v;
 }
 static inline vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch)
 {
@@ -84,6 +99,25 @@ static inline versors Sol_Quat_FromYawPitch(float yaw, float pitch)
         q[2],
         q[3],
     };
+}
+
+static inline vec4s Sol_Rot_FromVecs(vec3s fwd, vec3s up)
+{
+    vec3s fwd_dir = glms_vec3_normalize(fwd);
+
+    // Guard against singularity when looking straight along the UP axis
+    if (fabsf(glms_vec3_dot(fwd_dir, up)) > 0.999f)
+    {
+        up = (vec3s){0.0f, 0.0f, 1.0f};
+    }
+
+    vec3s right = glms_vec3_normalize(glms_vec3_cross(fwd_dir, up));
+    vec3s dirZ  = glms_vec3_cross(right, fwd_dir); // Already unit length!
+
+    mat3s rot_mat = {.col[0] = dirZ, .col[1] = fwd_dir, .col[2] = glms_vec3_negate(right)};
+
+    versors stable_rot = glms_mat3_quat(rot_mat);
+    return (vec4s){stable_rot.x, stable_rot.y, stable_rot.z, stable_rot.w};
 }
 
 static inline versors Sol_Quat_FromLookDir(vec3s lookDir)
@@ -308,10 +342,10 @@ static inline float Sol_Math_RandRange(float a, float b)
     return Sol_Math_Lerp(a, b, (float)rand() / (float)RAND_MAX);
 }
 
-static inline vec3s Sol_RotFromQuat(versors quat)
+static inline vec3s Sol_RotFromQuat(versors quat, vec3s axis)
 {
     mat4s mat = glms_quat_mat4(quat);
-    return glms_mat4_mulv3(mat, WORLD_FORWARD, 1.0f);
+    return glms_mat4_mulv3(mat, axis, 1.0f);
 }
 
 static inline float Sol_Math_RandRange2(float min, float max)
@@ -354,6 +388,19 @@ static inline int get_index_from_mask(unsigned int mask)
         index++;
     }
     return index;
+}
+
+static inline versors Sol_VelToQuat(vec3s dir)
+{
+    float v2 = glms_vec3_norm2(dir);
+    if (v2 > 0.001f)
+    {
+        versors quat   = GLMS_QUAT_IDENTITY;
+        vec3s dir      = glms_vec3_scale(dir, 1.0f / sqrt(v2));
+        vec3s base_dir = {0.0f, 1.0f, 0.0f};
+        return glms_quat_from_vecs(base_dir, dir);
+    }
+    return GLMS_QUAT_IDENTITY;
 }
 
 static inline vec3s Sol_ProjectVec(vec3s a, vec3s b)
@@ -616,10 +663,11 @@ typedef struct
 } GridMaker;
 static inline vec3s Sol_Grid_Next(GridMaker *grid)
 {
-    int c = grid->_counter++;
+    int c       = grid->_counter++;
     int col_idx = c % grid->cols;
     int row_idx = c / grid->cols;
-    return (vec3s){grid->start.x + (float)col_idx * grid->spacing.x, grid->start.y + (float)row_idx * grid->spacing.y, 0};
+    return (vec3s){grid->start.x + (float)col_idx * grid->spacing.x, grid->start.y + (float)row_idx * grid->spacing.y,
+                   0};
 }
 
 typedef enum

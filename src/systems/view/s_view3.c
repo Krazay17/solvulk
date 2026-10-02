@@ -29,6 +29,40 @@ static void PlasmaOrb_Draw(World *world, int id, ScView3 *view)
     sphere->color      = view->color;
 }
 
+static void Bolt_Draw(World *world, int id, ScView3 *view)
+{
+    Xform xform = Xform_GetDraw(world, id);
+
+    vec4s pos4 = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    vec4s sca4 = {xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
+    vec4s rot4 = {xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
+
+    vec4s model_sca = {0.05f, 1.0f, 0.05f, 1.0f};
+
+    ModelSSBO *model = Sol_Render_GetNextModel(0, MODELKIND_CYLINDER);
+    *model           = (ModelSSBO){
+        .color    = {0.3f, 0.3f, 1.0f, 1.0f},
+        .position = pos4,
+        .scale    = model_sca,
+        .rotation = rot4,
+    };
+
+    versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
+    versors cross_rot = glms_quat_mul(to_versors(rot4), roll_90);
+    for (int i = 0; i < 2; i++)
+    {
+        QuadSSBO *quad  = Sol_Render_GetNextQuad(PIPE_QUAD_ADD);
+        quad->textureId = SOL_TEXTURE_SHOCKSPRITE4;
+        quad->type      = 1;
+        quad->pos       = pos4;
+        quad->rot       = i == 0 ? rot4 : to_vec4s(cross_rot);
+        quad->color     = VEC4_WHITE;
+        quad->rect      = (vec4s){0, 0, 1.0f, 3.0f};
+        u32 sprite_anim = (u32)floorf(world->tickTime * 10.0f) % 4;
+        quad->uv        = SPRITEPAGE4[sprite_anim];
+    }
+}
+
 static void Fireball_Draw(World *world, int id, ScView3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
@@ -120,6 +154,9 @@ void View3_Draw(World *world, double dt)
             break;
         case VIEW3KIND_PLASMAORB:
             PlasmaOrb_Draw(world, id, view);
+            break;
+        case VIEW3KIND_BOLT:
+            Bolt_Draw(world, id, view);
             break;
         }
         // if (func)

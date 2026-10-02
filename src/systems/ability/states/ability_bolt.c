@@ -18,8 +18,8 @@ const float accel      = 12.0f; // speed gained per second
 const float min_speed  = 12.0f; // min grapple speed
 
 const float panspeed           = 6.0f; // texure pan
-const float unwrap_distance_sq = 5.0f;
-const float wrap_distance_sq   = 3.0f;
+const float unwrap_distance_sq = 2.0f;
+const float wrap_distance_sq   = 4.0f;
 
 static float GetBoltD2(World *world, vec3s pos, AbilityStateData *data)
 {
@@ -127,9 +127,11 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, float d
 
             if (data->as.bolt.bolt_state == 2)
             {
+                Sol_Event_Push(world, EVENTKIND_FX,
+                               (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
                 BoltDelete(world, data);
                 int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed,
-                                                    data->power, NULL);
+                                                    0.33f, NULL);
                 ScTimer *timer  = Sol_Comp_Add(world, bolt, ScTimer);
                 timer->duration = 2.0f;
                 timer->destroy  = true;
@@ -234,6 +236,8 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd)
     ScProjectile *p              = Sol_Comp_Get(world, bolt, ScProjectile);
     p->hit.damage                = data->conf.damage;
     p->hit.power                 = 1.0f;
+
+    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd)
 {
@@ -290,11 +294,33 @@ static void Draw(World *world, int id, ScAbility *ability, float dt)
         }
         break;
         case 2: {
-            vec4s hand_pos4 = {hand_pos.x, hand_pos.y, hand_pos.z, data->power * 0.4f};
+            vec4s hand_pos4 = {hand_pos.x, hand_pos.y, hand_pos.z, data->power * 1.0f};
+            vec3s fwd       = Sol_Comp_Get(world, id, ScCmd)->lookdir;
+            vec4s rot4      = Sol_Rot_FromVecs(fwd, WORLD_UP);
 
-            SphereSSBO *s = Sol_Render_GetNextSphere(PIPE_PLASMA);
-            s->pos        = hand_pos4;
-            s->color      = VEC4_WHITE;
+            vec4s model_sca                                 = {0.05f, 0.0f, 0.05f, 1.0f};
+            model_sca.y                                     = data->power * 1.0f;
+            *Sol_Render_GetNextModel(0, MODELKIND_CYLINDER) = (ModelSSBO){
+                .color    = {0.3f, 0.3f, 1.0f, 1.0f},
+                .position = hand_pos4,
+                .scale    = model_sca,
+                .rotation = rot4,
+            };
+
+            versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
+            versors cross_rot = glms_quat_mul(to_versors(rot4), roll_90);
+            for (int i = 0; i < 2; i++)
+            {
+                QuadSSBO *quad  = Sol_Render_GetNextQuad(PIPE_QUAD_ADD);
+                quad->textureId = SOL_TEXTURE_SHOCKSPRITE4;
+                quad->type      = 1;
+                quad->pos       = hand_pos4;
+                quad->rot       = i == 0 ? rot4 : to_vec4s(cross_rot);
+                quad->color     = VEC4_WHITE;
+                quad->rect      = (vec4s){0, 0, 1.0f, 3.0f};
+                u32 sprite_anim = (u32)floorf(world->tickTime * 10.0f) % 4;
+                quad->uv        = SPRITEPAGE4[sprite_anim];
+            }
         }
         break;
         }

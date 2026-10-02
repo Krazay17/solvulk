@@ -63,6 +63,7 @@ enum RenderKind
 {
     RENDERKIND_QUAD,
     RENDERKIND_SPHERE,
+    RENDERKIND_RIBBON,
 };
 const u32 particle_pipekind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = RENDERKIND_QUAD,   //
@@ -72,23 +73,26 @@ const u32 particle_pipekind[PARTICLE_COUNT] = {
     [PARTICLE_FIRE]    = RENDERKIND_QUAD,   //
     [PARTICLE_SPHERE]  = RENDERKIND_SPHERE, //
     [PARTICLE_PLASMA]  = RENDERKIND_SPHERE, //
+    [RIBBON_LIGHTNING] = RENDERKIND_RIBBON, //
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
     [PARTICLE_FRACTAL] = PIPE_FRACTAL_PYRAMID, //
     [PARTICLE_SMOKE]   = PIPE_QUAD,            //
     [PARTICLE_BLOOD]   = PIPE_QUAD,            //
-    [PARTICLE_FIRE]    = PIPE_QUAD,        //
+    [PARTICLE_FIRE]    = PIPE_QUAD,            //
     [PARTICLE_SPHERE]  = PIPE_SPHERE,          //
     [PARTICLE_PLASMA]  = PIPE_PLASMA,          //
     [PARTICLE_SPARK]   = PIPE_QUAD,            //
+    [RIBBON_LIGHTNING] = PIPE_RIBBON,          //
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
-    [PARTICLE_SMOKE] = SOL_TEXTURE_CLOUDPARTICLE, //
-    [PARTICLE_SPARK] = SOL_TEXTURE_SHOCKPARTICLE, //
-    [PARTICLE_BLOOD] = SOL_TEXTURE_BLOODPARTICLE, //
-    [PARTICLE_FIRE]  = SOL_TEXTURE_FIREPARTICLE,  //
+    [PARTICLE_SMOKE]   = SOL_TEXTURE_CLOUDPARTICLE, //
+    [PARTICLE_SPARK]   = SOL_TEXTURE_SHOCKPARTICLE, //
+    [PARTICLE_BLOOD]   = SOL_TEXTURE_BLOODPARTICLE, //
+    [PARTICLE_FIRE]    = SOL_TEXTURE_FIREPARTICLE,  //
+    [RIBBON_LIGHTNING] = SOL_TEXTURE_LIGHTNING,
 };
 
 static inline vec3s RandomVel_Sphere(float speed)
@@ -248,6 +252,12 @@ void Particle_Draw(World *world, double dt)
                 .color = final_color,
             };
             break;
+            case RENDERKIND_RIBBON:
+            // *Sol_Render_GetNext_RibbonSeg(particle_renderkind[p.kind]) = (RibbonSegSSBO){
+            //     .posA = 
+            // };
+
+            break;
         default:
             sollog("No particle pipe kind ", particle_pipekind[p.kind]);
         }
@@ -277,8 +287,8 @@ void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, ve
     SlEmitter *single = Sol_Comp_Get(world, 0, SlEmitter);
     for (int i = 0; i < count; i++)
     {
-        emitters[i].pos = pos;
-        emitters[i].dir = dir;
+        emitters[i].pos   = pos;
+        emitters[i].dir   = dir;
         emitters[i].speed = speed;
         Particle_Spawn(single, emitters[i]);
         if (emitters[i].ttl > 0)

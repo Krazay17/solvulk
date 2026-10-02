@@ -125,7 +125,7 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){
                            .entB         = hit.entB,
-                           .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
+                           .as.hit.kind  = HITKIND_NORMAL,
                            .as.hit.pos   = hit.pos,
                            .as.hit.power = hit.power,
                        });
@@ -154,7 +154,15 @@ void Projectile_Step(World *world, double dt)
             continue;
         }
 
-        vec3s vel   = body3->vel;
+        vec3s vel    = body3->vel;
+        float v2     = glms_vec3_norm2(body3->vel);
+        if (v2 > 0.1f)
+        {
+            vec3s dir            = glms_vec3_scale(body3->vel, 1.0f / sqrt(v2));
+            vec3s base_dir       = {0.0f, 1.0f, 0.0f};
+            world->xform.rot[id] = glms_quat_from_vecs(base_dir, dir);
+        }
+
         float speed = glms_vec3_norm(vel);
         vec3s dir   = (speed > 0.001f) ? vecSca(vel, 1.0f / speed) : (vec3s){0, 0, 1};
 

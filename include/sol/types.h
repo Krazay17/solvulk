@@ -21,6 +21,7 @@
 #define WORLD_FORWARD (vec3s){0, 0, 1.0f}
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
+#define WORLD_LEFT (vec3s){1.0f, 0.0f, 0}
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -177,6 +178,7 @@ typedef enum
     PARTICLE_BLOOD,
     PARTICLE_SPHERE_INOUT,
     PARTICLE_SMOKE,
+    RIBBON_LIGHTNING,
     PARTICLE_COUNT,
 } ParticleKind;
 typedef struct
@@ -249,6 +251,7 @@ typedef enum
     VIEW3KIND_PYRAMID,
     VIEW3KIND_DRAGONORB,
     VIEW3KIND_PLASMAORB,
+    VIEW3KIND_BOLT,
     VIEW3KIND_COUNT,
 } View3Kind;
 
@@ -414,8 +417,8 @@ typedef struct
 
 typedef struct
 {
-    vec3s pos;
     versors rot;
+    vec3s pos;
     vec3s sca;
 } Xform;
 
@@ -502,6 +505,7 @@ typedef enum
     MODELKIND_DUDE,
     MODELKIND_ZORGON,
     MODELKIND_WEAPONBLADE,
+    MODELKIND_CYLINDER,
     MODELKIND_WALL,
     MODELKIND_FLOOR,
     MODELKIND_SHIELD,
@@ -579,6 +583,7 @@ typedef enum
     SOL_TEXTURE_BLADE_CARD,
     SOL_TEXTURE_FIREPARTICLE,
     SOL_TEXTURE_SHOCKPARTICLE,
+    SOL_TEXTURE_SHOCKSPRITE4,
     SOL_TEXTURE_CLOUDPARTICLE,
     SOL_TEXTURE_BLOODPARTICLE,
     SOL_TEXTURE_FIREBALL_CARD,
@@ -837,6 +842,7 @@ typedef enum
 {
     FXKIND_INVULNHIT,
     FXKIND_PARRY,
+    FXKIND_SHOOT,
     FXKIND_TEST,
 } FxKind;
 

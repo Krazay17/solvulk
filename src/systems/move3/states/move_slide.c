@@ -11,7 +11,7 @@ void Move_Slide_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float fd
     MoveStateData *data  = &move->stateData[move->state];
     vec3s vel            = body->vel;
     data->vel            = vel;
-    vec3s rot            = Sol_RotFromQuat(world->xform.rot[id]);
+    vec3s rot            = glms_quat_rotatev(world->xform.rot[id], WORLD_FORWARD);
     vec3s latvel         = vel;
     latvel.y             = 0;
     latvel               = vecNorm(latvel);

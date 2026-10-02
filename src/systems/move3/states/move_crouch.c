@@ -10,7 +10,7 @@ void Move_Crouch_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float d
     {
         float x                = cmd->wishdir.x;
         float z                = cmd->wishdir.z;
-        vec3s rot              = Sol_RotFromQuat(world->xform.rot[id]);
+        vec3s rot              = glms_quat_rotatev(world->xform.rot[id], WORLD_FORWARD);
         data->as.crouch.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
     }
 }

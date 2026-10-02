@@ -203,7 +203,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             damage_done       = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
         }
 
-        Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.entA = hit.entA, .entB = id, .as.hit = hit});
+        Sol_Event_Push(world, EVENTKIND_HIT, (SolEvent){.as.hit.kind = hit.kind, .entA = hit.entA, .entB = id, .as.hit = hit});
     }
 
     return damage_done;

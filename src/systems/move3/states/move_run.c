@@ -6,7 +6,7 @@ void Move_Run_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
     float x                                   = cmd->wishdir.x;
     float z                                   = cmd->wishdir.z;
-    vec3s rot                                 = Sol_RotFromQuat(world->xform.rot[id]);
+    vec3s rot                                 = glms_quat_rotatev(world->xform.rot[id], WORLD_FORWARD);
     move->stateData[MOVE_RUN].as.walk.strafe = Sol_GetStrafedir(x, z, rot.x, rot.z);
 }
 

@@ -25,6 +25,7 @@ void Camera_Tick(World *world, double dt)
 
         vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
         vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
+        offsetvec = glms_vec3_normalize(offsetvec);
 
         if (camera->desired_distance <= 0)
         {

@@ -62,6 +62,17 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
                     .amount = 25.0f,
                 },
         },
+    [ABILITY_STATE_SHIELD_DASH] =
+        {
+            .duration = 0.3f,
+            .cooldown = 2.0f,
+            .damage =
+                {
+                    .amount     = 25.0f,
+                    .effectMask = EFFECTMASK_KNOCKUP,
+                },
+        },
+
     [ABILITY_STATE_CLAW_DASH] =
         {
             .duration = 0.6f,
@@ -71,7 +82,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .speed    = 1.0f,
             .damage =
                 {
-                    .amount = 25.0f,
+                    .amount     = 25.0f,
                     .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
                 },
         },
@@ -80,7 +91,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .duration = 0.6f,
             .maxpower = 1.1f,
             .speed    = 1.0f,
-            .cooldown = 1.0f,
+            .cooldown = 6.0f,
             .damage =
                 {
                     .amount   = 25.0f,
@@ -91,21 +102,11 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_SHIELD] =
         {
             .duration = 0.4f,
-            .cooldown = 1.0f,
+            .cooldown = 6.0f,
             .damage =
                 {
                     .amount     = 25.0f,
                     .effectMask = EFFECTMASK_KNOCKUP | EFFECTMASK_REFLECTPROJECTILE,
-                },
-        },
-    [ABILITY_STATE_SHIELD_DASH] =
-        {
-            .duration = 0.3f,
-            .cooldown = 1.0f,
-            .damage =
-                {
-                    .amount     = 25.0f,
-                    .effectMask = EFFECTMASK_KNOCKUP,
                 },
         },
 };
@@ -273,8 +274,9 @@ AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)
 bool Sol_Ability_GetIsDashing(const ScAbility *ability)
 {
     return ability->state == ABILITY_STATE_CLAW_DASH || ability->state == ABILITY_STATE_FIREBALL_DASH ||
-           (ability->state == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[ability->activeSlot].stage > 0))||
-           (ability->state == ABILITY_STATE_BOLT_CHARGE && ability->stateData[ability->activeSlot].as.bolt.bolt_state == 1);
+           (ability->state == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[ability->activeSlot].stage > 0)) ||
+           (ability->state == ABILITY_STATE_BOLT_CHARGE &&
+            ability->stateData[ability->activeSlot].as.bolt.bolt_state == 1);
 }
 
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot)

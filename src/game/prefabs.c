@@ -667,6 +667,7 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
     vec3s dims = {scale, scale, scale};
     u32 mask   = PHYSXMASK(COLLAYER_PROJECTILE, (COLLAYER_ALL & ~COLLAYER_PROJECTILE));
 
+    Xform_SetRot(world, id, glms_quat_from_vecs((vec3s){0, 1, 0}, dir));
     *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
         .ownerId = owner,
     };
@@ -686,7 +687,7 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
         .hitgen = Sol_Hitgen_Start(world, id),
     };
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind  = VIEW3KIND_PLASMAORB,
+        .kind  = VIEW3KIND_BOLT,
         .scale = dims.x,
         .color = VEC4_WHITE,
     };

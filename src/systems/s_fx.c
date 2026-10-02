@@ -105,6 +105,22 @@ static inline void Melee_Hit(World *world, SolEvent event)
     if (world->doesRender)
         Sol_Audio_PlayAt(SOL_AUDIO_SWORDHIT, pos, 1.0f, 0.0f, 16);
 }
+static inline void Normal_Hit(World *world, SolEvent event)
+{
+    vec3s pos = event.as.hit.pos;
+
+    Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
+    e1->pos     = event.as.hit.pos;
+    e1->p_color = (vec4s){0.7f, 0.6f, 0.6f, 0.8f};
+
+    Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
+    e2->pos     = pos;
+    e2->p_kind  = PARTICLE_SPARK;
+    e2->p_scale = 0.4f;
+
+    if (world->doesRender)
+        Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, pos, 0.5f, 0.08f, 16);
+}
 
 void Fx_Update(World *world, double dt)
 {
@@ -128,30 +144,29 @@ void Fx_Update(World *world, double dt)
             case HITKIND_FIRE:
                 Fire_Hit(world, event);
                 break;
-            case HITKIND_BULLET:
             case HITKIND_MELEE_HIT:
-            case HITKIND_NORMAL:
                 Melee_Hit(world, event);
                 break;
+            default:
+                Normal_Hit(world, event);
             }
             break;
-        case EVENTKIND_DEATH:
-            break;
-            // default:
-            //     sollog("No Hit event Fx handler", event.kind);
-        }
-
-        if (event.kind != EVENTKIND_FX)
-            continue;
-        switch (event.as.fx.kind)
-        {
-        case FXKIND_INVULNHIT:
-            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 8);
-            break;
-        case FXKIND_PARRY:
-            Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
-        case FXKIND_TEST:
-            Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 8);
+        case EVENTKIND_FX:
+            switch (event.as.fx.kind)
+            {
+            case FXKIND_INVULNHIT:
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 8);
+                break;
+            case FXKIND_PARRY:
+                Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
+                break;
+            case FXKIND_TEST:
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 8);
+                break;
+            case FXKIND_SHOOT:
+                Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.as.fx.pos, 1.0f, 0.1f, 8);
+                break;
+            }
             break;
         }
     }

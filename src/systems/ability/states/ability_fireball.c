@@ -92,7 +92,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 .damage = data->conf.damage,
                 .power  = 0.1f,
             };
-            Sol_Combat_DamageCast(world, dt, id,
+            Sol_Combat_DamageCast(world, id,
                                   (SolRay){.start     = pos,
                                            .dir       = dir,
                                            .dist      = MELEE_DIST,
@@ -142,6 +142,11 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
                 projectile->aoe_hit.damage.amount *= 0.5f;
                 projectile->power = data->power;
             }
+        }
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+        {
+            body3->vel = glms_vec3_lerpc(GLMS_VEC3_ZERO, body3->vel, 0.5f);
         }
         break;
     case 1:

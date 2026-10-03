@@ -893,9 +893,9 @@ int Sol_RaycastD(World *world, SolRay ray, SolRayResult *results, int max, float
     return hits;
 }
 
-int Sol_SpherecastD(World *world, float dt, SolRay ray, SolRayResult *results, int max, float time)
+int Sol_SpherecastD(World *world, SolRay ray, SolRayResult *results, int max, float time)
 {
-    int hits = Sol_Spherecast(world, dt, ray, results, max);
+    int hits = Sol_Spherecast(world, ray, results, max);
 
     *Sol_Debug_NewSphere(world, time) = (SolSphere){
         .pos    = ray.start,
@@ -1174,7 +1174,7 @@ int Sol_Raycast(World *world, SolRay ray, SolRayResult *out_hits, int max_hits)
 }
 
 // Put radius into SolRay
-int Sol_Spherecast(World *world, float dt, SolRay ray, SolRayResult *results, int max)
+int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 {
     float radius                = ray.radius;
     SparseSet_ScBody3 *set_body = Sol_Comp_Set(world, ScBody3);

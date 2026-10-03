@@ -37,15 +37,16 @@ static void Bolt_Draw(World *world, int id, ScView3 *view)
     vec4s sca4 = {xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
     vec4s rot4 = {xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
 
-    vec4s model_sca = {0.05f, 1.0f, 0.05f, 1.0f};
-
-    ModelSSBO *model = Sol_Render_GetNextModel(0, MODELKIND_CYLINDER);
-    *model           = (ModelSSBO){
-        .color    = {0.3f, 0.3f, 1.0f, 1.0f},
+    vec4s model_sca  = {0.5f, 1.0f, 0.5f, 1.0f};
+     ModelSSBO *model = Sol_Render_GetNextModel(0, MODELKIND_BOLT);
+     ModelSSBO model_ssbo = {
+        .color    = {1.0f, 1.0f, 1.0f, 1.0f},
         .position = pos4,
         .scale    = glms_vec4_scale(model_sca, xform.sca.x),
         .rotation = rot4,
     };
+    *model           = model_ssbo;
+    // Sol_Render_GetNext_Model(MODELKIND_BOLT, &model_ssbo, NULL);
 
     versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
     versors cross_rot = glms_quat_mul(to_versors(rot4), roll_90);

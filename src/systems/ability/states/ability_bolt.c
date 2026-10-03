@@ -132,13 +132,13 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 BoltDelete(world, data);
                 int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed,
                                                     0.33f, NULL);
-                ScTimer *timer  = Sol_Comp_Add(world, bolt, ScTimer);
-                timer->duration = 2.0f;
-                timer->destroy  = true;
+                ScTimer *timer   = Sol_Comp_Add(world, bolt, ScTimer);
+                timer->duration  = 2.0f;
+                timer->destroy   = true;
                 timer->shrinkout = true;
-                ScProjectile *p = Sol_Comp_Get(world, bolt, ScProjectile);
-                p->hit.damage   = data->conf.damage;
-                p->hit.power    = data->power;
+                ScProjectile *p  = Sol_Comp_Get(world, bolt, ScProjectile);
+                p->hit.damage    = data->conf.damage;
+                p->hit.power     = data->power;
             }
             else
             {
@@ -221,8 +221,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data  = &ability->stateData[slot];
-    data->conf              = Sol_Ability_GetSlotConf(ability, slot);
+    AbilityStateData *data = &ability->stateData[slot];
+    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
 
     int bolt =
         Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed, 0.33f, BoltHit);
@@ -241,7 +241,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
-    AbilityStateData *data = &ability->stateData[slot];
+    AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
 
     BoltDelete(world, data);
@@ -300,10 +300,10 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
             vec3s fwd       = Sol_Comp_Get(world, id, ScCmd)->lookdir;
             vec4s rot4      = Sol_Rot_FromVecs(fwd, WORLD_UP);
 
-            vec4s model_sca                                 = {0.05f, 0.0f, 0.05f, 1.0f};
-            model_sca.y                                     = data->power * 1.0f;
-            *Sol_Render_GetNextModel(0, MODELKIND_CYLINDER) = (ModelSSBO){
-                .color    = {0.3f, 0.3f, 1.0f, 1.0f},
+            vec4s model_sca                             = {0.5f, 0.0f, 0.5f, 1.0f};
+            model_sca.y                                 = data->power * 1.0f;
+            *Sol_Render_GetNextModel(0, MODELKIND_BOLT) = (ModelSSBO){
+                .color    = {1.0f, 1.0f, 1.0f, 1.0f},
                 .position = hand_pos4,
                 .scale    = model_sca,
                 .rotation = rot4,

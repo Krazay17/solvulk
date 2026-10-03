@@ -297,13 +297,13 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
     }
 }
 
-int Sol_Combat_DamageCast(World *world, float dt, int id, SolRay ray, SolHit hit, u32 hitgen)
+int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen)
 {
     SolRayResult results[64];
     int max_hits = 64;
     int damaged  = 0;
-    int hits     = solState.debug ? Sol_SpherecastD(world, dt, ray, results, max_hits, 0.2f)
-                                  : Sol_Spherecast(world, dt, ray, results, max_hits);
+    int hits     = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
+                                  : Sol_Spherecast(world,  ray, results, max_hits);
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;

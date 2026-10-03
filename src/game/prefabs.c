@@ -78,7 +78,7 @@ static const ScAbility dude_ability = {
         {
             ABILITYKIND_SHIELD,
             ABILITYKIND_FIREBALL,
-            0,
+            ABILITYKIND_CLAW,
             0,
             ABILITYKIND_CLAW,
             ABILITYKIND_CLAW,

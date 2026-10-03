@@ -163,6 +163,7 @@ typedef struct
 } AbilityStateData;
 typedef struct ScAbility
 {
+    int prio_slot;
     u32 state[ABILITY_SLOTS];
     u32 base_actions[ABILITY_SLOTS];
     u32 slotted_actions[ABILITY_SLOTS];
@@ -283,6 +284,8 @@ typedef struct ScAnim
     SolPoseE lastPose;
     AnimLayer layers[ANIM_LAYER_COUNT];
     bool hasLastPose;
+    u32 priority_ability_slot;
+    float priority_ability_duration;
 } ScAnim;
 
 typedef struct

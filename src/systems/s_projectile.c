@@ -176,8 +176,8 @@ void Projectile_Step(World *world, double dt)
         };
 
         SolRayResult results[16];
-        int hits = solState.debug ? Sol_SpherecastD(world, dt, ray, results, 16, 0.2f)
-                                  : Sol_Spherecast(world, dt, ray, results, 16);
+        int hits = solState.debug ? Sol_SpherecastD(world, ray, results, 16, 0.2f)
+                                  : Sol_Spherecast(world, ray, results, 16);
         if (hits == 0)
             continue;
 

@@ -96,6 +96,8 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
             [ANIM_HARDLAND]         = 40,
             [ANIM_2HANDCASTUP]      = 42,
             [ANIM_2HANDCASTFWD]     = 17,
+            [ANIM_RIGHTUPPERCUT]    = 43,
+            [ANIM_LEFTUPPERCUT]     = 44,
         },
     [MODELKIND_ZORGON] =
         {
@@ -259,7 +261,7 @@ struct AnimMap
             .hand_anim[0][3] = ANIM_ATTACK_LEFT,
             .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
             .seek            = 0.1f,
-            .speed           = 1.05f,
+            .speed           = 0.9f,
         },
     [ABILITY_STATE_FIREBALL] =
         {
@@ -346,7 +348,9 @@ void Anim_Tick(World *world, double dt)
                 case ABILITY_STATE_IDLE:
                     break;
                 case ABILITY_STATE_CLAW_CHARGE:
-                    ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
+                    ability_anim.layerId  = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
+                    ability_anim.blendIn  = 0.0f;
+                    ability_anim.blendOut = 0.0f;
                     break;
                 case ABILITY_STATE_FIREBALL_CHARGE: {
                     ability_anim.layerId = ANIM_LAYER_UPPER;
@@ -365,8 +369,14 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_FIREBALL: {
-                    ability_anim.anim    = ANIM_2HANDCASTFWD;
+                    ability_anim.anim = ANIM_2HANDCASTFWD;
                     // ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
+                break;
+                case ABILITY_STATE_CLAW: {
+                    ability_anim.anim  = j > 5 ? ANIM_RIGHTUPPERCUT : ANIM_LEFTUPPERCUT;
+                    ability_anim.seek  = 0.2f;
+                    ability_anim.speed = data->stage == 0 ? 0.6f : 0.8f;
                 }
                 break;
                 case ABILITY_STATE_SHIELD: {
@@ -380,11 +390,15 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 }
-                if (ability->state != 0)
-                    Sol_Anim_Play(world, id, ability_anim);
 
-                if (data->hitPause > 0)
-                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, 0.001f);
+                if (j == ability->prio_slot)
+                {
+                    Sol_Anim_Play(world, id, ability_anim);
+                    if (data->hitPause > 0)
+                        Sol_Anim_SetSpeed(world, id, ability_anim.layerId, 0.001f);
+                    else
+                        Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
+                }
                 else
                     Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
             }

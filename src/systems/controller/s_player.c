@@ -17,7 +17,7 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
 
     SolRay ray = {
         .start     = lookpos,
-        .mask      = COLLAYER_ALL,
+        .mask      = (COLLAYER_ALL & ~COLLAYER_PROJECTILE),
         .dir       = lookdir,
         .dist      = range,
         .ignoreEnt = id,

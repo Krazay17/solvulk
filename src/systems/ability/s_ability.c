@@ -19,11 +19,11 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         {
             .duration = 0.45f,
             .cooldown = 1.0f,
-            .maxpower = 1.0f,
+            .maxpower = 1.2f,
             .speed    = 1.0f,
             .damage =
                 {
-                    .amount     = 25.0f,
+                    .amount     = 30.0f,
                     .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
                 },
         },
@@ -85,6 +85,17 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
                 {
                     .amount     = 25.0f,
                     .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+                },
+        },
+    [ABILITY_STATE_CLAW] =
+        {
+            .duration = 0.7f,
+            .cooldown = 1.0f,
+            .maxpower = 1.0f,
+            .damage =
+                {
+                    .amount     = 35.0f,
+                    .effectMask = EFFECTMASK_KNOCKUP,
                 },
         },
     [ABILITY_STATE_FIREBALL] =
@@ -265,8 +276,17 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     if (prevfunc->exit)
         prevfunc->exit(world, id, ability, cmd, slot);
 
-    ability->state[slot] = target_state;
+    if (target_state != 0)
+    {
+        ability->prio_slot = slot;
+        for (int i = 0; i < ABILITY_SLOTS; i++)
+        {
+            AbilityStateData *data = &ability->stateData[i];
+            data->hitPause         = 0;
+        }
+    }
 
+    ability->state[slot]   = target_state;
     AbilityStateData *data = &ability->stateData[slot];
     data->elapsed          = 0;
     data->accum            = 0;

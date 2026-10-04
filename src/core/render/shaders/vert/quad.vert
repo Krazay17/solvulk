@@ -17,7 +17,7 @@ struct Quad {
     vec4 pos;       // xyz = world position, w = uniform scale
     vec4 rect;      // xy = local offset, zw = dimensions
     vec4 color;
-    vec4 uv;        // xy = UV offset, zw = UV scale
+    vec4 uv;        // xy = UV scale, zw = UV offset
     vec4 rot;       // quaternion (xyzw) OR rot.x = spin angle
     vec4 extra;     // custom fragment parameters
     uint type;      // 0 = QUADTYPE_FACECAM, 1 = QUADTYPE_QUAT
@@ -68,7 +68,7 @@ void main() {
     }
 
     vec2 uvCorner = vec2(corner.x + 0.5, 0.5 - corner.y);
-    fragUV        = q.uv.xy + uvCorner * q.uv.zw;
+    fragUV        = uvCorner * q.uv.xy + q.uv.zw;
     fragColor     = q.color;
     fragExtra     = q.extra;
     fragTextureId = q.textureId;

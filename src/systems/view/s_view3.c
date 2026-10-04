@@ -99,7 +99,7 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
         .pos   = pos,
         .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
         .color = view->color,
-        .uv    = (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
+        .uv    = (vec4s){1.0f, 1.0f,0.0f, 0.0f},
         .extra = (vec4s){fill, 0.0f, 0.0f, 0.0f},
         .type  = QUADTYPE_FACECAM,
     };
@@ -134,8 +134,6 @@ void View3_Draw(World *world, double dt)
         int id        = set->dense[i];
         ScView3 *view = &set->data[i];
 
-        // View3KindDraw func = draw_func[view->kind];
-
         switch (view->kind)
         {
         case VIEW3KIND_FIREBALL:
@@ -160,7 +158,5 @@ void View3_Draw(World *world, double dt)
             Bolt_Draw(world, id, view);
             break;
         }
-        // if (func)
-        //     func(world, id, view);
     }
 }

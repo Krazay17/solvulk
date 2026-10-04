@@ -15,16 +15,16 @@
 #include "prefabs.h"
 #include "render/render.h"
 
-#define CHARGE_DURATION 0.48f
+#define CHARGE_DURATION 0.45f
 
-#define HITDELAY 0.25f
+#define HITDELAY 0.2f
 #define HITINTERVAL 0.05f
-#define MELEE_RANGE 4.0f
+#define MELEE_RANGE 3.0f
 #define DASH_SPEED 30.0f
 #define MIN_POWER 0.5f
 
-#define CAST_TIME 0.45f
-#define SWING_TIME 0.5f
+#define CAST_TIME 0.44f
+#define SWING_TIME 0.3f
 #define RECOVER_TIME 0.33f
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
@@ -137,14 +137,23 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             data->stage++;
             ability->prio_slot = slot;
-            vec3s pos = GetProjectilePos(world, id, data->power, slot);
-            vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+            vec3s pos          = GetProjectilePos(world, id, data->power, slot);
+            vec3s dir          = vecNorm(vecSub(cmd->aimpos, pos));
 
             SolHit hit = {
                 .entA   = id,
                 .power  = data->power,
                 .damage = data->conf.damage,
             };
+            // Sol_Ribbon_Spawn(world, RIBBONKIND_LIGHTNING, pos, vecAdd(pos, vecSca(dir, 10.0f)));
+            // Ribbon *r    = Sol_Ribbon_Next(world);
+            // r->lifespan = 2.0f;
+            // r->kind      = RIBBONKIND_LIGHTNING;
+            // r->points[0] = pos;
+            // r->points[1] = vecAdd(pos, vecSca(dir, 10.0f));
+            // r->_point_count = 2;
+            // r->texture = SOL_TEXTURE_LIGHTNING;
+            // r->color = VEC4_WHITE;
 
             // { // Spawn fireball
             //     int fireball             = Sol_Prefab_PlasmaOrb(world, id, pos, dir, 20.0f, data->power);
@@ -166,10 +175,10 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     case 1: {
         if (data->elapsed > HITDELAY)
         {
-            vec3s head = Sol_Body3_GetHead(world, id);
-            float width = 0.5f;
+            vec3s head     = Sol_Body3_GetHead(world, id);
+            float width    = 0.5f;
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-            if(body3)
+            if (body3)
             {
                 width = body3->dims.x;
             }
@@ -224,7 +233,7 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, in
     AbilityStateData *data = &ability->stateData[slot];
     data->conf             = Sol_Ability_GetSlotConf(ability, slot);
     data->accum            = HITINTERVAL;
-    data->hitgen           = Sol_Hitgen_Start(world, id);
+    data->hitgen           = Sol_Hitgen_Start(world);
 
     switch (slot_kind_map[slot])
     {
@@ -283,7 +292,7 @@ void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)
     s->rotation  = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
 }
 
-DefendResult Defend(World *world, int id, ScAbility *ability, int slot, SolHit *hit)
+DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)
 {
     ScCmd *cmd   = Sol_Comp_Get(world, id, ScCmd);
     int attacker = hit->entA;

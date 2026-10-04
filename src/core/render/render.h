@@ -272,16 +272,18 @@ static inline SphereSSBO *Sol_Render_GetNextSphere(PipelineId kind)
 
 // RIBBONS #########################
 
-typedef struct
-{
-    vec4s posA;   // 16
-    vec4s posB;   // 32
-    vec4s colorA; // 48
-    vec4s colorB; // 64
-    vec4s uv;     // 80
-    u32 textureId, flags;
+typedef struct {
+    vec4s posA;
+    vec4s posB;
+    vec4s colorA;
+    vec4s colorB;
+    vec4s uv;
+    vec4s dirA;      // NEW: Shared tangent at point A
+    vec4s dirB;      // NEW: Shared tangent at point B
+    uint32_t textureId;
+    uint32_t flags;
     float panSpeed;
-    u32 _pad;
+    uint32_t _pad;
 } RibbonSegSSBO;
 
 typedef struct

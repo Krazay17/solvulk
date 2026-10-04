@@ -57,6 +57,16 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .alpha_curve = CURVE_EASE_OUT,
             .scale_curve = CURVE_QUICKIN_SLOWOUT,
         },
+    [EMITTERKIND_SHOCK_PULSE] =
+        {
+            .burst       = 1,
+            .p_kind      = PARTICLE_SPARK,
+            .p_lifespan  = 0.2f,
+            .p_scale     = 1.0f,
+            .p_color     = {1, 1, 1, 1},
+            .alpha_curve = CURVE_SCURVEY,
+            .scale_curve = CURVE_SCURVEY,
+        },
 };
 
 enum RenderKind
@@ -73,7 +83,6 @@ const u32 particle_pipekind[PARTICLE_COUNT] = {
     [PARTICLE_FIRE]    = RENDERKIND_QUAD,   //
     [PARTICLE_SPHERE]  = RENDERKIND_SPHERE, //
     [PARTICLE_PLASMA]  = RENDERKIND_SPHERE, //
-    [RIBBON_LIGHTNING] = RENDERKIND_RIBBON, //
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
@@ -84,15 +93,13 @@ const u32 particle_renderkind[PARTICLE_COUNT] = {
     [PARTICLE_SPHERE]  = PIPE_SPHERE,          //
     [PARTICLE_PLASMA]  = PIPE_PLASMA,          //
     [PARTICLE_SPARK]   = PIPE_QUAD,            //
-    [RIBBON_LIGHTNING] = PIPE_RIBBON,          //
 };
 
 const SolTextureId particle_texture[PARTICLE_COUNT] = {
-    [PARTICLE_SMOKE]   = SOL_TEXTURE_CLOUDPARTICLE, //
-    [PARTICLE_SPARK]   = SOL_TEXTURE_SHOCKPARTICLE, //
-    [PARTICLE_BLOOD]   = SOL_TEXTURE_BLOODPARTICLE, //
-    [PARTICLE_FIRE]    = SOL_TEXTURE_FIREPARTICLE,  //
-    [RIBBON_LIGHTNING] = SOL_TEXTURE_LIGHTNING,
+    [PARTICLE_SMOKE] = SOL_TEXTURE_CLOUDPARTICLE, //
+    [PARTICLE_SPARK] = SOL_TEXTURE_SHOCKPARTICLE, //
+    [PARTICLE_BLOOD] = SOL_TEXTURE_BLOODPARTICLE, //
+    [PARTICLE_FIRE]  = SOL_TEXTURE_FIREPARTICLE,  //
 };
 
 static inline vec3s RandomVel_Sphere(float speed)
@@ -243,7 +250,7 @@ void Particle_Draw(World *world, double dt)
                 .rect      = {0, 0, 1, 1},
                 .color     = final_color,
                 .textureId = particle_texture[p.kind],
-                .uv        = {0, 0, 1, 1},
+                .uv        = {1, 1, 0, 0},
             };
             break;
         case RENDERKIND_SPHERE:
@@ -251,12 +258,6 @@ void Particle_Draw(World *world, double dt)
                 .pos   = {p.pos.x, p.pos.y, p.pos.z, final_scale},
                 .color = final_color,
             };
-            break;
-            case RENDERKIND_RIBBON:
-            // *Sol_Render_GetNext_RibbonSeg(particle_renderkind[p.kind]) = (RibbonSegSSBO){
-            //     .posA = 
-            // };
-
             break;
         default:
             sollog("No particle pipe kind ", particle_pipekind[p.kind]);

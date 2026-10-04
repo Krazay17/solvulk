@@ -370,13 +370,12 @@ void Anim_Tick(World *world, double dt)
                 break;
                 case ABILITY_STATE_FIREBALL: {
                     ability_anim.anim = ANIM_2HANDCASTFWD;
-                    // ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
                 break;
                 case ABILITY_STATE_CLAW: {
                     ability_anim.anim  = j > 5 ? ANIM_RIGHTUPPERCUT : ANIM_LEFTUPPERCUT;
                     ability_anim.seek  = 0.2f;
-                    ability_anim.speed = data->stage == 0 ? 0.6f : 0.8f;
+                    ability_anim.speed = data->stage == 0 ? 0.7f : 0.8f;
                 }
                 break;
                 case ABILITY_STATE_SHIELD: {
@@ -399,8 +398,6 @@ void Anim_Tick(World *world, double dt)
                     else
                         Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
                 }
-                else
-                    Sol_Anim_SetSpeed(world, id, ability_anim.layerId, ability_anim.speed);
             }
         }
 

@@ -24,7 +24,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .damage =
                 {
                     .amount     = 30.0f,
-                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING,
                 },
         },
     [ABILITY_STATE_FIREBALL_CHARGE] =
@@ -61,6 +61,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .damage =
                 {
                     .amount = 25.0f,
+                    .effectMask = EFFECTMASK_CHAINLIGHTNING,
                 },
         },
     [ABILITY_STATE_SHIELD_DASH] =

@@ -23,6 +23,6 @@ layout(set = 3, binding = 0) uniform sampler2D textures[64];
 
 void main() {
     vec4 tex = texture(textures[fragTextureId], fragUV);
-    if (tex.a < 0.1) discard;
+    if (tex.a < 0.001) discard;
     outColor = tex * fragColor;
 }

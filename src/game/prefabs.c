@@ -150,13 +150,13 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
     *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {
-                                                          ABILITYKIND_CLAW,
-                                                          ABILITYKIND_FIREBALL,
+                                                          ABILITYKIND_SHIELD,
+                                                          ABILITYKIND_SHIELD,
+                                                          ABILITYKIND_SHIELD,
+                                                          ABILITYKIND_SHIELD,
                                                           ABILITYKIND_SHIELD,
                                                           ABILITYKIND_FIREBALL,
                                                           ABILITYKIND_FIREBALL,
-                                                          ABILITYKIND_FIREBALL,
-                                                          ABILITYKIND_SHIELD,
                                                       }};
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
@@ -179,7 +179,7 @@ int Sol_Prefab_Crosshair(World *world)
         .scale      = 1.0f,
         .targetFill = 1.0f,
         .hoverColor = {1, 1, 1, 1},
-        .textureUV  = {0, 0, 1, 1},
+        .textureUV  = {1, 1, 0, 0},
     };
 
     return id;
@@ -445,7 +445,7 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_FIREBALL,
         .radius = size,
-        .hitgen = Sol_Hitgen_Start(world, id),
+        .hitgen = Sol_Hitgen_Start(world),
     };
 
     ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
@@ -492,7 +492,7 @@ int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float sp
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_PLASMAORB,
         .radius = size,
-        .hitgen = Sol_Hitgen_Start(world, id),
+        .hitgen = Sol_Hitgen_Start(world),
     };
 
     ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
@@ -519,8 +519,6 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
     return 0;
 }
 
-
-
 int Sol_Prefab_AbilityBar(World *world, vec3s pos)
 {
     u32 layer = UILAYER_0;
@@ -533,10 +531,10 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos)
         .frame_pad       = {10.0f, 2.0f},
     };
     vec2s dims2 = Abilitybar_Size(&bar);
-    vec3s dims = {dims2.x, dims2.y, 0};
-    vec4s dims4 = {dims.x, dims.y, 0,0};
+    vec3s dims  = {dims2.x, dims2.y, 0};
+    vec4s dims4 = {dims.x, dims.y, 0, 0};
 
-    int id = Sol_Create_Ent(world, pos);
+    int id                                     = Sol_Create_Ent(world, pos);
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
     *Sol_Comp_Add(world, id, ScAbilitybar)     = bar;
 
@@ -549,23 +547,47 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos)
     };
 
     float s = bar.slot_dims.x;
-    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
-        .count = 5,
-        .views = {
-            {.layer = layer, .kind = VIEW2KIND_RECT, .dims = dims4, .color = {0, 0, 0, 1}},
-            {.layer = layer, .kind = VIEW2KIND_ABILITYBAR_BASEICON, .dims = dims4,
-             .color = {1, 1, 1, 1}, .desat = 1.0f},
-            {.layer = UILAYER_2, .kind = VIEW2KIND_ABILITYBAR, .dims = dims4, .flags = 0b111,
-             .color = {1, 0, 0, 1}, .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureID = SOL_TEXTURE_SWIRLFRAME},
-            {.layer = UILAYER_2, .kind = VIEW2KIND_RECT, .dims = {s, s}, .offset = {-s, bar.frame_pad.y},
-             .textureID = SOL_TEXTURE_TRIBOOKEND, .color = {1, 1, 1, 1},
-             .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureUV = {0.01f, 0, 1, 1}},
-            {.layer = UILAYER_2, .kind = VIEW2KIND_RECT, .dims = {s, s}, .offset = {dims.x, bar.frame_pad.y},
-             .textureID = SOL_TEXTURE_TRIBOOKEND, .color = {1, 1, 1, 1},
-             .hoverColor = {0.7f, 0.7f, 0.7f, 1}, .textureUV = {0, 0, -1, 0}},
-        }};
+    *Sol_Comp_Add(world, id, ScView2) =
+        (ScView2){.count = 5,
+                  .views = {
+                      {.layer = layer, .kind = VIEW2KIND_RECT, .dims = dims4, .color = {0, 0, 0, 1}},
+                      {.layer = layer,
+                       .kind  = VIEW2KIND_ABILITYBAR_BASEICON,
+                       .dims  = dims4,
+                       .color = {1, 1, 1, 1},
+                       .desat = 1.0f},
+                      {.layer      = UILAYER_2,
+                       .kind       = VIEW2KIND_ABILITYBAR,
+                       .dims       = dims4,
+                       .flags      = 0b111,
+                       .color      = {1, 0, 0, 1},
+                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
+                       .textureID  = SOL_TEXTURE_SWIRLFRAME},
+                      {.layer      = UILAYER_2,
+                       .kind       = VIEW2KIND_RECT,
+                       .dims       = {s, s},
+                       .offset     = {-s, bar.frame_pad.y},
+                       .textureID  = SOL_TEXTURE_TRIBOOKEND,
+                       .color      = {1, 1, 1, 1},
+                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
+                       .textureUV  = {1, 1, 0, 0}},
+                      {.layer      = UILAYER_2,
+                       .kind       = VIEW2KIND_RECT,
+                       .dims       = {s, s},
+                       .offset     = {dims.x, bar.frame_pad.y},
+                       .textureID  = SOL_TEXTURE_TRIBOOKEND,
+                       .color      = {1, 1, 1, 1},
+                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
+                       .textureUV  = {-1, 1, 0, 0}},
+                  }};
     return id;
 }
+
+const vec4s rarity_color[ITEMRARITY_COUNT] = {{0.2f, 0.2f, 0.2f, 1.0f},
+                                              {0.0f, 1.0f, 0.0f, 1.0f},
+                                              {0.0f, 0.0f, 1.0f, 1.0f},
+                                              {0.0f, 1.0f, 1.0f, 1.0f},
+                                              {1.0f, 0.3f, 0.0f, 1.0f}};
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
 {
     vec2s dims  = {62.0f, 62.0f};
@@ -599,7 +621,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
                 .kind        = VIEW2KIND_RECT,
                 .dims        = {dims.x, dims.y},
                 .textureID   = texture,
-                .textureUV   = {0, 0, 1.0f, 0.816f},
+                .textureUV   = {1.0f, 0.816f, 0, 0},
                 .flags       = 1,
                 .targetFill  = 1.0f,
                 .color       = {1, 1, 1, 1},
@@ -613,7 +635,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
                 .kind        = VIEW2KIND_RECT,
                 .dims        = {dims.x, dims.y},
                 .textureID   = SOL_TEXTURE_BORDER,
-                .color       = {0.0f, 0.0f, 0.0f, 1.0f},
+                .color       = rarity_color[item->rarity],
                 .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
                 .activeColor = {1, 1, 1, 1},
                 .downColor   = {1, 1, 1, 1},
@@ -660,7 +682,7 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
         .radius = dims.x,
         .mask   = mask,
         .hook   = hook,
-        .hitgen = Sol_Hitgen_Start(world, id),
+        .hitgen = Sol_Hitgen_Start(world),
     };
     *Sol_Comp_Add(world, id, ScView3) = (ScView3){
         .kind  = VIEW3KIND_BOLT,

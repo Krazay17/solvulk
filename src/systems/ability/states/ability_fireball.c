@@ -44,7 +44,24 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         if (!data->held)
         {
             data->stage++;
-            goto fire;
+            vec3s pos = GetProjectilePos(world, id, data->power, slot);
+            vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+
+            SolHit hit = {
+                .entA   = id,
+                .power  = data->power,
+                .damage = data->conf.damage,
+            };
+            hit.damage.amount *= 0.5f;
+
+            { // Spawn fireball
+                int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
+                ScBody3 *pBody           = Sol_Comp_Get(world, fireball, ScBody3);
+                ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
+                projectile->hit          = hit;
+                projectile->aoe_hit      = hit;
+                projectile->power        = data->power;
+            }
         }
         data->power    = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
@@ -53,31 +70,10 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 
         break;
     case 1:
-    fire:
-        data->stage++;
-        vec3s pos = GetProjectilePos(world, id, data->power, slot);
-        vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
-
-        SolHit hit = {
-            .entA   = id,
-            .power  = data->power,
-            .damage = data->conf.damage,
-        };
-        hit.damage.amount *= 0.5f;
-
-        { // Spawn fireball
-            int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
-            ScBody3 *pBody           = Sol_Comp_Get(world, fireball, ScBody3);
-            ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
-            projectile->hit          = hit;
-            projectile->aoe_hit      = hit;
-            projectile->power        = data->power;
-        }
-    case 2:
         if (data->elapsed > HIT_DELAY)
             data->stage++;
         break;
-    case 3:
+    case 2:
         data->accum += dt;
         if (data->accum >= HIT_RATE)
         {
@@ -160,7 +156,7 @@ void Ability_Fireball_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd
 {
     AbilityStateData *data = &ability->stateData[slot];
     data->conf             = Sol_Ability_GetSlotConf(ability, slot);
-    data->hitgen           = Sol_Hitgen_Start(world, id);
+    data->hitgen           = Sol_Hitgen_Start(world);
 
     switch (slot_kind_map[slot])
     {
@@ -209,7 +205,7 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, int slot, f
         };
     }
     break;
-    case 3: {
+    case 2: {
         // *Sol_Render_GetNextSphere(PIPE_PLASMA) = (SphereSSBO){
         //     .color = VEC4_RED,
         //     .pos   = (vec4s){pos.x, pos.y, pos.z, 0.25f},

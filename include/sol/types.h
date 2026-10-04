@@ -44,6 +44,7 @@ typedef void (*Hook)(World *, int id, int target);
 typedef enum
 {
     HITKIND_NORMAL,
+    HITKIND_LIGHTNING,
     HITKIND_MELEE_HIT,
     HITKIND_BULLET,
     HITKIND_FIRE,
@@ -178,7 +179,6 @@ typedef enum
     PARTICLE_BLOOD,
     PARTICLE_SPHERE_INOUT,
     PARTICLE_SMOKE,
-    RIBBON_LIGHTNING,
     PARTICLE_COUNT,
 } ParticleKind;
 typedef struct
@@ -199,6 +199,7 @@ typedef enum
     EMITTERKIND_BURST,
     EMITTERKIND_SPHERE,
     EMITTERKIND_SPHERE_BURST_FRACTAL,
+    EMITTERKIND_SHOCK_PULSE,
     EMITTERKIND_SMOKE_BURST,
     EMITTERKIND_COUNT,
 } EmitterKind;

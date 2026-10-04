@@ -104,7 +104,7 @@ void Camera_Tick(World *world, double dt)
             {
                 vec3s dir   = vecSub(move->lastTouch, xform.pos);
                 dir         = vecNorm(dir);
-                vec3s right = vecCrs(camera->dir, WORLD_UP);
+                vec3s right = vecCross(camera->dir, WORLD_UP);
                 float dot   = vecDot(right, dir);
                 targetRoll  = -dot * 15.0f * (3.14159f / 180.0f);
             }

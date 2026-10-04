@@ -15,8 +15,9 @@
 #define vecSub(a, b) glms_vec3_sub(a, b)
 #define vecSca(a, b) glms_vec3_scale(a, b)
 #define vecDot(a, b) glms_vec3_dot(a, b)
+#define vecLen(a) glms_vec3_norm((a))
 #define vecNorm(a) glms_vec3_normalize(a)
-#define vecCrs(a, b) glms_vec3_cross(a, b)
+#define vecCross(a, b) glms_vec3_cross((a), (b))
 #define vecLerp(a, b, c) glms_vec3_lerp(a, b, c)
 #define vecDist(a, b) glms_vec3_distance(a, b)
 
@@ -47,9 +48,9 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     {-0.7071f, 0.0f, -0.7071f}, // North-West
 };
 const vec4s SPRITEPAGE4[4] = {
-    {0.0f, 0.0f, 0.5f, 0.5f},
-    {0.5f, 0.0f, 0.5f, 0.5f},
-    {0.0f, 0.5f, 0.5f, 0.5f},
+    {0.5f, 0.5f, 0.0f, 0.0f},
+    {0.5f, 0.5f, 0.5f, 0.0f},
+    {0.5f, 0.5f, 0.0f, 0.5f},
     {0.5f, 0.5f, 0.5f, 0.5f},
 };
 #endif

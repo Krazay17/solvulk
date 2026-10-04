@@ -39,9 +39,9 @@ const struct SystemDef
     [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
-    [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
+    [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},
 
-    [WORLDSYS_BUFF]       = {.update = {Buff_Update, UPDATEPHASE_STEP}},
+    [WORLDSYS_BUFF]       = {.update = {{Buff_Update, UPDATEPHASE_STEP}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY3]      = {.update = {Body3_Update, UPDATEPHASE_STEP}},
@@ -49,16 +49,18 @@ const struct SystemDef
     [WORLDSYS_ABILITY]    = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ZONE]       = {.update = {Zone_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_COMBAT]     = {.update = {Combat_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_COMBAT]     = {.update = {Combat_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
-    [WORLDSYS_REF]     = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FX]      = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+
     [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_HOOK]    = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FACING]  = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_CAMERA]  = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_ANIM]    = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_RIBBON]  = {.update = {{Ribbon_Update, UPDATEPHASE_RENDER3}}},
 
     [WORLDSYS_MODEL] = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
     [WORLDSYS_VIEW3] = {.update = {View3_Draw, UPDATEPHASE_RENDER3}},

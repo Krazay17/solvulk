@@ -5,15 +5,17 @@ layout(location = 1) out vec4 outColor;
 layout(location = 3) flat out uint fragTextureId;
 
 struct RibbonSeg {
-    vec4 posA;       // .xyz = World Pos A, .w = Half Width A
-    vec4 posB;       // .xyz = World Pos B, .w = Half Width B
-    vec4 colorA;     // RGBA at endpoint A
-    vec4 colorB;     // RGBA at endpoint B
-    vec4 uv;         // .xy = Offset/Pan (U, V), .zw = Scale/Tile (U, V)
-    uint textureId;  // Texture array/bindless index
-    uint flags;      // 0 = Face Camera (Default), 1u = Align World Up
-    float panSpeed;  // U-axis scroll speed per second
-    uint _pad;       // Maintains 96-byte std430 alignment
+    vec4 posA;       
+    vec4 posB;       
+    vec4 colorA;     
+    vec4 colorB;     
+    vec4 uv;         
+    vec4 dirA;       // .xyz = Shared tangent at A
+    vec4 dirB;       // .xyz = Shared tangent at B
+    uint textureId;  
+    uint flags;      
+    float panSpeed;  
+    uint _pad;       
 };
 
 layout(set = 0, binding = 0) uniform Game {
@@ -44,24 +46,19 @@ const vec2 CORNERS[6] = vec2[](
 
 void main()
 {
-    RibbonSeg seg = segs[gl_InstanceIndex];
+RibbonSeg seg = segs[gl_InstanceIndex];
     vec2 corner   = CORNERS[gl_VertexIndex];
 
-    float sideSign = corner.x; // -1.0 or +1.0
-    float tSeg     = corner.y; //  0.0 or  1.0
+    float sideSign = corner.x; // -1.0 or +1.0 (Width)
+    float tSeg     = corner.y; //  0.0 or  1.0 (Length)
 
-    // Interpolate centerline position and width
-    vec3  posA    = seg.posA.xyz;
-    vec3  posB    = seg.posB.xyz;
-    vec3  basePos = mix(posA, posB, tSeg);
+    vec3  basePos = mix(seg.posA.xyz, seg.posB.xyz, tSeg);
     float halfW   = mix(seg.posA.w, seg.posB.w, tSeg);
 
-    // Segment orientation vector
-    vec3 segDir = posB - posA;
-    float segLen = length(segDir);
-    segDir = (segLen > 0.0001) ? segDir / segLen : vec3(0.0, 1.0, 0.0);
+    // Pick the shared tangent for the specific vertex being drawn
+    vec3 segDir = (tSeg < 0.5) ? seg.dirA.xyz : seg.dirB.xyz;
 
-    // Extrusion direction: DEFAULT (0) = Face Camera, OPT-IN (1u) = World Up
+    // The rest of the billboarding logic is exactly the same!
     vec3 sideDir;
     bool alignWorldUp = (seg.flags & 1u) != 0u;
 
@@ -75,7 +72,6 @@ void main()
         sideDir = (lenSq > 0.0001) ? normalize(sideDir) : vec3(1.0, 0.0, 0.0);
     }
 
-    // World space position & clip space transform
     vec3 worldPos = basePos + sideDir * (sideSign * halfW);
     gl_Position   = viewProj * vec4(worldPos, 1.0);
 
@@ -83,12 +79,13 @@ void main()
     outColor      = mix(seg.colorA, seg.colorB, tSeg);
     fragTextureId = seg.textureId;
 
-    // Base UV: U along length [0..1], V across width [0..1]
+    // tSeg maps to U (length), sideSign maps to V (width)
     vec2 baseUV = vec2(tSeg, sideSign * 0.5 + 0.5);
 
-    // Apply GPU-side panning over time along U coordinate
     float time = float(gameTime);
-    vec2 pannedOffset = seg.uv.xy + vec2(seg.panSpeed * time, 0.0);
+    
+    // Pans along the U axis (length)
+    vec2 pannedOffset = seg.uv.zw + vec2(seg.panSpeed * time, 0.0);
 
-    outUV = baseUV * seg.uv.zw + pannedOffset;
+    outUV = baseUV * seg.uv.xy + pannedOffset;
 }

@@ -5,6 +5,7 @@
  * Created: 2026-05-08
  */
 #include "audio.h"
+#include "sol_math.h"
 #include "sol_core.h"
 #include "render/render.h"
 
@@ -283,6 +284,11 @@ ScAudioHandle Sol_Audio_PlayAt(ScAudioId id, vec3s pos, float volume, float seek
     if (!Sol_Audio_IsHandleValid(handle))
         return INVALID_AUDIO_HANDLE;
 
+    ma_vec3f listener_pos = ma_engine_listener_get_position(&audio_engine, 0);
+    vec3s delta           = glms_vec3_sub(pos, (vec3s){listener_pos.x, listener_pos.y, listener_pos.z});
+    float d2              = glms_vec3_dot(delta, delta);
+    if (d2 > 3000.0f)
+        return INVALID_AUDIO_HANDLE;
     PlayingSound *ps = &playing_pool[handle.index];
     ma_sound_set_position(&ps->sound, pos.x, pos.y, pos.z);
     if (seek > 0)

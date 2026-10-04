@@ -16,7 +16,7 @@
 #define TERMINAL_VELOCITY -100.0f
 
 static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top, vec3s bottom, float capRadius,
-                                          float *outDist, vec3s *outNorm)
+                                          float *outDist, vec3s *outNorm, vec3s *outPos)
 {
     vec3s closest  = ClosestPointOnSegment(bottom, top, center);
     vec3s delta    = glms_vec3_sub(center, closest);
@@ -29,11 +29,12 @@ static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top,
     float dist = sqrtf(distSq);
     *outDist   = dist;
     *outNorm   = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : (vec3s){0.0f, 1.0f, 0.0f};
+    *outPos    = dist > 0.0001f ? glms_vec3_add(closest, glms_vec3_scale(*outNorm, capRadius)) : center;
     return true;
 }
 
 static inline bool Sphere_Overlap_Sphere(vec3s centerA, float radiusA, vec3s centerB, float radiusB, float *outDist,
-                                         vec3s *outNorm)
+                                         vec3s *outNorm, vec3s *outPos)
 {
     vec3s delta  = glms_vec3_sub(centerA, centerB);
     float distSq = glms_vec3_dot(delta, delta);
@@ -46,6 +47,7 @@ static inline bool Sphere_Overlap_Sphere(vec3s centerA, float radiusA, vec3s cen
     float dist = sqrtf(distSq);
     *outDist   = dist;
     *outNorm   = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : (vec3s){0.0f, 1.0f, 0.0f};
+    *outPos    = dist > 0.0001f ? glms_vec3_add(centerB, glms_vec3_scale(*outNorm, radiusB)) : centerB;
     return true;
 }
 
@@ -649,7 +651,7 @@ void Body3_UpdateSub(World *world, double dt)
         ScBody3 *body3 = &set->data[i];
 
         XformP xform   = Xform_GetP(world, id);
-        body3->vel     = glms_vec3_scale(body3->vel, 0.999f);
+        body3->vel     = glms_vec3_scale(body3->vel, 0.99999f);
         vec3s accel    = body3->vel.y < TERMINAL_VELOCITY ? GLMS_VEC3_ZERO : body3->gravity;
         accel          = glms_vec3_add(accel, body3->force);
         accel          = glms_vec3_add(accel, body3->impulse);
@@ -1329,12 +1331,13 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
             float capRadius = body->dims.x;
 
             float dist;
-            vec3s norm;
-            if (Sphere_Overlap_Capsule(center, radius, top, bottom, capRadius, &dist, &norm))
+            vec3s norm, pos;
+            if (Sphere_Overlap_Capsule(center, radius, top, bottom, capRadius, &dist, &norm, &pos))
             {
                 out_hits[count].hit   = true;
                 out_hits[count].t     = dist; // distance from center to surface, NOT a ray t
                 out_hits[count].norm  = norm;
+                out_hits[count].pos  = pos;
                 out_hits[count].entId = id;
                 count++;
             }
@@ -1343,13 +1346,14 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
         case SHAPE3_SPH: {
             float combined_radius = body->dims.x + radius;
             float t;
-            vec3s norm;
+            vec3s norm, pos;
 
-            if (Sphere_Overlap_Sphere(center, radius, xform.pos, body->dims.x, &t, &norm))
+            if (Sphere_Overlap_Sphere(center, radius, xform.pos, body->dims.x, &t, &norm, &pos))
             {
                 out_hits[count].hit   = true;
                 out_hits[count].t     = t;
                 out_hits[count].norm  = norm;
+                out_hits[count].pos  = pos;
                 out_hits[count].entId = id;
                 count++;
             }
@@ -1380,6 +1384,7 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
         out_hits[count].hit   = true;
         out_hits[count].t     = dist;
         out_hits[count].norm  = dist > 0.0001f ? glms_vec3_scale(delta, 1.0f / dist) : tri->normal;
+        out_hits[count].pos   = closest;
         out_hits[count].entId = entId;
         count++;
     }

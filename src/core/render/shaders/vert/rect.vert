@@ -4,7 +4,7 @@ struct Rect {
     vec4 pos;        // xy = screen position, z = depth, w = uniform scale
     vec4 rect;       // xy = local pivot offset, zw = dimensions (width, height)
     vec4 color;      // tint / base color
-    vec4 uv;         // xy = UV offset, zw = UV scale
+    vec4 uv;         // xy = UV scale, zw = UV offset
     vec4 extra;      // custom fragment parameters (x=border, y=radius, etc.)
     float spin;      // rotation angle in radians
     uint flags;      // UI flags / state
@@ -39,8 +39,8 @@ void main() {
 
     float scale = (r.pos.w != 0.0) ? r.pos.w : 1.0;
     vec2 dims   = r.rect.zw;
-    vec2 is_zero  = vec2(equal(r.uv.zw, vec2(0.0)));
-    vec2 uv_scale = mix(r.uv.zw, vec2(1.0), is_zero);
+    vec2 is_zero  = vec2(equal(r.uv.xy, vec2(0.0)));
+    vec2 uv_scale = mix(r.uv.xy, vec2(1.0), is_zero);
 
     // Unscaled local position relative to pivot (e.g. rect.xy = -dims * 0.5 for center)
     vec2 unscaledLocal = r.rect.xy + (corner * dims);
@@ -56,7 +56,7 @@ void main() {
     vec2 worldPos = r.pos.xy + (rotatedLocal * scale);
 
     // Fragment Shader Outputs
-    fragUV        = r.uv.xy + corner * uv_scale;
+    fragUV        = corner * uv_scale + r.uv.zw;
     fragColor     = r.color;
     localPos      = unscaledLocal; // For SDF calculations
     rectDims      = dims;

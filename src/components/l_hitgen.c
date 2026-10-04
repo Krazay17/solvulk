@@ -38,7 +38,7 @@ void SlHitgen_Deinit(SlHitgen *self)
     }
 }
 
-u32 Sol_Hitgen_Start(World *world, int id)
+u32 Sol_Hitgen_Start(World *world)
 {
     SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
 
@@ -111,4 +111,28 @@ bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen)
     solb_push(session->hit_targets, (u32)target);
 
     return true;
+}
+
+bool Sol_Hitgen_Has(World *world, int id, int target, u32 sessionGen)
+{
+    if (id < 0 || id >= MAX_ENTS) return false;
+
+    SlHitgen *single = Sol_Comp_Get(world, 0, SlHitgen);
+    HitgenRow *row = single->rows[id];
+    if (!row) return false;
+
+    for (u32 i = 0; i < row->session_count; i++)
+    {
+        if (row->sessions[i].session_gen == sessionGen)
+        {
+            HitgenSession *session = &row->sessions[i];
+            for (u32 j = 0; j < solb_count(session->hit_targets); j++)
+            {
+                if (session->hit_targets[j] == (u32)target)
+                    return true;
+            }
+            return false;
+        }
+    }
+    return false;
 }

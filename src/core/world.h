@@ -22,7 +22,6 @@ typedef struct World World;
 
 typedef enum
 {
-    WORLDSYS_EVENT,
     WORLDSYS_CMD,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
@@ -46,6 +45,7 @@ typedef enum
     WORLDSYS_REF,
     WORLDSYS_FX,
     WORLDSYS_EMITTER,
+    WORLDSYS_RIBBON,
     WORLDSYS_FACING,
     WORLDSYS_CAMERA,
     WORLDSYS_ANIM,
@@ -65,6 +65,8 @@ typedef enum
     X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
     X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
     X(SlContacts2, SlContacts2_Init, SlContacts2_Deinit)                                                               \
+    X(SlRibbon, SlRibbon_Init, SlRibbon_Deinit)                                                                        \
+    X(SlChainhit, SlChainhit_Init, SlChainhit_Deinit)                                                                        \
     X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
 
 #define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
@@ -80,6 +82,8 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(SlHitgen, HAS_SlHitgen)                                                                                          \
     X(SlEmitter, HAS_SlEmitter)                                                                                        \
     X(SlContacts2, HAS_SlContacts2)                                                                                    \
+    X(SlRibbon, HAS_SlRibbon)                                                                                    \
+    X(SlChainhit, HAS_SlChainhit)                                                                                    \
                                                                                                                        \
     X(ScActive, HAS_ScActive)                                                                                          \
     X(ScHook, HAS_ScHook)                                                                                              \
@@ -119,6 +123,7 @@ SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
     X(ScZone, HAS_ScZone)                                                                                              \
     X(ScRef, HAS_ScRef)                                                                                                \
     X(ScAbilitybar, HAS_ScAbilitybar)                                                                                  \
+    X(ScRibbon, HAS_ScRibbon)                                                                                  \
     X(ScBuilder, HAS_ScBuilder)
 
 typedef enum
@@ -188,7 +193,6 @@ struct World
     u64 masks[MAX_ENTS];
     u64 system_mask;
     void *components[COMPONENT_COUNT];
-    void *systems[WORLDSYS_COUNT];
 
     SolEvent *events;
 
@@ -504,6 +508,50 @@ void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 void Worlds_Event_Clear(World **worlds, int count);
 
+// Systems
+void Sol_Test(World *world, double dt);
+void Cmd_Update(World *world, double dt);
+void Player_Tick(World *world, double dt);
+void Interact_Update(World *world, double dt);
+void Parent_Update(World *world, double dt);
+void Abilitybar_Update(World *world, double dt);
+
+void Move3_Step(World *world, double dt);
+void Move2_Step(World *world, double dt);
+
+void Body3_Update(World *world, double dt);
+void Body2_Step(World *world, double dt);
+
+void Buff_Update(World *world, double dt);
+void Ability_Step(World *world, double dt);
+void Projectile_Step(World *world, double dt);
+void Zone_Update(World *world, double dt);
+void Combat_Update(World *world, double dt);
+void Ai_Step(World *world, double dt);
+void Interact_Step(World *world, double dt);
+
+void Ref_Update(World *world, double dt);
+void Fx_Update(World *world, double dt);
+void Hook_Tick(World *world, double dt);
+void Anim_Tick(World *world, double dt);
+void Facing_Tick(World *world, double dt);
+void Camera_Tick(World *world, double dt);
+void Emitter_Update(World *world, double dt);
+void Timer_Update(World *world, double dt);
+
+void Particle_Draw(World *world, double dt);
+void Buff_Draw(World *world, double dt);
+void Scoreboard_Draw(World *world, double dt);
+void Model_Render(World *world, double dt);
+void Ability_Draw(World *world, double dt);
+void View3_Draw(World *world, double dt);
+void View2_Draw(World *world, double dt);
+void Debug_Tick(World *world, double dt);
+void Debug_Draw3(World *world, double dt);
+void Debug_Draw2(World *world, double dt);
+void Ribbon_Update(World *world, double dt);
+void Ribbon_Update(World *world, double dt);
+
 // Api
 World *World_Create();
 World *World_Create_AllSys();
@@ -516,7 +564,6 @@ void Sol_Sys_Add(World *world, WorldSystems system);
 void Sol_Sys_Remove(World *world, WorldSystems system);
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
-// Systems
 int Sol_Interact_FindTopmost(World *world, vec2s point);
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name);
@@ -563,11 +610,13 @@ float Sol_Combat_Damage(World *world, int id, int dealer, ScCombat *combat, floa
 float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount);
 
 extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
+void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos);
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
 void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s dir, float speed);
 Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);
 
-u32 Sol_Hitgen_Start(World *world, int id);
+u32 Sol_Hitgen_Start(World *world);
+bool Sol_Hitgen_Has(World *world, int id, int target, u32 sessionGen);
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
 void Sol_Event_Push(World *world, EventKind kind, SolEvent event);
 
@@ -582,8 +631,14 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
 bool Sol_Ability_GetIsDashing(const ScAbility *ability);
 bool Sol_Combat_Hostile(World *world, int idA, int idB);
 float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot);
-void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius);
 AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item);
 AbilityConfig Sol_Item_GetMods(SolItem item);
 DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit);
+void Sol_Combat_Chain(World *world, ChainhitKind kind, SolHit hit, float radius, float rate, int chain_count);
 void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos);
+void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s posA, vec3s posB);
+void Sol_Ribbon_SpawnE(World *world, RibbonKind kind, u32 entA, u32 entB);
+Ribbon *Sol_Ribbon_Next(World *world);
+void Sol_Ribbon_Draw(World *world, double dt, Ribbon *r);
+void Sol_Draw_Lightning(World *world, double dt, Ribbon *r);
+u32 Sol_Combat_ClosestTargetLos(World *world, int id, SolRay ray, int hitgen);

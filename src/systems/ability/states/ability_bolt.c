@@ -7,11 +7,14 @@
  * Pickup bolt if touch bolt while charging.
  * On fire pull bolt if not picked up, else throw bolt.
  */
+#include "ability/s_ability.h"
 #include "world.h"
 #include "sol_math.h"
 #include "estate.h"
 #include "prefabs.h"
 #include "render/render.h"
+
+#define MIN_POWER 0.2f
 
 const float bolt_speed = 80.0f;
 const float accel      = 12.0f; // speed gained per second
@@ -110,6 +113,7 @@ static void BoltHit(World *world, int a, int b)
     if (!ability)
         return;
 
+    sollog(a);
     AbilityStateData *data   = &ability->stateData[ref->index];
     data->as.bolt.anchor[0]  = world->xform.pos[data->as.bolt.bolt];
     data->as.bolt.bolt_state = 1;
@@ -124,7 +128,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         if (!data->held)
         {
             data->stage++;
-
+            ability->prio_slot = slot;
             if (data->as.bolt.bolt_state == 2)
             {
                 Sol_Event_Push(world, EVENTKIND_FX,
@@ -172,6 +176,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 
                 float t = fabs(align);
                 t       = t * t * t;
+                t       = max(0.2f, t);
 
                 vec3s target_dir = glms_vec3_normalize(glms_vec3_lerpc(tangent, to_anchor, t));
                 float speed      = glms_vec3_norm(body3->vel);
@@ -224,6 +229,16 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     AbilityStateData *data = &ability->stateData[slot];
     data->conf             = Sol_Ability_GetSlotConf(ability, slot);
 
+    switch (slot_kind_map[slot])
+    {
+    case 0:
+        data->power = data->conf.maxpower;
+        break;
+    case 1:
+        data->power = MIN_POWER;
+        break;
+    }
+
     int bolt =
         Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed, 0.33f, BoltHit);
     ScRef *ref                   = Sol_Comp_Add(world, bolt, ScRef);
@@ -235,7 +250,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     data->as.bolt.current_anchor = 0;
     ScProjectile *p              = Sol_Comp_Get(world, bolt, ScProjectile);
     p->hit.damage                = data->conf.damage;
-    p->hit.power                 = 1.0f;
+    p->hit.power                 = data->power;
 
     Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
 }
@@ -276,23 +291,27 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                 vec3s prev_anchor = data->as.bolt.anchor[i - 1];
                 vec3s anchor3     = data->as.bolt.anchor[i];
                 anchor4           = (vec4s){anchor3.x, anchor3.y, anchor3.z, 0.3f};
-                RibbonSegSSBO *s  = Sol_Render_GetNext_RibbonSeg(PIPE_RIBBON);
-                s->posA           = (vec4s){prev_anchor.x, prev_anchor.y, prev_anchor.z, 0.3f};
-                s->posB           = anchor4;
-                s->colorA         = VEC4_WHITE;
-                s->colorB         = VEC4_WHITE;
-                s->textureId      = SOL_TEXTURE_LIGHTNING;
-                s->uv             = (vec4s){0, 0, 3.0f, 1.0f};
-                s->panSpeed       = 6.0f;
+                Sol_Draw_Lightning(world, dt,
+                                   &(Ribbon){
+                                       .points[0]    = prev_anchor,
+                                       .points[1]    = anchor3,
+                                       .thickness    = 0.3f,
+                                       .texture      = SOL_TEXTURE_LIGHTNING,
+                                       .color        = VEC4_WHITE,
+                                       .pan          = 6.0f,
+                                       ._point_count = 2,
+                                   });
             }
-            RibbonSegSSBO *s2 = Sol_Render_GetNext_RibbonSeg(PIPE_RIBBON);
-            s2->posA          = hand_pos4;
-            s2->posB          = anchor4;
-            s2->colorA        = VEC4_WHITE;
-            s2->colorB        = VEC4_WHITE;
-            s2->textureId     = SOL_TEXTURE_LIGHTNING;
-            s2->uv            = (vec4s){0, 0, 3.0f, 1.0f};
-            s2->panSpeed      = 6.0f;
+            Sol_Draw_Lightning(world, dt,
+                               &(Ribbon){
+                                   .points[0]    = hand_pos,
+                                   .points[1]    = (vec3s){anchor4.x, anchor4.y, anchor4.z},
+                                   .thickness    = 0.1f,
+                                   .texture      = SOL_TEXTURE_LIGHTNING,
+                                   .color        = VEC4_WHITE,
+                                   .pan          = 6.0f,
+                                   ._point_count = 2,
+                               });
         }
         break;
         case 2: {

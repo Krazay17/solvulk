@@ -121,6 +121,11 @@ static inline void Normal_Hit(World *world, SolEvent event)
     if (world->doesRender)
         Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, pos, 0.5f, 0.08f, 16);
 }
+static inline void Lightning_Hit(World *world, SolEvent event)
+{
+    Normal_Hit(world, event);
+    Sol_Emitter_Spawn(world, EMITTERKIND_SHOCK_PULSE, event.as.hit.pos);
+}
 
 void Fx_Update(World *world, double dt)
 {
@@ -146,6 +151,9 @@ void Fx_Update(World *world, double dt)
                 break;
             case HITKIND_MELEE_HIT:
                 Melee_Hit(world, event);
+                break;
+            case HITKIND_LIGHTNING:
+                Lightning_Hit(world, event);
                 break;
             default:
                 Normal_Hit(world, event);

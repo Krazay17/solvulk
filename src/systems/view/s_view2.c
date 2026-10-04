@@ -9,13 +9,17 @@ const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Ri
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
 {
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
-    if (!ref) return;
+    if (!ref)
+        return;
     World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
-    if (!ref_world) return;
+    if (!ref_world)
+        return;
     ScAbility *ability = Sol_Comp_Get(ref_world, ref->ent_id, ScAbility);
-    if (!ability) return;
+    if (!ability)
+        return;
     ScAbilitybar *abilitybar = Sol_Comp_Get(world, id, ScAbilitybar);
-    if (!abilitybar) return;
+    if (!abilitybar)
+        return;
 
     vec3s pos = world->xform.draw_pos[id];
     vec4s slots[ABILITY_SLOTS], frames[ABILITY_GROUPS];
@@ -36,8 +40,8 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     // Slots
     for (int s = 0; s < total_slots; s++)
     {
-        vec4s slot_pos  = {UISCALE(pos.x + slots[s].x), UISCALE(pos.y + slots[s].y)};
-        vec4s slot_rect = {0, 0, UISCALE(slots[s].z), UISCALE(slots[s].w)};
+        vec4s slot_pos         = {UISCALE(pos.x + slots[s].x), UISCALE(pos.y + slots[s].y)};
+        vec4s slot_rect        = {0, 0, UISCALE(slots[s].z), UISCALE(slots[s].w)};
         AbilityStateData *data = &ability->stateData[s];
 
         u32 texture       = view->textureID;
@@ -47,18 +51,18 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
             texture = ability_texture_map[ability->base_actions[s]];
             if (texture == 0)
                 final_color = (vec4s){0, 0, 0, 1};
-            view->textureUV = (vec4s){0, 0, 1.0f, 0.816f};
+            view->textureUV = (vec4s){1.0f, 0.816f, 0, 0};
         }
 
-        RectSSBO *slot         = Sol_Render_GetNext_Rect(view->layer);
-        slot->extra.z          = view->desat;
-        slot->extra.y          = data->cooldownRemaining > 0.0f ? data->cooldownRemaining / data->conf.cooldown : 0.0f;
-        slot->flags            = view->flags;
-        slot->pos              = slot_pos;
-        slot->rect             = slot_rect;
-        slot->textureId        = texture;
-        slot->color            = final_color;
-        slot->uv               = view->textureUV;
+        RectSSBO *slot  = Sol_Render_GetNext_Rect(view->layer);
+        slot->extra.z   = view->desat;
+        slot->extra.y   = data->cooldownRemaining > 0.0f ? data->cooldownRemaining / data->conf.cooldown : 0.0f;
+        slot->flags     = view->flags;
+        slot->pos       = slot_pos;
+        slot->rect      = slot_rect;
+        slot->textureId = texture;
+        slot->color     = final_color;
+        slot->uv        = view->textureUV;
 
         if (ability->state[s] != 0)
         {

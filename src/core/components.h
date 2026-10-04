@@ -493,12 +493,12 @@ typedef struct ScRef
 
 typedef struct ScAbilitybar
 {
-    float spacing;       // gap between slots within a group
-    float group_gap;     // gap between group frames (was group_spacing, now excludes padding)
+    float spacing;   // gap between slots within a group
+    float group_gap; // gap between group frames (was group_spacing, now excludes padding)
     vec2s slot_dims;
-    vec2s frame_pad;     // padding inside each group frame
+    vec2s frame_pad; // padding inside each group frame
     int slots_per_group[ABILITY_GROUPS];
-    int slotted_ents[ABILITY_SLOTS];   // keep if you already have it
+    int slotted_ents[ABILITY_SLOTS]; // keep if you already have it
 } ScAbilitybar;
 
 // #################
@@ -559,3 +559,49 @@ typedef struct SlContacts2
 {
     SolContact *contacts;
 } SlContacts2;
+
+typedef enum
+{
+    RIBBONKIND_BASIC,
+    RIBBONKIND_LIGHTNING,
+    RIBBONKIND_COUNT,
+} RibbonKind;
+#define MAX_RIBBON_SEGMENTS 16
+typedef struct Ribbon
+{
+    RibbonKind kind;
+    vec3s points[MAX_RIBBON_SEGMENTS];
+    float thickness;
+    vec4s color;
+    u32 texture;
+    float lifespan;
+    u32 entA, entB;
+    float pan;
+    float alpha_curve;
+    float scale_curve;
+
+    int _point_count;
+    float _elapsed;
+    float _update_timer;
+} Ribbon;
+
+typedef struct
+{
+    Ribbon *ribbons;
+} SlRibbon;
+
+typedef struct
+{
+    Ribbon *ribbons;
+} ScRibbon;
+
+typedef enum
+{
+    CHAINHITKIND_LIGHTNING,
+    CHAINHITKIND_COUNT,
+} ChainhitKind;
+typedef struct Chainhit Chainhit;
+typedef struct
+{
+    Chainhit *chainhits;
+} SlChainhit;

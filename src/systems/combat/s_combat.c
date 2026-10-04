@@ -11,6 +11,28 @@
 
 #define DESTROY_TIMER 3.0f
 
+struct Chainhit
+{
+    u32 owner;
+    u32 target;
+    int remaining;
+    float radius;
+    float rate;
+    SolHit hit;
+    int _hitgen;
+    float _accum;
+};
+
+void SlChainhit_Init(World *world, SlChainhit *self)
+{
+    solb_init(self->chainhits, 64);
+}
+
+void SlChainhit_Deinit(SlChainhit *self)
+{
+    solb_free(self->chainhits);
+}
+
 static vec3s RandomSpawn(World *world, int id, ScCombat *combat)
 {
     vec3s pos     = world->xform.home_pos[id];
@@ -76,7 +98,8 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
         }
         if (Sol_Comp_Has(world, id, ScAbility))
         {
-            Sol_Ability_SetState(world, id, 0, 0, true);
+            for (int i = 0; i < ABILITY_SLOTS; i++)
+                Sol_Ability_SetState(world, id, 0, i, true);
         }
         if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
         {
@@ -85,8 +108,63 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
     }
 }
 
-void Combat_Step(World *world, double dt)
+void Chain_Update(World *world, double dt)
 {
+    SlChainhit *sl = Sol_Comp_Get(world, 0, SlChainhit);
+    int write      = 0;
+    for (int i = 0; i < solb_count(sl->chainhits); i++)
+    {
+        Chainhit *s = &sl->chainhits[i];
+        if (s->remaining <= 0)
+            continue;
+        s->_accum += dt;
+        if (s->_accum >= s->rate)
+        {
+            s->_accum -= s->rate;
+            u32 next_target = Sol_Combat_ClosestTargetLos(
+                world, s->owner,
+                (SolRay){.start = world->xform.pos[s->target], .radius = s->radius, .ignoreEnt = s->target},
+                s->_hitgen);
+            if (next_target)
+            {
+                Sol_Ribbon_SpawnE(world, RIBBONKIND_LIGHTNING, s->target, next_target);
+
+                s->hit.entA = s->owner;
+                s->hit.entB = next_target;
+                s->hit.pos = world->xform.pos[next_target];
+                Sol_Combat_Hit(world, next_target, s->hit);
+                s->target = next_target;
+                s->remaining--;
+            }
+            else
+                s->remaining = 0;
+        }
+
+        sl->chainhits[write++] = *s;
+    }
+    solb_set_count(sl->chainhits, write);
+}
+
+void Sol_Combat_Chain(World *world, ChainhitKind kind, SolHit hit, float radius, float rate, int chain_count)
+{
+    SlChainhit *sl     = Sol_Comp_Get(world, 0, SlChainhit);
+    Chainhit *chainhit = solb_next(sl->chainhits);
+    chainhit->_accum   = 0;
+    chainhit->_hitgen  = Sol_Hitgen_Start(world);
+    Sol_Hitgen_Try(world, hit.entA, hit.entB, chainhit->_hitgen);
+
+    chainhit->hit       = hit;
+    chainhit->owner     = hit.entA;
+    chainhit->target    = hit.entB;
+    chainhit->radius    = radius;
+    chainhit->rate      = rate;
+    chainhit->remaining = chain_count;
+}
+
+void Combat_Update(World *world, double dt)
+{
+    Chain_Update(world, dt);
+
     SparseSet_ScCombat *set = Sol_Comp_Set(world, ScCombat);
     for (int i = 0; i < set->cnt; i++)
     {
@@ -155,6 +233,8 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
 
 float Sol_Combat_Hit(World *world, int id, SolHit hit)
 {
+    if (Sol_Comp_Has(world, id, ScStage))
+        return 0.0f;
     if (hit.damage.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
     {
         Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
@@ -184,6 +264,17 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         if (hit.damage.buffMask > 0)
         {
             Sol_Buff_AddMask(world, id, hit.damage.buffMask, hit.entA, hit.power);
+        }
+        if (hit.damage.effectMask & EFFECTMASK_CHAINLIGHTNING)
+        {
+            hit.damage.effectMask &= ~EFFECTMASK_CHAINLIGHTNING;
+            SolHit chain_hit = {.damage.amount   = 10.0f,
+                                .damage.buffMask = hit.damage.buffMask,
+                                .power           = hit.power,
+                                .entA            = hit.entA,
+                                .entB            = hit.entB,
+                                .kind            = HITKIND_LIGHTNING};
+            Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 20);
         }
         ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
         if (move3)
@@ -265,7 +356,7 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
         int hit_id = results[i].entId;
         if ((!hit.damage.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
             continue;
-        if (hitgen && !Sol_Hitgen_Try(world, id, hit_id, hitgen))
+        if (hitgen && Sol_Hitgen_Has(world, id, hit_id, hitgen))
             continue;
 
         vec3s hit_pos = world->xform.pos[hit_id];
@@ -293,8 +384,60 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
         }
         hit.entB = hit_id;
         hit.pos  = hit_pos;
+        Sol_Hitgen_Try(world, id, hit_id, hitgen);
         Sol_Combat_Hit(world, hit_id, hit);
     }
+}
+
+u32 Sol_Combat_ClosestTargetLos(World *world, int id, SolRay ray, int hitgen)
+{
+    SolRayResult results[64];
+    int max_hits = 64;
+    vec3s pos    = ray.start;
+    int hits     = Sol_SphereOverlap(world, ray, results, max_hits);
+
+    u32 best_id      = 0;
+    float closest_d2 = FLT_MAX;
+
+    for (int i = 0; i < hits; i++)
+    {
+        int hit_id = results[i].entId;
+        if (!Sol_Combat_Hostile(world, id, hit_id) || Sol_Comp_Has(world, hit_id, ScStage))
+            continue;
+        if (hitgen && Sol_Hitgen_Has(world, id, hit_id, hitgen))
+            continue;
+
+        vec3s hit_pos = results[i].pos;
+        vec3s delta   = vecSub(hit_pos, pos);
+        float d2      = glms_vec3_norm2(delta);
+
+        // Only run LoS raycast if entity isn't sitting directly on the explosion origin
+        if (d2 >= 0.000001f)
+        {
+            float dist = sqrtf(d2);
+            vec3s dir  = vecSca(delta, 1.0f / dist);
+
+            SolRayResult los_result = {0};
+            bool is_blocked =
+                Sol_Raycast1(world,
+                             (SolRay){.start     = pos,
+                                      .dir       = dir,
+                                      .dist      = dist - 0.01f, // Stop slightly short to avoid self-intersection
+                                      .mask      = COLLAYER_WORLD,
+                                      .ignoreEnt = id},
+                             &los_result);
+
+            if (is_blocked)
+                continue;
+        }
+        if (d2 < closest_d2)
+        {
+            closest_d2 = d2;
+            best_id    = hit_id;
+        }
+    }
+    Sol_Hitgen_Try(world, id, best_id, hitgen);
+    return best_id;
 }
 
 int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen)
@@ -303,13 +446,13 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
     int max_hits = 64;
     int damaged  = 0;
     int hits     = solState.debug ? Sol_SpherecastD(world, ray, results, max_hits, 0.2f)
-                                  : Sol_Spherecast(world,  ray, results, max_hits);
+                                  : Sol_Spherecast(world, ray, results, max_hits);
     for (int i = 0; i < hits; i++)
     {
         int hit_id = results[i].entId;
         if ((!hit.damage.isHeal && !Sol_Combat_Hostile(world, id, hit_id)) || Sol_Comp_Has(world, hit_id, ScStage))
             continue;
-        if (hitgen && !Sol_Hitgen_Try(world, id, hit_id, hitgen))
+        if (hitgen && Sol_Hitgen_Has(world, id, hit_id, hitgen))
             continue;
 
         vec3s hit_pos = world->xform.pos[hit_id];
@@ -336,6 +479,7 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
         hit.entB = hit_id;
         hit.pos  = hit_pos;
         hit.vel  = ray.dir;
+        Sol_Hitgen_Try(world, id, hit_id, hitgen);
         Sol_Combat_Hit(world, hit_id, hit);
         damaged++;
     }

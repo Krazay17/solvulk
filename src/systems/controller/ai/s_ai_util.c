@@ -501,10 +501,10 @@ void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
     ai->learning.prev_knows_combat.raw = next_knows_combat.raw;
 }
 
-const u32 slot_action[4] = {ACTION_ABILITY3, ACTION_ABILITY4, ACTION_ABILITY5, ACTION_ABILITY6};
+const u32 slot_action[4] = {ACTION_ABILITY1, ACTION_ABILITY2, ACTION_ABILITY3, ACTION_ABILITY4};
 void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKnowStateC next_knows_combat)
 {
-    cmd->actionState &= (BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
+    cmd->actionState &= (BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
     cmd->isStrafing = true;
     AiBrain *brain  = &ai->brain;
     vec3s fwd       = cmd->lookdir;
@@ -570,15 +570,15 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
     case AIACTIONC_NONE:
         if (next_knows_combat.attack < 2)
         {
-            cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
+            cmd->actionState &= ~(BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
         }
         break;
     case AIACTIONC_CHARGE:
-        cmd->actionState |= rand() % 2 ? BITC(ACTION_ABILITY1) : BITC(ACTION_ABILITY2);
+        cmd->actionState |= rand() % 2 ? BITC(ACTION_ABILITY6) : BITC(ACTION_ABILITY7);
         ai->learning.actionTimer = 0;
         break;
     case AIACTIONC_RELEASE:
-        cmd->actionState &= ~(BITC(ACTION_ABILITY1) | BITC(ACTION_ABILITY2));
+        cmd->actionState &= ~(BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
         if (ai->learning.prev_knows_combat.attack == 3)
             ai->learning.reward_combat += 30.0f;
         break;

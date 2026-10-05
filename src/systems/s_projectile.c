@@ -64,6 +64,7 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
                        .as.hit.power = hit.power,
                    });
 
+    Sol_Destroy_Ent(w, a);
     return true;
 }
 
@@ -87,7 +88,11 @@ static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projec
                        });
     }
     if (Sol_Comp_Has(world, hit.entB, ScStage))
+    {
+
+        Sol_Destroy_Ent(world, a);
         return true;
+    }
 
     return false;
 }
@@ -124,6 +129,7 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
 
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){
+                           .entA         = hit.entA,
                            .entB         = hit.entB,
                            .as.hit.kind  = HITKIND_NORMAL,
                            .as.hit.pos   = hit.pos,
@@ -154,8 +160,8 @@ void Projectile_Step(World *world, double dt)
             continue;
         }
 
-        vec3s vel    = body3->vel;
-        float v2     = glms_vec3_norm2(body3->vel);
+        vec3s vel = body3->vel;
+        float v2  = glms_vec3_norm2(body3->vel);
         if (v2 > 0.1f)
         {
             vec3s dir            = glms_vec3_scale(body3->vel, 1.0f / sqrt(v2));
@@ -176,13 +182,14 @@ void Projectile_Step(World *world, double dt)
         };
 
         SolRayResult results[16];
-        int hits = solState.debug ? Sol_SpherecastD(world, ray, results, 16, 0.2f)
-                                  : Sol_Spherecast(world, ray, results, 16);
+        int hits =
+            solState.debug ? Sol_SpherecastD(world, ray, results, 16, 0.2f) : Sol_Spherecast(world, ray, results, 16);
         if (hits == 0)
             continue;
 
         ScOwner *owner = Sol_Comp_Get(world, id, ScOwner);
         int ownerId    = owner ? owner->ownerId : 0;
+        Hook hook      = projectile->hook;
 
         SolHit hit = projectile->hit;
         hit.entA   = id;
@@ -201,25 +208,25 @@ void Projectile_Step(World *world, double dt)
 
             Sol_Ai_QuickLearn(world, id, ownerId, false);
 
-            bool destroyed = false;
+            if (hook)
+                hook(world, id, result.entId);
+
+            bool inactive = false;
             switch (projectile->kind)
             {
             case PROJECTILEKIND_FIREBALL:
-                destroyed = FireballHit(world, id, projectile, hit);
+                inactive = FireballHit(world, id, projectile, hit);
                 break;
             case PROJECTILEKIND_PLASMAORB:
-                destroyed = PlasmaOrbHit(world, id, projectile, hit);
+                inactive = PlasmaOrbHit(world, id, projectile, hit);
                 break;
             case PROJECTILEKIND_LIGHTNINGBOLT:
-                destroyed = LightningBoltHit(world, id, projectile, hit);
+                inactive = LightningBoltHit(world, id, projectile, hit);
                 break;
             }
-            if (projectile->hook)
-                projectile->hook(world, id, result.entId);
 
-            if (destroyed)
+            if (inactive)
             {
-                Sol_Destroy_Ent(world, id);
                 break;
             }
         }

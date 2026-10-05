@@ -787,7 +787,8 @@ typedef enum
 
 typedef struct
 {
-    vec3s pos, vel;
+    vec3s pos;
+    vec3s dir;
 } SolShoot;
 
 typedef enum

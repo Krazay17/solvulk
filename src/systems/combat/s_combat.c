@@ -131,7 +131,7 @@ void Chain_Update(World *world, double dt)
 
                 s->hit.entA = s->owner;
                 s->hit.entB = next_target;
-                s->hit.pos = world->xform.pos[next_target];
+                s->hit.pos  = world->xform.pos[next_target];
                 Sol_Combat_Hit(world, next_target, s->hit);
                 s->target = next_target;
                 s->remaining--;
@@ -242,12 +242,17 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     }
     if (!Sol_Comp_Has(world, id, ScCombat))
         return 0.0f;
-    ScCombat *dealer_combat = Sol_Comp_Get(world, hit.entA, ScCombat);
-    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
+    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+    int ownerId      = hit.entA;
+    ScOwner *owner   = Sol_Comp_Get(world, hit.entA, ScOwner);
+    if (owner)
+        ownerId = owner->ownerId;
+
+    ScCombat *dealer_combat = Sol_Comp_Get(world, ownerId, ScCombat);
     float damage_done       = 0;
     float damage            = hit.damage.amount * hit.power;
-    if (combat && hit.damage.isHeal)
-        damage_done = Sol_Combat_Heal(world, id, hit.entA, combat, hit.damage.amount);
+    if (hit.damage.isHeal)
+        damage_done = Sol_Combat_Heal(world, id, ownerId, combat, hit.damage.amount);
     else
     {
         if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
@@ -259,11 +264,11 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         }
         if (hit.hook)
         {
-            hit.hook(world, hit.entA, hit.entB);
+            hit.hook(world, ownerId, hit.entB);
         }
         if (hit.damage.buffMask > 0)
         {
-            Sol_Buff_AddMask(world, id, hit.damage.buffMask, hit.entA, hit.power);
+            Sol_Buff_AddMask(world, id, hit.damage.buffMask, ownerId, hit.power);
         }
         if (hit.damage.effectMask & EFFECTMASK_CHAINLIGHTNING)
         {
@@ -271,7 +276,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             SolHit chain_hit = {.damage.amount   = 10.0f,
                                 .damage.buffMask = hit.damage.buffMask,
                                 .power           = hit.power,
-                                .entA            = hit.entA,
+                                .entA            = ownerId,
                                 .entB            = hit.entB,
                                 .kind            = HITKIND_LIGHTNING};
             Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 20);
@@ -295,16 +300,14 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         if (hit.damage.effectMask & EFFECTMASK_LIFESTEAL)
         {
             if (dealer_combat)
-                Sol_Combat_Heal(world, hit.entA, hit.entA, dealer_combat, damage * 0.2f);
-        }
-        if (combat)
-        {
-            combat->lastHitBy = hit.entA;
-            damage_done       = Sol_Combat_Damage(world, id, hit.entA, combat, damage);
+                Sol_Combat_Heal(world, ownerId, ownerId, dealer_combat, damage * 0.2f);
         }
 
+        combat->lastHitBy = ownerId;
+        damage_done       = Sol_Combat_Damage(world, id, ownerId, combat, damage);
+
         Sol_Event_Push(world, EVENTKIND_HIT,
-                       (SolEvent){.as.hit.kind = hit.kind, .entA = hit.entA, .entB = id, .as.hit = hit});
+                       (SolEvent){.as.hit.kind = hit.kind, .entA = ownerId, .entB = id, .as.hit = hit});
     }
 
     return damage_done;
@@ -484,4 +487,21 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
         damaged++;
     }
     return damaged;
+}
+
+SolShoot Sol_Combat_GetShoot(World *world, int id, float fwd_offset)
+{
+    SolShoot shoot = {0};
+    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+    Xform xform    = Xform_Get(world, id);
+    shoot.dir      = Sol_DirFromQuat(xform.rot, WORLD_UP);
+    ScCmd *cmd     = Sol_Comp_Get(world, id, ScCmd);
+    if (cmd)
+        shoot.dir = vecNorm(cmd->aimdir);
+    shoot.pos = xform.pos;
+    if (body3)
+        shoot.pos.y += body3->dims.y * 0.75f;
+    shoot.pos = vecAdd(shoot.pos, vecSca(shoot.dir, fwd_offset));
+
+    return shoot;
 }

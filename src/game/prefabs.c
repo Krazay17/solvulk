@@ -33,6 +33,12 @@ static const ScCombat wizard_combat = {
     .health    = 100.0f,
 };
 
+static const View3 healthbar = {
+    .kind  = VIEW3KIND_HEALTHBAR,
+    .color = {0.1f, 0.9f, 0.1f, 1.0f},
+    .duration = 4.0f,
+};
+
 static const ScAi wizard_ai = {
     .kind       = AIKIND_WIZARD,
     .aggroRange = 20.0f,
@@ -114,10 +120,8 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
     *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
 
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind  = VIEW3KIND_HEALTHBAR,
-        .color = {0.1f, 0.9f, 0.1f, 1.0f},
-    };
+    ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
+    solb_push(view3->views_b, healthbar);
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
@@ -140,10 +144,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     Sol_Comp_Add(world, id, ScModel)->kind = MODELKIND_WIZARD;
     *Sol_Comp_Add(world, id, ScAnim)       = anim_default;
 
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
-        .kind  = VIEW3KIND_HEALTHBAR,
-        .color = {0.1f, 0.9f, 0.1f, 1.0f},
-    };
+    ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
+    solb_push(view3->views_b, healthbar);
 
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
@@ -436,11 +438,13 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 0),
     };
 
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+    ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
+    View3 fireball = {
         .kind  = VIEW3KIND_FIREBALL,
         .color = VEC4_RED,
         .scale = size,
     };
+    solb_push(view3->views_b, fireball);
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_FIREBALL,
@@ -483,11 +487,13 @@ int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float sp
         .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 0),
     };
 
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+    ScView3 *view3   = Sol_Comp_Add(world, id, ScView3);
+    View3 plasma_orb = {
         .kind  = VIEW3KIND_PLASMAORB,
         .color = VEC4_RED,
         .scale = size,
     };
+    solb_push(view3->views_b, plasma_orb);
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_PLASMAORB,
@@ -651,11 +657,13 @@ int Sol_Prefab_DragonOrb(World *world, vec3s pos)
 
     *Sol_Comp_Add(world, id, ScBody3) = sphere_body;
 
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+    ScView3 *view3   = Sol_Comp_Add(world, id, ScView3);
+    View3 dragon_orb = {
         .kind  = VIEW3KIND_DRAGONORB,
         .color = {1, 1, 1, 1},
         .scale = 1.0f,
     };
+    solb_push(view3->views_b, dragon_orb);
 }
 
 int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, float scale, Hook hook)
@@ -684,11 +692,13 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
         .hook   = hook,
         .hitgen = Sol_Hitgen_Start(world),
     };
-    *Sol_Comp_Add(world, id, ScView3) = (ScView3){
+    ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
+    View3 bolt     = {
         .kind  = VIEW3KIND_BOLT,
         .scale = dims.x,
         .color = VEC4_WHITE,
     };
+    solb_push(view3->views_b, bolt);
 
     return id;
 }

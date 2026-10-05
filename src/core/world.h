@@ -460,3 +460,4 @@ Ribbon *Sol_Ribbon_Next(World *world);
 void Sol_Ribbon_Draw(World *world, double dt, Ribbon *r);
 void Sol_Draw_Lightning(World *world, double dt, Ribbon *r);
 u32 Sol_Combat_ClosestTargetLos(World *world, int id, SolRay ray, int hitgen);
+SolShoot Sol_Combat_GetShoot(World *world, int id, float fwd_offset);

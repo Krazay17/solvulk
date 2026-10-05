@@ -394,12 +394,18 @@ typedef struct ScView2
     u8 count;
 } ScView2;
 
-typedef struct ScView3
+typedef struct
 {
     View3Kind kind;
     vec3s offset;
     vec4s color;
     float scale;
+    float duration;
+    float _elapsed;
+} View3;
+typedef struct ScView3
+{
+    View3 *views_b; // solbuffer
 } ScView3;
 
 typedef struct ScProjectile

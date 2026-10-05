@@ -113,7 +113,6 @@ static void BoltHit(World *world, int a, int b)
     if (!ability)
         return;
 
-    sollog(a);
     AbilityStateData *data   = &ability->stateData[ref->index];
     data->as.bolt.anchor[0]  = world->xform.pos[data->as.bolt.bolt];
     data->as.bolt.bolt_state = 1;
@@ -134,8 +133,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 Sol_Event_Push(world, EVENTKIND_FX,
                                (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
                 BoltDelete(world, data);
-                int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed,
-                                                    0.33f, NULL);
+                int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir,
+                                                    bolt_speed, 0.25f, NULL);
                 ScTimer *timer   = Sol_Comp_Add(world, bolt, ScTimer);
                 timer->duration  = 2.0f;
                 timer->destroy   = true;
@@ -147,6 +146,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             else
             {
                 Sol_Comp_Rem(world, data->as.bolt.bolt, ScParent);
+                ScProjectile *projectile = Sol_Comp_Add(world, data->as.bolt.bolt, ScProjectile);
+                projectile->hit.damage   = data->conf.damage;
+                projectile->hit.power    = data->power;
                 data->as.bolt.bolt_state = 3;
             }
         }
@@ -175,8 +177,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 tangent = glms_vec3_norm2(v_side) > 0.0001f ? glms_vec3_normalize(v_side) : to_anchor;
 
                 float t = fabs(align);
-                t       = t * t * t;
-                t       = max(0.2f, t);
+                t       = max(0.2f, t * t * t);
 
                 vec3s target_dir = glms_vec3_normalize(glms_vec3_lerpc(tangent, to_anchor, t));
                 float speed      = glms_vec3_norm(body3->vel);
@@ -240,7 +241,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     }
 
     int bolt =
-        Sol_Prefab_LightningBolt(world, id, Sol_Body3_GetHead(world, id), cmd->aimdir, bolt_speed, 0.33f, BoltHit);
+        Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir, bolt_speed, 0.25f, BoltHit);
     ScRef *ref                   = Sol_Comp_Add(world, bolt, ScRef);
     ref->kind                    = REFKIND_ABILITY;
     ref->index                   = slot;

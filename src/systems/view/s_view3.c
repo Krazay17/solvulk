@@ -3,9 +3,7 @@
 #include "render/render.h"
 #include "sol_user.h"
 
-typedef void (*View3KindDraw)(World *, int, ScView3 *);
-
-static void Sphere_Draw(World *world, int id, ScView3 *view)
+static void Sphere_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_SPHERE);
@@ -13,7 +11,7 @@ static void Sphere_Draw(World *world, int id, ScView3 *view)
     sphere->color      = view->color;
 }
 
-static void DragonOrb_Draw(World *world, int id, ScView3 *view)
+static void DragonOrb_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PARTICLE_DRAGON);
@@ -21,7 +19,7 @@ static void DragonOrb_Draw(World *world, int id, ScView3 *view)
     sphere->color      = view->color;
 }
 
-static void PlasmaOrb_Draw(World *world, int id, ScView3 *view)
+static void PlasmaOrb_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PLASMA);
@@ -29,7 +27,7 @@ static void PlasmaOrb_Draw(World *world, int id, ScView3 *view)
     sphere->color      = view->color;
 }
 
-static void Bolt_Draw(World *world, int id, ScView3 *view)
+static void Bolt_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
 
@@ -64,7 +62,7 @@ static void Bolt_Draw(World *world, int id, ScView3 *view)
     }
 }
 
-static void Fireball_Draw(World *world, int id, ScView3 *view)
+static void Fireball_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
@@ -75,7 +73,7 @@ static void Fireball_Draw(World *world, int id, ScView3 *view)
     };
 }
 
-static void Healthbar_Draw(World *world, int id, ScView3 *view)
+static void Healthbar_Draw(World *world, int id, const View3 *view)
 {
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
 
@@ -86,7 +84,7 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
         return;
     vec3s player_pos = world->xform.pos[sol_user.view_ent];
     Xform xform      = Xform_GetDraw(world, id);
-    if (combat->lastHitTime > world->tickTime - 4.0f || glms_vec3_norm(vecSub(xform.pos, player_pos)) < 15.0f)
+    // if (glms_vec3_norm(vecSub(xform.pos, player_pos)) < 15.0f)
     {
         vec4s pos4    = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
         ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
@@ -106,7 +104,7 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
     }
 }
 
-static void Pyramid_Draw(World *world, int id, ScView3 *view)
+static void Pyramid_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
@@ -120,7 +118,7 @@ static void Pyramid_Draw(World *world, int id, ScView3 *view)
     };
 }
 
-static const View3KindDraw draw_func[VIEW3KIND_COUNT] = {
+static void (*const draw_func[VIEW3KIND_COUNT])(World *, int, const View3 *) = {
     [VIEW3KIND_SPHERE]    = Sphere_Draw,
     [VIEW3KIND_FIREBALL]  = Fireball_Draw,
     [VIEW3KIND_HEALTHBAR] = Healthbar_Draw,
@@ -129,35 +127,63 @@ static const View3KindDraw draw_func[VIEW3KIND_COUNT] = {
 
 void View3_Draw(World *world, double dt)
 {
+    SlEvent *e = Sol_Comp_Get(world, 0, SlEvent);
+    for (int i = 0; i < solb_count(e->events); i++)
+    {
+        SolEvent *event = &e->events[i];
+        switch (event->kind)
+        {
+        case EVENTKIND_HIT:
+            ScOwner *owner = Sol_Comp_Get(world, event->as.hit.entA, ScOwner);
+            int id         = owner ? owner->ownerId : event->as.hit.entA;
+            if (id == sol_user.view_ent)
+            {
+                ScView3 *sc = Sol_Comp_Get(world, event->as.hit.entB, ScView3);
+                for (int v = 0; v < solb_count(sc->views_b); v++)
+                {
+                    View3 *view = &sc->views_b[v];
+                    if (view->kind == VIEW3KIND_HEALTHBAR)
+                        view->_elapsed = 0;
+                }
+            }
+        }
+    }
     SparseSet_ScView3 *set = Sol_Comp_Set(world, ScView3);
     for (int i = 0; i < set->cnt; i++)
     {
-        int id        = set->dense[i];
-        ScView3 *view = &set->data[i];
+        int id      = set->dense[i];
+        ScView3 *sc = &set->data[i];
 
-        switch (view->kind)
+        for (int j = 0; j < solb_count(sc->views_b); j++)
         {
-        case VIEW3KIND_FIREBALL:
-            Fireball_Draw(world, id, view);
-            break;
-        case VIEW3KIND_SPHERE:
-            Sphere_Draw(world, id, view);
-            break;
-        case VIEW3KIND_HEALTHBAR:
-            Healthbar_Draw(world, id, view);
-            break;
-        case VIEW3KIND_PYRAMID:
-            Pyramid_Draw(world, id, view);
-            break;
-        case VIEW3KIND_DRAGONORB:
-            DragonOrb_Draw(world, id, view);
-            break;
-        case VIEW3KIND_PLASMAORB:
-            PlasmaOrb_Draw(world, id, view);
-            break;
-        case VIEW3KIND_BOLT:
-            Bolt_Draw(world, id, view);
-            break;
+            View3 *view = &sc->views_b[j];
+            view->_elapsed += dt;
+            if ((view->duration > 0) && view->_elapsed >= view->duration)
+                continue;
+            switch (view->kind)
+            {
+            case VIEW3KIND_FIREBALL:
+                Fireball_Draw(world, id, view);
+                break;
+            case VIEW3KIND_SPHERE:
+                Sphere_Draw(world, id, view);
+                break;
+            case VIEW3KIND_HEALTHBAR:
+                Healthbar_Draw(world, id, view);
+                break;
+            case VIEW3KIND_PYRAMID:
+                Pyramid_Draw(world, id, view);
+                break;
+            case VIEW3KIND_DRAGONORB:
+                DragonOrb_Draw(world, id, view);
+                break;
+            case VIEW3KIND_PLASMAORB:
+                PlasmaOrb_Draw(world, id, view);
+                break;
+            case VIEW3KIND_BOLT:
+                Bolt_Draw(world, id, view);
+                break;
+            }
         }
     }
 }

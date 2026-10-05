@@ -343,7 +343,7 @@ static inline float Sol_Math_RandRange(float a, float b)
     return Sol_Math_Lerp(a, b, (float)rand() / (float)RAND_MAX);
 }
 
-static inline vec3s Sol_RotFromQuat(versors quat, vec3s axis)
+static inline vec3s Sol_DirFromQuat(versors quat, vec3s axis)
 {
     mat4s mat = glms_quat_mat4(quat);
     return glms_mat4_mulv3(mat, axis, 1.0f);

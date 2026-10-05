@@ -389,7 +389,7 @@ int SolFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMe
 
     for (int i = 0; i < memProps.memoryTypeCount; i++)
     {
-        if ((typeFilter & (1 << i)) && (memProps.memoryTypes[i].propertyFlags & properties) == properties)
+        if ((typeFilter & (1u << i)) && (memProps.memoryTypes[i].propertyFlags & properties) == properties)
         {
             *outIndex = i;
             return 0;

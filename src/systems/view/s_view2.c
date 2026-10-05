@@ -4,8 +4,8 @@
 #include "font.h"
 #include "render/render.h"
 #include "abilitybar/s_abilitybar.h"
-const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
 
+const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
 {
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
@@ -200,9 +200,11 @@ static void DrawText(World *world, int id, float fdt, View2 *view)
 
 static void DrawHealthbar(World *world, int id, float fdt, View2 *view)
 {
-    ScRef *ref       = Sol_Comp_Get(world, id, ScRef);
+    ScRef *ref = Sol_Comp_Get(world, id, ScRef);
+    if (!ref)
+        return;
     ScCombat *combat = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScCombat);
-    if (!ref || !combat || combat->health <= 0.0f)
+    if (!combat || combat->health <= 0.0f)
         return;
     vec3s pos        = world->xform.draw_pos[id];
     float speed      = -view->fillSpeed;
@@ -220,8 +222,7 @@ static void DrawHealthbar(World *world, int id, float fdt, View2 *view)
     ssbo->uv         = view->textureUV;
 }
 
-typedef void (*DrawFunc)(World *, int, float, View2 *);
-DrawFunc draw_funcs[VIEW2KIND_COUNT] = {
+const void (*draw_funcs[])(World *, int, float, View2 *) = {
     [VIEW2KIND_RECT]                = DrawRect,
     [VIEW2KIND_SLIDER]              = DrawSlider,
     [VIEW2KIND_SLIDER_FILL]         = DrawSliderFill,
@@ -243,7 +244,8 @@ void View2_Draw(World *world, double dt)
         for (int j = 0; j < viewComp->count; j++)
         {
             View2 *view = &viewComp->views[j];
-            draw_funcs[view->kind](world, id, fdt, view);
+            if (draw_funcs[view->kind])
+                draw_funcs[view->kind](world, id, fdt, view);
         }
     }
 }

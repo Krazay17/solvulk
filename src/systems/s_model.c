@@ -46,12 +46,12 @@ void Model_Render(World *world, double dt)
             ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
 
             if (interact->is_local && (interact->state & (INTERACT_DRAGGING | INTERACT_HOVERED)))
-                modelSSBO.flags |= (1 << 0);
+                modelSSBO.flags |= (1u << 0);
         }
         if (Sol_Comp_Has(world, id, ScBuff))
         {
             if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
-                modelSSBO.flags |= (1 << 1);
+                modelSSBO.flags |= (1u << 1);
         }
 
         if (Sol_Comp_Has(world, id, ScCombat))
@@ -68,7 +68,7 @@ void Model_Render(World *world, double dt)
 
         if (model->is2d)
         {
-            modelSSBO.flags |= (1 << 2);
+            modelSSBO.flags |= (1u << 2);
             float px           = UISCALE(pos.x + (model->xOffset * xform.sca.x));
             float py           = UISCALE(pos.y + (-model->yOffset * xform.sca.y));
             float pz           = pos.z;

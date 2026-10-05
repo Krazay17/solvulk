@@ -1,6 +1,6 @@
 #include "world.h"
 
-void Move2_Step(World *world, double dt)
+void Move2_Update(World *world, double dt)
 {
     float fdt = (float)dt;
 

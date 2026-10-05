@@ -15,6 +15,8 @@
 
 #define TERMINAL_VELOCITY -100.0f
 
+
+
 static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top, vec3s bottom, float capRadius,
                                           float *outDist, vec3s *outNorm, vec3s *outPos)
 {

@@ -104,3 +104,6 @@ vec3s delta   = vecSub(target, pos);
 float d2      = glms_vec3_norm2(delta);
 float dist    = sqrtf(d2);
 vec3s dir     = vecSca(delta, 1.0f / dist);
+
+```
+Im really trying to dial in on a perfect way to manage the setup of ECS systems/components, im trying to avoid file bloat, have low compile times, ease of includes on new systems. My thought process is: "Ok I need new functionality, I need a Item Shop, Ok I go to world.h add an enum WORLDSYS_ITEMSHOP, shop keepers will need state ok components.h add ScShopkeep, maybe I want to track gold spent in the world for a global shop upgrade, Ok make SlItemshop, Ok now I have my world requirements I make a file to contain the shop domain logic s_itemshop.c, Ok SlItemshop needs to define its Init/Deinit, mightaswell do it inside s_itemshop.c? 

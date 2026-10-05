@@ -6,7 +6,7 @@
  *
  */
 #pragma once
-#include "components.h"
+#include "component.h"
 #include "configs.h"
 
 #define MAX_SYSTEMS 64
@@ -22,12 +22,21 @@ typedef struct World World;
 
 typedef enum
 {
+    UPDATEPHASE_TICK,
+    UPDATEPHASE_STEP,
+    UPDATEPHASE_POSTTICK,
+    UPDATEPHASE_RENDER3,
+    UPDATEPHASE_RENDER2,
+} UpdatePhase;
+
+typedef enum
+{
+    WORLDSYS_TEST,
+
     WORLDSYS_CMD,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
     WORLDSYS_PARENT,
-
-    WORLDSYS_TEST,
 
     WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
@@ -59,111 +68,9 @@ typedef enum
     WORLDSYS_COUNT,
 } WorldSystems;
 
-#define SINGLETON_LIFECYCLE_LIST(X)                                                                                    \
-    X(SlEvent, SlEvent_Init, SlEvent_Deinit)                                                                           \
-    X(SlDebug, SlDebug_Init, SlDebug_Deinit)                                                                           \
-    X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
-    X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
-    X(SlContacts2, SlContacts2_Init, SlContacts2_Deinit)                                                               \
-    X(SlRibbon, SlRibbon_Init, SlRibbon_Deinit)                                                                        \
-    X(SlChainhit, SlChainhit_Init, SlChainhit_Deinit)                                                                        \
-    X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
-
-#define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
-    void InitFn(World *world, Type *self);                                                                             \
-    void DeinitFn(Type *self);
-SINGLETON_LIFECYCLE_LIST(SINGLETON_FWD)
-#undef SINGLETON_FWD
-
-#define SOL_COMPONENT_LIST(X)                                                                                          \
-    X(SlEvent, HAS_SlEvent)                                                                                            \
-    X(SlDebug, HAS_SlDebug)                                                                                            \
-    X(SlSpatial, HAS_SlSpatial)                                                                                        \
-    X(SlHitgen, HAS_SlHitgen)                                                                                          \
-    X(SlEmitter, HAS_SlEmitter)                                                                                        \
-    X(SlContacts2, HAS_SlContacts2)                                                                                    \
-    X(SlRibbon, HAS_SlRibbon)                                                                                    \
-    X(SlChainhit, HAS_SlChainhit)                                                                                    \
-                                                                                                                       \
-    X(ScActive, HAS_ScActive)                                                                                          \
-    X(ScHook, HAS_ScHook)                                                                                              \
-    X(ScCmd, HAS_ScCmd)                                                                                                \
-    X(ScUi, HAS_ScUi)                                                                                                  \
-    X(ScMeta, HAS_ScMeta)                                                                                              \
-    X(ScTeam, HAS_ScTeam)                                                                                              \
-    X(ScPlayer, HAS_ScPlayer)                                                                                          \
-    X(ScRemote, HAS_ScRemote)                                                                                          \
-    X(ScAi, HAS_ScAi)                                                                                                  \
-    X(ScAilearn, HAS_ScAilearn)                                                                                        \
-    X(ScBody2, HAS_ScBody2)                                                                                            \
-    X(ScBody3, HAS_ScBody3)                                                                                            \
-    X(ScStage, HAS_ScStage)                                                                                            \
-    X(ScModel, HAS_ScModel)                                                                                            \
-    X(ScAnim, HAS_ScAnim)                                                                                              \
-    X(ScCamera, HAS_ScCamera)                                                                                          \
-    X(ScInteract, HAS_ScInteract)                                                                                      \
-    X(ScMove3, HAS_ScMove3)                                                                                            \
-    X(ScMove2, HAS_ScMove2)                                                                                            \
-    X(ScAbility, HAS_ScAbility)                                                                                        \
-    X(ScBuff, HAS_ScBuff)                                                                                              \
-    X(ScTimer, HAS_ScTimer)                                                                                            \
-    X(ScAudio, HAS_ScAudio)                                                                                            \
-    X(ScParent, HAS_ScParent)                                                                                          \
-    X(ScOwner, HAS_ScOwner)                                                                                            \
-    X(ScCombat, HAS_ScCombat)                                                                                          \
-    X(ScReplication, HAS_ScReplication)                                                                                \
-    X(ScEmitter, HAS_ScEmitter)                                                                                        \
-    X(ScSlider, HAS_ScSlider)                                                                                          \
-    X(ScView2, HAS_ScView2)                                                                                            \
-    X(ScView3, HAS_ScView3)                                                                                            \
-    X(ScProjectile, HAS_ScProjectile)                                                                                  \
-    X(ScHudslot, HAS_ScHudslot)                                                                                        \
-    X(ScHuditem, HAS_ScHuditem)                                                                                        \
-    X(ScTooltip, HAS_ScTooltip)                                                                                        \
-    X(ScZone, HAS_ScZone)                                                                                              \
-    X(ScRef, HAS_ScRef)                                                                                                \
-    X(ScAbilitybar, HAS_ScAbilitybar)                                                                                  \
-    X(ScRibbon, HAS_ScRibbon)                                                                                  \
-    X(ScBuilder, HAS_ScBuilder)
-
-typedef enum
-{
-#define AS_ENUM(type, flag) flag,
-    SOL_COMPONENT_LIST(AS_ENUM)
-#undef AS_ENUM
-    COMPONENT_COUNT
-} WorldComponents;
-
-// ==========================================
-// 3. GENERIC SPARSE SET STRUCT DECLARATOR
-// ==========================================
-typedef struct BaseSparseSet
-{
-    int cnt;
-    int cap;
-    int *sparse;
-    int *dense;
-    void *data;
-} BaseSparseSet;
-#define SPARSE_SET_STRUCT(T)                                                                                           \
-    typedef struct SparseSet_##T                                                                                       \
-    {                                                                                                                  \
-        int cnt;                                                                                                       \
-        int cap;                                                                                                       \
-        int *sparse;                                                                                                   \
-        int *dense;                                                                                                    \
-        T *data;                                                                                                       \
-    } SparseSet_##T
-
-// Declare all SparseSet structs
-#define DECLARE_SPARSE_STRUCTS(type, flag) SPARSE_SET_STRUCT(type);
-SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
-#undef DECLARE_SPARSE_STRUCTS
-
 // ==========================================
 // 4. WORLD CONTAINER DEFINITION
 // ==========================================
-typedef struct SolEvent SolEvent;
 typedef struct WorldXform
 {
     vec3s pos[MAX_ENTS];
@@ -186,15 +93,11 @@ struct World
     SystemUpdate draw3dSystems[MAX_SYSTEMS];
     SystemUpdate draw2dSystems[MAX_SYSTEMS];
 
-    EntUpdate *on_destroy_ent;
-
     WorldXform xform;
 
     u64 masks[MAX_ENTS];
     u64 system_mask;
     void *components[COMPONENT_COUNT];
-
-    SolEvent *events;
 
     int tickCount;
     int stepCount;
@@ -202,15 +105,16 @@ struct World
     int draw3dCount;
     int draw2dCount;
 
+    int maxEntities;
     int entCount;
     int sparse[MAX_ENTS];
     int dense[MAX_ENTS];
 
     double dt;
-    float fdt, timescale;
-    u32 currentTick, currentStep;
     double tickTime, stepTime;
-    int maxEntities;
+    float fdt;
+    float timescale;
+    u32 currentTick, currentStep;
     int index;
     bool doesSimulate, doesRender, doesReplicate;
 };
@@ -219,228 +123,186 @@ struct World
 // 5. TYPED SPARSE SET IMPLEMENTATION GENERATOR
 // ==========================================
 
-#define GENERATE_SPARSE_SET_IMPL(T, ENUM_FLAG)                                                                         \
-                                                                                                                       \
-    static inline SparseSet_##T *Sol_SparseSet_Alloc_##T(int maxEnts)                                                  \
-    {                                                                                                                  \
-        SparseSet_##T *set = (SparseSet_##T *)calloc(1, sizeof(SparseSet_##T));                                        \
-        set->cap           = 0;                                                                                        \
-        set->cnt           = 0;                                                                                        \
-        set->sparse        = (int *)malloc(maxEnts * sizeof(int));                                                     \
-        return (SparseSet_##T *)set;                                                                                   \
-    }                                                                                                                  \
-                                                                                                                       \
-    static inline T *Sol_Comp_Add_##T(World *w, int entId)                                                             \
-    {                                                                                                                  \
-        if ((uint32_t)entId >= w->maxEntities)                                                                         \
-            return NULL;                                                                                               \
-        SparseSet_##T *set = (SparseSet_##T *)w->components[ENUM_FLAG];                                                \
-        if (w->masks[entId] & BITC(ENUM_FLAG))                                                                         \
-        {                                                                                                              \
-            return &set->data[set->sparse[entId]];                                                                     \
-        }                                                                                                              \
-        if (set->cnt >= set->cap)                                                                                      \
-        {                                                                                                              \
-            set->cap   = (set->cap == 0) ? 1 : set->cap * 2;                                                           \
-            set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));                                           \
-            set->data  = (T *)realloc(set->data, set->cap * sizeof(T));                                                \
-        }                                                                                                              \
-        int denseIdx         = set->cnt++;                                                                             \
-        set->sparse[entId]   = denseIdx;                                                                               \
-        set->dense[denseIdx] = entId;                                                                                  \
-        memset(&set->data[denseIdx], 0, sizeof(T));                                                                    \
-        w->masks[entId] |= BITC(ENUM_FLAG);                                                                            \
-        return (T *)&set->data[denseIdx];                                                                              \
-    }                                                                                                                  \
-                                                                                                                       \
-    static inline void Sol_Comp_Rem_##T(World *w, int entId)                                                           \
-    {                                                                                                                  \
-        if (!(w->masks[entId] & BITC(ENUM_FLAG)))                                                                      \
-            return;                                                                                                    \
-        SparseSet_##T *set       = (SparseSet_##T *)w->components[ENUM_FLAG];                                          \
-        int removedDense         = set->sparse[entId];                                                                 \
-        int lastEntity           = set->dense[set->cnt - 1];                                                           \
-        set->data[removedDense]  = set->data[set->cnt - 1];                                                            \
-        set->dense[removedDense] = lastEntity;                                                                         \
-        set->sparse[lastEntity]  = removedDense;                                                                       \
-        set->cnt--;                                                                                                    \
-        w->masks[entId] &= ~BITC(ENUM_FLAG);                                                                           \
-    }
+// #define GENERATE_SPARSE_SET_IMPL(T, ENUM_FLAG)                                                                         \
+//                                                                                                                        \
+//     static inline SparseSet_##T *Sol_SparseSet_Alloc_##T(int maxEnts)                                                  \
+//     {                                                                                                                  \
+//         SparseSet_##T *set = (SparseSet_##T *)calloc(1, sizeof(SparseSet_##T));                                        \
+//         set->cap           = 0;                                                                                        \
+//         set->cnt           = 0;                                                                                        \
+//         set->sparse        = (int *)malloc(maxEnts * sizeof(int));                                                     \
+//         return (SparseSet_##T *)set;                                                                                   \
+//     }                                                                                                                  \
+//                                                                                                                        \
+//     static inline T *Sol_Comp_Add_##T(World *w, int entId)                                                             \
+//     {                                                                                                                  \
+//         if ((uint32_t)entId >= w->maxEntities)                                                                         \
+//             return NULL;                                                                                               \
+//         SparseSet_##T *set = (SparseSet_##T *)w->components[ENUM_FLAG];                                                \
+//         if (w->masks[entId] & BITC(ENUM_FLAG))                                                                         \
+//         {                                                                                                              \
+//             return &set->data[set->sparse[entId]];                                                                     \
+//         }                                                                                                              \
+//         if (set->cnt >= set->cap)                                                                                      \
+//         {                                                                                                              \
+//             set->cap   = (set->cap == 0) ? 1 : set->cap * 2;                                                           \
+//             set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));                                           \
+//             set->data  = (T *)realloc(set->data, set->cap * sizeof(T));                                                \
+//         }                                                                                                              \
+//         int denseIdx         = set->cnt++;                                                                             \
+//         set->sparse[entId]   = denseIdx;                                                                               \
+//         set->dense[denseIdx] = entId;                                                                                  \
+//         memset(&set->data[denseIdx], 0, sizeof(T));                                                                    \
+//         w->masks[entId] |= BITC(ENUM_FLAG);                                                                            \
+//         return (T *)&set->data[denseIdx];                                                                              \
+//     }                                                                                                                  \
+//                                                                                                                        \
+//     static inline void Sol_Comp_Rem_##T(World *w, int entId)                                                           \
+//     {                                                                                                                  \
+//         if (!(w->masks[entId] & BITC(ENUM_FLAG)))                                                                      \
+//             return;                                                                                                    \
+//         SparseSet_##T *set       = (SparseSet_##T *)w->components[ENUM_FLAG];                                          \
+//         int removedDense         = set->sparse[entId];                                                                 \
+//         int lastEntity           = set->dense[set->cnt - 1];                                                           \
+//         set->data[removedDense]  = set->data[set->cnt - 1];                                                            \
+//         set->dense[removedDense] = lastEntity;                                                                         \
+//         set->sparse[lastEntity]  = removedDense;                                                                       \
+//         set->cnt--;                                                                                                    \
+//         w->masks[entId] &= ~BITC(ENUM_FLAG);                                                                           \
+//     }
 
-// Generate all typed inline Add/Rem/Alloc functions
-#define GENERATE_SPARSE_FUNCS(type, flag) GENERATE_SPARSE_SET_IMPL(type, flag)
-SOL_COMPONENT_LIST(GENERATE_SPARSE_FUNCS)
-#undef GENERATE_SPARSE_FUNCS
+// // Generate all typed inline Add/Rem/Alloc functions
+// #define GENERATE_SPARSE_FUNCS(type, flag) GENERATE_SPARSE_SET_IMPL(type, flag)
+// SOL_COMPONENT_LIST(GENERATE_SPARSE_FUNCS)
+// #undef GENERATE_SPARSE_FUNCS
 
 // ==========================================
 // 6. PUBLIC API ACCESSOR MACROS
 // ==========================================
 
-// Bitmask check: O(1), cache-friendly
-#define Sol_Comp_Has(w, entId, Type) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(HAS_##Type)) != 0))
+// // Bitmask check: O(1), cache-friendly
+// #define Sol_Comp_Has(w, entId, Type) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(HAS_##Type)) !=
+// 0))
 
-// Direct lookup via sparse index
-#define Sol_Comp_Get(w, entId, Type)                                                                                   \
-    (Sol_Comp_Has((w), (entId), Type)                                                                                  \
-         ? (&((SparseSet_##Type *)(w)->components[HAS_##Type])                                                         \
-                 ->data[((SparseSet_##Type *)(w)->components[HAS_##Type])->sparse[(entId)]])                           \
-         : NULL)
+// // Direct lookup via sparse index
+// #define Sol_Comp_Get(w, entId, Type) \
+//     (Sol_Comp_Has((w), (entId), Type) \
+//          ? (&((SparseSet_##Type *)(w)->components[HAS_##Type]) \
+//                  ->data[((SparseSet_##Type *)(w)->components[HAS_##Type])->sparse[(entId)]]) \
+//          : NULL)
 
-// Add component to entity (grows dense arrays dynamically if full)
-#define Sol_Comp_Add(w, entId, Type) Sol_Comp_Add_##Type(w, entId)
+// // Add component to entity (grows dense arrays dynamically if full)
+// #define Sol_Comp_Add(w, entId, Type) Sol_Comp_Add_##Type(w, entId)
 
-// O(1) swap-with-back removal
-#define Sol_Comp_Rem(w, entId, Type) Sol_Comp_Rem_##Type(w, entId)
+// // O(1) swap-with-back removal
+// #define Sol_Comp_Rem(w, entId, Type) Sol_Comp_Rem_##Type(w, entId)
 
-// Access backing SparseSet directly for system dense iteration
-#define Sol_Comp_Set(w, Type) ((SparseSet_##Type *)(w)->components[HAS_##Type])
+// // Access backing SparseSet directly for system dense iteration
+// #define Sol_Comp_Set(w, Type) ((SparseSet_##Type *)(w)->components[HAS_##Type])
 
-#define Sol_Comp_HasE(w, entId, idx) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(idx)) != 0))
-#define Sol_Comp_GetE(w, entId, idx)                                                                                   \
-    (Sol_Comp_HasE((w), (entId), idx) ? (&((w)->components[idx])->data[((w)->components[idx])->sparse[(entId)]]) : NULL)
+// #define Sol_Comp_HasE(w, entId, idx) ((u32)(entId) < (w)->maxEntities && (((w)->masks[entId] & BITC(idx)) != 0))
+// #define Sol_Comp_GetE(w, entId, idx) \
+//     (Sol_Comp_HasE((w), (entId), idx) ? (&((w)->components[idx])->data[((w)->components[idx])->sparse[(entId)]]) :
+//     NULL)
 
-// Initialize all sparse sets on the world
-static inline void Sol_World_InitAllComponents(World *w, int maxEntities)
-{
-    w->maxEntities = maxEntities;
-#define ALLOC_SPARSE_SET(type, flag) w->components[flag] = Sol_SparseSet_Alloc_##type(maxEntities);
-    SOL_COMPONENT_LIST(ALLOC_SPARSE_SET)
-#undef ALLOC_SPARSE_SET
-}
+// // Initialize all sparse sets on the world
+// static inline void Sol_World_InitAllComponents(World *w, int maxEntities)
+// {
+//     w->maxEntities = maxEntities;
+// #define ALLOC_SPARSE_SET(type, flag) w->components[flag] = Sol_SparseSet_Alloc_##type(maxEntities);
+//     SOL_COMPONENT_LIST(ALLOC_SPARSE_SET)
+// #undef ALLOC_SPARSE_SET
+// }
 
-static inline void World_InitSingletons(World *world)
-{
-#define SINGLETON_INIT(Type, InitFn, DeinitFn)                                                                         \
-    {                                                                                                                  \
-        Type *self = Sol_Comp_Add(world, 0, Type);                                                                     \
-        if (self)                                                                                                      \
-            InitFn(world, self);                                                                                       \
-    }
-    SINGLETON_LIFECYCLE_LIST(SINGLETON_INIT)
-#undef SINGLETON_INIT
-}
+// static const size_t COMP_SIZES[COMPONENT_COUNT] = {
+// #define X(type_name, enum_name) sizeof(type_name),
+//     SOL_COMPONENT_LIST(X)
+// #undef X
+// };
 
-static inline void World_DeinitSingletons(World *world)
-{
-#define SINGLETON_DEINIT(Type, InitFn, DeinitFn)                                                                       \
-    {                                                                                                                  \
-        Type *self = Sol_Comp_Get(world, 0, Type);                                                                     \
-        if (self)                                                                                                      \
-            DeinitFn(self);                                                                                            \
-    }
-    SINGLETON_LIFECYCLE_LIST(SINGLETON_DEINIT)
-#undef SINGLETON_DEINIT
-}
+// static inline void *Sol_Comp_AddE(World *w, int entId, int enum_idx)
+// {
+//     if ((uint32_t)entId >= w->maxEntities)
+//         return NULL;
 
-static const size_t COMP_SIZES[COMPONENT_COUNT] = {
-#define X(type_name, enum_name) sizeof(type_name),
-    SOL_COMPONENT_LIST(X)
-#undef X
-};
+//     BaseSparseSet *set = (BaseSparseSet *)w->components[enum_idx];
+//     size_t comp_size   = COMP_SIZES[enum_idx];
 
-static inline void *Sol_Comp_AddE(World *w, int entId, int enum_idx)
-{
-    if ((uint32_t)entId >= w->maxEntities)
-        return NULL;
+//     // 1. Check if entity already has component
+//     if (w->masks[entId] & BITC(enum_idx))
+//     {
+//         return ((char *)set->data) + (set->sparse[entId] * comp_size);
+//     }
 
-    BaseSparseSet *set = (BaseSparseSet *)w->components[enum_idx];
-    size_t comp_size   = COMP_SIZES[enum_idx];
+//     // 2. Grow backing buffers if full
+//     if (set->cnt >= set->cap)
+//     {
+//         set->cap   = (set->cap == 0) ? 1 : set->cap * 2;
+//         set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));
+//         set->data  = (void *)realloc(set->data, set->cap * comp_size);
+//     }
 
-    // 1. Check if entity already has component
-    if (w->masks[entId] & BITC(enum_idx))
-    {
-        return ((char *)set->data) + (set->sparse[entId] * comp_size);
-    }
+//     // 3. Assign sparse and dense indices
+//     int denseIdx         = set->cnt++;
+//     set->sparse[entId]   = denseIdx;
+//     set->dense[denseIdx] = entId;
 
-    // 2. Grow backing buffers if full
-    if (set->cnt >= set->cap)
-    {
-        set->cap   = (set->cap == 0) ? 1 : set->cap * 2;
-        set->dense = (int *)realloc(set->dense, set->cap * sizeof(int));
-        set->data  = (void *)realloc(set->data, set->cap * comp_size);
-    }
+//     w->masks[entId] |= BITC(enum_idx);
 
-    // 3. Assign sparse and dense indices
-    int denseIdx         = set->cnt++;
-    set->sparse[entId]   = denseIdx;
-    set->dense[denseIdx] = entId;
+//     // 4. Calculate byte pointer and initialize
+//     void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
+//     memset(elem_ptr, 0, comp_size);
+//     return elem_ptr;
+// }
 
-    w->masks[entId] |= BITC(enum_idx);
+// static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
+// {
+//     if (!(w->masks[entId] & BITC(compEnum)))
+//         return;
 
-    // 4. Calculate byte pointer and initialize
-    void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
-    memset(elem_ptr, 0, comp_size);
-    return elem_ptr;
-}
+//     BaseSparseSet *set = (BaseSparseSet *)w->components[compEnum];
+//     int removedDense   = set->sparse[entId];
+//     int lastIdx        = set->cnt - 1;
+//     int lastEntity     = set->dense[lastIdx];
+//     size_t elemSize    = COMP_SIZES[compEnum];
 
-static inline void Sol_Comp_RemE(World *w, int entId, int compEnum)
-{
-    if (!(w->masks[entId] & BITC(compEnum)))
-        return;
+//     // Swap payload data in the dense array
+//     if (removedDense != lastIdx && set->data)
+//     {
+//         char *bytes = (char *)set->data;
+//         memcpy(bytes + (removedDense * elemSize), bytes + (lastIdx * elemSize), elemSize);
+//     }
 
-    BaseSparseSet *set = (BaseSparseSet *)w->components[compEnum];
-    int removedDense   = set->sparse[entId];
-    int lastIdx        = set->cnt - 1;
-    int lastEntity     = set->dense[lastIdx];
-    size_t elemSize    = COMP_SIZES[compEnum];
+//     // Update dense/sparse indices
+//     set->dense[removedDense] = lastEntity;
+//     set->sparse[lastEntity]  = removedDense;
 
-    // Swap payload data in the dense array
-    if (removedDense != lastIdx && set->data)
-    {
-        char *bytes = (char *)set->data;
-        memcpy(bytes + (removedDense * elemSize), bytes + (lastIdx * elemSize), elemSize);
-    }
-
-    // Update dense/sparse indices
-    set->dense[removedDense] = lastEntity;
-    set->sparse[lastEntity]  = removedDense;
-
-    set->cnt--;
-    w->masks[entId] &= ~BITC(compEnum);
-}
+//     set->cnt--;
+//     w->masks[entId] &= ~BITC(compEnum);
+// }
 
 // Free all sparse set component arrays and their container memory
-static inline void World_FreeAllComponents(World *w)
-{
-    for (int i = 0; i < COMPONENT_COUNT; ++i)
-    {
-        BaseSparseSet *set = (BaseSparseSet *)w->components[i];
-        if (set)
-        {
-            if (set->sparse)
-                free(set->sparse);
-            if (set->dense)
-                free(set->dense);
-            if (set->data)
-                free(set->data);
-            free(set);
-            w->components[i] = NULL;
-        }
-    }
-}
+// static inline void World_FreeAllComponents(World *w)
+// {
+//     for (int i = 0; i < COMPONENT_COUNT; ++i)
+//     {
+//         BaseSparseSet *set = (BaseSparseSet *)w->components[i];
+//         if (set)
+//         {
+//             if (set->sparse)
+//                 free(set->sparse);
+//             if (set->dense)
+//                 free(set->dense);
+//             if (set->data)
+//                 free(set->data);
+//             free(set);
+//             w->components[i] = NULL;
+//         }
+//     }
+// }
 
-static inline void Sol_Destroy_Ent(World *w, int entId)
-{
-    for (int i = 0; i < solb_count(w->on_destroy_ent); i++)
-        w->on_destroy_ent[i](w, entId);
-    u64 mask = w->masks[entId];
-    while (mask != 0)
-    {
-#if defined(_MSC_VER) && !defined(__clang__)
-        unsigned long compEnum;
-        _BitScanForward64(&compEnum, mask);
-#else
-        int compEnum = __builtin_ctzll(mask);
-#endif
-        Sol_Comp_RemE(w, entId, compEnum);
-        mask &= mask - 1; // Clear lowest bit
-    }
-    int removedDense       = w->sparse[entId];
-    int lastEntity         = w->dense[w->entCount - 1];
-    w->dense[removedDense] = lastEntity;
-    w->sparse[lastEntity]  = removedDense;
-    w->entCount--;
-}
+// void *Sol_Comp_AddE(World *w, int entId, int comp_idx);
+// void Sol_Comp_RemE(World *w, int entId, int comp_idx);
 
 static inline Xform Xform_GetDraw(const World *world, int id)
 {
@@ -508,56 +370,13 @@ void Worlds_Xform_Snapshot(World **worlds, int count);
 void Worlds_Xform_Interpolate(World **worlds, int count, float alpha);
 void Worlds_Event_Clear(World **worlds, int count);
 
-// Systems
-void Sol_Test(World *world, double dt);
-void Cmd_Update(World *world, double dt);
-void Player_Tick(World *world, double dt);
-void Interact_Update(World *world, double dt);
-void Parent_Update(World *world, double dt);
-void Abilitybar_Update(World *world, double dt);
-
-void Move3_Step(World *world, double dt);
-void Move2_Step(World *world, double dt);
-
-void Body3_Update(World *world, double dt);
-void Body2_Step(World *world, double dt);
-
-void Buff_Update(World *world, double dt);
-void Ability_Step(World *world, double dt);
-void Projectile_Step(World *world, double dt);
-void Zone_Update(World *world, double dt);
-void Combat_Update(World *world, double dt);
-void Ai_Step(World *world, double dt);
-void Interact_Step(World *world, double dt);
-
-void Ref_Update(World *world, double dt);
-void Fx_Update(World *world, double dt);
-void Hook_Tick(World *world, double dt);
-void Anim_Tick(World *world, double dt);
-void Facing_Tick(World *world, double dt);
-void Camera_Tick(World *world, double dt);
-void Emitter_Update(World *world, double dt);
-void Timer_Update(World *world, double dt);
-
-void Particle_Draw(World *world, double dt);
-void Buff_Draw(World *world, double dt);
-void Scoreboard_Draw(World *world, double dt);
-void Model_Render(World *world, double dt);
-void Ability_Draw(World *world, double dt);
-void View3_Draw(World *world, double dt);
-void View2_Draw(World *world, double dt);
-void Debug_Tick(World *world, double dt);
-void Debug_Draw3(World *world, double dt);
-void Debug_Draw2(World *world, double dt);
-void Ribbon_Update(World *world, double dt);
-void Ribbon_Update(World *world, double dt);
-
 // Api
 World *World_Create();
 World *World_Create_AllSys();
 void World_Destroy(World *world);
 
 int Sol_Create_Ent(World *world, vec3s pos);
+void Sol_Destroy_Ent(World *w, int id);
 int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
 
 void Sol_Sys_Add(World *world, WorldSystems system);
@@ -609,7 +428,6 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit);
 float Sol_Combat_Damage(World *world, int id, int dealer, ScCombat *combat, float amount);
 float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount);
 
-extern const Emitter emitter_kinds[EMITTERKIND_COUNT];
 void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos);
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
 void Sol_Emitter_PushE(World *world, Emitter *emitters, int count, vec3s pos, vec3s dir, float speed);

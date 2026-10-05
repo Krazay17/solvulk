@@ -1,5 +1,7 @@
 #include "world.h"
 
+#define MAX_HITGEN_SESSIONS 8
+
 typedef struct
 {
     u32 session_gen;

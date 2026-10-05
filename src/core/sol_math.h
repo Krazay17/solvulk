@@ -674,7 +674,7 @@ static inline vec3s Sol_Grid_Next(GridMaker *grid)
 typedef enum
 {
     CURVE_CONSTANT, // Always 1.0
-    CURVE_SCURVEY,
+    CURVE_S,
     CURVE_LATEPULSE,
     CURVE_LINEAR_FADEIN,   // 0 -> 1
     CURVE_LINEAR_FADEOUT,  // 1 -> 0
@@ -710,7 +710,7 @@ static inline float EvaluateCurve(CurveTypes type, float t)
 
         return f_t / f_max;
     }
-    case CURVE_SCURVEY: {
+    case CURVE_S: {
 
         float a = powf(t, 8.0f);
         float b = powf(1.0f - t, 1.5f);

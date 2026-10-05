@@ -1,6 +1,7 @@
 #pragma once
 #include "sol/types.h"
-#include "components.h"
+
+typedef struct ScAbilitybar ScAbilitybar;
 
 // Fills bar-relative rects (x, y, w, h). Returns slot count.
 // frames[g].z == 0 means the group is empty.

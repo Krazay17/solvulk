@@ -64,8 +64,8 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .p_lifespan  = 0.2f,
             .p_scale     = 1.0f,
             .p_color     = {1, 1, 1, 1},
-            .alpha_curve = CURVE_SCURVEY,
-            .scale_curve = CURVE_SCURVEY,
+            .alpha_curve = CURVE_S,
+            .scale_curve = CURVE_S,
         },
 };
 

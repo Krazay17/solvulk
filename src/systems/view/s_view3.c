@@ -37,15 +37,15 @@ static void Bolt_Draw(World *world, int id, ScView3 *view)
     vec4s sca4 = {xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
     vec4s rot4 = {xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
 
-    vec4s model_sca  = {0.5f, 1.0f, 0.5f, 1.0f};
-     ModelSSBO *model = Sol_Render_GetNextModel(0, MODELKIND_BOLT);
-     ModelSSBO model_ssbo = {
+    vec4s model_sca      = {0.5f, 1.0f, 0.5f, 1.0f};
+    ModelSSBO *model     = Sol_Render_GetNextModel(0, MODELKIND_BOLT);
+    ModelSSBO model_ssbo = {
         .color    = {1.0f, 1.0f, 1.0f, 1.0f},
         .position = pos4,
         .scale    = glms_vec4_scale(model_sca, xform.sca.x),
         .rotation = rot4,
     };
-    *model           = model_ssbo;
+    *model = model_ssbo;
     // Sol_Render_GetNext_Model(MODELKIND_BOLT, &model_ssbo, NULL);
 
     versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
@@ -86,23 +86,24 @@ static void Healthbar_Draw(World *world, int id, ScView3 *view)
         return;
     vec3s player_pos = world->xform.pos[sol_user.view_ent];
     Xform xform      = Xform_GetDraw(world, id);
-    vec4s pos        = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
-    if (glms_vec3_norm(vecSub(xform.pos, player_pos)) > 15.0f)
-        return;
-    ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
-    if (body)
-        pos.y += body->dims.y;
+    if (combat->lastHitTime > world->tickTime - 4.0f || glms_vec3_norm(vecSub(xform.pos, player_pos)) < 15.0f)
+    {
+        vec4s pos4    = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+        ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+        if (body)
+            pos4.y += body->dims.y;
 
-    float fill = combat->health / combat->healthMax;
+        float fill = combat->health / combat->healthMax;
 
-    *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
-        .pos   = pos,
-        .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
-        .color = view->color,
-        .uv    = (vec4s){1.0f, 1.0f,0.0f, 0.0f},
-        .extra = (vec4s){fill, 0.0f, 0.0f, 0.0f},
-        .type  = QUADTYPE_FACECAM,
-    };
+        *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
+            .pos   = pos4,
+            .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
+            .color = view->color,
+            .uv    = (vec4s){1.0f, 1.0f, 0.0f, 0.0f},
+            .extra = (vec4s){fill, 0.0f, 0.0f, 0.0f},
+            .type  = QUADTYPE_FACECAM,
+        };
+    }
 }
 
 static void Pyramid_Draw(World *world, int id, ScView3 *view)

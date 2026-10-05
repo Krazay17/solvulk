@@ -5,36 +5,71 @@
  * Created: 2026-05-08
  * World!
  */
-
 #include "world.h"
+#include "component.h"
 #include "systems.h"
 #include "sol_core.h"
 #include "spatial_grid.h"
 #include "platform/platform.h"
 #include <omp.h>
 
-typedef enum
-{
-    UPDATEPHASE_TICK,
-    UPDATEPHASE_STEP,
-    UPDATEPHASE_POSTTICK,
-    UPDATEPHASE_RENDER3,
-    UPDATEPHASE_RENDER2,
-} UpdatePhase;
-typedef struct
-{
-    SystemUpdate update;
-    UpdatePhase phase;
-} SystemUpdateDef;
+// Systems
+void Sol_Test(World *world, double dt);
+void Cmd_Update(World *world, double dt);
+void Player_Update(World *world, double dt);
+void Interact_Update(World *world, double dt);
+void Parent_Update(World *world, double dt);
+void Abilitybar_Update(World *world, double dt);
+
+void Move3_Update(World *world, double dt);
+void Move2_Update(World *world, double dt);
+
+void Body3_Update(World *world, double dt);
+void Body2_Step(World *world, double dt);
+
+void Buff_Update(World *world, double dt);
+void Ability_Update(World *world, double dt);
+void Projectile_Step(World *world, double dt);
+void Zone_Update(World *world, double dt);
+void Combat_Update(World *world, double dt);
+void Ai_Step(World *world, double dt);
+void Interact_Step(World *world, double dt);
+
+void Ref_Update(World *world, double dt);
+void Fx_Update(World *world, double dt);
+void Hook_Tick(World *world, double dt);
+void Anim_Tick(World *world, double dt);
+void Facing_Tick(World *world, double dt);
+void Camera_Tick(World *world, double dt);
+void Emitter_Update(World *world, double dt);
+void Timer_Update(World *world, double dt);
+
+void Particle_Draw(World *world, double dt);
+void Buff_Draw(World *world, double dt);
+void Scoreboard_Draw(World *world, double dt);
+void Model_Render(World *world, double dt);
+void Ability_Draw(World *world, double dt);
+void View3_Draw(World *world, double dt);
+void View2_Draw(World *world, double dt);
+void Debug_Tick(World *world, double dt);
+void Debug_Draw3(World *world, double dt);
+void Debug_Draw2(World *world, double dt);
+void Ribbon_Update(World *world, double dt);
+void Ribbon_Update(World *world, double dt);
+
 #define SYSTEMUPDATEDEF_COUNT 3
 const struct SystemDef
 {
-    SystemUpdateDef update[SYSTEMUPDATEDEF_COUNT];
+    struct
+    {
+        SystemUpdate update;
+        UpdatePhase phase;
+    } update[SYSTEMUPDATEDEF_COUNT];
 } system_inits[WORLDSYS_COUNT] = {
     [WORLDSYS_TIMER] = {.update = {Timer_Update, UPDATEPHASE_TICK}},
 
     [WORLDSYS_CMD]        = {.update = {Cmd_Update, UPDATEPHASE_TICK}},
-    [WORLDSYS_PLAYER]     = {.update = {Player_Tick, UPDATEPHASE_TICK}},
+    [WORLDSYS_PLAYER]     = {.update = {Player_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
     [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
@@ -42,11 +77,11 @@ const struct SystemDef
     [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},
 
     [WORLDSYS_BUFF]       = {.update = {{Buff_Update, UPDATEPHASE_STEP}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_MOVE3]      = {.update = {Move3_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_MOVE2]      = {.update = {Move2_Step, UPDATEPHASE_STEP}},
+    [WORLDSYS_MOVE3]      = {.update = {Move3_Update, UPDATEPHASE_STEP}},
+    [WORLDSYS_MOVE2]      = {.update = {Move2_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY3]      = {.update = {Body3_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_BODY2]      = {.update = {Body2_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_ABILITY]    = {.update = {{Ability_Step, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
+    [WORLDSYS_ABILITY]    = {.update = {{Ability_Update, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
     [WORLDSYS_ZONE]       = {.update = {Zone_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_COMBAT]     = {.update = {Combat_Update, UPDATEPHASE_STEP}},
@@ -88,9 +123,8 @@ World *World_Create()
     world->doesRender      = true;
     world->index           = index;
     solState.worlds[index] = world;
-    solb_init(world->on_destroy_ent, 16);
 
-    Sol_World_InitAllComponents(world, world->maxEntities);
+    Sol_Comp_InitAll(world);
     World_InitSingletons(world);
 
     return world;
@@ -113,7 +147,7 @@ void World_Destroy(World *world)
     if (world)
     {
         World_DeinitSingletons(world); // frees internal solb_ buffers, structs still intact
-        World_FreeAllComponents(world);
+        Sol_Comp_FreeAll(world);
 
         // Swap-with-back removal to keep solState.worlds contiguous
         for (int i = 0; i < solState.worldCount; i++)
@@ -324,6 +358,27 @@ int Sol_Create_Ent(World *world, vec3s pos)
     return id;
 }
 
+void Sol_Destroy_Ent(World *w, int entId)
+{
+    u64 mask = w->masks[entId];
+    while (mask != 0)
+    {
+#if defined(_MSC_VER) && !defined(__clang__)
+        unsigned long compEnum;
+        _BitScanForward64(&compEnum, mask);
+#else
+        int compEnum = __builtin_ctzll(mask);
+#endif
+        Sol_Comp_RemE(w, entId, compEnum);
+        mask &= mask - 1; // Clear lowest bit
+    }
+    int removedDense       = w->sparse[entId];
+    int lastEntity         = w->dense[w->entCount - 1];
+    w->dense[removedDense] = lastEntity;
+    w->sparse[lastEntity]  = removedDense;
+    w->entCount--;
+}
+
 int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
 {
     int new_id = Sol_Create_Ent(target_world, pos);
@@ -332,12 +387,13 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
         if (Sol_Comp_HasE(world, id, i))
         {
             BaseSparseSet *src_set = (BaseSparseSet *)world->components[i];
+            size_t data_size       = src_set->data_size;
             int src_dense          = src_set->sparse[id];
-            void *old_comp         = ((char *)src_set->data) + (src_dense * COMP_SIZES[i]);
+            void *old_comp         = ((char *)src_set->data) + (src_dense * data_size);
 
             void *new_comp = Sol_Comp_AddE(target_world, new_id, i);
             if (old_comp && new_comp)
-                memcpy(new_comp, old_comp, COMP_SIZES[i]);
+                memcpy(new_comp, old_comp, data_size);
         }
     }
 

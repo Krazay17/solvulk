@@ -22,7 +22,7 @@ const MoveStateFuncs *MOVE_STATE_FUNCS[MOVE_STATE_COUNT] = {
     [MOVE_WALLRUN]  = &move_wallrun_funcs,  //
 };
 
-void Move3_Step(World *world, double dt)
+void Move3_Update(World *world, double dt)
 {
     float fdt = (float)dt;
     int i;

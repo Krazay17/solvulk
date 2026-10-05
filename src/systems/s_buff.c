@@ -185,7 +185,7 @@ void Sol_Buff_AddMask(World *world, int id, u32 mask, u32 source, float power)
 {
     ScBuff *buffs = Sol_Comp_Add(world, id, ScBuff);
     for (int i = 0; i < BUFFKIND_COUNT; i++)
-        if (mask & (1 << i))
+        if (mask & (1u << i))
             Sol_Buff_Add(world, id, (BuffKind)i, source, power);
 }
 

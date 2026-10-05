@@ -43,7 +43,7 @@ static struct Aim Sol_Player_SetParallaxAim(World *world, int id, vec3s headpos,
     return aim;
 }
 
-void Player_Tick(World *world, double dt)
+void Player_Update(World *world, double dt)
 {
     float fdt = (float)dt;
 

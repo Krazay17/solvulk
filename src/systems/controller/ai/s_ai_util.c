@@ -407,7 +407,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
             bool hit   = Sol_Raycast1(world, ray, &result);
             if (hit)
             {
-                knows.wallMask |= (1 << j - 1);
+                knows.wallMask |= (1u << j - 1);
             }
             else if (j == 1 || j == 2)
                 if (!Sol_Raycast1(world,

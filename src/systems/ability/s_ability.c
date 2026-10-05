@@ -182,8 +182,8 @@ static inline u32 Get_SlotState(const ScAbility *ability, int slot)
 }
 
 #define SHARED_LOCKOUT_COUNT 5
-#define SHARED_LOCKOUT ((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4))
-void Ability_Step(World *world, double dt)
+#define SHARED_LOCKOUT ((1u << 0) | (1u << 1u) | (1u << 2) | (1u << 3) | (1u << 4))
+void Ability_Update(World *world, double dt)
 {
     float fdt = (float)dt;
 
@@ -202,15 +202,15 @@ void Ability_Step(World *world, double dt)
         for (int j = 0; j < ABILITY_SLOTS; j++)
         {
             if (ability->state[j] != 0)
-                busy_mask |= 1 << j;
+                busy_mask |= 1u << j;
         }
         for (int j = 0; j < ABILITY_SLOTS; j++)
         {
-            int mask                   = 1 << (ACTION_ABILITY1 + j);
+            int mask                   = 1u << (ACTION_ABILITY1 + j);
             bool held                  = cmd->actionState & mask;
             ability->stateData[j].held = held;
 
-            if (busy_mask & SHARED_LOCKOUT || busy_mask & 1 << j)
+            if (busy_mask & SHARED_LOCKOUT || busy_mask & 1u << j)
                 continue;
 
             if (held)

@@ -13,7 +13,7 @@ const char *ability_name[ABILITYKIND_COUNT] = {
     [ABILITYKIND_CLAW]     = "Claw",     //
     [ABILITYKIND_FIREBALL] = "Fireball", //
     [ABILITYKIND_SHIELD]   = "Shield",   //
-    [ABILITYKIND_BOLT]     = "Whip",     //
+    [ABILITYKIND_BOLT]     = "Bolt",     //
 };
 
 const char *ability_state_name[ABILITY_STATE_COUNT] = {

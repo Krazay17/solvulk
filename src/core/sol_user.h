@@ -5,10 +5,10 @@
 
 typedef enum
 {
-    USERACTION_LCLICK = (1 << 0),
-    USERACTION_RCLICK = (1 << 1),
-    USERACTION_MCLICK = (1 << 2),
-    USERACTION_MENU   = (1 << 3),
+    USERACTION_LCLICK = (1u << 0),
+    USERACTION_RCLICK = (1u << 1),
+    USERACTION_MCLICK = (1u << 2),
+    USERACTION_MENU   = (1u << 3),
 } UserAction;
 typedef struct SolUser
 {

@@ -1,5 +1,5 @@
 /*
- * File: components.h
+ * File: component.h
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-11
@@ -362,15 +362,16 @@ typedef struct ScEmitter
     Emitter emitters[MAX_EMITTERS];
 } ScEmitter;
 
-enum UiKind
+typedef enum
 {
     UIKIND_BUTTON,
     UIKIND_SLIDER,
-};
+    UIKIND_COUNT,
+} UiKind;
 typedef struct ScUi
 {
-    u8 kind;
-    float value;
+    UiKind kind;
+
 } ScUi;
 
 typedef struct
@@ -541,7 +542,6 @@ typedef struct SlSpatial
     vec3s *build_maxs;
 } SlSpatial;
 
-#define MAX_HITGEN_SESSIONS 8
 typedef struct HitgenRow HitgenRow;
 typedef struct SlHitgen
 {
@@ -605,3 +605,120 @@ typedef struct
 {
     Chainhit *chainhits;
 } SlChainhit;
+
+#define SOL_SINGLETON_LIST(X)                                                                                          \
+    X(SlEvent, SlEvent_Init, SlEvent_Deinit)                                                                           \
+    X(SlDebug, SlDebug_Init, SlDebug_Deinit)                                                                           \
+    X(SlHitgen, SlHitgen_Init, SlHitgen_Deinit)                                                                        \
+    X(SlEmitter, SlEmitter_Init, SlEmitter_Deinit)                                                                     \
+    X(SlContacts2, SlContacts2_Init, SlContacts2_Deinit)                                                               \
+    X(SlRibbon, SlRibbon_Init, SlRibbon_Deinit)                                                                        \
+    X(SlChainhit, SlChainhit_Init, SlChainhit_Deinit)                                                                  \
+    X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
+
+#define SOL_COMPONENT_LIST(X)                                                                                          \
+    X(SlEvent, HAS_SlEvent)                                                                                            \
+    X(SlDebug, HAS_SlDebug)                                                                                            \
+    X(SlSpatial, HAS_SlSpatial)                                                                                        \
+    X(SlHitgen, HAS_SlHitgen)                                                                                          \
+    X(SlEmitter, HAS_SlEmitter)                                                                                        \
+    X(SlContacts2, HAS_SlContacts2)                                                                                    \
+    X(SlRibbon, HAS_SlRibbon)                                                                                          \
+    X(SlChainhit, HAS_SlChainhit)                                                                                      \
+                                                                                                                       \
+    X(ScActive, HAS_ScActive)                                                                                          \
+    X(ScHook, HAS_ScHook)                                                                                              \
+    X(ScCmd, HAS_ScCmd)                                                                                                \
+    X(ScUi, HAS_ScUi)                                                                                                  \
+    X(ScMeta, HAS_ScMeta)                                                                                              \
+    X(ScTeam, HAS_ScTeam)                                                                                              \
+    X(ScPlayer, HAS_ScPlayer)                                                                                          \
+    X(ScRemote, HAS_ScRemote)                                                                                          \
+    X(ScAi, HAS_ScAi)                                                                                                  \
+    X(ScAilearn, HAS_ScAilearn)                                                                                        \
+    X(ScBody2, HAS_ScBody2)                                                                                            \
+    X(ScBody3, HAS_ScBody3)                                                                                            \
+    X(ScStage, HAS_ScStage)                                                                                            \
+    X(ScModel, HAS_ScModel)                                                                                            \
+    X(ScAnim, HAS_ScAnim)                                                                                              \
+    X(ScCamera, HAS_ScCamera)                                                                                          \
+    X(ScInteract, HAS_ScInteract)                                                                                      \
+    X(ScMove3, HAS_ScMove3)                                                                                            \
+    X(ScMove2, HAS_ScMove2)                                                                                            \
+    X(ScAbility, HAS_ScAbility)                                                                                        \
+    X(ScBuff, HAS_ScBuff)                                                                                              \
+    X(ScTimer, HAS_ScTimer)                                                                                            \
+    X(ScAudio, HAS_ScAudio)                                                                                            \
+    X(ScParent, HAS_ScParent)                                                                                          \
+    X(ScOwner, HAS_ScOwner)                                                                                            \
+    X(ScCombat, HAS_ScCombat)                                                                                          \
+    X(ScReplication, HAS_ScReplication)                                                                                \
+    X(ScEmitter, HAS_ScEmitter)                                                                                        \
+    X(ScSlider, HAS_ScSlider)                                                                                          \
+    X(ScView2, HAS_ScView2)                                                                                            \
+    X(ScView3, HAS_ScView3)                                                                                            \
+    X(ScProjectile, HAS_ScProjectile)                                                                                  \
+    X(ScHudslot, HAS_ScHudslot)                                                                                        \
+    X(ScHuditem, HAS_ScHuditem)                                                                                        \
+    X(ScTooltip, HAS_ScTooltip)                                                                                        \
+    X(ScZone, HAS_ScZone)                                                                                              \
+    X(ScRef, HAS_ScRef)                                                                                                \
+    X(ScAbilitybar, HAS_ScAbilitybar)                                                                                  \
+    X(ScRibbon, HAS_ScRibbon)                                                                                          \
+    X(ScBuilder, HAS_ScBuilder)
+
+typedef enum
+{
+#define AS_ENUM(type, flag) flag,
+    SOL_COMPONENT_LIST(AS_ENUM)
+#undef AS_ENUM
+    COMPONENT_COUNT
+} SolComponents;
+
+#define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
+    void InitFn(World *world, Type *self);                                                                             \
+    void DeinitFn(Type *self);
+SOL_SINGLETON_LIST(SINGLETON_FWD)
+#undef SINGLETON_FWD
+
+void World_InitSingletons(World *world);
+void World_DeinitSingletons(World *world);
+
+typedef struct BaseSparseSet
+{
+    int cnt;
+    int cap;
+    int *sparse;
+    int *dense;
+    void *data;
+    size_t data_size;
+} BaseSparseSet;
+#define SPARSE_SET_STRUCT(T)                                                                                           \
+    typedef struct SparseSet_##T                                                                                       \
+    {                                                                                                                  \
+        int cnt;                                                                                                       \
+        int cap;                                                                                                       \
+        int *sparse;                                                                                                   \
+        int *dense;                                                                                                    \
+        T *data;                                                                                                       \
+        size_t data_size;                                                                                              \
+    } SparseSet_##T
+
+// Declare all SparseSet structs
+#define DECLARE_SPARSE_STRUCTS(type, flag) SPARSE_SET_STRUCT(type);
+SOL_COMPONENT_LIST(DECLARE_SPARSE_STRUCTS)
+#undef DECLARE_SPARSE_STRUCTS
+
+void Sol_Comp_InitAll(World *world);
+void Sol_Comp_FreeAll(World *world);
+
+bool Sol_Comp_HasE(World *world, int id, u64 idx);
+void *Sol_Comp_GetE(World *world, int id, u64 idx);
+void *Sol_Comp_AddE(World *world, int id, u64 idx);
+void Sol_Comp_RemE(World *world, int id, u64 idx);
+
+#define Sol_Comp_Has(w, id, type) ((u32)(id) < (u32)((w)->maxEntities) && (((w)->masks[id] & 1ULL << HAS_##type)) != 0)
+#define Sol_Comp_Get(w, id, type) ((type *)Sol_Comp_GetE((w), (id), HAS_##type))
+#define Sol_Comp_Add(w, id, type) ((type *)Sol_Comp_AddE((w), (id), HAS_##type))
+#define Sol_Comp_Rem(w, id, type) (Sol_Comp_RemE((w), (id), HAS_##type))
+#define Sol_Comp_Set(w, type) ((SparseSet_##type *)((w)->components[HAS_##type]))

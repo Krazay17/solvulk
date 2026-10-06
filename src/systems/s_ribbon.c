@@ -26,7 +26,7 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
     [RIBBONKIND_LIGHTNING_WEAPON_TRAIL] =
         {
             .color       = {1.0f, 1.0f, 1.0f, 1.0f},
-            .lifespan    = 0.2f,
+            .lifespan    = 0.25f,
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_BEAM,
@@ -52,13 +52,16 @@ static void Ribbon_RemoveFirstSegment(Ribbon *r)
         return;
     }
 
-    memmove(&r->points[0], &r->points[1], (size_t)(r->_point_count - 1) * sizeof(r->points[0]));
+    int old_count = r->_point_count;
 
-    memmove(&r->_seg_elapsed[0], &r->_seg_elapsed[1], (size_t)(r->_point_count - 2) * sizeof(r->_seg_elapsed[0]));
+    memmove(&r->points[0], &r->points[1], (size_t)(old_count - 1) * sizeof(r->points[0]));
+
+    memmove(&r->spin[0], &r->spin[1], (size_t)(old_count - 1) * sizeof(r->spin[0]));
+
+    memmove(&r->_point_elapsed[0], &r->_point_elapsed[1], (size_t)(old_count - 1) * sizeof(r->_point_elapsed[0]));
 
     r->_point_count--;
 }
-
 void Sol_Ribbon_GenerateJitter(Ribbon *r, float jitter_mag)
 {
     vec3s start = r->points[0];
@@ -97,40 +100,42 @@ bool Sol_Ribbon_Draw(World *world, double dt, Ribbon *r)
     {
         for (int p = 1; p < r->_point_count; p++)
         {
-            r->_seg_elapsed[p - 1] += dt;
-            float t     = r->_seg_elapsed[p - 1] / r->lifespan;
-            float scale = r->thickness * EvaluateCurve(r->scale_curve, t);
-            float alpha = EvaluateCurve(r->alpha_curve, t);
-            vec4s color = r->color;
-            color.w *= alpha;
+            float tA     = r->_point_elapsed[p - 1] / r->lifespan;
+            float tB     = r->_point_elapsed[p] / r->lifespan;
+            float scaleA = r->thickness * EvaluateCurve(r->scale_curve, tA);
+            float scaleB = r->thickness * EvaluateCurve(r->scale_curve, tB);
+            float alphaA = EvaluateCurve(r->alpha_curve, tA);
+            float alphaB = EvaluateCurve(r->alpha_curve, tB);
 
             vec3s pA = r->points[p - 1];
             vec3s pB = r->points[p];
 
-            // 1. Get neighbors (fallback to current point at the extreme ends)
-            vec3s pPrev = (p > 1) ? r->points[p - 2] : pA;
-            vec3s pNext = (p < r->_point_count - 1) ? r->points[p + 1] : pB;
-
-            // 2. The shared tangent is the vector from previous to next
-            vec3s dirA = vecNorm(vecSub(pB, pPrev));
-            vec3s dirB = vecNorm(vecSub(pNext, pA));
-
-            vec4s posA4 = {pA.x, pA.y, pA.z, scale};
-            vec4s posB4 = {pB.x, pB.y, pB.z, scale};
-
             float segment_length = glms_vec3_distance(pA, pB);
             float u_start        = current_distance / units_per_repeat;
             float u_end          = (current_distance + segment_length) / units_per_repeat;
+
+            vec3s pPrev = (p > 1) ? r->points[p - 2] : pA;
+            vec3s pNext = (p < r->_point_count - 1) ? r->points[p + 1] : pB;
+
+            vec3s dirA   = vecNorm(vecSub(pB, pPrev));
+            vec3s dirB   = vecNorm(vecSub(pNext, pA));
+            vec4s posA4  = {pA.x, pA.y, pA.z, scaleA};
+            vec4s posB4  = {pB.x, pB.y, pB.z, scaleB};
+            vec4s colorA = r->color;
+            vec4s colorB = r->color;
+            colorA.w *= alphaA;
+            colorB.w *= alphaB;
 
             *Sol_Render_GetNext_RibbonSeg(PIPE_RIBBON) = (RibbonSegSSBO){
                 .posA      = posA4,
                 .posB      = posB4,
                 .dirA      = (vec4s){dirA.x, dirA.y, dirA.z, 0.0f}, // Pass to shader
                 .dirB      = (vec4s){dirB.x, dirB.y, dirB.z, 0.0f}, // Pass to shader
-                .spin      = r->spin[p] + sheet_rot[sheets],
+                .spinA     = r->spin[p - 1] + glm_rad(sheet_rot[sheets]),
+                .spinB     = r->spin[p] + glm_rad(sheet_rot[sheets]),
                 .panSpeed  = r->pan,
-                .colorA    = color,
-                .colorB    = color,
+                .colorA    = colorA,
+                .colorB    = colorB,
                 .flags     = r->flags,
                 .textureId = r->texture,
                 .uv        = {u_end - u_start, 1.0f, u_start, 0.0f},
@@ -157,10 +162,11 @@ void Ribbon_Update(World *world, double dt)
     for (int i = 0; i < solb_count(sl->ribbons); i++)
     {
         Ribbon *r = &sl->ribbons[i];
-        ribbon_draw[r->kind](world, dt, r);
-        while (r->lifespan > 0 && r->_point_count > 1 && r->_seg_elapsed[0] >= r->lifespan)
+        for (int p = 0; p < r->_point_count; p++)
+            r->_point_elapsed[p] += dt;
+        while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
-
+        ribbon_draw[r->kind](world, dt, r);
         if (r->_point_count > 1)
             sl->ribbons[write++] = *r;
     }
@@ -173,9 +179,11 @@ void Ribbon_Update(World *world, double dt)
         ScRibbon *sc = &set->data[i];
         int write    = 0;
         Ribbon *r    = &sc->ribbon;
-        ribbon_draw[r->kind](world, dt, r);
-        while (r->lifespan > 0 && r->_point_count > 1 && r->_seg_elapsed[0] >= r->lifespan)
+        for (int p = 0; p < r->_point_count; p++)
+            r->_point_elapsed[p] += dt;
+        while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
+        ribbon_draw[r->kind](world, dt, r);
     }
 }
 
@@ -233,7 +241,7 @@ void Sol_Ribbon_Addpoint(Ribbon *r, vec3s pos, float jitter_mag, float spin)
     r->spin[p]   = spin;
     if (p > 0)
     {
-        r->_seg_elapsed[p - 1] = 0.0f;
+        r->_point_elapsed[p] = 0.0f;
 
         if (jitter_mag > 0)
         {

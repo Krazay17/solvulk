@@ -595,7 +595,7 @@ typedef struct Ribbon
     float scale_curve;
 
     int _point_count;
-    float _seg_elapsed[MAX_RIBBON_SEGMENTS];
+    float _point_elapsed[MAX_RIBBON_SEGMENTS];
     float _elapsed;
     float _update_timer;
 } Ribbon;

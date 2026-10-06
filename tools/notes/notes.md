@@ -1,5 +1,19 @@
 My Notes!
 
+// Sol world convention:
+//   +Z = forward
+//   +Y = up
+//   +X = left
+//
+// Therefore:
+//   -X = right
+//
+// Directional rotation:
+//   positive yaw = forward -> left
+//
+// Right vector:
+//   cross(forward, up) = right
+
 look at qu3e
 
 I want to remove and compact my tris from my spatial grid when destroying a physx entity.

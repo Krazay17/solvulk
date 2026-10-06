@@ -18,11 +18,12 @@
 #define SOLAPI
 #endif
 
-#define WORLD_FORWARD (vec3s){0, 0, 1.0f}
-#define WORLD_UP (vec3s){0, 1.0f, 0}
-#define WORLD_DOWN (vec3s){0, -1.0f, 0}
-#define WORLD_LEFT (vec3s){1.0f, 0.0f, 0}
-#define WORLD_RIGHT (vec3s){-1.0f, 0.0f, 0}
+#define WORLD_FWD (vec3s){0.0f, 0.0f, 1.0f}
+#define WORLD_BWD (vec3s){0.0f, 0.0f, -1.0f}
+#define WORLD_UP (vec3s){0.0f, 1.0f, 0.0f}
+#define WORLD_DOWN (vec3s){0.0f, -1.0f, 0.0f}
+#define WORLD_LEFT (vec3s){1.0f, 0.0f, 0.0f}
+#define WORLD_RIGHT (vec3s){-1.0f, 0.0f, 0.0f}
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720

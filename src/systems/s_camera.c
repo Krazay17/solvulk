@@ -15,7 +15,7 @@ void Camera_Tick(World *world, double dt)
         ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
         vec3s head    = Sol_Body3_GetHead(world, id);
-        vec3s lookdir = (vec3s){0, 0, 1.0f};
+        vec3s lookdir = WORLD_FWD;
 
         if (Sol_Comp_Has(world, id, ScCmd))
         {

@@ -36,10 +36,10 @@ extern const vec4s SPRITEPAGE4[4];
 const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     // Cardinal Directions
     {0.0f, 0.0f, 0.0f},
-    {0.0f, 0.0f, 1.0f},  // South / Forward
-    {0.0f, 0.0f, -1.0f}, // North / Backward
-    {1.0f, 0.0f, 0.0f},  // East / Right
-    {-1.0f, 0.0f, 0.0f}, // West / Left
+    {0.0f, 0.0f, 1.0f},  // North / Forward
+    {0.0f, 0.0f, -1.0f}, // South / Backward
+    {-1.0f, 0.0f, 0.0f},  // East / Right
+    {1.0f, 0.0f, 0.0f}, // West / Left
 
     // Diagonal Directions
     {0.7071f, 0.0f, 0.7071f},   // South-East
@@ -81,6 +81,25 @@ static inline vec3s Sol_Vec3_FromYawPitch(float yaw, float pitch)
     return (vec3s){x, y, z};
 }
 
+static inline float Sol_GetRoll(vec3s fwd, vec3s up)
+{
+    fwd          = vecNorm(fwd);
+    vec3s ref_up = WORLD_UP;
+    if (fabsf(vecDot(fwd, ref_up)) > 0.99f)
+        ref_up = WORLD_LEFT;
+    vec3s side = vecNorm(vecCross(fwd, ref_up));
+    vec3s ref  = vecNorm(vecCross(side, fwd));
+    return atan2f(vecDot(up, side), vecDot(up, ref));
+}
+
+static inline float Sol_QuatGetRoll(versors q, vec3s local_fwd, vec3s local_up)
+{
+    vec3s fwd = glms_quat_rotatev(q, local_fwd);
+    vec3s up  = glms_quat_rotatev(q, local_up);
+
+    return Sol_GetRoll(fwd, up);
+}
+
 static inline versors Sol_Quat_FromYawPitch(float yaw, float pitch)
 {
     versor q;
@@ -109,7 +128,7 @@ static inline vec4s Sol_Rot_FromVecs(vec3s fwd, vec3s up)
     // Guard against singularity when looking straight along the UP axis
     if (fabsf(glms_vec3_dot(fwd_dir, up)) > 0.999f)
     {
-        up = (vec3s){0.0f, 0.0f, 1.0f};
+        up = WORLD_FWD;
     }
 
     vec3s right = glms_vec3_normalize(glms_vec3_cross(fwd_dir, up));
@@ -132,7 +151,7 @@ static inline versors Sol_Quat_FromLookDir(vec3s lookDir)
 
 static inline versors Sol_Quat_FromLookDira(vec3s lookDir)
 {
-    vec3s forward = {0.0f, 0.0f, 1.0f};
+    vec3s forward = WORLD_FWD;
     vec3s dir     = glms_vec3_normalize(lookDir);
 
     float dot = glms_vec3_dot(forward, dir);

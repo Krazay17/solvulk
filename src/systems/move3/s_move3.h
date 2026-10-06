@@ -147,7 +147,7 @@ static inline vec3s GroundSlope(vec3s normal)
 static inline WallTouch CalcTouch(vec3s wallnorm, float yaw)
 {
     // 1. Vector pointing FROM player TO wall
-    // Since WORLD_FORWARD is {0,0,1}, facing yaw=0 means facing +Z
+    // Since WORLD_FWD is {0,0,1}, facing yaw=0 means facing +Z
     float dx = -wallnorm.x;
     float dz = -wallnorm.z;
 

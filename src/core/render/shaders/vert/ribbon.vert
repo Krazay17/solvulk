@@ -12,10 +12,13 @@ struct RibbonSeg {
     vec4 uv;
     vec4 dirA;
     vec4 dirB;
+
+    float spinA;
+    float spinB;
+
     uint textureId;
     uint flags;
     float panSpeed;
-    float spin;
 };
 
 layout(set = 0, binding = 0) uniform Game {
@@ -35,6 +38,18 @@ layout(set = 2, binding = 0) readonly buffer RibbonSSBO {
     RibbonSeg segs[];
 };
 
+
+float LerpAngle(float a, float b, float t)
+{
+    const float PI    = 3.14159265359;
+    const float TWO_PI = 6.28318530718;
+
+    float delta = mod(b - a + PI, TWO_PI) - PI;
+
+    return a + delta * t;
+}
+
+
 vec3 MakeRibbonSide(vec3 tangent, float spin)
 {
     vec3 refUp = vec3(0.0, 1.0, 0.0);
@@ -53,6 +68,7 @@ vec3 MakeRibbonSide(vec3 tangent, float spin)
     return side * c + cross(tangent, side) * s;
 }
 
+
 const vec2 CORNERS[6] = vec2[](
     vec2(-1.0, 0.0), // Left A
     vec2( 1.0, 0.0), // Right A
@@ -62,6 +78,7 @@ const vec2 CORNERS[6] = vec2[](
     vec2( 1.0, 1.0), // Right B
     vec2(-1.0, 1.0)  // Left B
 );
+
 
 void main()
 {
@@ -74,6 +91,9 @@ void main()
     vec3 basePos = mix(seg.posA.xyz, seg.posB.xyz, tSeg);
     float halfW  = mix(seg.posA.w, seg.posB.w, tSeg);
 
+    // Interpolate the endpoint roll across the segment.
+    float spin = LerpAngle(seg.spinA, seg.spinB, tSeg);
+
     // Use the shared tangent at the appropriate endpoint.
     vec3 segDir = normalize(
         (tSeg < 0.5) ? seg.dirA.xyz : seg.dirB.xyz
@@ -85,7 +105,7 @@ void main()
 
     if (alignWorldUp)
     {
-        sideDir = MakeRibbonSide(segDir, seg.spin);
+        sideDir = MakeRibbonSide(segDir, spin);
     }
     else
     {

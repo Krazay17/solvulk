@@ -131,7 +131,7 @@ static inline vec3s RandomVel_Cone(float speed, vec3s direction, float max_angle
     vec3s W       = {direction.x / dir_len, direction.y / dir_len, direction.z / dir_len};
 
     // 3. Construct tangent frame (U, V) perpendicular to W
-    vec3s ref = (fabsf(W.z) < 0.999f) ? (vec3s){0.0f, 0.0f, 1.0f} : (vec3s){1.0f, 0.0f, 0.0f};
+    vec3s ref = (fabsf(W.z) < 0.999f) ? WORLD_FWD : WORLD_RIGHT;
 
     // Cross product ref x W
     vec3s U     = {ref.y * W.z - ref.z * W.y, ref.z * W.x - ref.x * W.z, ref.x * W.y - ref.y * W.x};

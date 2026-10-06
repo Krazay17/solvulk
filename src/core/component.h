@@ -152,7 +152,7 @@ typedef struct
     AbilityConfig conf;
 
     float elapsed, accum, power, cooldownRemaining;
-    float drawElapsed;
+    float drawElapsed, drawAccum;
     float hitPause;
 
     u32 hitgen;
@@ -570,9 +570,14 @@ typedef enum
 {
     RIBBONKIND_BASIC,
     RIBBONKIND_LIGHTNING,
+    RIBBONKIND_LIGHTNING_WEAPON_TRAIL,
     RIBBONKIND_COUNT,
 } RibbonKind;
-#define MAX_RIBBON_SEGMENTS 16
+typedef enum
+{
+    RIBBONFLAG_NOFACECAM = 1,
+} RibbonFlag;
+#define MAX_RIBBON_SEGMENTS 64
 typedef struct Ribbon
 {
     RibbonKind kind;
@@ -582,11 +587,15 @@ typedef struct Ribbon
     u32 texture;
     float lifespan;
     u32 entA, entB;
+    RibbonFlag flags;
+    float spin[MAX_RIBBON_SEGMENTS];
+    u32 sheets;
     float pan;
     float alpha_curve;
     float scale_curve;
 
     int _point_count;
+    float _seg_elapsed[MAX_RIBBON_SEGMENTS];
     float _elapsed;
     float _update_timer;
 } Ribbon;
@@ -598,7 +607,9 @@ typedef struct
 
 typedef struct
 {
-    Ribbon *ribbons;
+    Ribbon ribbon;
+    float rate;
+    float _accum;
 } ScRibbon;
 
 typedef enum

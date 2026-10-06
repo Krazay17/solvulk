@@ -6,9 +6,6 @@
  *
  */
 #include "sol/sol.h"
-// #include "prefabs.h"
-// #include "world.h"
-// #include "sol_math.h"
 
 const ScCamera player_camera = {
     .fov              = 75.0f,
@@ -34,8 +31,8 @@ static const ScCombat wizard_combat = {
 };
 
 static const View3 healthbar = {
-    .kind  = VIEW3KIND_HEALTHBAR,
-    .color = {0.1f, 0.9f, 0.1f, 1.0f},
+    .kind     = VIEW3KIND_HEALTHBAR,
+    .color    = {0.1f, 0.9f, 0.1f, 1.0f},
     .duration = 4.0f,
 };
 
@@ -135,8 +132,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
     snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
 
-    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->range      = 25.0f;
+    // ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    // interact->range      = 25.0f;
 
     ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
     team->team   = 1;
@@ -664,6 +661,8 @@ int Sol_Prefab_DragonOrb(World *world, vec3s pos)
         .scale = 1.0f,
     };
     solb_push(view3->views_b, dragon_orb);
+
+    return id;
 }
 
 int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, float scale, Hook hook)
@@ -699,6 +698,12 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
         .color = VEC4_WHITE,
     };
     solb_push(view3->views_b, bolt);
+
+    ScRibbon *ribbon      = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING);
+    ribbon->rate          = 0.033f;
+    ribbon->ribbon.sheets = 2;
+    ribbon->ribbon.flags = 1;
+    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0.0f, 0);
 
     return id;
 }

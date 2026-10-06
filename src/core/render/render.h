@@ -283,7 +283,7 @@ typedef struct {
     uint32_t textureId;
     uint32_t flags;
     float panSpeed;
-    uint32_t _pad;
+    float spin;
 } RibbonSegSSBO;
 
 typedef struct

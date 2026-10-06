@@ -240,12 +240,12 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         break;
     }
 
-    int bolt =
-        Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir, bolt_speed, 0.25f, BoltHit);
-    ScRef *ref                   = Sol_Comp_Add(world, bolt, ScRef);
-    ref->kind                    = REFKIND_ABILITY;
-    ref->index                   = slot;
-    ref->ent_id                  = id;
+    int bolt    = Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir, bolt_speed,
+                                           0.25f, BoltHit);
+    ScRef *ref  = Sol_Comp_Add(world, bolt, ScRef);
+    ref->kind   = REFKIND_ABILITY;
+    ref->index  = slot;
+    ref->ent_id = id;
     data->as.bolt.bolt           = bolt;
     data->as.bolt.bolt_state     = 0;
     data->as.bolt.current_anchor = 0;
@@ -271,7 +271,11 @@ static bool CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd, int s
     AbilityStateData *data = &ability->stateData[slot];
     return !(data->cooldownRemaining > 0.0f);
 }
-static DefendResult Defend(World *world, int id, ScAbility *ability, int slot, SolHit *hit)
+static DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)
+{
+}
+
+static void GeneratePoints(vec3s prev, vec3s next, vec3s *out_pos)
 {
 }
 static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
@@ -279,6 +283,7 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
     AbilityStateData *data = &ability->stateData[slot];
     vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
     vec3s bolt_pos         = world->xform.pos[data->as.bolt.bolt];
+    data->drawAccum += dt;
     switch (data->stage)
     {
     case 0: {
@@ -287,32 +292,42 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
         case 1: {
             vec4s hand_pos4 = {hand_pos.x, hand_pos.y, hand_pos.z, 0.1f};
             vec4s anchor4   = {bolt_pos.x, bolt_pos.y, bolt_pos.z, 0.3f};
+            vec3s points[16];
             for (int i = 1; i < data->as.bolt.current_anchor + 1; i++)
             {
                 vec3s prev_anchor = data->as.bolt.anchor[i - 1];
                 vec3s anchor3     = data->as.bolt.anchor[i];
                 anchor4           = (vec4s){anchor3.x, anchor3.y, anchor3.z, 0.3f};
-                Sol_Draw_Lightning(world, dt,
-                                   &(Ribbon){
-                                       .points[0]    = prev_anchor,
-                                       .points[1]    = anchor3,
-                                       .thickness    = 0.3f,
-                                       .texture      = SOL_TEXTURE_LIGHTNING,
-                                       .color        = VEC4_WHITE,
-                                       .pan          = 6.0f,
-                                       ._point_count = 2,
-                                   });
+
+                Ribbon r = {
+                    .points[0]    = prev_anchor,
+                    .points[15]   = anchor3,
+                    .thickness    = 0.3f,
+                    .texture      = SOL_TEXTURE_LIGHTNING,
+                    .color        = VEC4_WHITE,
+                    .pan          = 6.0f,
+                    .sheets       = 2,
+                    .flags = 1,
+                    ._point_count = 16,
+                };
+
+                Sol_Ribbon_GenerateJitter(&r, 0.33f);
+                Sol_Ribbon_Draw(world, dt, &r);
             }
-            Sol_Draw_Lightning(world, dt,
-                               &(Ribbon){
-                                   .points[0]    = hand_pos,
-                                   .points[1]    = (vec3s){anchor4.x, anchor4.y, anchor4.z},
-                                   .thickness    = 0.1f,
-                                   .texture      = SOL_TEXTURE_LIGHTNING,
-                                   .color        = VEC4_WHITE,
-                                   .pan          = 6.0f,
-                                   ._point_count = 2,
-                               });
+            vec3s anchor_pos3 = {anchor4.x, anchor4.y, anchor4.z};
+            Ribbon r          = {
+                .points[0]    = anchor_pos3,
+                .points[15]   = hand_pos,
+                .thickness    = 0.1f,
+                .texture      = SOL_TEXTURE_LIGHTNING,
+                .color        = VEC4_WHITE,
+                .pan          = 6.0f,
+                    .flags = 1,
+                ._point_count = 16,
+                .sheets       = 2,
+            };
+            Sol_Ribbon_GenerateJitter(&r, 0.33f);
+            Sol_Ribbon_Draw(world, dt, &r);
         }
         break;
         case 2: {

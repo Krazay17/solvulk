@@ -22,6 +22,7 @@
 #define WORLD_UP (vec3s){0, 1.0f, 0}
 #define WORLD_DOWN (vec3s){0, -1.0f, 0}
 #define WORLD_LEFT (vec3s){1.0f, 0.0f, 0}
+#define WORLD_RIGHT (vec3s){-1.0f, 0.0f, 0}
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -288,6 +289,7 @@ typedef enum
     AISTATE_SEARCH,
     AISTATE_AGGRO,
     AISTATE_RETREAT,
+    AISTATE_DEAD,
     AISTATE_COUNT,
 } AiState;
 typedef enum

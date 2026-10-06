@@ -160,6 +160,17 @@ void Projectile_Step(World *world, double dt)
             continue;
         }
 
+        ScRibbon *ribbon = Sol_Comp_Get(world, id, ScRibbon);
+        if (ribbon)
+        {
+            ribbon->_accum += dt;
+            while (ribbon->_accum >= ribbon->rate)
+            {
+                ribbon->_accum -= ribbon->rate;
+                Sol_Ribbon_Addpoint(&ribbon->ribbon, xform.pos, 0.1f, 0);
+            }
+        }
+
         vec3s vel = body3->vel;
         float v2  = glms_vec3_norm2(body3->vel);
         if (v2 > 0.1f)

@@ -34,6 +34,10 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     vec3s pos        = world->xform.pos[id];
     vec3s target_pos = world->xform.pos[target];
 
+    vec3s fwd    = ai->brain.target_dir;
+    cmd->lookdir = fwd;
+    cmd->leftdir = glms_vec3_cross(WORLD_UP, fwd);
+    cmd->yaw     = Sol_YawFromVec(fwd);
     cmd->aimpos = target_pos;
     cmd->aimdir = cmd->lookdir;
 
@@ -89,7 +93,7 @@ bool Ai_Aggro_CanExit(World *world, int id, ScAi *ai, u32 next)
 bool Ai_Aggro_CanEnter(World *world, int id, ScAi *ai, u32 last)
 {
     AiStateData *data = &ai->stateData[ai->state];
-    return ai->brain.target;
+    return ai->brain.target != 0;
 }
 
 void Ai_Wizard_Aggro_Update(World *world, int id, ScAi *ai, float dt)

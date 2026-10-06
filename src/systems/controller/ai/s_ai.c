@@ -11,6 +11,7 @@
 #include "sol_core.h"
 
 const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
+    AISTATE_DEAD,
     AISTATE_AGGRO, //
     // AISTATE_RETREAT, //
     // AISTATE_SEARCH,  //
@@ -18,15 +19,11 @@ const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
     AISTATE_IDLE,   //
 };
 
-extern const AiStateFuncs ai_idle_state;
-extern const AiStateFuncs ai_patrol_state;
-extern const AiStateFuncs ai_aggro_state;
-// extern const AiStateFuncs search_state;
-// extern const AiStateFuncs retreat_state;
 const AiStateFuncs *ai_funcs_base[AISTATE_COUNT] = {
     [AISTATE_IDLE]   = &ai_idle_state,   //
     [AISTATE_PATROL] = &ai_patrol_state, //
     [AISTATE_AGGRO]  = &ai_aggro_state,  //
+    [AISTATE_DEAD]   = &ai_dead,
     // [AISTATE_SEARCH]  = &search_state,  //
     // [AISTATE_RETREAT] = &retreat_state, //
 };
@@ -114,13 +111,6 @@ void Ai_Step(World *world, double dt)
         if (!cmd)
             continue;
         Fill_Brain(world, id, ai, cmd, fdt);
-        if (ai->brain.target)
-        {
-            vec3s fwd    = ai->brain.target_dir;
-            cmd->lookdir = fwd;
-            cmd->leftdir = glms_vec3_cross(WORLD_UP, fwd);
-            cmd->yaw     = Sol_YawFromVec(fwd);
-        }
         Evaluate_State(world, id, ai);
         AiStateFuncs funcs = Ai_Get_Funcs(ai->kind, ai->state);
         if (funcs.update)

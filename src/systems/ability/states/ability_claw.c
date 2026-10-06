@@ -140,28 +140,26 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             vec3s pos          = GetProjectilePos(world, id, data->power, slot);
             vec3s dir          = vecNorm(vecSub(cmd->aimpos, pos));
 
+            ScRibbon *ribbon     = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING_WEAPON_TRAIL);
+            ribbon->ribbon.flags = RIBBONFLAG_NOFACECAM;
+            ribbon->rate         = 0.05f;
+            if (ribbon)
+            {
+                Xform bone_xform =
+                    Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
+                vec3s boneUp      = glms_quat_rotatev(bone_xform.rot, WORLD_UP);
+                vec3s boneForward = glms_quat_rotatev(bone_xform.rot, WORLD_FORWARD);
+                float spin        = Sol_GetBoneRoll(boneForward, boneUp);
+                spin += glm_rad(90.0f);
+                Sol_Ribbon_Addpoint(&ribbon->ribbon, bone_xform.pos, 0, spin);
+            }
+
             SolHit hit = {
                 .entA   = id,
                 .power  = data->power,
                 .damage = data->conf.damage,
             };
-            // Sol_Ribbon_Spawn(world, RIBBONKIND_LIGHTNING, pos, vecAdd(pos, vecSca(dir, 10.0f)));
-            // Ribbon *r    = Sol_Ribbon_Next(world);
-            // r->lifespan = 2.0f;
-            // r->kind      = RIBBONKIND_LIGHTNING;
-            // r->points[0] = pos;
-            // r->points[1] = vecAdd(pos, vecSca(dir, 10.0f));
-            // r->_point_count = 2;
-            // r->texture = SOL_TEXTURE_LIGHTNING;
-            // r->color = VEC4_WHITE;
 
-            // { // Spawn fireball
-            //     int fireball             = Sol_Prefab_PlasmaOrb(world, id, pos, dir, 20.0f, data->power);
-            //     ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
-            //     projectile->hit          = hit;
-            //     projectile->aoe_hit      = hit;
-            //     projectile->power        = data->power;
-            // }
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
             if (body3)
             {
@@ -175,6 +173,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     case 1: {
         if (data->elapsed > HITDELAY)
         {
+
             vec3s head     = Sol_Body3_GetHead(world, id);
             float width    = 0.5f;
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
@@ -250,6 +249,7 @@ void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int
 {
     AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
+    // Sol_Comp_Rem(world, id, ScRibbon);
 }
 
 bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
@@ -276,6 +276,24 @@ void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
     s->position            = pos;
     s->scale               = (vec4s){scale, scale * 1.5f, scale, scale};
     s->rotation            = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
+    switch (data->stage)
+    {
+    case 1:
+        ScRibbon *ribbon = Sol_Comp_Get(world, id, ScRibbon);
+        ribbon->_accum += dt;
+        if (ribbon && ribbon->_accum >= ribbon->rate)
+        {
+            ribbon->_accum -= ribbon->rate;
+            Xform bone_xform  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
+            vec3s boneUp      = glms_quat_rotatev(bone_xform.rot, WORLD_UP);
+            vec3s boneForward = glms_quat_rotatev(bone_xform.rot, WORLD_FORWARD);
+            float spin        = Sol_GetBoneRoll(boneForward, boneUp);
+            spin += glm_rad(90.0f);
+
+            Sol_Ribbon_Addpoint(&ribbon->ribbon, bone_xform.pos, 0, spin);
+        }
+        break;
+    }
 }
 
 void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)

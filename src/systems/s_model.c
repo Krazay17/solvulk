@@ -158,3 +158,17 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 
     return result;
 }
+
+float Sol_GetBoneRoll(vec3s tangent, vec3s boneUp)
+{
+    tangent     = vecNorm(tangent);
+    vec3s refUp = WORLD_UP;
+
+    if (fabsf(vecDot(tangent, refUp)) > 0.99f)
+        refUp = WORLD_LEFT;
+
+    vec3s side = vecNorm(vecCross(tangent, refUp));
+    vec3s up   = vecNorm(vecCross(side, tangent));
+
+    return atan2f(vecDot(boneUp, side), vecDot(boneUp, up));
+}

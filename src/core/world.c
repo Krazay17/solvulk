@@ -6,7 +6,7 @@
  * World!
  */
 #include "world.h"
-#include "component.h"
+#include "components.h"
 #include "systems.h"
 #include "sol_core.h"
 #include "spatial_grid.h"
@@ -44,6 +44,7 @@ void Camera_Tick(World *world, double dt);
 void Emitter_Update(World *world, double dt);
 void Timer_Update(World *world, double dt);
 
+void Weapon_Update(World *world, double dt);
 void Particle_Draw(World *world, double dt);
 void Buff_Draw(World *world, double dt);
 void Scoreboard_Draw(World *world, double dt);
@@ -87,6 +88,7 @@ const struct SystemDef
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
     [WORLDSYS_PARENT] = {.update = {Parent_Update, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_WEAPON] = {.update = {Weapon_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},

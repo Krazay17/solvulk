@@ -40,6 +40,7 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_WEAPONTRAIL,
+            .flags       = 1,
             .thickness   = 1.0f,
         },
     [RIBBONKIND_LIGHTNING_WEAPON_TRAIL] =
@@ -49,6 +50,7 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_BEAM,
+            .flags       = 1,
             .thickness   = 1.0f,
         },
     [RIBBONKIND_WEAPON_TRAIL_RED] =
@@ -58,6 +60,7 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_WEAPONTRAIL,
+            .flags       = 1,
             .thickness   = 1.0f,
         },
     [RIBBONKIND_WEAPON_TRAIL_COLORRING] =
@@ -67,6 +70,7 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_SQUARERING,
+            .flags       = 1,
             .thickness   = 1.0f,
         },
 

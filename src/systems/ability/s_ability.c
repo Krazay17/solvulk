@@ -183,13 +183,18 @@ static inline u32 Get_SlotState(const ScAbility *ability, int slot)
 
 static void Equip_Weapons(World *world, int id, ScAbility *ability)
 {
+    if (!Sol_Comp_Has(world, ability->left_weapon, ScWeapon))
+        ability->left_weapon = 0;
+    if (!Sol_Comp_Has(world, ability->right_weapon, ScWeapon))
+        ability->right_weapon = 0;
+
     if (!ability->left_weapon)
     {
-        ability->left_weapon = Sol_Weapon_Spawn(world, id, WEAPONKIND_SCYTHE, "hand.L.Weapon");
+        ability->left_weapon = Make_Weapon[WEAPONKIND_CLAW](world, id, 5);
     }
     if (!ability->right_weapon)
     {
-        ability->right_weapon = Sol_Weapon_Spawn(world, id, WEAPONKIND_SCYTHE, "hand.R.Weapon");
+        ability->right_weapon = Make_Weapon[WEAPONKIND_CLAW](world, id, 6);
     }
 }
 

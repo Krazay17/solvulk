@@ -429,6 +429,20 @@ static inline versors Sol_VelToQuat(vec3s dir)
     return GLMS_QUAT_IDENTITY;
 }
 
+typedef struct
+{
+    float dist;
+    vec3s dir;
+} SolDistDir;
+static inline SolDistDir Sol_GetDistDir(vec3s a, vec3s b)
+{
+    vec3s delta = vecSub(a, b);
+    float d2    = vecDot(delta, delta);
+    float dist  = sqrtf(d2);
+    vec3s dir   = vecSca(delta, 1.0f / dist);
+    return (SolDistDir){dist, dir};
+}
+
 static inline vec3s Sol_ProjectVec(vec3s a, vec3s b)
 {
     float dot = glms_vec3_dot(a, b);

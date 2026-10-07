@@ -6,7 +6,7 @@
  *
  */
 #pragma once
-#include "component.h"
+#include "components.h"
 #include "configs.h"
 
 #define MAX_SYSTEMS 64
@@ -36,7 +36,6 @@ typedef enum
     WORLDSYS_CMD,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
-    WORLDSYS_PARENT,
 
     WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
@@ -50,6 +49,9 @@ typedef enum
     WORLDSYS_COMBAT,
     WORLDSYS_HOOK,
     WORLDSYS_AI,
+
+    WORLDSYS_PARENT,
+    WORLDSYS_WEAPON,
 
     WORLDSYS_REF,
     WORLDSYS_FX,
@@ -278,5 +280,5 @@ void Sol_Ribbon_Addpoint(Ribbon *r, vec3s pos, float jitter_mag, float spin);
 ScRibbon *Sol_Ribbon_AddKind(World *world, int id, RibbonKind kind);
 void Sol_Ribbon_GenerateJitter(Ribbon *r, float jitter_mag);
 float Sol_GetBoneRoll(vec3s tangent, vec3s boneUp);
-int Sol_Weapon_Spawn(World *world, int owner, WeaponKind kind, const char *bone);
 vec3s Sol_Weapon_DmgPos(World *world, int id);
+Xform Sol_Weapon_BladeXform(World *world, int id);

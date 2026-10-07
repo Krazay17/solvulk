@@ -5,7 +5,7 @@
  * Created: 2026-10-04
  *
  */
-#include "component.h"
+#include "components.h"
 #include "world.h"
 
 static BaseSparseSet *SparseSet_Alloc(size_t data_size, int max_ents)

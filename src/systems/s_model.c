@@ -123,11 +123,6 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
             break;
         }
     }
-    if(Sol_Comp_Has(world, id, ScWeapon))
-    {
-        sollog(boneIdx, skeleton->boneCount);
-        
-    }
     // Bone wasn't found.
     if (boneIdx < 0)
     {

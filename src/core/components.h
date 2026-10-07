@@ -1,5 +1,5 @@
 /*
- * File: component.h
+ * File: components.h
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-11
@@ -513,12 +513,16 @@ typedef struct ScAbilitybar
 
 typedef enum
 {
+    WEAPONKIND_CLAW,
     WEAPONKIND_SCYTHE,
+    WEAPONKIND_COUNT,
 } WeaponKind;
 typedef struct
 {
     WeaponKind kind;
+    bool update_trail;
 } ScWeapon;
+extern const int (*Make_Weapon[WEAPONKIND_COUNT])(World *, int owner, int slot);
 
 // #################
 // #### SINGLES ####

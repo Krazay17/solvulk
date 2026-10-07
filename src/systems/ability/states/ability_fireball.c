@@ -22,6 +22,12 @@
 #define CAST_TIME 0.7f
 #define RECOVER_TIME 0.5f
 
+static const float spell_stage_time[3] = {0.5f, 0.3f, 0.3f};
+#define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
+
+static const float charge_stage_time[4] = {0.0f, 0.2f, 0.15f, 0.2f};
+#define CHARGE_STAGE_COUNT (sizeof(charge_stage_time) / sizeof(charge_stage_time[0]))
+
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
     vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
@@ -38,6 +44,31 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
+    data->elapsed += dt;
+    if (data->stage > 0)
+    {
+        if (data->hitPause > 0)
+            data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
+        else
+            data->accum += dt;
+
+        while (data->stage < CHARGE_STAGE_COUNT && data->accum >= charge_stage_time[data->stage])
+        {
+            data->accum -= charge_stage_time[data->stage];
+            data->stage++;
+            switch (data->stage)
+            {
+            case 1:
+                break;
+            }
+        }
+        if (data->stage >= CHARGE_STAGE_COUNT)
+        {
+            Sol_Ability_SetState(world, id, 0, slot, 1);
+            return;
+        }
+    }
+
     switch (data->stage)
     {
     case 0:
@@ -53,7 +84,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 .damage = data->conf.damage,
             };
             hit.damage.amount *= 0.5f;
-
             { // Spawn fireball
                 int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 25.0f, data->power);
                 ScBody3 *pBody           = Sol_Comp_Get(world, fireball, ScBody3);
@@ -62,22 +92,19 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 projectile->aoe_hit      = hit;
                 projectile->power        = data->power;
             }
+
+            break;
         }
         data->power    = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
         if (move3)
             move3->speedMod = Sol_Math_Lerp(1.0f, 0.5f, data->power / data->conf.maxpower);
-
-        break;
-    case 1:
-        if (data->elapsed > HIT_DELAY)
-            data->stage++;
         break;
     case 2:
-        data->accum += dt;
-        if (data->accum >= HIT_RATE)
+        data->hitaccum += dt;
+        if (data->hitaccum >= HIT_RATE)
         {
-            data->accum -= HIT_RATE;
+            data->hitaccum -= HIT_RATE;
             vec3s pos = GetProjectilePos(world, id, data->power, slot);
             vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
@@ -98,29 +125,26 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                                   hit, 0);
         }
     }
-
-    if (data->stage > 0)
-        data->elapsed += dt;
-    if (data->elapsed >= data->conf.duration)
-    {
-        Sol_Ability_SetState(world, id, 0, slot, true);
-        return;
-    }
 }
 
 static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    vec3s pos              = GetProjectilePos(world, id, 1.0f, slot);
-    vec3s dir              = vecNorm(vecSub(cmd->aimpos, pos));
-    data->accum += dt;
-    switch (data->stage)
+    data->elapsed += dt;
+    if (data->hitPause > 0)
+        data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
+    else
+        data->accum += dt;
+    while (data->stage < SPELL_STAGE_COUNT && data->accum >= spell_stage_time[data->stage])
     {
-    case 0:
-        if (data->accum >= CAST_TIME)
+        data->accum -= spell_stage_time[data->stage];
+        data->stage++;
+        switch (data->stage)
         {
-            data->accum -= CAST_TIME;
-            data->stage++;
+        case 1:
+            vec3s pos = GetProjectilePos(world, id, 1.0f, slot);
+            vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
+
             { // Spawn fireball
                 int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, 1.0f);
                 ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
@@ -138,16 +162,23 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
                 projectile->aoe_hit.damage.amount *= 0.5f;
                 projectile->power = data->power;
             }
+            break;
         }
+    }
+    if (data->stage >= SPELL_STAGE_COUNT)
+    {
+        Sol_Ability_SetState(world, id, 0, slot, 1);
+        return;
+    }
+
+    switch (data->stage)
+    {
+    case 0:
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
         {
             body3->vel = glms_vec3_lerpc(GLMS_VEC3_ZERO, body3->vel, 0.5f);
         }
-        break;
-    case 1:
-        if (data->accum >= RECOVER_TIME)
-            Sol_Ability_SetState(world, id, 0, slot, true);
         break;
     }
 }
@@ -206,15 +237,11 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, int slot, f
     }
     break;
     case 2: {
-        // *Sol_Render_GetNextSphere(PIPE_PLASMA) = (SphereSSBO){
-        //     .color = VEC4_RED,
-        //     .pos   = (vec4s){pos.x, pos.y, pos.z, 0.25f},
-        // };
         *Sol_Render_GetNextModel(0, MODELKIND_CONE) = (ModelSSBO){
             .position = {pos.x, pos.y, pos.z, 1.0f},
             .rotation = rot,
             .scale    = {1.0f, 1.0f, 1.0f, 1.0f},
-            .color    = {1, 0.1f, 0, 1},
+            .color    = {1, 0.2f, 0, 1},
         };
         Sol_Emitter_Push(world,
                          &(Emitter){

@@ -13,6 +13,16 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .thickness   = 1.0f,
             .pan         = 1.0f,
         },
+    [RIBBONKIND_FIRE] =
+        {
+            .color       = {1.0f, 0.0f, 0.0f, 1.0f},
+            .lifespan    = 1.0f,
+            .scale_curve = CURVE_LINEAR_FADEOUT,
+            .alpha_curve = CURVE_LINEAR_FADEOUT,
+            .texture     = SOL_TEXTURE_FOGSTRIP,
+            .thickness   = 0.8f,
+            .pan         = 1.0f,
+        },
     [RIBBONKIND_LIGHTNING] =
         {
             .color       = {1.0f, 1.0f, 1.0f, 1.0f},
@@ -23,13 +33,40 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
             .thickness   = 1.0f,
             .pan         = 2.0f,
         },
+    [RIBBONKIND_WEAPON_TRAIL] =
+        {
+            .color       = {1.0f, 1.0f, 1.0f, 1.0f},
+            .lifespan    = 0.5f,
+            .scale_curve = CURVE_LINEAR_FADEOUT,
+            .alpha_curve = CURVE_LINEAR_FADEOUT,
+            .texture     = SOL_TEXTURE_WEAPONTRAIL,
+            .thickness   = 1.0f,
+        },
     [RIBBONKIND_LIGHTNING_WEAPON_TRAIL] =
         {
             .color       = {1.0f, 1.0f, 1.0f, 1.0f},
-            .lifespan    = 0.25f,
+            .lifespan    = 0.5f,
             .scale_curve = CURVE_LINEAR_FADEOUT,
             .alpha_curve = CURVE_LINEAR_FADEOUT,
             .texture     = SOL_TEXTURE_BEAM,
+            .thickness   = 1.0f,
+        },
+    [RIBBONKIND_WEAPON_TRAIL_RED] =
+        {
+            .color       = {1.0f, 0.0f, 0.0f, 1.0f},
+            .lifespan    = 0.5f,
+            .scale_curve = CURVE_LINEAR_FADEOUT,
+            .alpha_curve = CURVE_LINEAR_FADEOUT,
+            .texture     = SOL_TEXTURE_WEAPONTRAIL,
+            .thickness   = 1.0f,
+        },
+    [RIBBONKIND_WEAPON_TRAIL_COLORRING] =
+        {
+            .color       = {1.0f, 1.0f, 1.0f, 1.0f},
+            .lifespan    = 0.5f,
+            .scale_curve = CURVE_LINEAR_FADEOUT,
+            .alpha_curve = CURVE_LINEAR_FADEOUT,
+            .texture     = SOL_TEXTURE_SQUARERING,
             .thickness   = 1.0f,
         },
 
@@ -51,15 +88,10 @@ static void Ribbon_RemoveFirstSegment(Ribbon *r)
         r->_point_count = 0;
         return;
     }
-
     int old_count = r->_point_count;
-
     memmove(&r->points[0], &r->points[1], (size_t)(old_count - 1) * sizeof(r->points[0]));
-
     memmove(&r->spin[0], &r->spin[1], (size_t)(old_count - 1) * sizeof(r->spin[0]));
-
     memmove(&r->_point_elapsed[0], &r->_point_elapsed[1], (size_t)(old_count - 1) * sizeof(r->_point_elapsed[0]));
-
     r->_point_count--;
 }
 void Sol_Ribbon_GenerateJitter(Ribbon *r, float jitter_mag)
@@ -166,7 +198,12 @@ void Ribbon_Update(World *world, double dt)
             r->_point_elapsed[p] += dt;
         while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
-        ribbon_draw[r->kind](world, dt, r);
+
+        if (ribbon_draw[r->kind])
+            ribbon_draw[r->kind](world, dt, r);
+        else
+            Sol_Ribbon_Draw(world, dt, r);
+
         if (r->_point_count > 1)
             sl->ribbons[write++] = *r;
     }
@@ -183,7 +220,11 @@ void Ribbon_Update(World *world, double dt)
             r->_point_elapsed[p] += dt;
         while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
-        ribbon_draw[r->kind](world, dt, r);
+
+        if (ribbon_draw[r->kind])
+            ribbon_draw[r->kind](world, dt, r);
+        else
+            Sol_Ribbon_Draw(world, dt, r);
     }
 }
 

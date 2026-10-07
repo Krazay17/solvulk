@@ -56,11 +56,15 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_FIREBALLIMPACT] = "FireballImpact.mp3",
     [SOL_AUDIO_GOTHIT]         = "PlayerHit.mp3",
     [SOL_AUDIO_SWORDHIT]       = "SwordHit.mp3",
-    [SOL_AUDIO_SWORD_SWING]    = "HeavySword.mp3",
+    [SOL_AUDIO_SWORDSWING]     = "HeavySword.mp3",
     [SOL_AUDIO_PARRY]          = "Parry.mp3",
     [SOL_AUDIO_WOODCOCK]       = "WoodCock.mp3",
     [SOL_AUDIO_LIGHTNINGHIT]   = "LightningHit.mp3",
     [SOL_AUDIO_LASER]          = "Laser.mp3",
+    [SOL_AUDIO_FUZZHIT]        = "FuzzHit.mp3",
+    [SOL_AUDIO_PHASENOISE]     = "PhaseNoise.mp3",
+    [SOL_AUDIO_HEAVYSWORD]     = "HeavySword.mp3",
+
 };
 
 int Sol_Audio_Init(void)

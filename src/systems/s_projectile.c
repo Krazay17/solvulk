@@ -131,7 +131,7 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
                        (SolEvent){
                            .entA         = hit.entA,
                            .entB         = hit.entB,
-                           .as.hit.kind  = HITKIND_NORMAL,
+                           .as.hit.kind  = HITKIND_LIGHTNING,
                            .as.hit.pos   = hit.pos,
                            .as.hit.power = hit.power,
                        });
@@ -167,7 +167,7 @@ void Projectile_Step(World *world, double dt)
             while (ribbon->_accum >= ribbon->rate)
             {
                 ribbon->_accum -= ribbon->rate;
-                Sol_Ribbon_Addpoint(&ribbon->ribbon, xform.pos, 0.1f, 0);
+                Sol_Ribbon_Addpoint(&ribbon->ribbon, xform.pos, 0, 0);
             }
         }
 

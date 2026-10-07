@@ -71,7 +71,6 @@ const struct SystemDef
     [WORLDSYS_CMD]        = {.update = {Cmd_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_PLAYER]     = {.update = {Player_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
-    [WORLDSYS_PARENT]     = {.update = {Parent_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
     [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},
@@ -87,6 +86,7 @@ const struct SystemDef
     [WORLDSYS_COMBAT]     = {.update = {Combat_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
 
+    [WORLDSYS_PARENT] = {.update = {Parent_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},

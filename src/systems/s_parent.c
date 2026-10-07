@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-30
- * 
-*/
+ *
+ */
 #include "world.h"
 #include "sol_math.h"
 
@@ -17,13 +17,15 @@ void Parent_Update(World *world, double dt)
         ScParent *parent = &set->data[i];
 
         Xform xform_parent = Xform_Get(world, parent->parentId);
+        if (parent->boneFollow)
+        {
+            xform_parent = Sol_Model_GetBoneXform(world, parent->parentId, parent->boneFollow);
+        }
 
         vec3s pos_final   = glms_vec3_add(xform_parent.pos, parent->localOffset);
         versors rot_final = glms_quat_mul(xform_parent.rot, parent->localQuat);
-        vec3s sca_final   = xform_parent.sca;
+        vec3s sca_final   = (vec3s){1,1,1};// xform_parent.sca;
 
-        world->xform.pos[id] = pos_final;
-        world->xform.rot[id] = rot_final;
-        world->xform.sca[id] = sca_final;
+        Xform_SetAll(world, id, pos_final, rot_final, sca_final);
     }
 }

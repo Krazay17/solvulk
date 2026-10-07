@@ -12,28 +12,23 @@
 
 static inline void Fireball_Explode(World *world, SolEvent event)
 {
+    vec3s pos      = event.as.hit.pos;
     Emitter *e1    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
-    e1->pos        = event.as.hit.pos;
-    e1->p_color    = (vec4s){1, 1, 1, 1};
+    e1->pos        = pos;
+    e1->p_color    = (vec4s){1.0f, 0.3f, 0.0f, 1.0f};
     e1->p_lifespan = 0.3f;
     e1->p_scale    = event.as.hit.power * 2.0f;
-    e1->p_kind     = PARTICLE_PLASMA;
+    e1->p_kind     = PARTICLE_SPHERE;
 
-    // Emitter *e3    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
-    // e3->pos        = event.as.fx.pos;
-    // e3->p_color    = VEC4_WHITE;
-    // e3->p_lifespan = 0.3f;
-    // e3->p_scale    = event.as.fx.scale;
-    // e3->scale_curve = CURVE_LATEPULSE;
+    Sol_Emitter_Spawn(world, EMITTERKIND_BURST_FIRE, pos);
 
     Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
-    e2->pos     = event.as.hit.pos;
+    e2->pos     = pos;
     e2->p_color = (vec4s){0.7f, 0.6f, 0.6f, 0.8f};
 
     if (world->doesRender)
-        Sol_Audio_PlayAt(SOL_AUDIO_FIREBALLIMPACT, event.as.hit.pos, 1.0f, 0.0f, 16);
+        Sol_Audio_PlayAt(SOL_AUDIO_FIREBALLIMPACT, pos, 1.0f, 0.0f, 16);
 }
-
 static inline void Fireball_Hit(World *world, SolEvent event)
 {
     Emitter *e1    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
@@ -48,10 +43,7 @@ static inline void Fireball_Hit(World *world, SolEvent event)
     e2->p_color    = (vec4s){1, 0, 0, 1};
     e2->ttl        = 0;
     e2->p_lifespan = 0.5f;
-
-    // Sol_Audio_PlayAt(SOL_AUDIO_LASER, event.as.fx.pos, 1.0f, 0.0f, 16);
 }
-
 static inline void Fire_Hit(World *world, SolEvent event)
 {
     Emitter *e     = Sol_Emitter_Next(world, EMITTERKIND_BURST);
@@ -65,11 +57,9 @@ static inline void Fire_Hit(World *world, SolEvent event)
     e->speed       = 2.5f;
     e->p_kind      = PARTICLE_FIRE;
 }
-
 static inline void Claw_Hit(World *world, SolEvent event)
 {
-    vec3s pos = event.as.hit.pos;
-
+    vec3s pos   = event.as.hit.pos;
     Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
     e1->pos     = pos;
 
@@ -119,12 +109,22 @@ static inline void Normal_Hit(World *world, SolEvent event)
     e2->p_scale = 0.4f;
 
     if (world->doesRender)
-        Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, pos, 0.5f, 0.08f, 16);
+        Sol_Audio_PlayAt(SOL_AUDIO_FUZZHIT, pos, 0.4f, 0, 16);
 }
 static inline void Lightning_Hit(World *world, SolEvent event)
 {
-    Normal_Hit(world, event);
-    Sol_Emitter_Spawn(world, EMITTERKIND_SHOCK_PULSE, event.as.hit.pos);
+    vec3s pos   = event.as.hit.pos;
+    Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
+    e1->pos     = event.as.hit.pos;
+    e1->p_color = (vec4s){0.7f, 0.6f, 0.6f, 0.8f};
+
+    Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
+    e2->pos     = pos;
+    e2->p_kind  = PARTICLE_SPARK;
+    e2->p_scale = 0.4f;
+    Sol_Emitter_Spawn(world, EMITTERKIND_SHOCK_PULSE, pos);
+    if (world->doesRender)
+        Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, pos, 0.6f, 0.05f, 16);
 }
 
 void Fx_Update(World *world, double dt)
@@ -174,6 +174,11 @@ void Fx_Update(World *world, double dt)
             case FXKIND_SHOOT:
                 Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.as.fx.pos, 1.0f, 0.1f, 8);
                 break;
+            case FXKIND_SWORDSWING:
+                Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.as.fx.pos, 1.0f, 0, 8);
+                break;
+            default:
+                sollog("EVENTKIND_FX no fx kind");
             }
             break;
         }

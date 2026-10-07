@@ -243,8 +243,9 @@ static inline void Hook_Test(World *w, int a, int b)
     int id      = sol_user.view_ent;
     vec3s pos   = game->xform.pos[id];
     ScCmd *cmd  = Sol_Comp_Get(game, id, ScCmd);
-    // Sol_Buff_AddMask(game, id, 1, 0, 1.0f);
-    int fireball   = Sol_Prefab_Fireball(game, 6, vecAdd(pos, vecSca(cmd->aimdir, 3.0f)), cmd->aimdir, 5.2f, 1.0f);
-    ScBody3 *body3 = Sol_Comp_Get(game, fireball, ScBody3);
-    // body3->gravity = (vec3s){0};
+    vec3s fwd_pos = vecAdd(pos, vecSca(cmd->aimdir, 3.0f));
+
+    int ent = Sol_Create_Ent(game, fwd_pos);
+    ScModel *model = Sol_Comp_Add(game, ent, ScModel);
+    model->kind = MODELKIND_SCYTHE;
 }

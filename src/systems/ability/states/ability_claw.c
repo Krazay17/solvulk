@@ -23,7 +23,10 @@
 static const float spell_stage_time[3] = {0.4f, 0.2f, 0.2f};
 #define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
 
-static const float charge_stage_time[4] = {0.0f, 0.25f, 0.15f, 0.2f};
+static const float dash_stage_time[3] = {0.3f, 0.4f, 0.4f};
+#define DASH_STAGE_COUNT (sizeof(dash_stage_time) / sizeof(dash_stage_time[0]))
+
+static const float charge_stage_time[4] = {0.0f, 0.2f, 0.15f, 0.2f};
 #define CHARGE_STAGE_COUNT (sizeof(charge_stage_time) / sizeof(charge_stage_time[0]))
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
@@ -50,11 +53,11 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         switch (data->stage)
         {
         case 1:
-            ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING_WEAPON_TRAIL);
+            ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL_RED);
             if (ribbon)
             {
                 ribbon->ribbon.flags = RIBBONFLAG_NOFACECAM;
-                ribbon->rate         = 0.02f;
+                ribbon->rate         = 0.01f;
                 Xform bone_xform =
                     Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
                 float spin = Sol_QuatGetRoll(bone_xform.rot, WORLD_FWD, WORLD_UP);
@@ -78,22 +81,23 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         {
             body3->vel.y = 5.0f;
         }
-        int hits = Sol_Combat_DamageCast(
-            world, id,
-            (SolRay){
-                .dir       = cmd->aimdir,
-                .dist      = MELEE_RANGE,
-                .ignoreEnt = id,
-                .radius    = 0.5f,
-                .start     = glms_vec3_add(Sol_Body3_GetHead(world, id), glms_vec3_scale(cmd->aimdir, body3->dims.x)),
-            },
-            (SolHit){
-                .damage = data->conf.damage,
-                .power  = data->power,
-                .entA   = id,
-                .kind   = HITKIND_MELEE_HIT,
-            },
-            data->hitgen);
+        vec3s blade_pos = Sol_Weapon_DmgPos(world, ability->left_weapon);
+        int hits        = Sol_Combat_DamageCast(world, id,
+                                                (SolRay){
+                                                    .dir       = cmd->aimdir,
+                                                    .dist      = MELEE_RANGE,
+                                                    .ignoreEnt = id,
+                                                    .radius    = 0.5f,
+                                                    .start     = blade_pos, // glms_vec3_add(Sol_Body3_GetHead(world, id),
+                                                                 // glms_vec3_scale(cmd->aimdir, body3->dims.x)),
+                                         },
+                                                (SolHit){
+                                                    .damage = data->conf.damage,
+                                                    .power  = data->power,
+                                                    .entA   = id,
+                                                    .kind   = HITKIND_MELEE_HIT,
+                                                },
+                                                data->hitgen);
         if (hits > 0)
         {
             if (data->hitPauseDr < 4)
@@ -109,34 +113,69 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    ScBody3 *body3         = Sol_Comp_Get(world, id, ScBody3);
-    if (!body3)
-        return;
-    vec3s pos            = world->xform.pos[id];
-    float duration_delta = data->elapsed / data->conf.duration;
-    vec3s dir            = cmd->lookdir;
-    // dir.y                = dir.y > 0 ? 0 : dir.y;
-    body3->vel  = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 5.0f, 0, 1.0f, duration_delta));
-    float speed = glms_vec3_norm(body3->vel) * dt;
-
-    SolRay ray = {
-        .start     = pos,
-        .dir       = cmd->lookdir,
-        .dist      = 1.0f + speed,
-        .ignoreEnt = id,
-        .radius    = body3->dims.y,
-    };
-    SolHit hit = {
-        .entA   = id,
-        .damage = data->conf.damage,
-        .power  = 1.0f,
-        .kind   = HITKIND_MELEE_HIT,
-    };
-    Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
-
     data->elapsed += dt;
-    if (data->elapsed >= data->conf.duration)
-        Sol_Ability_SetState(world, id, 0, slot, true);
+    if (data->hitPause > 0)
+        data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
+    else
+        data->accum += dt;
+    while (data->stage < DASH_STAGE_COUNT && data->accum >= dash_stage_time[data->stage])
+    {
+        data->accum -= dash_stage_time[data->stage];
+        data->stage++;
+        switch (data->stage)
+        {
+        case 1:
+            Sol_Event_Push(world, EVENTKIND_FX,
+                           (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .as.fx.pos = Sol_Body3_GetHead(world, id)});
+
+            ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL_RED);
+            if (ribbon)
+            {
+                ribbon->ribbon.flags = RIBBONFLAG_NOFACECAM;
+                ribbon->rate         = 0.01f;
+                Xform bone_xform =
+                    Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
+                float spin = Sol_QuatGetRoll(bone_xform.rot, WORLD_FWD, WORLD_UP);
+                spin += glm_rad(90.0f);
+                Sol_Ribbon_Addpoint(&ribbon->ribbon, bone_xform.pos, 0, spin);
+            }
+            break;
+        }
+    }
+    if (data->stage >= DASH_STAGE_COUNT)
+    {
+        Sol_Ability_SetState(world, id, 0, slot, 1);
+        return;
+    }
+
+    switch (data->stage)
+    {
+    case 1:
+        vec3s pos            = world->xform.pos[id];
+        float duration_delta = data->accum / dash_stage_time[data->stage];
+        vec3s dir            = cmd->lookdir;
+        // dir.y                = dir.y > 0 ? 0 : dir.y;
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        if (body3)
+            body3->vel = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 5.0f, 0, 1.0f, duration_delta));
+        float speed = glms_vec3_norm(body3->vel) * dt;
+
+        SolRay ray = {
+            .start     = pos,
+            .dir       = cmd->lookdir,
+            .dist      = 1.0f + speed,
+            .ignoreEnt = id,
+            .radius    = body3->dims.y,
+        };
+        SolHit hit = {
+            .entA   = id,
+            .damage = data->conf.damage,
+            .power  = 1.0f,
+            .kind   = HITKIND_MELEE_HIT,
+        };
+        Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
+        break;
+    }
 }
 
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
@@ -156,12 +195,14 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             data->stage++;
             switch (data->stage)
             {
+            case 1:
+                break;
             case 2:
-                ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING_WEAPON_TRAIL);
+                ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL_COLORRING);
                 if (ribbon)
                 {
                     ribbon->ribbon.flags = RIBBONFLAG_NOFACECAM;
-                    ribbon->rate         = 0.02f;
+                    ribbon->rate         = 0.01f;
                     Xform bone_xform =
                         Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
                     float spin = Sol_QuatGetRoll(bone_xform.rot, WORLD_FWD, WORLD_UP);
@@ -185,8 +226,11 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             data->stage++;
             ability->prio_slot = slot;
-            vec3s pos          = GetProjectilePos(world, id, data->power, slot);
-            vec3s dir          = vecNorm(vecSub(cmd->aimpos, pos));
+            Sol_Event_Push(world, EVENTKIND_FX,
+                           (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .as.fx.pos = Sol_Body3_GetHead(world, id)});
+
+            vec3s pos = GetProjectilePos(world, id, data->power, slot);
+            vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
             SolHit hit = {
                 .entA   = id,
@@ -205,7 +249,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         break;
     case 2: {
-        vec3s head     = Sol_Body3_GetHead(world, id);
+        vec3s hand_pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
         float width    = 0.5f;
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
@@ -213,7 +257,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             width = body3->dims.x;
         }
         SolRay ray = {
-            .start     = head,
+            .start     = hand_pos,
             .dir       = cmd->aimdir,
             .dist      = width + MELEE_RANGE * data->power,
             .ignoreEnt = id,
@@ -260,6 +304,13 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, in
         data->power = MIN_POWER;
         break;
     }
+}
+
+void Spell_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
+{
+    Sol_Event_Push(world, EVENTKIND_FX,
+                   (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .as.fx.pos = Sol_Body3_GetHead(world, id)});
+    Ability_Claw_Enter(world, id, ability, cmd, slot);
 }
 
 void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
@@ -366,7 +417,7 @@ DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int s
 
 const AbilityStateFunc ability_claw_state = {
     .update   = Spell,
-    .enter    = Ability_Claw_Enter,
+    .enter    = Spell_Enter,
     .exit     = Ability_Claw_Exit,
     .canExit  = Ability_Claw_CanExit,
     .canEnter = Ability_Claw_CanEnter,

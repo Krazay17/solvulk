@@ -42,10 +42,11 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
     [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
     [SOL_TEXTURE_SHIELD]           = "Shield.png",
-    [SOL_TEXTURE_GRID]             = "Grid.png",
     [SOL_TEXTURE_TRIBOOKEND]       = "TriangleBookend.png",
     [SOL_TEXTURE_SHOCKSPRITE4]     = "ShockSprite4.png",
     [SOL_TEXTURE_GREENFRAME]       = "GreenFrame.png",
+    [SOL_TEXTURE_WEAPONTRAIL]      = "WeaponTrail.webp",
+    [SOL_TEXTURE_SQUARERING]       = "SquareRing.png",
 };
 
 SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
@@ -103,6 +104,9 @@ SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id
     if (!image->pixels)
     {
         printf("stbi failed for %d: %s\n", id, stbi_failure_reason());
+        static char message[128];
+        snprintf(message, sizeof(message), "stbi failed for %d: %s\n", id, stbi_failure_reason());
+        Sol_MessageBox(message, "warning");
         return NULL;
     }
 

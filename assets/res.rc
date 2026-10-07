@@ -38,9 +38,11 @@ Impact.webp             RCDATA          "images/Impact.webp"
 LaserCard.webp          RCDATA          "images/LaserCard.webp"
 FogStrip.png            RCDATA          "images/FogStrip.png"
 Shield.png              RCDATA          "images/Shield.png"
-Grid.png                RCDATA          "images/Grid.png"
 TriangleBookend.png     RCDATA          "images/TriangleBookend.png"
-
+GreenFrame.png RCDATA "images/GreenFrame.png"
+WeaponTrail.webp RCDATA "images/WeaponTrail.webp"
+SquareRing.png RCDATA "images/SquareRing.png"
+ShockSprite4.png RCDATA "images/ShockSprite4.png"
 
 Dude.glb                   RCDATA          "models/Dude.glb"
 Wizard.glb                 RCDATA          "models/Wizard.glb"

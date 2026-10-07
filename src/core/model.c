@@ -18,6 +18,7 @@ const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     [MODELKIND_CYLINDER]    = "Cylinder.glb",
     [MODELKIND_BOLT]        = "Bolt.glb",
+    [MODELKIND_SCYTHE]      = "Scythe.glb",
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
     // [MODELKIND_WALL]        = "Wall.glb",
@@ -43,7 +44,7 @@ ScModelDataMasks model_masks[MODELKIND_COUNT];
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
 static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
-static void Sample_Channel(ScAnimChannel *ch, float t, float *out);
+static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
 void Sol_FreeModel(ScModelData *model)
 {
@@ -117,6 +118,42 @@ static ScModelData *Parse_Model(SolResource res, u32 id)
         return model;
     }
 
+// TEST
+sollog("MODEL ID", id);
+printf(
+    "Model: %s | skins: %zu | animations: %zu\n",
+    data->scene && data->scene->name ? data->scene->name : "unknown",
+    data->skins_count,
+    data->animations_count
+);
+
+for (cgltf_size i = 0; i < data->skins_count; i++)
+{
+    cgltf_skin *skin = &data->skins[i];
+
+    printf(
+        "  Skin %zu: %s | joints: %zu\n",
+        i,
+        skin->name ? skin->name : "unnamed",
+        skin->joints_count
+    );
+
+    for (cgltf_size j = 0; j < skin->joints_count; j++)
+    {
+        cgltf_node *joint = skin->joints[j];
+
+        printf(
+            "    joint %zu: %s\n",
+            j,
+            joint->name ? joint->name : "unnamed"
+        );
+    }
+}
+
+// TEST
+
+
+
     model->skeleton = ParseSkeleton(data);
     // Allocate
     model->meshes   = calloc(model->mesh_count, sizeof(SolMesh));
@@ -177,6 +214,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
     cgltf_skin *skin = &data->skins[0]; // assume first skin
     skel.boneCount   = (int)skin->joints_count;
     skel.bones       = calloc(skel.boneCount, sizeof(SolBone));
+    sollog(data->skins->name, skel.boneCount);
 
     // Build a node-pointer → bone-index map (only for joints in this skin)
     // For each joint, find its parent's index in the joints array.
@@ -237,12 +275,12 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
     skel.animationCount = (int)data->animations_count;
     if (skel.animationCount > 0)
     {
-        skel.animations = calloc(skel.animationCount, sizeof(ScAnimation));
+        skel.animations = calloc(skel.animationCount, sizeof(SolAnimation));
 
         for (int a = 0; a < skel.animationCount; a++)
         {
             cgltf_animation *src = &data->animations[a];
-            ScAnimation *anim    = &skel.animations[a];
+            SolAnimation *anim    = &skel.animations[a];
 
             if (src->name)
             {
@@ -251,13 +289,13 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             }
 
             anim->channelCount = (int)src->channels_count;
-            anim->channels     = calloc(anim->channelCount, sizeof(ScAnimChannel));
+            anim->channels     = calloc(anim->channelCount, sizeof(SolAnimChannel));
 
             float maxTime = 0;
             for (int c = 0; c < anim->channelCount; c++)
             {
                 cgltf_animation_channel *srcCh = &src->channels[c];
-                ScAnimChannel *dstCh           = &anim->channels[c];
+                SolAnimChannel *dstCh           = &anim->channels[c];
 
                 // Map target node → bone index
                 dstCh->boneIndex = -1;
@@ -523,7 +561,7 @@ static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx,
 }
 
 // Sample one channel at a given time, returning interpolated value
-static void Sample_Channel(ScAnimChannel *ch, float t, float *out)
+static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
 {
     if (ch->keyCount == 0)
         return;
@@ -584,12 +622,12 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
     if (animIndex < 0 || animIndex >= skel->animationCount)
         return;
 
-    ScAnimation *anim = &skel->animations[animIndex];
+    SolAnimation *anim = &skel->animations[animIndex];
     float t           = fmodf(time, anim->duration);
 
     for (int c = 0; c < anim->channelCount; c++)
     {
-        ScAnimChannel *ch = &anim->channels[c];
+        SolAnimChannel *ch = &anim->channels[c];
         if (ch->boneIndex < 0)
             continue;
 

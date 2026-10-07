@@ -154,6 +154,7 @@ typedef struct
     float elapsed, accum, power, cooldownRemaining;
     float drawElapsed, drawAccum;
     float hitPause;
+    float hitaccum;
 
     u32 hitgen;
     u32 hitgen2;
@@ -164,6 +165,8 @@ typedef struct
 typedef struct ScAbility
 {
     int prio_slot;
+    int left_weapon;
+    int right_weapon;
     u32 state[ABILITY_SLOTS];
     u32 base_actions[ABILITY_SLOTS];
     u32 slotted_actions[ABILITY_SLOTS];
@@ -320,7 +323,7 @@ typedef struct ScParent
     u32 parentId, active;
     vec3s localOffset;
     versors localQuat;
-    char boneFollow[16];
+    char boneFollow[32];
 } ScParent;
 
 typedef struct ScOwner
@@ -508,6 +511,15 @@ typedef struct ScAbilitybar
     int slotted_ents[ABILITY_SLOTS]; // keep if you already have it
 } ScAbilitybar;
 
+typedef enum
+{
+    WEAPONKIND_SCYTHE,
+} WeaponKind;
+typedef struct
+{
+    WeaponKind kind;
+} ScWeapon;
+
 // #################
 // #### SINGLES ####
 // #################
@@ -569,8 +581,12 @@ typedef struct SlContacts2
 typedef enum
 {
     RIBBONKIND_BASIC,
+    RIBBONKIND_FIRE,
     RIBBONKIND_LIGHTNING,
+    RIBBONKIND_WEAPON_TRAIL,
     RIBBONKIND_LIGHTNING_WEAPON_TRAIL,
+    RIBBONKIND_WEAPON_TRAIL_RED,
+    RIBBONKIND_WEAPON_TRAIL_COLORRING,
     RIBBONKIND_COUNT,
 } RibbonKind;
 typedef enum
@@ -682,6 +698,7 @@ typedef struct
     X(ScRef, HAS_ScRef)                                                                                                \
     X(ScAbilitybar, HAS_ScAbilitybar)                                                                                  \
     X(ScRibbon, HAS_ScRibbon)                                                                                          \
+    X(ScWeapon, HAS_ScWeapon)                                                                                          \
     X(ScBuilder, HAS_ScBuilder)
 
 typedef enum

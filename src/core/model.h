@@ -30,28 +30,28 @@ typedef enum
     ANIM_PATH_SCALE,
 } AnimPath;
 
-typedef struct ScAnimChannel
+typedef struct SolAnimChannel
 {
     int      boneIndex; // which bone this affects
     AnimPath path;      // T, R, or S
     float   *times;     // keyframe timestamps, length = keyCount
     float   *values;    // packed values: vec3 for T/S, vec4 (quat) for R
     int      keyCount;
-} ScAnimChannel;
+} SolAnimChannel;
 
-typedef struct ScAnimation
+typedef struct SolAnimation
 {
     char            name[64];
     float           duration; // longest keyframe time across all channels
-    ScAnimChannel *channels;
+    SolAnimChannel *channels;
     int             channelCount;
-} ScAnimation;
+} SolAnimation;
 
 typedef struct SolSkeleton
 {
     SolBone      *bones;
     int           boneCount;
-    ScAnimation *animations;
+    SolAnimation *animations;
     int           animationCount;
 } SolSkeleton;
 

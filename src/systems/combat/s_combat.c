@@ -132,6 +132,7 @@ void Chain_Update(World *world, double dt)
                 s->hit.entA = s->owner;
                 s->hit.entB = next_target;
                 s->hit.pos  = world->xform.pos[next_target];
+                sollog(s->hit.kind);
                 Sol_Combat_Hit(world, next_target, s->hit);
                 s->target = next_target;
                 s->remaining--;

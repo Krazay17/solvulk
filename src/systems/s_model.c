@@ -96,65 +96,114 @@ void Model_Render(World *world, double dt)
 
 Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 {
-    Xform result          = {0};
-    ScModel *model        = Sol_Comp_Get(world, id, ScModel);
-    ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
+    Xform result = {0};
+
+    ScModel *model = Sol_Comp_Get(world, id, ScModel);
+
+    if (!model)
+    {
+        result.pos = Xform_GetDraw(world, id).pos;
+        result.rot = Xform_GetDraw(world, id).rot;
+        return result;
+    }
+
+    ScAnim *anim = Sol_Comp_Get(world, id, ScAnim);
+
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
     Xform xform           = Xform_GetDraw(world, id);
 
+    // Find the bone by exact name.
     int boneIdx = -1;
+
     for (int i = 0; i < skeleton->boneCount; i++)
     {
-        if (strstr(skeleton->bones[i].name, name))
+        if (strcmp(skeleton->bones[i].name, name) == 0)
         {
             boneIdx = i;
             break;
         }
     }
+    if(Sol_Comp_Has(world, id, ScWeapon))
+    {
+        sollog(boneIdx, skeleton->boneCount);
+        
+    }
+    // Bone wasn't found.
     if (boneIdx < 0)
     {
         result.pos = xform.pos;
-        result.rot = GLMS_QUAT_IDENTITY;
+        result.rot = xform.rot;
         return result;
     }
 
-    // 1. Get the bone's animated pose in Model Space.
-    // model->bones contains: AnimatedBonePose * InverseBindPose
-    // To extract the actual current Model Space position and rotation of the bone,
-    // we multiply it back by the original bindPose matrix.
+    /*
+     * Build the bone's model-space transform.
+     *
+     * With animation:
+     *
+     *     animatedPose * bindPose
+     *
+     * Without animation:
+     *
+     *     bindPose
+     */
     mat4 bindPose;
     glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
 
     mat4 boneModelSpace;
-    glm_mat4_mul(anim->pose.bones[boneIdx], bindPose, boneModelSpace);
 
-    // 2. Construct the Entity's World Transform Matrix
+    if (anim)
+    {
+        glm_mat4_mul(anim->pose.bones[boneIdx], bindPose, boneModelSpace);
+    }
+    else
+    {
+        glm_mat4_copy(bindPose, boneModelSpace);
+    }
+
+    /*
+     * Build the entity's world transform.
+     */
     mat4 entityWorld;
     glm_mat4_identity(entityWorld);
 
-    // Apply position (including your yOffset adjustment)
     xform.pos.y += model_kinds[model->kind].y_offset;
+
     vec3 actualDrawPos = {xform.pos.x, xform.pos.y + (model->yOffset * xform.sca.y), xform.pos.z};
+
     glm_translate(entityWorld, actualDrawPos);
 
-    // Apply rotation
     glm_quat_rotate(entityWorld, xform.rot.raw, entityWorld);
 
-    // Apply scale
     glm_scale(entityWorld, xform.sca.raw);
 
-    // 3. Combine them: Final World Matrix = EntityWorld * BoneModelSpace
+    /*
+     * EntityWorld * BoneModelSpace
+     */
     mat4 finalWorldMat;
+
     glm_mat4_mul(entityWorld, boneModelSpace, finalWorldMat);
 
-    // 4. Decompose the final matrix to extract raw position and quaternion
-    // Extract Position vector directly from the 4th column
+    /*
+     * Position.
+     */
     result.pos.x = finalWorldMat[3][0];
     result.pos.y = finalWorldMat[3][1];
     result.pos.z = finalWorldMat[3][2];
 
-    // Extract Rotation quaternion cleanly from the upper-left 3x3
-    glm_mat4_quat(finalWorldMat, result.rot.raw);
+    /*
+     * Remove scale before extracting rotation.
+     */
+    mat4 rotationMat;
+    glm_mat4_identity(rotationMat);
+
+    glm_vec3_normalize_to(finalWorldMat[0], rotationMat[0]);
+
+    glm_vec3_normalize_to(finalWorldMat[1], rotationMat[1]);
+
+    glm_vec3_normalize_to(finalWorldMat[2], rotationMat[2]);
+
+    glm_mat4_quat(rotationMat, result.rot.raw);
 
     return result;
 }

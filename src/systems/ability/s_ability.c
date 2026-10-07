@@ -60,7 +60,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .cooldown = 1.0f,
             .damage =
                 {
-                    .amount = 25.0f,
+                    .amount     = 25.0f,
                     .effectMask = EFFECTMASK_CHAINLIGHTNING,
                 },
         },
@@ -78,7 +78,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_CLAW_DASH] =
         {
             .duration = 0.6f,
-            .cooldown = 4.0f,
+            .cooldown = 1.0f,
             .damage   = 25.0f,
             .maxpower = 1.0f,
             .speed    = 1.0f,
@@ -181,6 +181,18 @@ static inline u32 Get_SlotState(const ScAbility *ability, int slot)
     return abilityslot_state_map[kind][slot_kind_map[slot]];
 }
 
+static void Equip_Weapons(World *world, int id, ScAbility *ability)
+{
+    if (!ability->left_weapon)
+    {
+        ability->left_weapon = Sol_Weapon_Spawn(world, id, WEAPONKIND_SCYTHE, "hand.L.Weapon");
+    }
+    if (!ability->right_weapon)
+    {
+        ability->right_weapon = Sol_Weapon_Spawn(world, id, WEAPONKIND_SCYTHE, "hand.R.Weapon");
+    }
+}
+
 #define SHARED_LOCKOUT_COUNT 5
 #define SHARED_LOCKOUT ((1u << 0) | (1u << 1u) | (1u << 2) | (1u << 3) | (1u << 4))
 void Ability_Update(World *world, double dt)
@@ -196,6 +208,7 @@ void Ability_Update(World *world, double dt)
         ScCombat *combat   = Sol_Comp_Get(world, id, ScCombat);
         if (!cmd || !combat || combat->is_dead)
             continue;
+        Equip_Weapons(world, id, ability);
 
         // Build busy mask
         u32 busy_mask = 0;

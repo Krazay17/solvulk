@@ -3,6 +3,20 @@
 #include "render/render.h"
 
 const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
+    [EMITTERKIND_BURST_FIRE] =
+        {
+            .ttl         = 0.5f,
+            .burst       = 20,
+            .rate        = 0.1f,
+            .kind        = EMITKIND_SPHERE,
+            .speed = 4.0f,
+            .p_kind      = PARTICLE_FIRE,
+            .p_lifespan  = 1.0f,
+            .p_scale     = 0.5f,
+            .p_color     = {1, 0.3f, 0, 1},
+            .alpha_curve = CURVE_SMOOTH_INOUT,
+            .scale_curve = CURVE_QUICKIN_SLOWOUT,
+        },
     [EMITTERKIND_SPHERE] =
         {
             .ttl         = 0.0f,

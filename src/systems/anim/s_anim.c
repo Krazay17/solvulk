@@ -247,8 +247,10 @@ struct AnimMap
     [ABILITY_STATE_CLAW_DASH] =
         {
             .hand_anim[0][0] = ANIM_SPINSLASH,
-            .seek            = 0.6f,
-            .speed           = 2.0f,
+            .hand_anim[0][1] = ANIM_SPINSLASH,
+            .hand_anim[0][2] = ANIM_SPINSLASH,
+            .seek            = 0.05f,
+            .speed           = 1.0f,
         },
     [ABILITY_STATE_CLAW_CHARGE] =
         {
@@ -365,7 +367,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_CLAW_DASH: {
-                    ability_anim.speed = 1.6 + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                    ability_anim.speed = 1.1 + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
                 }
                 break;
                 case ABILITY_STATE_FIREBALL: {

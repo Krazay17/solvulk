@@ -461,6 +461,11 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_combat         = 10.0f;
     }
 
+    ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
+    ribbon->rate = 0.02f;
+    ribbon->ribbon.thickness = size;
+    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0, 0);
+
     return id;
 }
 

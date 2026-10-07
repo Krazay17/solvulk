@@ -38,8 +38,8 @@ const vec3s VECTOR_RADIAL_DIRECTIONS[9] = {
     {0.0f, 0.0f, 0.0f},
     {0.0f, 0.0f, 1.0f},  // North / Forward
     {0.0f, 0.0f, -1.0f}, // South / Backward
-    {-1.0f, 0.0f, 0.0f},  // East / Right
-    {1.0f, 0.0f, 0.0f}, // West / Left
+    {-1.0f, 0.0f, 0.0f}, // East / Right
+    {1.0f, 0.0f, 0.0f},  // West / Left
 
     // Diagonal Directions
     {0.7071f, 0.0f, 0.7071f},   // South-East
@@ -98,6 +98,12 @@ static inline float Sol_QuatGetRoll(versors q, vec3s local_fwd, vec3s local_up)
     vec3s up  = glms_quat_rotatev(q, local_up);
 
     return Sol_GetRoll(fwd, up);
+}
+
+static inline void Sol_BuildFwdUp(versors q, vec3s *local_fwd, vec3s *local_up)
+{
+    glm_quat_rotatev(q.raw, WORLD_FWD.raw, local_fwd->raw);
+    glm_quat_rotatev(q.raw, WORLD_UP.raw, local_up->raw);
 }
 
 static inline versors Sol_Quat_FromYawPitch(float yaw, float pitch)

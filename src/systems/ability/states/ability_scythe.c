@@ -68,6 +68,8 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 {
     AbilityStateData *data = &ability->stateData[slot];
     data->hitgen           = Sol_Hitgen_Start(world);
+    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

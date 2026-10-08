@@ -11,8 +11,8 @@ const ScCamera player_camera = {
     .fov              = 75.0f,
     .up.y             = 1.0f,
     .lerpspeed        = 10.0f,
-    .desired_offset   = 1.0f,
-    .desired_distance = 3.0f,
+    .desired_offset   = 1.5f,
+    .desired_distance = 3.5f,
 };
 
 static const ScBody3 wizard_body = {

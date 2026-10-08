@@ -135,12 +135,12 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
     if (ai->learning.prev_knows_combat.attack & 2)
         ai->learning.reward_combat -= 0.1f * fdt;
 
-    if (ai->learning.prev_knows_move.danger &&
-        ((ai->learning.action_move == AIACTION_DODGEFWD) || (ai->learning.action_move == AIACTION_DODGEBWD) ||
-         (ai->learning.action_move == AIACTION_DODGELEFT) || (ai->learning.action_move == AIACTION_DODGERIGHT)))
-    {
-        ai->learning.reward_move += 10.0f;
-    }
+    // if (ai->learning.prev_knows_move.danger &&
+    //     ((ai->learning.action_move == AIACTION_DODGEFWD) || (ai->learning.action_move == AIACTION_DODGEBWD) ||
+    //      (ai->learning.action_move == AIACTION_DODGELEFT) || (ai->learning.action_move == AIACTION_DODGERIGHT)))
+    // {
+    //     ai->learning.reward_move += 10.0f;
+    // }
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
@@ -284,7 +284,8 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     {
         int projectile_id = projectile_set->dense[i];
         ScOwner *pOwner   = Sol_Comp_Get(world, projectile_id, ScOwner);
-        if (pOwner->ownerId == id)
+
+        if (pOwner && pOwner->ownerId == id)
             continue;
         vec3s projectile_pos = world->xform.pos[projectile_id];
         vec3s delta          = glms_vec3_sub(projectile_pos, pos);
@@ -583,8 +584,8 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
             ai->learning.reward_combat += 30.0f;
         break;
     case AIACTIONC_ABILITY_AOE:
-        // u32 slot = rand() % 4;
-        cmd->actionState |= BITC(slot_action[0]);
+        u32 slot = rand() % 3;
+        cmd->actionState |= BITC(slot_action[slot]);
         ai->learning.reward_combat -= 5.0f;
         break;
     }

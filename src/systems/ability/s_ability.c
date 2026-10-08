@@ -89,7 +89,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_CLAW_DASH] =
         {
             .duration = 0.6f,
-            .cooldown = 1.0f,
+            .cooldown = 4.0f,
             .damage   = 25.0f,
             .maxpower = 1.0f,
             .speed    = 1.0f,

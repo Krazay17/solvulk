@@ -763,3 +763,6 @@ void Sol_Comp_RemE(World *world, int id, u64 idx);
 #define Sol_Comp_Add(w, id, type) ((type *)Sol_Comp_AddE((w), (id), HAS_##type))
 #define Sol_Comp_Rem(w, id, type) (Sol_Comp_RemE((w), (id), HAS_##type))
 #define Sol_Comp_Set(w, type) ((SparseSet_##type *)((w)->components[HAS_##type]))
+
+// use c->
+#define forc(w, id, type) for (type *c = Sol_Comp_Get(w, id, type); c; c = NULL)

@@ -29,7 +29,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_SCYTHE_CHARGE] =
         {
-            .cooldown = 0.5f,
+            .cooldown = 1.0f,
             .maxpower = 1.2f,
             .speed    = 1.0f,
             .damage =
@@ -85,7 +85,17 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
                     .effectMask = EFFECTMASK_KNOCKUP,
                 },
         },
-
+    [ABILITY_STATE_SCYTHE_DASH] =
+        {
+            .cooldown = 4.0f,
+            .maxpower = 1.2f,
+            .speed    = 1.0f,
+            .damage =
+                {
+                    .amount     = 30.0f,
+                    .effectMask = EFFECTMASK_CHAINLIGHTNING,
+                },
+        },
     [ABILITY_STATE_CLAW_DASH] =
         {
             .duration = 0.6f,
@@ -296,9 +306,6 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
             Sol_Ability_SetState(world, id, 0, 6, true);
     }
 
-    if (prevfunc->exit)
-        prevfunc->exit(world, id, ability, cmd, slot);
-
     if (target_state != 0)
     {
         ability->prio_slot = slot;
@@ -308,6 +315,11 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
             data->hitPause         = 0;
         }
     }
+    AbilityStateData *prev_data  = &ability->stateData[slot];
+    prev_data->cooldownRemaining = prev_data->conf.cooldown;
+
+    if (prevfunc->exit)
+        prevfunc->exit(world, id, ability, cmd, slot);
 
     ability->state[slot]   = target_state;
     AbilityStateData *data = &ability->stateData[slot];

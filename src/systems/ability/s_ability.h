@@ -6,8 +6,10 @@
  *
  */
 #include "sol/types.h"
+#include "world.h"
 #include "components.h"
 #include "estate.h"
+#include "sol_math.h"
 
 extern const u32 slot_kind_map[7];
 
@@ -76,4 +78,18 @@ static inline void WeaponTrails_Off(World *world, ScAbility *ability)
     weapon = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
     if (weapon)
         weapon->update_trail = false;
+}
+static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand)
+{
+    const char *bone = right_hand ? "hand.R.Weapon" : "hand.L.Weapon";
+    Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);
+    Xform blade_xform = Sol_Weapon_BladeXform(world, right_hand ? ability->right_weapon : ability->left_weapon);
+    SolDistDir dd    = Sol_GetDistDir(blade_xform.pos, hand_xform.pos);
+    return (SolRay){
+        .dir       = dd.dir,
+        .dist      = dd.dist,
+        .start     = hand_xform.pos,
+        .radius    = 0.4f,
+        .ignoreEnt = id,
+    };
 }

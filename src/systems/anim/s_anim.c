@@ -101,6 +101,7 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
             [ANIM_LEFTUPPERCUT]        = 44,
             [ANIM_ATTACK_LEFT_SCYTHE]  = 45,
             [ANIM_ATTACK_RIGHT_SCYTHE] = 46,
+            [ANIM_ATTACK_2HSCYTHE]     = 47,
         },
     [MODELKIND_ZORGON] =
         {
@@ -241,7 +242,7 @@ enum
 };
 struct AnimMap
 {
-    u32 hand_anim[2][4];
+    u32 hand_anim[2][5];
     float speed;
     float seek;
 } ability_anim_map[ABILITY_STATE_COUNT] = {
@@ -326,6 +327,15 @@ struct AnimMap
             .hand_anim[1][2] = ANIM_ATTACK_RIGHT_SCYTHE,
             .hand_anim[0][3] = ANIM_ATTACK_LEFT_SCYTHE,
             .hand_anim[1][3] = ANIM_ATTACK_RIGHT_SCYTHE,
+            .hand_anim[0][4] = ANIM_ATTACK_LEFT_SCYTHE,
+            .hand_anim[1][4] = ANIM_ATTACK_RIGHT_SCYTHE,
+            .speed           = 1.0f,
+        },
+    [ABILITY_STATE_SCYTHE_DASH] =
+        {
+            .hand_anim[0][0] = ANIM_ATTACK_2HSCYTHE,
+            .hand_anim[0][1] = ANIM_ATTACK_2HSCYTHE,
+            .hand_anim[0][2] = ANIM_ATTACK_2HSCYTHE,
             .speed           = 1.0f,
         },
     [ABILITY_STATE_SHIELD] =
@@ -410,7 +420,28 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_SCYTHE_CHARGE: {
-                    ability_anim.layerId = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
+                    switch (data->stage)
+                    {
+                    case 0:
+                        ability_anim.layerId = ANIM_LAYER_UPPER;
+                        break;
+                    case 1:
+                        ability_anim.layerId = ANIM_LAYER_OVERRIDE;
+                        ability_anim.seek    = 0.2f;
+                        break;
+                    }
+                }
+                break;
+                case ABILITY_STATE_SCYTHE_DASH: {
+                    switch (data->stage)
+                    {
+                    case 0:
+                        ability_anim.speed = 1.6f;
+                        break;
+                    case 1:
+                        ability_anim.speed = 0.0f;
+                        break;
+                    }
                 }
                 break;
                 }

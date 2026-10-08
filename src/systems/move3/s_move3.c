@@ -110,6 +110,7 @@ void Move3_Update(World *world, double dt)
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
+        
         if (move->knockDur > 0.0f)
         {
             move->knockDur = maxf(0.0f, move->knockDur - fdt);
@@ -117,17 +118,18 @@ void Move3_Update(World *world, double dt)
         }
         if (move->frictionMod != 1.0f)
         {
-            move->frictionMod = Sol_InterpToOne(move->frictionMod, fdt);
+            move->frictionMod = Sol_InterpToOne(move->frictionMod, fdt * 2.5f);
         }
         if (move->gravityMod != 1.0f)
         {
-            move->gravityMod = Sol_InterpToOne(move->gravityMod, fdt);
+            move->gravityMod = Sol_InterpToOne(move->gravityMod, fdt * 2.5f);
         }
         if (move->speedMod != 1.0f)
         {
-            move->speedMod = Sol_InterpToOne(move->speedMod, fdt);
+            move->speedMod = Sol_InterpToOne(move->speedMod, fdt * 2.5f);
         }
     }
+
 }
 
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
@@ -144,8 +146,10 @@ void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)
                           &(SolRayResult){0}, 0.2f))
             return;
     }
-    body->dims.y                              = newHeight;
-    Sol_Comp_Get(world, id, ScModel)->yOffset = newHeight * -0.5f;
+    body->dims.y   = newHeight;
+    ScModel *model = Sol_Comp_Get(world, id, ScModel);
+    if (model)
+        model->yOffset = newHeight * -0.5f;
 }
 
 struct GoodRay

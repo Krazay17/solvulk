@@ -335,6 +335,25 @@ static inline float Sol_Math_Remap(float value, float inMin, float inMax, float 
     return Sol_Math_Lerp(outMin, outMax, t);
 }
 
+static inline float Sol_ExpToOne(float value, float factor)
+{
+    float delta = 1.0f - value;
+
+    if (fabsf(delta) < 0.001f)
+        return 1.0f;
+
+    return value + delta * factor;
+}
+
+static inline float Sol_InterpToOne(float value, float amount)
+{
+    if (value < 1.0f)
+        return minf(value + amount, 1.0f);
+    if (value > 1.0f)
+        return maxf(value - amount, 1.0f);
+    return 1.0f;
+}
+
 static inline float Sol_Quat_ToYaw(versors q)
 {
     // Extract yaw (rotation around Y axis) from unit quaternion

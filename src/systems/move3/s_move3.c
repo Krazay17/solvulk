@@ -110,7 +110,6 @@ void Move3_Update(World *world, double dt)
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
-        const float factor = 1.0f - expf(-10.0f * fdt);
         if (move->knockDur > 0.0f)
         {
             move->knockDur = maxf(0.0f, move->knockDur - fdt);
@@ -118,15 +117,15 @@ void Move3_Update(World *world, double dt)
         }
         if (move->frictionMod != 1.0f)
         {
-            move->frictionMod = Sol_Math_Lerp(move->frictionMod, 1.0f, factor);
+            move->frictionMod = Sol_InterpToOne(move->frictionMod, fdt);
         }
         if (move->gravityMod != 1.0f)
         {
-            move->gravityMod = Sol_Math_Lerp(move->gravityMod, 1.0f, factor);
+            move->gravityMod = Sol_InterpToOne(move->gravityMod, fdt);
         }
         if (move->speedMod != 1.0f)
         {
-            move->speedMod = Sol_Math_Lerp(move->speedMod, 1.0f, factor);
+            move->speedMod = Sol_InterpToOne(move->speedMod, fdt);
         }
     }
 }

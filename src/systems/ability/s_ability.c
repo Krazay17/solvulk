@@ -371,7 +371,6 @@ bool Sol_Ability_GetIsDashing(const ScAbility *ability)
     for (int i = 0; i < ABILITY_SLOTS; i++)
     {
         if (ability->state[i] == ABILITY_STATE_CLAW_DASH || ability->state[i] == ABILITY_STATE_FIREBALL_DASH ||
-            (ability->state[i] == ABILITY_STATE_CLAW_CHARGE && (ability->stateData[i].stage > 0)) ||
             (ability->state[i] == ABILITY_STATE_BOLT_CHARGE && ability->stateData[i].as.bolt.bolt_state == 1))
             isDashing = true;
     }

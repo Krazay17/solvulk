@@ -51,13 +51,13 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     switch (prog.stage)
     {
     case 1:
+        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (prog.advanced)
         {
             ScWeapon *weapon = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
             if (weapon)
                 weapon->update_trail = true;
         }
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
         {
             body3->vel.y = 5.0f;
@@ -176,9 +176,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     AbilityStateData *data = &ability->stateData[slot];
     StageProgress prog     = {0};
     if (data->stage > 0)
-    {
         prog = Progress_Stage(data, dt, charge_stage_time, CHARGE_STAGE_COUNT);
-    }
     if (prog.finished)
     {
         Sol_Ability_SetState(world, id, 0, slot, 1);
@@ -198,9 +196,16 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
             if (body3)
             {
-                vec3s boost = cmd->lookdir; // glms_vec3_norm2(cmd->wishdir) > 0 ? cmd->wishdir :
-                boost.y     = boost.y < 0 ? boost.y : 0;
-                body3->vel  = Accel_BringTo(boost, body3->vel, 8.0f);
+                vec3s boost    = cmd->lookdir; // glms_vec3_norm2(cmd->wishdir) > 0 ? cmd->wishdir :
+                boost.y        = boost.y < 0 ? boost.y : 0;
+                body3->vel     = Accel_BringTo(boost, body3->vel, 8.0f);
+
+                ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
+                if (move3)
+                {
+                    move3->speedMod = 0.5f;
+                    move3->frictionMod = 0.0f;
+                }
             }
         }
         data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
@@ -210,9 +215,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             ScWeapon *weapon = Sol_Comp_Get(world, weaponId, ScWeapon);
             if (weapon)
-            {
                 weapon->update_trail = true;
-            }
         }
         vec3s hand_pos  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
         vec3s blade_pos = Sol_Weapon_BladeXform(world, weaponId).pos;
@@ -238,7 +241,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             HitPause(data);
             ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
             if (body3)
-                body3->vel.y = fmaxf(body3->vel.y, 1.0f);
+                body3->vel.y = fmaxf(body3->vel.y, 2.0f);
         }
     }
     break;

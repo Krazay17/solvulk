@@ -6,6 +6,7 @@ const u32 ability_texture_map[ABILITYKIND_COUNT] = {
     [ABILITYKIND_FIREBALL] = SOL_TEXTURE_FIREBALL_CARD,
     [ABILITYKIND_SHIELD]   = SOL_TEXTURE_CRYSTAL_CARD,
     [ABILITYKIND_BOLT]     = SOL_TEXTURE_LIGHTNING,
+    [ABILITYKIND_SCYTHE]   = SOL_TEXTURE_SCYTHE_CARD,
 };
 
 const char *ability_name[ABILITYKIND_COUNT] = {
@@ -14,6 +15,7 @@ const char *ability_name[ABILITYKIND_COUNT] = {
     [ABILITYKIND_FIREBALL] = "Fireball", //
     [ABILITYKIND_SHIELD]   = "Shield",   //
     [ABILITYKIND_BOLT]     = "Bolt",     //
+    [ABILITYKIND_SCYTHE]   = "Scythe",   //
 };
 
 const char *ability_state_name[ABILITY_STATE_COUNT] = {

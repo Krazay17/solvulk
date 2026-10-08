@@ -163,19 +163,19 @@ void Fx_Update(World *world, double dt)
             switch (event.as.fx.kind)
             {
             case FXKIND_INVULNHIT:
-                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 8);
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 16);
                 break;
             case FXKIND_PARRY:
                 Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
                 break;
             case FXKIND_TEST:
-                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 8);
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 16);
                 break;
             case FXKIND_SHOOT:
-                Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.as.fx.pos, 1.0f, 0.1f, 8);
+                Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.as.fx.pos, 1.0f, 0.1f, 16);
                 break;
             case FXKIND_SWORDSWING:
-                Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.as.fx.pos, 1.0f, 0, 8);
+                Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.as.fx.pos, 1.0f, 0, 16);
                 break;
             default:
                 sollog("EVENTKIND_FX no fx kind");

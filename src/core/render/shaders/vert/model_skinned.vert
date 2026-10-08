@@ -1,13 +1,11 @@
 #version 450
 
-// ─── Vertex inputs ──────────────────────────────────────────────────────────
 layout(location = 0) in vec3  inPos;
 layout(location = 1) in vec3  inNormal;
 layout(location = 2) in vec2  inUV;
 layout(location = 3) in uvec4 inBoneIndices;
 layout(location = 4) in vec4  inBoneWeights;
 
-// ─── Vertex outputs ─────────────────────────────────────────────────────────
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec3 fragWorldPos;
@@ -16,7 +14,6 @@ layout(location = 4) flat out uint  flags;
 layout(location = 5) flat out float fragHitTime;
 layout(location = 6) out vec2 fragUV;
 
-// ─── Descriptors ────────────────────────────────────────────────────────────
 layout(set = 0, binding = 0) uniform GameData {
     mat4 dummy;
 } game;
@@ -30,23 +27,26 @@ layout(set = 1, binding = 0) uniform Scene {
 } scene;
 
 struct ModelData {
-    vec4  position;
-    vec4  scale;
-    vec4  rotation;
-    vec4  color;
-    vec4  material;
-    uint  flags;
+    vec4 position;
+    vec4 scale;
+    vec4 rotation;
+    vec4 color;
+    vec4 material;
+    uint flags;
     float hitTime;
-    uint  _padding[2];
+    uint _padding[2];
 };
 
 layout(set = 2, binding = 0) readonly buffer Models {
     ModelData models[];
 };
 
-layout(set = 3, binding = 0) uniform Ortho {mat4 ortho2d;};
+layout(set = 3, binding = 0) uniform Ortho {
+    mat4 ortho2d;
+};
 
 #define MAX_BONES 128
+
 struct InstanceSkinning {
     mat4 bones[MAX_BONES];
 };
@@ -55,16 +55,30 @@ layout(set = 5, binding = 0) readonly buffer Skinning {
     InstanceSkinning skins[];
 };
 
-// ─── Flag bits (mirror these on the CPU) ────────────────────────────────────
 const uint FLAG_2D = 1u << 2;
 
-// ─── Quaternion → 3x3 rotation matrix ───────────────────────────────────────
-mat3 quatToMat3(vec4 q) {
-    float x = q.x, y = q.y, z = q.z, w = q.w;
-    float x2 = x + x, y2 = y + y, z2 = z + z;
-    float xx = x * x2, xy = x * y2, xz = x * z2;
-    float yy = y * y2, yz = y * z2, zz = z * z2;
-    float wx = w * x2, wy = w * y2, wz = w * z2;
+mat3 quatToMat3(vec4 q)
+{
+    float x = q.x;
+    float y = q.y;
+    float z = q.z;
+    float w = q.w;
+
+    float x2 = x + x;
+    float y2 = y + y;
+    float z2 = z + z;
+
+    float xx = x * x2;
+    float xy = x * y2;
+    float xz = x * z2;
+
+    float yy = y * y2;
+    float yz = y * z2;
+    float zz = z * z2;
+
+    float wx = w * x2;
+    float wy = w * y2;
+    float wz = w * z2;
 
     return mat3(
         1.0 - (yy + zz), xy + wz,         xz - wy,
@@ -73,48 +87,80 @@ mat3 quatToMat3(vec4 q) {
     );
 }
 
-void main() {
+void main()
+{
     ModelData inst = models[gl_InstanceIndex];
+
     bool is2D = (inst.flags & FLAG_2D) != 0u;
 
-    // ─── Skinning: blend per-vertex bone matrices by their weights ─────────
+    // -------------------------------------------------------------------------
+    // Skinning
+    //
+    // Bone matrices operate entirely in model space.
+    // No coordinate-system conversion happens here.
+    // -------------------------------------------------------------------------
+
     mat4 skinMat =
         skins[gl_InstanceIndex].bones[inBoneIndices.x] * inBoneWeights.x +
         skins[gl_InstanceIndex].bones[inBoneIndices.y] * inBoneWeights.y +
         skins[gl_InstanceIndex].bones[inBoneIndices.z] * inBoneWeights.z +
         skins[gl_InstanceIndex].bones[inBoneIndices.w] * inBoneWeights.w;
 
-    vec3 skinnedPos    = (skinMat * vec4(inPos, 1.0)).xyz;
-    vec3 skinnedNormal = mat3(skinMat) * inNormal;
+    vec3 skinnedPos =
+        (skinMat * vec4(inPos, 1.0)).xyz;
 
-    // ─── Instance transform: rotation + scale ──────────────────────────────
-    mat3 rot = quatToMat3(inst.rotation);
-    vec3 transformedPos    = rot * (skinnedPos * inst.scale.xyz);
-    vec3 transformedNormal = rot * normalize(skinnedNormal);
+    vec3 skinnedNormal =
+        mat3(skinMat) * inNormal;
 
-    // ─── 2D Y-flip ─────────────────────────────────────────────────────────
-    // 3D models are authored Y-up. ortho2d treats input Y as screen-down
-    // (Vulkan NDC). Flip vertically so the model isn't upside-down.
-    // Flip BOTH position and normal so surface lighting stays correct on the
-    // mirrored geometry.
-    if (is2D) {
-        transformedPos.y    = -transformedPos.y;
+    // -------------------------------------------------------------------------
+    // Entity transform
+    //
+    // Asset convention:
+    //   +Y = up
+    //   +Z = forward
+    //   +X = left
+    //
+    // inst.rotation is the actual entity/world rotation.
+    // -------------------------------------------------------------------------
+
+    mat3 rotation = quatToMat3(inst.rotation);
+
+    vec3 transformedPos =
+        rotation * (skinnedPos * inst.scale.xyz);
+
+    vec3 transformedNormal =
+        rotation * normalize(skinnedNormal);
+
+    vec3 worldPos =
+        transformedPos + inst.position.xyz;
+
+    // -------------------------------------------------------------------------
+    // 2D projection
+    //
+    // This Y flip is only a conversion into the UI coordinate system.
+    // It is NOT correcting the model's orientation.
+    // -------------------------------------------------------------------------
+
+    if (is2D)
+    {
+        worldPos.y = -worldPos.y;
         transformedNormal.y = -transformedNormal.y;
+
+        gl_Position =
+            ortho2d *
+            vec4(
+                worldPos.xy,
+                0.5 + worldPos.z * 0.001,
+                1.0
+            );
+    }
+    else
+    {
+        gl_Position =
+            scene.viewProjection *
+            vec4(worldPos, 1.0);
     }
 
-    // ─── Translate into world / UI space ───────────────────────────────────
-    vec3 worldPos = transformedPos + inst.position.xyz;
-
-    // ─── Project ───────────────────────────────────────────────────────────
-    // 2D: project XY through ortho and force Z = 0. The model's natural Z
-    //     extent (chest depth, etc.) would otherwise map outside Vulkan's
-    //     NDC.z [0, 1] via the OpenGL-convention ortho and get depth-clipped.
-    // 3D: standard view-projection.
-    gl_Position = is2D
-        ? ortho2d * vec4(worldPos.xy, 0.5 + worldPos.z * 0.001, 1.0)
-        : scene.viewProjection * vec4(worldPos, 1.0);
-
-    // ─── Pass-throughs ─────────────────────────────────────────────────────
     fragWorldPos  = worldPos;
     fragNormal    = transformedNormal;
     fragColor     = inst.color;

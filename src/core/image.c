@@ -31,6 +31,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_FIREBALL_CARD]    = "Fireball.png",
     [SOL_TEXTURE_PISTOL_CARD]      = "Pistol.png",
     [SOL_TEXTURE_CRYSTAL_CARD]     = "CardCrystal.png",
+    [SOL_TEXTURE_SCYTHE_CARD]      = "Scythe.png",
     [SOL_TEXTURE_CLOUD1]           = "Cloud1.webp",
     [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
     [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",

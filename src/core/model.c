@@ -117,43 +117,6 @@ static ScModelData *Parse_Model(SolResource res, u32 id)
         cgltf_free(data);
         return model;
     }
-
-// TEST
-sollog("MODEL ID", id);
-printf(
-    "Model: %s | skins: %zu | animations: %zu\n",
-    data->scene && data->scene->name ? data->scene->name : "unknown",
-    data->skins_count,
-    data->animations_count
-);
-
-for (cgltf_size i = 0; i < data->skins_count; i++)
-{
-    cgltf_skin *skin = &data->skins[i];
-
-    printf(
-        "  Skin %zu: %s | joints: %zu\n",
-        i,
-        skin->name ? skin->name : "unnamed",
-        skin->joints_count
-    );
-
-    for (cgltf_size j = 0; j < skin->joints_count; j++)
-    {
-        cgltf_node *joint = skin->joints[j];
-
-        printf(
-            "    joint %zu: %s\n",
-            j,
-            joint->name ? joint->name : "unnamed"
-        );
-    }
-}
-
-// TEST
-
-
-
     model->skeleton = ParseSkeleton(data);
     // Allocate
     model->meshes   = calloc(model->mesh_count, sizeof(SolMesh));
@@ -270,6 +233,20 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
         else
             bone->restScale = (vec3s){{1, 1, 1}};
     }
+    static const struct
+    {
+        const char *name;
+        float w;
+    } k_spine[] = {
+        {"spine", 0.30f},
+        {"spine.001", 0.30f},
+        {"spine.002", 0.40f},
+    };
+
+    for (int i = 0; i < skel.boneCount; i++)
+        for (int k = 0; k < (int)(sizeof(k_spine) / sizeof(k_spine[0])); k++)
+            if (strcmp(skel.bones[i].name, k_spine[k].name) == 0)
+                skel.bones[i].pitch_weight = k_spine[k].w;
 
     // Parse animations
     skel.animationCount = (int)data->animations_count;
@@ -280,7 +257,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
         for (int a = 0; a < skel.animationCount; a++)
         {
             cgltf_animation *src = &data->animations[a];
-            SolAnimation *anim    = &skel.animations[a];
+            SolAnimation *anim   = &skel.animations[a];
 
             if (src->name)
             {
@@ -295,7 +272,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
             for (int c = 0; c < anim->channelCount; c++)
             {
                 cgltf_animation_channel *srcCh = &src->channels[c];
-                SolAnimChannel *dstCh           = &anim->channels[c];
+                SolAnimChannel *dstCh          = &anim->channels[c];
 
                 // Map target node → bone index
                 dstCh->boneIndex = -1;
@@ -602,12 +579,12 @@ static void Sample_Channel(SolAnimChannel *ch, float t, float *out)
             // They have opposite polarity; invert one to force the shortest path
             float inverted_v1[4] = {-v1[0], -v1[1], -v1[2], -v1[3]};
             glm_quat_nlerp(v0, inverted_v1, a, out);
-            glm_quat_normalize(inverted_v1);
+            glm_quat_normalize(out);
         }
         else
         {
             glm_quat_nlerp(v0, v1, a, out);
-            glm_quat_normalize(v1);
+            glm_quat_normalize(out);
         }
     }
     else
@@ -623,7 +600,7 @@ void Sample_Animation_Pose(SolSkeleton *skel, int animIndex, float time, vec3 *o
         return;
 
     SolAnimation *anim = &skel->animations[animIndex];
-    float t           = fmodf(time, anim->duration);
+    float t            = fmodf(time, anim->duration);
 
     for (int c = 0; c < anim->channelCount; c++)
     {
@@ -663,7 +640,8 @@ typedef struct
 
 static _Thread_local AnimScratchBuffer g_animScratch;
 
-void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose)
+void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose,
+                       float pitch)
 {
     ScModelData *model = &loaded_models[model_handle];
     SolSkeleton *skel  = &model->skeleton;
@@ -757,6 +735,18 @@ void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, So
             glm_mat4_mul(s->worldTransforms[parent], local, s->worldTransforms[i]);
         }
 
+        float w = skel->bones[i].pitch_weight;
+        if (w != 0.0f && pitch != 0.0f)
+        {
+            vec3 pivot = {s->worldTransforms[i][3][0], s->worldTransforms[i][3][1], s->worldTransforms[i][3][2]};
+            vec3 axis  = {1.0f, 0.0f, 0.0f}; // model-space X (engine "left")
+
+            mat4 R;
+            glm_mat4_identity(R);
+            glm_rotate_at(R, pivot, -pitch * w, axis);
+            glm_mat4_mul(R, s->worldTransforms[i], s->worldTransforms[i]);
+        }
+
         glm_mat4_mul(s->worldTransforms[i], skel->bones[i].inverseBind, outPose->bones[i]);
     }
 }
@@ -775,7 +765,6 @@ void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask)
 void Init_Anim_Masks(ModelKind kind, SolSkeleton *skel)
 {
     ScModelDataMasks *masks = &model_masks[kind];
-    // SolSkeleton   *skel  = &Sol_Bank_Get()->models[kind].skeleton;
 
     // Reset all masks to false
     memset(masks, 0, sizeof(*masks));

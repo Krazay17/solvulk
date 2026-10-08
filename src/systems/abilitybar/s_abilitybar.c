@@ -19,17 +19,13 @@ void Abilitybar_Update(World *world, double dt)
         World *game_world = Sol_GetWorldByIdx(ref->ent_world);
         if (!game_world)
             continue;
-        ScAbility *abilities = Sol_Comp_Get(game_world, ref->ent_id, ScAbility);
-        if (!abilities)
-            continue;
-
-        memset(abilities->slotted_actions, 0, sizeof(abilities->slotted_actions));
-        memset(abilitybar->slotted_ents, 0, sizeof(abilitybar->slotted_ents));
 
         // Same layout the view uses, offset by the bar's position
         vec3s origin = Xform_Get(world, id).pos;
         vec4s slots[ABILITY_SLOTS], frames[ABILITY_GROUPS];
         int total_slots = Abilitybar_Layout(abilitybar, slots, frames);
+
+        int current_slots[ABILITY_SLOTS] = {0};
 
         int ids[8] = {0};
         int hits   = Sol_Body2_GetOverlaps(world, id, ids, 8);
@@ -50,18 +46,18 @@ void Abilitybar_Update(World *world, double dt)
             {
                 float sx = origin.x + slots[s].x;
                 float sy = origin.y + slots[s].y;
-                if (item_center.x < sx || item_center.x > sx + slots[s].z ||
-                    item_center.y < sy || item_center.y > sy + slots[s].w)
+                if (item_center.x < sx || item_center.x > sx + slots[s].z || item_center.y < sy ||
+                    item_center.y > sy + slots[s].w)
                     continue;
 
-                if (abilitybar->slotted_ents[s] == 0 || abilitybar->slotted_ents[s] == item_id)
+                if (current_slots[s] == 0)
                     target = s;
                 break;
             }
             if (target == -1)
                 continue;
 
-            abilitybar->slotted_ents[target] = item_id;
+            current_slots[target] = item_id;
 
             vec3s target_pos = {
                 origin.x + slots[target].x + slots[target].z * 0.5f - item_half.x,
@@ -71,8 +67,31 @@ void Abilitybar_Update(World *world, double dt)
             item_body->vel = glms_vec3_scale(glms_vec3_sub(target_pos, item_xform.pos), 12.0f);
 
             SolItem *user_item = &user_data.items[item_ref->index];
-            abilities->slotted_actions[target] = user_item->abilityKind;
-            abilities->slotted_items[target]   = *user_item;
+        }
+
+        for (int s = 0; s < total_slots; s++)
+        {
+            int old_item = abilitybar->slotted_ents[s];
+            int new_item = current_slots[s];
+
+            if (old_item == new_item)
+                continue;
+
+            abilitybar->slotted_ents[s] = new_item;
+
+            if (new_item == 0)
+            {
+                Sol_Ability_Equip(game_world, ref->ent_id, s, NULL);
+                continue;
+            }
+
+            ScRef *item_ref = Sol_Comp_Get(world, new_item, ScRef);
+            if (!item_ref || item_ref->kind != REFKIND_ITEM)
+                continue;
+
+            SolItem *user_item = &user_data.items[item_ref->index];
+
+            Sol_Ability_Equip(game_world, ref->ent_id, s, user_item);
         }
     }
 }

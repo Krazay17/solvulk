@@ -30,7 +30,7 @@ static const float charge_stage_time[4] = {0.0f, 0.2f, 0.15f, 0.2f};
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
-    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
+    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
     pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));

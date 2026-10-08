@@ -17,7 +17,7 @@ const ScWeapon weapon_kinds[WEAPONKIND_COUNT] = {
 
 int Make_Claw(World *world, int owner, int slot)
 {
-    char *bone    = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
+    char *bone       = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
     int id           = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
     ScWeapon *weapon = Sol_Comp_Add(world, id, ScWeapon);
     ScParent *parent = Sol_Comp_Add(world, id, ScParent);
@@ -26,17 +26,18 @@ int Make_Claw(World *world, int owner, int slot)
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
     parent->localQuat = GLMS_QUAT_IDENTITY;
 
-    ScModel *model   = Sol_Comp_Add(world, id, ScModel);
-    model->kind      = MODELKIND_WEAPONBLADE;
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
+    model->kind    = MODELKIND_WEAPONBLADE;
     Sol_Comp_Add(world, id, ScAnim);
     ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL);
-    ribbon->rate     = 0.02f;
+    ribbon->ribbon.texture = SOL_TEXTURE_SQUARERING;
+    ribbon->rate     = 0.01f;
     return id;
 }
 
 int Make_Scythe(World *world, int owner, int slot)
 {
-    char *bone    = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
+    char *bone       = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
     int id           = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
     ScWeapon *weapon = Sol_Comp_Add(world, id, ScWeapon);
     ScParent *parent = Sol_Comp_Add(world, id, ScParent);
@@ -48,7 +49,7 @@ int Make_Scythe(World *world, int owner, int slot)
     ScModel *model   = Sol_Comp_Add(world, id, ScModel);
     model->kind      = MODELKIND_SCYTHE;
     ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL_COLORRING);
-    ribbon->rate     = 0.02f;
+    ribbon->rate     = 0.01f;
 
     return id;
 }
@@ -81,7 +82,7 @@ void Weapon_Update(World *world, double dt)
     }
 }
 
-const int (*Make_Weapon[WEAPONKIND_COUNT])(World *, int owner, int slot) = {
+const MakeWeapon Make_Weapon[WEAPONKIND_COUNT] = {
     [WEAPONKIND_CLAW]   = Make_Claw,
     [WEAPONKIND_SCYTHE] = Make_Scythe,
 };

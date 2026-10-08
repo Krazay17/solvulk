@@ -31,9 +31,10 @@ void Move_Slide_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
     move->targetHeight = move->baseHeight * 0.65f;
     if (move->groundtime > 0)
     {
-        data->as.slide.boost = fmaxf(fminf(data->as.slide.boost + (world->tickTime - data->lastExited), BOOST_CD), 0.0f);
-        body->impulse        = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Body3_GetDir(world, id))),
-                                      Sol_Math_MapRange(0.0f, 400.0f, 0.0f, BOOST_CD, data->as.slide.boost));
+        data->as.slide.boost =
+            fmaxf(fminf(data->as.slide.boost + (world->tickTime - data->lastExited), BOOST_CD), 0.0f);
+        body->impulse = vecSca(vecNorm(ProjectOntoGround(move->groundNorm, Sol_Body3_GetDir(world, id))),
+                               Sol_Math_Remap(data->as.slide.boost, 0.0f, BOOST_CD, 0.0f, 400.0f));
         data->as.slide.boost /= 2.0f;
     }
 }

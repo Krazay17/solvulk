@@ -282,3 +282,4 @@ void Sol_Ribbon_GenerateJitter(Ribbon *r, float jitter_mag);
 float Sol_GetBoneRoll(vec3s tangent, vec3s boneUp);
 vec3s Sol_Weapon_DmgPos(World *world, int id);
 Xform Sol_Weapon_BladeXform(World *world, int id);
+void Sol_Ability_Equip(World *world, int id, int slot, SolItem *item);

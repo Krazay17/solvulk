@@ -85,7 +85,7 @@ static const ScAbility dude_ability = {
             0,
             ABILITYKIND_CLAW,
             ABILITYKIND_CLAW,
-            ABILITYKIND_BOLT,
+            ABILITYKIND_CLAW,
         },
 };
 
@@ -132,8 +132,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
     snprintf(meta->name, sizeof(meta->name), "Wizard %d", id);
 
-    // ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    // interact->range      = 25.0f;
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->range      = 25.0f;
 
     ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
     team->team   = 1;

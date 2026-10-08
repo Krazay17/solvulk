@@ -176,6 +176,8 @@ static inline void Hook_AddItem(World *w, int a, int b)
         &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT, .effectMask = EFFECTMASK_KNOCKUP});
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE});
+    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE, .rarity = ITEMRARITY_LEGENDARY});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)
@@ -199,7 +201,7 @@ static inline void Hook_SetPlayerFov(World *w, int a, int b)
     ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
     ScCamera *camera = Sol_Comp_Get(game, id, ScCamera);
     if (camera && slider)
-        camera->fov = Sol_Math_MapRange(60.0f, 120.f, 0, 1.0f, slider->value);
+        camera->fov = Sol_Math_Remap(slider->value, 0, 1.0f, 60.0f, 120.f);
 }
 static inline void Hook_ClearEnts(World *w, int a, int b)
 {
@@ -224,7 +226,7 @@ static inline void Hook_SetTimescale(World *w, int a, int b)
     ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
     if (game && slider)
     {
-        game->timescale = Sol_Math_MapRange(0.0f, 5.0f, 0, 1.0f, slider->value);
+        game->timescale = Sol_Math_Remap(slider->value, 0, 1.0f, 0.0f, 5.0f);
     }
 }
 
@@ -239,13 +241,13 @@ static inline void Hook_TestReflect(World *w, int a, int b)
 
 static inline void Hook_Test(World *w, int a, int b)
 {
-    World *game = Sol_User_GetGameWorld();
-    int id      = sol_user.view_ent;
-    vec3s pos   = game->xform.pos[id];
-    ScCmd *cmd  = Sol_Comp_Get(game, id, ScCmd);
+    World *game   = Sol_User_GetGameWorld();
+    int id        = sol_user.view_ent;
+    vec3s pos     = game->xform.pos[id];
+    ScCmd *cmd    = Sol_Comp_Get(game, id, ScCmd);
     vec3s fwd_pos = vecAdd(pos, vecSca(cmd->aimdir, 3.0f));
 
-    int ent = Sol_Create_Ent(game, fwd_pos);
+    int ent        = Sol_Create_Ent(game, fwd_pos);
     ScModel *model = Sol_Comp_Add(game, ent, ScModel);
-    model->kind = MODELKIND_SCYTHE;
+    model->kind    = MODELKIND_SCYTHE;
 }

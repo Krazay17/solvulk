@@ -329,11 +329,10 @@ static inline float Sol_Math_Lerp_Clamped(float start, float end, float amount)
     return start + amount * (end - start);
 }
 
-static inline float Sol_Math_MapRange(float startA, float endA, float startB, float endB, float amount)
+static inline float Sol_Math_Remap(float value, float inMin, float inMax, float outMin, float outMax)
 {
-    if (amount == 0)
-        return 0.0f;
-    return Sol_Math_Lerp(startA, endA, amount / (endB - startB));
+    float t = (value - inMin) / (inMax - inMin);
+    return Sol_Math_Lerp(outMin, outMax, t);
 }
 
 static inline float Sol_Quat_ToYaw(versors q)

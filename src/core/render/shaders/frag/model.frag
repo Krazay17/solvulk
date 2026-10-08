@@ -1,3 +1,10 @@
+/*
+ * File: model.frag
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-07
+ * 
+*/
 #version 450
 
 layout(location = 0) in vec4 fragColor;

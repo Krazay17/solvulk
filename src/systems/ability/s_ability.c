@@ -18,13 +18,24 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_CLAW_CHARGE] =
         {
             .duration = 0.45f,
-            .cooldown = 1.0f,
+            .cooldown = 0.5f,
             .maxpower = 1.2f,
             .speed    = 1.0f,
             .damage =
                 {
                     .amount     = 30.0f,
                     .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING,
+                },
+        },
+    [ABILITY_STATE_SCYTHE_CHARGE] =
+        {
+            .cooldown = 0.5f,
+            .maxpower = 1.2f,
+            .speed    = 1.0f,
+            .damage =
+                {
+                    .amount     = 30.0f,
+                    .effectMask = EFFECTMASK_CHAINLIGHTNING,
                 },
         },
     [ABILITY_STATE_FIREBALL_CHARGE] =
@@ -85,7 +96,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .damage =
                 {
                     .amount     = 25.0f,
-                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE,
+                    .effectMask = EFFECTMASK_KNOCKBACK | EFFECTMASK_REFLECTPROJECTILE | EFFECTMASK_CHAINLIGHTNING,
                 },
         },
     [ABILITY_STATE_CLAW] =
@@ -138,24 +149,11 @@ const u32 abilityslot_state_map[ABILITYKIND_COUNT][3] = {
     [ABILITYKIND_SHIELD][2] = ABILITY_STATE_SHIELD_DASH,   //
 
     [ABILITYKIND_BOLT][1] = ABILITY_STATE_BOLT_CHARGE, //
+
+    [ABILITYKIND_SCYTHE][0] = ABILITY_STATE_SCYTHE,
+    [ABILITYKIND_SCYTHE][1] = ABILITY_STATE_SCYTHE_CHARGE,
+    [ABILITYKIND_SCYTHE][2] = ABILITY_STATE_SCYTHE_DASH,
 };
-
-extern const AbilityStateFunc ability_idle_state;
-
-extern const AbilityStateFunc ability_claw_state;
-extern const AbilityStateFunc ability_claw_charge_state;
-extern const AbilityStateFunc ability_claw_dash_state;
-
-extern const AbilityStateFunc ability_fireball_state;
-extern const AbilityStateFunc ability_fireball_charge_state;
-extern const AbilityStateFunc ability_fireball_dash_state;
-
-extern const AbilityStateFunc ability_shield_charge_state;
-extern const AbilityStateFunc ability_shield_state;
-
-extern const AbilityStateFunc ability_bolt_charge;
-
-extern const AbilityStateFunc ability_dash_state;
 
 const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_IDLE] = &ability_idle_state, //
@@ -173,6 +171,11 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_SHIELD_DASH]   = &ability_dash_state, //
 
     [ABILITY_STATE_BOLT_CHARGE] = &ability_bolt_charge, //
+
+    [ABILITY_STATE_SCYTHE]        = &ability_scythe_spell_state,
+    [ABILITY_STATE_SCYTHE_CHARGE] = &ability_scythe_charge_state,
+    [ABILITY_STATE_SCYTHE_DASH]   = &ability_scythe_dash_state,
+
 };
 
 static inline u32 Get_SlotState(const ScAbility *ability, int slot)
@@ -181,21 +184,22 @@ static inline u32 Get_SlotState(const ScAbility *ability, int slot)
     return abilityslot_state_map[kind][slot_kind_map[slot]];
 }
 
+const WeaponKind ability_weapon_map[ABILITYKIND_COUNT] = {
+    [ABILITYKIND_CLAW]     = WEAPONKIND_CLAW,   //
+    [ABILITYKIND_FIREBALL] = WEAPONKIND_CLAW,   //
+    [ABILITYKIND_SHIELD]   = WEAPONKIND_CLAW,   //
+    [ABILITYKIND_BOLT]     = WEAPONKIND_CLAW,   //
+    [ABILITYKIND_SCYTHE]   = WEAPONKIND_SCYTHE, //
+};
 static void Equip_Weapons(World *world, int id, ScAbility *ability)
 {
-    if (!Sol_Comp_Has(world, ability->left_weapon, ScWeapon))
-        ability->left_weapon = 0;
-    if (!Sol_Comp_Has(world, ability->right_weapon, ScWeapon))
-        ability->right_weapon = 0;
+    ScWeapon *left_weapon  = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
+    ScWeapon *right_weapon = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
+    if (!ability->left_weapon || !left_weapon)
+        ability->left_weapon = Make_Weapon[ability_weapon_map[ability->slotted_actions[5]]](world, id, 5);
 
-    if (!ability->left_weapon)
-    {
-        ability->left_weapon = Make_Weapon[WEAPONKIND_CLAW](world, id, 5);
-    }
-    if (!ability->right_weapon)
-    {
-        ability->right_weapon = Make_Weapon[WEAPONKIND_CLAW](world, id, 6);
-    }
+    if (!ability->right_weapon || !right_weapon)
+        ability->right_weapon = Make_Weapon[ability_weapon_map[ability->slotted_actions[6]]](world, id, 6);
 }
 
 #define SHARED_LOCKOUT_COUNT 5
@@ -320,8 +324,35 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
     return true;
 }
 
-void Sol_Ability_Equip(World *world, int id, int slot, SolItem item)
+void Sol_Ability_Equip(World *world, int id, int slot, SolItem *item)
 {
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (!ability)
+        return;
+    if (item)
+    {
+        bool changed = ability->slotted_actions[slot] != item->abilityKind;
+        if (!changed)
+            return;
+
+        ability->slotted_items[slot]   = *item;
+        ability->slotted_actions[slot] = item->abilityKind;
+    }
+    else
+    {
+        ability->slotted_items[slot]   = (SolItem){0};
+        ability->slotted_actions[slot] = 0;
+    }
+
+    if (ability->state[slot] != 0)
+        Sol_Ability_SetState(world, id, 0, slot, true);
+
+    if (slot == 5)
+    {
+        Sol_Destroy_Ent(world, ability->left_weapon);
+    }
+    else if (slot == 6)
+        Sol_Destroy_Ent(world, ability->right_weapon);
 }
 
 AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot)

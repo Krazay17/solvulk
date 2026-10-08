@@ -20,7 +20,7 @@
 #define HITINTERVAL 0.05f
 #define DASH_SPEED 30.0f
 
-static const float spell_stage_time[3] = {0.4f, 0.2f, 0.2f};
+static const float spell_stage_time[3] = {0.4f, 0.15f, 0.25f};
 #define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
 
 static const float dash_stage_time[3] = {0.3f, 0.5f, 0.4f};
@@ -116,7 +116,6 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
                 weaponR->update_trail = true;
         }
 
-        vec3s pos            = world->xform.pos[id];
         float duration_delta = data->accum / dash_stage_time[data->stage];
         vec3s dir            = cmd->lookdir;
         // dir.y                = dir.y > 0 ? 0 : dir.y;
@@ -124,26 +123,43 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         if (body3)
         {
             if (data->hitPause == 0)
-                body3->vel = vecSca(dir, Sol_Math_MapRange(DASH_SPEED, 5.0f, 0, 1.0f, duration_delta));
+                body3->vel = vecSca(dir, Sol_Math_Remap(duration_delta, 0, 1.0f, DASH_SPEED, 5.0f));
             else
                 body3->vel = GLMS_VEC3_ZERO;
         }
-        float speed = glms_vec3_norm(body3->vel) * dt;
 
-        SolRay ray = {
-            .start     = pos,
-            .dir       = cmd->lookdir,
-            .dist      = 1.0f + speed,
+        vec3s hand_posL  = Sol_Model_GetBoneXform(world, id, "hand.L.Weapon").pos;
+        vec3s hand_posR  = Sol_Model_GetBoneXform(world, id, "hand.R.Weapon").pos;
+        vec3s blade_posL = Sol_Weapon_BladeXform(world, ability->left_weapon).pos;
+        vec3s blade_posR = Sol_Weapon_BladeXform(world, ability->right_weapon).pos;
+        SolDistDir ddL   = Sol_GetDistDir(blade_posL, hand_posL);
+        SolDistDir ddR   = Sol_GetDistDir(blade_posR, hand_posR);
+
+        SolRay rayA = {
+            .start     = hand_posL,
+            .dir       = ddL.dir,
+            .dist      = ddL.dist,
             .ignoreEnt = id,
-            .radius    = body3->dims.y,
+            .radius    = 0.3f,
+        };
+        SolRay rayB = {
+            .start     = hand_posR,
+            .dir       = ddR.dir,
+            .dist      = ddR.dist,
+            .ignoreEnt = id,
+            .radius    = 0.3f,
         };
         SolHit hit = {
             .entA   = id,
             .damage = data->conf.damage,
-            .power  = 1.0f,
+            .power  = 0.5f,
             .kind   = HITKIND_MELEE_HIT,
         };
-        int hits = Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
+        int hits;
+        hits = Sol_Combat_DamageCast(world, id, rayA, hit, data->hitgen);
+        if (hits > 0)
+            HitPause(data);
+        hits = Sol_Combat_DamageCast(world, id, rayB, hit, data->hitgen2);
         if (hits > 0)
             HitPause(data);
         break;
@@ -242,6 +258,7 @@ void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, in
     data->conf             = Sol_Ability_GetSlotConf(ability, slot);
     data->accum            = HITINTERVAL;
     data->hitgen           = Sol_Hitgen_Start(world);
+    data->hitgen2          = Sol_Hitgen_Start(world);
 
     switch (slot_kind_map[slot])
     {
@@ -265,6 +282,7 @@ void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int
 {
     AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
+    WeaponTrails_Off(world, ability);
 }
 
 bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
@@ -283,7 +301,7 @@ bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L");
+    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon");
     float scale            = data->power * 1.5f;
     vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, scale};
     ModelSSBO *s           = Sol_Render_GetNextModel(0, MODELKIND_WEAPONBLADE);
@@ -291,26 +309,6 @@ void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
     s->position            = pos;
     s->scale               = (vec4s){scale, scale * 1.5f, scale, scale};
     s->rotation            = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
-    switch (data->stage)
-    {
-    case 2:
-        // ScRibbon *ribbon = Sol_Comp_Get(world, id, ScRibbon);
-        // if (ribbon)
-        // {
-        //     ribbon->_accum += dt;
-        //     if (ribbon->_accum >= ribbon->rate)
-        //     {
-        //         ribbon->_accum -= ribbon->rate;
-        //         Xform blade_xform =
-        //             Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
-        //         float spin = Sol_QuatGetRoll(blade_xform.rot, WORLD_FWD, WORLD_UP);
-        //         spin += glm_rad(90.0f);
-
-        //         Sol_Ribbon_Addpoint(&ribbon->ribbon, blade_xform.pos, 0, spin);
-        //     }
-        // }
-        break;
-    }
 }
 
 void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)
@@ -325,26 +323,6 @@ void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)
     s->position  = pos;
     s->scale     = (vec4s){scale, scale, scale, scale};
     s->rotation  = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
-    switch (data->stage)
-    {
-    case 1:
-        // ScRibbon *ribbon = Sol_Comp_Get(world, id, ScRibbon);
-        // if (ribbon)
-        // {
-        //     ribbon->_accum += dt;
-        //     if (ribbon->_accum >= ribbon->rate)
-        //     {
-        //         ribbon->_accum -= ribbon->rate;
-        //         Xform bone_xform =
-        //             Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon.001" : "hand.L.Weapon.001");
-        //         float spin = Sol_QuatGetRoll(bone_xform.rot, WORLD_FWD, WORLD_UP);
-        //         spin += glm_rad(90.0f);
-
-        //         Sol_Ribbon_Addpoint(&ribbon->ribbon, bone_xform.pos, 0, spin);
-        //     }
-        // }
-        break;
-    }
 }
 
 DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)

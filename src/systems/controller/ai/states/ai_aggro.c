@@ -38,8 +38,9 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     cmd->lookdir = fwd;
     cmd->leftdir = glms_vec3_cross(WORLD_UP, fwd);
     cmd->yaw     = Sol_YawFromVec(fwd);
-    cmd->aimpos = target_pos;
-    cmd->aimdir = cmd->lookdir;
+    cmd->pitch   = Sol_PitchFromVec(fwd);
+    cmd->aimpos  = target_pos;
+    cmd->aimdir  = cmd->lookdir;
 
     ScBody3 *target_body = Sol_Comp_Get(world, target, ScBody3);
     if (target_body)
@@ -47,7 +48,7 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
         vec3s target_vel = target_body->vel;
         target_vel       = glms_vec3_clamp(target_vel, -1.5f, 1.5f);
         cmd->aimpos      = vecAdd(cmd->aimpos, target_vel);
-        float mapped     = Sol_Math_MapRange(-target_body->dims.y, 10.0f, 1.0f, 50.0f, ai->brain.target_dist);
+        float mapped     = Sol_Math_Remap(ai->brain.target_dist, 1.0f, 50.0f, -target_body->dims.y, 10.0f);
         cmd->aimpos.y += mapped;
     }
 

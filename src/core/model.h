@@ -14,6 +14,7 @@ typedef struct SolBone
 {
     char name[64];
     int  parent;      // index into bones array, or -1 for root
+    float pitch_weight;
     mat4 inverseBind; // baked from glTF
 
     // Local TRS at rest (used as default if no animation channel exists)
@@ -154,7 +155,7 @@ int  Sol_Models_Init();
 void Init_Anim_Masks(ModelKind kind, SolSkeleton *skele);
 void Mark_Bone_And_Descendants(SolSkeleton *skel, int boneIdx, BoneMask *mask);
 int  Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name);
-void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose);
+void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose, float pitch);
 // void           Sol_Skeleton_Pose(SolSkeleton *skel, PoseRequest *req);
 // void Sol_Skeleton_Pose(int model_handle, SolPose *pose, AnimLayer *layers);
 u32  Sol_Model_GetTriCount(ModelKind handle);

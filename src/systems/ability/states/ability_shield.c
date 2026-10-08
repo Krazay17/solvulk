@@ -9,7 +9,7 @@
 
 static float Scale(const AbilityStateData *data, float elapsed)
 {
-    return Sol_Math_MapRange(1.0f, 5.0f, 0, 1.0f, (elapsed / data->conf.duration) * data->power);
+    return Sol_Math_Remap((elapsed / data->conf.duration) * data->power , 0, 1.0f,1.0f, 5.0f );
 }
 
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)

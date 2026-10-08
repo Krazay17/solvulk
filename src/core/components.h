@@ -289,6 +289,8 @@ typedef struct ScAnim
     bool hasLastPose;
     u32 priority_ability_slot;
     float priority_ability_duration;
+    float target_pitch;
+    float pitch;
 } ScAnim;
 
 typedef struct
@@ -522,7 +524,8 @@ typedef struct
     WeaponKind kind;
     bool update_trail;
 } ScWeapon;
-extern const int (*Make_Weapon[WEAPONKIND_COUNT])(World *, int owner, int slot);
+typedef int (*MakeWeapon)(World *, int owner, int slot);
+extern const MakeWeapon Make_Weapon[];
 
 // #################
 // #### SINGLES ####

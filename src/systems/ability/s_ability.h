@@ -7,8 +7,30 @@
  */
 #include "sol/types.h"
 #include "components.h"
+#include "estate.h"
 
 extern const u32 slot_kind_map[7];
+
+extern const AbilityStateFunc ability_idle_state;
+
+extern const AbilityStateFunc ability_claw_state;
+extern const AbilityStateFunc ability_claw_charge_state;
+extern const AbilityStateFunc ability_claw_dash_state;
+
+extern const AbilityStateFunc ability_fireball_state;
+extern const AbilityStateFunc ability_fireball_charge_state;
+extern const AbilityStateFunc ability_fireball_dash_state;
+
+extern const AbilityStateFunc ability_shield_charge_state;
+extern const AbilityStateFunc ability_shield_state;
+
+extern const AbilityStateFunc ability_bolt_charge;
+
+extern const AbilityStateFunc ability_dash_state;
+
+extern const AbilityStateFunc ability_scythe_charge_state;
+extern const AbilityStateFunc ability_scythe_spell_state;
+extern const AbilityStateFunc ability_scythe_dash_state;
 
 static inline HitPause(AbilityStateData *data)
 {
@@ -44,4 +66,14 @@ static inline StageProgress Progress_Stage(AbilityStateData *data, float dt, con
     prog.finished = prog.stage >= stage_count;
 
     return prog;
+}
+static inline void WeaponTrails_Off(World *world, ScAbility *ability)
+{
+    ScWeapon *weapon;
+    weapon = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
+    if (weapon)
+        weapon->update_trail = false;
+    weapon = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
+    if (weapon)
+        weapon->update_trail = false;
 }

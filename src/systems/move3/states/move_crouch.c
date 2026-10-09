@@ -4,7 +4,7 @@
 
 void Move_Crouch_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
-    MoveStateData *data  = &move->stateData[move->state];
+    MoveStateData *data = &move->stateData[move->state];
 
     if (cmd)
     {
@@ -30,8 +30,9 @@ void Move_Crouch_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
 bool Move_Crouch_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    bool     hit   = Sol_Raycast1(
-        world, (SolRay){ .start = world->xform.pos[id], .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id },
+    bool hit = Sol_Raycast1(
+        world,
+        (SolRay){.start = world->xform.pos[id], .dir = WORLD_UP, .dist = move->baseHeight * 0.6f, .ignoreEnt = id},
         &(SolRayResult){0});
 
     if (hit)

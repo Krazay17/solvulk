@@ -307,7 +307,7 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                     .color        = VEC4_WHITE,
                     .pan          = 6.0f,
                     .sheets       = 2,
-                    .flags = 1,
+                    .flags        = 1,
                     ._point_count = 16,
                 };
 
@@ -322,7 +322,7 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                 .texture      = SOL_TEXTURE_LIGHTNING,
                 .color        = VEC4_WHITE,
                 .pan          = 6.0f,
-                    .flags = 1,
+                .flags        = 1,
                 ._point_count = 16,
                 .sheets       = 2,
             };

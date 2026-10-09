@@ -13,14 +13,25 @@ void Ref_Update(World *world, double dt)
         int ref_id       = ref->ent_id;
         switch (ref->kind)
         {
-        case REFKIND_HEALTHBAR:
+        case REFKIND_HEALTHBAR: {
+
             ScView2 *view2   = Sol_Comp_Get(world, id, ScView2);
             ScCombat *combat = Sol_Comp_Get(ref_world, ref_id, ScCombat);
             if (combat && view2)
             {
                 snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->health);
             }
-            break;
+        }
+        break;
+        case REFKIND_ENERGYBAR: {
+            ScView2 *view2   = Sol_Comp_Get(world, id, ScView2);
+            ScCombat *combat = Sol_Comp_Get(ref_world, ref_id, ScCombat);
+            if (combat && view2)
+            {
+                snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->energy);
+            }
+        }
+        break;
         }
     }
 }

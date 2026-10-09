@@ -137,6 +137,8 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
                        });
 
         Sol_Comp_Rem(world, id, ScProjectile);
+
+        return true;
     }
 
     return false;
@@ -243,42 +245,3 @@ void Projectile_Step(World *world, double dt)
         }
     }
 }
-
-// void Sol_Projectile_Reflect(World *world, int attacker, float dt, vec3s a0, vec3s a1, float radius)
-// {
-//     SparseSet_ScProjectile *set = Sol_Comp_Set(world, ScProjectile);
-//     for (int i = set->cnt; i-- > 0;)
-//     {
-//         int id = set->dense[i];
-//         if (!Sol_Combat_Hostile(world, attacker, id))
-//             continue;
-//         ScProjectile *projectile = &set->data[i];
-//         ScBody3 *body3           = Sol_Comp_Get(world, id, ScBody3);
-//         vec3s vel                = body3->vel;
-
-//         vec3s b0 = world->xform.pos[id];
-//         vec3s b1 = glms_vec3_add(b0, glms_vec3_scale(vel, dt));
-
-//         CapHit hit;
-//         if (Sol_CapsuleOverlap(world, a0, a1, b0, b1, radius, projectile->radius, &hit))
-//         {
-//             ScTeam *team          = Sol_Comp_Get(world, id, ScTeam);
-//             ScOwner *owner        = Sol_Comp_Get(world, id, ScOwner);
-//             ScTeam *attacker_team = Sol_Comp_Get(world, attacker, ScTeam);
-//             ScCmd *cmd            = Sol_Comp_Get(world, attacker, ScCmd);
-
-//             if (owner)
-//                 owner->ownerId = attacker;
-//             if (team)
-//                 team->team = attacker_team->team;
-
-//             if (body3 && cmd)
-//             {
-//                 body3->vel       = Sol_RedirectVel(body3->vel, cmd->aimdir);
-//                 body3->ignoreEnt = attacker;
-//             }
-
-//             Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = hit.contactA});
-//         }
-//     }
-// }

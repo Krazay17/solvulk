@@ -96,11 +96,7 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
             body3->base_mask = body3->mask;
             body3->mask      = 0;
         }
-        if (Sol_Comp_Has(world, id, ScAbility))
-        {
-            for (int i = 0; i < ABILITY_SLOTS; i++)
-                Sol_Ability_SetState(world, id, 0, i, true);
-        }
+        Sol_Ability_SetAllIdle(world, id);
         if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
         {
             Sol_Destroy_Ent(world, id);
@@ -182,7 +178,54 @@ void Combat_Update(World *world, double dt)
         {
             combat->health = 0;
         }
+
+        if (combat->energyRegenDelay <= 0.0f)
+            combat->energy = minf(combat->energy + (dt * (10.0f + combat->energyRegen)), combat->energyMax);
+        else
+            combat->energyRegenDelay -= dt;
     }
+}
+
+bool Sol_Combat_UseEnergy(World *world, int id, float amount)
+{
+    forc(world, id, ScCombat)
+    {
+        c->energyRegenDelay = 1.0f;
+        if (c->energy >= amount)
+        {
+            c->energy -= amount;
+            return true;
+        }
+    }
+    return false;
+}
+
+void Sol_Combat_AddEnergy(World *world, int id, float amount)
+{
+    forc(world, id, ScCombat) c->energy = fmin(c->energy + amount, c->energyMax);
+}
+
+float Apply_Damage(ScCombat *combat, float amount)
+{
+    if (!combat || combat->health <= 0.0f || amount <= 0.0f)
+        return 0.0f;
+
+    float damage_done = (amount > combat->health) ? combat->health : amount;
+    combat->health -= damage_done;
+    combat->damageTaken += damage_done;
+    return damage_done;
+}
+
+float Apply_Heal(ScCombat *combat, float amount)
+{
+    if (!combat || combat->health <= 0.0f || amount <= 0.0f)
+        return 0.0f;
+
+    float missing_health = combat->healthMax - combat->health;
+    float healing_done   = (amount > missing_health) ? missing_health : amount;
+    combat->health += healing_done;
+    combat->healingTaken += healing_done;
+    return healing_done;
 }
 
 bool Sol_Combat_Hostile(World *world, int idA, int idB)
@@ -252,7 +295,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     float damage_done       = 0;
     float damage            = hit.damage.amount * hit.power;
     if (hit.damage.isHeal)
-        damage_done = Sol_Combat_Heal(world, id, ownerId, combat, hit.damage.amount);
+        damage_done = Apply_Heal(combat, damage);
     else
     {
         if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
@@ -296,15 +339,25 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
                 move3->knockDur    = 0.4f;
                 move3->frictionMod = 0.0f;
             }
+            if (hit.damage.effectMask & EFFECTMASK_PULL)
+            {
+                move3->knockVel    = vecSca(vecNorm(hit.vel), -7.0f);
+                move3->knockDur    = 0.4f;
+                move3->frictionMod = 0.0f;
+            }
         }
         if (hit.damage.effectMask & EFFECTMASK_LIFESTEAL)
         {
             if (dealer_combat)
-                Sol_Combat_Heal(world, ownerId, ownerId, dealer_combat, damage * 0.2f);
+                Sol_Combat_Heal(world, ownerId, ownerId, damage * 0.2f);
+        }
+        if (hit.damage.effectMask & EFFECTMASK_INTERRUPT)
+        {
+            Sol_Ability_SetAllIdle(world, id);
         }
 
         combat->lastHitBy = ownerId;
-        damage_done       = Sol_Combat_Damage(world, id, ownerId, combat, damage);
+        damage_done       = Apply_Damage(combat, damage);
 
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){.as.hit.kind = hit.kind, .entA = ownerId, .entB = id, .as.hit = hit});
@@ -313,9 +366,10 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     return damage_done;
 }
 
-float Sol_Combat_Damage(World *world, int id, int source, ScCombat *combat, float amount)
+float Sol_Combat_Damage(World *world, int id, int source, float amount)
 {
-    if (combat->health <= 0.0f || amount <= 0.0f)
+    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+    if (!combat || combat->health <= 0.0f || amount <= 0.0f)
         return 0.0f;
 
     float damage_done = (amount > combat->health) ? combat->health : amount;
@@ -323,16 +377,15 @@ float Sol_Combat_Damage(World *world, int id, int source, ScCombat *combat, floa
     combat->damageTaken += damage_done;
     combat->lastHitTime = world->tickTime;
 
-    ScCombat *combatA = Sol_Comp_Get(world, source, ScCombat);
-    if (combatA)
-        combatA->damageDone += damage_done;
+    forc(world, source, ScCombat) c->damageDone += damage_done;
 
     return damage_done;
 }
 
-float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount)
+float Sol_Combat_Heal(World *world, int id, int source, float amount)
 {
-    if (combat->health <= 0.0f || amount <= 0.0f)
+    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+    if (!combat || combat->health <= 0.0f || amount <= 0.0f)
         return 0.0f;
 
     float missing_health = combat->healthMax - combat->health;
@@ -340,9 +393,7 @@ float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float 
     combat->health += healing_done;
     combat->healingTaken += healing_done;
 
-    ScCombat *combatA = Sol_Comp_Get(world, dealer, ScCombat);
-    if (combatA)
-        combatA->healingDone += healing_done;
+    forc(world, source, ScCombat) c->healingDone += healing_done;
 
     return healing_done;
 }

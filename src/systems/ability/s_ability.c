@@ -35,7 +35,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .damage =
                 {
                     .amount     = 30.0f,
-                    .effectMask = EFFECTMASK_CHAINLIGHTNING,
+                    .effectMask = EFFECTMASK_CHAINLIGHTNING | EFFECTMASK_INTERRUPT | EFFECTMASK_LIFESTEAL,
                 },
         },
     [ABILITY_STATE_FIREBALL_CHARGE] =
@@ -93,7 +93,8 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
             .damage =
                 {
                     .amount     = 30.0f,
-                    .effectMask = EFFECTMASK_CHAINLIGHTNING,
+                    .effectMask = EFFECTMASK_CHAINLIGHTNING | EFFECTMASK_INTERRUPT | EFFECTMASK_LIFESTEAL,
+                    .buffMask   = (1u << BUFFKIND_STUN),
                 },
         },
     [ABILITY_STATE_CLAW_DASH] =
@@ -244,8 +245,10 @@ void Ability_Update(World *world, double dt)
 
             if (busy_mask & SHARED_LOCKOUT || busy_mask & 1u << j)
                 continue;
+            if ((busy_mask & ((1u << 5) | (1u << 6))) && (j >= 5))
+                continue;
 
-            if (held)
+            if (held && Sol_CanAbility(world, id))
             {
                 if (Sol_Ability_SetState(world, id, Get_SlotState(ability, j), j, false))
                     break;
@@ -284,8 +287,12 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
 {
     if (target_state >= ABILITY_STATE_COUNT)
         return false;
-    ScAbility *ability               = Sol_Comp_Get(world, id, ScAbility);
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (!ability)
+        return false;
+
     ScCmd *cmd                       = Sol_Comp_Get(world, id, ScCmd);
+    u32 prev_state                   = ability->state[slot];
     const AbilityStateFunc *prevfunc = ability_state_func[ability->state[slot]];
     const AbilityStateFunc *nextfunc = ability_state_func[target_state];
     if (!prevfunc || !nextfunc)
@@ -298,13 +305,13 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability, cmd, slot))
             return false;
     }
-    if (slot < 5)
-    {
-        if (ability->state[5] != 0)
-            Sol_Ability_SetState(world, id, 0, 5, true);
-        if (ability->state[6] != 0)
-            Sol_Ability_SetState(world, id, 0, 6, true);
-    }
+    // if (slot < 5)
+    // {
+    //     if (ability->state[5] != 0)
+    //         Sol_Ability_SetState(world, id, 0, 5, true);
+    //     if (ability->state[6] != 0)
+    //         Sol_Ability_SetState(world, id, 0, 6, true);
+    // }
 
     if (target_state != 0)
     {
@@ -315,8 +322,11 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
             data->hitPause         = 0;
         }
     }
-    AbilityStateData *prev_data  = &ability->stateData[slot];
-    prev_data->cooldownRemaining = prev_data->conf.cooldown;
+    if (prev_state != 0)
+    {
+        AbilityStateData *prev_data  = &ability->stateData[slot];
+        prev_data->cooldownRemaining = prev_data->conf.cooldown;
+    }
 
     if (prevfunc->exit)
         prevfunc->exit(world, id, ability, cmd, slot);
@@ -409,4 +419,13 @@ DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit)
         }
     }
     return DEFENDKIND_NONE;
+}
+
+void Sol_Ability_SetAllIdle(World *world, int id)
+{
+    if (Sol_Comp_Has(world, id, ScAbility))
+    {
+        for (int i = 0; i < ABILITY_SLOTS; i++)
+            Sol_Ability_SetState(world, id, 0, i, true);
+    }
 }

@@ -50,17 +50,17 @@ typedef enum
     WORLDSYS_HOOK,
     WORLDSYS_AI,
 
-    WORLDSYS_PARENT,
-    WORLDSYS_WEAPON,
-
     WORLDSYS_REF,
+    WORLDSYS_FACING,
+    WORLDSYS_ANIM,
+    WORLDSYS_PARENT,
+
+    WORLDSYS_CAMERA,
+    WORLDSYS_WEAPON,
     WORLDSYS_FX,
     WORLDSYS_EMITTER,
-    WORLDSYS_RIBBON,
-    WORLDSYS_FACING,
-    WORLDSYS_CAMERA,
-    WORLDSYS_ANIM,
     WORLDSYS_MODEL,
+    WORLDSYS_RIBBON,
     WORLDSYS_VIEW2,
     WORLDSYS_VIEW3,
     WORLDSYS_SCOREBOARD,
@@ -241,8 +241,8 @@ SolLine *Sol_Debug_NewLine(World *world, float ttl);
 SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
 
 float Sol_Combat_Hit(World *world, int id, SolHit hit);
-float Sol_Combat_Damage(World *world, int id, int dealer, ScCombat *combat, float amount);
-float Sol_Combat_Heal(World *world, int id, int dealer, ScCombat *combat, float amount);
+float Sol_Combat_Damage(World *world, int id, int dealer, float amount);
+float Sol_Combat_Heal(World *world, int id, int dealer, float amount);
 
 void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos);
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
@@ -283,3 +283,8 @@ float Sol_GetBoneRoll(vec3s tangent, vec3s boneUp);
 vec3s Sol_Weapon_DmgPos(World *world, int id);
 Xform Sol_Weapon_BladeXform(World *world, int id);
 void Sol_Ability_Equip(World *world, int id, int slot, SolItem *item);
+void Sol_Ability_SetAllIdle(World *world, int id);
+bool Sol_CanAbility(World *world, int id);
+bool Sol_CanMove(World *world, int id);
+bool Sol_Combat_UseEnergy(World *world, int id, float amount);
+void Sol_Combat_AddEnergy(World *world, int id, float amount);

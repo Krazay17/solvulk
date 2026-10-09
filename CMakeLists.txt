@@ -38,7 +38,7 @@ endif()
 add_library(solvulk "")
 
 # --- Core Sources ---
-file(GLOB_RECURSE SOURCES CMAKE_CONFIGURE_DEPENDS "src/*.c")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 list(FILTER SOURCES EXCLUDE REGEX "src/platform/.*")
 target_sources(solvulk PRIVATE ${SOURCES})
 
@@ -54,14 +54,14 @@ if(WIN32)
         INTERFACE_LINK_LIBRARIES "ws2_32;winmm"
     )
 
-    file(GLOB PLATFORM_SOURCES "src/platform/win32/*.c")
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/win32/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES} )
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
     set(PLATFORM_LIBS user32 gdi32 dwmapi)
 else()
     find_package(X11 REQUIRED)
     list(FILTER SOURCES EXCLUDE REGEX "src/platform/win32/*.c")
-    file(GLOB PLATFORM_SOURCES "src/platform/linux/*.c")
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/linux/*.c")
     target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_XLIB_KHR)
     set(PLATFORM_LIBS X11::X11 Threads::Threads m dl)
@@ -113,7 +113,7 @@ if(WIN32)
    add_executable(solapp 
        "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
        "${CMAKE_SOURCE_DIR}/src/game/game.c"
-       "${CMAKE_SOURCE_DIR}/assets/res.rc"
+       #"${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")

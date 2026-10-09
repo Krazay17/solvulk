@@ -110,7 +110,7 @@ void Move3_Update(World *world, double dt)
             body3->vel.x = vel.x;
             body3->vel.z = vel.z;
         }
-        
+
         if (move->knockDur > 0.0f)
         {
             move->knockDur = maxf(0.0f, move->knockDur - fdt);
@@ -129,7 +129,6 @@ void Move3_Update(World *world, double dt)
             move->speedMod = Sol_InterpToOne(move->speedMod, fdt * 2.5f);
         }
     }
-
 }
 
 void CrouchHeight(World *world, int id, ScMove3 *move, float fdt)

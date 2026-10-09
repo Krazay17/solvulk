@@ -206,7 +206,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 }
             }
         }
-        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
+        if (Sol_Combat_UseEnergy(world, id, dt * 25.0f))
+            data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
         break;
     case 2: {
         if (prog.advanced)
@@ -235,6 +236,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             HitPause(data);
             forc(world, id, ScBody3) c->vel.y = fmaxf(c->vel.y, 2.0f);
+            Sol_Combat_AddEnergy(world, id, 10.0f);
         }
     }
     break;
@@ -306,15 +308,15 @@ void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
 void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, "hand.L");
-    float scale            = data->power;
-    vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, scale};
+    // Xform hand_xform       = Sol_Model_GetBoneXform(world, id, "hand.L");
+    // float scale            = data->power;
+    // vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, scale};
 
-    ModelSSBO *s = Sol_Render_GetNextModel(0, MODELKIND_WEAPONBLADE);
-    s->color     = (vec4s){1, 1, 1, 1};
-    s->position  = pos;
-    s->scale     = (vec4s){scale, scale, scale, scale};
-    s->rotation  = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
+    // ModelSSBO *s = Sol_Render_GetNextModel(0, MODELKIND_WEAPONBLADE);
+    // s->color     = (vec4s){1, 1, 1, 1};
+    // s->position  = pos;
+    // s->scale     = (vec4s){scale, scale, scale, scale};
+    // s->rotation  = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
 }
 
 DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)

@@ -16,9 +16,6 @@ void Move_Stun_Exit(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
 bool Move_Stun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next)
 {
-    if (next == MOVE_DEAD) 
-        return true;
-        
     if (Sol_Buff_HasBuff(world, id, BUFFKIND_STUN))
         return false;
 
@@ -27,11 +24,7 @@ bool Move_Stun_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next
 
 bool Move_Stun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    if(Sol_Comp_Has(world, id, ScBuff))
-    {
-        ScBuff *buff = Sol_Comp_Get(world, id, ScBuff);
-        return buff->activeKindsMask & BITC(BUFFKIND_STUN);
-    }
+    forc(world, id, ScBuff) return c->activeKindsMask & (1ULL << BUFFKIND_STUN);
     return false;
 }
 

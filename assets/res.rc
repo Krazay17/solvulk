@@ -45,6 +45,7 @@ SquareRing.png RCDATA "images/SquareRing.png"
 ShockSprite4.png RCDATA "images/ShockSprite4.png"
 Scythe.png RCDATA "images/Scythe.png"
 
+
 Dude.glb                   RCDATA          "models/Dude.glb"
 Wizard.glb                 RCDATA          "models/Wizard.glb"
 World0.glb                 RCDATA          "models/World0.glb"

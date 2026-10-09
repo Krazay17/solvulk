@@ -136,12 +136,13 @@ void Sol_User_SyncUI()
         return;
     SparseSet_ScPlayer *player_set = Sol_Comp_Set(game, ScPlayer);
     bool player_healthbars[32]     = {0};
+    bool player_energybars[32]     = {0};
     bool player_abilitybars[32]    = {0};
     // Cleanup UI from destroyed player ents
     for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
         ScRef *ref = &ref_set->data[i];
-        if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR)
+        if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR && ref->kind != REFKIND_ENERGYBAR)
             continue;
         int ref_id     = ref_set->dense[i];
         int ent_id     = ref->ent_id;
@@ -158,6 +159,8 @@ void Sol_User_SyncUI()
                 player_healthbars[player_idx] = true;
             else if (ref->kind == REFKIND_ABILITYBAR)
                 player_abilitybars[player_idx] = true;
+            else if (ref->kind == REFKIND_ENERGYBAR)
+                player_energybars[player_idx] = true;
         }
     }
 
@@ -173,12 +176,33 @@ void Sol_User_SyncUI()
             if (player_ent == view_id)
             {
                 x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
-                y = 620.0f;
+                y = 610.0f;
             }
-            int healthbar_id = Sol_Prefab_Healthbar(hud, (vec3s){x, y, 0});
+            int healthbar_id = Sol_Prefab_Powerbar(hud, (vec3s){x, y, 0}, (vec4s){0, 1, 0, 1}, 30.0f);
 
             *Sol_Comp_Add(hud, healthbar_id, ScRef) = (ScRef){
                 .kind      = REFKIND_HEALTHBAR,
+                .ent_world = game->index,
+                .ent_id    = player_ent,
+            };
+        }
+    }
+    for (int p = 0; p < player_set->cnt; p++)
+    {
+        if (p < 32 && !player_energybars[p])
+        {
+            int player_ent = player_set->dense[p];
+            float x        = 0.0f;
+            float y        = 50.0f + (p * 30.0f);
+            if (player_ent == view_id)
+            {
+                x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
+                y = 630.0f;
+            }
+            int energybar_id = Sol_Prefab_Powerbar(hud, (vec3s){x, y, 0}, (vec4s){1, 1, 0, 1}, 20.0f);
+
+            *Sol_Comp_Add(hud, energybar_id, ScRef) = (ScRef){
+                .kind      = REFKIND_ENERGYBAR,
                 .ent_world = game->index,
                 .ent_id    = player_ent,
             };

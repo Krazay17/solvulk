@@ -62,6 +62,7 @@ void Create_Menu()
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "ClearEnts", INTERACT_DRAGGABLE, UILAYER_4, Hook_ClearEnts);
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dudes", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnDudes);
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Reflect", INTERACT_DRAGGABLE, UILAYER_4, Hook_TestReflect);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "TakeDamage", INTERACT_DRAGGABLE, UILAYER_4, Hook_TakeDamage);
 }
 
 void Create_Hud()

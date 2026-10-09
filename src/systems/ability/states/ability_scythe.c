@@ -11,7 +11,7 @@ static const float charge_stage_time[5] = {0.0f, 0.25f, 0.25f, 0.2f, 0.2f};
 static const float spell_stage_time[4] = {0.0f, 0.3f, 0.5f, 0.2f};
 #define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
 
-static const float dash_stage_time[3] = {0.45f, 0.75f, 0.5f};
+static const float dash_stage_time[4] = {0.4f, 0.7f, 0.4f, 0.3f};
 #define DASH_STAGE_COUNT (sizeof(dash_stage_time) / sizeof(dash_stage_time[0]))
 
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
@@ -21,6 +21,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     if (data->stage > 0)
     {
         prog = Progress_Stage(data, dt, charge_stage_time, CHARGE_STAGE_COUNT);
+
         forc(world, id, ScMove3) c->speedMod = 0.4f;
     }
     if (prog.finished)
@@ -41,7 +42,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             forc(world, weaponId, ScWeapon) c->update_trail = true;
         }
-        forc(world, id, ScBody3) c->vel                 = vecSca(cmd->lookdir, 4.0f);
+        forc(world, id, ScBody3) c->vel = vecSca(cmd->lookdir, 5.0f);
         vec3s hand_pos  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
         vec3s blade_pos = Sol_Weapon_BladeXform(world, weaponId).pos;
         SolDistDir dd   = Sol_GetDistDir(blade_pos, hand_pos);
@@ -60,6 +61,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .entA   = id,
             .vel    = cmd->aimdir,
         };
+        hit.damage.buffMask |= (1u << BUFFKIND_STUN);
         int hits = Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
         if (hits > 0)
         {
@@ -73,20 +75,23 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     case 3: {
         if (prog.advanced)
         {
-            data->hitgen                    = Sol_Hitgen_Start(world);
+            data->hitgen     = Sol_Hitgen_Start(world);
             data->hitPauseDr = 0;
         }
-        forc(world, id, ScBody3) c->vel = vecSca(cmd->lookdir, -4.0f);
-        SolHit hit = {
+        forc(world, id, ScBody3) c->vel = vecSca(cmd->lookdir, -5.0f);
+        SolHit hit                      = {
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
             .entA   = id,
             .vel    = cmd->aimdir,
         };
+        hit.damage.effectMask |= EFFECTMASK_PULL;
         int hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5), hit, data->hitgen);
         if (hits)
+        {
             HitPause(data);
+        }
     }
     break;
     case 4:
@@ -106,9 +111,42 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
     if (prog.finished)
         Sol_Ability_SetState(world, id, 0, slot, 1);
 
+    SolHit hit = {
+        .entA   = id,
+        .damage = data->conf.damage,
+        .power  = data->power,
+        .kind   = HITKIND_MELEE_HIT,
+    };
+    hit.damage.amount *= 0.5f;
+
     switch (prog.stage)
     {
-    case 1:
+    case 1: {
+
+        if (prog.advanced)
+        {
+            forc(world, ability->left_weapon, ScWeapon) c->update_trail  = true;
+            forc(world, ability->right_weapon, ScWeapon) c->update_trail = true;
+        }
+
+        ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
+        if (!body)
+            break;
+
+        int hits;
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0), hit, data->hitgen);
+        if (hits > 0)
+        {
+            body->vel = GLMS_VEC3_ZERO;
+            HitPause(data);
+        }
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1), hit, data->hitgen2);
+        if (hits > 0)
+        {
+            body->vel = GLMS_VEC3_ZERO;
+            HitPause(data);
+        }
+
         vec3s pos         = world->xform.pos[id];
         float stage_delta = data->accum / dash_stage_time[1];
         forc(world, id, ScBody3)
@@ -121,8 +159,17 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 
             c->vel = jump_vel;
         }
-        break;
-    case 2:
+    }
+    break;
+    case 2: {
+        if (prog.advanced)
+        {
+            forc(world, ability->left_weapon, ScWeapon) c->update_trail  = true;
+            forc(world, ability->right_weapon, ScWeapon) c->update_trail = true;
+
+            data->hitgen  = Sol_Hitgen_Start(world);
+            data->hitgen2 = Sol_Hitgen_Start(world);
+        }
         ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
         if (!body)
             break;
@@ -131,12 +178,6 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             if (c->state == MOVE_FALL)
                 body->vel.y = -30.0f;
         }
-        SolHit hit = {
-            .entA   = id,
-            .damage = data->conf.damage,
-            .power  = data->power,
-            .kind   = HITKIND_MELEE_HIT,
-        };
         int hits;
         hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0), hit, data->hitgen);
         if (hits > 0)
@@ -151,6 +192,11 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             HitPause(data);
         }
     }
+    break;
+    case 3:
+        WeaponTrails_Off(world, ability);
+        break;
+    }
 }
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
@@ -161,7 +207,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     if (slot >= 5)
         data->power = MIN_POWER;
     else
-        data->power = 1.0f;
+        data->power = data->conf.maxpower;
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

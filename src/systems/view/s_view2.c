@@ -198,7 +198,7 @@ static void DrawText(World *world, int id, float fdt, View2 *view)
                                       });
 }
 
-static void DrawHealthbar(World *world, int id, float fdt, View2 *view)
+static void PowerBar(World *world, int id, float fdt, View2 *view)
 {
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
     if (!ref)
@@ -206,20 +206,22 @@ static void DrawHealthbar(World *world, int id, float fdt, View2 *view)
     ScCombat *combat = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScCombat);
     if (!combat || combat->health <= 0.0f)
         return;
-    vec3s pos        = world->xform.draw_pos[id];
-    float speed      = -view->fillSpeed;
-    float factor     = 1.0f - expf(speed * fdt);
-    view->targetFill = combat->health / combat->healthMax;
-    view->fill       = Sol_Math_Lerp(view->fill, view->targetFill, factor);
-    RectSSBO *ssbo   = Sol_Render_GetNext_Rect(view->layer);
-    ssbo->pos        = (vec4s){UISCALE(pos.x), UISCALE(pos.y)};
-    ssbo->flags      = 1;
-    ssbo->extra.y    = view->fill;
-    ssbo->extra.x    = view->border;
-    ssbo->rect       = (vec4s){0, 0, UISCALE(view->dims.x), UISCALE(view->dims.y)};
-    ssbo->color      = view->color;
-    ssbo->textureId  = view->textureID;
-    ssbo->uv         = view->textureUV;
+
+    vec3s pos    = world->xform.draw_pos[id];
+    float speed  = -view->fillSpeed;
+    float factor = 1.0f - expf(speed * fdt);
+    view->targetFill =
+        ref->kind == REFKIND_HEALTHBAR ? combat->health / combat->healthMax : combat->energy / combat->energyMax;
+    view->fill      = Sol_Math_Lerp(view->fill, view->targetFill, factor);
+    RectSSBO *ssbo  = Sol_Render_GetNext_Rect(view->layer);
+    ssbo->pos       = (vec4s){UISCALE(pos.x), UISCALE(pos.y)};
+    ssbo->flags     = 1;
+    ssbo->extra.y   = view->fill;
+    ssbo->extra.x   = view->border;
+    ssbo->rect      = (vec4s){0, 0, UISCALE(view->dims.x), UISCALE(view->dims.y)};
+    ssbo->color     = view->color;
+    ssbo->textureId = view->textureID;
+    ssbo->uv        = view->textureUV;
 }
 
 const void (*draw_funcs[])(World *, int, float, View2 *) = {
@@ -228,7 +230,7 @@ const void (*draw_funcs[])(World *, int, float, View2 *) = {
     [VIEW2KIND_SLIDER_FILL]         = DrawSliderFill,
     [VIEW2KIND_CIRCLE]              = DrawCircle,
     [VIEW2KIND_TEXT]                = DrawText,
-    [VIEW2KIND_HEALTHBAR]           = DrawHealthbar,
+    [VIEW2KIND_POWERBAR]            = PowerBar,
     [VIEW2KIND_ABILITYBAR]          = DrawAbilitybar,
     [VIEW2KIND_ABILITYBAR_BASEICON] = DrawAbilitybar,
 };

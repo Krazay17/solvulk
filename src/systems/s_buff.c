@@ -9,6 +9,10 @@ const Buff buff_kinds[BUFFKIND_COUNT] = {
             .duration = 3.0f,
             .power    = 1.0f,
         },
+    [BUFFKIND_STUN] =
+        {
+            .duration = 0.5f,
+        },
 };
 
 const char *buff_names[BUFFKIND_COUNT] = {
@@ -52,6 +56,10 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
     }
 }
 
+static inline void Stun_OnApply(World *world, int id, Buff *buff)
+{
+    Sol_Ability_SetAllIdle(world, id);
+}
 typedef void (*On)(World *, int, Buff *);
 static const struct
 {
@@ -66,6 +74,10 @@ static const struct
             .remove = Fire_OnRemove,
             .update = Fire_OnUpdate,
             .draw   = Fire_OnDraw,
+        },
+    [BUFFKIND_STUN] =
+        {
+            .apply = Stun_OnApply,
         },
 };
 

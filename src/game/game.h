@@ -201,7 +201,7 @@ static inline void Hook_SetPlayerFov(World *w, int a, int b)
     ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
     ScCamera *camera = Sol_Comp_Get(game, id, ScCamera);
     if (camera && slider)
-        camera->fov = Sol_Math_Remap(slider->value, 0, 1.0f, 60.0f, 120.f);
+        camera->fov = Sol_Math_Remap(slider->value, 0, 1.0f, 60.0f, 90.f);
 }
 static inline void Hook_ClearEnts(World *w, int a, int b)
 {
@@ -237,6 +237,13 @@ static inline void Hook_TestReflect(World *w, int a, int b)
     vec3s pos   = {0, 0, 0};
     SolHit hit  = {.pos = pos};
     Sol_Ability_TryDefend(game, id, &hit);
+}
+
+static inline void Hook_TakeDamage(World *w, int a, int b)
+{
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
+    Sol_Combat_Damage(game, id, 0, 10.0f);
 }
 
 static inline void Hook_Test(World *w, int a, int b)

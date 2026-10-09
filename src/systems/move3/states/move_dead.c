@@ -23,11 +23,7 @@ bool Move_Dead_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next
 }
 bool Move_Dead_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 last)
 {
-    if (Sol_Comp_Has(world, id, ScCombat))
-    {
-        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-        return combat->is_dead;
-    }
+    forc(world, id, ScCombat) return c->is_dead;
     return false;
 }
 

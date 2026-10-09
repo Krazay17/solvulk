@@ -73,6 +73,8 @@ static const ScMove3 dude_move = {
 static const ScCombat dude_combat = {
     .healthMax   = 100.0f,
     .health      = 100.0f,
+    .energyMax   = 100.0f,
+    .energy      = 100.0f,
     .respawnTime = 2.0f,
 };
 
@@ -351,9 +353,9 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     return id;
 }
 
-int Sol_Prefab_Healthbar(World *world, vec3s pos)
+int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
 {
-    vec2s dims = {300.0f, 30.0f};
+    vec2s dims = {300.0f, dim_y};
 
     int id               = Sol_Create_Ent(world, pos);
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
@@ -383,7 +385,7 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[2] = (View2){
-        .kind       = VIEW2KIND_HEALTHBAR,
+        .kind       = VIEW2KIND_POWERBAR,
         .dims       = {dims.x, dims.y},
         .color      = {1.0f, 0.0f, 0.0f, 1.0f},
         .fillSpeed  = 1.5f,
@@ -391,9 +393,9 @@ int Sol_Prefab_Healthbar(World *world, vec3s pos)
         .textureID  = SOL_TEXTURE_HEALTH,
     };
     view->views[3] = (View2){
-        .kind       = VIEW2KIND_HEALTHBAR,
+        .kind       = VIEW2KIND_POWERBAR,
         .dims       = {dims.x, dims.y},
-        .color      = {0.0f, 1.0f, 0.0f, 1.0f},
+        .color      = color,
         .fillSpeed  = 10.0f,
         .hoverColor = {1, 1, 0, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
@@ -461,8 +463,8 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_combat         = 10.0f;
     }
 
-    ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
-    ribbon->rate = 0.02f;
+    ScRibbon *ribbon         = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
+    ribbon->rate             = 0.02f;
     ribbon->ribbon.thickness = size;
     Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0, 0);
 
@@ -707,7 +709,7 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
     ScRibbon *ribbon      = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING);
     ribbon->rate          = 0.033f;
     ribbon->ribbon.sheets = 2;
-    ribbon->ribbon.flags = 1;
+    ribbon->ribbon.flags  = 1;
     Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0.0f, 0);
 
     return id;

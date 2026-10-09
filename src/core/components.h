@@ -341,6 +341,8 @@ typedef struct ScCombat
     float energy, energyMax, energyRegen;
     float mana, manaMax, manaRegen;
 
+    float energyRegenDelay;
+
     float damageTaken;
     float healingTaken;
 

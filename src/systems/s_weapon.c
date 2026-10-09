@@ -30,7 +30,6 @@ int Make_Claw(World *world, int owner, int slot)
     model->kind    = MODELKIND_WEAPONBLADE;
     Sol_Comp_Add(world, id, ScAnim);
     ScRibbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL);
-    ribbon->ribbon.texture = SOL_TEXTURE_SQUARERING;
     ribbon->rate     = 0.01f;
     return id;
 }
@@ -44,7 +43,7 @@ int Make_Scythe(World *world, int owner, int slot)
     parent->parentId = owner;
 
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
-    glm_euler_zyx_quat((vec3){90.0f, 0.0f, 0.0f}, parent->localQuat.raw);
+    glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, 0.0f}, parent->localQuat.raw);
 
     ScModel *model   = Sol_Comp_Add(world, id, ScModel);
     model->kind      = MODELKIND_SCYTHE;

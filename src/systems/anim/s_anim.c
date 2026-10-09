@@ -47,61 +47,63 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
         },
     [MODELKIND_DUDE] =
         {
-            [ANIM_IDLE]                = 0,
-            [ANIM_WALK_FWD]            = 1,
-            [ANIM_WALK_LEFT]           = 2,
-            [ANIM_WALK_BWD]            = 3,
-            [ANIM_WALK_RIGHT]          = 4,
-            [ANIM_JUMP]                = 39,
-            [ANIM_FLIPJUMP]            = 7,
-            [ANIM_FALL]                = 5,
-            [ANIM_DASH_FWD]            = 8,
-            [ANIM_DASH_LEFT]           = 9,
-            [ANIM_DASH_BWD]            = 10,
-            [ANIM_DASH_RIGHT]          = 11,
-            [ANIM_CHARGE_LEFT]         = 25,
-            [ANIM_CHARGE_RIGHT]        = 41,
-            [ANIM_CHANNEL_LEFT]        = 29,
-            [ANIM_CHANNEL_RIGHT]       = 30,
-            [ANIM_ATTACK_LEFT]         = 16,
-            [ANIM_ATTACK_RIGHT]        = 15,
-            [ANIM_SPINSLASH]           = 24,
-            [ANIM_ABILITY0]            = 24,
-            [ANIM_ABILITY1]            = 15,
-            [ANIM_ABILITY2]            = 15,
-            [ANIM_ABILITY3]            = 15,
-            [ANIM_ABILITY4]            = 25,
-            [ANIM_ABILITY5]            = 15,
-            [ANIM_ABILITY6]            = 15,
-            [ANIM_ABILITY7]            = 15,
-            [ANIM_ABILITY8]            = 15,
-            [ANIM_ABILITY9]            = 15,
-            [ANIM_CROUCHWALK_FWD]      = 26,
-            [ANIM_CROUCHWALK_BWD]      = 26,
-            [ANIM_CROUCHWALK_LEFT]     = 26,
-            [ANIM_CROUCHWALK_RIGHT]    = 26,
-            [ANIM_SLIDE_FWD]           = 27,
-            [ANIM_SLIDE_BWD]           = 27,
-            [ANIM_SLIDE_LEFT]          = 27,
-            [ANIM_SLIDE_RIGHT]         = 27,
-            [ANIM_DEATH]               = 23,
-            [ANIM_STUN]                = 28,
-            [ANIM_WALLJUMP_LEFT]       = 31,
-            [ANIM_WALLJUMP_RIGHT]      = 32,
-            [ANIM_WALLRUN_FWD]         = 34,
-            [ANIM_MANTLE]              = 33,
-            [ANIM_MANTLE_ROLL]         = 37,
-            [ANIM_WALLRUN_LEFT]        = 35,
-            [ANIM_WALLRUN_RIGHT]       = 36,
-            [ANIM_BACKFLIP]            = 38,
-            [ANIM_HARDLAND]            = 40,
-            [ANIM_2HANDCASTUP]         = 42,
-            [ANIM_2HANDCASTFWD]        = 17,
-            [ANIM_RIGHTUPPERCUT]       = 43,
-            [ANIM_LEFTUPPERCUT]        = 44,
-            [ANIM_ATTACK_LEFT_SCYTHE]  = 45,
-            [ANIM_ATTACK_RIGHT_SCYTHE] = 46,
-            [ANIM_ATTACK_2HSCYTHE]     = 47,
+            [ANIM_IDLE]                 = 0,
+            [ANIM_WALK_FWD]             = 1,
+            [ANIM_WALK_LEFT]            = 2,
+            [ANIM_WALK_BWD]             = 3,
+            [ANIM_WALK_RIGHT]           = 4,
+            [ANIM_JUMP]                 = 39,
+            [ANIM_FLIPJUMP]             = 7,
+            [ANIM_FALL]                 = 5,
+            [ANIM_DASH_FWD]             = 8,
+            [ANIM_DASH_LEFT]            = 9,
+            [ANIM_DASH_BWD]             = 10,
+            [ANIM_DASH_RIGHT]           = 11,
+            [ANIM_CHARGE_LEFT]          = 25,
+            [ANIM_CHARGE_RIGHT]         = 41,
+            [ANIM_CHANNEL_LEFT]         = 29,
+            [ANIM_CHANNEL_RIGHT]        = 30,
+            [ANIM_ATTACK_LEFT]          = 16,
+            [ANIM_ATTACK_RIGHT]         = 15,
+            [ANIM_SPINSLASH]            = 24,
+            [ANIM_ABILITY0]             = 24,
+            [ANIM_ABILITY1]             = 15,
+            [ANIM_ABILITY2]             = 15,
+            [ANIM_ABILITY3]             = 15,
+            [ANIM_ABILITY4]             = 25,
+            [ANIM_ABILITY5]             = 15,
+            [ANIM_ABILITY6]             = 15,
+            [ANIM_ABILITY7]             = 15,
+            [ANIM_ABILITY8]             = 15,
+            [ANIM_ABILITY9]             = 15,
+            [ANIM_CROUCHWALK_FWD]       = 26,
+            [ANIM_CROUCHWALK_BWD]       = 26,
+            [ANIM_CROUCHWALK_LEFT]      = 26,
+            [ANIM_CROUCHWALK_RIGHT]     = 26,
+            [ANIM_SLIDE_FWD]            = 27,
+            [ANIM_SLIDE_BWD]            = 27,
+            [ANIM_SLIDE_LEFT]           = 27,
+            [ANIM_SLIDE_RIGHT]          = 27,
+            [ANIM_DEATH]                = 23,
+            [ANIM_STUN]                 = 28,
+            [ANIM_WALLJUMP_LEFT]        = 31,
+            [ANIM_WALLJUMP_RIGHT]       = 32,
+            [ANIM_WALLRUN_FWD]          = 34,
+            [ANIM_MANTLE]               = 33,
+            [ANIM_MANTLE_ROLL]          = 37,
+            [ANIM_WALLRUN_LEFT]         = 35,
+            [ANIM_WALLRUN_RIGHT]        = 36,
+            [ANIM_BACKFLIP]             = 38,
+            [ANIM_HARDLAND]             = 40,
+            [ANIM_2HANDCASTUP]          = 42,
+            [ANIM_2HANDCASTFWD]         = 17,
+            [ANIM_RIGHTUPPERCUT]        = 43,
+            [ANIM_LEFTUPPERCUT]         = 44,
+            [ANIM_ATTACK_LEFT_SCYTHE]   = 45,
+            [ANIM_ATTACK_RIGHT_SCYTHE]  = 46,
+            [ANIM_ATTACK_2HSCYTHE]      = 47,
+            [ANIM_ATTACK_2HSCYTHE_JUMP] = 48,
+            [ANIM_ATTACK_2HSCYTHE_SLAM] = 49,
         },
     [MODELKIND_ZORGON] =
         {
@@ -333,9 +335,10 @@ struct AnimMap
         },
     [ABILITY_STATE_SCYTHE_DASH] =
         {
-            .hand_anim[0][0] = ANIM_ATTACK_2HSCYTHE,
-            .hand_anim[0][1] = ANIM_ATTACK_2HSCYTHE,
-            .hand_anim[0][2] = ANIM_ATTACK_2HSCYTHE,
+            .hand_anim[0][0] = ANIM_ATTACK_2HSCYTHE_JUMP,
+            .hand_anim[0][1] = ANIM_ATTACK_2HSCYTHE_JUMP,
+            .hand_anim[0][2] = ANIM_ATTACK_2HSCYTHE_SLAM,
+            .hand_anim[0][3] = ANIM_ATTACK_2HSCYTHE_SLAM,
             .speed           = 1.0f,
         },
     [ABILITY_STATE_SHIELD] =
@@ -378,11 +381,13 @@ void Anim_Tick(World *world, double dt)
                 {
                 case ABILITY_STATE_IDLE:
                     break;
-                case ABILITY_STATE_CLAW_CHARGE:
+                case ABILITY_STATE_CLAW_CHARGE: {
+
                     ability_anim.layerId  = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
                     ability_anim.blendIn  = 0.0f;
                     ability_anim.blendOut = 0.0f;
-                    break;
+                }
+                break;
                 case ABILITY_STATE_FIREBALL_CHARGE: {
                     ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
@@ -433,13 +438,14 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_SCYTHE_DASH: {
+                    ability_anim.playKind = ANIMPLAYKIND_NOLOOP;
                     switch (data->stage)
                     {
-                    case 0:
-                        ability_anim.speed = 1.6f;
-                        break;
                     case 1:
-                        ability_anim.speed = 0.0f;
+                        ability_anim.speed = 1.2f;
+                        break;
+                    case 2:
+                        ability_anim.speed = 0.9f;
                         break;
                     }
                 }

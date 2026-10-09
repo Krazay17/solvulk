@@ -79,7 +79,7 @@ static inline void WeaponTrails_Off(World *world, ScAbility *ability)
     if (weapon)
         weapon->update_trail = false;
 }
-static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand)
+static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand, float power)
 {
     const char *bone = right_hand ? "hand.R.Weapon" : "hand.L.Weapon";
     Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);

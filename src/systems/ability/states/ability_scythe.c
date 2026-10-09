@@ -5,7 +5,7 @@
 
 #define MIN_POWER 0.2f
 
-static const float charge_stage_time[5] = {0.0f, 0.25f, 0.25f, 0.2f, 0.2f};
+static const float charge_stage_time[5] = {0.0f, 0.25f, 0.2f, 0.2f, 0.2f};
 #define CHARGE_STAGE_COUNT (sizeof(charge_stage_time) / sizeof(charge_stage_time[0]))
 
 static const float spell_stage_time[4] = {0.0f, 0.3f, 0.5f, 0.2f};
@@ -33,8 +33,13 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             data->stage++;
             ability->prio_slot = slot;
+            break;
         }
-        data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
+
+        const float amount = dt * 40.0f;
+        if (Sol_Combat_UseEnergy(world, id, amount))
+            data->power += amount * 0.01f;
+
         break;
     case 2: {
         int weaponId = slot > 5 ? ability->right_weapon : ability->left_weapon;
@@ -43,18 +48,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             forc(world, weaponId, ScWeapon) c->update_trail = true;
         }
         forc(world, id, ScBody3) c->vel = vecSca(cmd->lookdir, 5.0f);
-        vec3s hand_pos  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
-        vec3s blade_pos = Sol_Weapon_BladeXform(world, weaponId).pos;
-        SolDistDir dd   = Sol_GetDistDir(blade_pos, hand_pos);
-        SolRay ray      = {
-            .start     = hand_pos,
-            .dir       = dd.dir,
-            .dist      = dd.dist * (1.0f + data->power),
-            .ignoreEnt = id,
-            .mask      = COLLAYER_ALL,
-            .radius    = 0.3f,
-        };
-        SolHit hit = {
+        SolHit hit                      = {
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
@@ -62,7 +56,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .vel    = cmd->aimdir,
         };
         hit.damage.buffMask |= (1u << BUFFKIND_STUN);
-        int hits = Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
+        int hits =
+            Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             HitPause(data);
@@ -87,7 +82,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .vel    = cmd->aimdir,
         };
         hit.damage.effectMask |= EFFECTMASK_PULL;
-        int hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5), hit, data->hitgen);
+        int hits =
+            Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5, data->power), hit, data->hitgen);
         if (hits)
         {
             HitPause(data);
@@ -134,30 +130,43 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             break;
 
         int hits;
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0), hit, data->hitgen);
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1), hit, data->hitgen2);
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
 
-        vec3s pos         = world->xform.pos[id];
-        float stage_delta = data->accum / dash_stage_time[1];
         forc(world, id, ScBody3)
         {
-            vec3s tangent  = vecCross(cmd->lookdir, WORLD_UP);
-            float angle    = Sol_Math_Lerp(-45.0f, -120.0f, stage_delta);
-            vec3s jump_dir = glms_vec3_rotate(WORLD_UP, glm_rad(angle), tangent);
-            float boost    = Sol_Math_Lerp_Clamped(25.0f, 3.0f, stage_delta);
-            vec3s jump_vel = vecSca(jump_dir, boost);
+            float stage_delta = glm_clamp(data->accum / dash_stage_time[1], 0.0f, 1.0f);
 
-            c->vel = jump_vel;
+            // Build a horizontal direction, ignoring look pitch.
+            vec3s forward = cmd->lookdir;
+            forward.y     = 0.0f;
+
+            if (glms_vec3_norm2(forward) < FLOAT_EPSILON)
+                forward = (vec3s){{0.0f, 0.0f, -1.0f}};
+            else
+                forward = glms_vec3_normalize(forward);
+
+            // Guaranteed nonzero rotation axis.
+            vec3s tangent = glms_vec3_cross(forward, WORLD_UP);
+            tangent       = glms_vec3_normalize(tangent);
+
+            float angle    = glm_rad(Sol_Math_Lerp(-45.0f, -120.0f, stage_delta));
+            vec3s jump_dir = glms_vec3_rotate(WORLD_UP, angle, tangent);
+            jump_dir       = glms_vec3_normalize(jump_dir);
+
+            float boost = Sol_Math_Lerp_Clamped(25.0f, 3.0f, stage_delta);
+
+            c->vel = glms_vec3_scale(jump_dir, boost);
         }
     }
     break;
@@ -179,13 +188,13 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
                 body->vel.y = -30.0f;
         }
         int hits;
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0), hit, data->hitgen);
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1), hit, data->hitgen2);
+        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;

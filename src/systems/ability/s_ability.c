@@ -77,7 +77,7 @@ const AbilityConfig ability_base[ABILITY_STATE_COUNT] = {
         },
     [ABILITY_STATE_SHIELD_DASH] =
         {
-            .duration = 0.3f,
+            .duration = 0.4f,
             .cooldown = 2.0f,
             .damage =
                 {
@@ -189,10 +189,14 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
 
 };
 
+static inline u32 Get_SlotAbilityKind(const ScAbility *ability, int slot)
+{
+    return ability->slotted_actions[slot] > 0 ? ability->slotted_actions[slot] : ability->base_actions[slot];
+}
+
 static inline u32 Get_SlotState(const ScAbility *ability, int slot)
 {
-    u32 kind = ability->slotted_actions[slot] > 0 ? ability->slotted_actions[slot] : ability->base_actions[slot];
-    return abilityslot_state_map[kind][slot_kind_map[slot]];
+    return abilityslot_state_map[Get_SlotAbilityKind(ability, slot)][slot_kind_map[slot]];
 }
 
 const WeaponKind ability_weapon_map[ABILITYKIND_COUNT] = {
@@ -207,10 +211,10 @@ static void Equip_Weapons(World *world, int id, ScAbility *ability)
     ScWeapon *left_weapon  = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
     ScWeapon *right_weapon = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
     if (!ability->left_weapon || !left_weapon)
-        ability->left_weapon = Make_Weapon[ability_weapon_map[ability->slotted_actions[5]]](world, id, 5);
+        ability->left_weapon = Make_Weapon[ability_weapon_map[Get_SlotAbilityKind(ability, 5)]](world, id, 5);
 
     if (!ability->right_weapon || !right_weapon)
-        ability->right_weapon = Make_Weapon[ability_weapon_map[ability->slotted_actions[6]]](world, id, 6);
+        ability->right_weapon = Make_Weapon[ability_weapon_map[Get_SlotAbilityKind(ability, 6)]](world, id, 6);
 }
 
 #define SHARED_LOCKOUT_COUNT 5
@@ -428,4 +432,33 @@ void Sol_Ability_SetAllIdle(World *world, int id)
         for (int i = 0; i < ABILITY_SLOTS; i++)
             Sol_Ability_SetState(world, id, 0, i, true);
     }
+}
+bool Sol_Ability_IsCharging(World *world, int id)
+{
+    forc(world, id, ScAbility)
+    {
+        for (int s = 5; s < ABILITY_SLOTS; s++)
+        {
+            if (c->state[s] != 0 && c->stateData[s].stage == 0)
+                return true;
+        }
+    }
+    return false;
+}
+bool Sol_Ability_AnyActive(World *world, int id)
+{
+    forc(world, id, ScAbility)
+    {
+        for (int s = 5; s < ABILITY_SLOTS; s++)
+        {
+            if (c->state[s] != 0 && c->stateData[s].stage > 0)
+                return true;
+        }
+        for (int s = 0; s < ABILITY_SLOTS - 2; s++)
+        {
+            if (c->state[s] != 0)
+                return true;
+        }
+    }
+    return false;
 }

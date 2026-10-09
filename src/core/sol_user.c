@@ -369,6 +369,38 @@ void User_Debug(double dt)
     }
 }
 
+const float show_healthbar_d2 = 100.0f;
+static void ShowHealthbar_OnDistance(World *world, int user_ent)
+{
+    if (!world || !user_ent)
+        return;
+    vec3s pos_user          = world->xform.pos[user_ent];
+    SparseSet_ScCombat *set = Sol_Comp_Set(world, ScCombat);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id = set->dense[i];
+        if (id == user_ent)
+            continue;
+        vec3s pos   = world->xform.pos[id];
+        vec3s delta = vecSub(pos, pos_user);
+        float d2    = vecDot(delta, delta);
+        if (d2 <= show_healthbar_d2)
+        {
+            forc(world, id, ScView3)
+            {
+                for (int v = 0; v < solb_count(c->views_b); v++)
+                {
+                    View3 *view = &c->views_b[v];
+                    if (view->kind == VIEW3KIND_POWERBAR)
+                    {
+                        view->_elapsed = 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void Sol_User_Tick(double dt)
 {
     SolMouse mouse         = Sol_Input_GetMouse();
@@ -385,6 +417,9 @@ void Sol_User_Tick(double dt)
 
     Find_User_Hit(dt, mouse);
     Sol_User_SyncUI();
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
+    ShowHealthbar_OnDistance(game, id);
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
     {

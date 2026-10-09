@@ -3,7 +3,7 @@
 #include "render/render.h"
 #include "sol_user.h"
 
-static void Sphere_Draw(World *world, int id, const View3 *view)
+static inline void Sphere_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_SPHERE);
@@ -11,7 +11,7 @@ static void Sphere_Draw(World *world, int id, const View3 *view)
     sphere->color      = view->color;
 }
 
-static void DragonOrb_Draw(World *world, int id, const View3 *view)
+static inline void DragonOrb_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PARTICLE_DRAGON);
@@ -19,7 +19,7 @@ static void DragonOrb_Draw(World *world, int id, const View3 *view)
     sphere->color      = view->color;
 }
 
-static void PlasmaOrb_Draw(World *world, int id, const View3 *view)
+static inline void PlasmaOrb_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PLASMA);
@@ -27,7 +27,7 @@ static void PlasmaOrb_Draw(World *world, int id, const View3 *view)
     sphere->color      = view->color;
 }
 
-static void Bolt_Draw(World *world, int id, const View3 *view)
+static inline void Bolt_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
 
@@ -62,7 +62,7 @@ static void Bolt_Draw(World *world, int id, const View3 *view)
     }
 }
 
-static void Fireball_Draw(World *world, int id, const View3 *view)
+static inline void Fireball_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
@@ -73,7 +73,7 @@ static void Fireball_Draw(World *world, int id, const View3 *view)
     };
 }
 
-static void Healthbar_Draw(World *world, int id, const View3 *view)
+static inline void Powerbar_Draw(World *world, int id, const View3 *view)
 {
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
 
@@ -82,29 +82,28 @@ static void Healthbar_Draw(World *world, int id, const View3 *view)
 
     if (id == sol_user.view_ent)
         return;
+    
     vec3s player_pos = world->xform.pos[sol_user.view_ent];
     Xform xform      = Xform_GetDraw(world, id);
-    // if (glms_vec3_norm(vecSub(xform.pos, player_pos)) < 15.0f)
-    {
-        vec4s pos4    = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
-        ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
-        if (body)
-            pos4.y += body->dims.y;
+    vec4s pos4       = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
+    ScBody3 *body    = Sol_Comp_Get(world, id, ScBody3);
+    if (body)
+        pos4.y += body->dims.y;
 
-        float fill = combat->health / combat->healthMax;
+    float fill = glm_clamp(combat->health / combat->healthMax, 0.0f, 1.0f);
+    float fillB = glm_clamp(combat->energy / combat->energyMax, 0.0f, 1.0f);
 
-        *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
-            .pos   = pos4,
-            .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
-            .color = view->color,
-            .uv    = (vec4s){1.0f, 1.0f, 0.0f, 0.0f},
-            .extra = (vec4s){fill, 0.0f, 0.0f, 0.0f},
-            .type  = QUADTYPE_FACECAM,
-        };
-    }
+    *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
+        .pos   = pos4,
+        .rect  = (vec4s){0.0f, 0.0f, 2.0f, 0.2f},
+        .color = view->color,
+        .uv    = (vec4s){1.0f, 1.0f, 0.0f, 0.0f},
+        .extra = (vec4s){fill, fillB, 0.0f, 0.0f},
+        .type  = QUADTYPE_FACECAM,
+    };
 }
 
-static void Pyramid_Draw(World *world, int id, const View3 *view)
+static inline void Pyramid_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
@@ -119,10 +118,10 @@ static void Pyramid_Draw(World *world, int id, const View3 *view)
 }
 
 static void (*const draw_func[VIEW3KIND_COUNT])(World *, int, const View3 *) = {
-    [VIEW3KIND_SPHERE]    = Sphere_Draw,
-    [VIEW3KIND_FIREBALL]  = Fireball_Draw,
-    [VIEW3KIND_HEALTHBAR] = Healthbar_Draw,
-    [VIEW3KIND_PYRAMID]   = Pyramid_Draw,
+    [VIEW3KIND_SPHERE]   = Sphere_Draw,
+    [VIEW3KIND_FIREBALL] = Fireball_Draw,
+    [VIEW3KIND_POWERBAR] = Powerbar_Draw,
+    [VIEW3KIND_PYRAMID]  = Pyramid_Draw,
 };
 
 void View3_Draw(World *world, double dt)
@@ -142,7 +141,7 @@ void View3_Draw(World *world, double dt)
                 for (int v = 0; v < solb_count(sc->views_b); v++)
                 {
                     View3 *view = &sc->views_b[v];
-                    if (view->kind == VIEW3KIND_HEALTHBAR)
+                    if (view->kind == VIEW3KIND_POWERBAR)
                         view->_elapsed = 0;
                 }
             }
@@ -168,8 +167,8 @@ void View3_Draw(World *world, double dt)
             case VIEW3KIND_SPHERE:
                 Sphere_Draw(world, id, view);
                 break;
-            case VIEW3KIND_HEALTHBAR:
-                Healthbar_Draw(world, id, view);
+            case VIEW3KIND_POWERBAR:
+                Powerbar_Draw(world, id, view);
                 break;
             case VIEW3KIND_PYRAMID:
                 Pyramid_Draw(world, id, view);

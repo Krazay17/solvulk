@@ -286,16 +286,19 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     if (!Sol_Comp_Has(world, id, ScCombat))
         return 0.0f;
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-    int ownerId      = hit.entA;
+    int dealer       = hit.entA;
     ScOwner *owner   = Sol_Comp_Get(world, hit.entA, ScOwner);
     if (owner)
-        ownerId = owner->ownerId;
+        dealer = owner->ownerId;
 
-    ScCombat *dealer_combat = Sol_Comp_Get(world, ownerId, ScCombat);
+    ScCombat *dealer_combat = Sol_Comp_Get(world, dealer, ScCombat);
     float damage_done       = 0;
     float damage            = hit.damage.amount * hit.power;
     if (hit.damage.isHeal)
+    {
+        Sol_Combat_AddEnergy(world, dealer, damage * 0.25f);
         damage_done = Apply_Heal(combat, damage);
+    }
     else
     {
         if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
@@ -305,13 +308,15 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_INVULNHIT, .as.fx.pos = hit.pos});
             return 0.0f;
         }
+        Sol_Combat_AddEnergy(world, dealer, damage * 0.25f);
+
         if (hit.hook)
         {
-            hit.hook(world, ownerId, hit.entB);
+            hit.hook(world, dealer, hit.entB);
         }
         if (hit.damage.buffMask > 0)
         {
-            Sol_Buff_AddMask(world, id, hit.damage.buffMask, ownerId, hit.power);
+            Sol_Buff_AddMask(world, id, hit.damage.buffMask, dealer, hit.power);
         }
         if (hit.damage.effectMask & EFFECTMASK_CHAINLIGHTNING)
         {
@@ -319,7 +324,7 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             SolHit chain_hit = {.damage.amount   = 10.0f,
                                 .damage.buffMask = hit.damage.buffMask,
                                 .power           = hit.power,
-                                .entA            = ownerId,
+                                .entA            = dealer,
                                 .entB            = hit.entB,
                                 .kind            = HITKIND_LIGHTNING};
             Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 20);
@@ -349,18 +354,18 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         if (hit.damage.effectMask & EFFECTMASK_LIFESTEAL)
         {
             if (dealer_combat)
-                Sol_Combat_Heal(world, ownerId, ownerId, damage * 0.2f);
+                Sol_Combat_Heal(world, dealer, dealer, damage * 0.2f);
         }
         if (hit.damage.effectMask & EFFECTMASK_INTERRUPT)
         {
             Sol_Ability_SetAllIdle(world, id);
         }
 
-        combat->lastHitBy = ownerId;
+        combat->lastHitBy = dealer;
         damage_done       = Apply_Damage(combat, damage);
 
         Sol_Event_Push(world, EVENTKIND_HIT,
-                       (SolEvent){.as.hit.kind = hit.kind, .entA = ownerId, .entB = id, .as.hit = hit});
+                       (SolEvent){.as.hit.kind = hit.kind, .entA = dealer, .entB = id, .as.hit = hit});
     }
 
     return damage_done;

@@ -92,13 +92,15 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                 projectile->aoe_hit      = hit;
                 projectile->power        = data->power;
             }
-
             break;
         }
-        data->power    = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
-        ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
-        if (move3)
-            move3->speedMod = Sol_Math_Lerp(1.0f, 0.5f, data->power / data->conf.maxpower);
+
+        const float amount = dt * 40.0f;
+        if (Sol_Combat_UseEnergy(world, id, amount))
+            data->power += amount * 0.01f;
+
+        forc(world, id, ScMove3) c->speedMod = Sol_Math_Lerp(1.0f, 0.5f, data->power / data->conf.maxpower);
+
         break;
     case 2:
         data->hitaccum += dt;

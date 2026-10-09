@@ -401,6 +401,11 @@ typedef struct ScView2
     u8 count;
 } ScView2;
 
+typedef enum
+{
+    POWERKIND_HEALTH,
+    POWERKIND_ENERGY,
+} PowerKind;
 typedef struct
 {
     View3Kind kind;

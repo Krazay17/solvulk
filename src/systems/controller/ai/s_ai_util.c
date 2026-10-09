@@ -149,7 +149,7 @@ u32 GetCombatActionMask(World *world, int id, ScAi *ai)
     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
     if (ability)
     {
-        if (Sol_Ability_GetIsDashing(ability))
+        if (Sol_Ability_AnyActive(world, id))
             return mask;
     }
     bool is_charging = (ai->learning.prev_knows_combat.attack >= 2);
@@ -162,9 +162,8 @@ u32 GetCombatActionMask(World *world, int id, ScAi *ai)
     {
         mask |= BITC(AIACTIONC_NONE);
         mask |= BITC(AIACTIONC_CHARGE);
-        mask |= BITC(AIACTIONC_ABILITY_AOE);
-        // mask |= BITC(AIACTIONC_ABILITY_MELEE);
-        // mask |= BITC(AIACTIONC_ABILITY_DASH_FWD);
+        mask |= BITC(AIACTIONC_ABILITY_MELEE);
+        mask |= BITC(AIACTIONC_ABILITY_RANGED);
     }
     return mask;
 }
@@ -174,9 +173,7 @@ u32 GetMoveActionMask(World *world, int id, ScAi *ai)
     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
     if (ability)
     {
-        if (Sol_Ability_GetIsDashing(ability))
-            return mask;
-        if (ability->stateData[6].cooldownRemaining <= 0.0f)
+        if (!(ability->stateData[4].cooldownRemaining > 0.0f) && !Sol_Ability_AnyActive(world, id))
         {
             mask |= BITC(AIACTION_DODGEFWD) | BITC(AIACTION_DODGEBWD) | BITC(AIACTION_DODGELEFT) |
                     BITC(AIACTION_DODGERIGHT);
@@ -263,21 +260,6 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
             break;
         }
     }
-
-    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-    if (ability)
-    {
-        // if (ability->stateData[ability->activeSlot].power >= 0.8f)
-        //     knows.attack = 3;
-        // else if (ability->stateData[ability->activeSlot].held)
-        //     knows.attack = 2;
-        // else if (ability->state != 0)
-        //     knows.attack = 1;
-
-        if (ability->stateData[6].cooldownRemaining > 0.0f)
-            knows.self = 1;
-    }
-
     SparseSet_ScProjectile *projectile_set = Sol_Comp_Set(world, ScProjectile);
     float min_d2                           = 70.0f;
     for (int i = 0; i < projectile_set->cnt; i++)
@@ -326,7 +308,9 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
         knows.targetLos = 1;
 
     ScBody3 *target_body = Sol_Comp_Get(world, target, ScBody3);
-    if (target_body)
+    if ((pos.y + 0.5f) < target_pos.y)
+        knows.targetState = 4;
+    else if (target_body)
     {
         vec3s target_vel = target_body->vel;
         vec3s to_target  = glms_vec3_sub(brain->target_pos, pos);
@@ -370,21 +354,35 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
         }
     }
 
-    if ((pos.y + 0.5f) < target_pos.y)
-        knows.targetState = 4;
+    ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
+    if (ability)
+    {
+        if (Sol_Ability_IsCharging(world, id) && ability->stateData[ability->prio_slot].power > 0.8f)
+            knows.attack = 3;
+        else if (Sol_Ability_IsCharging(world, id))
+            knows.attack = 2;
+        else if (Sol_Ability_AnyActive(world, id))
+            knows.attack = 1;
+    }
 
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
         if (Sol_Ability_GetIsDashing(target_ability))
             knows.targetState = 7;
-        // else if (target_ability->stateData[target_ability->activeSlot].stage > 0)
-        //     knows.targetState = 6;
-        // else if (target_ability->stateData[target_ability->activeSlot].power > 0.0f)
-        //     knows.targetState = 5;
+        else if (Sol_Ability_IsCharging(world, target))
+            knows.targetState = 5;
+        else if (Sol_Ability_AnyActive(world, target))
+            knows.targetState = 6;
     }
 
-    ScCombat *combat        = Sol_Comp_Get(world, id, ScCombat);
+    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
+    knows.energy     = 0;
+    if (combat)
+    {
+        if (combat->energy < 40.0f)
+            knows.energy = 1;
+    }
     ScCombat *target_combat = Sol_Comp_Get(world, target, ScCombat);
     if (combat && target_combat)
     {
@@ -432,7 +430,7 @@ AiKnowStateM KnowsM(AiKnows *s)
 {
     AiKnowStateM knows = {0};
 
-    knows.self        = s->self;
+    knows.attack      = s->attack;
     knows.moveState   = s->moveState;
     knows.danger      = s->danger;
     knows.targetState = s->targetState;
@@ -452,10 +450,12 @@ AiKnowStateC KnowsC(AiKnows *s)
 {
     AiKnowStateC knows = {0};
 
+    knows.danger     = s->danger;
     knows.attack     = s->attack;
     knows.targetLos  = s->targetLos;
     knows.targetDist = s->targetDist;
     knows.winning    = s->winning;
+    knows.energy     = s->energy;
 
     return knows;
 }
@@ -562,7 +562,7 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
                                    : (ai->learning.action_move == AIACTION_DODGELEFT)  ? left
                                    : (ai->learning.action_move == AIACTION_DODGERIGHT) ? right
                                                                                        : fwd;
-        ai->learning.actionTimer = 0.3f;
+        ai->learning.actionTimer = 0.4f;
         break;
     }
 
@@ -581,11 +581,14 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
     case AIACTIONC_RELEASE:
         cmd->actionState &= ~(BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
         if (ai->learning.prev_knows_combat.attack == 3)
-            ai->learning.reward_combat += 30.0f;
+            ai->learning.reward_combat += 10.0f;
         break;
-    case AIACTIONC_ABILITY_AOE:
-        u32 slot = rand() % 3;
-        cmd->actionState |= BITC(slot_action[slot]);
+    case AIACTIONC_ABILITY_RANGED:
+        cmd->actionState |= BITC(slot_action[1]);
+        ai->learning.reward_combat -= 5.0f;
+        break;
+    case AIACTIONC_ABILITY_MELEE:
+        cmd->actionState |= BITC(slot_action[0]) | BITC(slot_action[2]) | BITC(slot_action[3]);
         ai->learning.reward_combat -= 5.0f;
         break;
     }

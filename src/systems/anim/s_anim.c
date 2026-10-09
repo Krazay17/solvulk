@@ -232,7 +232,7 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
         ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
         if (cmd)
             anim->target_pitch = Sol_Math_Remap(cmd->pitch, -GLM_PI_2f, GLM_PI_2f, -1.2f, 1.2f);
-        anim->pitch += (anim->target_pitch - anim->pitch) * (1.0f - expf(-25.0f * fdt));
+        anim->pitch += (anim->target_pitch - anim->pitch) * (1.0f - expf(-50.0f * fdt));
         Sol_Skeleton_Pose(model->kind, &anim->pose, anim->layers, &anim->lastPose, &anim->hasLastPose, anim->pitch);
     }
 }

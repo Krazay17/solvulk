@@ -15,8 +15,6 @@
 
 #define TERMINAL_VELOCITY -100.0f
 
-
-
 static inline bool Sphere_Overlap_Capsule(vec3s center, float radius, vec3s top, vec3s bottom, float capRadius,
                                           float *outDist, vec3s *outNorm, vec3s *outPos)
 {
@@ -629,6 +627,7 @@ static SolProfiler prof_dynamic     = {.name = "Dynamic"};
 static SolProfiler prof_static      = {.name = "StaticTable"};
 static SolProfiler prof_static_test = {.name = "StaticTest"};
 
+const float max_grid_d2 = 512.0f * 512.0f;
 void Body3_UpdateSub(World *world, double dt)
 {
     Prof_Begin(&prof_body3);
@@ -660,6 +659,8 @@ void Body3_UpdateSub(World *world, double dt)
         body3->impulse = (vec3s){0};
         body3->vel     = glms_vec3_add(body3->vel, glms_vec3_scale(accel, fdt));
         *xform.pos     = vecAdd(*xform.pos, vecSca(body3->vel, fdt));
+        if (glms_vec3_norm2(*xform.pos) > max_grid_d2)
+            *xform.pos = world->xform.home_pos[id];
     }
 
     solb_reserve(spatial->build_ids, body_count);
@@ -806,18 +807,6 @@ void Body3_UpdateSub(World *world, double dt)
         Resolve_Contact(world, spatial->contacts[i]);
     }
 
-    // for (i = body_count; i-- > 0;)
-    // {
-    //     int id        = set->dense[i];
-    //     ScBody3 *body = &set->data[i];
-    //     Xform xform   = Xform_Get(world, id);
-
-    //     if (xform.pos.y <= -15.0f)
-    //     {
-    //         world->xform.pos[id] = (vec3s){0, 5.0f, 0};
-    //         body->vel            = (vec3s){0, 5.0f, 0};
-    //     }
-    // }
     Prof_EndEz(&prof_body3, true, fdt);
 }
 
@@ -1339,7 +1328,7 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
                 out_hits[count].hit   = true;
                 out_hits[count].t     = dist; // distance from center to surface, NOT a ray t
                 out_hits[count].norm  = norm;
-                out_hits[count].pos  = pos;
+                out_hits[count].pos   = pos;
                 out_hits[count].entId = id;
                 count++;
             }
@@ -1355,7 +1344,7 @@ int Sol_SphereOverlap(World *world, SolRay ray, SolRayResult *out_hits, int max_
                 out_hits[count].hit   = true;
                 out_hits[count].t     = t;
                 out_hits[count].norm  = norm;
-                out_hits[count].pos  = pos;
+                out_hits[count].pos   = pos;
                 out_hits[count].entId = id;
                 count++;
             }

@@ -256,7 +256,7 @@ typedef enum
 {
     VIEW3KIND_SPHERE,
     VIEW3KIND_FIREBALL,
-    VIEW3KIND_HEALTHBAR,
+    VIEW3KIND_POWERBAR,
     VIEW3KIND_PYRAMID,
     VIEW3KIND_DRAGONORB,
     VIEW3KIND_PLASMAORB,
@@ -971,7 +971,7 @@ typedef enum AiActions
 typedef union {
     struct
     {
-        u32 self : 2;        // READY, CANDODGE, CHARGING CHARGINGLONG
+        u32 attack : 2;      // READY, CANDODGE, CHARGING CHARGINGLONG
         u32 surrounding : 2; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
         u32 moveState : 2;   // GROUNDED, FALL, WALLRUN, SLIDING
 
@@ -994,30 +994,31 @@ typedef enum
     AIACTIONC_CHARGE,
     AIACTIONC_RELEASE,
     AIACTIONC_ABILITY_MELEE,
-    AIACTIONC_ABILITY_AOE,
-    AIACTIONC_ABILITY_DASH_FWD,
+    AIACTIONC_ABILITY_RANGED,
     AIACTIONC_COUNT,
 } AiActionsC;
-#define AIKNOW_COMBATSTATE_COUNT (1 << (2 + 3 + 1))
+#define AIKNOW_COMBATSTATE_COUNT (1 << (3 + 3 + 2))
 typedef union {
     struct
     {
+        u32 danger : 1;
         u32 attack : 2; // READY, ATTACKING, CHARGING, CHARGINGLONG
 
         u32 targetDist : 2; // 4 Distances
         u32 targetLos : 1;
 
         u32 winning : 1;
+        u32 energy : 1; // High, Low
     };
     u32 raw;
 } AiKnowStateC;
 
 typedef struct
 {
-    u32 self;        // READY, CANTDODGE
     u32 attack;      // READY, ATTACKING, CHARGING, CHARGINGLONG
     u32 surrounding; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
     u32 moveState;   // GROUNDED, FALL, WALLRUN, SLIDING
+    u32 energy;      // High, Low
 
     u32 targetDist;  // 4 Distances
     u32 targetState; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, CHARGING, FIRING, DODGING

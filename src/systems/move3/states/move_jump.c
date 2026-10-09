@@ -8,6 +8,8 @@
 #define JUMP_DURATION 0.5f
 #define DAMPING 3.0f
 
+#define AIRJUMP_ENERGY_COST 40.0f
+
 void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
 {
     ScBody3 *body3      = Sol_Comp_Get(world, id, ScBody3);
@@ -36,9 +38,7 @@ void Move_Jump_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
     if (move->airtime >= JUMP_BUFFER)
     {
-        ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-        if (combat)
-            combat->energy -= 25.0f;
+        Sol_Combat_UseEnergy(world, id, AIRJUMP_ENERGY_COST);
         data->as.jump.airJump = true;
     }
 
@@ -76,12 +76,7 @@ bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
     {
         if (move->airtime >= JUMP_BUFFER)
         {
-            if (Sol_Comp_Has(world, id, ScCombat))
-            {
-                ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-                return combat->energy >= 25.0f;
-            }
-            return false;
+            forc(world, id, ScCombat) return c->energy >= AIRJUMP_ENERGY_COST;
         }
         return true;
     }

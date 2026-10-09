@@ -10,6 +10,8 @@
 #include "sol_math.h"
 #include "sol_core.h"
 
+#include "profiler.h"
+
 const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
     AISTATE_DEAD,
     AISTATE_AGGRO, //
@@ -73,8 +75,6 @@ static void Evaluate_State(World *world, int id, ScAi *ai)
             continue;
         if (current_state == target_state)
             break;
-        // sollog(current_state_funcs.canExit(world, id, ai, target_state),
-        //        target_state_funcs.canEnter(world, id, ai, current_state), i);
 
         if (current_state_funcs.exit)
             current_state_funcs.exit(world, id, ai);
@@ -84,9 +84,10 @@ static void Evaluate_State(World *world, int id, ScAi *ai)
         break;
     }
 }
-
+SolProfiler ai_prof = {.name = "AiStep"};
 void Ai_Step(World *world, double dt)
 {
+    Prof_Begin(&ai_prof);
     float fdt       = (float)dt;
     SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
     for (int i = 0; i < solb_count(events->events); i++)
@@ -116,6 +117,8 @@ void Ai_Step(World *world, double dt)
         if (funcs.update)
             funcs.update(world, id, ai, fdt);
     }
+
+    Prof_EndEz(&ai_prof, true, dt);
 }
 
 void Sol_Ai_QuickLearn(World *world, int id, int ownerId, bool once)

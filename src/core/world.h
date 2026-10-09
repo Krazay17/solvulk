@@ -288,3 +288,5 @@ bool Sol_CanAbility(World *world, int id);
 bool Sol_CanMove(World *world, int id);
 bool Sol_Combat_UseEnergy(World *world, int id, float amount);
 void Sol_Combat_AddEnergy(World *world, int id, float amount);
+bool Sol_Ability_IsCharging(World *world, int id);
+bool Sol_Ability_AnyActive(World *world, int id);

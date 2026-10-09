@@ -205,9 +205,13 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                     c->frictionMod = 0.0f;
                 }
             }
+            break;
         }
-        if (Sol_Combat_UseEnergy(world, id, dt * 25.0f))
-            data->power = min(data->conf.maxpower, data->power + (dt * data->conf.speed));
+
+        const float amount = dt * 40.0f;
+        if (Sol_Combat_UseEnergy(world, id, amount))
+            data->power += amount * 0.01f;
+            
         break;
     case 2: {
         if (prog.advanced)
@@ -236,7 +240,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             HitPause(data);
             forc(world, id, ScBody3) c->vel.y = fmaxf(c->vel.y, 2.0f);
-            Sol_Combat_AddEnergy(world, id, 10.0f);
         }
     }
     break;

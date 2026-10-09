@@ -31,9 +31,17 @@ static const ScCombat wizard_combat = {
 };
 
 static const View3 healthbar = {
-    .kind     = VIEW3KIND_HEALTHBAR,
+    .kind     = VIEW3KIND_POWERBAR,
     .color    = {0.1f, 0.9f, 0.1f, 1.0f},
     .duration = 4.0f,
+    ._elapsed = 4.0f,
+};
+
+static const View3 energybar = {
+    .kind     = VIEW3KIND_POWERBAR,
+    .color    = {0.9f, 0.9f, 0.1f, 1.0f},
+    .duration = 4.0f,
+    ._elapsed = 4.0f,
 };
 
 static const ScAi wizard_ai = {
@@ -85,9 +93,9 @@ static const ScAbility dude_ability = {
             ABILITYKIND_FIREBALL,
             ABILITYKIND_CLAW,
             0,
-            ABILITYKIND_CLAW,
-            ABILITYKIND_CLAW,
-            ABILITYKIND_CLAW,
+            ABILITYKIND_SCYTHE,
+            ABILITYKIND_SCYTHE,
+            ABILITYKIND_SCYTHE,
         },
 };
 
@@ -121,6 +129,7 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
     solb_push(view3->views_b, healthbar);
+    solb_push(view3->views_b, energybar);
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);

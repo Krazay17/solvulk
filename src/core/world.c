@@ -91,7 +91,7 @@ const struct SystemDef
     [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_TICK}},
     [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_PARENT] = {.update = {Parent_Update, UPDATEPHASE_POSTTICK}},

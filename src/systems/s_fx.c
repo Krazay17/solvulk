@@ -177,6 +177,9 @@ void Fx_Update(World *world, double dt)
             case FXKIND_SWORDSWING:
                 Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.as.fx.pos, 1.0f, 0, 16);
                 break;
+            case FXKIND_SCYTHEATTACK:
+                Sol_Audio_PlayAt(SOL_AUDIO_SCYTHEATTACK, event.pos, 1.0f, 0, 16);
+                break;
             default:
                 sollog("EVENTKIND_FX no fx kind");
             }

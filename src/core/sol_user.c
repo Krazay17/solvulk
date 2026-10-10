@@ -125,8 +125,8 @@ void Sol_User_SyncUI()
         if (!items[i])
         {
             SolItem *item = &user_data.items[i];
-            float x       = 100.0f + (i % 5) * 64.0f;
-            float y       = 100.0f + (i / 5) * 64.0f;
+            float x       = 0.0f + (i % 5) * 64.0f;
+            float y       = 0.0f + (i / 5) * 64.0f;
             Sol_Prefab_AbilityCard(hud, (vec3s){x, y, 0}, item, i);
         }
     }

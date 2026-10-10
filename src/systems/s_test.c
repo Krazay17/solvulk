@@ -4,13 +4,13 @@
 
 void Sol_Test(World *world, double dt)
 {
-    for (int i = 0; i < world->entCount; i++)
-    {
-        vec3s pos  = world->xform.pos[world->dense[i]];
-        float dist = glms_vec3_norm(pos);
-        if (dist > 512.0f)
-            sollog(pos, dist);
-    }
+    // for (int i = 0; i < world->entCount; i++)
+    // {
+    //     vec3s pos  = world->xform.pos[world->dense[i]];
+    //     float dist = glms_vec3_norm(pos);
+    //     if (dist > 512.0f)
+    //         sollog(pos, dist, world->dense[i]);
+    // }
 
     return;
     int id         = sol_user.view_ent;

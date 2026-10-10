@@ -34,7 +34,7 @@ extern const AbilityStateFunc ability_scythe_charge_state;
 extern const AbilityStateFunc ability_scythe_spell_state;
 extern const AbilityStateFunc ability_scythe_dash_state;
 
-static inline HitPause(AbilityStateData *data)
+static inline void HitPause(AbilityStateData *data)
 {
     if (data->hitPauseDr < 4)
     {

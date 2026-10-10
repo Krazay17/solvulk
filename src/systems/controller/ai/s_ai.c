@@ -105,12 +105,12 @@ void Ai_Step(World *world, double dt)
     int count           = set->cnt;
     for (int i = 0; i < count; i++)
     {
-        int id      = set->dense[i];
-        ScAi *ai    = &set->data[i];
-        ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
-        Xform xform = Xform_Get(world, id);
-        if (!cmd)
+        int id     = set->dense[i];
+        ScAi *ai   = &set->data[i];
+        ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
+        if (!cmd || ai->inactive)
             continue;
+        Xform xform = Xform_Get(world, id);
         Fill_Brain(world, id, ai, cmd, fdt);
         Evaluate_State(world, id, ai);
         AiStateFuncs funcs = Ai_Get_Funcs(ai->kind, ai->state);

@@ -21,3 +21,11 @@ void Cmd_Update(World *world, double dt)
         }
     }
 }
+
+void Sol_Cmd_Clear(World *world, int id)
+{
+    forc(world, id, ScCmd)
+    {
+        *c = (ScCmd){0};
+    }
+}

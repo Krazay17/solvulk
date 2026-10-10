@@ -10,15 +10,17 @@
 
 const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_DUDE]        = "Dude.glb",    //
-    [MODELKIND_WIZARD]      = "Wizard.glb",  //
-    [MODELKIND_WORLD0]      = "World0.glb",  //
-    [MODELKIND_WORLD1]      = "World1.glb",  //
     [MODELKIND_WORLD10]     = "World10.glb", //
-    [MODELKIND_CONE]        = "Cone.glb",    //
     [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
-    [MODELKIND_CYLINDER]    = "Cylinder.glb",
     [MODELKIND_BOLT]        = "Bolt.glb",
     [MODELKIND_SCYTHE]      = "Scythe.glb",
+#ifndef SOL_BUILD_DEMO
+    [MODELKIND_WIZARD]   = "Wizard.glb", //
+    [MODELKIND_WORLD0]   = "World0.glb", //
+    [MODELKIND_WORLD1]   = "World1.glb", //
+    [MODELKIND_CONE]     = "Cone.glb",   //
+    [MODELKIND_CYLINDER] = "Cylinder.glb",
+#endif
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
     // [MODELKIND_WALL]        = "Wall.glb",

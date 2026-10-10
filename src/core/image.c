@@ -16,8 +16,7 @@
 #include "webp/decode.h"
 
 const char *image_path[SOL_TEXTURE_COUNT] = {
-    [SOL_TEXTURE_ICEFONT] = "font_ice_atlas.png",
-
+    [SOL_TEXTURE_ICEFONT]          = "font_ice_atlas.png",
     [SOL_TEXTURE_REDSKY]           = "RedSky.webp",
     [SOL_TEXTURE_CROSSHAIR]        = "Crosshair.png",
     [SOL_TEXTURE_HEALTH]           = "HealthTexture.webp",
@@ -36,18 +35,20 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
     [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
     [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
-    [SOL_TEXTURE_SPIN_CARD]        = "TornadoCard.png",
-    [SOL_TEXTURE_LIGHTNING]        = "Lightning.webp",
-    [SOL_TEXTURE_BEAM]             = "Beam.webp",
-    [SOL_TEXTURE_IMPACT]           = "Impact.webp",
-    [SOL_TEXTURE_LASER_CARD]       = "LaserCard.webp",
-    [SOL_TEXTURE_FOGSTRIP]         = "FogStrip.png",
-    [SOL_TEXTURE_SHIELD]           = "Shield.png",
-    [SOL_TEXTURE_TRIBOOKEND]       = "TriangleBookend.png",
-    [SOL_TEXTURE_SHOCKSPRITE4]     = "ShockSprite4.png",
-    [SOL_TEXTURE_GREENFRAME]       = "GreenFrame.png",
-    [SOL_TEXTURE_WEAPONTRAIL]      = "WeaponTrail.webp",
-    [SOL_TEXTURE_SQUARERING]       = "SquareRing.png",
+#ifndef SOL_BUILD_DEMO
+    [SOL_TEXTURE_SPIN_CARD]    = "TornadoCard.png",
+    [SOL_TEXTURE_LIGHTNING]    = "Lightning.webp",
+    [SOL_TEXTURE_BEAM]         = "Beam.webp",
+    [SOL_TEXTURE_IMPACT]       = "Impact.webp",
+    [SOL_TEXTURE_LASER_CARD]   = "LaserCard.webp",
+    [SOL_TEXTURE_FOGSTRIP]     = "FogStrip.png",
+    [SOL_TEXTURE_SHIELD]       = "Shield.png",
+    [SOL_TEXTURE_TRIBOOKEND]   = "TriangleBookend.png",
+    [SOL_TEXTURE_SHOCKSPRITE4] = "ShockSprite4.png",
+    [SOL_TEXTURE_GREENFRAME]   = "GreenFrame.png",
+    [SOL_TEXTURE_WEAPONTRAIL]  = "WeaponTrail.webp",
+    [SOL_TEXTURE_SQUARERING]   = "SquareRing.png",
+#endif
 };
 
 SolTexture loaded_images[MAX_GLOBAL_TEXTURES];
@@ -60,13 +61,16 @@ int Sol_Textures_Init()
         if (!image_path[i])
             continue;
 
-        SolResource res   = Sol_LoadResource("images/", image_path[i]);
-        const char *ext   = strrchr(image_path[i], '.');
-        SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
+        SolResource res = Sol_LoadResource("images/", image_path[i]);
+        if (res.data)
+        {
+            const char *ext   = strrchr(image_path[i], '.');
+            SolTexture *image = Parse_Texture(res.data, res.size, ext, i);
 
-        // FIX: Ensure size property is explicitly set for static assets!
-        image->size           = res.size;
-        image->needsGpuUpload = true;
+            // FIX: Ensure size property is explicitly set for static assets!
+            image->size           = res.size;
+            image->needsGpuUpload = true;
+        }
     }
     return 0;
 }
@@ -75,7 +79,6 @@ SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id
 {
     SolTexture *image = &loaded_images[id];
     image->data       = data;
-    sollog(extension);
 
     if (extension && strstr(extension, "raw"))
     {

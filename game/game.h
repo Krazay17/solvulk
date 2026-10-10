@@ -91,7 +91,7 @@ static inline void Hook_SpawnDudes(World *w, int a, int b)
     World *game = Sol_User_GetGameWorld();
     for (int i = 0; i < 200; i++)
     {
-        vec3s spawn_pos = {sinf(i) * 80.0f, 100.f, cosf(i) * 80.0f};
+        vec3s spawn_pos = {sinf((float)i) * 80.0f, 100.f, cosf((float)i) * 80.0f};
         int id          = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
         ScAi *ai        = Sol_Comp_Add(game, id, ScAi);
         ai->aggroRange  = 100.0f;
@@ -244,6 +244,21 @@ static inline void Hook_TakeDamage(World *w, int a, int b)
     World *game = Sol_User_GetGameWorld();
     int id      = sol_user.view_ent;
     Sol_Combat_Damage(game, id, 0, 10.0f);
+}
+
+static inline void Hook_Chill(World *w, int a, int b)
+{
+    ScInteract *interact = Sol_Comp_Get(w, a, ScInteract);
+
+    World *game         = Sol_User_GetGameWorld();
+    SparseSet_ScAi *set = Sol_Comp_Set(game, ScAi);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id       = set->dense[i];
+        ScAi *ai     = &set->data[i];
+        ai->inactive = interact->state & INTERACT_TOGGLED;
+        Sol_Cmd_Clear(game, id);
+    }
 }
 
 static inline void Hook_Test(World *w, int a, int b)

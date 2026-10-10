@@ -9,7 +9,7 @@
 #include <dwmapi.h>
 #include <windows.h>
 
-#include "game.h"
+#include "sol/sol.h"
 
 #define TARGET_FRAME_TIME (1.0 / 600.0)
 

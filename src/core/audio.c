@@ -64,7 +64,7 @@ static const char *audio_path[SOL_AUDIO_COUNT] = {
     [SOL_AUDIO_FUZZHIT]        = "FuzzHit.mp3",
     [SOL_AUDIO_PHASENOISE]     = "PhaseNoise.mp3",
     [SOL_AUDIO_HEAVYSWORD]     = "HeavySword.mp3",
-
+    [SOL_AUDIO_SCYTHEATTACK]   = "ScytheAttack.mp3",
 };
 
 int Sol_Audio_Init(void)

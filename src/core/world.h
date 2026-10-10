@@ -36,6 +36,7 @@ typedef enum
     WORLDSYS_CMD,
     WORLDSYS_PLAYER,
     WORLDSYS_INTERACT,
+    WORLDSYS_FACING,
 
     WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
@@ -51,7 +52,6 @@ typedef enum
     WORLDSYS_AI,
 
     WORLDSYS_REF,
-    WORLDSYS_FACING,
     WORLDSYS_ANIM,
     WORLDSYS_PARENT,
 
@@ -290,3 +290,4 @@ bool Sol_Combat_UseEnergy(World *world, int id, float amount);
 void Sol_Combat_AddEnergy(World *world, int id, float amount);
 bool Sol_Ability_IsCharging(World *world, int id);
 bool Sol_Ability_AnyActive(World *world, int id);
+void Sol_Cmd_Clear(World *world, int id);

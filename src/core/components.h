@@ -89,9 +89,9 @@ typedef struct AiLearning
 typedef struct ScAi
 {
     u8 kind;
+    bool inactive;
     AiState state;
     AiStateData stateData[AISTATE_COUNT];
-
     float maxHomeRange;
     float aggroRange;
     AiBrain brain;

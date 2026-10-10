@@ -355,6 +355,7 @@ typedef enum
     SOL_AUDIO_FUZZHIT,
     SOL_AUDIO_PHASENOISE,
     SOL_AUDIO_HEAVYSWORD,
+    SOL_AUDIO_SCYTHEATTACK,
     SOL_AUDIO_SWORDHIT,
     SOL_AUDIO_MENUMUSIC,
     SOL_AUDIO_SPACEGUN,
@@ -877,6 +878,7 @@ typedef enum
     FXKIND_PARRY,
     FXKIND_SHOOT,
     FXKIND_SWORDSWING,
+    FXKIND_SCYTHEATTACK,
     FXKIND_TEST,
 } FxKind;
 
@@ -885,6 +887,7 @@ typedef struct SolEvent
     EventKind kind;
     u32 entA; // Attacker
     u32 entB; // Victim
+    vec3s pos;
     union {
         SolHit hit;
         struct

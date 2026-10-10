@@ -33,6 +33,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         {
             data->stage++;
             ability->prio_slot = slot;
+            Sol_Event_Push(world, EVENTKIND_FX,
+                           (SolEvent){.as.fx.kind = FXKIND_SCYTHEATTACK, .pos = Sol_Body3_GetHead(world, id)});
             break;
         }
 
@@ -118,33 +120,29 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
     switch (prog.stage)
     {
     case 1: {
-
         if (prog.advanced)
         {
             forc(world, ability->left_weapon, ScWeapon) c->update_trail  = true;
             forc(world, ability->right_weapon, ScWeapon) c->update_trail = true;
         }
 
-        ScBody3 *body = Sol_Comp_Get(world, id, ScBody3);
-        if (!body)
-            break;
-
-        int hits;
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
-        if (hits > 0)
-        {
-            body->vel = GLMS_VEC3_ZERO;
-            HitPause(data);
-        }
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
-        if (hits > 0)
-        {
-            body->vel = GLMS_VEC3_ZERO;
-            HitPause(data);
-        }
-
         forc(world, id, ScBody3)
         {
+            int hits;
+            hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
+            if (hits > 0)
+            {
+                c->vel = GLMS_VEC3_ZERO;
+                HitPause(data);
+            }
+            hits =
+                Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
+            if (hits > 0)
+            {
+                c->vel = GLMS_VEC3_ZERO;
+                HitPause(data);
+            }
+
             float stage_delta = glm_clamp(data->accum / dash_stage_time[1], 0.0f, 1.0f);
 
             // Build a horizontal direction, ignoring look pitch.

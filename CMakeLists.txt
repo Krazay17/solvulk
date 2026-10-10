@@ -55,7 +55,7 @@ if(WIN32)
     )
 
     file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/win32/*.c")
-    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES} )
+    target_sources(solvulk PRIVATE ${PLATFORM_SOURCES})
     target_compile_definitions(solvulk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
     set(PLATFORM_LIBS user32 gdi32 dwmapi)
 else()
@@ -88,6 +88,7 @@ PUBLIC
     "${CMAKE_SOURCE_DIR}/src/core"
     "${CMAKE_SOURCE_DIR}/src/game"
     "${CMAKE_SOURCE_DIR}/src/systems"
+    "${CMAKE_SOURCE_DIR}/src/prefabs"
     "${EXTERN_DIR}"
     "${EXTERN_DIR}/cglm/include"
     "${EXTERN_DIR}/enet/include"
@@ -112,8 +113,8 @@ set_target_properties(solvulk PROPERTIES C_STANDARD 17 OUTPUT_NAME "solvulk")
 if(WIN32)
    add_executable(solapp 
        "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
-       "${CMAKE_SOURCE_DIR}/src/game/game.c"
-       #"${CMAKE_SOURCE_DIR}/assets/res.rc"
+       "${CMAKE_SOURCE_DIR}/game/game.c"
+       "${CMAKE_SOURCE_DIR}/assets/res.rc"
    )
    if(MSVC)
        target_link_options(solapp PRIVATE "/ENTRY:mainCRTStartup"  "$<$<CONFIG:Release>:/NODEFAULTLIB:MSVCRTD>")
@@ -123,7 +124,7 @@ if(WIN32)
 else()
    add_executable(solapp
        "${CMAKE_SOURCE_DIR}/src/platform/linux/lin_main.c"
-       "${CMAKE_SOURCE_DIR}/src/game/game.c"
+       "${CMAKE_SOURCE_DIR}/game/game.c"
    )
 
 endif()
@@ -145,6 +146,16 @@ add_custom_command(TARGET solapp POST_BUILD
 )
 
 #--------------------------------------
+# Build Demo
+#--------------------------------------
+add_executable(soldemo 
+    "${CMAKE_SOURCE_DIR}/src/platform/win32/win_main.c"
+    "${CMAKE_SOURCE_DIR}/game/demo.c"
+    "${CMAKE_SOURCE_DIR}/assets/res_demo.rc"
+)
+target_link_libraries(soldemo PRIVATE solvulk ${PLATFORM_LIBS})
+set_target_properties(soldemo PROPERTIES OUTPUT_NAME "SolDemo")
+#--------------------------------------
 # Build App2
 #--------------------------------------
 if(BUILD_APP2)
@@ -158,9 +169,7 @@ if(WIN32)
 endif()
 
 target_link_libraries(solapp2 PRIVATE solvulk ${PLATFORM_LIBS})
-set_target_properties(solapp2 PROPERTIES
-OUTPUT_NAME "SolApp2"
-)
+set_target_properties(solapp2 PROPERTIES OUTPUT_NAME "SolApp2")
 endif()
 #--------------------------------------
 # compile shaders
@@ -197,6 +206,7 @@ add_custom_target(shaders ALL DEPENDS ${SHADER_OUTPUTS})
 
 add_dependencies(solvulk shaders)
 add_dependencies(solapp shaders)
+add_dependencies(soldemo shaders)
 if(BUILD_APP2)
 add_dependencies(solapp2 shaders)
 endif()

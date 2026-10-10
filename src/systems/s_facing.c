@@ -1,3 +1,10 @@
+/*
+ * File: s_facing.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-09
+ * 
+*/
 #include "world.h"
 #include "sol_math.h"
 

@@ -1,0 +1,91 @@
+/*
+ * File: res_demo.rc
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-09-17
+ * 
+*/
+//ID_NAME               TYPE            PATH
+SolEngine.ico           ICON            "images/SolEngine.ico"
+
+qtables                 RCDATA          "data/qtables"
+
+atlas.json              RCDATA          "fonts/atlas.json"
+atlas.raw               RCDATA          "fonts/atlas.raw"
+
+font_ice_atlas.png      RCDATA          "images/font_ice_atlas.png"
+Crosshair.png           RCDATA          "images/Crosshair4.png"
+HealthTexture.webp      RCDATA          "images/HealthTexture.webp"
+SwirlFrame.webp         RCDATA          "images/SwirlFrame.webp"
+Blade.png               RCDATA          "images/Blade.png"
+Border.webp             RCDATA          "images/Border.webp"
+CloudParticle.png       RCDATA          "images/CloudParticle.png"
+FireParticle.png        RCDATA          "images/FireParticle.png"
+ShockParticle.png       RCDATA          "images/ShockParticle.png"
+BloodParticle.png       RCDATA          "images/BloodParticle.png"
+Fireball.png            RCDATA          "images/Fireball.png"
+Pistol.png              RCDATA          "images/Pistol.png"
+CardCrystal.png         RCDATA          "images/CardCrystal.png"
+DashCard.png            RCDATA          "images/DashCard.png"
+SpikeFrameFilled.webp   RCDATA          "images/SpikeFrameFilled.webp"
+Lightning.webp          RCDATA          "images/Lightning.webp"
+Beam.webp               RCDATA          "images/Beam3.webp"
+Impact.webp             RCDATA          "images/Impact.webp"
+LaserCard.webp          RCDATA          "images/LaserCard.webp"
+FogStrip.png            RCDATA          "images/FogStrip.png"
+Shield.png              RCDATA          "images/Shield.png"
+TriangleBookend.png     RCDATA          "images/TriangleBookend.png"
+GreenFrame.png          RCDATA          "images/GreenFrame.png"
+WeaponTrail.webp        RCDATA          "images/WeaponTrail.webp"
+SquareRing.png          RCDATA          "images/SquareRing.png"
+ShockSprite4.png        RCDATA          "images/ShockSprite4.png"
+Scythe.png              RCDATA          "images/Scythe.png"
+
+Dude.glb                RCDATA          "models/Dude.glb"
+World10.glb             RCDATA          "models/World10.glb"
+WeaponBlade.glb         RCDATA          "models/WeaponBlade.glb"
+Scythe.glb              RCDATA          "models/Scythe.glb"
+
+
+Hit.wav                 RCDATA          "audio/Hit.wav"
+MenuMusic.mp3           RCDATA          "audio/MenuMusic.mp3"
+SpaceGun.mp3            RCDATA          "audio/SpaceGun.mp3"
+Woong1.wav              RCDATA          "audio/Woong1.wav"
+dash.mp3                RCDATA          "audio/Dash2.mp3"
+fireballUse.mp3         RCDATA          "audio/fireballUse.mp3"
+FireballImpact.mp3      RCDATA          "audio/FireballImpact.mp3"
+PlayerHit.mp3           RCDATA          "audio/PlayerHit.mp3"
+SwordHit.mp3            RCDATA          "audio/SwordHit.mp3"
+HeavySword.mp3          RCDATA          "audio/HeavySword.mp3"
+Parry.mp3               RCDATA          "audio/Parry.mp3"
+WoodCock.mp3            RCDATA          "audio/WoodCock.mp3"
+LightningHit.mp3        RCDATA          "audio/LightningHit.mp3"
+Laser.mp3               RCDATA          "audio/Laser.mp3"
+ScytheAttack.mp3        RCDATA          "audio/ScytheAttack.mp3"
+
+model.vert.spv          RCDATA          "shaders/model.vert.spv"
+model_skinned.vert.spv  RCDATA          "shaders/model_skinned.vert.spv"
+quad.vert.spv           RCDATA          "shaders/quad.vert.spv"
+sphere.vert.spv         RCDATA          "shaders/sphere.vert.spv"
+rect.vert.spv           RCDATA          "shaders/rect.vert.spv"
+line.vert.spv           RCDATA          "shaders/line.vert.spv"
+text2d.vert.spv         RCDATA          "shaders/text2d.vert.spv"
+ribbon.vert.spv         RCDATA          "shaders/ribbon.vert.spv"
+
+text2d.frag.spv             RCDATA          "shaders/text2d.frag.spv"
+text3d.frag.spv             RCDATA          "shaders/text3d.frag.spv"
+model.frag.spv              RCDATA          "shaders/model.frag.spv"
+sphere.frag.spv             RCDATA          "shaders/sphere.frag.spv"
+plasma2.frag.spv            RCDATA          "shaders/plasma2.frag.spv"
+sprite.frag.spv             RCDATA          "shaders/sprite.frag.spv"
+rect.frag.spv               RCDATA          "shaders/rect.frag.spv"
+line.frag.spv               RCDATA          "shaders/line.frag.spv"
+skybox.vert.spv             RCDATA          "shaders/skybox.vert.spv"
+skybox.frag.spv             RCDATA          "shaders/skybox.frag.spv"
+fireball.frag.spv           RCDATA          "shaders/fireball.frag.spv"
+coral_reef.frag.spv         RCDATA          "shaders/coral_reef.frag.spv"
+particle_dragon.frag.spv    RCDATA          "shaders/particle_dragon.frag.spv"
+fractal_pyramid.frag.spv    RCDATA          "shaders/fractal_pyramid.frag.spv"
+plasma.frag.spv             RCDATA          "shaders/plasma.frag.spv"
+healthbar.frag.spv          RCDATA          "shaders/healthbar.frag.spv"
+

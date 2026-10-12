@@ -25,10 +25,10 @@ static inline void Fireball(World *world, int id, ScZone *zone)
 
         SolHit hit = zone->hit;
         hit.pos    = hit_pos;
-        hit.entA   = id;
-        hit.entB   = hit_id;
+        hit.dealer   = id;
+        hit.target   = hit_id;
         hit.normal = normal;
-        Sol_Combat_Hit(world, hit.entB, hit);
+        Sol_Combat_Hit(world, hit);
     }
 }
 

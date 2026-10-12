@@ -54,6 +54,7 @@ typedef enum
     WORLDSYS_REF,
     WORLDSYS_ANIM,
     WORLDSYS_PARENT,
+    WORLDSYS_EVENT,
 
     WORLDSYS_CAMERA,
     WORLDSYS_WEAPON,
@@ -240,9 +241,9 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState nextState, int slot
 SolLine *Sol_Debug_NewLine(World *world, float ttl);
 SolSphere *Sol_Debug_NewSphere(World *world, float ttl);
 
-float Sol_Combat_Hit(World *world, int id, SolHit hit);
-float Sol_Combat_Damage(World *world, int id, int dealer, float amount);
-float Sol_Combat_Heal(World *world, int id, int dealer, float amount);
+float Sol_Combat_Hit(World *world, SolHit hit);
+float Sol_Combat_Damage(World *world, int target, int dealer, float amount);
+float Sol_Combat_Heal(World *world, int target, int dealer, float amount);
 
 void Sol_Emitter_Spawn(World *world, EmitterKind kind, vec3s pos);
 void Sol_Emitter_Push(World *world, Emitter *emitters, int count);
@@ -291,3 +292,8 @@ void Sol_Combat_AddEnergy(World *world, int id, float amount);
 bool Sol_Ability_IsCharging(World *world, int id);
 bool Sol_Ability_AnyActive(World *world, int id);
 void Sol_Cmd_Clear(World *world, int id);
+Sol_Event_AddHandler(World *world, EventKind kind, EventHandler handler);
+void Sol_Weapon_Extend(World *world, int id, float power);
+void Sol_Weapon_Unextend(World *world, int id);
+int Sol_Parent_GetChildren(World *world, int id, int *ids, int max_ids);
+void Item_Hud_Update(World *world, SolItem *items, int count);

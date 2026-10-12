@@ -1,5 +1,6 @@
 #pragma once
 #include "types.h"
+#include "components.h"
 
 #define MAX_USER_ITEMS 512
 
@@ -23,6 +24,8 @@ typedef struct SolUser
     bool interact_last;
     bool grab, grab_last;
 
+    u32 window_greyitem;
+
     int target, target_w;
     int focus, focus_w;
     int drag, drag_w;
@@ -35,8 +38,10 @@ typedef struct UserData
     SolActions key_binds[SOL_KEY_COUNT];
     SolActions mouse_binds[SOL_MOUSE_COUNT];
 
-    SolItem items[MAX_USER_ITEMS];
-    int itemCount;
+    ScInventory inventory;
+    SolItem loose_items[MAX_USER_ITEMS];
+    int loose_item_count;
+    bool unlocked_items[ABILITYKIND_COUNT];
 } UserData;
 
 extern UserData user_data;
@@ -55,3 +60,4 @@ World *Sol_User_GetGameWorld();
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);
 void Sol_User_AddItem(SolItem *item);
 void Sol_Tooltip_Draw(World *world, int id, float fdt);
+void Sol_User_AddItemLoose(SolItem *item);

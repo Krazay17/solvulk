@@ -27,9 +27,23 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
 {
     float alpha = tooltipAlpha;
     ScRef *ref  = Sol_Comp_Get(world, id, ScRef);
-
-    SolItem item = user_data.items[ref->index];
-
+    if (!ref)
+        return;
+    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    if (!ref_world)
+        return;
+    SolItem *item = NULL;
+    switch (ref->kind)
+    {
+    case REFKIND_INVENTORYITEM:
+        forc(ref_world, ref->ent_id, ScInventory) item = &c->items[ref->index];
+        break;
+    case REFKIND_LOOSEITEM:
+        item = &user_data.loose_items[ref->index];
+        break;
+    }
+    if (!item)
+        return;
     // --- STAGE 1: COMPUTE STRINGS & MEASURE WIDTHS ---
     // Keep a local stack array of the lines we need to draw
     char lines[MAX_TOOLTIP_LINES][64];
@@ -37,10 +51,10 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
 
     // Track the raw width maximums
     float maxWidth    = 0.0f;
-    AbilityConfig cfg = Sol_Item_GetMods(item);
+    AbilityConfig cfg = Sol_Item_GetMods(*item);
 
     // 1. Measure and buffer Header
-    const char *headerText = ability_name[item.abilityKind];
+    const char *headerText = ability_name[item->abilityKind];
     float headerSize       = 15.0f;
     float headerWidth      = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
     if (headerWidth > maxWidth)

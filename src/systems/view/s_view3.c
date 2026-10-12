@@ -82,7 +82,7 @@ static inline void Powerbar_Draw(World *world, int id, const View3 *view)
 
     if (id == sol_user.view_ent)
         return;
-    
+
     vec3s player_pos = world->xform.pos[sol_user.view_ent];
     Xform xform      = Xform_GetDraw(world, id);
     vec4s pos4       = {xform.pos.x, xform.pos.y, xform.pos.z, 1.0f};
@@ -90,7 +90,7 @@ static inline void Powerbar_Draw(World *world, int id, const View3 *view)
     if (body)
         pos4.y += body->dims.y;
 
-    float fill = glm_clamp(combat->health / combat->healthMax, 0.0f, 1.0f);
+    float fill  = glm_clamp(combat->health / combat->healthMax, 0.0f, 1.0f);
     float fillB = glm_clamp(combat->energy / combat->energyMax, 0.0f, 1.0f);
 
     *Sol_Render_GetNextQuad(PIPE_HEALTHBAR) = (QuadSSBO){
@@ -133,16 +133,18 @@ void View3_Draw(World *world, double dt)
         switch (event->kind)
         {
         case EVENTKIND_HIT:
-            ScOwner *owner = Sol_Comp_Get(world, event->as.hit.entA, ScOwner);
-            int id         = owner ? owner->ownerId : event->as.hit.entA;
+            ScOwner *owner = Sol_Comp_Get(world, event->dealer, ScOwner);
+            int id         = owner ? owner->ownerId : event->dealer;
             if (id == sol_user.view_ent)
             {
-                ScView3 *sc = Sol_Comp_Get(world, event->as.hit.entB, ScView3);
-                for (int v = 0; v < solb_count(sc->views_b); v++)
+                forc(world, id, ScView3)
                 {
-                    View3 *view = &sc->views_b[v];
-                    if (view->kind == VIEW3KIND_POWERBAR)
-                        view->_elapsed = 0;
+                    for (int v = 0; v < solb_count(c->views_b); v++)
+                    {
+                        View3 *view = &c->views_b[v];
+                        if (view->kind == VIEW3KIND_POWERBAR)
+                            view->_elapsed = 0;
+                    }
                 }
             }
         }

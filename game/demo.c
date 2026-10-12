@@ -48,30 +48,21 @@ void Create_Hud()
     Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL});
 }
 
-static void Heal_On_Kill(World *world, double dt)
+static void Heal_Kill_Handler(World *world, SolEvent *e)
 {
-    forc(world, 0, SlEvent)
+    forc(world, e->dealer, ScCombat)
     {
-        int count = solb_count(c->events);
-        sollog(count);
-        for (int i = 0; i < count; i++)
-        {
-            SolEvent *e = &c->events[i];
-            if (e->kind != EVENTKIND_DEATH)
-                continue;
-            forc(world, e->entA, ScCombat)
-            {
-                c->health = c->healthMax;
-            }
-            Sol_Comp_Rem(world, e->entA, ScBuff);
-        }
+        c->health = c->healthMax;
     }
+    Sol_Comp_Rem(world, e->dealer, ScBuff);
 }
+
 void Create_Game()
 {
     World *world        = World_Create_AllSys();
     sol_user.game_world = world->index;
-    WAddPosttick(world)     = Heal_On_Kill;
+    Sol_Event_AddHandler(world, EVENTKIND_DEATH, Heal_Kill_Handler);
+
     { // Player
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
         sol_user.view_ent = id;

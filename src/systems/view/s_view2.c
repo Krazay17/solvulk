@@ -1,3 +1,10 @@
+/*
+ * File: s_view2.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-11
+ *
+ */
 #include "world.h"
 #include "sol_core.h"
 #include "sol_math.h"
@@ -5,6 +12,25 @@
 #include "render/render.h"
 #include "abilitybar/s_abilitybar.h"
 
+static void DrawGreyItemBank(World *world, int id, float fdt, View2 *view)
+{
+    vec4s pos4   = {world->xform.pos[id].x, world->xform.pos[id].y, 0, 1.0f};
+    RectSSBO *bg = Sol_Render_GetNext_Rect(view->layer);
+    bg->flags    = 0;
+    bg->pos      = pos4;
+    bg->rect     = (vec4s){0, 0, UISCALE(200.0f), UISCALE(200.0f)};
+    bg->color    = VEC4_BLACK;
+
+    RectSSBO *frame  = Sol_Render_GetNext_Rect(view->layer);
+    frame->flags     = 0;
+    frame->pos       = pos4;
+    frame->rect      = (vec4s){0, 0, UISCALE(200.0f), UISCALE(200.0f)};
+    frame->color     = VEC4_WHITE;
+    frame->textureId = SOL_TEXTURE_GREENFRAME;
+    for (int i = 0; i < ABILITYKIND_COUNT; i++)
+    {
+    }
+}
 const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
 {
@@ -21,74 +47,56 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     if (!abilitybar)
         return;
 
-    vec3s pos = world->xform.draw_pos[id];
-    vec4s slots[ABILITY_SLOTS], frames[ABILITY_GROUPS];
-    int total_slots = Abilitybar_Layout(abilitybar, slots, frames);
+    vec3s pos  = world->xform.draw_pos[id];
+    vec4s pos4 = {pos.x, pos.y, pos.z, 1.0f};
 
-    // Group frames
-    for (int g = 0; g < ABILITY_GROUPS; g++)
+    for (int i = 0; i < abilitybar->slot_count; i++)
     {
-        if (frames[g].z <= 0.0f)
-            continue;
-        RectSSBO *rect  = Sol_Render_GetNext_Rect(view->layer);
-        rect->pos       = (vec4s){UISCALE(pos.x + frames[g].x), UISCALE(pos.y + frames[g].y), 0.0f, 1.0f};
-        rect->color     = VEC4_WHITE;
-        rect->rect      = (vec4s){0, 0, UISCALE(frames[g].z), UISCALE(frames[g].w)};
-        rect->textureId = SOL_TEXTURE_GREENFRAME;
-    }
+        int ability_slot             = abilitybar->ability_slots[i];
+        const AbilityStateData *data = &ability->stateData[ability_slot];
 
-    // Slots
-    for (int s = 0; s < total_slots; s++)
-    {
-        vec4s slot_pos         = {UISCALE(pos.x + slots[s].x), UISCALE(pos.y + slots[s].y)};
-        vec4s slot_rect        = {0, 0, UISCALE(slots[s].z), UISCALE(slots[s].w)};
-        AbilityStateData *data = &ability->stateData[s];
+        vec4s slot_pos   = (vec4s){UISCALE(pos.x + abilitybar->slot_dims.x * i), UISCALE(pos.y), 0, 1.0f};
+        vec4s slot_rect  = (vec4s){0, 0, UISCALE(abilitybar->slot_dims.x), UISCALE(abilitybar->slot_dims.y)};
+        vec4s slot_color = VEC4_WHITE;
 
-        u32 texture       = view->textureID;
-        vec4s final_color = view->color;
-        if (view->kind == VIEW2KIND_ABILITYBAR_BASEICON)
-        {
-            texture = ability_texture_map[ability->base_actions[s]];
-            if (texture == 0)
-                final_color = (vec4s){0, 0, 0, 1};
-            view->textureUV = (vec4s){1.0f, 0.816f, 0, 0};
-        }
+        RectSSBO *cooldown  = Sol_Render_GetNext_Rect(view->layer);
+        cooldown->extra.y   = data->cooldownRemaining > 0.0f ? data->cooldownRemaining / data->conf.cooldown : 0.0f;
+        cooldown->flags     = 0b111;
+        cooldown->pos       = slot_pos;
+        cooldown->rect      = slot_rect;
+        cooldown->textureId = SOL_TEXTURE_SWIRLFRAME;
+        cooldown->color     = (vec4s){1.0f, 0.0f, 0.0f, 1.0f};
 
-        RectSSBO *slot  = Sol_Render_GetNext_Rect(view->layer);
-        slot->extra.z   = view->desat;
-        slot->extra.y   = data->cooldownRemaining > 0.0f ? data->cooldownRemaining / data->conf.cooldown : 0.0f;
-        slot->flags     = view->flags;
-        slot->pos       = slot_pos;
-        slot->rect      = slot_rect;
-        slot->textureId = texture;
-        slot->color     = final_color;
-        slot->uv        = view->textureUV;
-
-        if (ability->state[s] != 0)
+        if (ability->state[ability_slot] != 0)
         {
             RectSSBO *p  = Sol_Render_GetNext_Rect(view->layer);
-            p->flags     = view->flags;
             p->pos       = slot_pos;
             p->rect      = slot_rect;
             p->color     = VEC4_WHITE;
             p->textureId = SOL_TEXTURE_SWIRLFRAME;
         }
+
         if (data->held)
         {
             RectSSBO *p  = Sol_Render_GetNext_Rect(view->layer);
-            p->flags     = view->flags;
             p->pos       = slot_pos;
             p->rect      = slot_rect;
             p->color     = VEC4_WHITE;
             p->textureId = SOL_TEXTURE_SHOCKPARTICLE;
         }
 
-        Sol_Render_DrawText2D(slot_text[s], (SolFontDesc){.color  = VEC4_GREEN,
-                                                          .layer  = view->layer,
-                                                          .size   = UISCALE(16.0f),
-                                                          .x      = slot_pos.x + slot_rect.z * 0.5f,
-                                                          .y      = slot_pos.y + slot_rect.w * 0.5f,
-                                                          .center = true});
+        RectSSBO *frame  = Sol_Render_GetNext_Rect(view->layer + 1);
+        frame->pos       = slot_pos;
+        frame->rect      = (vec4s){0, 0, UISCALE(abilitybar->slot_dims.x), UISCALE(abilitybar->slot_dims.y)};
+        frame->textureId = SOL_TEXTURE_GREENFRAME;
+        frame->color     = VEC4_WHITE;
+
+        Sol_Render_DrawText2D(slot_text[ability_slot], (SolFontDesc){.color  = VEC4_GREEN,
+                                                                     .layer  = view->layer + 1,
+                                                                     .size   = UISCALE(16.0f),
+                                                                     .x      = slot_pos.x + slot_rect.z * 0.5f,
+                                                                     .y      = slot_pos.y + slot_rect.w * 0.5f,
+                                                                     .center = true});
     }
 }
 static void DrawRect(World *world, int id, float fdt, View2 *view)
@@ -203,7 +211,10 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
     if (!ref)
         return;
-    ScCombat *combat = Sol_Comp_Get(Sol_GetWorldByIdx(ref->ent_world), ref->ent_id, ScCombat);
+    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    if (!ref_world)
+        return;
+    ScCombat *combat = Sol_Comp_Get(ref_world, ref->ent_id, ScCombat);
     if (!combat || combat->health <= 0.0f)
         return;
 
@@ -215,7 +226,7 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
     view->fill      = Sol_Math_Lerp(view->fill, view->targetFill, factor);
     RectSSBO *ssbo  = Sol_Render_GetNext_Rect(view->layer);
     ssbo->pos       = (vec4s){UISCALE(pos.x), UISCALE(pos.y)};
-    ssbo->flags     = 1;
+    ssbo->flags     = view->flags;
     ssbo->extra.y   = view->fill;
     ssbo->extra.x   = view->border;
     ssbo->rect      = (vec4s){0, 0, UISCALE(view->dims.x), UISCALE(view->dims.y)};
@@ -224,15 +235,15 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
     ssbo->uv        = view->textureUV;
 }
 
-const void (*draw_funcs[])(World *, int, float, View2 *) = {
-    [VIEW2KIND_RECT]                = DrawRect,
-    [VIEW2KIND_SLIDER]              = DrawSlider,
-    [VIEW2KIND_SLIDER_FILL]         = DrawSliderFill,
-    [VIEW2KIND_CIRCLE]              = DrawCircle,
-    [VIEW2KIND_TEXT]                = DrawText,
-    [VIEW2KIND_POWERBAR]            = PowerBar,
-    [VIEW2KIND_ABILITYBAR]          = DrawAbilitybar,
-    [VIEW2KIND_ABILITYBAR_BASEICON] = DrawAbilitybar,
+const void (*draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
+    [VIEW2KIND_RECT]         = DrawRect,
+    [VIEW2KIND_SLIDER]       = DrawSlider,
+    [VIEW2KIND_SLIDER_FILL]  = DrawSliderFill,
+    [VIEW2KIND_CIRCLE]       = DrawCircle,
+    [VIEW2KIND_TEXT]         = DrawText,
+    [VIEW2KIND_POWERBAR]     = PowerBar,
+    [VIEW2KIND_ABILITYBAR]   = DrawAbilitybar,
+    [VIEW2KIND_GREYITEMBANK] = DrawGreyItemBank,
 };
 
 void View2_Draw(World *world, double dt)

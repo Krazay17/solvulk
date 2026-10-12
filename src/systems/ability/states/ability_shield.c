@@ -39,7 +39,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
                                 },
                                 (SolHit){
                                     .damage = data->conf.damage,
-                                    .entA   = id,
+                                    .dealer   = id,
                                     .kind   = HITKIND_NORMAL,
                                     .power  = data->power,
                                 },
@@ -69,8 +69,8 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
                                 .ignoreEnt = id,
                             },
                             (SolHit){
+                                .dealer   = id,
                                 .damage = data->conf.damage,
-                                .entA   = id,
                                 .kind   = HITKIND_NORMAL,
                                 .power  = 1.0f,
                             },

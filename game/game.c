@@ -75,6 +75,8 @@ void Create_Hud()
     Sol_Sys_Add(world, WORLDSYS_VIEW2);
     Sol_Sys_Add(world, WORLDSYS_ABILITYBAR);
     Sol_Sys_Add(world, WORLDSYS_REF);
+    Sol_Sys_Add(world, WORLDSYS_PARENT);
+
 
     Sol_Prefab_Crosshair(world);
 }

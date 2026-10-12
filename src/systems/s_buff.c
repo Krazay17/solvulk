@@ -43,11 +43,11 @@ static inline void Fire_OnUpdate(World *world, int id, Buff *buff)
         if (combat)
         {
             vec3s pos = world->xform.pos[id];
-            Sol_Combat_Hit(world, id,
+            Sol_Combat_Hit(world,
                            (SolHit){
                                .kind   = HITKIND_FIRE,
-                               .entA   = buff->source,
-                               .entB   = id,
+                               .dealer   = buff->source,
+                               .target   = id,
                                .damage = {.amount = buff->damage},
                                .power  = buff->power,
                                .pos    = pos,

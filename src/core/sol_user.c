@@ -97,39 +97,15 @@ void Sol_User_LoadUserSettings()
 {
     user_settings_file = Sol_LoadResource("data/", USER_SETTINGS_FILENAME);
 }
-
+static void Sync_BaseAbilities(World *hud, World *game, SparseSet_ScRef *set)
+{
+}
 void Sol_User_SyncUI()
 {
     World *hud = Sol_GetWorldByIdx(WORLDID_HUD);
     if (!hud)
         return;
-    SparseSet_ScRef *ref_set   = Sol_Comp_Set(hud, ScRef);
-    bool items[MAX_USER_ITEMS] = {0};
-    for (int i = ref_set->cnt - 1; i >= 0; i--)
-    {
-        int id     = ref_set->dense[i];
-        ScRef *ref = &ref_set->data[i];
-        if (ref->kind != REFKIND_ITEM)
-            continue;
-        if (ref->index < 0 || ref->index >= user_data.itemCount)
-        {
-            Sol_Destroy_Ent(hud, id);
-            continue;
-        }
-        items[ref->index] = true;
-    }
-
-    // Spawn new refs
-    for (int i = 0; i < user_data.itemCount; i++)
-    {
-        if (!items[i])
-        {
-            SolItem *item = &user_data.items[i];
-            float x       = 0.0f + (i % 5) * 64.0f;
-            float y       = 0.0f + (i / 5) * 64.0f;
-            Sol_Prefab_AbilityCard(hud, (vec3s){x, y, 0}, item, i);
-        }
-    }
+    SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
 
     World *game = Sol_User_GetGameWorld();
     if (!game)
@@ -178,7 +154,7 @@ void Sol_User_SyncUI()
                 x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
                 y = 610.0f;
             }
-            int healthbar_id = Sol_Prefab_Powerbar(hud, (vec3s){x, y, 0}, (vec4s){0, 1, 0, 1}, 30.0f);
+            int healthbar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){0, 1, 0, 1});
 
             *Sol_Comp_Add(hud, healthbar_id, ScRef) = (ScRef){
                 .kind      = REFKIND_HEALTHBAR,
@@ -199,7 +175,7 @@ void Sol_User_SyncUI()
                 x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
                 y = 630.0f;
             }
-            int energybar_id = Sol_Prefab_Powerbar(hud, (vec3s){x, y, 0}, (vec4s){1, 1, 0, 1}, 20.0f);
+            int energybar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){1, 1, 0, 1});
 
             *Sol_Comp_Add(hud, energybar_id, ScRef) = (ScRef){
                 .kind      = REFKIND_ENERGYBAR,
@@ -220,13 +196,13 @@ void Sol_User_SyncUI()
                 x = (WINDOW_WIDTH * 0.5f) - (434.0f * 0.5f);
                 y = 700.0f;
             }
-            int abilitybar_id = Sol_Prefab_AbilityBar(hud, (vec3s){x, y, 0}, 7);
-
-            *Sol_Comp_Add(hud, abilitybar_id, ScRef) = (ScRef){
-                .kind      = REFKIND_ABILITYBAR,
-                .ent_world = game->index,
-                .ent_id    = player_ent,
-            };
+            float offset_x_group = x;
+            int abilitybar_id0   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group, y, 0}, player_ent, game->index,
+                                                         (int[]){0, 1, 2, 3}, 4);
+            int abilitybar_id1   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 264.0f, y, 0}, player_ent,
+                                                         game->index, (int[]){4}, 1);
+            int abilitybar_id2   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 66.0f, y, 0}, player_ent,
+                                                         game->index, (int[]){5, 6}, 2);
         }
     }
 }
@@ -236,6 +212,7 @@ static void LoadDefaults(void)
     user_data = (UserData){
         .look_sens = 0.001f,
     };
+    // solb_init(user_data.inventory.items, 8);
     memcpy(user_data.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
     memcpy(user_data.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
 }
@@ -251,6 +228,19 @@ int Sol_User_Init(void)
         LoadDefaults();
 
     return 0;
+}
+
+void Sol_User_SaveUserSettings()
+{
+    size_t size = sizeof(UserData);
+    // size += solb_count(user_data.inventory.items) * sizeof(SolItem);
+    Sol_WriteFile("data/", USER_SETTINGS_FILENAME, &user_data, size);
+}
+
+void Sol_User_ClearUserSettings()
+{
+    Sol_DeleteFile("data/", USER_SETTINGS_FILENAME);
+    LoadDefaults();
 }
 
 void Entity_Actions()
@@ -352,20 +342,6 @@ void User_Debug(double dt)
                 prev_state = move->state;
             }
         }
-        // if (Sol_Comp_Has(world, id, ScAbility))
-        // {
-        //     ScAbility *ability = Sol_Comp_Get(world, id, ScAbility);
-
-        //     static u32 prev_Astate = 0;
-
-        //     bool state_changed = ability->state != prev_Astate;
-        //     if (state_changed)
-        //     {
-        //         Sol_Debug_AddText("AbilityState", ability_state_name[ability->state]);
-        //         Sol_Debug_AddText("PrevAState", ability_state_name[prev_Astate]);
-        //         prev_Astate = ability->state;
-        //     }
-        // }
     }
 }
 
@@ -418,7 +394,9 @@ void Sol_User_Tick(double dt)
     Find_User_Hit(dt, mouse);
     Sol_User_SyncUI();
     World *game = Sol_User_GetGameWorld();
-    int id      = sol_user.view_ent;
+    World *hud  = Sol_GetWorldByIdx(sol_user.hud_world);
+
+    int id = sol_user.view_ent;
     ShowHealthbar_OnDistance(game, id);
 
     if (Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
@@ -428,6 +406,33 @@ void Sol_User_Tick(double dt)
         solState.worlds[0]->doesSimulate = menuActive;
         solState.worlds[0]->doesRender   = menuActive;
         Sol_Input_SetLocked(!menuActive);
+    }
+
+    if (Sol_Input_KeyPressed(SOL_KEY_5))
+    {
+        if (Sol_Buff_HasBuff(game, id, BUFFKIND_INVULN))
+            Sol_Buff_Rem(game, id, BUFFKIND_INVULN);
+        else
+        {
+            Sol_Buff_Next(game, id, BUFFKIND_INVULN)->inf = true;
+        }
+    }
+
+    if (hud)
+    {
+        Item_Hud_Update(hud, user_data.loose_items, user_data.loose_item_count);
+        if (Sol_Input_KeyPressed(SOL_KEY_6))
+        {
+            if (!sol_user.window_greyitem)
+            {
+                sol_user.window_greyitem = Sol_Prefab_Inventory(hud, (vec3s){500.0f, 500.0f}, &user_data.inventory);
+            }
+            else
+            {
+                Sol_Destroy_Ent(hud, sol_user.window_greyitem);
+                sol_user.window_greyitem = 0;
+            }
+        }
     }
 
     Entity_Actions();
@@ -463,71 +468,12 @@ void Sol_User_PostTick(double dt)
             Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
         }
     }
-
-    if (Sol_Input_KeyPressed(SOL_KEY_5))
-    {
-        if (Sol_Buff_HasBuff(game, id, BUFFKIND_INVULN))
-            Sol_Buff_Rem(game, id, BUFFKIND_INVULN);
-        else
-        {
-            Sol_Buff_Next(game, id, BUFFKIND_INVULN)->inf = true;
-        }
-    }
-
-    // World *hud               = Sol_GetWorldByIdx(WORLDID_HUD);
-    // SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
-    // SlEvent *events          = Sol_Comp_Get(game, 0, SlEvent);
-    // for (int i = 0; i < solb_count(events->events); i++)
-    // {
-    //     SolEvent event = events->events[i];
-    //     if (event.kind != EVENTKIND_ENT_DESTROY)
-    //         continue;
-    //     for (int j = ref_set->cnt - 1; j >= 0; j--)
-    //     {
-    //         ScRef *ref = &ref_set->data[j];
-    //         if (ref->ent_world == game->index && ref->ent_id == event.as.ent_destroy.id)
-    //         {
-    //             Sol_Destroy_Ent(hud, ref_set->dense[j]);
-    //         }
-    //     }
-    // }
-
-    // if (Sol_Comp_Has(world, id, ScCmd))
-    // {
-    //     vec3s head = Sol_Body3_GetHead(world, id);
-    //     ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-    //     if (mouse.buttons[SOL_MOUSE_LEFT])
-    //     {
-    //         SolRay ray = {.start = head, .dir = cmd->aimdir, .dist = 30.0f, .mask = (COLLAYER_WORLD |
-    //         COLLAYER_TEAMZ)}; vec3s final_pos     = vecAdd(ray.start, vecSca(ray.dir, ray.dist)); SolRayResult result
-    //         = {0}; bool hit            = Sol_Raycast1D(world, ray, &result, 0.1f); if (hit)
-    //         {
-    //             final_pos = result.pos;
-    //         }
-
-    //         SolSphere *sphere = Sol_Debug_NewSphere(world, 0.1f);
-    //         sphere->color     = VEC4_GREEN;
-    //         sphere->pos       = final_pos;
-    //         sphere->radius    = 0.2f;
-    //     }
-    // }
 }
 void Sol_User_Draw(double dt)
 {
     World *world = Sol_GetWorldByIdx(sol_user.target_w);
     int id       = sol_user.target;
     Sol_Tooltip_Draw(world, id, (float)dt);
-}
-
-void Sol_User_SaveUserSettings()
-{
-    Sol_WriteFile("data/", USER_SETTINGS_FILENAME, &user_data, sizeof(UserData));
-}
-
-void Sol_User_ClearUserSettings()
-{
-    Sol_DeleteFile("data/", USER_SETTINGS_FILENAME);
-    LoadDefaults();
 }
 
 World *Sol_User_GetGameWorld()
@@ -557,13 +503,22 @@ void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)
     sol_user.view_ent          = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
     Sol_Destroy_Ent(last_world, last_id);
 }
-
+void Sol_User_UnlockItem(AbilityKind kind)
+{
+    user_data.unlocked_items[kind] = true;
+}
 void Sol_User_AddItem(SolItem *item)
 {
-    user_data.items[user_data.itemCount++] = *item;
+    solb_push(user_data.inventory.items, *item);
+    Sol_User_UnlockItem(item->abilityKind);
+}
+void Sol_User_AddItemLoose(SolItem *item)
+{
+    user_data.loose_items[user_data.loose_item_count++] = *item;
+    Sol_User_UnlockItem(item->abilityKind);
 }
 
 SolItem *Sol_User_GetItemAtIdx(int idx)
 {
-    return &user_data.items[idx];
+    return &user_data.loose_items[idx];
 }

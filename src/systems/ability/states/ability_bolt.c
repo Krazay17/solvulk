@@ -131,7 +131,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             if (data->as.bolt.bolt_state == 2)
             {
                 Sol_Event_Push(world, EVENTKIND_FX,
-                               (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
+                               (SolEvent){.as.fx.kind = FXKIND_SHOOT, .pos = world->xform.pos[id]});
                 BoltDelete(world, data);
                 int bolt = Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir,
                                                     bolt_speed, 0.25f, NULL);
@@ -253,7 +253,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     p->hit.damage                = data->conf.damage;
     p->hit.power                 = data->power;
 
-    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_SHOOT, .as.fx.pos = world->xform.pos[id]});
+    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_SHOOT, .pos = world->xform.pos[id]});
 }
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

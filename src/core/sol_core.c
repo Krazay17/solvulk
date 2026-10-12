@@ -115,7 +115,7 @@ void Sol_Tick(double dt, double time)
     Sol_Render_DrawSkybox();
     Worlds_Draw3d(solState.worlds, solState.worldCount, dt);
     Sol_Render_Flush3D();
-    
+
     Worlds_Draw2d(solState.worlds, solState.worldCount, dt);
     Sol_User_Draw(dt);
     Sol_Render_Flush2D();
@@ -125,11 +125,9 @@ void Sol_Tick(double dt, double time)
     Sol_End_Draw();
 
     Worlds_Event_Clear(solState.worlds, solState.worldCount);
-    if (solState.destroy_qued)
-    {
-        Sol_Destroy();
-    }
 
+    if (solState.destroy_qued)
+        Sol_Destroy();
 }
 
 void Sol_Destroy()

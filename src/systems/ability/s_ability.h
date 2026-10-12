@@ -49,17 +49,18 @@ typedef struct
     bool advanced;
     bool finished;
 } StageProgress;
-static inline StageProgress Progress_Stage(AbilityStateData *data, float dt, const float *stage_time, int stage_count)
+static inline StageProgress Progress_Stage(AbilityStateData *data, float dt, const float *stage_time, int stage_count, float add_stage_time)
 {
+    float final_stage_time = stage_time[data->stage] + add_stage_time;
     StageProgress prog = {0};
     data->elapsed += dt;
     if (data->hitPause > 0)
         data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
     else
         data->accum += dt;
-    while (data->stage < stage_count && data->accum >= stage_time[data->stage])
+    while (data->stage < stage_count && data->accum >= final_stage_time)
     {
-        data->accum -= stage_time[data->stage];
+        data->accum -= final_stage_time;
         data->stage++;
 
         prog.advanced = true;
@@ -81,7 +82,7 @@ static inline void WeaponTrails_Off(World *world, ScAbility *ability)
 }
 static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand, float power)
 {
-    const char *bone = right_hand ? "hand.R.Weapon" : "hand.L.Weapon";
+    const char *bone = right_hand ? "weapon.R" : "weapon.L";
     Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);
     Xform blade_xform = Sol_Weapon_BladeXform(world, right_hand ? ability->right_weapon : ability->left_weapon);
     SolDistDir dd    = Sol_GetDistDir(blade_xform.pos, hand_xform.pos);
@@ -92,4 +93,8 @@ static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool 
         .radius    = 0.4f,
         .ignoreEnt = id,
     };
+}
+static inline int GetWeaponId(const ScAbility *ability, int slot)
+{
+    return slot > 5 ? ability->right_weapon : ability->left_weapon;
 }

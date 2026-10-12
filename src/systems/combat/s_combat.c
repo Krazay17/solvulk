@@ -87,7 +87,7 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
     {
         combat->is_dead   = true;
         combat->deathTime = world->tickTime;
-        Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.entA = combat->lastHitBy, .entB = id});
+        Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.dealer = combat->lastHitBy, .target = id});
         Sol_Comp_Rem(world, id, ScBuff);
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
@@ -125,10 +125,10 @@ void Chain_Update(World *world, double dt)
             {
                 Sol_Ribbon_SpawnE(world, RIBBONKIND_LIGHTNING, s->target, next_target);
 
-                s->hit.entA = s->owner;
-                s->hit.entB = next_target;
-                s->hit.pos  = world->xform.pos[next_target];
-                Sol_Combat_Hit(world, next_target, s->hit);
+                s->hit.dealer = s->owner;
+                s->hit.target = next_target;
+                s->hit.pos    = world->xform.pos[next_target];
+                Sol_Combat_Hit(world, s->hit);
                 s->target = next_target;
                 s->remaining--;
             }
@@ -147,11 +147,11 @@ void Sol_Combat_Chain(World *world, ChainhitKind kind, SolHit hit, float radius,
     Chainhit *chainhit = solb_next(sl->chainhits);
     chainhit->_accum   = 0;
     chainhit->_hitgen  = Sol_Hitgen_Start(world);
-    Sol_Hitgen_Try(world, hit.entA, hit.entB, chainhit->_hitgen);
+    Sol_Hitgen_Try(world, hit.dealer, hit.target, chainhit->_hitgen);
 
     chainhit->hit       = hit;
-    chainhit->owner     = hit.entA;
-    chainhit->target    = hit.entB;
+    chainhit->owner     = hit.dealer;
+    chainhit->target    = hit.target;
     chainhit->radius    = radius;
     chainhit->rate      = rate;
     chainhit->remaining = chain_count;
@@ -251,10 +251,10 @@ bool Sol_Combat_Hostile(World *world, int idA, int idB)
 
 void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
 {
-    // ScProjectile *pComp = Sol_Comp_Get(world, projectile, ScProjectile);
-    ScBody3 *body3         = Sol_Comp_Get(world, projectile, ScBody3);
-    ScTeam *team           = Sol_Comp_Get(world, projectile, ScTeam);
-    ScOwner *owner         = Sol_Comp_Get(world, projectile, ScOwner);
+    ScOwner *owner = Sol_Comp_Get(world, projectile, ScOwner);
+    ScTeam *team   = Sol_Comp_Get(world, projectile, ScTeam);
+    ScBody3 *body3 = Sol_Comp_Get(world, projectile, ScBody3);
+
     ScTeam *reflector_team = Sol_Comp_Get(world, reflector, ScTeam);
     ScCmd *cmd             = Sol_Comp_Get(world, reflector, ScCmd);
 
@@ -271,29 +271,29 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
         body3->ignoreEnt = reflector;
     }
 
-    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .as.fx.pos = pos});
+    Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .pos = pos});
 }
 
-float Sol_Combat_Hit(World *world, int id, SolHit hit)
+float Sol_Combat_Hit(World *world, SolHit hit)
 {
-    if (Sol_Comp_Has(world, id, ScStage))
+    int dealer                           = hit.dealer;
+    int target                           = hit.target;
+    int ownerId                          = dealer;
+    forc(world, dealer, ScOwner) ownerId = c->ownerId;
+
+    if (Sol_Comp_Has(world, target, ScStage))
         return 0.0f;
-    if (hit.damage.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, id, ScProjectile))
+    if (hit.damage.effectMask & EFFECTMASK_REFLECTPROJECTILE && Sol_Comp_Has(world, target, ScProjectile))
     {
-        Sol_Combat_Reflect(world, id, hit.entA, hit.pos);
+        Sol_Combat_Reflect(world, target, ownerId, hit.pos);
         return 0.0f;
     }
-    if (!Sol_Comp_Has(world, id, ScCombat))
+    ScCombat *combat = Sol_Comp_Get(world, target, ScCombat);
+    if (!combat)
         return 0.0f;
-    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-    int dealer       = hit.entA;
-    ScOwner *owner   = Sol_Comp_Get(world, hit.entA, ScOwner);
-    if (owner)
-        dealer = owner->ownerId;
 
-    ScCombat *dealer_combat = Sol_Comp_Get(world, dealer, ScCombat);
-    float damage_done       = 0;
-    float damage            = hit.damage.amount * hit.power;
+    float damage_done = 0;
+    float damage      = hit.damage.amount * hit.power;
     if (hit.damage.isHeal)
     {
         Sol_Combat_AddEnergy(world, dealer, damage * 0.25f);
@@ -301,22 +301,22 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
     }
     else
     {
-        if (Sol_Ability_TryDefend(world, id, &hit) == DEFENDKIND_CONSUMED)
+        if (Sol_Ability_TryDefend(world, target, &hit) == DEFENDKIND_CONSUMED)
             return 0.0f;
-        if (Sol_Buff_HasBuff(world, id, BUFFKIND_INVULN))
+        if (Sol_Buff_HasBuff(world, target, BUFFKIND_INVULN))
         {
-            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_INVULNHIT, .as.fx.pos = hit.pos});
+            Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_INVULNHIT, .pos = hit.pos});
             return 0.0f;
         }
         Sol_Combat_AddEnergy(world, dealer, damage * 0.25f);
 
         if (hit.hook)
         {
-            hit.hook(world, dealer, hit.entB);
+            hit.hook(world, dealer, target);
         }
         if (hit.damage.buffMask > 0)
         {
-            Sol_Buff_AddMask(world, id, hit.damage.buffMask, dealer, hit.power);
+            Sol_Buff_AddMask(world, target, hit.damage.buffMask, dealer, hit.power);
         }
         if (hit.damage.effectMask & EFFECTMASK_CHAINLIGHTNING)
         {
@@ -324,12 +324,12 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
             SolHit chain_hit = {.damage.amount   = 10.0f,
                                 .damage.buffMask = hit.damage.buffMask,
                                 .power           = hit.power,
-                                .entA            = dealer,
-                                .entB            = hit.entB,
+                                .dealer          = dealer,
+                                .target          = target,
                                 .kind            = HITKIND_LIGHTNING};
             Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 20);
         }
-        ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
+        ScMove3 *move3 = Sol_Comp_Get(world, target, ScMove3);
         if (move3)
         {
             if (hit.damage.effectMask & EFFECTMASK_KNOCKBACK)
@@ -353,19 +353,24 @@ float Sol_Combat_Hit(World *world, int id, SolHit hit)
         }
         if (hit.damage.effectMask & EFFECTMASK_LIFESTEAL)
         {
-            if (dealer_combat)
-                Sol_Combat_Heal(world, dealer, dealer, damage * 0.2f);
+            Sol_Combat_Heal(world, dealer, dealer, damage * 0.2f);
         }
         if (hit.damage.effectMask & EFFECTMASK_INTERRUPT)
         {
-            Sol_Ability_SetAllIdle(world, id);
+            Sol_Ability_SetAllIdle(world, target);
         }
 
         combat->lastHitBy = dealer;
         damage_done       = Apply_Damage(combat, damage);
 
         Sol_Event_Push(world, EVENTKIND_HIT,
-                       (SolEvent){.as.hit.kind = hit.kind, .entA = dealer, .entB = id, .as.hit = hit});
+                       (SolEvent){
+                           .dealer       = dealer,
+                           .target       = target,
+                           .pos          = hit.pos,
+                           .as.hit.kind  = hit.kind,
+                           .as.hit.power = hit.power,
+                       });
     }
 
     return damage_done;
@@ -441,10 +446,10 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
             if (is_blocked)
                 continue;
         }
-        hit.entB = hit_id;
-        hit.pos  = hit_pos;
+        hit.target = hit_id;
+        hit.pos    = hit_pos;
         Sol_Hitgen_Try(world, id, hit_id, hitgen);
-        Sol_Combat_Hit(world, hit_id, hit);
+        Sol_Combat_Hit(world, hit);
     }
 }
 
@@ -535,11 +540,11 @@ int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitg
             if (is_blocked)
                 continue;
         }
-        hit.entB = hit_id;
-        hit.pos  = hit_pos;
-        hit.vel  = ray.dir;
+        hit.target = hit_id;
+        hit.pos    = hit_pos;
+        hit.vel    = ray.dir;
         Sol_Hitgen_Try(world, id, hit_id, hitgen);
-        Sol_Combat_Hit(world, hit_id, hit);
+        Sol_Combat_Hit(world, hit);
         damaged++;
     }
     return damaged;

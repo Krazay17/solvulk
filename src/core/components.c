@@ -8,6 +8,11 @@
 #include "components.h"
 #include "world.h"
 
+const ScParent parent_base = {
+    .localScale = {1, 1, 1},
+    .localQuat  = {0, 0, 0, 1},
+};
+
 static BaseSparseSet *SparseSet_Alloc(size_t data_size, int max_ents)
 {
     BaseSparseSet *set = calloc(1, sizeof(*set));
@@ -25,7 +30,7 @@ static BaseSparseSet *SparseSet_Alloc(size_t data_size, int max_ents)
 
 void Sol_Comp_InitAll(World *world)
 {
-#define INIT_COMPONENT(type, idx) world->components[idx] = SparseSet_Alloc(sizeof(type), world->maxEntities);
+#define INIT_COMPONENT(type, idx, ...) world->components[idx] = SparseSet_Alloc(sizeof(type), world->maxEntities);
     SOL_COMPONENT_LIST(INIT_COMPONENT)
 #undef INIT_COMPONENT
 }
@@ -87,6 +92,12 @@ void *Sol_Comp_GetE(World *w, int id, u64 idx)
     return ((char *)set->data) + (set->sparse[id] * set->data_size);
 }
 
+static const void *component_defaults[COMPONENT_COUNT] = {
+#define REGISTER_COMPONENT_BASES(type, flag, base) [flag] = base,
+    SOL_COMPONENT_LIST(REGISTER_COMPONENT_BASES)
+#undef REGISTER_COMPONENT_BASES
+};
+
 void *Sol_Comp_AddE(World *w, int entId, u64 idx)
 {
     if ((uint32_t)entId >= w->maxEntities)
@@ -116,7 +127,11 @@ void *Sol_Comp_AddE(World *w, int entId, u64 idx)
 
     // 4. Calculate byte pointer and initialize
     void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
-    memset(elem_ptr, 0, comp_size);
+    void *defaults = component_defaults[idx];
+    if (defaults)
+        memcpy(elem_ptr, defaults, comp_size);
+    else
+        memset(elem_ptr, 0, comp_size);
 
     w->masks[entId] |= (1ULL << idx);
 

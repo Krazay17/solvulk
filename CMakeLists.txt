@@ -68,7 +68,7 @@ else()
 endif()
 # Compiler Specifics
 if(MSVC)
-    target_compile_options(solvulk PRIVATE /W2 /O2)
+    #target_compile_options(solvulk PRIVATE /W2 /O2)
     #set_property(TARGET solvulk PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
     #target_compile_options(solvulk PRIVATE -fopenmp)

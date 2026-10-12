@@ -171,13 +171,13 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .rarity = ITEMRARITY_LEGENDARY});
-    Sol_User_AddItem(
-        &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT, .effectMask = EFFECTMASK_KNOCKUP});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE, .rarity = ITEMRARITY_LEGENDARY});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .rarity = ITEMRARITY_LEGENDARY});
+    Sol_User_AddItemLoose(
+        &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE, .rarity = ITEMRARITY_LEGENDARY});
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)

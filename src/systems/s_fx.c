@@ -12,7 +12,7 @@
 
 static inline void Fireball_Explode(World *world, SolEvent event)
 {
-    vec3s pos      = event.as.hit.pos;
+    vec3s pos      = event.pos;
     Emitter *e1    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
     e1->pos        = pos;
     e1->p_color    = (vec4s){1.0f, 0.3f, 0.0f, 1.0f};
@@ -31,14 +31,16 @@ static inline void Fireball_Explode(World *world, SolEvent event)
 }
 static inline void Fireball_Hit(World *world, SolEvent event)
 {
+    vec3s pos = event.pos;
+
     Emitter *e1    = Sol_Emitter_Next(world, EMITTERKIND_SPHERE);
     e1->p_color    = (vec4s){1, 0.3f, 0, 1};
     e1->p_lifespan = 0.3f;
-    e1->pos        = event.as.hit.pos;
+    e1->pos        = pos;
     e1->p_scale    = 1.0f;
 
     Emitter *e2    = Sol_Emitter_Next(world, EMITTERKIND_BURST);
-    e2->pos        = event.as.hit.pos;
+    e2->pos        = pos;
     e2->p_kind     = PARTICLE_BLOOD;
     e2->p_color    = (vec4s){1, 0, 0, 1};
     e2->ttl        = 0;
@@ -47,7 +49,7 @@ static inline void Fireball_Hit(World *world, SolEvent event)
 static inline void Fire_Hit(World *world, SolEvent event)
 {
     Emitter *e     = Sol_Emitter_Next(world, EMITTERKIND_BURST);
-    e->pos         = event.as.hit.pos;
+    e->pos         = event.pos;
     e->p_color     = (vec4s){1, 0.3f, 0, 1};
     e->p_lifespan  = 0.3f;
     e->p_scale     = 0.5f;
@@ -59,7 +61,7 @@ static inline void Fire_Hit(World *world, SolEvent event)
 }
 static inline void Claw_Hit(World *world, SolEvent event)
 {
-    vec3s pos   = event.as.hit.pos;
+    vec3s pos   = event.pos;
     Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
     e1->pos     = pos;
 
@@ -78,7 +80,7 @@ static inline void Claw_Hit(World *world, SolEvent event)
 }
 static inline void Melee_Hit(World *world, SolEvent event)
 {
-    vec3s pos = event.as.hit.pos;
+    vec3s pos = event.pos;
 
     Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
     e2->pos     = pos;
@@ -97,10 +99,10 @@ static inline void Melee_Hit(World *world, SolEvent event)
 }
 static inline void Normal_Hit(World *world, SolEvent event)
 {
-    vec3s pos = event.as.hit.pos;
+    vec3s pos = event.pos;
 
     Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
-    e1->pos     = event.as.hit.pos;
+    e1->pos     = pos;
     e1->p_color = (vec4s){0.7f, 0.6f, 0.6f, 0.8f};
 
     Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
@@ -113,9 +115,10 @@ static inline void Normal_Hit(World *world, SolEvent event)
 }
 static inline void Lightning_Hit(World *world, SolEvent event)
 {
-    vec3s pos   = event.as.hit.pos;
+    vec3s pos = event.pos;
+
     Emitter *e1 = Sol_Emitter_Next(world, EMITTERKIND_SMOKE_BURST);
-    e1->pos     = event.as.hit.pos;
+    e1->pos     = pos;
     e1->p_color = (vec4s){0.7f, 0.6f, 0.6f, 0.8f};
 
     Emitter *e2 = Sol_Emitter_Next(world, EMITTERKIND_BURST);
@@ -163,19 +166,19 @@ void Fx_Update(World *world, double dt)
             switch (event.as.fx.kind)
             {
             case FXKIND_INVULNHIT:
-                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 0.8f, 0.2f, 16);
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.pos, 0.8f, 0.2f, 16);
                 break;
             case FXKIND_PARRY:
-                Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.as.fx.pos, 1.0f, 0, 16);
+                Sol_Audio_PlayAt(SOL_AUDIO_PARRY, event.pos, 1.0f, 0, 16);
                 break;
             case FXKIND_TEST:
-                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.as.fx.pos, 1.0f, 0, 16);
+                Sol_Audio_PlayAt(SOL_AUDIO_WOONG, event.pos, 1.0f, 0, 16);
                 break;
             case FXKIND_SHOOT:
-                Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.as.fx.pos, 1.0f, 0.1f, 16);
+                Sol_Audio_PlayAt(SOL_AUDIO_SPACEGUN, event.pos, 1.0f, 0.1f, 16);
                 break;
             case FXKIND_SWORDSWING:
-                Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.as.fx.pos, 1.0f, 0, 16);
+                Sol_Audio_PlayAt(SOL_AUDIO_SWORDSWING, event.pos, 1.0f, 0, 16);
                 break;
             case FXKIND_SCYTHEATTACK:
                 Sol_Audio_PlayAt(SOL_AUDIO_SCYTHEATTACK, event.pos, 1.0f, 0, 16);

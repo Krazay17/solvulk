@@ -287,10 +287,8 @@ struct AnimMap
             .hand_anim[1][0] = ANIM_CHARGE_RIGHT,
             .hand_anim[0][1] = ANIM_ATTACK_LEFT,
             .hand_anim[1][1] = ANIM_ATTACK_RIGHT,
-            .hand_anim[0][2] = ANIM_ATTACK_LEFT,
-            .hand_anim[1][2] = ANIM_ATTACK_RIGHT,
-            .hand_anim[0][3] = ANIM_ATTACK_LEFT,
-            .hand_anim[1][3] = ANIM_ATTACK_RIGHT,
+            .hand_anim[0][2] = ANIM_CHANNEL_LEFT,
+            .hand_anim[1][2] = ANIM_CHANNEL_RIGHT,
             .seek            = 0.1f,
             .speed           = 0.7f,
         },
@@ -390,6 +388,7 @@ void Anim_Tick(World *world, double dt)
                 break;
                 case ABILITY_STATE_FIREBALL_CHARGE: {
                     ability_anim.layerId = ANIM_LAYER_UPPER;
+                    ability_anim.playKind = ANIMPLAYKIND_NOLOOP;
                 }
                 break;
                 case ABILITY_STATE_SHIELD_CHARGE: {

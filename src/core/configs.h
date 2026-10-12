@@ -14,3 +14,5 @@ extern const u32 ability_texture_map[ABILITYKIND_COUNT];
 extern const char *ability_name[ABILITYKIND_COUNT];
 extern const char *ability_state_name[ABILITY_STATE_COUNT];
 extern const char *move_state_name[MOVE_STATE_COUNT];
+
+extern const vec4s rarity_color[ITEMRARITY_COUNT];

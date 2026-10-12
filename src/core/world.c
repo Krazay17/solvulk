@@ -20,6 +20,7 @@ void Player_Update(World *world, double dt);
 void Interact_Update(World *world, double dt);
 void Parent_Update(World *world, double dt);
 void Abilitybar_Update(World *world, double dt);
+void Item_Update(World *world, double dt);
 
 void Move3_Update(World *world, double dt);
 void Move2_Update(World *world, double dt);
@@ -43,6 +44,8 @@ void Facing_Tick(World *world, double dt);
 void Camera_Tick(World *world, double dt);
 void Emitter_Update(World *world, double dt);
 void Timer_Update(World *world, double dt);
+void Event_Update(World *world, double dt);
+void Inventory_Update(World *world, double dt);
 
 void Weapon_Update(World *world, double dt);
 void Particle_Draw(World *world, double dt);
@@ -95,6 +98,8 @@ const struct SystemDef
     [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_PARENT] = {.update = {Parent_Update, UPDATEPHASE_POSTTICK}},
+
+    [WORLDSYS_EVENT] = {.update = {Event_Update, UPDATEPHASE_POSTTICK}},
 
     [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_RIBBON]  = {.update = {{Ribbon_Update, UPDATEPHASE_RENDER3}}},
@@ -362,6 +367,17 @@ int Sol_Create_Ent(World *world, vec3s pos)
 
 void Sol_Destroy_Ent(World *w, int entId)
 {
+    if (!w || entId < 1 || entId > w->maxEntities)
+        return;
+    int children[64];
+    int child_count;
+    do
+    {
+        child_count = Sol_Parent_GetChildren(w, entId, children, (int)(sizeof(children) / sizeof(children[0])));
+        for (int i = 0; i < child_count; i++)
+            Sol_Destroy_Ent(w, children[i]);
+    } while (child_count != 0);
+
     u64 mask = w->masks[entId];
     while (mask != 0)
     {
@@ -405,6 +421,8 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
 void SlEvent_Init(World *world, SlEvent *self)
 {
     solb_init(self->events, 64);
+    for (int i = 0; i < EVENTKIND_COUNT; i++)
+        solb_init(self->handlers[i], 4);
 }
 void SlEvent_Deinit(SlEvent *self)
 {

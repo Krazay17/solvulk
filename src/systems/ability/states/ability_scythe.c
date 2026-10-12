@@ -20,12 +20,13 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     StageProgress prog     = {0};
     if (data->stage > 0)
     {
-        prog = Progress_Stage(data, dt, charge_stage_time, CHARGE_STAGE_COUNT);
+        prog = Progress_Stage(data, dt, charge_stage_time, CHARGE_STAGE_COUNT, 0.0f);
 
         forc(world, id, ScMove3) c->speedMod = 0.4f;
     }
     if (prog.finished)
         Sol_Ability_SetState(world, id, 0, slot, true);
+
     switch (prog.stage)
     {
     case 0:
@@ -41,7 +42,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         const float amount = dt * 40.0f;
         if (Sol_Combat_UseEnergy(world, id, amount))
             data->power += amount * 0.01f;
-
+        Sol_Weapon_Extend(world, GetWeaponId(ability, slot), data->power);
         break;
     case 2: {
         int weaponId = slot > 5 ? ability->right_weapon : ability->left_weapon;
@@ -54,7 +55,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
-            .entA   = id,
+            .dealer   = id,
             .vel    = cmd->aimdir,
         };
         hit.damage.buffMask |= (1u << BUFFKIND_STUN);
@@ -80,7 +81,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
-            .entA   = id,
+            .dealer   = id,
             .vel    = cmd->aimdir,
         };
         hit.damage.effectMask |= EFFECTMASK_PULL;
@@ -99,18 +100,17 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    Progress_Stage(data, dt, spell_stage_time, SPELL_STAGE_COUNT);
 }
 static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
     StageProgress prog     = {0};
-    prog                   = Progress_Stage(data, dt, dash_stage_time, DASH_STAGE_COUNT);
+    prog                   = Progress_Stage(data, dt, dash_stage_time, DASH_STAGE_COUNT, 0.0f);
     if (prog.finished)
         Sol_Ability_SetState(world, id, 0, slot, 1);
 
     SolHit hit = {
-        .entA   = id,
+        .dealer   = id,
         .damage = data->conf.damage,
         .power  = data->power,
         .kind   = HITKIND_MELEE_HIT,
@@ -183,7 +183,10 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         forc(world, id, ScMove3)
         {
             if (c->state == MOVE_FALL)
+            {
                 body->vel.y = -30.0f;
+                data->hitPause = 0.1f;
+            }
         }
         int hits;
         hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
@@ -220,6 +223,7 @@ static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
     WeaponTrails_Off(world, ability);
+    Sol_Weapon_Unextend(world, GetWeaponId(ability, slot));
 }
 static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

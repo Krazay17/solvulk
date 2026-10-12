@@ -7,6 +7,12 @@
  */
 #include "world.h"
 
+const vec4s rarity_color[ITEMRARITY_COUNT] = {{0.2f, 0.2f, 0.2f, 1.0f},
+                                              {0.0f, 1.0f, 0.0f, 1.0f},
+                                              {0.0f, 0.0f, 1.0f, 1.0f},
+                                              {0.0f, 1.0f, 1.0f, 1.0f},
+                                              {1.0f, 0.3f, 0.0f, 1.0f}};
+
 enum
 {
     COOLDOWN,
@@ -22,6 +28,43 @@ float item_rarity_scale[PARAMCOUNT] = {
     [MAXPOWER] = 0.1f,
     [SPEED]    = 0.1f,
 };
+
+bool g_items_active[256] = {0};
+void Item_Hud_Update(World *world, SolItem *items, int count)
+{
+    SparseSet_ScRef *ref_set = Sol_Comp_Set(world, ScRef);
+    for (int i = ref_set->cnt - 1; i >= 0; i--)
+    {
+        int id     = ref_set->dense[i];
+        ScRef *ref = &ref_set->data[i];
+        if (ref->kind != REFKIND_LOOSEITEM)
+            continue;
+        if (ref->index < 0 || ref->index >= count)
+        {
+            Sol_Destroy_Ent(world, id);
+            continue;
+        }
+        g_items_active[ref->index] = true;
+    }
+
+    // Spawn new refs
+    for (int i = 0; i < count; i++)
+    {
+        if (!g_items_active[i])
+        {
+            SolItem *item = &items[i];
+            float x       = 0.0f + (i % 5) * 64.0f;
+            float y       = 0.0f + (i / 5) * 64.0f;
+            int card_id   = Sol_Prefab_AbilityCard(world, (vec3s){x, y, 0}, item);
+
+            *Sol_Comp_Add(world, card_id, ScRef) = (ScRef){.kind = REFKIND_LOOSEITEM, .index = i};
+        }
+    }
+}
+
+void Item_Update(World *world, double dt)
+{
+}
 
 AbilityConfig Sol_Item_GetMods(SolItem item)
 {

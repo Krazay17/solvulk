@@ -70,8 +70,9 @@ typedef struct SolHit
     SolDamage damage;
     float power;
 
-    int entA; // Attacker
-    int entB; // Victim
+    int dealer;
+    int target;
+
     vec3s pos;
     vec3s normal;
     vec3s vel;
@@ -247,8 +248,8 @@ typedef enum
     VIEW2KIND_SLIDER,
     VIEW2KIND_SLIDER_FILL,
     VIEW2KIND_POWERBAR,
+    VIEW2KIND_GREYITEMBANK,
     VIEW2KIND_ABILITYBAR,
-    VIEW2KIND_ABILITYBAR_BASEICON,
     VIEW2KIND_COUNT,
 } View2Kind;
 
@@ -328,6 +329,8 @@ typedef enum
 typedef enum
 {
     REFKIND_ITEM,
+    REFKIND_LOOSEITEM,
+    REFKIND_INVENTORYITEM,
     REFKIND_HEALTHBAR,
     REFKIND_ENERGYBAR,
     REFKIND_ABILITYBAR,
@@ -364,7 +367,7 @@ typedef enum
     SOL_AUDIO_DASH,
     SOL_AUDIO_FIREBALLIMPACT,
     SOL_AUDIO_COUNT,
-} ScAudioId;
+} SoundKind;
 
 typedef enum
 {
@@ -631,6 +634,8 @@ typedef enum
     SOL_TEXTURE_FOGSTRIP,
     SOL_TEXTURE_SHIELD,
     SOL_TEXTURE_TRIBOOKEND,
+    Sol_TEXTURE_HEALTHVIAL,
+    Sol_TEXTURE_HEALTHVIALFILL,
     SOL_TEXTURE_COUNT,
 } SolTextureId;
 
@@ -859,16 +864,11 @@ typedef enum
 
 typedef enum
 {
-    EVENTKIND_COLLISION,
-    EVENTKIND_FX,
-    EVENTKIND_SOUND,
-    EVENTKIND_EQUIP,
-    EVENTKIND_SCORE,
-    EVENTKIND_ENT_DESTROY,
-    EVENTKIND_AILEARN,
     EVENTKIND_HIT,
     EVENTKIND_DEATH,
-    EVENTKIND_RESPAWN,
+    EVENTKIND_FX,
+    EVENTKIND_SOUND,
+    EVENTKIND_SCORE,
     EVENTKIND_COUNT,
 } EventKind;
 
@@ -882,64 +882,46 @@ typedef enum
     FXKIND_TEST,
 } FxKind;
 
+typedef enum
+{
+    DEATHKIND_FALL,
+    DEATHKIND_PLAYERKILL,
+    DEATHKIND_SELFKILL,
+} DeathKind;
+
 typedef struct SolEvent
 {
     EventKind kind;
-    u32 entA; // Attacker
-    u32 entB; // Victim
+    u32 dealer;
+    u32 target;
     vec3s pos;
     union {
-        SolHit hit;
         struct
         {
-            vec3s pos, normal, vel;
-            u32 entA, entB;
-        } collision;
+            HitKind kind;
+            float amount;
+            float power;
+        } hit;
         struct
         {
+            DeathKind kind;
             float damage;
-            u32 entA, entB;
         } death;
         struct
         {
             FxKind kind;
-            u32 entA, entB;
-            vec3s pos;
             vec4s color;
             float scale, duration;
         } fx;
         struct
         {
-            u32 kind;
-            vec3s pos;
+            SoundKind kind;
             float volume;
         } sound;
         struct
         {
-            u32 ent;
-            vec3s pos;
-        } respawn;
-        struct
-        {
-            u32 entId;
-            u32 slot;
-            u32 ability;
-            u32 rarity;
-        } equip;
-        struct
-        {
-            u32 entA, entB;
             float damageDealt;
         } score;
-        struct
-        {
-            u32 kind;
-            u32 interactor, interactee;
-        } interact;
-        struct
-        {
-            u32 id;
-        } ent_destroy;
     } as;
 } SolEvent;
 

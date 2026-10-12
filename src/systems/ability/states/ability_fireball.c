@@ -25,12 +25,12 @@
 static const float spell_stage_time[3] = {0.5f, 0.3f, 0.3f};
 #define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
 
-static const float charge_stage_time[4] = {0.0f, 0.2f, 0.15f, 0.2f};
+static const float charge_stage_time[4] = {0.0f, 0.2f, 0.3f, 0.2f};
 #define CHARGE_STAGE_COUNT (sizeof(charge_stage_time) / sizeof(charge_stage_time[0]))
 
 static vec3s GetProjectilePos(World *world, int id, float power, int slot)
 {
-    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon").pos;
+    vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
     pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));
@@ -44,32 +44,13 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->elapsed += dt;
+    StageProgress prog     = {0};
     if (data->stage > 0)
-    {
-        if (data->hitPause > 0)
-            data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
-        else
-            data->accum += dt;
+        prog = Progress_Stage(data, dt, charge_stage_time, CHARGE_STAGE_COUNT, data->stage == 2 ? data->power : 0.0f);
+    if (prog.finished)
+        Sol_Ability_SetState(world, id, 0, slot, 1);
 
-        while (data->stage < CHARGE_STAGE_COUNT && data->accum >= charge_stage_time[data->stage])
-        {
-            data->accum -= charge_stage_time[data->stage];
-            data->stage++;
-            switch (data->stage)
-            {
-            case 1:
-                break;
-            }
-        }
-        if (data->stage >= CHARGE_STAGE_COUNT)
-        {
-            Sol_Ability_SetState(world, id, 0, slot, 1);
-            return;
-        }
-    }
-
-    switch (data->stage)
+    switch (prog.stage)
     {
     case 0:
         if (!data->held)
@@ -79,7 +60,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
             SolHit hit = {
-                .entA   = id,
+                .dealer = id,
                 .power  = data->power,
                 .damage = data->conf.damage,
             };
@@ -111,7 +92,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
 
             SolHit hit = {
-                .entA   = id,
+                .dealer = id,
                 .kind   = HITKIND_MELEE_HIT,
                 .power  = data->power,
                 .damage = data->conf.damage,
@@ -132,54 +113,37 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->elapsed += dt;
-    if (data->hitPause > 0)
-        data->hitPause = fmaxf(0, data->hitPause - dt * 8.0f);
-    else
-        data->accum += dt;
-    while (data->stage < SPELL_STAGE_COUNT && data->accum >= spell_stage_time[data->stage])
+    StageProgress prog     = Progress_Stage(data, dt, spell_stage_time, SPELL_STAGE_COUNT, 0.0f);
+    if (prog.finished)
+        Sol_Ability_SetState(world, id, 0, slot, 1);
+
+    switch (data->stage)
     {
-        data->accum -= spell_stage_time[data->stage];
-        data->stage++;
-        switch (data->stage)
+    case 0:
+        forc(world, id, ScBody3) c->vel = glms_vec3_lerpc(GLMS_VEC3_ZERO, c->vel, 0.5f);
+        break;
+    case 1:
+        if (prog.advanced)
         {
-        case 1:
             vec3s pos = GetProjectilePos(world, id, 1.0f, slot);
             vec3s dir = vecNorm(vecSub(cmd->aimpos, pos));
-
             { // Spawn fireball
                 int fireball             = Sol_Prefab_Fireball(world, id, pos, dir, 30.0f, 1.0f);
                 ScProjectile *projectile = Sol_Comp_Get(world, fireball, ScProjectile);
                 projectile->hit          = (SolHit){
-                    .entA   = id,
+                    .dealer = id,
                     .damage = data->conf.damage,
                     .power  = data->power,
                 };
                 projectile->hit.damage.amount *= 0.5f;
                 projectile->aoe_hit = (SolHit){
-                    .entA   = id,
+                    .dealer = id,
                     .damage = data->conf.damage,
                     .power  = data->power,
                 };
                 projectile->aoe_hit.damage.amount *= 0.5f;
                 projectile->power = data->power;
             }
-            break;
-        }
-    }
-    if (data->stage >= SPELL_STAGE_COUNT)
-    {
-        Sol_Ability_SetState(world, id, 0, slot, 1);
-        return;
-    }
-
-    switch (data->stage)
-    {
-    case 0:
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-        if (body3)
-        {
-            body3->vel = glms_vec3_lerpc(GLMS_VEC3_ZERO, body3->vel, 0.5f);
         }
         break;
     }

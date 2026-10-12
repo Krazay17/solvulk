@@ -16,6 +16,7 @@ void Camera_Tick(World *world, double dt)
 
         vec3s head    = Sol_Body3_GetHead(world, id);
         vec3s lookdir = WORLD_FWD;
+        head.y += camera->y_offset;
 
         if (Sol_Comp_Has(world, id, ScCmd))
         {

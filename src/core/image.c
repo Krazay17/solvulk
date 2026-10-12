@@ -35,6 +35,9 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_SPIKEFRAMEFILLED] = "SpikeFrameFilled.webp",
     [SOL_TEXTURE_CLOUD2]           = "Cloud2.webp",
     [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
+    [Sol_TEXTURE_HEALTHVIAL]       = "HealthVial.png",
+    [Sol_TEXTURE_HEALTHVIALFILL]   = "HealthVialFill.png",
+
 #ifndef SOL_BUILD_DEMO
     [SOL_TEXTURE_SPIN_CARD]    = "TornadoCard.png",
     [SOL_TEXTURE_LIGHTNING]    = "Lightning.webp",

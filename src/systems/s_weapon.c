@@ -17,14 +17,15 @@ const ScWeapon weapon_kinds[WEAPONKIND_COUNT] = {
 
 int Make_Claw(World *world, int owner, int slot)
 {
-    char *bone       = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
+    char *bone       = slot > 5 ? "weapon.R" : "weapon.L";
     int id           = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
     ScWeapon *weapon = Sol_Comp_Add(world, id, ScWeapon);
     ScParent *parent = Sol_Comp_Add(world, id, ScParent);
     parent->parentId = owner;
 
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
-    parent->localQuat = GLMS_QUAT_IDENTITY;
+    parent->localQuat  = GLMS_QUAT_IDENTITY;
+    parent->localScale = (vec3s){1, 1, 1};
 
     ScModel *model = Sol_Comp_Add(world, id, ScModel);
     model->kind    = MODELKIND_WEAPONBLADE;
@@ -36,14 +37,15 @@ int Make_Claw(World *world, int owner, int slot)
 
 int Make_Scythe(World *world, int owner, int slot)
 {
-    char *bone       = slot > 5 ? "hand.R.Weapon" : "hand.L.Weapon";
+    char *bone       = slot > 5 ? "weapon.R" : "weapon.L";
     int id           = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
     ScWeapon *weapon = Sol_Comp_Add(world, id, ScWeapon);
     ScParent *parent = Sol_Comp_Add(world, id, ScParent);
     parent->parentId = owner;
 
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
-    glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, 0.0f}, parent->localQuat.raw);
+    glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
+    parent->localScale = (vec3s){1, 1, 1};
 
     ScModel *model   = Sol_Comp_Add(world, id, ScModel);
     model->kind      = MODELKIND_SCYTHE;
@@ -78,6 +80,10 @@ void Weapon_Update(World *world, double dt)
                 }
             }
         }
+        if (!sc->extending)
+        {
+            forc(world, id, ScParent) c->localScale.y = Sol_InterpToOne(c->localScale.y, dt);
+        }
     }
 }
 
@@ -94,4 +100,13 @@ vec3s Sol_Weapon_DmgPos(World *world, int id)
 Xform Sol_Weapon_BladeXform(World *world, int id)
 {
     return Sol_Model_GetBoneXform(world, id, "Blade");
+}
+void Sol_Weapon_Extend(World *world, int id, float power)
+{
+    forc(world, id, ScParent) c->localScale.y = 1.0f + (power * 0.5f);
+    forc(world, id, ScWeapon) c->extending    = true;
+}
+void Sol_Weapon_Unextend(World *world, int id)
+{
+    forc(world, id, ScWeapon) c->extending = false;
 }

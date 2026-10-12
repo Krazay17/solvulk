@@ -17,7 +17,7 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
     ScOwner *owner       = Sol_Comp_Get(w, a, ScOwner);
     int ownerId          = owner ? owner->ownerId : 0;
     vec3s pos            = w->xform.pos[a];
-    Sol_Combat_Hit(w, hit.entB, hit);
+    Sol_Combat_Hit(w, hit);
 
     SolRay ray = {.start = pos, .ignoreEnt = a, .dir = WORLD_DOWN, .mask = COLLAYER_ALL, .radius = explode_radius};
     SolRayResult results[512];
@@ -50,17 +50,17 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
         }
 
         SolHit aoe_hit = projectile->aoe_hit;
-        aoe_hit.entB   = hit_id;
+        aoe_hit.target = hit_id;
         aoe_hit.pos    = hit_pos;
-        Sol_Combat_Hit(w, hit_id, aoe_hit);
+        Sol_Combat_Hit(w, aoe_hit);
         Sol_Ai_QuickLearn(w, a, ownerId, false);
     }
     Sol_Event_Push(w, EVENTKIND_HIT,
                    (SolEvent){
-                       .entA         = ownerId,
-                       .entB         = hit.entB,
+                       .dealer       = ownerId,
+                       .target       = hit.target,
+                       .pos          = pos,
                        .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
-                       .as.hit.pos   = pos,
                        .as.hit.power = hit.power,
                    });
 
@@ -73,21 +73,21 @@ static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projec
     ScOwner *owner = Sol_Comp_Get(world, a, ScOwner);
     int ownerId    = owner ? owner->ownerId : 0;
 
-    if (Sol_Hitgen_Try(world, a, hit.entB, projectile->hitgen))
+    if (Sol_Hitgen_Try(world, a, hit.target, projectile->hitgen))
     {
 
-        Sol_Combat_Hit(world, hit.entB, hit);
+        Sol_Combat_Hit(world, hit);
 
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){
-                           .entA         = ownerId,
-                           .entB         = hit.entB,
+                           .dealer       = ownerId,
+                           .target       = hit.target,
+                           .pos          = hit.pos,
                            .as.hit.kind  = HITKIND_FIREBALL_EXPLODE,
-                           .as.hit.pos   = hit.pos,
                            .as.hit.power = hit.power,
                        });
     }
-    if (Sol_Comp_Has(world, hit.entB, ScStage))
+    if (Sol_Comp_Has(world, hit.target, ScStage))
     {
 
         Sol_Destroy_Ent(world, a);
@@ -99,9 +99,9 @@ static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projec
 
 static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p, SolHit hit)
 {
-    if (Sol_Combat_Hostile(world, id, hit.entB) && Sol_Hitgen_Try(world, id, hit.entB, p->hitgen))
+    if (Sol_Combat_Hostile(world, id, hit.target) && Sol_Hitgen_Try(world, id, hit.target, p->hitgen))
     {
-        Sol_Combat_Hit(world, hit.entB, hit);
+        Sol_Combat_Hit(world, hit);
 
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         body3->vel     = GLMS_VEC3_ZERO;
@@ -110,8 +110,8 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
         world->xform.pos[id] = hit.pos;
 
         // 2. Fetch target transform
-        vec3s target_pos     = world->xform.pos[hit.entB];
-        versors target_rot   = world->xform.rot[hit.entB];
+        vec3s target_pos     = world->xform.pos[hit.target];
+        versors target_rot   = world->xform.rot[hit.target];
         versors inv_target_r = glms_quat_inv(target_rot);
 
         // 3. Compute local space offset & rotation (Child_Local = Parent_Inv * Child_World)
@@ -120,19 +120,17 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
         versors local_quat = glms_quat_mul(inv_target_r, world->xform.rot[id]);
 
         // 4. Attach ScParent
-        *Sol_Comp_Add(world, id, ScParent) = (ScParent){
-            .parentId    = hit.entB,
-            .localOffset = local_offset,
-            .localQuat   = local_quat,
-            .active      = true,
-        };
+        ScParent *parent    = Sol_Comp_Add(world, id, ScParent);
+        parent->parentId    = hit.target;
+        parent->localOffset = local_offset;
+        parent->localQuat   = local_quat;
 
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){
-                           .entA         = hit.entA,
-                           .entB         = hit.entB,
+                           .dealer       = hit.dealer,
+                           .target       = hit.target,
+                           .pos          = hit.pos,
                            .as.hit.kind  = HITKIND_LIGHTNING,
-                           .as.hit.pos   = hit.pos,
                            .as.hit.power = hit.power,
                        });
 
@@ -205,7 +203,7 @@ void Projectile_Step(World *world, double dt)
         Hook hook      = projectile->hook;
 
         SolHit hit = projectile->hit;
-        hit.entA   = id;
+        hit.dealer = id;
         hit.vel    = glms_vec3_normalize(vel);
         for (int j = 0; j < hits; j++)
         {
@@ -215,7 +213,7 @@ void Projectile_Step(World *world, double dt)
             if (result.entId == ownerId)
                 continue;
 
-            hit.entB   = result.entId;
+            hit.target = result.entId;
             hit.normal = result.norm;
             hit.pos    = result.pos;
 

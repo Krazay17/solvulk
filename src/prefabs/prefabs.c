@@ -8,11 +8,12 @@
 #include "sol/sol.h"
 
 const ScCamera player_camera = {
-    .fov              = 75.0f,
+    .fov              = 60.0f,
     .up.y             = 1.0f,
     .lerpspeed        = 10.0f,
-    .desired_offset   = 1.5f,
-    .desired_distance = 3.5f,
+    .desired_offset   = 0.5f,
+    .desired_distance = 5.0f,
+    .y_offset         = 0.5f,
 };
 
 static const ScBody3 wizard_body = {
@@ -538,76 +539,78 @@ int Sol_Prefab_Crystal(World *world, vec3s pos)
     return 0;
 }
 
-int Sol_Prefab_AbilityBar(World *world, vec3s pos)
+int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
 {
-    u32 layer = UILAYER_0;
-
-    ScAbilitybar bar = {
-        .slots_per_group = {4, 1, 2},
-        .spacing         = 4.0f,
-        .group_gap       = 4.0f,
-        .slot_dims       = {62.0f, 62.0f},
-        .frame_pad       = {10.0f, 2.0f},
-    };
-    vec2s dims2 = Abilitybar_Size(&bar);
-    vec3s dims  = {dims2.x, dims2.y, 0};
-    vec4s dims4 = {dims.x, dims.y, 0, 0};
-
-    int id                                     = Sol_Create_Ent(world, pos);
-    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_DRAGGABLE;
-    *Sol_Comp_Add(world, id, ScAbilitybar)     = bar;
+    int id     = Sol_Create_Ent(world, pos);
+    vec2s dims = {200.0f, 200.0f};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
-        .zindex   = layer,
+        .zindex   = UILAYER_0,
         .shape    = SHAPE2_REC,
-        .dims     = dims,
+        .dims     = (vec3s){dims.x, dims.y, 0},
         .isSensor = true,
         .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    float s = bar.slot_dims.x;
-    *Sol_Comp_Add(world, id, ScView2) =
-        (ScView2){.count = 5,
-                  .views = {
-                      {.layer = layer, .kind = VIEW2KIND_RECT, .dims = dims4, .color = {0, 0, 0, 1}},
-                      {.layer = layer,
-                       .kind  = VIEW2KIND_ABILITYBAR_BASEICON,
-                       .dims  = dims4,
-                       .color = {1, 1, 1, 1},
-                       .desat = 1.0f},
-                      {.layer      = UILAYER_2,
-                       .kind       = VIEW2KIND_ABILITYBAR,
-                       .dims       = dims4,
-                       .flags      = 0b111,
-                       .color      = {1, 0, 0, 1},
-                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
-                       .textureID  = SOL_TEXTURE_SWIRLFRAME},
-                      {.layer      = UILAYER_2,
-                       .kind       = VIEW2KIND_RECT,
-                       .dims       = {s, s},
-                       .offset     = {-s, bar.frame_pad.y},
-                       .textureID  = SOL_TEXTURE_TRIBOOKEND,
-                       .color      = {1, 1, 1, 1},
-                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
-                       .textureUV  = {1, 1, 0, 0}},
-                      {.layer      = UILAYER_2,
-                       .kind       = VIEW2KIND_RECT,
-                       .dims       = {s, s},
-                       .offset     = {dims.x, bar.frame_pad.y},
-                       .textureID  = SOL_TEXTURE_TRIBOOKEND,
-                       .color      = {1, 1, 1, 1},
-                       .hoverColor = {0.7f, 0.7f, 0.7f, 1},
-                       .textureUV  = {-1, 1, 0, 0}},
-                  }};
+    float offset = 0.0f;
+    for (int i = 0; i < ABILITYKIND_COUNT; i++)
+    {
+        // if (inventory->unlocked_items[i])
+        // {
+        //     int card_id              = Sol_Prefab_AbilityCard(world, pos, &(SolItem){.abilityKind = i});
+        //     ScParent *card_parent    = Sol_Comp_Add(world, card_id, ScParent);
+        //     card_parent->parentId    = id;
+        //     card_parent->localOffset = (vec3s){offset, 0, 0};
+        //     offset += 64.0f;
+        // }
+    }
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->state      = INTERACT_DRAGGABLE;
+
+    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
+    view2->count    = 1;
+    view2->views[0] = (View2){.kind = VIEW2KIND_GREYITEMBANK};
+
     return id;
 }
 
-const vec4s rarity_color[ITEMRARITY_COUNT] = {{0.2f, 0.2f, 0.2f, 1.0f},
-                                              {0.0f, 1.0f, 0.0f, 1.0f},
-                                              {0.0f, 0.0f, 1.0f, 1.0f},
-                                              {0.0f, 1.0f, 1.0f, 1.0f},
-                                              {1.0f, 0.3f, 0.0f, 1.0f}};
-int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
+int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx, const int *slots, int slot_count)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    vec2s slot_dims = {66.0f, 66.0f};
+    vec2s dims      = {slot_dims.x * slot_count, slot_dims.y};
+
+    *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .zindex   = UILAYER_0,
+        .shape    = SHAPE2_REC,
+        .dims     = (vec3s){dims.x, dims.y, 0},
+        .isSensor = true,
+        .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->state      = INTERACT_DRAGGABLE;
+
+    *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ABILITYBAR, .ent_world = ent_world_idx, .ent_id = ent_id};
+
+    ScAbilitybar *ability_bar = Sol_Comp_Add(world, id, ScAbilitybar);
+    ability_bar->slot_dims    = slot_dims;
+    ability_bar->slot_count   = slot_count;
+    memcpy(ability_bar->ability_slots, slots, sizeof(slots[0]) * slot_count);
+
+    View2 bg        = {.dims = dims, .color = VEC4_BLACK, .hoverColor = VEC4_WHITE};
+    View2 slot_view = {.kind = VIEW2KIND_ABILITYBAR, .dims = dims, .color = VEC4_BLACK, .layer = UILAYER_2};
+    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
+    view2->count    = 2;
+    view2->views[0] = bg;
+    view2->views[1] = slot_view;
+
+    return id;
+}
+
+int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
 {
     vec2s dims  = {62.0f, 62.0f};
     u32 texture = ability_texture_map[item->abilityKind];
@@ -616,8 +619,6 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item, int ref)
     int id = Sol_Create_Ent(world, pos);
 
     Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_ONLYDRAGGABLE;
-
-    *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ITEM, .index = ref};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .zindex   = layer,
@@ -720,6 +721,40 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
     ribbon->ribbon.sheets = 2;
     ribbon->ribbon.flags  = 1;
     Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0.0f, 0);
+
+    return id;
+}
+
+int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
+{
+    vec2s dims = {120.0f, 120.0f};
+
+    int id = Sol_Create_Ent(world, pos);
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->state |= INTERACT_DRAGGABLE;
+
+    ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
+    *body         = (ScBody2){
+        .shape       = SHAPE2_REC,
+        .restitution = 1.0f,
+        .dims        = {dims.x, dims.y, 0},
+        .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    ScView2 *view2 = Sol_Comp_Add(world, id, ScView2);
+    view2->count   = 2;
+    View2 fill     = {
+        .kind      = VIEW2KIND_POWERBAR,
+        .color     = color,
+        .dims      = dims,
+        .textureID = Sol_TEXTURE_HEALTHVIALFILL,
+        .fillSpeed = 5.0f,
+        .flags     = 0b111,
+    };
+    View2 frame     = {.kind = VIEW2KIND_RECT, .color = color, .dims = dims, .textureID = Sol_TEXTURE_HEALTHVIAL};
+    view2->views[0] = fill;
+    view2->views[1] = frame;
 
     return id;
 }

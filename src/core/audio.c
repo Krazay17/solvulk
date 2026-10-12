@@ -33,7 +33,7 @@ typedef struct
 {
     ma_audio_buffer_ref bufferRef; // per-instance view into shared pcmData
     ma_sound sound;
-    ScAudioId id;
+    SoundKind id;
     u32 generation;
     bool inUse;
 } PlayingSound;
@@ -131,7 +131,7 @@ static void Slot_Uninit(PlayingSound *ps)
 
 // --- Core allocator ---
 
-static ScAudioHandle Sol_Audio_Alloc(ScAudioId id, bool is3d, float volume, u32 maxConcurrent)
+static ScAudioHandle Sol_Audio_Alloc(SoundKind id, bool is3d, float volume, u32 maxConcurrent)
 {
     if (id >= SOL_AUDIO_COUNT || !loaded_audio[id].loaded)
         return INVALID_AUDIO_HANDLE;
@@ -268,7 +268,7 @@ SolAudio *Parse_Audio(SolResource res, u32 id)
 
 // --- Playback ---
 
-ScAudioHandle Sol_Audio_Play(ScAudioId id, float volume, float seek, u32 concurrent)
+ScAudioHandle Sol_Audio_Play(SoundKind id, float volume, float seek, u32 concurrent)
 {
     ScAudioHandle handle = Sol_Audio_Alloc(id, false, volume, concurrent);
     if (!Sol_Audio_IsHandleValid(handle))
@@ -282,7 +282,7 @@ ScAudioHandle Sol_Audio_Play(ScAudioId id, float volume, float seek, u32 concurr
     return handle;
 }
 
-ScAudioHandle Sol_Audio_PlayAt(ScAudioId id, vec3s pos, float volume, float seek, u32 concurrent)
+ScAudioHandle Sol_Audio_PlayAt(SoundKind id, vec3s pos, float volume, float seek, u32 concurrent)
 {
     ScAudioHandle handle = Sol_Audio_Alloc(id, true, volume, concurrent);
     if (!Sol_Audio_IsHandleValid(handle))

@@ -128,6 +128,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     {
         result.pos = xform.pos;
         result.rot = xform.rot;
+        result.sca = xform.sca;
         return result;
     }
 
@@ -199,6 +200,8 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_vec3_normalize_to(finalWorldMat[2], rotationMat[2]);
 
     glm_mat4_quat(rotationMat, result.rot.raw);
+
+    result.sca = xform.sca;
 
     return result;
 }

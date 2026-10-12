@@ -26,8 +26,30 @@ void Parent_Update(World *world, double dt)
         vec3s pos_final = glms_vec3_add(xform_parent.pos, offset);
 
         versors rot_final = glms_quat_mul(xform_parent.rot, parent->localQuat);
-        vec3s sca_final   = (vec3s){1, 1, 1}; // xform_parent.sca;
+        vec3s sca_final   = glms_vec3_mul(xform_parent.sca, parent->localScale);
 
         Xform_SetAll(world, id, pos_final, rot_final, sca_final);
+        vec3s parent_vel;
+        forc(world, parent->parentId, ScBody2) parent_vel = c->vel;
+        forc(world, id, ScBody2) c->vel = parent_vel;
+
+        forc(world, parent->parentId, ScBody3) parent_vel = c->vel;
+        forc(world, id, ScBody3) c->vel = parent_vel;
     }
+}
+
+int Sol_Parent_GetChildren(World *world, int id, int *ids, int max_ids)
+{
+    SparseSet_ScParent *set = Sol_Comp_Set(world, ScParent);
+    int child_count         = 0;
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int child_id     = set->dense[i];
+        ScParent *parent = &set->data[i];
+        if (child_count >= max_ids)
+            break;
+        if (parent->parentId == id)
+            ids[child_count++] = child_id;
+    }
+    return child_count;
 }

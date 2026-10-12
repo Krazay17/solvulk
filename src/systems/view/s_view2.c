@@ -106,18 +106,20 @@ static void DrawRect(World *world, int id, float fdt, View2 *view)
     {
         ScInteract *interact = Sol_Comp_Get(world, id, ScInteract);
 
-        if (interact->state & INTERACT_DOWN)
+        if (interact->state & (1u << INTERACT_DOWN))
             view->downAnim = fminf(view->downAnim + fdt * 20.0f, 1.0f);
         else
             view->downAnim = fmaxf(view->downAnim - fdt * 20.0f, 0.0f);
 
-        if (interact->state & INTERACT_HOVERED)
+        if (interact->state & (1u << INTERACT_HOVERED))
+        {
             view->hoverAnim = fminf(view->hoverAnim + fdt * 12.0f, 1.0f);
+        }
         else
             view->hoverAnim = fmaxf(view->hoverAnim - fdt * 8.0f, 0.0f);
 
         view->activeAnim = fmaxf(view->activeAnim - fdt * 5.0f, 0.0f);
-        if ((interact->state & (INTERACT_TOGGLED | INTERACT_ACTIVE)))
+        if ((interact->state & (1u << INTERACT_ACTIVE)))
             view->activeAnim = 1.0f;
     }
     drawCol          = glms_vec4_lerp(drawCol, view->hoverColor, view->hoverAnim);

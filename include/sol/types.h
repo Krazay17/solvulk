@@ -36,6 +36,8 @@
 #define PHYSX_GET_LAYER(packed) (((u32)(packed) >> 16) & 0xFFFF)
 #define PHYSX_GET_FILTER(packed) ((u32)(packed) & 0xFFFF)
 #define ABILITY_SLOTS 7
+#define MAX_TOOLTIP_ALPHA 0.9f
+#define MAX_TOOLTIP_LINES 10
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
@@ -123,6 +125,23 @@ typedef struct
     float speed;
     float duration;
 } AbilityConfig;
+
+typedef enum
+{
+    USERACTION_MOUSEINTERACT = 1,
+    USERACTION_MOUSEGRAB,
+    USERACTION_MOUSEMENU,
+    USERACTION_ESCAPE,
+    USERACTION_COUNT,
+} UserActions;
+typedef struct UserInput
+{
+    vec2s mouse;
+    bool mouse_locked;
+    u64 user_actions;
+    u64 just_actions;
+    u64 prev_actions;
+} UserInput;
 
 typedef struct
 {
@@ -584,22 +603,20 @@ typedef struct SolTri
 
 typedef enum
 {
-    INTERACT_UP,
-    INTERACT_ENTHOVERED    = (1 << 0),
-    INTERACT_MOUSEHOVERED  = (1 << 1),
-    INTERACT_DOWN          = (1 << 2),
-    INTERACT_JUSTDOWN      = (1 << 3),
-    INTERACT_JUSTUP        = (1 << 4),
-    INTERACT_DRAGGING      = (1 << 5),
-    INTERACT_TOGGLED       = (1 << 6),
-    INTERACT_ACTIVE        = (1 << 7),
-    INTERACT_HOVERED       = (1 << 8),
-    INTERACT_JUSTHOVERED   = (1 << 9),
-    INTERACT_JUSTUNHOVERED = (1 << 10),
-    INTERACT_TOGGLEABLE    = (1 << 11),
-    INTERACT_DRAGGABLE     = (1 << 12),
-    INTERACT_ONLYDRAGGABLE = (1 << 13),
+    INTERACT_HOVERED = 1,
+    INTERACT_FOCUSED,
+    INTERACT_DOWN,
+    INTERACT_DRAGGING,
+    INTERACT_ACTIVE,
+    INTERACT_COUNT,
 } InteractState;
+
+typedef enum
+{
+    INTERACTFLAG_DRAGGABLE     = (1 << 0),
+    INTERACTFLAG_ONLYDRAGGABLE = (1 << 1),
+    INTERACTFLAG_TOGGLEABLE    = (1 << 2),
+} InteractFlags;
 
 typedef enum
 {
@@ -729,10 +746,12 @@ typedef struct AnimLayer
 
 typedef struct SolUserHit
 {
-    int hoverId, focusId;
-    World *hoverWorld, *focusWorld;
-    bool isHoverUi, isFocusUi, isDragging;
-    ivec2s pressPos;
+    int target;
+    int focus;
+    int grab;
+    World *target_world;
+    World *focus_world;
+    World *grab_world;
 } SolUserHit;
 
 typedef enum

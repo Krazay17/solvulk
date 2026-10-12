@@ -18,8 +18,8 @@ static int keyMap[256] = {
     [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,      [71] = SOL_KEY_G,     [9] = SOL_KEY_TAB,
 };
 
-static bool         rawKeys[SOL_KEY_COUNT];
-static bool         rawMouseButtons[SOL_MOUSE_COUNT];
+static bool rawKeys[SOL_KEY_COUNT];
+static bool rawMouseButtons[SOL_MOUSE_COUNT];
 static volatile int rawMouseWheelDelta;
 static volatile int rawMouseX, rawMouseY;
 static volatile int rawMouseDeltaX, rawMouseDeltaY;
@@ -30,9 +30,11 @@ static bool keys[SOL_KEY_COUNT];
 static bool keysPrev[SOL_KEY_COUNT];
 static bool mouseButtons[SOL_MOUSE_COUNT];
 static bool mouseButtonsPrev[SOL_MOUSE_COUNT];
-static int  mouseWheelDelta;
-static int  mouseX, mouseY;
-static int  mouseDeltaX, mouseDeltaY;
+static int mouseWheelDelta;
+static int mouseX, mouseY;
+static int mouseDeltaX, mouseDeltaY;
+
+UserInput user_input;
 
 void Sol_Input_Init()
 {
@@ -121,10 +123,21 @@ bool Sol_Input_KeyPressed(SolKey key)
 {
     return keys[key] && !keysPrev[key];
 }
-
+bool Sol_Input_MouseDown(SolMouseButton button)
+{
+    return mouseButtons[button];
+}
+bool Sol_Input_MousePressed(SolMouseButton button)
+{
+    return mouseButtons[button] && !mouseButtonsPrev[button];
+}
+bool Sol_Input_MouseLocked()
+{
+    return mouseLocked;
+}
 SolMouse Sol_Input_GetMouse()
 {
-    SolMouse m = { 0 };
+    SolMouse m = {0};
     m.x        = mouseX;
     m.y        = mouseY;
 
@@ -171,5 +184,5 @@ void Sol_Input_Clear()
 vec2s Sol_Input_GetMouseUI(void)
 {
     SolMouse m = Sol_Input_GetMouse();
-    return (vec2s){ UIUNSCALE(m.x), UIUNSCALE(m.y) };
+    return (vec2s){UIUNSCALE(m.x), UIUNSCALE(m.y)};
 }

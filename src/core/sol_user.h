@@ -4,13 +4,6 @@
 
 #define MAX_USER_ITEMS 512
 
-typedef enum
-{
-    USERACTION_LCLICK = (1u << 0),
-    USERACTION_RCLICK = (1u << 1),
-    USERACTION_MCLICK = (1u << 2),
-    USERACTION_MENU   = (1u << 3),
-} UserAction;
 typedef struct SolUser
 {
     int view_world;
@@ -59,5 +52,4 @@ void Sol_User_ClearUserSettings();
 World *Sol_User_GetGameWorld();
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);
 void Sol_User_AddItem(SolItem *item);
-void Sol_Tooltip_Draw(World *world, int id, float fdt);
 void Sol_User_AddItemLoose(SolItem *item);

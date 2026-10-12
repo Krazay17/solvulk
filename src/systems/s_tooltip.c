@@ -1,14 +1,7 @@
-#include "sol_user.h"
 #include "world.h"
-#include "sol_core.h"
-#include "sol_math.h"
-#include "render/render.h"
 #include "font.h"
-
-#define MAX_TOOLTIP_ALPHA 0.9f
-#define MAX_TOOLTIP_LINES 10
-
-static float tooltipAlpha;
+#include "render/render.h"
+#include "sol_core.h"
 
 static void Render_Tooltip_Line(const char *str, float centerX, float y, float size, float alpha)
 {
@@ -23,27 +16,15 @@ static void Render_Tooltip_Line(const char *str, float centerX, float y, float s
     Sol_Render_DrawText2D(str, desc);
 }
 
-static void Item_Draw(World *world, int id, ScTooltip *tooltip)
+static void Item_Draw(World *world, int id, UserInput *input, float alpha)
 {
-    float alpha = tooltipAlpha;
-    ScRef *ref  = Sol_Comp_Get(world, id, ScRef);
+    ScRef *ref = Sol_Comp_Get(world, id, ScRef);
     if (!ref)
         return;
-    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
-    if (!ref_world)
-        return;
-    SolItem *item = NULL;
-    switch (ref->kind)
-    {
-    case REFKIND_INVENTORYITEM:
-        forc(ref_world, ref->ent_id, ScInventory) item = &c->items[ref->index];
-        break;
-    case REFKIND_LOOSEITEM:
-        item = &user_data.loose_items[ref->index];
-        break;
-    }
+    SolItem *item = Sol_Item_Resolve(world, ref);
     if (!item)
         return;
+
     // --- STAGE 1: COMPUTE STRINGS & MEASURE WIDTHS ---
     // Keep a local stack array of the lines we need to draw
     char lines[MAX_TOOLTIP_LINES][64];
@@ -172,7 +153,7 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
     vec2s dims = {.x = maxWidth + paddingX * 2.0f, .y = UISCALE(headerSize) + (lineCount * ySpacing) + paddingY * 2.0f};
 
     // Keep the box centered or offset cleanly near mouse coordinate profiles
-    vec2s pos    = {sol_user.mouse_pos.x, sol_user.mouse_pos.y - dims.y};
+    vec2s pos    = {input->mouse.x, input->mouse.y - dims.y};
     vec2s center = {pos.x + dims.x * 0.5f, pos.y + dims.y * 0.5f};
 
     // --- STAGE 3: DRAW BACKDROP GEOMETRY FIRST ---
@@ -226,24 +207,19 @@ static void Item_Draw(World *world, int id, ScTooltip *tooltip)
     }
 }
 
-typedef void (*TooltipDraw)(World *world, int id, ScTooltip *tooltip);
+typedef void (*TooltipDraw)(World *world, int id, UserInput *input, float alpha);
 const TooltipDraw tooltip_funcs[TOOLTIPKIND_COUNT] = {
     [TOOLTIPKIND_CARD] = Item_Draw,
 };
 
-void Sol_Tooltip_Draw(World *world, int id, float fdt)
+void Sol_Tooltip_Draw(World *world, int id, UserInput *input, float alpha)
 {
-    if (world && id > 0)
+    if (!world)
+        return;
+    forc(world, id, ScTooltip)
     {
-        ScTooltip *tooltip = Sol_Comp_Get(world, id, ScTooltip);
-        if (tooltip)
-        {
-            const float stiffness = 5.0f;
-            float alpha           = 1.0f - expf(-stiffness * fdt);
-            tooltipAlpha          = Sol_Math_Lerp(tooltipAlpha, MAX_TOOLTIP_ALPHA, alpha);
-            tooltip_funcs[tooltip->kind](world, id, tooltip);
-        }
+        TooltipDraw draw = tooltip_funcs[c->kind];
+        if (draw)
+            draw(world, id, input, alpha);
     }
-    else
-        tooltipAlpha = 0;
 }

@@ -16,94 +16,85 @@
 static SolProfiler profile = {.name = "Interact"};
 const float drag_dist2     = 100.0f;
 
-static void User_Update(World *world)
+static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
 {
-    if (world->index == sol_user.focus_w && sol_user.focus > 0)
-    {
-        int id               = sol_user.focus;
-        ScInteract *interact = Sol_Comp_Get(world, sol_user.focus, ScInteract);
-        if (!interact)
-            return;
+    // int i, j;
+    // SparseSet_ScCmd *set_cmd = Sol_Comp_Set(world, ScCmd);
+    // // #pragma omp parallel for schedule(dynamic)
+    // for (i = 0; i < set_cmd->cnt; i++)
+    // {
+    //     int id               = set_cmd->dense[i];
+    //     ScCmd *cmd           = &set_cmd->data[i];
+    //     vec3s pos            = Sol_Body3_GetHead(world, id);
+    //     int best_id          = 0;
+    //     float best_dot       = 0.0f;
+    //     ScInteract *interact = NULL;
+    //     for (j = set_interact->cnt - 1; j >= 0; j--)
+    //     {
+    //         int idB = set_interact->dense[j];
+    //         if (id == idB)
+    //             continue;
+    //         float range  = set_interact->data[j].range;
+    //         vec3s posB   = world->xform.pos[idB];
+    //         float d2     = glms_vec3_distance2(posB, pos);
+    //         vec3s dir_to = glms_vec3_scale(glms_vec3_sub(posB, pos), 1.0f / (d2 > 0 ? sqrt(d2) : 1.0f));
+    //         float range2 = range > 0 ? range * range : 5.0f;
+    //         if (d2 < range2)
+    //         {
+    //             float dot = glms_vec3_dot(cmd->aimdir, dir_to);
+    //             if (dot > best_dot)
+    //             {
+    //                 best_dot = dot;
+    //                 best_id  = idB;
+    //             }
+    //         }
+    //     }
+    //     if (best_id > 0)
+    //     {
+    //         cmd->interact = best_id;
+    //     }
+    // }
 
-        if ((interact->state & (INTERACT_DRAGGABLE | INTERACT_ONLYDRAGGABLE)) && sol_user.grab)
-        {
-            interact->state |= INTERACT_DRAGGING;
-            if (!(interact->state_prev & INTERACT_DRAGGING))
-            {
-                vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
-                interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
-            }
-            return;
-        }
-        else if (interact->state & INTERACT_ONLYDRAGGABLE &&
-                 glms_vec2_distance2(sol_user.mouse_pos_ui, (vec2s){interact->down_pos.x, interact->down_pos.y}) >
-                     drag_dist2)
-        {
-            interact->state |= INTERACT_DRAGGING;
-            if (!(interact->state_prev & INTERACT_DRAGGING))
-            {
-                vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
-                interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
-            }
-            return;
-        }
+    // for (i = 0; i < set_cmd->cnt; i++)
+    // {
+    //     int id                    = set_cmd->dense[i];
+    //     ScCmd *cmd                = &set_cmd->data[i];
+    //     bool is_player            = Sol_Comp_Has(world, id, ScPlayer);
+    //     int best_id               = cmd->interact;
+    //     ScInteract *best_interact = Sol_Comp_Get(world, best_id, ScInteract);
+    //     if (best_id < 1 || !best_interact)
+    //         continue;
 
-        interact->state |= INTERACT_DOWN;
-        interact->state |= INTERACT_HOVERED;
-        interact->is_local = true;
+    //     if (is_player)
+    //     {
+    //         best_interact->state |= INTERACT_HOVERED;
+    //         best_interact->is_local = true;
+    //     }
+    //     ScHook *hook = Sol_Comp_Get(world, best_id, ScHook);
+    //     if ((cmd->actionState & BITC(ACTION_INTERACT)))
+    //     {
+    //         best_interact->state |= INTERACT_DOWN;
 
-        // ScHook *hook = Sol_Comp_Get(world, sol_user.focus, ScHook);
-        // if (!(interact->state_prev & INTERACT_DOWN))
-        // {
-        //             sollog("focus pressed");
+    //         best_interact->interactor = id;
+    //         if (best_interact->state & INTERACT_TOGGLEABLE)
+    //             best_interact->state ^= INTERACT_TOGGLED;
 
-        //     if (hook && hook->pressed)
-        //         hook->pressed(world, sol_user.target, sol_user.view_ent);
-        // }
-    }
+    //         if (!(cmd->action_state_prev & BITC(ACTION_INTERACT)))
+    //         {
+    //             if (hook && hook->pressed)
+    //                 hook->pressed(world, best_id, id);
+    //         }
 
-    if (world->index == sol_user.target_w && sol_user.target > 0)
-    {
-        ScInteract *interact = Sol_Comp_Get(world, sol_user.target, ScInteract);
-        if (!interact)
-            return;
-
-        interact->state |= INTERACT_HOVERED;
-        interact->is_local = true;
-
-        if (!(interact->state & INTERACT_DRAGGING))
-        {
-            ScHook *hook = Sol_Comp_Get(world, sol_user.target, ScHook);
-
-            if (sol_user.interact)
-            {
-                interact->state |= INTERACT_DOWN;
-
-                if (hook && hook->held)
-                    hook->held(world, sol_user.target, sol_user.view_ent);
-
-                if (!sol_user.interact_last)
-                {
-                    interact->state |= INTERACT_JUSTDOWN;
-                    interact->down_pos = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
-                    if (hook && hook->pressed)
-                        hook->pressed(world, sol_user.target, sol_user.view_ent);
-                }
-            }
-            else if (sol_user.interact_last)
-            {
-                interact->state |= INTERACT_JUSTUP;
-
-                if (interact->state & INTERACT_TOGGLEABLE)
-                    interact->state ^= INTERACT_TOGGLED;
-                if (hook && hook->release)
-                {
-                    interact->state |= INTERACT_ACTIVE;
-                    hook->release(world, sol_user.target, sol_user.view_ent);
-                }
-            }
-        }
-    }
+    //         if (hook && hook->held)
+    //             hook->held(world, best_id, id);
+    //     }
+    //     else if (cmd->action_state_prev & BITC(ACTION_INTERACT))
+    //     {
+    //         best_interact->interactor = id;
+    //         if (hook && hook->release)
+    //             hook->release(world, best_id, id);
+    //     }
+    // }
 }
 
 static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
@@ -115,10 +106,10 @@ static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
         ScSlider *slider     = &set->data[i];
         ScInteract *interact = &set_interact->data[set_interact->sparse[id]];
         Xform xform          = Xform_Get(world, id);
-        if (!(interact->state & (INTERACT_DOWN)))
+        if (!(interact->state & (1ULL << INTERACT_DOWN)))
             continue;
         vec3s origin   = glms_vec3_add(xform.pos, slider->offset); // world-space start of track
-        vec3s to_mouse = glms_vec3_sub((vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0}, origin);
+        vec3s to_mouse = glms_vec3_sub(interact->drag_target, origin);
         float t        = glms_vec3_dot(to_mouse, slider->axis) / slider->track_len;
         t              = glm_clamp(t, 0.0f, 1.0f);
 
@@ -129,142 +120,49 @@ static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
     }
 }
 
-static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
+static inline bool Pressed(ScInteract *c)
 {
-    int i, j;
-    SparseSet_ScCmd *set_cmd = Sol_Comp_Set(world, ScCmd);
-// #pragma omp parallel for schedule(dynamic)
-    for (i = 0; i < set_cmd->cnt; i++)
-    {
-        int id               = set_cmd->dense[i];
-        ScCmd *cmd           = &set_cmd->data[i];
-        vec3s pos            = Sol_Body3_GetHead(world, id);
-        int best_id          = 0;
-        float best_dot       = 0.0f;
-        ScInteract *interact = NULL;
-        for (j = set_interact->cnt - 1; j >= 0; j--)
-        {
-            int idB = set_interact->dense[j];
-            if (id == idB)
-                continue;
-            float range  = set_interact->data[j].range;
-            vec3s posB   = world->xform.pos[idB];
-            float d2     = glms_vec3_distance2(posB, pos);
-            vec3s dir_to = glms_vec3_scale(glms_vec3_sub(posB, pos), 1.0f / (d2 > 0 ? sqrt(d2) : 1.0f));
-            float range2 = range > 0 ? range * range : 5.0f;
-            if (d2 < range2)
-            {
-                float dot = glms_vec3_dot(cmd->aimdir, dir_to);
-                if (dot > best_dot)
-                {
-                    best_dot = dot;
-                    best_id  = idB;
-                }
-            }
-        }
-        if (best_id > 0)
-        {
-            cmd->interact = best_id;
-        }
-    }
-
-    for (i = 0; i < set_cmd->cnt; i++)
-    {
-        int id                    = set_cmd->dense[i];
-        ScCmd *cmd                = &set_cmd->data[i];
-        bool is_player            = Sol_Comp_Has(world, id, ScPlayer);
-        int best_id               = cmd->interact;
-        ScInteract *best_interact = Sol_Comp_Get(world, best_id, ScInteract);
-        if (best_id < 1 || !best_interact)
-            continue;
-
-        if (is_player)
-        {
-            best_interact->state |= INTERACT_HOVERED;
-            best_interact->is_local = true;
-        }
-        ScHook *hook = Sol_Comp_Get(world, best_id, ScHook);
-        if ((cmd->actionState & BITC(ACTION_INTERACT)))
-        {
-            best_interact->state |= INTERACT_DOWN;
-
-            best_interact->interactor = id;
-            if (best_interact->state & INTERACT_TOGGLEABLE)
-                best_interact->state ^= INTERACT_TOGGLED;
-
-            if (!(cmd->action_state_prev & BITC(ACTION_INTERACT)))
-            {
-                if (hook && hook->pressed)
-                    hook->pressed(world, best_id, id);
-            }
-
-            if (hook && hook->held)
-                hook->held(world, best_id, id);
-        }
-        else if (cmd->action_state_prev & BITC(ACTION_INTERACT))
-        {
-            best_interact->interactor = id;
-            if (hook && hook->release)
-                hook->release(world, best_id, id);
-        }
-    }
-}
-
-static void Interact_Final(World *world, SparseSet_ScInteract *set)
-{
-    for (int i = 0; i < set->cnt; i++)
-    {
-        ScInteract *interact = &set->data[i];
-        if ((interact->state & INTERACT_HOVERED))
-        {
-            if (!(interact->state_prev & INTERACT_HOVERED))
-            {
-                interact->state |= INTERACT_JUSTHOVERED;
-                interact->hover_start_time = world->tickTime;
-            }
-        }
-        else if (interact->state_prev & INTERACT_HOVERED)
-        {
-            interact->state |= INTERACT_JUSTUNHOVERED;
-            interact->hover_end_time = world->tickTime;
-        }
-
-        if ((interact->state & INTERACT_DOWN))
-        {
-            if (!(interact->state_prev & INTERACT_DOWN))
-            {
-                interact->state |= INTERACT_JUSTDOWN;
-                interact->down_start_time = world->tickTime;
-            }
-        }
-        else if ((interact->state_prev & INTERACT_DOWN))
-        {
-            interact->state |= INTERACT_JUSTUP;
-            interact->down_end_time = world->tickTime;
-        }
-    }
 }
 
 void Interact_Update(World *world, double dt)
 {
-    Prof_Begin(&profile);
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
     for (int i = 0; i < set->cnt; i++)
     {
-        ScInteract *interact = &set->data[i];
-        interact->state_prev = interact->state;
-        interact->state &= (INTERACT_TOGGLED | INTERACT_TOGGLEABLE | INTERACT_DRAGGABLE | INTERACT_ONLYDRAGGABLE);
+        ScInteract *c = &set->data[i];
+        c->state_prev = c->state;
+        c->state      = (c->state & 1u << INTERACT_ACTIVE) | c->pending;
+        c->pending    = 0;
+        c->state_just = c->state & ~c->state_prev;
     }
 
-    User_Update(world);
-    Slider_Update(world, set);
-    Cmd_Update(world, set);
-    Interact_Final(world, set);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id        = set->dense[i];
+        ScInteract *c = &set->data[i];
+        bool down     = c->state & 1u << INTERACT_DOWN;
+        bool pressed  = c->state_just & (1u << INTERACT_DOWN);
+        bool clicked  = (c->state & (1u << INTERACT_HOVERED)) && (c->state_prev & (1u << INTERACT_DOWN));
+        if (clicked && c->flags & INTERACTFLAG_TOGGLEABLE)
+            c->state ^= (1u << INTERACT_ACTIVE);
+        forc(world, id, ScHook)
+        {
 
-    Prof_EndEz(&profile, true, world->dt / solState.worldCount);
+            if (down && c->held)
+                c->held(world, id, 0);
+            if (pressed && c->pressed)
+                c->pressed(world, id, 0);
+            if (clicked && c->clicked)
+            {
+                c->clicked(world, id, 0);
+            }
+        }
+    }
+
+    Slider_Update(world, set);
 }
 
-void Interact_Step(World *world, double dt)
+void Drag_Update(World *world, double dt)
 {
     float fdt = (float)dt;
 
@@ -272,23 +170,20 @@ void Interact_Step(World *world, double dt)
 
     for (int j = 0; j < set->cnt; j++)
     {
-        int interact_id      = set->dense[j];
-        ScInteract *interact = &set->data[j];
+        int interact_id = set->dense[j];
+        ScInteract *c   = &set->data[j];
 
-        if (!(interact->state & INTERACT_DRAGGING))
+        if (!(c->state & (1u << INTERACT_DRAGGING)))
             continue;
 
         ScBody2 *body2 = Sol_Comp_Get(world, interact_id, ScBody2);
         if (body2)
         {
             vec3s xform_pos = world->xform.pos[interact_id];
-            vec2s target_pos =
-                glms_vec2_sub(sol_user.mouse_pos_ui, (vec2s){interact->drag_offset.x, interact->drag_offset.y});
-            float factor = 40.0f - expf(-25.0f * fdt);
-            vec2s delta  = glms_vec2_sub(target_pos, (vec2s){xform_pos.x, xform_pos.y});
-            vec2s vel2   = glms_vec2_scale(delta, factor);
+            vec3s delta     = glms_vec3_sub(c->drag_target, xform_pos);
 
-            body2->vel = (vec3s){vel2.x, vel2.y, 0.0f};
+            float k    = fminf(40.0f, 1.0f / fdt);
+            body2->vel = (vec3s){delta.x * k, delta.y * k, 0.0f};
         }
     }
 }
@@ -328,4 +223,38 @@ int Sol_Interact_FindTopmost(World *world, vec2s point)
     }
 
     return best;
+}
+
+void Sol_Interact_Post(World *w, int id, u32 bits)
+{
+    if (!w || id <= 0)
+        return;
+    forc(w, id, ScInteract)
+    {
+        if (!(c->flags & INTERACTFLAG_DRAGGABLE))
+            bits &= ~(1u << INTERACT_DRAGGING);
+        c->pending |= bits;
+    }
+}
+void Sol_Interact_BeginDrag(World *w, int id, vec3s point)
+{
+    forc(w, id, ScInteract) c->drag_offset = glms_vec3_sub(point, w->xform.pos[id]);
+}
+void Sol_Interact_Drag(World *w, int id, vec3s point)
+{
+    forc(w, id, ScInteract)
+    {
+        if (!(c->flags & (INTERACTFLAG_DRAGGABLE | INTERACTFLAG_ONLYDRAGGABLE)))
+            return;
+        c->drag_target = glms_vec3_sub(point, c->drag_offset);
+        c->pending |= (1u << INTERACT_DRAGGING);
+    }
+}
+void Sol_Interact_Down(World *w, int id, vec3s point)
+{
+    forc(w, id, ScInteract)
+    {
+        c->drag_target = point;
+        c->pending |= (1u << INTERACT_DOWN);
+    }
 }

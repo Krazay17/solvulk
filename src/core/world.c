@@ -34,7 +34,7 @@ void Projectile_Step(World *world, double dt);
 void Zone_Update(World *world, double dt);
 void Combat_Update(World *world, double dt);
 void Ai_Step(World *world, double dt);
-void Interact_Step(World *world, double dt);
+void Drag_Update(World *world, double dt);
 
 void Ref_Update(World *world, double dt);
 void Fx_Update(World *world, double dt);
@@ -74,7 +74,7 @@ const struct SystemDef
 
     [WORLDSYS_CMD]        = {.update = {Cmd_Update, UPDATEPHASE_TICK}},
     [WORLDSYS_PLAYER]     = {.update = {Player_Update, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Interact_Step, UPDATEPHASE_STEP}}},
+    [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Drag_Update, UPDATEPHASE_STEP}}},
     [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
 
     [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},

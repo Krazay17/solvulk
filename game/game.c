@@ -27,42 +27,42 @@ void Create_Menu()
 
     { // QUIT BUTTON
         int id =
-            Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACT_DRAGGABLE, UILAYER_4, Hook_Quit);
+            Sol_Prefab_Button(world, (vec3s){1130.0f, 100.0f, 0}, "QUIT", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_Quit);
     }
     { // DEBUG BUTTON
         int id = Sol_Prefab_Button(world, (vec3s){1130.0f, 150.0f, 0}, "Debug",
-                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4, Hook_DebugToggle);
+                                   INTERACTFLAG_DRAGGABLE | INTERACTFLAG_TOGGLEABLE, UILAYER_4, Hook_DebugToggle);
     }
     { // FULLSCREEN BUTTON
         int id = Sol_Prefab_Button(world, (vec3s){1130.0f, 200.0f, 0}, "FULLSCREEN",
-                                   INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4, Hook_Fullscreen);
+                                   INTERACTFLAG_DRAGGABLE | INTERACTFLAG_TOGGLEABLE, UILAYER_4, Hook_Fullscreen);
     }
 
     GridMaker grid = {.cols = 4, .start = (vec2s){20.0f, 120.0f}, .spacing = (vec2s){120.0f, 40.0f}};
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizard", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnWizard);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizard", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnWizard);
     { // WIZARDS BUTTON
-        int id       = Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizards", INTERACT_DRAGGABLE, UILAYER_4, NULL);
+        int id       = Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizards", INTERACTFLAG_DRAGGABLE, UILAYER_4, NULL);
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->held   = Hook_SpawnWizard;
     }
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World1", INTERACT_DRAGGABLE, UILAYER_4, Hook_SwitchWorld);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World2", INTERACT_DRAGGABLE, UILAYER_4, Hook_SwitchWorld2);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World3", INTERACT_DRAGGABLE, UILAYER_4, Hook_SwitchWorld3);
-    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Volume", INTERACT_DRAGGABLE, UILAYER_4, Hook_SetVolume);
-    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Timescale", INTERACT_DRAGGABLE, UILAYER_4, Hook_SetTimescale);
-    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Fov", INTERACT_DRAGGABLE, UILAYER_4, Hook_SetPlayerFov);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Clone", INTERACT_DRAGGABLE, UILAYER_4, Hook_Clone);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "AddItem", INTERACT_DRAGGABLE, UILAYER_4, Hook_AddItem);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Save", INTERACT_DRAGGABLE, UILAYER_4, Hook_SaveUser);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Save Clear", INTERACT_DRAGGABLE, UILAYER_4, Hook_SaveClear);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Emitter", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnEmitter);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Test", INTERACT_DRAGGABLE, UILAYER_4, Hook_Test);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Respawn", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnPlayer);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dude", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnDude);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "ClearEnts", INTERACT_DRAGGABLE, UILAYER_4, Hook_ClearEnts);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dudes", INTERACT_DRAGGABLE, UILAYER_4, Hook_SpawnDudes);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Reflect", INTERACT_DRAGGABLE, UILAYER_4, Hook_TestReflect);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "TakeDamage", INTERACT_DRAGGABLE, UILAYER_4, Hook_TakeDamage);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World1", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SwitchWorld);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World2", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SwitchWorld2);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "World3", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SwitchWorld3);
+    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Volume", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SetVolume);
+    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Timescale", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SetTimescale);
+    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Fov", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SetPlayerFov);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Clone", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_Clone);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "AddItem", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_AddItem);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Save", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SaveUser);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Save Clear", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SaveClear);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Emitter", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnEmitter);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Test", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_Test);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Respawn", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnPlayer);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dude", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnDude);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "ClearEnts", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_ClearEnts);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dudes", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnDudes);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Reflect", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_TestReflect);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "TakeDamage", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_TakeDamage);
 }
 
 void Create_Hud()

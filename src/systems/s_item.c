@@ -6,6 +6,8 @@
  *
  */
 #include "world.h"
+#include "sol_user.h"
+#include "sol_core.h"
 
 const vec4s rarity_color[ITEMRARITY_COUNT] = {{0.2f, 0.2f, 0.2f, 1.0f},
                                               {0.0f, 1.0f, 0.0f, 1.0f},
@@ -30,8 +32,9 @@ float item_rarity_scale[PARAMCOUNT] = {
 };
 
 bool g_items_active[256] = {0};
-void Item_Hud_Update(World *world, SolItem *items, int count)
+void Item_User_Update(World *world, SolItem *items, int count)
 {
+    
     SparseSet_ScRef *ref_set = Sol_Comp_Set(world, ScRef);
     for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
@@ -46,8 +49,6 @@ void Item_Hud_Update(World *world, SolItem *items, int count)
         }
         g_items_active[ref->index] = true;
     }
-
-    // Spawn new refs
     for (int i = 0; i < count; i++)
     {
         if (!g_items_active[i])
@@ -94,4 +95,24 @@ AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item)
         conf.damage.effectMask |= item.effectMask;
     }
     return conf;
+}
+
+SolItem *Sol_Item_Resolve(World *world, ScRef *ref)
+{
+    SolItem *item    = NULL;
+    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    if (!ref_world)
+        return item;
+        
+    switch (ref->kind)
+    {
+    case REFKIND_INVENTORYITEM:
+        forc(ref_world, ref->ent_id, ScInventory) item = &c->items[ref->index];
+        break;
+    case REFKIND_LOOSEITEM:
+        item = &user_data.loose_items[ref->index];
+        break;
+    }
+
+    return item;
 }

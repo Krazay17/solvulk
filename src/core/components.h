@@ -53,7 +53,10 @@ typedef struct ScTeam
 
 typedef struct ScPlayer
 {
-    int level;
+    SolActions actions;
+    float yaw;
+    float pitch;
+    bool strafing;
 } ScPlayer;
 
 typedef struct ScRemote
@@ -195,13 +198,17 @@ typedef struct ScCamera
 
 typedef struct ScInteract
 {
-    uint16_t state;
-    uint16_t state_prev;
+    u8 pending;
+    u8 state;
+    u8 state_prev;
+    u8 state_just;
+    InteractFlags flags;
     bool is_local;
 
     int interactor;
     float range, duration;
-    vec3s drag_offset, down_pos;
+    vec3s drag_offset;
+    vec3s drag_target;
 
     double down_start_time;
     double down_end_time;
@@ -505,8 +512,8 @@ typedef struct ScHook
 {
     Hook held;
     Hook pressed;
+    Hook clicked;
     Hook update;
-    Hook release;
     Hook in_range;
 } ScHook;
 

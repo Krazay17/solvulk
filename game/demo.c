@@ -17,14 +17,15 @@ void Create_Menu()
     Sol_Sys_Add(world, WORLDSYS_VIEW2);
     GridMaker grid = {.cols = 1, .start = (vec2s){1130.0f, 100.0f}, .spacing = (vec2s){120.0f, 60.0f}};
 
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "QUIT", INTERACT_DRAGGABLE, UILAYER_4, Hook_Quit);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Debug", INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4,
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "QUIT", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_Quit);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Debug", INTERACTFLAG_DRAGGABLE | INTERACTFLAG_TOGGLEABLE, UILAYER_4,
                       Hook_DebugToggle);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "FULLSCREEN", INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE, UILAYER_4,
-                      Hook_Fullscreen);
-    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Volume", INTERACT_DRAGGABLE, UILAYER_4, Hook_SetVolume);
-    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Chill", INTERACT_DRAGGABLE | INTERACT_TOGGLEABLE | INTERACT_TOGGLED,
-                      UILAYER_4, Hook_Chill);
+    Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "FULLSCREEN", INTERACTFLAG_DRAGGABLE | INTERACTFLAG_TOGGLEABLE,
+                      UILAYER_4, Hook_Fullscreen);
+    Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Volume", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SetVolume);
+    int chill_button = Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Chill",
+                                         INTERACTFLAG_DRAGGABLE | INTERACTFLAG_TOGGLEABLE, UILAYER_4, Hook_Chill);
+    forc(world, chill_button, ScInteract) c->state |= (1u << INTERACT_ACTIVE);
 }
 
 void Create_Hud()

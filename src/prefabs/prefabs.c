@@ -204,10 +204,10 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
     if (id < 0)
         return -1;
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state |= interact_flags;
+    interact->flags |= interact_flags;
 
     ScHook *hook  = Sol_Comp_Add(world, id, ScHook);
-    hook->release = on_click;
+    hook->clicked = on_click;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -369,7 +369,7 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
 
     int id               = Sol_Create_Ent(world, pos);
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state |= INTERACT_DRAGGABLE;
+    interact->flags |= INTERACTFLAG_DRAGGABLE;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -566,7 +566,7 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
     }
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state      = INTERACT_DRAGGABLE;
+    interact->flags      = INTERACTFLAG_DRAGGABLE;
 
     ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
     view2->count    = 1;
@@ -591,7 +591,7 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
     };
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state      = INTERACT_DRAGGABLE;
+    interact->flags      = INTERACTFLAG_DRAGGABLE;
 
     *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ABILITYBAR, .ent_world = ent_world_idx, .ent_id = ent_id};
 
@@ -618,7 +618,8 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
 
     int id = Sol_Create_Ent(world, pos);
 
-    Sol_Comp_Add(world, id, ScInteract)->state = INTERACT_ONLYDRAGGABLE;
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->flags      = INTERACTFLAG_DRAGGABLE;
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .zindex   = layer,
@@ -732,7 +733,7 @@ int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
     int id = Sol_Create_Ent(world, pos);
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state |= INTERACT_DRAGGABLE;
+    interact->flags |= INTERACTFLAG_DRAGGABLE;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){

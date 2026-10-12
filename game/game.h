@@ -71,7 +71,7 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
 
     int wizard = Sol_Prefab_Wizard(world, (vec3s){sinf(fdt), 20.f, cosf(fdt)}, 1.0f);
 
-    Sol_Comp_Add(world, wizard, ScHook)->release = Hook_Possess;
+    Sol_Comp_Add(world, wizard, ScHook)->clicked = Hook_Possess;
 }
 static inline void Hook_SpawnDude(World *w, int a, int b)
 {
@@ -103,7 +103,7 @@ static inline void Hook_SpawnDudes(World *w, int a, int b)
 }
 static inline void Hook_DebugToggle(World *w, int a, int b)
 {
-    solState.debug = (Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED) != 0;
+    solState.debug = (Sol_Comp_Get(w, a, ScInteract)->state & (1u << INTERACT_ACTIVE)) != 0;
 }
 static inline void Hook_CrystalDrain(World *w, int a, int b)
 {
@@ -114,7 +114,7 @@ static inline void Hook_Quit(World *w, int a, int b)
 }
 static inline void Hook_Fullscreen(World *w, int a, int b)
 {
-    W_Set_Fullscreen(Sol_Comp_Get(w, a, ScInteract)->state & INTERACT_TOGGLED);
+    W_Set_Fullscreen(Sol_Comp_Get(w, a, ScInteract)->state & (1u << INTERACT_ACTIVE));
 }
 static inline void Hook_Healthbar(World *w, int a, int b)
 {
@@ -172,8 +172,7 @@ static inline void Hook_Clone(World *w, int a, int b)
 static inline void Hook_AddItem(World *w, int a, int b)
 {
     Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_CLAW, .rarity = ITEMRARITY_LEGENDARY});
-    Sol_User_AddItemLoose(
-        &(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT});
+    Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL, .rarity = ITEMRARITY_DECENT});
     Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_SHIELD});
     Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
     Sol_User_AddItemLoose(&(SolItem){.abilityKind = ABILITYKIND_SCYTHE});
@@ -256,7 +255,7 @@ static inline void Hook_Chill(World *w, int a, int b)
     {
         int id       = set->dense[i];
         ScAi *ai     = &set->data[i];
-        ai->inactive = interact->state & INTERACT_TOGGLED;
+        ai->inactive = interact->state & (1u << INTERACT_ACTIVE);
         Sol_Cmd_Clear(game, id);
     }
 }

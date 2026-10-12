@@ -1,3 +1,10 @@
+/*
+ * File: s_player.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-12
+ * 
+*/
 #include "world.h"
 #include "sol_core.h"
 #include "sol_math.h"
@@ -51,15 +58,15 @@ void Player_Update(World *world, double dt)
     for (int i = 0; i < set->cnt; i++)
     {
         int id           = set->dense[i];
-        ScPlayer *player = &set->data[i];
+        ScPlayer *c = &set->data[i];
         ScCmd *cmd       = Sol_Comp_Get(world, id, ScCmd);
         if (!cmd)
             continue;
-        cmd->actionState = 0;
-        cmd->yaw         = sol_user.yaw;
-        cmd->pitch       = sol_user.pitch;
-        cmd->isStrafing  = sol_user.mouse_locked;
-        cmd->actionState = sol_user.actions;
+
+        cmd->yaw         = c->yaw;
+        cmd->pitch       = c->pitch;
+        cmd->isStrafing  = c->strafing;
+        cmd->actionState = c->actions;
 
         cmd->lookdir  = vecNorm(Sol_Vec3_FromYawPitch(sol_user.yaw, sol_user.pitch));
         cmd->aimdir   = cmd->lookdir;

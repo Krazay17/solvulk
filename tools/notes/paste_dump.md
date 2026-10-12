@@ -1606,3 +1606,94 @@ int Sol_Spherecast(World *world, SolRay ray, SolRayResult *results, int max)
 //         }
 //     }
 // }
+
+
+// static void User_Update(World *world)
+// {
+//     if (world->index == sol_user.focus_w && sol_user.focus > 0)
+//     {
+//         int id               = sol_user.focus;
+//         ScInteract *interact = Sol_Comp_Get(world, sol_user.focus, ScInteract);
+//         if (!interact)
+//             return;
+
+//         if ((interact->state & (INTERACT_DRAGGABLE | INTERACT_ONLYDRAGGABLE)) && sol_user.grab)
+//         {
+//             interact->state |= INTERACT_DRAGGING;
+//             if (!(interact->state_prev & INTERACT_DRAGGING))
+//             {
+//                 vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
+//                 interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
+//             }
+//             return;
+//         }
+//         else if (interact->state & INTERACT_ONLYDRAGGABLE &&
+//                  glms_vec2_distance2(sol_user.mouse_pos_ui, (vec2s){interact->down_pos.x, interact->down_pos.y}) >
+//                      drag_dist2)
+//         {
+//             interact->state |= INTERACT_DRAGGING;
+//             if (!(interact->state_prev & INTERACT_DRAGGING))
+//             {
+//                 vec3s mouse3          = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
+//                 interact->drag_offset = glms_vec3_sub(mouse3, world->xform.pos[sol_user.focus]);
+//             }
+//             return;
+//         }
+
+//         interact->state |= INTERACT_DOWN;
+//         interact->state |= INTERACT_HOVERED;
+//         interact->is_local = true;
+
+//         // ScHook *hook = Sol_Comp_Get(world, sol_user.focus, ScHook);
+//         // if (!(interact->state_prev & INTERACT_DOWN))
+//         // {
+//         //             sollog("focus pressed");
+
+//         //     if (hook && hook->pressed)
+//         //         hook->pressed(world, sol_user.target, sol_user.view_ent);
+//         // }
+//     }
+
+//     if (world->index == sol_user.target_w && sol_user.target > 0)
+//     {
+//         ScInteract *interact = Sol_Comp_Get(world, sol_user.target, ScInteract);
+//         if (!interact)
+//             return;
+
+//         interact->state |= INTERACT_HOVERED;
+//         interact->is_local = true;
+
+//         if (!(interact->state & INTERACT_DRAGGING))
+//         {
+//             ScHook *hook = Sol_Comp_Get(world, sol_user.target, ScHook);
+
+//             if (sol_user.interact)
+//             {
+//                 interact->state |= INTERACT_DOWN;
+
+//                 if (hook && hook->held)
+//                     hook->held(world, sol_user.target, sol_user.view_ent);
+
+//                 if (!sol_user.interact_last)
+//                 {
+//                     interact->state |= INTERACT_JUSTDOWN;
+//                     interact->down_pos = (vec3s){sol_user.mouse_pos_ui.x, sol_user.mouse_pos_ui.y, 0};
+//                     if (hook && hook->pressed)
+//                         hook->pressed(world, sol_user.target, sol_user.view_ent);
+//                 }
+//             }
+//             else if (sol_user.interact_last)
+//             {
+//                 interact->state |= INTERACT_JUSTUP;
+
+//                 if (interact->state & INTERACT_TOGGLEABLE)
+//                     interact->state ^= INTERACT_TOGGLED;
+//                 if (hook && hook->release)
+//                 {
+//                     interact->state |= INTERACT_ACTIVE;
+//                     hook->release(world, sol_user.target, sol_user.view_ent);
+//                 }
+//             }
+//         }
+//     }
+// }

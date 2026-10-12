@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-09-25
- * 
-*/
+ *
+ */
 #define WIN32_LEAN_AND_MEAN
 #include <dwmapi.h>
 #include <windows.h>
@@ -302,7 +302,7 @@ void QuitApp(int flags)
 
 void W_Set_Ontop(int flags)
 {
-    bool toggle = (flags & INTERACT_TOGGLED);
+    bool toggle = (flags & (1u << INTERACT_ACTIVE));
     HWND top    = toggle ? HWND_TOPMOST : HWND_NOTOPMOST;
     SetWindowPos(g_hwnd, top, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }

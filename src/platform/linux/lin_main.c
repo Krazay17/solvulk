@@ -315,7 +315,7 @@ void QuitApp(int flags)
 
 void W_Set_Ontop(int flags)
 {
-    bool toggle  = (flags & INTERACT_TOGGLED);
+    bool toggle  = (flags & (1u << INTERACT_TOGGLED));
     Atom wmState = XInternAtom(g_display, "_NET_WM_STATE", False);
     Atom wmAbove = XInternAtom(g_display, "_NET_WM_STATE_ABOVE", False);
 

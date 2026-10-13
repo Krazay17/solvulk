@@ -62,24 +62,15 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         {
             body3->vel.y = 5.0f;
         }
-        vec3s hand_pos  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L").pos;
-        vec3s blade_pos = Sol_Weapon_DmgPos(world, ability->left_weapon);
-        SolDistDir dd   = Sol_GetDistDir(blade_pos, hand_pos);
-        int hits        = Sol_Combat_DamageCast(world, id,
-                                                (SolRay){
-                                                    .dir       = dd.dir,
-                                                    .dist      = dd.dist,
-                                                    .ignoreEnt = id,
-                                                    .radius    = 0.5f,
-                                                    .start     = hand_pos,
-                                                },
-                                                (SolHit){
-                                                    .damage = data->conf.damage,
-                                                    .power  = data->power,
-                                                    .dealer   = id,
-                                                    .kind   = HITKIND_MELEE_HIT,
-                                                },
-                                                data->hitgen);
+
+        int hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power),
+                                         (SolHit){
+                                             .damage = data->conf.damage,
+                                             .power  = data->power,
+                                             .dealer = id,
+                                             .kind   = HITKIND_MELEE_HIT,
+                                         },
+                                         data->hitgen);
         if (hits > 0)
             HitPause(data);
         break;
@@ -100,20 +91,15 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         Sol_Ability_SetState(world, id, 0, slot, 1);
         return;
     }
-    ScWeapon *weaponL = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
-    ScWeapon *weaponR = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
     switch (prog.stage)
     {
     case 1:
-        int weaponId = slot > 5 ? ability->right_weapon : ability->left_weapon;
         if (prog.advanced)
         {
             Sol_Event_Push(world, EVENTKIND_FX,
                            (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .pos = Sol_Body3_GetHead(world, id)});
-            if (weaponL)
-                weaponL->update_trail = true;
-            if (weaponR)
-                weaponR->update_trail = true;
+            Sol_Weapon_TrailOn(world, id, 5);
+            Sol_Weapon_TrailOn(world, id, 6);
         }
 
         float duration_delta = data->accum / dash_stage_time[data->stage];
@@ -128,46 +114,22 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
                 body3->vel = GLMS_VEC3_ZERO;
         }
 
-        vec3s hand_posL  = Sol_Model_GetBoneXform(world, id, "weapon.L").pos;
-        vec3s hand_posR  = Sol_Model_GetBoneXform(world, id, "weapon.R").pos;
-        vec3s blade_posL = Sol_Weapon_BladeXform(world, ability->left_weapon).pos;
-        vec3s blade_posR = Sol_Weapon_BladeXform(world, ability->right_weapon).pos;
-        SolDistDir ddL   = Sol_GetDistDir(blade_posL, hand_posL);
-        SolDistDir ddR   = Sol_GetDistDir(blade_posR, hand_posR);
-
-        SolRay rayA = {
-            .start     = hand_posL,
-            .dir       = ddL.dir,
-            .dist      = ddL.dist,
-            .ignoreEnt = id,
-            .radius    = 0.3f,
-        };
-        SolRay rayB = {
-            .start     = hand_posR,
-            .dir       = ddR.dir,
-            .dist      = ddR.dist,
-            .ignoreEnt = id,
-            .radius    = 0.3f,
-        };
         SolHit hit = {
-            .dealer   = id,
+            .dealer = id,
             .damage = data->conf.damage,
             .power  = 0.5f,
             .kind   = HITKIND_MELEE_HIT,
         };
         int hits;
-        hits = Sol_Combat_DamageCast(world, id, rayA, hit, data->hitgen);
+        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, true, data->power), hit, data->hitgen);
         if (hits > 0)
             HitPause(data);
-        hits = Sol_Combat_DamageCast(world, id, rayB, hit, data->hitgen2);
+        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, false, data->power), hit, data->hitgen2);
         if (hits > 0)
             HitPause(data);
         break;
     case 2:
-        if (weaponL)
-            weaponL->update_trail = false;
-        if (weaponR)
-            weaponR->update_trail = false;
+        Sol_Weapon_TrailsOff(world, id);
     }
 }
 
@@ -215,27 +177,20 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         break;
     case 2: {
         if (prog.advanced)
-            forc(world, weaponId, ScWeapon) c->update_trail = true;
+        {
+            Sol_Weapon_TrailOn(world, id, slot);
+        }
 
-        vec3s hand_pos  = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L").pos;
-        vec3s blade_pos = Sol_Weapon_BladeXform(world, weaponId).pos;
-        SolDistDir dd   = Sol_GetDistDir(blade_pos, hand_pos);
-        SolRay ray      = {
-            .start     = hand_pos,
-            .dir       = dd.dir,
-            .dist      = dd.dist * (1.0f + data->power),
-            .ignoreEnt = id,
-            .mask      = COLLAYER_ALL,
-            .radius    = 0.33f,
-        };
         SolHit hit = {
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
-            .dealer   = id,
+            .dealer = id,
             .vel    = cmd->aimdir,
         };
-        int hits = Sol_Combat_DamageCast(world, id, ray, hit, data->hitgen);
+
+        int hits =
+            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             HitPause(data);
@@ -244,7 +199,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     }
     break;
     case 3:
-        forc(world, weaponId, ScWeapon) c->update_trail = false;
+        Sol_Weapon_TrailsOff(world, id);
         break;
     }
 }
@@ -252,7 +207,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 void Ability_Claw_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->conf             = Sol_Ability_GetSlotConf(world, id, slot);
     data->accum            = HITINTERVAL;
     data->hitgen           = Sol_Hitgen_Start(world);
     data->hitgen2          = Sol_Hitgen_Start(world);
@@ -279,7 +234,7 @@ void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int
 {
     AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
-    WeaponTrails_Off(world, ability);
+    Sol_Weapon_TrailsOff(world, id);
 }
 
 bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
@@ -324,9 +279,9 @@ void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)
 
 DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)
 {
-    int dealer = hit->dealer;
-    ScCmd *cmd   = Sol_Comp_Get(world, id, ScCmd);
-    vec3s delta  = glms_vec3_sub(hit->pos, Sol_Body3_GetHead(world, id));
+    int dealer  = hit->dealer;
+    ScCmd *cmd  = Sol_Comp_Get(world, id, ScCmd);
+    vec3s delta = glms_vec3_sub(hit->pos, Sol_Body3_GetHead(world, id));
 
     float dot = glms_vec3_dot(delta, cmd->lookdir);
     if (Sol_Comp_Has(world, dealer, ScProjectile) && dot > 0)

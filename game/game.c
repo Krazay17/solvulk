@@ -41,7 +41,7 @@ void Create_Menu()
     GridMaker grid = {.cols = 4, .start = (vec2s){20.0f, 120.0f}, .spacing = (vec2s){120.0f, 40.0f}};
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizard", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnWizard);
     { // WIZARDS BUTTON
-        int id       = Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizards", INTERACTFLAG_DRAGGABLE, UILAYER_4, NULL);
+        int id = Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Wizards", INTERACTFLAG_DRAGGABLE, UILAYER_4, NULL);
         ScHook *hook = Sol_Comp_Add(world, id, ScHook);
         hook->held   = Hook_SpawnWizard;
     }
@@ -77,7 +77,6 @@ void Create_Hud()
     Sol_Sys_Add(world, WORLDSYS_REF);
     Sol_Sys_Add(world, WORLDSYS_PARENT);
 
-
     Sol_Prefab_Crosshair(world);
 }
 
@@ -90,6 +89,8 @@ void Create_Game()
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
         sol_user.view_ent = id;
         Sol_Comp_Add(world, id, ScPlayer);
+        ScUser *user = Sol_Comp_Add(world, id, ScUser);
+        user->uid    = user_session.users[0].id;
         ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
         snprintf(meta->name, sizeof(meta->name), "Player");
         Sol_Debug_Add("Player Ent", (float)id);

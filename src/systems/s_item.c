@@ -33,8 +33,7 @@ float item_rarity_scale[PARAMCOUNT] = {
 
 bool g_items_active[256] = {0};
 void Item_User_Update(World *world, SolItem *items, int count)
-{
-    
+{    
     SparseSet_ScRef *ref_set = Sol_Comp_Set(world, ScRef);
     for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
@@ -63,14 +62,31 @@ void Item_User_Update(World *world, SolItem *items, int count)
     }
 }
 
+void Inventory_Update(World *world, double dt)
+{
+    // SparseSet_ScInventory *inv_set = Sol_Comp_Set(world, ScInventory);
+    // for(int i=0;i<inv_set->cnt;i++)
+    // {
+    //     int id = inv_set->dense[i];
+    //     ScInventory *inv = &inv_set->data[i];
+    //     forc(world, id, ScAbility)
+    //     {
+    //         for(int j = 5;j<ABILITY_SLOTS;j++)
+    //         {
+    //             Sol_Ability_Equip(world, id, j, &inv->equipped_items[j]);
+    //         }
+    //     }
+    // }
+}
 void Item_Update(World *world, double dt)
 {
+    Inventory_Update(world, dt);
 }
 
 AbilityConfig Sol_Item_GetMods(SolItem item)
 {
     AbilityConfig conf = {0};
-    if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
+    if (item.item_kind > 0 && item.item_kind < ITEMKIND_COUNT)
     {
         conf.cooldown = (item_rarity_scale[COOLDOWN] * (float)item.rarity);
         conf.maxpower = (item_rarity_scale[MAXPOWER] * (float)item.rarity);
@@ -85,7 +101,7 @@ AbilityConfig Sol_Item_GetMods(SolItem item)
 
 AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item)
 {
-    if (item.abilityKind > 0 && item.abilityKind < ABILITYKIND_COUNT)
+    if (item.item_kind > 0 && item.item_kind < ITEMKIND_COUNT)
     {
         conf.cooldown *= 1.0f - (item_rarity_scale[COOLDOWN] * (float)item.rarity);
         conf.maxpower *= 1.0f + (item_rarity_scale[MAXPOWER] * (float)item.rarity);
@@ -115,4 +131,42 @@ SolItem *Sol_Item_Resolve(World *world, ScRef *ref)
     }
 
     return item;
+}
+
+void Sol_Inv_Equip(World *world, int id, int slot, SolItem item)
+{    
+    // forc(world, id, ScUser)
+    // {
+    //     user_data.inventory.equipped_items[slot] = item;
+    //     return;
+    // }
+    forc(world, id, ScInventory)
+    {
+        c->equipped_items[slot] = item;
+    }
+    Sol_Equip_Item(world, id, item.item_kind, slot);
+}
+SolItem Sol_Inv_Remove(World *world, int id, u32 idx)
+{
+    SolItem item = {0};
+    // forc(world, id, ScUser)
+    // {
+    //     item = user_data.inventory.items[idx];
+
+    //     user_data.inventory.items[idx] = user_data.inventory.items[user_data.inventory.item_count - 1];
+    //     user_data.inventory.item_count--;
+    //     return item;
+    // }
+    forc(world, id, ScInventory)
+    {
+        item          = c->items[idx];
+        c->items[idx] = c->items[c->item_count - 1];
+        c->item_count--;
+    }
+    return item;
+}
+
+SolItem Sol_Inv_GetItemAtSlot(const ScInventory *inv, int slot)
+{
+    return inv->equipped_items[slot];
 }

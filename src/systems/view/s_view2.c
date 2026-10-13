@@ -10,7 +10,6 @@
 #include "sol_math.h"
 #include "font.h"
 #include "render/render.h"
-#include "abilitybar/s_abilitybar.h"
 
 static void DrawGreyItemBank(World *world, int id, float fdt, View2 *view)
 {
@@ -27,7 +26,7 @@ static void DrawGreyItemBank(World *world, int id, float fdt, View2 *view)
     frame->rect      = (vec4s){0, 0, UISCALE(200.0f), UISCALE(200.0f)};
     frame->color     = VEC4_WHITE;
     frame->textureId = SOL_TEXTURE_GREENFRAME;
-    for (int i = 0; i < ABILITYKIND_COUNT; i++)
+    for (int i = 0; i < ITEMKIND_COUNT; i++)
     {
     }
 }

@@ -17,12 +17,8 @@
 
 #define USER_SETTINGS_FILENAME "UserData"
 
-bool consume_mouse;
-bool consume_key;
-SolUser sol_user   = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
-UserData user_data = {.look_sens = 0.001f};
-UserInput user_input;
-SolUserHit g_user_hit;
+UserCore sol_user  = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
+UserData user_data = {.user_config.look_sens = 0.001f};
 
 static float tooltip_alpha;
 static SolResource user_settings_file;
@@ -59,11 +55,10 @@ static const SolActions mouse_binds[SOL_MOUSE_COUNT] = {
     [SOL_MOUSE_RIGHT] = ACTION_ABILITY7,
 };
 
-void UserHit_Update(SolUserHit *user_hit)
+void UserHit_Update(UserHit *user_hit)
 {
-    bool just_down         = user_input.just_actions & (1u << USERACTION_MOUSEINTERACT);
-    bool down              = user_input.user_actions & (1u << USERACTION_MOUSEINTERACT);
-    bool grab              = user_input.user_actions & (1u << USERACTION_MOUSEGRAB);
+    bool down              = sol_user.user_input.user_actions & (1u << USERACTION_MOUSEINTERACT);
+    bool grab              = sol_user.user_input.user_actions & (1u << USERACTION_MOUSEGRAB);
     user_hit->target       = 0;
     user_hit->target_world = NULL;
     for (int i = 0; i < solState.worldCount; i++)
@@ -71,7 +66,7 @@ void UserHit_Update(SolUserHit *user_hit)
         World *world = solState.worlds[i];
         if (world->doesSimulate)
         {
-            int hit_ent = Sol_Interact_FindTopmost(world, user_input.mouse);
+            int hit_ent = Sol_Interact_FindTopmost(world, sol_user.user_input.mouse);
             if (hit_ent > 0)
             {
                 user_hit->target       = hit_ent;
@@ -92,7 +87,7 @@ void UserHit_Update(SolUserHit *user_hit)
         user_hit->focus_world = NULL;
     }
 
-    if (!user_hit->grab && !user_hit->focus && user_hit->target > 0 && (just_down || grab))
+    if (!user_hit->grab && !user_hit->focus && user_hit->target > 0 && (down || grab))
     {
         user_hit->focus       = user_hit->target;
         user_hit->focus_world = user_hit->target_world;
@@ -101,14 +96,14 @@ void UserHit_Update(SolUserHit *user_hit)
             user_hit->grab       = user_hit->target;
             user_hit->grab_world = user_hit->target_world;
             Sol_Interact_BeginDrag(user_hit->grab_world, user_hit->grab,
-                                   (vec3s){user_input.mouse.x, user_input.mouse.y});
+                                   (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
         }
     }
-    
+
     if (user_hit->grab)
-        Sol_Interact_Drag(user_hit->grab_world, user_hit->grab, (vec3s){user_input.mouse.x, user_input.mouse.y});
+        Sol_Interact_Drag(user_hit->grab_world, user_hit->grab, (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
     else if (user_hit->focus)
-        Sol_Interact_Down(user_hit->focus_world, user_hit->focus, (vec3s){user_input.mouse.x, user_input.mouse.y});
+        Sol_Interact_Down(user_hit->focus_world, user_hit->focus, (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
     else if (user_hit->target)
         Sol_Interact_Post(user_hit->target_world, user_hit->target, (1u << INTERACT_HOVERED));
 }
@@ -121,11 +116,11 @@ void Sol_User_LoadUserSettings()
 static void LoadDefaults(void)
 {
     user_data = (UserData){
-        .look_sens = 0.001f,
+        .user_config.look_sens = 0.001f,
     };
     // solb_init(user_data.inventory.items, 8);
-    memcpy(user_data.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
-    memcpy(user_data.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
+    memcpy(user_data.user_config.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
+    memcpy(user_data.user_config.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
 }
 
 int Sol_User_Init(void)
@@ -168,10 +163,10 @@ void Entity_Actions()
 
     if (mouse.locked)
     {
-        *yaw -= (float)(mouse.dx * user_data.look_sens);
+        *yaw -= (float)(mouse.dx * user_data.user_config.look_sens);
         *yaw -= (2.0f * GLM_PIf) * floorf((*yaw + GLM_PIf) / (2.0f * GLM_PIf));
 
-        *pitch -= (float)(mouse.dy * user_data.look_sens);
+        *pitch -= (float)(mouse.dy * user_data.user_config.look_sens);
         *pitch = glm_clamp(*pitch, -MAX_PITCH, MAX_PITCH);
     }
 
@@ -179,7 +174,7 @@ void Entity_Actions()
     {
         if (Sol_Input_KeyDown(i))
         {
-            SolActions action = user_data.key_binds[i];
+            SolActions action = user_data.user_config.key_binds[i];
             if (action != 0)
                 sol_user.actions |= 1u << action;
         }
@@ -188,10 +183,10 @@ void Entity_Actions()
     if (mouse.togglelocked)
     {
         if (mouse.buttons[SOL_MOUSE_LEFT])
-            sol_user.actions |= BITC(user_data.mouse_binds[SOL_MOUSE_LEFT]);
+            sol_user.actions |= BITC(user_data.user_config.mouse_binds[SOL_MOUSE_LEFT]);
 
         if (mouse.buttons[SOL_MOUSE_RIGHT])
-            sol_user.actions |= BITC(user_data.mouse_binds[SOL_MOUSE_RIGHT]);
+            sol_user.actions |= BITC(user_data.user_config.mouse_binds[SOL_MOUSE_RIGHT]);
     }
     else if (mouse.locked && mouse.buttons[SOL_MOUSE_LEFT])
         sol_user.actions |= BITC(ACTION_FWD);
@@ -214,10 +209,10 @@ void Entity_Actions()
         if (mouse.locked)
         {
             c->strafing = true;
-            c->yaw -= (float)(mouse.dx * user_data.look_sens);
+            c->yaw -= (float)(mouse.dx * user_data.user_config.look_sens);
             c->yaw -= (2.0f * GLM_PIf) * floorf((c->yaw + GLM_PIf) / (2.0f * GLM_PIf));
 
-            c->pitch -= (float)(mouse.dy * user_data.look_sens);
+            c->pitch -= (float)(mouse.dy * user_data.user_config.look_sens);
         }
         else
             c->strafing = false;
@@ -302,18 +297,18 @@ static void ShowHealthbar_OnDistance(World *world, int user_ent)
 
 void User_Input()
 {
-    user_input.mouse        = Sol_Input_GetMouseUI();
-    user_input.mouse_locked = Sol_Input_MouseLocked();
-    user_input.prev_actions = user_input.user_actions;
-    user_input.user_actions = 0;
-    user_input.just_actions = 0;
+    sol_user.user_input.mouse        = Sol_Input_GetMouseUI();
+    sol_user.user_input.mouse_locked = Sol_Input_MouseLocked();
+    sol_user.user_input.prev_actions = sol_user.user_input.user_actions;
+    sol_user.user_input.user_actions = 0;
+    sol_user.user_input.just_actions = 0;
     for (int i = 0; i < SOL_KEY_COUNT; i++)
     {
         if (Sol_Input_KeyDown(i))
         {
             UserActions action = user_keys[i];
             if (action != 0)
-                user_input.user_actions |= 1u << action;
+                sol_user.user_input.user_actions |= 1u << action;
         }
     }
     for (int i = 0; i < SOL_MOUSE_COUNT; i++)
@@ -323,21 +318,21 @@ void User_Input()
             UserActions action = user_mouse[i];
             if (action != 0)
             {
-                user_input.user_actions |= 1u << action;
+                sol_user.user_input.user_actions |= 1u << action;
             }
         }
     }
     for (int i = 0; i < USERACTION_COUNT; i++)
     {
-        if (user_input.user_actions & 1u << i && !(user_input.prev_actions & 1u << i))
-            user_input.just_actions |= 1u << i;
+        if (sol_user.user_input.user_actions & 1u << i && !(sol_user.user_input.prev_actions & 1u << i))
+            sol_user.user_input.just_actions |= 1u << i;
     }
 }
 
 void Sol_User_Tick(double dt)
 {
     User_Input();
-    UserHit_Update(&g_user_hit);
+    UserHit_Update(&sol_user.user_hit);
     World *menu = Sol_GetWorldByIdx(sol_user.menu_world);
     World *game = Sol_GetWorldByIdx(sol_user.game_world);
     World *hud  = Sol_GetWorldByIdx(sol_user.hud_world);
@@ -372,14 +367,14 @@ void Sol_User_Tick(double dt)
 
     if (hud && Sol_Input_KeyPressed(SOL_KEY_6))
     {
-        if (!sol_user.window_greyitem)
+        if (!sol_user.inventory_id)
         {
-            sol_user.window_greyitem = Sol_Prefab_Inventory(hud, (vec3s){500.0f, 500.0f}, &user_data.inventory);
+            sol_user.inventory_id = Sol_Prefab_Inventory(hud, (vec3s){500.0f, 500.0f}, &user_data.inventory);
         }
         else
         {
-            Sol_Destroy_Ent(hud, sol_user.window_greyitem);
-            sol_user.window_greyitem = 0;
+            Sol_Destroy_Ent(hud, sol_user.inventory_id);
+            sol_user.inventory_id = 0;
         }
     }
 
@@ -417,14 +412,12 @@ void Sol_User_PostTick(double dt)
 void Sol_User_Draw(double dt)
 {
     float fdt    = (float)dt;
-    World *world = Sol_GetWorldByIdx(sol_user.target_w);
-    int id       = sol_user.target;
+    World *world = sol_user.user_hit.target_world;
+    int id       = sol_user.user_hit.target;
     if (world && Sol_Comp_Has(world, id, ScTooltip))
     {
-        const float stiffness = 5.0f;
-        float alpha           = 1.0f - expf(-stiffness * fdt);
-        tooltip_alpha         = Sol_Math_Lerp(tooltip_alpha, MAX_TOOLTIP_ALPHA, alpha);
-        Sol_Tooltip_Draw(world, id, &user_input, tooltip_alpha);
+        tooltip_alpha = Sol_Math_Lerp(tooltip_alpha, MAX_TOOLTIP_ALPHA, 1.0f - expf(-5.0f * fdt));
+        Sol_Tooltip_Draw(world, id, &sol_user.user_input, tooltip_alpha);
     }
     else
         tooltip_alpha = 0;
@@ -457,19 +450,13 @@ void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)
     sol_user.view_ent          = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
     Sol_Destroy_Ent(last_world, last_id);
 }
-void Sol_User_UnlockItem(AbilityKind kind)
-{
-    user_data.unlocked_items[kind] = true;
-}
 void Sol_User_AddItem(SolItem *item)
 {
     solb_push(user_data.inventory.items, *item);
-    Sol_User_UnlockItem(item->abilityKind);
 }
 void Sol_User_AddItemLoose(SolItem *item)
 {
     user_data.loose_items[user_data.loose_item_count++] = *item;
-    Sol_User_UnlockItem(item->abilityKind);
 }
 
 SolItem *Sol_User_GetItemAtIdx(int idx)

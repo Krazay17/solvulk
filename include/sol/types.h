@@ -106,17 +106,13 @@ typedef enum
     ABILITY_STATE_COUNT,
 } AbilityState;
 
+
 typedef enum
 {
-    ABILITYKIND_IDLE,
-    ABILITYKIND_CLAW,
-    ABILITYKIND_FIREBALL,
-    ABILITYKIND_SHIELD,
-    ABILITYKIND_BOLT,
-    ABILITYKIND_SCYTHE,
-    ABILITYKIND_COUNT,
-} AbilityKind;
-
+    WEAPONKIND_CLAW = 1,
+    WEAPONKIND_SCYTHE,
+    WEAPONKIND_COUNT,
+} WeaponKind;
 typedef struct
 {
     SolDamage damage;
@@ -353,6 +349,7 @@ typedef enum
     REFKIND_HEALTHBAR,
     REFKIND_ENERGYBAR,
     REFKIND_ABILITYBAR,
+    REFKIND_ABILITYBAR_BASECARD,
     REFKIND_ABILITY,
 } RefKind;
 
@@ -744,7 +741,7 @@ typedef struct AnimLayer
     bool force, hasSnapshot;
 } AnimLayer;
 
-typedef struct SolUserHit
+typedef struct UserHit
 {
     int target;
     int focus;
@@ -752,7 +749,7 @@ typedef struct SolUserHit
     World *target_world;
     World *focus_world;
     World *grab_world;
-} SolUserHit;
+} UserHit;
 
 typedef enum
 {
@@ -866,10 +863,18 @@ typedef enum
     ABILITYSLOT_SPELL,
     ABILITYSLOT_DASH,
 } AbilitySlotKind;
+typedef enum ItemKind
+{
+    ITEMKIND_CLAW,
+    ITEMKIND_SCYTHE,
+    ITEMKIND_FIREBALL,
+    ITEMKIND_BOLT,
+    ITEMKIND_CRYSTAL,
+    ITEMKIND_COUNT,
+}ItemKind;
 typedef struct SolItem
 {
-    AbilityKind abilityKind;
-    int slot;
+    ItemKind item_kind;
     ItemRarity rarity;
     u32 buffMask;
     u32 effectMask;

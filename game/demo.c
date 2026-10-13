@@ -41,12 +41,12 @@ void Create_Hud()
 
     Sol_Prefab_Crosshair(world);
 
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_BOLT});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_CLAW});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL});
-    Sol_User_AddItem(&(SolItem){.abilityKind = ABILITYKIND_FIREBALL});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_BOLT});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_BOLT});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_CLAW});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_CLAW});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_FIREBALL});
+    Sol_User_AddItem(&(SolItem){.item_kind = ITEMKIND_FIREBALL});
 }
 
 static void Heal_Kill_Handler(World *world, SolEvent *e)

@@ -228,7 +228,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->conf             = Sol_Ability_GetSlotConf(world, id, slot);
 
     switch (slot_kind_map[slot])
     {

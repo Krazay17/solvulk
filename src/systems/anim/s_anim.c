@@ -400,7 +400,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_CLAW_DASH: {
-                    ability_anim.speed = 1.1 + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                    ability_anim.speed = 1.1 + Sol_Ability_GetCurrentBaseDuration(world, id,  j) - data->conf.duration;
                 }
                 break;
                 case ABILITY_STATE_FIREBALL: {
@@ -414,13 +414,13 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_SHIELD: {
-                    ability_anim.speed   = 0.85f + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                    ability_anim.speed   = 0.85f + Sol_Ability_GetCurrentBaseDuration(world, id, j) - data->conf.duration;
                     ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
                 break;
                 case ABILITY_STATE_SHIELD_DASH: {
                     ability_anim.anim  = dash_map[data->as.dash.strafe];
-                    ability_anim.speed = 1.0f + Sol_Ability_GetCurrentBaseDuration(ability, j) - data->conf.duration;
+                    ability_anim.speed = 1.0f + Sol_Ability_GetCurrentBaseDuration(world, id, j) - data->conf.duration;
                 }
                 break;
                 case ABILITY_STATE_SCYTHE_CHARGE: {

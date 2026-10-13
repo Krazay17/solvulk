@@ -327,7 +327,7 @@ float Sol_Combat_Hit(World *world, SolHit hit)
                                 .dealer          = dealer,
                                 .target          = target,
                                 .kind            = HITKIND_LIGHTNING};
-            Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 20);
+            Sol_Combat_Chain(world, CHAINHITKIND_LIGHTNING, chain_hit, 5.0f, 0.1f, 50);
         }
         ScMove3 *move3 = Sol_Comp_Get(world, target, ScMove3);
         if (move3)

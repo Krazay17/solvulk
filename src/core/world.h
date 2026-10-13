@@ -6,6 +6,7 @@
  *
  */
 #pragma once
+#include "sol/types.h"
 #include "components.h"
 #include "configs.h"
 
@@ -17,7 +18,6 @@
 #define WAdd3d(w) ((w)->draw3dSystems[(w)->draw3dCount++])
 #define WAdd2d(w) ((w)->draw2dSystems[(w)->draw2dCount++])
 
-// Forward declaration of World struct
 typedef struct World World;
 
 typedef enum
@@ -38,6 +38,7 @@ typedef enum
     WORLDSYS_INTERACT,
     WORLDSYS_FACING,
 
+    WORLDSYS_ITEM,
     WORLDSYS_BUFF,
     WORLDSYS_ABILITYBAR,
     WORLDSYS_MOVE3,
@@ -71,9 +72,6 @@ typedef enum
     WORLDSYS_COUNT,
 } WorldSystems;
 
-// ==========================================
-// 4. WORLD CONTAINER DEFINITION
-// ==========================================
 typedef struct WorldXform
 {
     vec3s pos[MAX_ENTS];
@@ -211,7 +209,7 @@ void Sol_Anim_SetSeek(World *world, int id, AnimLayerId layerId, float seek);
 
 bool Sol_Buff_HasBuff(World *world, int id, BuffKind kind);
 
-AbilityConfig Sol_Ability_GetSlotConf(const ScAbility *ability, int slot);
+AbilityConfig Sol_Ability_GetSlotConf(World *world, int id, int slot);
 
 bool Sol_Move3_SetState(World *world, int id, MoveState state);
 float Sol_Move3_GetBaseSpeed(World *world, int id);
@@ -265,7 +263,7 @@ void Sol_Combat_DamageSphere(World *world, int id, SolRay ray, SolHit hit, u32 h
 int Sol_Combat_DamageCast(World *world, int id, SolRay ray, SolHit hit, u32 hitgen);
 bool Sol_Ability_GetIsDashing(const ScAbility *ability);
 bool Sol_Combat_Hostile(World *world, int idA, int idB);
-float Sol_Ability_GetCurrentBaseDuration(const ScAbility *ability, int slot);
+float Sol_Ability_GetCurrentBaseDuration(World *world, int id, int slot);
 AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item);
 AbilityConfig Sol_Item_GetMods(SolItem item);
 DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit);
@@ -304,3 +302,10 @@ void Sol_Interact_Post(World *w, int id, u32 bits);
 void Sol_Interact_BeginDrag(World *w, int id, vec3s point);
 void Sol_Interact_Drag(World *w, int id, vec3s point);
 void Sol_Interact_Down(World *w, int id, vec3s point);
+void Sol_Inv_Equip(World *world, int id, int slot, SolItem item);
+SolItem Sol_Inv_Remove(World *world, int id, u32 idx);
+int Sol_Equip_Item(World *world, int id, u32 kind, int slot);
+int Sol_Equip_GetId(World *world, int id, int slot);
+int Sol_Weapon_TrailsOff(World *world, int id);
+SolRay Sol_Weapon_Ray(World *world, int id, int right_hand, float power);
+void Sol_Weapon_TrailOn(World *world, int id, int slot);

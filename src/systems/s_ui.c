@@ -1,7 +1,15 @@
+/*
+ * File: s_ui.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-13
+ *
+ */
 #include "world.h"
 #include "sol_user.h"
 #include "sol_math.h"
 #include "sol_core.h"
+#include "prefabs.h"
 #include "render/render.h"
 
 void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
@@ -44,8 +52,11 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         if (p < 32 && !player_healthbars[p])
         {
             int player_ent = player_set->dense[p];
-            float x        = 0.0f;
-            float y        = 50.0f + (p * 30.0f);
+            if (!Sol_Comp_Has(game, player_ent, ScCombat))
+                continue;
+
+            float x = 0.0f;
+            float y = 50.0f + (p * 30.0f);
             if (player_ent == user_ent)
             {
                 x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
@@ -65,8 +76,10 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         if (p < 32 && !player_energybars[p])
         {
             int player_ent = player_set->dense[p];
-            float x        = 0.0f;
-            float y        = 50.0f + (p * 30.0f);
+            if (!Sol_Comp_Has(game, player_ent, ScCombat))
+                continue;
+            float x = 0.0f;
+            float y = 50.0f + (p * 30.0f);
             if (player_ent == user_ent)
             {
                 x = (WINDOW_WIDTH * 0.5f) - (300.0f * 0.5f);
@@ -86,20 +99,29 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         if (p < 32 && !player_abilitybars[p])
         {
             int player_ent = player_set->dense[p];
-            float x        = 200.0f;
-            float y        = 50.0f + (p * 50.0f);
+            if (!Sol_Comp_Has(game, player_ent, ScAbility))
+                continue;
+            float x = 200.0f;
+            float y = 50.0f + (p * 50.0f);
             if (player_ent == user_ent)
             {
                 x = (WINDOW_WIDTH * 0.5f) - (434.0f * 0.5f);
                 y = 700.0f;
             }
             float offset_x_group = x;
-            int abilitybar_id0   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group, y, 0}, player_ent, game->index,
-                                                         (int[]){0, 1, 2, 3}, 4);
-            int abilitybar_id1   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 264.0f, y, 0}, player_ent,
-                                                         game->index, (int[]){4}, 1);
-            int abilitybar_id2   = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 66.0f, y, 0}, player_ent,
-                                                         game->index, (int[]){5, 6}, 2);
+
+            forc(game, player_ent, ScAbility)
+            {
+
+                int abilitybar_id0 = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group, y, 0}, player_ent, game->index,
+                                                           (int[]){0, 1, 2, 3}, 4);
+
+                int abilitybar_id1 = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 264.0f, y, 0}, player_ent,
+                                                           game->index, (int[]){4}, 1);
+
+                int abilitybar_id2 = Sol_Prefab_AbilityBar(hud, (vec3s){offset_x_group += 66.0f, y, 0}, player_ent,
+                                                           game->index, (int[]){5, 6}, 2);
+            }
         }
     }
 }

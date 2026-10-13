@@ -45,7 +45,6 @@ void Camera_Tick(World *world, double dt);
 void Emitter_Update(World *world, double dt);
 void Timer_Update(World *world, double dt);
 void Event_Update(World *world, double dt);
-void Inventory_Update(World *world, double dt);
 
 void Weapon_Update(World *world, double dt);
 void Particle_Draw(World *world, double dt);
@@ -79,6 +78,7 @@ const struct SystemDef
 
     [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},
 
+    [WORLDSYS_ITEM]       = {.update = {{Item_Update, UPDATEPHASE_STEP}}},
     [WORLDSYS_BUFF]       = {.update = {{Buff_Update, UPDATEPHASE_STEP}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
     [WORLDSYS_MOVE3]      = {.update = {Move3_Update, UPDATEPHASE_STEP}},
     [WORLDSYS_MOVE2]      = {.update = {Move2_Update, UPDATEPHASE_STEP}},

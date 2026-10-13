@@ -9,8 +9,8 @@
 #include "sol_core.h"
 #include "sol_user.h"
 #include "sol_math.h"
+#include "prefabs.h"
 #include "ability/s_ability.h"
-#include "s_abilitybar.h"
 
 void Abilitybar_Update(World *world, double dt)
 {
@@ -28,6 +28,24 @@ void Abilitybar_Update(World *world, double dt)
 
         vec3s origin    = world->xform.pos[id];
         vec2s slot_dims = abilitybar->slot_dims;
+
+        // ScAbility *owner_ability = Sol_Comp_Get(game_world, ref->ent_id, ScAbility);
+        // if (owner_ability)
+        // {
+        //     for (int j = 0; j < abilitybar->slot_count; j++)
+        //     {
+        //         AbilityKind ability_kind = owner_ability->base_actions[abilitybar->ability_slots[j]];
+        //         if (!ability_kind)
+        //             continue;
+        //         vec3s base_card_pos = origin;
+        //         base_card_pos.x += j * slot_dims.x;
+        //         if (!abilitybar->base_cards[j])
+        //         {
+        //             abilitybar->base_cards[j] =
+        //                 Sol_Prefab_AbilityCard(world, base_card_pos, &(SolItem){.item_kind = ability_kind});
+        //         }
+        //     }
+        // }
 
         int current_slots[ABILITY_SLOTS] = {0};
         int ids[8]                       = {0};
@@ -79,7 +97,7 @@ void Abilitybar_Update(World *world, double dt)
 
             if (new_item == 0)
             {
-                Sol_Ability_Equip(game_world, ref->ent_id, ability_slot, NULL);
+                Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, (SolItem){0});
                 continue;
             }
 
@@ -88,9 +106,8 @@ void Abilitybar_Update(World *world, double dt)
                 continue;
 
             SolItem *user_item = &user_data.loose_items[item_ref->index];
-
-            Sol_Ability_Equip(game_world, ref->ent_id, ability_slot, user_item);
+            
+            Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, *user_item);
         }
     }
 }
-

@@ -127,7 +127,7 @@ void *Sol_Comp_AddE(World *w, int entId, u64 idx)
 
     // 4. Calculate byte pointer and initialize
     void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
-    void *defaults = component_defaults[idx];
+    const void *defaults = component_defaults[idx];
     if (defaults)
         memcpy(elem_ptr, defaults, comp_size);
     else

@@ -1,21 +1,19 @@
 #include "configs.h"
 
-const u32 ability_texture_map[ABILITYKIND_COUNT] = {
-    [ABILITYKIND_IDLE]     = 0,
-    [ABILITYKIND_CLAW]     = SOL_TEXTURE_BLADE_CARD,
-    [ABILITYKIND_FIREBALL] = SOL_TEXTURE_FIREBALL_CARD,
-    [ABILITYKIND_SHIELD]   = SOL_TEXTURE_CRYSTAL_CARD,
-    [ABILITYKIND_BOLT]     = SOL_TEXTURE_LIGHTNING,
-    [ABILITYKIND_SCYTHE]   = SOL_TEXTURE_SCYTHE_CARD,
+const u32 item_texture_map[ITEMKIND_COUNT] = {
+    [ITEMKIND_CLAW]   = SOL_TEXTURE_BLADE_CARD,
+    [ITEMKIND_SCYTHE] = SOL_TEXTURE_SCYTHE_CARD,
+    [ITEMKIND_FIREBALL] = SOL_TEXTURE_FIREBALL_CARD,
+    [ITEMKIND_BOLT] = SOL_TEXTURE_SPIN_CARD,
+    [ITEMKIND_CRYSTAL] = SOL_TEXTURE_CRYSTAL_CARD,
 };
 
-const char *ability_name[ABILITYKIND_COUNT] = {
-    [ABILITYKIND_IDLE]     = "Idle",     //
-    [ABILITYKIND_CLAW]     = "Claw",     //
-    [ABILITYKIND_FIREBALL] = "Fireball", //
-    [ABILITYKIND_SHIELD]   = "Shield",   //
-    [ABILITYKIND_BOLT]     = "Bolt",     //
-    [ABILITYKIND_SCYTHE]   = "Scythe",   //
+const char *item_name[ITEMKIND_COUNT] = {
+    [ITEMKIND_CLAW]     = "Claw",     //
+    [ITEMKIND_FIREBALL] = "Fireball", //
+    [ITEMKIND_CRYSTAL]  = "Crystal",  //
+    [ITEMKIND_BOLT]     = "Bolt",     //
+    [ITEMKIND_SCYTHE]   = "Scythe",   //
 };
 
 const char *ability_state_name[ABILITY_STATE_COUNT] = {

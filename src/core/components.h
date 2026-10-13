@@ -59,6 +59,11 @@ typedef struct ScPlayer
     bool strafing;
 } ScPlayer;
 
+typedef struct ScUser
+{
+    int uid;
+} ScUser;
+
 typedef struct ScRemote
 {
     int remoteId;
@@ -126,8 +131,16 @@ typedef struct ScBody2
 #define MAX_INVENTORY_ITEMS 64
 typedef struct ScInventory
 {
+    int item_count;
     SolItem items[MAX_INVENTORY_ITEMS];
+    SolItem equipped_items[ABILITY_SLOTS];
 } ScInventory;
+
+typedef struct ScEquip
+{
+    int left_weapon;
+    int right_weapon;
+} ScEquip;
 
 typedef struct
 {
@@ -524,34 +537,23 @@ typedef struct ScRef
     int index;
 } ScRef;
 
-#define ABILITY_GROUPS 3
-
 typedef struct ScAbilitybar
 {
-    int ability_slots[ABILITY_SLOTS];
-    int slot_count;
-    float spacing;
-    float group_gap;
     vec2s slot_dims;
-    vec2s frame_pad;
-    int slots_per_group[ABILITY_GROUPS];
+    int slot_count;
+    int ability_slots[ABILITY_SLOTS];
     int slotted_ents[ABILITY_SLOTS];
 } ScAbilitybar;
 
-typedef enum
-{
-    WEAPONKIND_CLAW,
-    WEAPONKIND_SCYTHE,
-    WEAPONKIND_COUNT,
-} WeaponKind;
 typedef struct
 {
     WeaponKind kind;
+    int equipped_slot;
     bool update_trail;
     bool extending;
 } ScWeapon;
-typedef int (*MakeWeapon)(World *, int owner, int slot);
-extern const MakeWeapon Make_Weapon[];
+typedef int (*MakeWeapon)(World *world, int owner, int slot);
+extern const MakeWeapon Make_Weapon[WEAPONKIND_COUNT];
 
 // #################
 // #### SINGLES ####
@@ -735,6 +737,8 @@ typedef struct
     X(ScRibbon, HAS_ScRibbon, NULL)                                                                                    \
     X(ScWeapon, HAS_ScWeapon, NULL)                                                                                    \
     X(ScInventory, HAS_ScInventory, NULL)                                                                              \
+    X(ScUser, HAS_ScUser, NULL)                                                                                        \
+    X(ScEquip, HAS_ScEquip, NULL)                                                                                        \
     X(ScBuilder, HAS_ScBuilder, NULL)
 
 typedef enum

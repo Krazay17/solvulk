@@ -70,31 +70,17 @@ static inline StageProgress Progress_Stage(AbilityStateData *data, float dt, con
 
     return prog;
 }
-static inline void WeaponTrails_Off(World *world, ScAbility *ability)
-{
-    ScWeapon *weapon;
-    weapon = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
-    if (weapon)
-        weapon->update_trail = false;
-    weapon = Sol_Comp_Get(world, ability->right_weapon, ScWeapon);
-    if (weapon)
-        weapon->update_trail = false;
-}
-static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand, float power)
-{
-    const char *bone = right_hand ? "weapon.R" : "weapon.L";
-    Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);
-    Xform blade_xform = Sol_Weapon_BladeXform(world, right_hand ? ability->right_weapon : ability->left_weapon);
-    SolDistDir dd    = Sol_GetDistDir(blade_xform.pos, hand_xform.pos);
-    return (SolRay){
-        .dir       = dd.dir,
-        .dist      = dd.dist,
-        .start     = hand_xform.pos,
-        .radius    = 0.4f,
-        .ignoreEnt = id,
-    };
-}
-static inline int GetWeaponId(const ScAbility *ability, int slot)
-{
-    return slot > 5 ? ability->right_weapon : ability->left_weapon;
-}
+// static inline SolRay WeaponTrace(World *world, int id, ScAbility *ability, bool right_hand, float power)
+// {
+//     const char *bone = right_hand ? "weapon.R" : "weapon.L";
+//     Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);
+//     Xform blade_xform = Sol_Weapon_BladeXform(world, right_hand ? ability->right_weapon : ability->left_weapon);
+//     SolDistDir dd    = Sol_GetDistDir(blade_xform.pos, hand_xform.pos);
+//     return (SolRay){
+//         .dir       = dd.dir,
+//         .dist      = dd.dist,
+//         .start     = hand_xform.pos,
+//         .radius    = 0.4f,
+//         .ignoreEnt = id,
+//     };
+// }

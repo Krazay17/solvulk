@@ -31,6 +31,15 @@ static const ScCombat wizard_combat = {
     .health    = 100.0f,
 };
 
+static const ScInventory dude_inventory = {
+    .items =
+        {
+            {.item_kind = ITEMKIND_SCYTHE},
+            {.item_kind = ITEMKIND_SCYTHE},
+        },
+    .item_count = 2,
+};
+
 static const View3 healthbar = {
     .kind     = VIEW3KIND_POWERBAR,
     .color    = {0.1f, 0.9f, 0.1f, 1.0f},
@@ -90,13 +99,13 @@ static const ScCombat dude_combat = {
 static const ScAbility dude_ability = {
     .base_actions =
         {
-            ABILITYKIND_SHIELD,
-            ABILITYKIND_FIREBALL,
-            ABILITYKIND_CLAW,
+            ITEMKIND_CRYSTAL,
+            ITEMKIND_FIREBALL,
+            ITEMKIND_CLAW,
             0,
-            ABILITYKIND_SCYTHE,
-            ABILITYKIND_SCYTHE,
-            ABILITYKIND_SCYTHE,
+            ITEMKIND_SCYTHE,
+            ITEMKIND_SCYTHE,
+            ITEMKIND_SCYTHE,
         },
 };
 
@@ -124,9 +133,10 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *combat             = dude_combat;
     combat->respawnTime = 2.0f;
 
-    *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
-    *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
-    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
+    *Sol_Comp_Add(world, id, ScAbility)   = dude_ability;
+    *Sol_Comp_Add(world, id, ScMove3)     = dude_move;
+    *Sol_Comp_Add(world, id, ScCamera)    = player_camera;
+    *Sol_Comp_Add(world, id, ScInventory) = dude_inventory;
 
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
     solb_push(view3->views_b, healthbar);
@@ -134,6 +144,9 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
+
+    for(int i = 0;i<ABILITY_SLOTS;i++)
+    Sol_Equip_Item(world, id, ITEMKIND_CLAW, i);
 
     return id;
 }
@@ -161,13 +174,13 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
     *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {
-                                                          ABILITYKIND_SHIELD,
-                                                          ABILITYKIND_SHIELD,
-                                                          ABILITYKIND_SHIELD,
-                                                          ABILITYKIND_SHIELD,
-                                                          ABILITYKIND_SHIELD,
-                                                          ABILITYKIND_FIREBALL,
-                                                          ABILITYKIND_FIREBALL,
+                                                          ITEMKIND_CRYSTAL,
+                                                          ITEMKIND_CRYSTAL,
+                                                          ITEMKIND_CRYSTAL,
+                                                          ITEMKIND_CRYSTAL,
+                                                          ITEMKIND_CRYSTAL,
+                                                          ITEMKIND_FIREBALL,
+                                                          ITEMKIND_FIREBALL,
                                                       }};
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
@@ -272,7 +285,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     int id = Sol_Create_Ent(world, pos);
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->state |= interact_flags;
+    interact->flags |= interact_flags;
 
     ScBody2 body = {
         .zindex = layer,
@@ -553,11 +566,11 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
     };
 
     float offset = 0.0f;
-    for (int i = 0; i < ABILITYKIND_COUNT; i++)
+    for (int i = 0; i < ITEMKIND_COUNT; i++)
     {
         // if (inventory->unlocked_items[i])
         // {
-        //     int card_id              = Sol_Prefab_AbilityCard(world, pos, &(SolItem){.abilityKind = i});
+        //     int card_id              = Sol_Prefab_AbilityCard(world, pos, &(SolItem){.item_kind = i});
         //     ScParent *card_parent    = Sol_Comp_Add(world, card_id, ScParent);
         //     card_parent->parentId    = id;
         //     card_parent->localOffset = (vec3s){offset, 0, 0};
@@ -607,13 +620,25 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
     view2->views[0] = bg;
     view2->views[1] = slot_view;
 
+    // forc(Sol_GetWorldByIdx(ent_world_idx), ent_id, ScAbility)
+    // {
+    //     for (int i = 0; i < slot_count; i++)
+    //     {
+    //         if (c->base_actions[slots[i]] == 0)
+    //             continue;
+    //         vec3s card_pos = pos;
+    //         card_pos.x += i * dims.x;
+    //         Sol_User_AddItemLoose(&(SolItem){.item_kind = c->base_actions[slots[i]]});
+    //     }
+    // }
+
     return id;
 }
 
 int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
 {
     vec2s dims  = {62.0f, 62.0f};
-    u32 texture = ability_texture_map[item->abilityKind];
+    u32 texture = item_texture_map[item->item_kind];
     u32 layer   = UILAYER_1;
 
     int id = Sol_Create_Ent(world, pos);

@@ -42,25 +42,24 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         const float amount = dt * 40.0f;
         if (Sol_Combat_UseEnergy(world, id, amount))
             data->power += amount * 0.01f;
-        Sol_Weapon_Extend(world, GetWeaponId(ability, slot), data->power);
+        Sol_Weapon_Extend(world, Sol_Equip_GetId(world, id, slot), data->power);
         break;
     case 2: {
-        int weaponId = slot > 5 ? ability->right_weapon : ability->left_weapon;
         if (prog.advanced)
         {
-            forc(world, weaponId, ScWeapon) c->update_trail = true;
+            forc(world, Sol_Equip_GetId(world, id, slot), ScWeapon) c->update_trail = true;
         }
         forc(world, id, ScBody3) c->vel = vecSca(cmd->lookdir, 5.0f);
         SolHit hit                      = {
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
-            .dealer   = id,
+            .dealer = id,
             .vel    = cmd->aimdir,
         };
         hit.damage.buffMask |= (1u << BUFFKIND_STUN);
         int hits =
-            Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5, data->power), hit, data->hitgen);
+            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             HitPause(data);
@@ -81,12 +80,12 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .kind   = HITKIND_MELEE_HIT,
             .damage = data->conf.damage,
             .power  = data->power,
-            .dealer   = id,
+            .dealer = id,
             .vel    = cmd->aimdir,
         };
         hit.damage.effectMask |= EFFECTMASK_PULL;
         int hits =
-            Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, slot > 5, data->power), hit, data->hitgen);
+            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
         if (hits)
         {
             HitPause(data);
@@ -94,7 +93,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     }
     break;
     case 4:
-        WeaponTrails_Off(world, ability);
+        Sol_Weapon_TrailsOff(world, id);
     }
 }
 static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
@@ -110,7 +109,7 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         Sol_Ability_SetState(world, id, 0, slot, 1);
 
     SolHit hit = {
-        .dealer   = id,
+        .dealer = id,
         .damage = data->conf.damage,
         .power  = data->power,
         .kind   = HITKIND_MELEE_HIT,
@@ -122,21 +121,20 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
     case 1: {
         if (prog.advanced)
         {
-            forc(world, ability->left_weapon, ScWeapon) c->update_trail  = true;
-            forc(world, ability->right_weapon, ScWeapon) c->update_trail = true;
+            forc(world, Sol_Equip_GetId(world, id, 5), ScWeapon) c->update_trail = true;
+            forc(world, Sol_Equip_GetId(world, id, 6), ScWeapon) c->update_trail = true;
         }
 
         forc(world, id, ScBody3)
         {
             int hits;
-            hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
+            hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 0, data->power), hit, data->hitgen);
             if (hits > 0)
             {
                 c->vel = GLMS_VEC3_ZERO;
                 HitPause(data);
             }
-            hits =
-                Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
+            hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 1, data->power), hit, data->hitgen2);
             if (hits > 0)
             {
                 c->vel = GLMS_VEC3_ZERO;
@@ -184,18 +182,18 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         {
             if (c->state == MOVE_FALL)
             {
-                body->vel.y = -30.0f;
+                body->vel.y    = -30.0f;
                 data->hitPause = 0.1f;
             }
         }
         int hits;
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 0, data->power), hit, data->hitgen);
+        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 0, data->power), hit, data->hitgen);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
-        hits = Sol_Combat_DamageCast(world, id, WeaponTrace(world, id, ability, 1, data->power), hit, data->hitgen2);
+        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 1, data->power), hit, data->hitgen2);
         if (hits > 0)
         {
             body->vel = GLMS_VEC3_ZERO;
@@ -204,7 +202,7 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
     }
     break;
     case 3:
-        WeaponTrails_Off(world, ability);
+        Sol_Weapon_TrailsOff(world, id);
         break;
     }
 }
@@ -213,7 +211,7 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
     AbilityStateData *data = &ability->stateData[slot];
     data->hitgen           = Sol_Hitgen_Start(world);
     data->hitgen2          = Sol_Hitgen_Start(world);
-    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->conf             = Sol_Ability_GetSlotConf(world, id, slot);
     if (slot >= 5)
         data->power = MIN_POWER;
     else
@@ -222,8 +220,8 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    WeaponTrails_Off(world, ability);
-    Sol_Weapon_Unextend(world, GetWeaponId(ability, slot));
+    Sol_Weapon_TrailsOff(world, id);
+    Sol_Weapon_Unextend(world, Sol_Equip_GetId(world, id, slot));
 }
 static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

@@ -17,7 +17,7 @@
 #include "image.h"
 #include "profiler.h"
 #include "sol_user.h"
+#include "sol_net.h"
 #include "render/render.h"
 #include "platform/platform.h"
 #include "spatial_grid.h"
-#include "abilitybar/s_abilitybar.h"

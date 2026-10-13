@@ -120,10 +120,6 @@ static void Slider_Update(World *world, SparseSet_ScInteract *set_interact)
     }
 }
 
-static inline bool Pressed(ScInteract *c)
-{
-}
-
 void Interact_Update(World *world, double dt)
 {
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
@@ -153,9 +149,7 @@ void Interact_Update(World *world, double dt)
             if (pressed && c->pressed)
                 c->pressed(world, id, 0);
             if (clicked && c->clicked)
-            {
                 c->clicked(world, id, 0);
-            }
         }
     }
 
@@ -176,14 +170,14 @@ void Drag_Update(World *world, double dt)
         if (!(c->state & (1u << INTERACT_DRAGGING)))
             continue;
 
-        ScBody2 *body2 = Sol_Comp_Get(world, interact_id, ScBody2);
-        if (body2)
-        {
-            vec3s xform_pos = world->xform.pos[interact_id];
-            vec3s delta     = glms_vec3_sub(c->drag_target, xform_pos);
+        vec3s xform_pos = world->xform.pos[interact_id];
+        vec3s delta     = glms_vec3_sub(c->drag_target, xform_pos);
 
-            float k    = fminf(40.0f, 1.0f / fdt);
-            body2->vel = (vec3s){delta.x * k, delta.y * k, 0.0f};
+        forc(world, interact_id, ScBody2)
+        {
+            vec3s vel = glms_vec3_scale(delta, 1.0f / fdt);
+            vel.z     = 0.0f;
+            c->vel    = vel;
         }
     }
 }

@@ -7,6 +7,7 @@
  */
 #include "sol_core.h"
 #include "sol_user.h"
+#include "sol_net.h"
 #include "world.h"
 #include "audio.h"
 #include "input.h"
@@ -39,6 +40,10 @@ int Sol_Init(void *hwnd, void *hInstance)
     result = Sol_User_Init();
     if (result != 0)
         printf("User failed to init, code: %d\n", result);
+
+    result = Sol_Net_Init();
+    if (result != 0)
+        printf("Net failed to init, code: %d\n", result);
 
     result = Sol_Audio_Init();
     if (result != 0)

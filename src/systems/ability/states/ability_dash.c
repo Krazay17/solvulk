@@ -28,7 +28,7 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 void Ability_Dash_Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->conf             = Sol_Ability_GetSlotConf(world, id, slot);
 
     vec3s flat_lookdir   = cmd->lookdir;
     flat_lookdir.y       = 0;

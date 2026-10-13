@@ -84,7 +84,7 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
 static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    data->conf             = Sol_Ability_GetSlotConf(ability, slot);
+    data->conf             = Sol_Ability_GetSlotConf(world, id, slot);
     data->hitgen           = Sol_Hitgen_Start(world);
     data->hitgen2          = Sol_Hitgen_Start(world);
     data->drawElapsed      = 0.0f;

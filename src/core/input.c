@@ -34,8 +34,6 @@ static int mouseWheelDelta;
 static int mouseX, mouseY;
 static int mouseDeltaX, mouseDeltaY;
 
-UserInput user_input;
-
 void Sol_Input_Init()
 {
 }

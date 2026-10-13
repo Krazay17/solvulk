@@ -35,7 +35,7 @@ static void Item_Draw(World *world, int id, UserInput *input, float alpha)
     AbilityConfig cfg = Sol_Item_GetMods(*item);
 
     // 1. Measure and buffer Header
-    const char *headerText = ability_name[item->abilityKind];
+    const char *headerText = item_name[item->item_kind];
     float headerSize       = 15.0f;
     float headerWidth      = Sol_MeasureText(headerText, UISCALE(headerSize), SOL_FONT_ICE);
     if (headerWidth > maxWidth)

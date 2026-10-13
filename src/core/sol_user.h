@@ -4,41 +4,37 @@
 
 #define MAX_USER_ITEMS 512
 
-typedef struct SolUser
+typedef struct UserCore
 {
-    int view_world;
     int view_ent;
+    int view_world;
     int menu_world, game_world, hud_world;
     float yaw, pitch;
+    u32 inventory_id;
     SolActions actions;
-    bool mouse_locked;
-    vec2s mouse_pos, mouse_pos_ui, focus_start;
-    bool interact;
-    bool interact_last;
-    bool grab, grab_last;
+    UserInput user_input;
+    UserHit user_hit;
+} UserCore;
 
-    u32 window_greyitem;
-
-    int target, target_w;
-    int focus, focus_w;
-    int drag, drag_w;
-} SolUser;
-
-typedef struct UserData
+typedef struct UserConfig
 {
     float look_sens;
     float volume;
     SolActions key_binds[SOL_KEY_COUNT];
     SolActions mouse_binds[SOL_MOUSE_COUNT];
+} UserConfig;
 
+typedef struct UserData
+{
+    UserConfig user_config;
     ScInventory inventory;
     SolItem loose_items[MAX_USER_ITEMS];
     int loose_item_count;
-    bool unlocked_items[ABILITYKIND_COUNT];
+    bool unlocked_items[ITEMKIND_COUNT];
 } UserData;
 
 extern UserData user_data;
-extern SolUser sol_user;
+extern UserCore sol_user;
 
 int Sol_User_Init(void);
 

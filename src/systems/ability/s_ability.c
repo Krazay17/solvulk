@@ -191,18 +191,13 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
 
 };
 
-static inline u32 Get_SlotAbility(World *world, int id, int slot)
+static inline u32 Get_SlotState(World *world, int id, int slot)
 {
     forc(world, id, ScInventory)
     {
-        return c->equipped_items[slot].item_kind;
+        return item_ability_map[c->items[c->equipped_items[slot]].item_kind][slot_kind_map[slot]];
     }
     return 0;
-}
-
-static inline u32 Get_SlotState(World *world, int id, int slot)
-{
-    return item_ability_map[Get_SlotAbility(world, id, slot)][slot_kind_map[slot]];
 }
 
 #define SHARED_LOCKOUT_COUNT 5
@@ -240,10 +235,9 @@ void Ability_Update(World *world, double dt)
 
             if (held)
             {
-                SolItem slot_item                      = {0};
-                forc(world, id, ScInventory) slot_item = c->equipped_items[j];
-                if (Sol_Ability_SetState(world, id, item_ability_map[slot_item.item_kind][slot_kind_map[j]],
-                                         j, false))
+                SolItem slot_item                                                     = {0};
+                forc(world, id, ScInventory) if (c->equipped_items[j] >= 0) slot_item = c->items[c->equipped_items[j]];
+                if (Sol_Ability_SetState(world, id, item_ability_map[slot_item.item_kind][slot_kind_map[j]], j, false))
                     break;
             }
         }
@@ -298,14 +292,6 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         if (!nextfunc->canEnter || !nextfunc->canEnter(world, id, ability, cmd, slot))
             return false;
     }
-    // if (slot < 5)
-    // {
-    //     if (ability->state[5] != 0)
-    //         Sol_Ability_SetState(world, id, 0, 5, true);
-    //     if (ability->state[6] != 0)
-    //         Sol_Ability_SetState(world, id, 0, 6, true);
-    // }
-
     if (target_state != 0)
     {
         ability->prio_slot = slot;
@@ -370,8 +356,8 @@ AbilityConfig Sol_Ability_GetSlotConf(World *world, int id, int slot)
     AbilityConfig conf = ability_base[Get_SlotState(world, id, slot)];
     forc(world, id, ScInventory)
     {
-        if (c->equipped_items[slot].item_kind > 0)
-            return Sol_Item_ApplyMods(conf, c->equipped_items[slot]);
+        if (c->items[c->equipped_items[slot]].item_kind > 0)
+            return Sol_Item_ApplyMods(conf, c->items[c->equipped_items[slot]]);
     }
     return conf;
 }

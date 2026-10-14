@@ -101,9 +101,11 @@ void UserHit_Update(UserHit *user_hit)
     }
 
     if (user_hit->grab)
-        Sol_Interact_Drag(user_hit->grab_world, user_hit->grab, (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
+        Sol_Interact_Drag(user_hit->grab_world, user_hit->grab,
+                          (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
     else if (user_hit->focus)
-        Sol_Interact_Down(user_hit->focus_world, user_hit->focus, (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
+        Sol_Interact_Down(user_hit->focus_world, user_hit->focus,
+                          (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
     else if (user_hit->target)
         Sol_Interact_Post(user_hit->target_world, user_hit->target, (1u << INTERACT_HOVERED));
 }
@@ -341,7 +343,11 @@ void Sol_User_Tick(double dt)
     if (hud)
     {
         Sol_Ui_User_Update(hud, game, id);
-        Item_User_Update(hud, user_data.loose_items, user_data.loose_item_count);
+        forc(game, id, ScInventory)
+        {
+            if (c->dirty)
+                Ui_Sync_Inventory(hud, game, id);
+        }
     }
 
     ShowHealthbar_OnDistance(game, id);

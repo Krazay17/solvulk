@@ -128,12 +128,15 @@ typedef struct ScBody2
     int zindex;
 } ScBody2;
 
-#define MAX_INVENTORY_ITEMS 64
+#define MAX_INVENTORY_ITEMS 256
 typedef struct ScInventory
 {
     int item_count;
+    u32 next_item_id;
     SolItem items[MAX_INVENTORY_ITEMS];
-    SolItem equipped_items[ABILITY_SLOTS];
+    int equipped_items[ABILITY_SLOTS];
+
+    bool dirty;
 } ScInventory;
 
 typedef struct ScEquip
@@ -534,7 +537,8 @@ typedef struct ScRef
 {
     RefKind kind;
     u32 ent_world, ent_id;
-    int index;
+    u32 index;
+    u32 uid;
 } ScRef;
 
 typedef struct ScAbilitybar
@@ -552,8 +556,6 @@ typedef struct
     bool update_trail;
     bool extending;
 } ScWeapon;
-typedef int (*MakeWeapon)(World *world, int owner, int slot);
-extern const MakeWeapon Make_Weapon[WEAPONKIND_COUNT];
 
 // #################
 // #### SINGLES ####
@@ -738,7 +740,7 @@ typedef struct
     X(ScWeapon, HAS_ScWeapon, NULL)                                                                                    \
     X(ScInventory, HAS_ScInventory, NULL)                                                                              \
     X(ScUser, HAS_ScUser, NULL)                                                                                        \
-    X(ScEquip, HAS_ScEquip, NULL)                                                                                        \
+    X(ScEquip, HAS_ScEquip, NULL)                                                                                      \
     X(ScBuilder, HAS_ScBuilder, NULL)
 
 typedef enum

@@ -54,9 +54,7 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (prog.advanced)
         {
-            ScWeapon *weapon = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
-            if (weapon)
-                weapon->update_trail = true;
+            Sol_Weapon_TrailOn(world, id, slot > 5);
         }
         if (body3)
         {
@@ -98,8 +96,9 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         {
             Sol_Event_Push(world, EVENTKIND_FX,
                            (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .pos = Sol_Body3_GetHead(world, id)});
-            Sol_Weapon_TrailOn(world, id, 5);
-            Sol_Weapon_TrailOn(world, id, 6);
+                           
+            forc(world, Sol_Equip_GetId(world, id, 5), ScWeapon) c->update_trail = true;
+            forc(world, Sol_Equip_GetId(world, id, 6), ScWeapon) c->update_trail = true;
         }
 
         float duration_delta = data->accum / dash_stage_time[data->stage];
@@ -178,7 +177,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     case 2: {
         if (prog.advanced)
         {
-            Sol_Weapon_TrailOn(world, id, slot);
+            Sol_Weapon_TrailOn(world, id, slot > 5);
         }
 
         SolHit hit = {

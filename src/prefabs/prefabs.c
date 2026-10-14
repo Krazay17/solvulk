@@ -32,12 +32,19 @@ static const ScCombat wizard_combat = {
 };
 
 static const ScInventory dude_inventory = {
+    .equipped_items = {0, 1, 2, 3, 4, 5, 6},
     .items =
         {
-            {.item_kind = ITEMKIND_SCYTHE},
-            {.item_kind = ITEMKIND_SCYTHE},
+            {.item_kind = ITEMKIND_CLAW},
+            {.item_kind = ITEMKIND_CLAW},
+            {.item_kind = ITEMKIND_CLAW},
+            {.item_kind = ITEMKIND_CLAW},
+
+            {.item_kind = ITEMKIND_CLAW},
+            {.item_kind = ITEMKIND_CLAW},
+            {.item_kind = ITEMKIND_CLAW},
         },
-    .item_count = 2,
+    .item_count = 7,
 };
 
 static const View3 healthbar = {
@@ -136,7 +143,15 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScAbility)   = dude_ability;
     *Sol_Comp_Add(world, id, ScMove3)     = dude_move;
     *Sol_Comp_Add(world, id, ScCamera)    = player_camera;
-    *Sol_Comp_Add(world, id, ScInventory) = dude_inventory;
+    
+    ScInventory *inv = Sol_Comp_Add(world, id, ScInventory);
+    *inv = dude_inventory;
+    inv->dirty = 1;
+    for(int i = 0;i<inv->item_count;i++)
+    {
+        int uid = ++inv->next_item_id;
+        inv->items[i].uid = uid;
+    }
 
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
     solb_push(view3->views_b, healthbar);
@@ -145,8 +160,8 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
 
-    for(int i = 0;i<ABILITY_SLOTS;i++)
-    Sol_Equip_Item(world, id, ITEMKIND_CLAW, i);
+    for (int i = 0; i < ABILITY_SLOTS; i++)
+        Sol_Equip_Item(world, id, ITEMKIND_CLAW, i);
 
     return id;
 }

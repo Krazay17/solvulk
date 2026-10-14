@@ -15,5 +15,7 @@ int Sol_Net_Init()
 
 int Sol_Net_AddUser(SessionUser user)
 {
-    user_session.users[user_session.user_cnt++] = user;
+    int idx                 = user_session.user_cnt++;
+    user_session.users[idx] = user;
+    return idx;
 }

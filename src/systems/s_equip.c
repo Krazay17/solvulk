@@ -49,25 +49,44 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
 {
     if (slot < 5)
         return 0;
-    int id          = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
-    WeaponKind kind = item_weapon_map[item_kind];
-    char *bone      = slot > 5 ? "weapon.R" : "weapon.L";
 
     ScEquip *equip = Sol_Comp_Add(world, owner, ScEquip);
+    
+    if (!item_kind)
+    {
+        switch (slot)
+        {
+        case 5:
+            if (equip->left_weapon)
+                Sol_Destroy_Ent(world, equip->left_weapon);
+            break;
+        case 6:
+            if (equip->right_weapon)
+                Sol_Destroy_Ent(world, equip->right_weapon);
+            break;
+        }
+        return 0;
+    }
+
+    int id = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
+
     switch (slot)
     {
-    case 5:
+    case 5: {
         if (equip->left_weapon)
             Sol_Destroy_Ent(world, equip->left_weapon);
         equip->left_weapon = id;
-        break;
-    case 6:
+    }
+    break;
+    case 6: {
         if (equip->right_weapon)
             Sol_Destroy_Ent(world, equip->right_weapon);
         equip->right_weapon = id;
-        break;
+    }
+    break;
     }
 
+    WeaponKind kind       = item_weapon_map[item_kind];
     ScWeapon *weapon      = Sol_Comp_Add(world, id, ScWeapon);
     weapon->kind          = kind;
     weapon->equipped_slot = slot;
@@ -76,6 +95,7 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     ScParent *parent      = Sol_Comp_Add(world, id, ScParent);
     parent->parentId      = owner;
 
+    char *bone = slot > 5 ? "weapon.R" : "weapon.L";
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
     parent->localQuat  = GLMS_QUAT_IDENTITY;
     parent->localScale = (vec3s){1, 1, 1};
@@ -127,13 +147,12 @@ int Sol_Equip_GetId(World *world, int id, int slot)
     forc(world, id, ScEquip) return slot > 5 ? c->right_weapon : c->left_weapon;
     return 0;
 }
-void Sol_Weapon_TrailOn(World *world, int id, int slot)
+void Sol_Weapon_TrailOn(World *world, int id, bool is_right)
 {
     forc(world, id, ScEquip)
     {
-        int left  = c->left_weapon;
-        int right = c->right_weapon;
-        forc(world, slot > 5 ? right : left, ScWeapon)
+        int weaponId = is_right ? c->right_weapon : c->left_weapon;
+        forc(world, weaponId, ScWeapon)
         {
             c->update_trail = true;
         }

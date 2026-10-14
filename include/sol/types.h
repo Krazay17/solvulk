@@ -346,6 +346,7 @@ typedef enum
     REFKIND_ITEM,
     REFKIND_LOOSEITEM,
     REFKIND_INVENTORYITEM,
+    REFKIND_EQUIPPEDITEM,
     REFKIND_HEALTHBAR,
     REFKIND_ENERGYBAR,
     REFKIND_ABILITYBAR,
@@ -865,6 +866,7 @@ typedef enum
 } AbilitySlotKind;
 typedef enum ItemKind
 {
+    ITEMKIND_NONE,
     ITEMKIND_CLAW,
     ITEMKIND_SCYTHE,
     ITEMKIND_FIREBALL,
@@ -878,6 +880,7 @@ typedef struct SolItem
     ItemRarity rarity;
     u32 buffMask;
     u32 effectMask;
+    u32 uid;
 } SolItem;
 
 typedef enum

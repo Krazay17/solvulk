@@ -37,6 +37,7 @@ void Ai_Step(World *world, double dt);
 void Drag_Update(World *world, double dt);
 
 void Ref_Update(World *world, double dt);
+void Ui_Update(World *world, double dt);
 void Fx_Update(World *world, double dt);
 void Hook_Tick(World *world, double dt);
 void Anim_Tick(World *world, double dt);
@@ -92,6 +93,7 @@ const struct SystemDef
 
     [WORLDSYS_WEAPON] = {.update = {Weapon_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
+    [WORLDSYS_UI]     = {.update = {Ui_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
     [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_TICK}},
@@ -130,6 +132,11 @@ World *World_Create()
     world->doesRender      = true;
     world->index           = index;
     solState.worlds[index] = world;
+
+    for (int i = 0; i < ONSKIND_COUNT; i++)
+        solb_init(world->ons[i], 1);
+
+    solb_push(world->ons[ONSKIND_DESTROY], Sol_Inv_AllDirty);
 
     Sol_Comp_InitAll(world);
     World_InitSingletons(world);
@@ -369,6 +376,12 @@ void Sol_Destroy_Ent(World *w, int entId)
 {
     if (!w || entId < 1 || entId > w->maxEntities)
         return;
+
+    for (int i = 0; i < solb_count(w->ons[ONSKIND_DESTROY]); i++)
+    {
+        if (w->ons[ONSKIND_DESTROY][i])
+            w->ons[ONSKIND_DESTROY][i](w);
+    }
     int children[64];
     int child_count;
     do

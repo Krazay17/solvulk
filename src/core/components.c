@@ -13,6 +13,24 @@ const ScParent parent_base = {
     .localQuat  = {0, 0, 0, 1},
 };
 
+void Add_None(World *world, int id, void *c)
+{
+}
+
+void ScInventory_Init(World *world, int id, ScInventory *c)
+{
+    c->dirty       = true;
+    c->dirty_equip = true;
+    memset(c->equipped_items, -1, sizeof(c->equipped_items));
+}
+
+void SlRules_Init(World *world, SlRules *self)
+{
+}
+void SlRules_Deinit(SlRules *self)
+{
+}
+
 static BaseSparseSet *SparseSet_Alloc(size_t data_size, int max_ents)
 {
     BaseSparseSet *set = calloc(1, sizeof(*set));
@@ -92,10 +110,16 @@ void *Sol_Comp_GetE(World *w, int id, u64 idx)
     return ((char *)set->data) + (set->sparse[id] * set->data_size);
 }
 
-static const void *component_defaults[COMPONENT_COUNT] = {
-#define REGISTER_COMPONENT_BASES(type, flag, base) [flag] = base,
-    SOL_COMPONENT_LIST(REGISTER_COMPONENT_BASES)
-#undef REGISTER_COMPONENT_BASES
+// static const void *component_defaults[COMPONENT_COUNT] = {
+// #define REGISTER_COMPONENT_BASES(type, flag, base) [flag] = base,
+//     SOL_COMPONENT_LIST(REGISTER_COMPONENT_BASES)
+// #undef REGISTER_COMPONENT_BASES
+// };
+
+static const ComponentInitFn component_inits[COMPONENT_COUNT] = {
+#define REGISTER_COMPONENT_ADDS(Type, Flag, AddFn) [Flag] = AddFn,
+    SOL_COMPONENT_LIST(REGISTER_COMPONENT_ADDS)
+#undef REGISTER_COMPONENT_ADDS
 };
 
 void *Sol_Comp_AddE(World *w, int entId, u64 idx)
@@ -127,11 +151,14 @@ void *Sol_Comp_AddE(World *w, int entId, u64 idx)
 
     // 4. Calculate byte pointer and initialize
     void *elem_ptr = ((char *)set->data) + (denseIdx * comp_size);
-    const void *defaults = component_defaults[idx];
-    if (defaults)
-        memcpy(elem_ptr, defaults, comp_size);
-    else
-        memset(elem_ptr, 0, comp_size);
+    memset(elem_ptr, 0, comp_size);
+    if (component_inits[idx])
+        component_inits[idx](w, entId, elem_ptr);
+    // const void *defaults = component_defaults[idx];
+    // if (defaults)
+    //     memcpy(elem_ptr, defaults, comp_size);
+    // else
+    //     memset(elem_ptr, 0, comp_size);
 
     w->masks[entId] |= (1ULL << idx);
 

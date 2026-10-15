@@ -33,7 +33,7 @@ typedef struct
 
 // Array modification operations
 #define solb_push(b, v) (solb__grow(b, 1), (b)[solb__hdr(b)->count++] = (v))
-#define solb_pop(b) ((b) && solb__hdr(b)->count > 0 ? (b)[--solb__hdr(b)->count] : 0)
+#define solb_pop(b) (((b) && solb__hdr(b)->count > 0) ? (b)[--solb__hdr(b)->count] : (*b))
 #define solb_reserve(b, n) (solb__grow(b, (n)))
 #define solb_free(b) ((b) ? (free(solb__hdr(b)), (b) = NULL) : 0)
 #define solb_zero(b) ((b) ? solb__hdr(b)->count = 0 : 0)

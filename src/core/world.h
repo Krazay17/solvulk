@@ -53,12 +53,15 @@ typedef enum
     WORLDSYS_AI,
 
     WORLDSYS_REF,
+    WORLDSYS_UI,
     WORLDSYS_ANIM,
-    WORLDSYS_PARENT,
     WORLDSYS_EVENT,
-
+    
     WORLDSYS_CAMERA,
     WORLDSYS_WEAPON,
+    
+    WORLDSYS_PARENT,
+
     WORLDSYS_FX,
     WORLDSYS_EMITTER,
     WORLDSYS_MODEL,
@@ -86,6 +89,11 @@ typedef struct WorldXform
     vec3s home_pos[MAX_ENTS];
 } WorldXform;
 
+typedef enum
+{
+    ONSKIND_DESTROY,
+    ONSKIND_COUNT,
+} OnsKind;
 struct World
 {
     SystemUpdate tickSystems[MAX_SYSTEMS];
@@ -99,6 +107,8 @@ struct World
     u64 masks[MAX_ENTS];
     u64 system_mask;
     void *components[COMPONENT_COUNT];
+
+    void (**ons[ONSKIND_COUNT])(World *world);
 
     int tickCount;
     int stepCount;
@@ -294,7 +304,7 @@ Sol_Event_AddHandler(World *world, EventKind kind, EventHandler handler);
 void Sol_Weapon_Extend(World *world, int id, float power);
 void Sol_Weapon_Unextend(World *world, int id);
 int Sol_Parent_GetChildren(World *world, int id, int *ids, int max_ids);
-void Item_User_Update(World *world, SolItem *items, int count, u32 kind);
+// void Item_User_Update(World *world, SolItem *items, int count, u32 kind);
 SolItem *Sol_Item_Resolve(World *world, ScRef *ref);
 void Sol_Tooltip_Draw(World *world, int id, UserInput *input, float alpha);
 void Sol_Ui_User_Update(World *hud, World *game, int user_ent);
@@ -306,9 +316,13 @@ void Sol_Inv_Equip(World *world, int id, int slot, int idx);
 SolItem Sol_Inv_Remove(World *world, int id, u32 idx);
 int Sol_Equip_Item(World *world, int id, u32 kind, int slot);
 int Sol_Equip_GetId(World *world, int id, int slot);
-int Sol_Weapon_TrailsOff(World *world, int id);
+void Sol_Weapon_TrailsOff(World *world, int id);
 SolRay Sol_Weapon_Ray(World *world, int id, int right_hand, float power);
 void Sol_Weapon_TrailOn(World *world, int id, bool is_right);
 SolItem Sol_Inv_GetItemAtSlot(const ScInventory *inv, int slot);
 SolItem *Sol_Inv_GetItem_FromId(ScInventory *inv, u32 uid);
-void Ui_Sync_Inventory(World *hud, World *game, int user_ent);
+void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s pos);
+int Sol_Inv_AddItem(World *world, int id, SolItem *item, bool try_equip);
+void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent);
+void Sol_Ui_CloseInv(World *hud, vec3s *inv_pos);
+void Sol_Inv_AllDirty(World *world);

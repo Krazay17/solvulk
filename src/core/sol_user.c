@@ -25,6 +25,7 @@ static SolResource user_settings_file;
 
 static const UserActions user_keys[SOL_KEY_COUNT] = {
     [SOL_KEY_ESCAPE] = USERACTION_ESCAPE,
+    [SOL_KEY_C]      = USERACTION_INVENTORY,
 };
 static const UserActions user_mouse[SOL_MOUSE_COUNT] = {
     [SOL_MOUSE_LEFT]   = USERACTION_MOUSEINTERACT,
@@ -117,9 +118,8 @@ void Sol_User_LoadUserSettings()
 
 static void LoadDefaults(void)
 {
-    user_data = (UserData){
-        .user_config.look_sens = 0.001f,
-    };
+    memset(&user_data, 0, sizeof(UserData));
+    user_data.user_config.look_sens = 0.001f;
     // solb_init(user_data.inventory.items, 8);
     memcpy(user_data.user_config.key_binds, key_binds, sizeof(SolActions) * SOL_KEY_COUNT);
     memcpy(user_data.user_config.mouse_binds, mouse_binds, sizeof(SolActions) * SOL_MOUSE_COUNT);
@@ -345,8 +345,10 @@ void Sol_User_Tick(double dt)
         Sol_Ui_User_Update(hud, game, id);
         forc(game, id, ScInventory)
         {
-            if (c->dirty)
-                Ui_Sync_Inventory(hud, game, id);
+            if (c->dirty_equip)
+                Sol_Ui_Sync_AbilityItems(hud, game, id);
+            if (c->dirty && sol_user.inventory.open)
+                Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
         }
     }
 
@@ -371,16 +373,22 @@ void Sol_User_Tick(double dt)
         }
     }
 
-    if (hud && Sol_Input_KeyPressed(SOL_KEY_6))
+    if (hud)
     {
-        if (!sol_user.inventory_id)
+        if (sol_user.user_input.user_actions & (1u << USERACTION_INVENTORY))
         {
-            sol_user.inventory_id = Sol_Prefab_Inventory(hud, (vec3s){500.0f, 500.0f}, &user_data.inventory);
+            if (!sol_user.inventory.open)
+            {
+                Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
+                sol_user.inventory.open = true;
+            }
+            Sol_Input_SetLocked(false);
         }
-        else
+        else if (sol_user.inventory.open)
         {
-            Sol_Destroy_Ent(hud, sol_user.inventory_id);
-            sol_user.inventory_id = 0;
+            Sol_Ui_CloseInv(hud, &sol_user.inventory.pos);
+            sol_user.inventory.open = false;
+            Sol_Input_SetLocked(true);
         }
     }
 

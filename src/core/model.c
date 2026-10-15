@@ -179,7 +179,6 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
     cgltf_skin *skin = &data->skins[0]; // assume first skin
     skel.boneCount   = (int)skin->joints_count;
     skel.bones       = calloc(skel.boneCount, sizeof(SolBone));
-    sollog(data->skins->name, skel.boneCount);
 
     // Build a node-pointer → bone-index map (only for joints in this skin)
     // For each joint, find its parent's index in the joints array.

@@ -31,6 +31,8 @@ int Sol_Body2_GetOverlaps(World *world, int id, int *ids, int max_counts)
     {
         if (i == dense_idx)
             continue;
+        if (hits >= max_counts)
+            break;
         int idB        = set->dense[i];
         ScBody2 *bodyB = &set->data[i];
         if (!Sol_Body2_DoesCollide(bodyA, bodyB))
@@ -164,7 +166,10 @@ void Body2_Step(World *world, double dt)
     // Apply forces
     for (i = 0; i < count; i++)
     {
-        int id               = set->dense[i];
+        int id = set->dense[i];
+        if (Sol_Comp_Has(world, id, ScParent))
+            continue;
+
         ScBody2 *body        = &set->data[i];
         world->xform.pos[id] = vecAdd(world->xform.pos[id], vecSca(body->vel, fdt));
     }
@@ -175,6 +180,8 @@ void Body2_Step(World *world, double dt)
         int id        = set->dense[i];
         ScBody2 *body = &set->data[i];
         if (body->isSensor)
+            continue;
+                    if (Sol_Comp_Has(world, id, ScParent))
             continue;
         vec3s *posA = &positions[id];
 
@@ -195,6 +202,8 @@ void Body2_Step(World *world, double dt)
         int id        = set->dense[i];
         ScBody2 *body = &set->data[i];
         if (body->ignoreWindow)
+            continue;
+                    if (Sol_Comp_Has(world, id, ScParent))
             continue;
         Xform xform   = Xform_Get(world, id);
         vec3s old_pos = xform.pos;

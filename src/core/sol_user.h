@@ -4,13 +4,19 @@
 
 #define MAX_USER_ITEMS 512
 
+typedef struct
+{
+    bool open;
+    vec3s pos;
+    u32 id;
+} UserInventory;
 typedef struct UserCore
 {
     int view_ent;
     int view_world;
     int menu_world, game_world, hud_world;
     float yaw, pitch;
-    u32 inventory_id;
+    UserInventory inventory;
     SolActions actions;
     UserInput user_input;
     UserHit user_hit;

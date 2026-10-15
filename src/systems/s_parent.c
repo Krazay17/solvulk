@@ -16,7 +16,7 @@ void Parent_Update(World *world, double dt)
         int id           = set->dense[i];
         ScParent *parent = &set->data[i];
 
-        Xform xform_parent = Xform_Get(world, parent->parentId);
+        Xform xform_parent = Xform_GetDraw(world, parent->parentId);
         if (parent->boneFollow)
         {
             xform_parent = Sol_Model_GetBoneXform(world, parent->parentId, parent->boneFollow);
@@ -29,12 +29,6 @@ void Parent_Update(World *world, double dt)
         vec3s sca_final   = glms_vec3_mul(xform_parent.sca, parent->localScale);
 
         Xform_SetAll(world, id, pos_final, rot_final, sca_final);
-        vec3s parent_vel;
-        forc(world, parent->parentId, ScBody2) parent_vel = c->vel;
-        forc(world, id, ScBody2) c->vel = parent_vel;
-
-        forc(world, parent->parentId, ScBody3) parent_vel = c->vel;
-        forc(world, id, ScBody3) c->vel = parent_vel;
     }
 }
 

@@ -11,24 +11,28 @@
 #include "font.h"
 #include "render/render.h"
 
-static void DrawGreyItemBank(World *world, int id, float fdt, View2 *view)
+static void Draw_Inventory(World *world, int id, float fdt, View2 *view)
 {
-    vec4s pos4   = {world->xform.pos[id].x, world->xform.pos[id].y, 0, 1.0f};
+    vec4s pos4   = {UISCALE(world->xform.draw_pos[id].x), UISCALE(world->xform.draw_pos[id].y), 0, 1.0f};
+    float width;
+    float height;
+    forc(world, id, ScBody2)
+    {
+        width = c->dims.x;
+        height = c->dims.y;
+    }
     RectSSBO *bg = Sol_Render_GetNext_Rect(view->layer);
     bg->flags    = 0;
     bg->pos      = pos4;
-    bg->rect     = (vec4s){0, 0, UISCALE(200.0f), UISCALE(200.0f)};
+    bg->rect     = (vec4s){0, 0, UISCALE(width), UISCALE(height)};
     bg->color    = VEC4_BLACK;
 
     RectSSBO *frame  = Sol_Render_GetNext_Rect(view->layer);
     frame->flags     = 0;
     frame->pos       = pos4;
-    frame->rect      = (vec4s){0, 0, UISCALE(200.0f), UISCALE(200.0f)};
+    frame->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(height)};
     frame->color     = VEC4_WHITE;
     frame->textureId = SOL_TEXTURE_GREENFRAME;
-    for (int i = 0; i < ITEMKIND_COUNT; i++)
-    {
-    }
 }
 const char *slot_text[ABILITY_SLOTS] = {"1", "2", "3", "4", "Shift", "Left", "Right"};
 static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
@@ -244,7 +248,7 @@ const void (*draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
     [VIEW2KIND_TEXT]         = DrawText,
     [VIEW2KIND_POWERBAR]     = PowerBar,
     [VIEW2KIND_ABILITYBAR]   = DrawAbilitybar,
-    [VIEW2KIND_GREYITEMBANK] = DrawGreyItemBank,
+    [VIEW2KIND_INVENTORY] = Draw_Inventory,
 };
 
 void View2_Draw(World *world, double dt)

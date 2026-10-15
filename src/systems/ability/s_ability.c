@@ -235,8 +235,10 @@ void Ability_Update(World *world, double dt)
 
             if (held)
             {
-                SolItem slot_item                                                     = {0};
+                SolItem slot_item = {0};
+
                 forc(world, id, ScInventory) if (c->equipped_items[j] >= 0) slot_item = c->items[c->equipped_items[j]];
+
                 if (Sol_Ability_SetState(world, id, item_ability_map[slot_item.item_kind][slot_kind_map[j]], j, false))
                     break;
             }

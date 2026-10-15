@@ -8,12 +8,12 @@
 #include "sol/sol.h"
 
 const ScCamera player_camera = {
-    .fov              = 60.0f,
+    .fov              = 65.0f,
     .up.y             = 1.0f,
     .lerpspeed        = 10.0f,
-    .desired_offset   = 0.5f,
-    .desired_distance = 5.0f,
-    .y_offset         = 0.5f,
+    .desired_offset   = 1.0f,
+    .desired_distance = 3.5f,
+    // .y_offset         = 0.5f,
 };
 
 static const ScBody3 wizard_body = {
@@ -31,21 +31,22 @@ static const ScCombat wizard_combat = {
     .health    = 100.0f,
 };
 
-static const ScInventory dude_inventory = {
-    .equipped_items = {0, 1, 2, 3, 4, 5, 6},
-    .items =
-        {
-            {.item_kind = ITEMKIND_CLAW},
-            {.item_kind = ITEMKIND_CLAW},
-            {.item_kind = ITEMKIND_CLAW},
-            {.item_kind = ITEMKIND_CLAW},
+// static const ScInventory dude_inventory = {
+//     .equipped_items = {0, 1, 2, 3, 4, 5, 6},
+//     .items =
+//         {
+//             {.item_kind = ITEMKIND_CLAW, .uid = 1},
+//             {.item_kind = ITEMKIND_CLAW, .uid = 2},
+//             {.item_kind = ITEMKIND_CLAW, .uid = 3},
+//             {.item_kind = ITEMKIND_CLAW, .uid = 4},
 
-            {.item_kind = ITEMKIND_CLAW},
-            {.item_kind = ITEMKIND_CLAW},
-            {.item_kind = ITEMKIND_CLAW},
-        },
-    .item_count = 7,
-};
+//             {.item_kind = ITEMKIND_CLAW, .uid = 5},
+//             {.item_kind = ITEMKIND_CLAW, .uid = 6},
+//             {.item_kind = ITEMKIND_CLAW, .uid = 7},
+//         },
+//     .item_count   = 7,
+//     .next_item_id = 8,
+// };
 
 static const View3 healthbar = {
     .kind     = VIEW3KIND_POWERBAR,
@@ -140,17 +141,20 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *combat             = dude_combat;
     combat->respawnTime = 2.0f;
 
-    *Sol_Comp_Add(world, id, ScAbility)   = dude_ability;
-    *Sol_Comp_Add(world, id, ScMove3)     = dude_move;
-    *Sol_Comp_Add(world, id, ScCamera)    = player_camera;
-    
+    *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
+    *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
+    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
+
     ScInventory *inv = Sol_Comp_Add(world, id, ScInventory);
-    *inv = dude_inventory;
-    inv->dirty = 1;
-    for(int i = 0;i<inv->item_count;i++)
+    Sol_Inv_Equip(world, id, 0, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
+    Sol_Inv_Equip(world, id, 1, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0));
+    Sol_Inv_Equip(world, id, 4, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
+    Sol_Inv_Equip(world, id, 5, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
+    Sol_Inv_Equip(world, id, 6, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
+
+    for (int i = 0; i < 14; i++)
     {
-        int uid = ++inv->next_item_id;
-        inv->items[i].uid = uid;
+        Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
     }
 
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
@@ -159,9 +163,6 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
-
-    for (int i = 0; i < ABILITY_SLOTS; i++)
-        Sol_Equip_Item(world, id, ITEMKIND_CLAW, i);
 
     return id;
 }
@@ -251,7 +252,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
-        .color       = {0.1f, 0.1f, 0.1f, 1.0f},
+        .color       = {0.0f, 0.0f, 0.0f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -260,7 +261,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
-        .color       = {0.9f, 0.1f, 0.1f, 1.0f},
+        .color       = {0.2f, 0.2f, 0.2f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -326,7 +327,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
-        .color       = {0.1f, 0.1f, 0.1f, 1.0f},
+        .color       = {0.0f, 0.0f, 0.0f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -341,7 +342,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
-        .color       = {0.9f, 0.1f, 0.1f, 1.0f},
+        .color       = {0.2f, 0.2f, 0.2f, 1.0f},
         .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -598,7 +599,7 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
 
     ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
     view2->count    = 1;
-    view2->views[0] = (View2){.kind = VIEW2KIND_GREYITEMBANK};
+    view2->views[0] = (View2){.kind = VIEW2KIND_INVENTORY};
 
     return id;
 }
@@ -796,6 +797,30 @@ int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
     View2 frame     = {.kind = VIEW2KIND_RECT, .color = color, .dims = dims, .textureID = Sol_TEXTURE_HEALTHVIAL};
     view2->views[0] = fill;
     view2->views[1] = frame;
+
+    return id;
+}
+
+int Sol_Prefab_InventoryWindow(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    vec2s dims = {200.0f, 200.0f};
+
+    *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .zindex   = UILAYER_1,
+        .shape    = SHAPE2_REC,
+        .dims     = (vec3s){dims.x, dims.y, 0},
+        .isSensor = true,
+        .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->flags |= INTERACTFLAG_DRAGGABLE;
+
+    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
+    view2->count    = 1;
+    view2->views[0] = (View2){.kind = VIEW2KIND_INVENTORY};
 
     return id;
 }

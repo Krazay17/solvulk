@@ -128,15 +128,16 @@ typedef struct ScBody2
     int zindex;
 } ScBody2;
 
-#define MAX_INVENTORY_ITEMS 256
+// #define MAX_INVENTORY_ITEMS 0xffff
 typedef struct ScInventory
 {
-    int item_count;
-    u32 next_item_id;
-    SolItem items[MAX_INVENTORY_ITEMS];
+    //  int item_count;
+    SolItem *items;
     int equipped_items[ABILITY_SLOTS];
+    u32 next_item_id;
 
     bool dirty;
+    bool dirty_equip;
 } ScInventory;
 
 typedef struct ScEquip
@@ -537,6 +538,7 @@ typedef struct ScRef
 {
     RefKind kind;
     u32 ent_world, ent_id;
+    u32 flags;
     u32 index;
     u32 uid;
 } ScRef;
@@ -548,6 +550,14 @@ typedef struct ScAbilitybar
     int ability_slots[ABILITY_SLOTS];
     int slotted_ents[ABILITY_SLOTS];
 } ScAbilitybar;
+
+typedef struct ScUiItem
+{
+    u8 mode; // 0=inv, 1=loose, 2=equipped, 3=dragging
+    u32 world;
+    u32 ent;
+    u32 uid;
+} ScUiItem;
 
 typedef struct
 {
@@ -678,6 +688,18 @@ typedef struct
     Chainhit *chainhits;
 } SlChainhit;
 
+typedef enum
+{
+    RULESKIND_FFA,
+    RULESKIND_TDM,
+} RulesKind;
+typedef struct
+{
+    RulesKind kind;
+} SlRules;
+
+typedef void (*ComponentInitFn)(World *world, int id, void *c);
+
 #define SOL_SINGLETON_LIST(X)                                                                                          \
     X(SlEvent, SlEvent_Init, SlEvent_Deinit)                                                                           \
     X(SlDebug, SlDebug_Init, SlDebug_Deinit)                                                                           \
@@ -686,70 +708,77 @@ typedef struct
     X(SlContacts2, SlContacts2_Init, SlContacts2_Deinit)                                                               \
     X(SlRibbon, SlRibbon_Init, SlRibbon_Deinit)                                                                        \
     X(SlChainhit, SlChainhit_Init, SlChainhit_Deinit)                                                                  \
+    X(SlRules, SlRules_Init, SlRules_Deinit)                                                                           \
     X(SlSpatial, SlSpatial_Init, SlSpatial_Deinit)
 
 #define SOL_COMPONENT_LIST(X)                                                                                          \
-    X(SlEvent, HAS_SlEvent, NULL)                                                                                      \
-    X(SlDebug, HAS_SlDebug, NULL)                                                                                      \
-    X(SlSpatial, HAS_SlSpatial, NULL)                                                                                  \
-    X(SlHitgen, HAS_SlHitgen, NULL)                                                                                    \
-    X(SlEmitter, HAS_SlEmitter, NULL)                                                                                  \
-    X(SlContacts2, HAS_SlContacts2, NULL)                                                                              \
-    X(SlRibbon, HAS_SlRibbon, NULL)                                                                                    \
-    X(SlChainhit, HAS_SlChainhit, NULL)                                                                                \
+    X(SlEvent, HAS_SlEvent, Add_None)                                                                                  \
+    X(SlDebug, HAS_SlDebug, Add_None)                                                                                  \
+    X(SlSpatial, HAS_SlSpatial, Add_None)                                                                              \
+    X(SlHitgen, HAS_SlHitgen, Add_None)                                                                                \
+    X(SlEmitter, HAS_SlEmitter, Add_None)                                                                              \
+    X(SlContacts2, HAS_SlContacts2, Add_None)                                                                          \
+    X(SlRibbon, HAS_SlRibbon, Add_None)                                                                                \
+    X(SlChainhit, HAS_SlChainhit, Add_None)                                                                            \
+    X(SlRules, HAS_SlRules, Add_None)                                                                                  \
                                                                                                                        \
-    X(ScActive, HAS_ScActive, NULL)                                                                                    \
-    X(ScHook, HAS_ScHook, NULL)                                                                                        \
-    X(ScCmd, HAS_ScCmd, NULL)                                                                                          \
-    X(ScUi, HAS_ScUi, NULL)                                                                                            \
-    X(ScMeta, HAS_ScMeta, NULL)                                                                                        \
-    X(ScTeam, HAS_ScTeam, NULL)                                                                                        \
-    X(ScPlayer, HAS_ScPlayer, NULL)                                                                                    \
-    X(ScRemote, HAS_ScRemote, NULL)                                                                                    \
-    X(ScAi, HAS_ScAi, NULL)                                                                                            \
-    X(ScAilearn, HAS_ScAilearn, NULL)                                                                                  \
-    X(ScBody2, HAS_ScBody2, NULL)                                                                                      \
-    X(ScBody3, HAS_ScBody3, NULL)                                                                                      \
-    X(ScStage, HAS_ScStage, NULL)                                                                                      \
-    X(ScModel, HAS_ScModel, NULL)                                                                                      \
-    X(ScAnim, HAS_ScAnim, NULL)                                                                                        \
-    X(ScCamera, HAS_ScCamera, NULL)                                                                                    \
-    X(ScInteract, HAS_ScInteract, NULL)                                                                                \
-    X(ScMove3, HAS_ScMove3, NULL)                                                                                      \
-    X(ScMove2, HAS_ScMove2, NULL)                                                                                      \
-    X(ScAbility, HAS_ScAbility, NULL)                                                                                  \
-    X(ScBuff, HAS_ScBuff, NULL)                                                                                        \
-    X(ScTimer, HAS_ScTimer, NULL)                                                                                      \
-    X(ScAudio, HAS_ScAudio, NULL)                                                                                      \
-    X(ScParent, HAS_ScParent, &parent_base)                                                                            \
-    X(ScOwner, HAS_ScOwner, NULL)                                                                                      \
-    X(ScCombat, HAS_ScCombat, NULL)                                                                                    \
-    X(ScReplication, HAS_ScReplication, NULL)                                                                          \
-    X(ScEmitter, HAS_ScEmitter, NULL)                                                                                  \
-    X(ScSlider, HAS_ScSlider, NULL)                                                                                    \
-    X(ScView2, HAS_ScView2, NULL)                                                                                      \
-    X(ScView3, HAS_ScView3, NULL)                                                                                      \
-    X(ScProjectile, HAS_ScProjectile, NULL)                                                                            \
-    X(ScHudslot, HAS_ScHudslot, NULL)                                                                                  \
-    X(ScHuditem, HAS_ScHuditem, NULL)                                                                                  \
-    X(ScTooltip, HAS_ScTooltip, NULL)                                                                                  \
-    X(ScZone, HAS_ScZone, NULL)                                                                                        \
-    X(ScRef, HAS_ScRef, NULL)                                                                                          \
-    X(ScAbilitybar, HAS_ScAbilitybar, NULL)                                                                            \
-    X(ScRibbon, HAS_ScRibbon, NULL)                                                                                    \
-    X(ScWeapon, HAS_ScWeapon, NULL)                                                                                    \
-    X(ScInventory, HAS_ScInventory, NULL)                                                                              \
-    X(ScUser, HAS_ScUser, NULL)                                                                                        \
-    X(ScEquip, HAS_ScEquip, NULL)                                                                                      \
-    X(ScBuilder, HAS_ScBuilder, NULL)
+    X(ScActive, HAS_ScActive, Add_None)                                                                                \
+    X(ScHook, HAS_ScHook, Add_None)                                                                                    \
+    X(ScCmd, HAS_ScCmd, Add_None)                                                                                      \
+    X(ScUi, HAS_ScUi, Add_None)                                                                                        \
+    X(ScMeta, HAS_ScMeta, Add_None)                                                                                    \
+    X(ScTeam, HAS_ScTeam, Add_None)                                                                                    \
+    X(ScPlayer, HAS_ScPlayer, Add_None)                                                                                \
+    X(ScRemote, HAS_ScRemote, Add_None)                                                                                \
+    X(ScAi, HAS_ScAi, Add_None)                                                                                        \
+    X(ScAilearn, HAS_ScAilearn, Add_None)                                                                              \
+    X(ScBody2, HAS_ScBody2, Add_None)                                                                                  \
+    X(ScBody3, HAS_ScBody3, Add_None)                                                                                  \
+    X(ScStage, HAS_ScStage, Add_None)                                                                                  \
+    X(ScModel, HAS_ScModel, Add_None)                                                                                  \
+    X(ScAnim, HAS_ScAnim, Add_None)                                                                                    \
+    X(ScCamera, HAS_ScCamera, Add_None)                                                                                \
+    X(ScInteract, HAS_ScInteract, Add_None)                                                                            \
+    X(ScMove3, HAS_ScMove3, Add_None)                                                                                  \
+    X(ScMove2, HAS_ScMove2, Add_None)                                                                                  \
+    X(ScAbility, HAS_ScAbility, Add_None)                                                                              \
+    X(ScBuff, HAS_ScBuff, Add_None)                                                                                    \
+    X(ScTimer, HAS_ScTimer, Add_None)                                                                                  \
+    X(ScAudio, HAS_ScAudio, Add_None)                                                                                  \
+    X(ScParent, HAS_ScParent, Add_None)                                                                                \
+    X(ScOwner, HAS_ScOwner, Add_None)                                                                                  \
+    X(ScCombat, HAS_ScCombat, Add_None)                                                                                \
+    X(ScReplication, HAS_ScReplication, Add_None)                                                                      \
+    X(ScEmitter, HAS_ScEmitter, Add_None)                                                                              \
+    X(ScSlider, HAS_ScSlider, Add_None)                                                                                \
+    X(ScView2, HAS_ScView2, Add_None)                                                                                  \
+    X(ScView3, HAS_ScView3, Add_None)                                                                                  \
+    X(ScProjectile, HAS_ScProjectile, Add_None)                                                                        \
+    X(ScHudslot, HAS_ScHudslot, Add_None)                                                                              \
+    X(ScHuditem, HAS_ScHuditem, Add_None)                                                                              \
+    X(ScTooltip, HAS_ScTooltip, Add_None)                                                                              \
+    X(ScZone, HAS_ScZone, Add_None)                                                                                    \
+    X(ScRef, HAS_ScRef, Add_None)                                                                                      \
+    X(ScAbilitybar, HAS_ScAbilitybar, Add_None)                                                                        \
+    X(ScRibbon, HAS_ScRibbon, Add_None)                                                                                \
+    X(ScWeapon, HAS_ScWeapon, Add_None)                                                                                \
+    X(ScInventory, HAS_ScInventory, ScInventory_Init)                                                                  \
+    X(ScUser, HAS_ScUser, Add_None)                                                                                    \
+    X(ScEquip, HAS_ScEquip, Add_None)                                                                                  \
+    X(ScUiItem, HAS_ScUiItem, Add_None)                                                                                \
+    X(ScBuilder, HAS_ScBuilder, Add_None)
 
 typedef enum
 {
-#define AS_ENUM(type, flag, ...) flag,
+#define AS_ENUM(Type, Flag, ...) Flag,
     SOL_COMPONENT_LIST(AS_ENUM)
 #undef AS_ENUM
     COMPONENT_COUNT
 } SolComponents;
+
+#define COMP_INIT_FWD(Type, Flag, InitFn) void InitFn(World *world, int id, void *self);
+SOL_COMPONENT_LIST(COMP_INIT_FWD)
+#undef COMP_INIT_FWD
 
 #define SINGLETON_FWD(Type, InitFn, DeinitFn)                                                                          \
     void InitFn(World *world, Type *self);                                                                             \

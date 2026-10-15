@@ -24,17 +24,16 @@ void Weapon_Update(World *world, double dt)
         Xform blade_xform = Sol_Weapon_BladeXform(world, id);
         if (sc->update_trail)
         {
-            ScRibbon *ribbon = Sol_Comp_Get(world, id, ScRibbon);
-            if (ribbon)
+            forc(world, id, ScRibbon)
             {
-                ribbon->_accum += dt;
-                while (ribbon->_accum >= ribbon->rate)
+                c->_accum += dt;
+                while (c->_accum >= c->rate)
                 {
-                    ribbon->_accum -= ribbon->rate;
+                    c->_accum -= c->rate;
                     float spin = Sol_QuatGetRoll(blade_xform.rot, WORLD_FWD, WORLD_UP);
 
                     spin += glm_rad(90.0f);
-                    Sol_Ribbon_Addpoint(&ribbon->ribbon, blade_xform.pos, 0, spin);
+                    Sol_Ribbon_Addpoint(&c->ribbon, blade_xform.pos, 0, spin);
                 }
             }
         }
@@ -51,40 +50,18 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
         return 0;
 
     ScEquip *equip = Sol_Comp_Add(world, owner, ScEquip);
-    
+    int *weaponId  = slot > 5 ? &equip->right_weapon : &equip->left_weapon;
+
+    if (*weaponId > 0)
+    {
+        Sol_Destroy_Ent(world, *weaponId);
+        *weaponId = -1;
+    }
     if (!item_kind)
-    {
-        switch (slot)
-        {
-        case 5:
-            if (equip->left_weapon)
-                Sol_Destroy_Ent(world, equip->left_weapon);
-            break;
-        case 6:
-            if (equip->right_weapon)
-                Sol_Destroy_Ent(world, equip->right_weapon);
-            break;
-        }
-        return 0;
-    }
+        return -1;
 
-    int id = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
-
-    switch (slot)
-    {
-    case 5: {
-        if (equip->left_weapon)
-            Sol_Destroy_Ent(world, equip->left_weapon);
-        equip->left_weapon = id;
-    }
-    break;
-    case 6: {
-        if (equip->right_weapon)
-            Sol_Destroy_Ent(world, equip->right_weapon);
-        equip->right_weapon = id;
-    }
-    break;
-    }
+    int id    = Sol_Create_Ent(world, GLMS_VEC3_ZERO);
+    *weaponId = id;
 
     WeaponKind kind       = item_weapon_map[item_kind];
     ScWeapon *weapon      = Sol_Comp_Add(world, id, ScWeapon);
@@ -135,12 +112,19 @@ Xform Sol_Weapon_BladeXform(World *world, int id)
 }
 void Sol_Weapon_Extend(World *world, int id, float power)
 {
-    forc(world, id, ScParent) c->localScale.y = 1.0f + (power * 0.5f);
+    forc(world, id, ScParent) c->localScale.y = 1.0f + (power);
     forc(world, id, ScWeapon) c->extending    = true;
 }
 void Sol_Weapon_Unextend(World *world, int id)
 {
-    forc(world, id, ScWeapon) c->extending = false;
+    forc(world, id, ScEquip)
+    {
+        int left  = c->left_weapon;
+        int right = c->right_weapon;
+
+        forc(world, left, ScWeapon) c->extending  = false;
+        forc(world, right, ScWeapon) c->extending = false;
+    }
 }
 int Sol_Equip_GetId(World *world, int id, int slot)
 {
@@ -158,7 +142,7 @@ void Sol_Weapon_TrailOn(World *world, int id, bool is_right)
         }
     }
 }
-int Sol_Weapon_TrailsOff(World *world, int id)
+void Sol_Weapon_TrailsOff(World *world, int id)
 {
     forc(world, id, ScEquip)
     {

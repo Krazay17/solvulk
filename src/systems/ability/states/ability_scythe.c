@@ -221,7 +221,7 @@ static void Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {
     AbilityStateData *data = &ability->stateData[slot];
     Sol_Weapon_TrailsOff(world, id);
-    Sol_Weapon_Unextend(world, Sol_Equip_GetId(world, id, slot));
+    Sol_Weapon_Unextend(world, id);
 }
 static bool CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
 {

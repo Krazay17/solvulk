@@ -90,7 +90,6 @@ SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id
         image->width  = 224;
         image->loaded = true;
         image->unorm  = 1;
-        printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
     }
 
@@ -98,7 +97,6 @@ SolTexture *Parse_Texture(void *data, size_t size, const char *extension, u32 id
     {
         image->pixels = WebPDecodeRGBA(data, size, &image->width, &image->height);
         image->loaded = true;
-        printf("ID: %d, Image upload width:%d\n", id, image->width);
         return image;
     }
 

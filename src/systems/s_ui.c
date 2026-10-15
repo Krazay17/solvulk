@@ -12,6 +12,165 @@
 #include "prefabs.h"
 #include "render/render.h"
 
+enum
+{
+    ITEM_LOOSE,
+    ITEM_ABILITYBAR,
+    ITEM_INVENTORY,
+};
+
+void Abilitybar_Update(World *world, double dt)
+{
+    SparseSet_ScAbilitybar *set = Sol_Comp_Set(world, ScAbilitybar);
+    for (int i = 0; i < set->cnt; i++)
+    {
+        int id                   = set->dense[i];
+        ScAbilitybar *abilitybar = &set->data[i];
+        ScRef *ref               = Sol_Comp_Get(world, id, ScRef);
+        if (!ref)
+            continue;
+        World *game_world = Sol_GetWorldByIdx(ref->ent_world);
+        if (!game_world)
+            continue;
+
+        vec3s origin    = world->xform.pos[id];
+        vec2s slot_dims = abilitybar->slot_dims;
+
+        int current_slots[ABILITY_SLOTS] = {0};
+        int ids[8]                       = {0};
+        int hits                         = Sol_Body2_GetOverlaps(world, id, ids, 8);
+
+        for (int j = 0; j < hits; j++)
+        {
+            int item_id     = ids[j];
+            ScRef *item_ref = Sol_Comp_Get(world, item_id, ScRef);
+            if (!item_ref || item_ref->kind != REFKIND_ITEM)
+                continue;
+
+            vec3s item_pos     = world->xform.pos[item_id];
+            ScBody2 *item_body = Sol_Comp_Get(world, item_id, ScBody2);
+            vec2s item_half    = {item_body->dims.x * 0.5f, item_body->dims.y * 0.5f};
+            vec2s item_center  = {item_pos.x + item_half.x, item_pos.y + item_half.y};
+
+            int target = -1;
+            for (int s = 0; s < abilitybar->slot_count; s++)
+            {
+                float sx = origin.x + abilitybar->slot_dims.x * s;
+                float sy = origin.y;
+                if (item_center.x < sx || item_center.x > sx + slot_dims.x || item_center.y < sy ||
+                    item_center.y > sy + slot_dims.y)
+                    continue;
+
+                if (current_slots[s] != 0)
+                {
+                    continue;
+                }
+
+                target = s;
+                break;
+            }
+            if (target == -1)
+                continue;
+            current_slots[target] = item_id;
+
+            vec2s slot_center = {origin.x + slot_dims.x * target + slot_dims.x * 0.5f, origin.y + slot_dims.y * 0.5f};
+            vec3s delta       = {slot_center.x - item_center.x, slot_center.y - item_center.y};
+            item_body->vel    = glms_vec3_scale(delta, 12.0f);
+        }
+
+        for (int s = 0; s < abilitybar->slot_count; s++)
+        {
+            int old_item     = abilitybar->slotted_ents[s];
+            int new_item     = current_slots[s];
+            int ability_slot = abilitybar->ability_slots[s];
+
+            if (old_item == new_item)
+                continue;
+
+            abilitybar->slotted_ents[s] = new_item;
+
+            if (new_item == 0)
+            {
+                Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, -1);
+                continue;
+            }
+
+            ScRef *item_ref = Sol_Comp_Get(world, new_item, ScRef);
+            if (!item_ref || item_ref->kind != REFKIND_ITEM)
+                continue;
+            forc(game_world, ref->ent_id, ScInventory)
+            {
+                Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, item_ref->index);
+                item_ref->flags = ITEM_ABILITYBAR;
+            }
+        }
+    }
+}
+
+void Inventory_Update(World *world, double dt)
+{
+    SparseSet_ScRef *ref_set = Sol_Comp_Set(world, ScRef);
+    for (int i = 0; i < ref_set->cnt; i++)
+    {
+        int ref_id = ref_set->dense[i];
+        ScRef *ref = &ref_set->data[i];
+        if (ref->kind != REFKIND_ITEM)
+            continue;
+
+        bool dragging                            = false;
+        forc(world, ref_id, ScInteract) dragging = (c->state & (1u << INTERACT_DRAGGING));
+        if (dragging)
+        {
+            Sol_Comp_Rem(world, ref_id, ScParent);
+            ref->flags = ITEM_LOOSE;
+            continue;
+        }
+        if (Sol_Comp_Has(world, ref_id, ScParent))
+        {
+            ref->flags = ITEM_INVENTORY;
+            continue;
+        }
+
+        int target, target_kind = -1;
+        int ids[4];
+        int hits = Sol_Body2_GetOverlaps(world, ref_id, ids, 4);
+        for (int hit = 0; hit < hits; hit++)
+        {
+            ScRef *r = Sol_Comp_Get(world, ids[hit], ScRef);
+            if (!r)
+                continue;
+            if (r->kind == REFKIND_ABILITYBAR)
+            {
+                target      = ids[hit];
+                target_kind = REFKIND_ABILITYBAR;
+                break;
+            }
+            if (r->kind == REFKIND_INVENTORY)
+            {
+                target      = ids[hit];
+                target_kind = REFKIND_INVENTORY;
+            }
+        }
+        switch (target_kind)
+        {
+        case REFKIND_ABILITYBAR: {
+            ref->flags = ITEM_ABILITYBAR;
+        }
+        break;
+        case REFKIND_INVENTORY: {
+            ref->flags                             = ITEM_INVENTORY;
+            *Sol_Comp_Add(world, ref_id, ScParent) = (ScParent){
+                .parentId    = target,
+                .localOffset = vecSub(world->xform.pos[ref_id], world->xform.pos[target]),
+            };
+        }
+        break;
+        default:
+            ref->flags = ITEM_LOOSE;
+        }
+    }
+}
+
 static int Ui_FindItemCard(World *hud, u32 world_id, u32 ent_id, u32 card_id)
 {
     SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
@@ -25,40 +184,231 @@ static int Ui_FindItemCard(World *hud, u32 world_id, u32 ent_id, u32 card_id)
     return -1;
 }
 
-void Ui_Sync_Inventory(World *hud, World *game, int user_ent)
+void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent)
 {
     ScInventory *inv = Sol_Comp_Get(game, user_ent, ScInventory);
     if (!inv)
         return;
+    inv->dirty_equip              = false;
+    vec3s slot_pos[ABILITY_SLOTS] = {0};
+    int grid_n                    = 0;
+
     SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
     for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
         int ref_id = ref_set->dense[i];
         ScRef *ref = &ref_set->data[i];
-        if (ref->kind != REFKIND_ITEM || ref->ent_id != user_ent || ref->ent_world != game->index)
-            continue;
-        if (!Sol_Inv_GetItem_FromId(inv, ref->uid))
-            Sol_Destroy_Ent(hud, ref_id);
+        switch (ref->kind)
+        {
+        case REFKIND_ABILITYBAR: {
+            forc(hud, ref_id, ScAbilitybar)
+            {
+                vec3s bar_pos = hud->xform.pos[ref_id];
+                for (int j = 0; j < c->slot_count; j++)
+                {
+                    int s        = c->ability_slots[j];
+                    vec3s offset = bar_pos;
+                    offset.x += j * c->slot_dims.x;
+                    slot_pos[s] = offset;
+                }
+            }
+        }
+        break;
+        case REFKIND_ITEM: {
+            if (!Sol_Inv_GetItem_FromId(inv, ref->uid))
+                Sol_Destroy_Ent(hud, ref_id);
+        }
+        break;
+        }
     }
-    for (int i = 0; i < inv->item_count; i++)
+    int equipped_count = 0;
+    for (int j = 0; j < ABILITY_SLOTS; j++)
+    {
+        if (inv->equipped_items[j] >= 0)
+            equipped_count++;
+    }
+
+    int item_count = solb_count(inv->items);
+    for (int i = 0; i < item_count; i++)
     {
         SolItem *item = &inv->items[i];
         if (Ui_FindItemCard(hud, game->index, user_ent, item->uid) >= 0)
             continue;
-        sollog(i);
-        vec3s pos = {
-            100.0f + (i % 6) * 64.0f,
-            100.0f + (i / 6) * 64.0f,
-            0.0f,
+        for (int j = 0; j < ABILITY_SLOTS; j++)
+        {
+            if (inv->equipped_items[j] == i)
+            {
+                int card_id = Sol_Prefab_AbilityCard(hud, GLMS_VEC3_ZERO, item);
+
+                ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
+                *card_ref       = (ScRef){
+                    .ent_id    = user_ent,
+                    .ent_world = game->index,
+                    .kind      = REFKIND_ITEM,
+                    .uid       = item->uid,
+                    .index     = i,
+                    .flags     = ITEM_ABILITYBAR,
+                };
+                vec3s *pos = &hud->xform.pos[card_id];
+                *pos       = slot_pos[j];
+            }
+        }
+    }
+}
+
+void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s inv_pos)
+{
+    ScInventory *inv = Sol_Comp_Get(game, user_ent, ScInventory);
+    if (!inv)
+        return;
+    inv->dirty                    = false;
+    inv->dirty_equip              = false;
+    vec3s slot_pos[ABILITY_SLOTS] = {0};
+    int inv_id                    = 0;
+    vec3s inv_window_pos          = inv_pos;
+    int grid_n                    = 0;
+
+    SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
+    for (int i = ref_set->cnt - 1; i >= 0; i--)
+    {
+        int ref_id = ref_set->dense[i];
+        ScRef *ref = &ref_set->data[i];
+        switch (ref->kind)
+        {
+        case REFKIND_ABILITYBAR: {
+            forc(hud, ref_id, ScAbilitybar)
+            {
+                vec3s bar_pos = hud->xform.pos[ref_id];
+                for (int j = 0; j < c->slot_count; j++)
+                {
+                    int s        = c->ability_slots[j];
+                    vec3s offset = bar_pos;
+                    offset.x += j * c->slot_dims.x;
+                    slot_pos[s] = offset;
+                }
+            }
+        }
+        break;
+        case REFKIND_INVENTORY: {
+            inv_window_pos = hud->xform.pos[ref_id];
+            inv_id         = ref_id;
+        }
+        break;
+        case REFKIND_ITEM: {
+            if (!Sol_Inv_GetItem_FromId(inv, ref->uid))
+                Sol_Destroy_Ent(hud, ref_id);
+            else if (ref->flags == ITEM_INVENTORY)
+                grid_n++;
+        }
+        break;
+        }
+    }
+    if (!inv_id)
+    {
+        inv_window_pos = inv_pos;
+        inv_id         = Sol_Prefab_InventoryWindow(hud, inv_window_pos);
+
+        *Sol_Comp_Add(hud, inv_id, ScRef) = (ScRef){
+            .kind = REFKIND_INVENTORY,
         };
-        int card_id                        = Sol_Prefab_AbilityCard(hud, pos, item);
-        *Sol_Comp_Add(hud, card_id, ScRef) = (ScRef){
+    }
+
+    int item_count        = solb_count(inv->items);
+    int equipped_count    = 0;
+    int docked_item_count = 0;
+    for (int i = 0; i < item_count; i++)
+    {
+        bool equipped = false;
+        for (int j = 0; j < ABILITY_SLOTS; j++)
+        {
+            if (inv->equipped_items[j] == i)
+            {
+                equipped_count++;
+                equipped = true;
+                break;
+            }
+        }
+        if (!equipped)
+            docked_item_count++;
+    }
+    {
+        int rows     = (docked_item_count + 5) / 6;
+        float height = 30.0f + 64.0f * rows;
+        float width  = 30.0f + 64.0f * 6;
+        forc(hud, inv_id, ScBody2)
+        {
+            c->dims.x = width;
+            c->dims.y = height;
+        }
+    }
+    for (int i = 0; i < item_count; i++)
+    {
+        SolItem *item = &inv->items[i];
+        // Skip already spawned cards
+        if (Ui_FindItemCard(hud, game->index, user_ent, item->uid) >= 0)
+            continue;
+        int bar_slot = -1;
+        for (int j = 0; j < ABILITY_SLOTS; j++)
+        {
+            if (inv->equipped_items[j] == i)
+            {
+                bar_slot = j;
+                break;
+            }
+        }
+        int card_id = Sol_Prefab_AbilityCard(hud, GLMS_VEC3_ZERO, item);
+
+        ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
+        *card_ref       = (ScRef){
             .ent_id    = user_ent,
             .ent_world = game->index,
             .kind      = REFKIND_ITEM,
             .uid       = item->uid,
             .index     = i,
         };
+        vec3s *pos = &hud->xform.pos[card_id];
+        if (bar_slot >= 0)
+        {
+            card_ref->flags = ITEM_ABILITYBAR;
+            *pos            = slot_pos[bar_slot];
+        }
+        else
+        {
+            card_ref->flags = ITEM_INVENTORY;
+            *pos            = (vec3s){
+                15.0f + (grid_n % 6) * 64.0f,
+                15.0f + (grid_n / 6) * 64.0f,
+                0.0f,
+            };
+            *Sol_Comp_Add(hud, card_id, ScParent) = (ScParent){
+                .localOffset = *pos,
+                .parentId    = inv_id,
+            };
+            grid_n++;
+        };
+    }
+}
+
+void Sol_Ui_CloseInv(World *hud, vec3s *inv_pos)
+{
+    SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
+    for (int i = ref_set->cnt - 1; i >= 0; i--)
+    {
+        int ref_id = ref_set->dense[i];
+        ScRef *ref = &ref_set->data[i];
+        switch (ref->kind)
+        {
+        case REFKIND_ITEM: {
+            if (ref->flags != ITEM_ABILITYBAR)
+                Sol_Destroy_Ent(hud, ref_id);
+        }
+        break;
+        case REFKIND_INVENTORY: {
+            *inv_pos = hud->xform.pos[ref_id];
+            Sol_Destroy_Ent(hud, ref_id);
+        }
+        break;
+        }
     }
 }
 
@@ -233,4 +583,10 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
             }
         }
     }
+}
+
+void Ui_Update(World *world, double dt)
+{
+     Abilitybar_Update(world, dt);
+     Inventory_Update(world, dt);
 }

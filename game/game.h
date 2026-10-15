@@ -171,12 +171,15 @@ static inline void Hook_Clone(World *w, int a, int b)
 
 static inline void Hook_AddItem(World *w, int a, int b)
 {
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_CLAW, .rarity = ITEMRARITY_LEGENDARY});
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_FIREBALL, .rarity = ITEMRARITY_DECENT});
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_CRYSTAL});
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_BOLT});
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_SCYTHE});
-    Sol_User_AddItemLoose(&(SolItem){.item_kind = ITEMKIND_SCYTHE, .rarity = ITEMRARITY_LEGENDARY});
+    World *game = Sol_User_GetGameWorld();
+    int id      = sol_user.view_ent;
+
+    forc(game, id, ScInventory)
+    {
+        Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0);
+        Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
+        Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_CRYSTAL}, 0);
+    }
 }
 
 static inline void Hook_SaveUser(World *w, int a, int b)
@@ -204,12 +207,14 @@ static inline void Hook_SetPlayerFov(World *w, int a, int b)
 }
 static inline void Hook_ClearEnts(World *w, int a, int b)
 {
-    World *game = Sol_User_GetGameWorld();
-    int i       = 1;
+    World *game  = Sol_User_GetGameWorld();
+    int i        = 1;
     while (i < game->entCount)
     {
-        int id = game->dense[i];
-        if (Sol_Comp_Has(game, id, ScPlayer) || Sol_Comp_Has(game, id, ScStage))
+        int id         = game->dense[i];
+        ScOwner *owner = Sol_Comp_Get(game, id, ScOwner);
+        if (Sol_Comp_Has(game, id, ScPlayer) || Sol_Comp_Has(game, id, ScStage) ||
+            (owner && Sol_Comp_Has(game, owner->ownerId, ScPlayer)))
         {
             i++;
         }

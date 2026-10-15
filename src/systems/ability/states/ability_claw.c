@@ -20,7 +20,7 @@
 #define HITINTERVAL 0.05f
 #define DASH_SPEED 30.0f
 
-static const float spell_stage_time[3] = {0.4f, 0.15f, 0.25f};
+static const float spell_stage_time[3] = {0.35f, 0.25f, 0.2f};
 #define SPELL_STAGE_COUNT (sizeof(spell_stage_time) / sizeof(spell_stage_time[0]))
 
 static const float dash_stage_time[3] = {0.3f, 0.5f, 0.4f};
@@ -73,9 +73,7 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
             HitPause(data);
         break;
     case 2:
-        ScWeapon *weapon = Sol_Comp_Get(world, ability->left_weapon, ScWeapon);
-        if (weapon)
-            weapon->update_trail = false;
+        Sol_Weapon_TrailsOff(world, id);
         break;
     }
 }
@@ -96,7 +94,7 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         {
             Sol_Event_Push(world, EVENTKIND_FX,
                            (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .pos = Sol_Body3_GetHead(world, id)});
-                           
+
             forc(world, Sol_Equip_GetId(world, id, 5), ScWeapon) c->update_trail = true;
             forc(world, Sol_Equip_GetId(world, id, 6), ScWeapon) c->update_trail = true;
         }
@@ -172,6 +170,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         const float amount = dt * 40.0f;
         if (Sol_Combat_UseEnergy(world, id, amount))
             data->power += amount * 0.01f;
+        Sol_Weapon_Extend(world, Sol_Equip_GetId(world, id, slot), data->power);
 
         break;
     case 2: {
@@ -234,6 +233,7 @@ void Ability_Claw_Exit(World *world, int id, ScAbility *ability, ScCmd *cmd, int
     AbilityStateData *data  = &ability->stateData[slot];
     data->cooldownRemaining = data->conf.cooldown;
     Sol_Weapon_TrailsOff(world, id);
+    Sol_Weapon_Unextend(world, id);
 }
 
 bool Ability_Claw_CanExit(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot)
@@ -251,15 +251,15 @@ bool Ability_Claw_CanEnter(World *world, int id, ScAbility *ability, ScCmd *cmd,
 
 void Draw_Charge(World *world, int id, ScAbility *ability, int slot, float dt)
 {
-    AbilityStateData *data = &ability->stateData[slot];
-    Xform hand_xform       = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L");
-    float scale            = data->power * 1.5f;
-    vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, scale};
-    ModelSSBO *s           = Sol_Render_GetNextModel(0, MODELKIND_WEAPONBLADE);
-    s->color               = (vec4s){1, 1, 1, 1};
-    s->position            = pos;
-    s->scale               = (vec4s){scale, scale * 1.5f, scale, scale};
-    s->rotation            = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
+    // AbilityStateData *data = &ability->stateData[slot];
+    // Xform hand_xform       = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L");
+    // float scale            = data->power * 1.5f;
+    // vec4s pos              = (vec4s){hand_xform.pos.x, hand_xform.pos.y, hand_xform.pos.z, scale};
+    // ModelSSBO *s           = Sol_Render_GetNextModel(0, MODELKIND_WEAPONBLADE);
+    // s->color               = (vec4s){1, 1, 1, 1};
+    // s->position            = pos;
+    // s->scale               = (vec4s){scale, scale * 1.5f, scale, scale};
+    // s->rotation            = (vec4s){hand_xform.rot.x, hand_xform.rot.y, hand_xform.rot.z, hand_xform.rot.w};
 }
 
 void Draw_Spell(World *world, int id, ScAbility *ability, int slot, float dt)

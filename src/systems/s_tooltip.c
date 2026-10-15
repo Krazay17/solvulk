@@ -52,6 +52,15 @@ static void Item_Draw(World *world, int id, UserInput *input, float alpha)
             maxWidth = w;
         lineCount++;
     }
+        if (lineCount < MAX_TOOLTIP_LINES)
+    {
+        snprintf(lines[lineCount], sizeof(lines[lineCount]), "Uid: %d", item->uid);
+        float w = Sol_MeasureText(lines[lineCount], UISCALE(bodyTextSize), SOL_FONT_ICE);
+        if (w > maxWidth)
+            maxWidth = w;
+        lineCount++;
+    }
+
     if (cfg.speed > 0.0f && lineCount < MAX_TOOLTIP_LINES)
     {
         snprintf(lines[lineCount], sizeof(lines[lineCount]), "Speed: +%%%.f", cfg.speed * 100.0f);
@@ -153,7 +162,7 @@ static void Item_Draw(World *world, int id, UserInput *input, float alpha)
     vec2s dims = {.x = maxWidth + paddingX * 2.0f, .y = UISCALE(headerSize) + (lineCount * ySpacing) + paddingY * 2.0f};
 
     // Keep the box centered or offset cleanly near mouse coordinate profiles
-    vec2s pos    = {input->mouse.x, input->mouse.y - dims.y};
+    vec2s pos    = {UISCALE(input->mouse.x), UISCALE(input->mouse.y - dims.y)};
     vec2s center = {pos.x + dims.x * 0.5f, pos.y + dims.y * 0.5f};
 
     // --- STAGE 3: DRAW BACKDROP GEOMETRY FIRST ---

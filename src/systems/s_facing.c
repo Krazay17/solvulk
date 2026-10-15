@@ -21,7 +21,7 @@ void Facing_Tick(World *world, double dt)
         // MODE 1: Strafing / Aiming — Snap or smooth towards camera yaw
         if (cmd->isStrafing)
         {
-            world->xform.rot[id] = Sol_Quat_FromYawPitch(cmd->yaw, 0.0f);
+            Xform_SetRot(world, id, Sol_Quat_FromYawPitch(cmd->yaw, 0.0f));
         }
         // MODE 2: Free Movement — Smoothly turn model toward movement wishdir
         else if (glms_vec3_norm(cmd->wishdir) > 0.001f)

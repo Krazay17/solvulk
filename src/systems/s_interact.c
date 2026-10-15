@@ -233,6 +233,7 @@ void Sol_Interact_Post(World *w, int id, u32 bits)
 void Sol_Interact_BeginDrag(World *w, int id, vec3s point)
 {
     forc(w, id, ScInteract) c->drag_offset = glms_vec3_sub(point, w->xform.pos[id]);
+    Sol_Comp_Rem(w, id, ScParent);
 }
 void Sol_Interact_Drag(World *w, int id, vec3s point)
 {

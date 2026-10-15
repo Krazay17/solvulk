@@ -12,11 +12,11 @@
 #include "font.h"
 #include "model.h"
 
-#define MAX_MODEL_INSTANCES 0x4fff
-#define MAX_RECT_INSTANCES (1u << 14)
-#define MAX_FONT_INSTANCES (1u << 16)
-#define MAX_QUAD_INSTANCES (1u << 20)
-#define MAX_BUFFER_VERTS 0xffffff
+#define MAX_MODEL_INSTANCES 0xafffu
+#define MAX_RECT_INSTANCES 0xafffu
+#define MAX_FONT_INSTANCES 0xafffu
+#define MAX_QUAD_INSTANCES 0xfffffu
+#define MAX_BUFFER_VERTS 0xfffffu
 
 typedef struct ScModelData ScModelData;
 

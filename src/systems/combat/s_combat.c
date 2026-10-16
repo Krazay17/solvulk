@@ -87,20 +87,18 @@ static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
     {
         combat->is_dead   = true;
         combat->deathTime = world->tickTime;
-        Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.dealer = combat->lastHitBy, .target = id});
-        Sol_Comp_Rem(world, id, ScBuff);
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-        if (body3)
-        {
-            body3->vel       = GLMS_VEC3_ZERO;
-            body3->base_mask = body3->mask;
-            body3->mask      = 0;
-        }
         Sol_Ability_SetAllIdle(world, id);
-        if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+        Sol_Comp_Rem(world, id, ScBuff);
+        forc(world, id, ScBody3)
         {
-            Sol_Destroy_Ent(world, id);
+            c->vel       = GLMS_VEC3_ZERO;
+            c->base_mask = c->mask;
+            c->mask      = 0;
         }
+        if (combat->respawnTime == 0.0f && world->tickTime >= (combat->deathTime + DESTROY_TIMER))
+            Sol_Destroy_Ent(world, id);
+
+        Sol_Event_Push(world, EVENTKIND_DEATH, (SolEvent){.dealer = combat->lastHitBy, .target = id});
     }
 }
 
@@ -365,11 +363,12 @@ float Sol_Combat_Hit(World *world, SolHit hit)
 
         Sol_Event_Push(world, EVENTKIND_HIT,
                        (SolEvent){
-                           .dealer       = dealer,
-                           .target       = target,
-                           .pos          = hit.pos,
-                           .as.hit.kind  = hit.kind,
-                           .as.hit.power = hit.power,
+                           .dealer        = dealer,
+                           .target        = target,
+                           .pos           = hit.pos,
+                           .as.hit.amount = damage_done,
+                           .as.hit.kind   = hit.kind,
+                           .as.hit.power  = hit.power,
                        });
     }
 

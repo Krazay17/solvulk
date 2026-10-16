@@ -151,6 +151,7 @@ void Inventory_Update(World *world, double dt)
                 target_kind = REFKIND_INVENTORY;
             }
         }
+
         switch (target_kind)
         {
         case REFKIND_ABILITYBAR: {
@@ -434,12 +435,29 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
             Sol_Destroy_Ent(hud, ref_id);
             continue;
         }
-        if (ref->kind == REFKIND_HEALTHBAR)
+        switch (ref->kind)
+        {
+        case REFKIND_HEALTHBAR: {
             player_healthbar = true;
-        else if (ref->kind == REFKIND_ABILITYBAR)
+            ScView2 *view2   = Sol_Comp_Get(hud, ref_id, ScView2);
+            ScCombat *combat = Sol_Comp_Get(game, ref->ent_id, ScCombat);
+            if (combat && view2)
+                snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->health);
+        }
+        break;
+        case REFKIND_ABILITYBAR: {
             player_abilitybar = true;
-        else if (ref->kind == REFKIND_ENERGYBAR)
+        }
+        break;
+        case REFKIND_ENERGYBAR: {
             player_energybar = true;
+            ScView2 *view2   = Sol_Comp_Get(hud, ref_id, ScView2);
+            ScCombat *combat = Sol_Comp_Get(game, ref->ent_id, ScCombat);
+            if (combat && view2)
+                snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->energy);
+        }
+        break;
+        }
     }
     if (!player_healthbar && Sol_Comp_Has(game, user_ent, ScCombat))
     {
@@ -585,8 +603,29 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
     }
 }
 
+void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
+{
+    bool existing_window = false;
+    for_set(hud, ScRef)
+    {
+        switch (c->kind)
+        {
+        case REFKIND_RULESWINDOW: {
+            existing_window = true;
+        }
+        break;
+        }
+    }
+    if (!existing_window)
+    {
+        int window_id = Sol_Prefab_RulesWindow(hud, (vec3s){0, 0, 0});
+        ScRef *ref    = Sol_Comp_Add(hud, window_id, ScRef);
+        ref->kind     = REFKIND_RULESWINDOW;
+    }
+}
+
 void Ui_Update(World *world, double dt)
 {
-     Abilitybar_Update(world, dt);
-     Inventory_Update(world, dt);
+    Abilitybar_Update(world, dt);
+    Inventory_Update(world, dt);
 }

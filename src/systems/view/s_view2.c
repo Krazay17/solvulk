@@ -11,14 +11,37 @@
 #include "font.h"
 #include "render/render.h"
 
-static void Draw_Inventory(World *world, int id, float fdt, View2 *view)
+static void Draw_RulesWindow(World *world, int id, float fdt, View2 *view)
 {
-    vec4s pos4   = {UISCALE(world->xform.draw_pos[id].x), UISCALE(world->xform.draw_pos[id].y), 0, 1.0f};
+    vec4s pos4 = {UISCALE(world->xform.draw_pos[id].x), UISCALE(world->xform.draw_pos[id].y), 0, 1.0f};
     float width;
     float height;
     forc(world, id, ScBody2)
     {
-        width = c->dims.x;
+        width  = c->dims.x;
+        height = c->dims.y;
+    }
+    RectSSBO *bg = Sol_Render_GetNext_Rect(view->layer);
+    bg->flags    = 0;
+    bg->pos      = pos4;
+    bg->rect     = (vec4s){0, 0, UISCALE(width), UISCALE(height)};
+    bg->color    = (vec4s){0, 0, 0, 0.4f};
+
+    RectSSBO *frame  = Sol_Render_GetNext_Rect(view->layer);
+    frame->flags     = 0;
+    frame->pos       = pos4;
+    frame->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(height)};
+    frame->color        = (vec4s){1, 1, 1, 0.4f};
+    frame->textureId = SOL_TEXTURE_GREENFRAME;
+}
+static void Draw_Inventory(World *world, int id, float fdt, View2 *view)
+{
+    vec4s pos4 = {UISCALE(world->xform.draw_pos[id].x), UISCALE(world->xform.draw_pos[id].y), 0, 1.0f};
+    float width;
+    float height;
+    forc(world, id, ScBody2)
+    {
+        width  = c->dims.x;
         height = c->dims.y;
     }
     RectSSBO *bg = Sol_Render_GetNext_Rect(view->layer);
@@ -241,14 +264,15 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
 }
 
 const void (*draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
-    [VIEW2KIND_RECT]         = DrawRect,
-    [VIEW2KIND_SLIDER]       = DrawSlider,
-    [VIEW2KIND_SLIDER_FILL]  = DrawSliderFill,
-    [VIEW2KIND_CIRCLE]       = DrawCircle,
-    [VIEW2KIND_TEXT]         = DrawText,
-    [VIEW2KIND_POWERBAR]     = PowerBar,
-    [VIEW2KIND_ABILITYBAR]   = DrawAbilitybar,
-    [VIEW2KIND_INVENTORY] = Draw_Inventory,
+    [VIEW2KIND_RECT]        = DrawRect,
+    [VIEW2KIND_SLIDER]      = DrawSlider,
+    [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,
+    [VIEW2KIND_CIRCLE]      = DrawCircle,
+    [VIEW2KIND_TEXT]        = DrawText,
+    [VIEW2KIND_POWERBAR]    = PowerBar,
+    [VIEW2KIND_ABILITYBAR]  = DrawAbilitybar,
+    [VIEW2KIND_INVENTORY]   = Draw_Inventory,
+    [VIEW2KIND_RULESWINDOW] = Draw_RulesWindow,
 };
 
 void View2_Draw(World *world, double dt)

@@ -92,7 +92,6 @@ void Sol_Tick(double dt, double time)
     if (solState.needsResize)
         Sol_OnResize();
 
-    // Sol_Net_Tick(solState.worlds, solState.worldCount);
     Sol_User_Tick(dt);
     Worlds_Tick(solState.worlds, solState.worldCount, dt);
 
@@ -102,8 +101,6 @@ void Sol_Tick(double dt, double time)
     {
         Worlds_Xform_Snapshot(solState.worlds, solState.worldCount);
         Worlds_Step(solState.worlds, solState.worldCount, SOL_TIMESTEP);
-        // Sol_Net_Step(solState.worlds, solState.worldCount, time);
-        // Sol_Events_Clear(solState.worlds, solState.worldCount);
         solState.stepCounter++;
         accumulator -= SOL_TIMESTEP;
     }
@@ -129,7 +126,7 @@ void Sol_Tick(double dt, double time)
     Sol_Debug_Draw(dt);
     Sol_End_Draw();
 
-    Worlds_Event_Clear(solState.worlds, solState.worldCount);
+    // Worlds_Event_Clear(solState.worlds, solState.worldCount);
 
     if (solState.destroy_qued)
         Sol_Destroy();

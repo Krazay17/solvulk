@@ -7,6 +7,7 @@
  */
 #include "components.h"
 #include "world.h"
+#include "spatial_grid.h"
 
 const ScParent parent_base = {
     .localScale = {1, 1, 1},
@@ -28,6 +29,98 @@ void SlRules_Init(World *world, SlRules *self)
 {
 }
 void SlRules_Deinit(SlRules *self)
+{
+}
+
+void SlEvent_Init(World *world, SlEvent *self)
+{
+    solb_init(self->events, 64);
+    for (int i = 0; i < EVENTKIND_COUNT; i++)
+        solb_init(self->handlers[i], 4);
+}
+void SlEvent_Deinit(SlEvent *self)
+{
+    solb_free(self->events);
+}
+
+void SlEmitter_Init(World *world, SlEmitter *self)
+{
+    solb_init(self->emitters, 128);
+    solb_init(self->particles, 512);
+}
+
+void SlEmitter_Deinit(SlEmitter *self)
+{
+    solb_free(self->emitters);
+    solb_free(self->particles);
+}
+
+void SlSpatial_Init(World *world, SlSpatial *self)
+{
+    solb_init(self->contacts, 4096);
+    solb_init(self->tris_static, 4096);
+    solb_init(self->build_ids, 64);
+    solb_init(self->build_mins, 64);
+    solb_init(self->build_maxs, 64);
+
+    int max_threads = omp_get_max_threads();
+    solb_init(self->threadContacts, max_threads);
+    solb_set_count(self->threadContacts, max_threads);
+    solb_init(self->threadIds, max_threads);
+    solb_set_count(self->threadIds, max_threads);
+
+    for (int i = 0; i < max_threads; i++)
+    {
+        solb_init(self->threadContacts[i].contacts, 256);
+        solb_init(self->threadIds[i].ids, 32);
+    }
+
+    {
+        float cell_size    = 5.0f;
+        self->grid_dynamic = malloc(sizeof(SpatialGrid));
+        vec3s min          = {-512.0f, -512.0f, -32.0f};
+        vec3s max          = {512.0f, 512.0f, 256.0f};
+        SpatialGrid_Init(self->grid_dynamic, min, max, cell_size);
+    }
+
+    {
+        float cell_size   = 5.0f;
+        self->grid_static = malloc(sizeof(SpatialGrid));
+        vec3s min         = {-512.0f, -512.0f, -32.0f};
+        vec3s max         = {512.0f, 512.0f, 256.0f};
+        SpatialGrid_Init(self->grid_static, min, max, cell_size);
+    }
+}
+
+void SlSpatial_Deinit(SlSpatial *self)
+{
+    SpatialGrid_Deinit(self->grid_dynamic);
+    SpatialGrid_Deinit(self->grid_static);
+    solb_free(self->contacts);
+    solb_free(self->threadIds);
+    solb_free(self->tris_static);
+    solb_free(self->build_ids);
+    solb_free(self->build_mins);
+    solb_free(self->build_maxs);
+}
+
+void SlContacts2_Init(World *world, SlContacts2 *self)
+{
+    solb_init(self->contacts, 16);
+}
+
+void SlContacts2_Deinit(SlContacts2 *self)
+{
+    solb_free(self->contacts);
+}
+
+void SlDebug_Init(World *world, SlDebug *self)
+{
+    solb_init(self->lines, 32);
+    solb_init(self->spheres, 32);
+}
+
+void SlDebug_Deinit(SlDebug *self)
 {
 }
 

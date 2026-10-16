@@ -179,15 +179,15 @@ const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_FIREBALL_CHARGE] = &ability_fireball_charge_state, //
     [ABILITY_STATE_FIREBALL_DASH]   = &ability_dash_state,            //
 
-    [ABILITY_STATE_SHIELD]        = &ability_shield_state, //
-    [ABILITY_STATE_SHIELD_CHARGE] = &ability_shield_charge_state,
-    [ABILITY_STATE_SHIELD_DASH]   = &ability_dash_state, //
+    [ABILITY_STATE_SHIELD]        = &ability_shield_state,        //
+    [ABILITY_STATE_SHIELD_CHARGE] = &ability_shield_charge_state, //
+    [ABILITY_STATE_SHIELD_DASH]   = &ability_dash_state,          //
 
     [ABILITY_STATE_BOLT_CHARGE] = &ability_bolt_charge, //
 
-    [ABILITY_STATE_SCYTHE]        = &ability_scythe_spell_state,
-    [ABILITY_STATE_SCYTHE_CHARGE] = &ability_scythe_charge_state,
-    [ABILITY_STATE_SCYTHE_DASH]   = &ability_scythe_dash_state,
+    [ABILITY_STATE_SCYTHE]        = &ability_scythe_spell_state,  //
+    [ABILITY_STATE_SCYTHE_CHARGE] = &ability_scythe_charge_state, //
+    [ABILITY_STATE_SCYTHE_DASH]   = &ability_scythe_dash_state,   //
 
 };
 

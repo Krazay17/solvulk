@@ -191,12 +191,7 @@ typedef struct
 typedef struct ScAbility
 {
     int prio_slot;
-    int left_weapon;
-    int right_weapon;
     u32 state[ABILITY_SLOTS];
-    u32 base_actions[ABILITY_SLOTS];
-    u32 slotted_actions[ABILITY_SLOTS];
-    SolItem slotted_items[ABILITY_SLOTS];
     AbilityStateData stateData[ABILITY_SLOTS];
 } ScAbility;
 
@@ -692,11 +687,34 @@ typedef enum
 {
     RULESKIND_FFA,
     RULESKIND_TDM,
+    RULESKIND_COUNT,
 } RulesKind;
+typedef enum
+{
+    RULESPHASE_START,
+    RULESPHASE_ACTIVE,
+    RULESPHASE_END,
+} RulesPhase;
 typedef struct
 {
+    union {
+        struct
+        {
+            int winning_kills;
+        } ffa;
+    } as;
     RulesKind kind;
+    RulesPhase phase;
+    int winner;
 } SlRules;
+
+typedef struct
+{
+    u32 kills;
+    u32 deaths;
+    float damage;
+    float healing;
+} ScScore;
 
 typedef void (*ComponentInitFn)(World *world, int id, void *c);
 
@@ -766,6 +784,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScUser, HAS_ScUser, Add_None)                                                                                    \
     X(ScEquip, HAS_ScEquip, Add_None)                                                                                  \
     X(ScUiItem, HAS_ScUiItem, Add_None)                                                                                \
+    X(ScScore, HAS_ScScore, Add_None)                                                                                  \
     X(ScBuilder, HAS_ScBuilder, Add_None)
 
 typedef enum
@@ -830,3 +849,9 @@ void Sol_Comp_RemE(World *world, int id, u64 idx);
 
 // use c->
 #define forc(w, id, type) for (type *c = Sol_Comp_Get(w, id, type); c; c = NULL)
+
+// set->, c->
+#define for_set(w, type)                                                                                               \
+    for (SparseSet_##type *set = Sol_Comp_Set(w, type); set; set = NULL)                                               \
+        for (int i = 0; i < set->cnt; i++)                                                                             \
+            for (type *c = &set->data[i]; c; c = NULL)

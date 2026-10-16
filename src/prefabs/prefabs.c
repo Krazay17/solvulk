@@ -77,7 +77,7 @@ static const ScBody3 dude_body = {
     .invMass     = 1.0f,
     .restitution = 0.01f,
     .gravity     = SOL_GRAVITY,
-    .dims        = {0.35f, 1.0f, 0.35f},
+    .dims        = {0.4f, 1.0f, 0.4f},
     .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
@@ -104,19 +104,6 @@ static const ScCombat dude_combat = {
     .respawnTime = 2.0f,
 };
 
-static const ScAbility dude_ability = {
-    .base_actions =
-        {
-            ITEMKIND_CRYSTAL,
-            ITEMKIND_FIREBALL,
-            ITEMKIND_CLAW,
-            0,
-            ITEMKIND_SCYTHE,
-            ITEMKIND_SCYTHE,
-            ITEMKIND_SCYTHE,
-        },
-};
-
 static const ScAnim anim_default = {
     .layers =
         {
@@ -141,9 +128,9 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *combat             = dude_combat;
     combat->respawnTime = 2.0f;
 
-    *Sol_Comp_Add(world, id, ScAbility) = dude_ability;
-    *Sol_Comp_Add(world, id, ScMove3)   = dude_move;
-    *Sol_Comp_Add(world, id, ScCamera)  = player_camera;
+    Sol_Comp_Add(world, id, ScAbility);
+    *Sol_Comp_Add(world, id, ScMove3)  = dude_move;
+    *Sol_Comp_Add(world, id, ScCamera) = player_camera;
 
     ScInventory *inv = Sol_Comp_Add(world, id, ScInventory);
     Sol_Inv_Equip(world, id, 0, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
@@ -189,15 +176,7 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
     *Sol_Comp_Add(world, id, ScAi)     = wizard_ai;
 
-    *Sol_Comp_Add(world, id, ScAbility) = (ScAbility){.base_actions = {
-                                                          ITEMKIND_CRYSTAL,
-                                                          ITEMKIND_CRYSTAL,
-                                                          ITEMKIND_CRYSTAL,
-                                                          ITEMKIND_CRYSTAL,
-                                                          ITEMKIND_CRYSTAL,
-                                                          ITEMKIND_FIREBALL,
-                                                          ITEMKIND_FIREBALL,
-                                                      }};
+    Sol_Comp_Add(world, id, ScAbility);
 
     Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
     Sol_Comp_Add(world, id, ScCmd);
@@ -821,6 +800,30 @@ int Sol_Prefab_InventoryWindow(World *world, vec3s pos)
     ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
     view2->count    = 1;
     view2->views[0] = (View2){.kind = VIEW2KIND_INVENTORY};
+
+    return id;
+}
+
+int Sol_Prefab_RulesWindow(World *world, vec3s pos)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    vec2s dims = {200.0f, 200.0f};
+
+    *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
+        .zindex   = UILAYER_1,
+        .shape    = SHAPE2_REC,
+        .dims     = (vec3s){dims.x, dims.y, 0},
+        .isSensor = true,
+        .mask     = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
+    interact->flags |= INTERACTFLAG_DRAGGABLE;
+
+    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
+    view2->count    = 1;
+    view2->views[0] = (View2){.kind = VIEW2KIND_RULESWINDOW};
 
     return id;
 }

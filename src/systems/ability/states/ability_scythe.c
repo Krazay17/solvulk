@@ -169,8 +169,14 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
     case 2: {
         if (prog.advanced)
         {
-            forc(world, ability->left_weapon, ScWeapon) c->update_trail  = true;
-            forc(world, ability->right_weapon, ScWeapon) c->update_trail = true;
+            forc(world, id, ScEquip)
+            {
+                int left  = c->left_weapon;
+                int right = c->right_weapon;
+
+                forc(world, left, ScWeapon) c->update_trail  = true;
+                forc(world, right, ScWeapon) c->update_trail = true;
+            }
 
             data->hitgen  = Sol_Hitgen_Start(world);
             data->hitgen2 = Sol_Hitgen_Start(world);

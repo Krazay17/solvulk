@@ -22,58 +22,68 @@ typedef struct World World;
 
 typedef enum
 {
-    UPDATEPHASE_TICK,
-    UPDATEPHASE_STEP,
-    UPDATEPHASE_POSTTICK,
-    UPDATEPHASE_RENDER3,
-    UPDATEPHASE_RENDER2,
-} UpdatePhase;
+    PHASE_PRE,
+    PHASE_STEP,
+    PHASE_POST,
+    PHASE_RENDER3,
+    PHASE_RENDER2,
+} Phase;
+
+#define SOL_SYSTEMS(X)                                                                                                 \
+    X(SYS_TEST, PHASE_PRE, Sol_Test)                                                                                   \
+    X(SYS_TIMER, PHASE_PRE, Timer_Update)                                                                              \
+    X(SYS_CMD, PHASE_PRE, Cmd_Update)                                                                                  \
+    X(SYS_PLAYER, PHASE_PRE, Player_Update)                                                                            \
+    X(SYS_INTERACT, PHASE_PRE, Interact_Update)                                                                        \
+    X(SYS_FACING, PHASE_PRE, Facing_Tick)                                                                              \
+    X(SYS_DEBUG, PHASE_PRE, Debug_Tick)                                                                                \
+                                                                                                                       \
+    X(SYS_DRAG, PHASE_STEP, Drag_Update)                                                                               \
+    X(SYS_ITEM, PHASE_STEP, Item_Update)                                                                               \
+    X(SYS_BUFF, PHASE_STEP, Buff_Update)                                                                               \
+    X(SYS_MOVE3, PHASE_STEP, Move3_Update)                                                                             \
+    X(SYS_MOVE2, PHASE_STEP, Move2_Update)                                                                             \
+    X(SYS_BODY3, PHASE_STEP, Body3_Update)                                                                             \
+    X(SYS_BODY2, PHASE_STEP, Body2_Step)                                                                               \
+    X(SYS_ABILITY, PHASE_STEP, Ability_Update)                                                                         \
+    X(SYS_PROJECTILE, PHASE_STEP, Projectile_Step)                                                                     \
+    X(SYS_ZONE, PHASE_STEP, Zone_Update)                                                                               \
+    X(SYS_COMBAT, PHASE_STEP, Combat_Update)                                                                           \
+    X(SYS_AI, PHASE_STEP, Ai_Step)                                                                                     \
+    X(SYS_SCORE, PHASE_STEP, Score_Update)                                                                             \
+    X(SYS_RULES, PHASE_STEP, Rules_Update)                                                                             \
+    X(SYS_FX, PHASE_STEP, Fx_Update)                                                                                   \
+    X(SYS_EVENT, PHASE_STEP, Event_Step)                                                                    \
+    X(SYS_EVENTCLEAR, PHASE_STEP, Event_Clear)                                                               \
+                                                                                                                       \
+    X(SYS_UI, PHASE_POST, Ui_Update)                                                                                   \
+    X(SYS_HOOK, PHASE_POST, Hook_Tick)                                                                                 \
+    X(SYS_CAMERA, PHASE_POST, Camera_Tick)                                                                             \
+    X(SYS_ANIM, PHASE_POST, Anim_Tick)                                                                                 \
+    X(SYS_PARENT, PHASE_POST, Parent_Update)                                                                           \
+    X(SYS_WEAPON, PHASE_POST, Weapon_Update)                                                                           \
+    X(SYS_EMITTER, PHASE_POST, Emitter_Update)                                                                         \
+                                                                                                                       \
+    X(SYS_BUFF_DRAW, PHASE_RENDER3, Buff_Draw)                                                                         \
+    X(SYS_ABILITY_DRAW, PHASE_RENDER3, Ability_Draw)                                                                   \
+    X(SYS_PARTICLE_DRAW, PHASE_RENDER3, Particle_Draw)                                                                 \
+    X(SYS_RIBBON_DRAW, PHASE_RENDER3, Ribbon_Update)                                                                   \
+    X(SYS_MODEL_DRAW, PHASE_RENDER3, Model_Render)                                                                     \
+    X(SYS_VIEW3_DRAW, PHASE_RENDER3, View3_Draw)                                                                       \
+    X(SYS_DEBUG_DRAW3, PHASE_RENDER3, Debug_Draw3)                                                                     \
+                                                                                                                       \
+    X(SYS_SCOREBOARD_DRAW, PHASE_RENDER2, Scoreboard_Draw)                                                             \
+    X(SYS_RULES_DRAW, PHASE_RENDER2, Rules_Draw)                                                                       \
+    X(SYS_VIEW2_DRAW, PHASE_RENDER2, View2_Draw)                                                                       \
+    X(SYS_DEBUG_DRAW2, PHASE_RENDER2, Debug_Draw2)
 
 typedef enum
 {
-    WORLDSYS_TEST,
-
-    WORLDSYS_CMD,
-    WORLDSYS_PLAYER,
-    WORLDSYS_INTERACT,
-    WORLDSYS_FACING,
-
-    WORLDSYS_ITEM,
-    WORLDSYS_BUFF,
-    WORLDSYS_ABILITYBAR,
-    WORLDSYS_MOVE3,
-    WORLDSYS_MOVE2,
-    WORLDSYS_BODY3,
-    WORLDSYS_BODY2,
-    WORLDSYS_ABILITY,
-    WORLDSYS_PROJECTILE,
-    WORLDSYS_ZONE,
-    WORLDSYS_COMBAT,
-    WORLDSYS_HOOK,
-    WORLDSYS_AI,
-
-    WORLDSYS_REF,
-    WORLDSYS_UI,
-    WORLDSYS_ANIM,
-    WORLDSYS_EVENT,
-    
-    WORLDSYS_CAMERA,
-    WORLDSYS_WEAPON,
-    
-    WORLDSYS_PARENT,
-
-    WORLDSYS_FX,
-    WORLDSYS_EMITTER,
-    WORLDSYS_MODEL,
-    WORLDSYS_RIBBON,
-    WORLDSYS_VIEW2,
-    WORLDSYS_VIEW3,
-    WORLDSYS_SCOREBOARD,
-    WORLDSYS_TIMER,
-
-    WORLDSYS_DEBUG,
-    WORLDSYS_COUNT,
-} WorldSystems;
+#define AS_ENUM(ENUM, ...) ENUM,
+    SOL_SYSTEMS(AS_ENUM)
+#undef AS_ENUM
+    SYS_COUNT,
+} SolSys;
 
 typedef struct WorldXform
 {
@@ -96,11 +106,11 @@ typedef enum
 } OnsKind;
 struct World
 {
-    SystemUpdate tickSystems[MAX_SYSTEMS];
-    SystemUpdate stepSystems[MAX_SYSTEMS];
-    SystemUpdate posttickSystems[MAX_SYSTEMS];
-    SystemUpdate draw3dSystems[MAX_SYSTEMS];
-    SystemUpdate draw2dSystems[MAX_SYSTEMS];
+    UpdateFn tickSystems[MAX_SYSTEMS];
+    UpdateFn stepSystems[MAX_SYSTEMS];
+    UpdateFn posttickSystems[MAX_SYSTEMS];
+    UpdateFn draw3dSystems[MAX_SYSTEMS];
+    UpdateFn draw2dSystems[MAX_SYSTEMS];
 
     WorldXform xform;
 
@@ -108,7 +118,7 @@ struct World
     u64 system_mask;
     void *components[COMPONENT_COUNT];
 
-    void (**ons[ONSKIND_COUNT])(World *world);
+    // void (**ons[ONSKIND_COUNT])(World *world);
 
     int tickCount;
     int stepCount;
@@ -204,8 +214,10 @@ int Sol_Create_Ent(World *world, vec3s pos);
 void Sol_Destroy_Ent(World *w, int id);
 int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos);
 
-void Sol_Sys_Add(World *world, WorldSystems system);
-void Sol_Sys_Remove(World *world, WorldSystems system);
+void Sol_Sys_Add(World *world, SolSys system);
+void Sol_Sys_Remove(World *world, SolSys system);
+void Sol_Sys_Add_Ui(World *world);
+
 void Sol_Xform_Teleport(World *world, int id, vec3s pos);
 
 int Sol_Interact_FindTopmost(World *world, vec2s point);
@@ -261,7 +273,9 @@ Emitter *Sol_Emitter_Next(World *world, EmitterKind kind);
 u32 Sol_Hitgen_Start(World *world);
 bool Sol_Hitgen_Has(World *world, int id, int target, u32 sessionGen);
 bool Sol_Hitgen_Try(World *world, int id, int target, u32 sessionGen);
+
 void Sol_Event_Push(World *world, EventKind kind, SolEvent event);
+void Sol_Event_AddHandler(World *world, EventKind kind, EventHandler handler);
 
 void Sol_Buff_Add(World *world, int id, BuffKind kind, u32 source, float power);
 void Sol_Buff_AddMask(World *world, int id, u32 mask, u32 source, float power);
@@ -300,7 +314,6 @@ void Sol_Combat_AddEnergy(World *world, int id, float amount);
 bool Sol_Ability_IsCharging(World *world, int id);
 bool Sol_Ability_AnyActive(World *world, int id);
 void Sol_Cmd_Clear(World *world, int id);
-Sol_Event_AddHandler(World *world, EventKind kind, EventHandler handler);
 void Sol_Weapon_Extend(World *world, int id, float power);
 void Sol_Weapon_Unextend(World *world, int id);
 int Sol_Parent_GetChildren(World *world, int id, int *ids, int max_ids);
@@ -325,4 +338,5 @@ void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s pos);
 int Sol_Inv_AddItem(World *world, int id, SolItem *item, bool try_equip);
 void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent);
 void Sol_Ui_CloseInv(World *hud, vec3s *inv_pos);
+void Sol_Ui_Sync_Rules(World *hud, World *game, double dt);
 void Sol_Inv_AllDirty(World *world);

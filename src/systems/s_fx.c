@@ -130,6 +130,21 @@ static inline void Lightning_Hit(World *world, SolEvent event)
         Sol_Audio_PlayAt(SOL_AUDIO_LIGHTNINGHIT, pos, 0.6f, 0.05f, 16);
 }
 
+static inline void Local_Hit(World *world, SolEvent event)
+{
+    Sol_Audio_Play(SOL_AUDIO_HIT, 0.3f, 0, 32);
+
+    forc(world, event.target, ScView3)
+    {
+        for (int i = 0; i < solb_count(c->views_b); i++)
+        {
+            View3 *view = &c->views_b[i];
+            if (view->kind == VIEW3KIND_POWERBAR)
+                view->_elapsed = 0;
+        }
+    }
+}
+
 void Fx_Update(World *world, double dt)
 {
     if (!world->doesRender)
@@ -141,6 +156,9 @@ void Fx_Update(World *world, double dt)
         switch (event.kind)
         {
         case EVENTKIND_HIT:
+            if (sol_user.game_world == world->index && sol_user.view_ent == event.dealer)
+                Local_Hit(world, event);
+
             switch (event.as.hit.kind)
             {
             case HITKIND_FIREBALL_EXPLODE:

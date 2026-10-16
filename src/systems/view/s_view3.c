@@ -126,29 +126,6 @@ static void (*const draw_func[VIEW3KIND_COUNT])(World *, int, const View3 *) = {
 
 void View3_Draw(World *world, double dt)
 {
-    SlEvent *e = Sol_Comp_Get(world, 0, SlEvent);
-    for (int i = 0; i < solb_count(e->events); i++)
-    {
-        SolEvent *event = &e->events[i];
-        switch (event->kind)
-        {
-        case EVENTKIND_HIT:
-            ScOwner *owner = Sol_Comp_Get(world, event->dealer, ScOwner);
-            int id         = owner ? owner->ownerId : event->dealer;
-            if (id == sol_user.view_ent)
-            {
-                forc(world, id, ScView3)
-                {
-                    for (int v = 0; v < solb_count(c->views_b); v++)
-                    {
-                        View3 *view = &c->views_b[v];
-                        if (view->kind == VIEW3KIND_POWERBAR)
-                            view->_elapsed = 0;
-                    }
-                }
-            }
-        }
-    }
     SparseSet_ScView3 *set = Sol_Comp_Set(world, ScView3);
     for (int i = 0; i < set->cnt; i++)
     {

@@ -9,115 +9,22 @@
 #include "components.h"
 #include "systems.h"
 #include "sol_core.h"
-#include "spatial_grid.h"
 #include "platform/platform.h"
 #include <omp.h>
 
-// Systems
-void Sol_Test(World *world, double dt);
-void Cmd_Update(World *world, double dt);
-void Player_Update(World *world, double dt);
-void Interact_Update(World *world, double dt);
-void Parent_Update(World *world, double dt);
-void Abilitybar_Update(World *world, double dt);
-void Item_Update(World *world, double dt);
+#define AS_FN(ENUM, PHASE, FN) void FN(World *world, double dt);
+SOL_SYSTEMS(AS_FN)
+#undef AS_FN
 
-void Move3_Update(World *world, double dt);
-void Move2_Update(World *world, double dt);
-
-void Body3_Update(World *world, double dt);
-void Body2_Step(World *world, double dt);
-
-void Buff_Update(World *world, double dt);
-void Ability_Update(World *world, double dt);
-void Projectile_Step(World *world, double dt);
-void Zone_Update(World *world, double dt);
-void Combat_Update(World *world, double dt);
-void Ai_Step(World *world, double dt);
-void Drag_Update(World *world, double dt);
-
-void Ref_Update(World *world, double dt);
-void Ui_Update(World *world, double dt);
-void Fx_Update(World *world, double dt);
-void Hook_Tick(World *world, double dt);
-void Anim_Tick(World *world, double dt);
-void Facing_Tick(World *world, double dt);
-void Camera_Tick(World *world, double dt);
-void Emitter_Update(World *world, double dt);
-void Timer_Update(World *world, double dt);
-void Event_Update(World *world, double dt);
-
-void Weapon_Update(World *world, double dt);
-void Particle_Draw(World *world, double dt);
-void Buff_Draw(World *world, double dt);
-void Scoreboard_Draw(World *world, double dt);
-void Model_Render(World *world, double dt);
-void Ability_Draw(World *world, double dt);
-void View3_Draw(World *world, double dt);
-void View2_Draw(World *world, double dt);
-void Debug_Tick(World *world, double dt);
-void Debug_Draw3(World *world, double dt);
-void Debug_Draw2(World *world, double dt);
-void Ribbon_Update(World *world, double dt);
-void Ribbon_Update(World *world, double dt);
-
-#define SYSTEMUPDATEDEF_COUNT 3
-const struct SystemDef
+typedef struct
 {
-    struct
-    {
-        SystemUpdate update;
-        UpdatePhase phase;
-    } update[SYSTEMUPDATEDEF_COUNT];
-} system_inits[WORLDSYS_COUNT] = {
-    [WORLDSYS_TIMER] = {.update = {Timer_Update, UPDATEPHASE_TICK}},
-
-    [WORLDSYS_CMD]        = {.update = {Cmd_Update, UPDATEPHASE_TICK}},
-    [WORLDSYS_PLAYER]     = {.update = {Player_Update, UPDATEPHASE_TICK}},
-    [WORLDSYS_INTERACT]   = {.update = {{Interact_Update, UPDATEPHASE_TICK}, {Drag_Update, UPDATEPHASE_STEP}}},
-    [WORLDSYS_ABILITYBAR] = {.update = Abilitybar_Update, UPDATEPHASE_TICK},
-
-    [WORLDSYS_TEST] = {.update = {{Sol_Test, UPDATEPHASE_TICK}}},
-
-    [WORLDSYS_ITEM]       = {.update = {{Item_Update, UPDATEPHASE_STEP}}},
-    [WORLDSYS_BUFF]       = {.update = {{Buff_Update, UPDATEPHASE_STEP}, {Buff_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_MOVE3]      = {.update = {Move3_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_MOVE2]      = {.update = {Move2_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_BODY3]      = {.update = {Body3_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_BODY2]      = {.update = {Body2_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_ABILITY]    = {.update = {{Ability_Update, UPDATEPHASE_STEP}, {Ability_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_PROJECTILE] = {.update = {Projectile_Step, UPDATEPHASE_STEP}},
-    [WORLDSYS_ZONE]       = {.update = {Zone_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_COMBAT]     = {.update = {Combat_Update, UPDATEPHASE_STEP}},
-    [WORLDSYS_AI]         = {.update = {Ai_Step, UPDATEPHASE_STEP}},
-
-    [WORLDSYS_WEAPON] = {.update = {Weapon_Update, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_REF]    = {.update = {Ref_Update, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_UI]     = {.update = {Ui_Update, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FX]     = {.update = {Fx_Update, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_HOOK]   = {.update = {Hook_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_FACING] = {.update = {Facing_Tick, UPDATEPHASE_TICK}},
-    [WORLDSYS_CAMERA] = {.update = {Camera_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_ANIM]   = {.update = {Anim_Tick, UPDATEPHASE_POSTTICK}},
-    [WORLDSYS_PARENT] = {.update = {Parent_Update, UPDATEPHASE_POSTTICK}},
-
-    [WORLDSYS_EVENT] = {.update = {Event_Update, UPDATEPHASE_POSTTICK}},
-
-    [WORLDSYS_EMITTER] = {.update = {{Emitter_Update, UPDATEPHASE_POSTTICK}, {Particle_Draw, UPDATEPHASE_RENDER3}}},
-    [WORLDSYS_RIBBON]  = {.update = {{Ribbon_Update, UPDATEPHASE_RENDER3}}},
-
-    [WORLDSYS_MODEL] = {.update = {Model_Render, UPDATEPHASE_RENDER3}},
-    [WORLDSYS_VIEW3] = {.update = {View3_Draw, UPDATEPHASE_RENDER3}},
-
-    [WORLDSYS_VIEW2]      = {.update = {View2_Draw, UPDATEPHASE_RENDER2}},
-    [WORLDSYS_SCOREBOARD] = {.update = {Scoreboard_Draw, UPDATEPHASE_RENDER2}},
-
-    [WORLDSYS_DEBUG] =
-        {
-            .update[0] = {Debug_Tick, UPDATEPHASE_TICK},
-            .update[1] = {Debug_Draw3, UPDATEPHASE_RENDER3},
-            .update[2] = {Debug_Draw2, UPDATEPHASE_RENDER2},
-        },
+    Phase phase;
+    UpdateFn update;
+} SysUpdate;
+const SysUpdate sys_updates[] = {
+#define AS_UPDATES(ENUM, PHASE, FN) [ENUM] = {PHASE, FN},
+    SOL_SYSTEMS(AS_UPDATES)
+#undef AS_UPDATES
 };
 
 World *World_Create()
@@ -133,10 +40,10 @@ World *World_Create()
     world->index           = index;
     solState.worlds[index] = world;
 
-    for (int i = 0; i < ONSKIND_COUNT; i++)
-        solb_init(world->ons[i], 1);
+    // for (int i = 0; i < ONSKIND_COUNT; i++)
+    //     solb_init(world->ons[i], 1);
 
-    solb_push(world->ons[ONSKIND_DESTROY], Sol_Inv_AllDirty);
+    // solb_push(world->ons[ONSKIND_DESTROY], Sol_Inv_AllDirty);
 
     Sol_Comp_InitAll(world);
     World_InitSingletons(world);
@@ -150,8 +57,8 @@ World *World_Create_AllSys()
     if (!world)
         return NULL;
 
-    for (int sys = 0; sys < WORLDSYS_COUNT; sys++)
-        Sol_Sys_Add(world, (WorldSystems)sys);
+    for (int sys = 0; sys < SYS_COUNT; sys++)
+        Sol_Sys_Add(world, (SolSys)sys);
 
     return world;
 }
@@ -178,38 +85,47 @@ void World_Destroy(World *world)
     }
 }
 
-void Sol_Sys_Add(World *world, WorldSystems system)
+void Sol_Sys_Add(World *world, SolSys system)
 {
     if (world->system_mask & BITC(system))
         return;
-    if (system_inits[system].update)
-        for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
+    const SysUpdate sys = sys_updates[system];
+    if (sys.update)
+    {
+        switch (sys.phase)
         {
-            if (!system_inits[system].update[i].update)
-                continue;
-            switch (system_inits[system].update[i].phase)
-            {
-            case UPDATEPHASE_TICK:
-                WAddTick(world) = system_inits[system].update[i].update;
-                break;
-            case UPDATEPHASE_STEP:
-                WAddStep(world) = system_inits[system].update[i].update;
-                break;
-            case UPDATEPHASE_POSTTICK:
-                WAddPosttick(world) = system_inits[system].update[i].update;
-                break;
-            case UPDATEPHASE_RENDER3:
-                WAdd3d(world) = system_inits[system].update[i].update;
-                break;
-            case UPDATEPHASE_RENDER2:
-                WAdd2d(world) = system_inits[system].update[i].update;
-                break;
-            }
+        case PHASE_PRE:
+            WAddTick(world) = sys.update;
+            break;
+        case PHASE_STEP:
+            WAddStep(world) = sys.update;
+            break;
+        case PHASE_POST:
+            WAddPosttick(world) = sys.update;
+            break;
+        case PHASE_RENDER3:
+            WAdd3d(world) = sys.update;
+            break;
+        case PHASE_RENDER2:
+            WAdd2d(world) = sys.update;
+            break;
         }
+    }
     world->system_mask |= BITC(system);
 }
 
-static void RemoveSystemFromList(SystemUpdate *list, int *count, SystemUpdate sys)
+void Sol_Sys_Add_Ui(World *world)
+{    
+    Sol_Sys_Add(world, SYS_INTERACT);
+    Sol_Sys_Add(world, SYS_DRAG);
+    Sol_Sys_Add(world, SYS_HOOK);
+    Sol_Sys_Add(world, SYS_BODY2);
+    Sol_Sys_Add(world, SYS_UI);
+    Sol_Sys_Add(world, SYS_PARENT);
+    Sol_Sys_Add(world, SYS_VIEW2_DRAW);
+}
+
+static void RemoveSystemFromList(UpdateFn *list, int *count, UpdateFn sys)
 {
     for (int i = 0; i < *count; i++)
     {
@@ -224,38 +140,38 @@ static void RemoveSystemFromList(SystemUpdate *list, int *count, SystemUpdate sy
     }
 }
 
-void Sol_Sys_Remove(World *world, WorldSystems system)
+void Sol_Sys_Remove(World *world, SolSys system)
 {
-    if (!(world->system_mask & BITC(system)))
-        return;
+    // if (!(world->system_mask & BITC(system)))
+    //     return;
 
-    for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
-    {
-        SystemUpdate update_fn = system_inits[system].update[i].update;
-        if (update_fn)
-        {
-            switch (system_inits[system].update[i].phase)
-            {
-            case UPDATEPHASE_TICK:
-                RemoveSystemFromList(world->tickSystems, &world->tickCount, update_fn);
-                break;
-            case UPDATEPHASE_STEP:
-                RemoveSystemFromList(world->stepSystems, &world->stepCount, update_fn);
-                break;
-            case UPDATEPHASE_POSTTICK:
-                RemoveSystemFromList(world->posttickSystems, &world->posttickCount, update_fn);
-                break;
-            case UPDATEPHASE_RENDER3:
-                RemoveSystemFromList(world->draw3dSystems, &world->draw3dCount, update_fn);
-                break;
-            case UPDATEPHASE_RENDER2:
-                RemoveSystemFromList(world->draw2dSystems, &world->draw2dCount, update_fn);
-                break;
-            }
-        }
-    }
+    // for (int i = 0; i < SYSTEMUPDATEDEF_COUNT; i++)
+    // {
+    //     UpdateFn update_fn = system_inits[system].update[i].update;
+    //     if (update_fn)
+    //     {
+    //         switch (system_inits[system].update[i].phase)
+    //         {
+    //         case UPDATEPHASE_TICK:
+    //             RemoveSystemFromList(world->tickSystems, &world->tickCount, update_fn);
+    //             break;
+    //         case UPDATEPHASE_STEP:
+    //             RemoveSystemFromList(world->stepSystems, &world->stepCount, update_fn);
+    //             break;
+    //         case UPDATEPHASE_POSTTICK:
+    //             RemoveSystemFromList(world->posttickSystems, &world->posttickCount, update_fn);
+    //             break;
+    //         case UPDATEPHASE_RENDER3:
+    //             RemoveSystemFromList(world->draw3dSystems, &world->draw3dCount, update_fn);
+    //             break;
+    //         case UPDATEPHASE_RENDER2:
+    //             RemoveSystemFromList(world->draw2dSystems, &world->draw2dCount, update_fn);
+    //             break;
+    //         }
+    //     }
+    // }
 
-    world->system_mask &= ~BITC(system);
+    // world->system_mask &= ~BITC(system);
 }
 
 void Worlds_Tick(World **worlds, int count, double dt)
@@ -336,19 +252,6 @@ void Worlds_Draw2d(World **worlds, int count, double dt)
     }
 }
 
-void Worlds_Event_Clear(World **worlds, int count)
-{
-    for (int w = 0; w < count; w++)
-    {
-        World *world = worlds[w];
-        if (world && world->doesSimulate)
-        {
-            SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
-            solb_set_count(single->events, 0);
-        }
-    }
-}
-
 int Sol_Create_Ent(World *world, vec3s pos)
 {
     int id = 1;
@@ -377,11 +280,12 @@ void Sol_Destroy_Ent(World *w, int entId)
     if (!w || entId < 1 || entId > w->maxEntities)
         return;
 
-    for (int i = 0; i < solb_count(w->ons[ONSKIND_DESTROY]); i++)
-    {
-        if (w->ons[ONSKIND_DESTROY][i])
-            w->ons[ONSKIND_DESTROY][i](w);
-    }
+    Sol_Event_Push(w, EVENTKIND_DESTROY, (SolEvent){.target = entId, .pos = w->xform.pos[entId]});
+    // for (int i = 0; i < solb_count(w->ons[ONSKIND_DESTROY]); i++)
+    // {
+    //     if (w->ons[ONSKIND_DESTROY][i])
+    //         w->ons[ONSKIND_DESTROY][i](w);
+    // }
     int children[64];
     int child_count;
     do
@@ -429,103 +333,4 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
     }
 
     return new_id;
-}
-
-void SlEvent_Init(World *world, SlEvent *self)
-{
-    solb_init(self->events, 64);
-    for (int i = 0; i < EVENTKIND_COUNT; i++)
-        solb_init(self->handlers[i], 4);
-}
-void SlEvent_Deinit(SlEvent *self)
-{
-    solb_free(self->events);
-}
-
-void SlEmitter_Init(World *world, SlEmitter *self)
-{
-    solb_init(self->emitters, 128);
-    solb_init(self->particles, 512);
-}
-
-void SlEmitter_Deinit(SlEmitter *self)
-{
-    solb_free(self->emitters);
-    solb_free(self->particles);
-}
-
-void SlSpatial_Init(World *world, SlSpatial *self)
-{
-    solb_init(self->contacts, 4096);
-    solb_init(self->tris_static, 4096);
-    solb_init(self->build_ids, 64);
-    solb_init(self->build_mins, 64);
-    solb_init(self->build_maxs, 64);
-
-    int max_threads = omp_get_max_threads();
-    solb_init(self->threadContacts, max_threads);
-    solb_set_count(self->threadContacts, max_threads);
-    solb_init(self->threadIds, max_threads);
-    solb_set_count(self->threadIds, max_threads);
-
-    for (int i = 0; i < max_threads; i++)
-    {
-        solb_init(self->threadContacts[i].contacts, 256);
-        solb_init(self->threadIds[i].ids, 32);
-    }
-
-    {
-        float cell_size    = 5.0f;
-        self->grid_dynamic = malloc(sizeof(SpatialGrid));
-        vec3s min          = {-512.0f, -512.0f, -32.0f};
-        vec3s max          = {512.0f, 512.0f, 256.0f};
-        SpatialGrid_Init(self->grid_dynamic, min, max, cell_size);
-    }
-
-    {
-        float cell_size   = 5.0f;
-        self->grid_static = malloc(sizeof(SpatialGrid));
-        vec3s min         = {-512.0f, -512.0f, -32.0f};
-        vec3s max         = {512.0f, 512.0f, 256.0f};
-        SpatialGrid_Init(self->grid_static, min, max, cell_size);
-    }
-}
-
-void SlSpatial_Deinit(SlSpatial *self)
-{
-    SpatialGrid_Deinit(self->grid_dynamic);
-    SpatialGrid_Deinit(self->grid_static);
-    solb_free(self->contacts);
-    solb_free(self->threadIds);
-    solb_free(self->tris_static);
-    solb_free(self->build_ids);
-    solb_free(self->build_mins);
-    solb_free(self->build_maxs);
-}
-
-void SlContacts2_Init(World *world, SlContacts2 *self)
-{
-    solb_init(self->contacts, 16);
-}
-
-void SlContacts2_Deinit(SlContacts2 *self)
-{
-    solb_free(self->contacts);
-}
-
-void SlDebug_Init(World *world, SlDebug *self)
-{
-    solb_init(self->lines, 32);
-    solb_init(self->spheres, 32);
-}
-
-void SlDebug_Deinit(SlDebug *self)
-{
-}
-
-void Sol_Event_Push(World *world, EventKind kind, SolEvent event)
-{
-    SlEvent *single = Sol_Comp_Get(world, 0, SlEvent);
-    event.kind      = kind;
-    solb_push(single->events, event);
 }

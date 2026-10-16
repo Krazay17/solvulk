@@ -161,7 +161,6 @@ void Drag_Update(World *world, double dt)
     float fdt = (float)dt;
 
     SparseSet_ScInteract *set = Sol_Comp_Set(world, ScInteract);
-
     for (int j = 0; j < set->cnt; j++)
     {
         int interact_id = set->dense[j];

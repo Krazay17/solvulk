@@ -20,10 +20,7 @@ void Create_Menu()
 {
     World *world        = World_Create();
     sol_user.menu_world = world->index;
-    Sol_Sys_Add(world, WORLDSYS_INTERACT);
-    Sol_Sys_Add(world, WORLDSYS_HOOK);
-    Sol_Sys_Add(world, WORLDSYS_BODY2);
-    Sol_Sys_Add(world, WORLDSYS_VIEW2);
+    Sol_Sys_Add_Ui(world);
 
     { // QUIT BUTTON
         int id =
@@ -69,15 +66,7 @@ void Create_Hud()
 {
     World *world       = World_Create();
     sol_user.hud_world = world->index;
-    Sol_Sys_Add(world, WORLDSYS_INTERACT);
-    Sol_Sys_Add(world, WORLDSYS_HOOK);
-    Sol_Sys_Add(world, WORLDSYS_BODY2);
-    Sol_Sys_Add(world, WORLDSYS_VIEW2);
-    Sol_Sys_Add(world, WORLDSYS_ABILITYBAR);
-    Sol_Sys_Add(world, WORLDSYS_REF);
-    Sol_Sys_Add(world, WORLDSYS_PARENT);
-    Sol_Sys_Add(world, WORLDSYS_UI);
-
+    Sol_Sys_Add_Ui(world);
     Sol_Prefab_Crosshair(world);
 }
 

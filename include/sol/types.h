@@ -30,6 +30,7 @@
 #define TARGET_ASPECT 16.0f / 9.0f
 
 #define SOL_TIMESTEP (1.0 / 60.0)
+#define MAX_PLAYERS 32
 #define MAX_ENTS 0x4fff
 #define MAX_BONES 128
 #define PHYSXMASK(g, m) ((g << 16) | m)
@@ -41,7 +42,7 @@
 
 #define SOL_GRAVITY {0.0f, -9.81f, 0.0f}
 
-typedef void (*SystemUpdate)(World *, double);
+typedef void (*UpdateFn)(World *, double);
 typedef void (*EntUpdate)(World *, int);
 typedef void (*Hook)(World *, int id, int target);
 
@@ -265,6 +266,7 @@ typedef enum
     VIEW2KIND_SLIDER_FILL,
     VIEW2KIND_POWERBAR,
     VIEW2KIND_INVENTORY,
+    VIEW2KIND_RULESWINDOW,
     VIEW2KIND_ABILITYBAR,
     VIEW2KIND_COUNT,
 } View2Kind;
@@ -347,6 +349,7 @@ typedef enum
     REFKIND_ITEM,
     REFKIND_INVENTORY,
     REFKIND_HEALTHBAR,
+    REFKIND_RULESWINDOW,
     REFKIND_ENERGYBAR,
     REFKIND_ABILITYBAR,
     REFKIND_ABILITY,
@@ -895,6 +898,7 @@ typedef enum
     EVENTKIND_FX,
     EVENTKIND_SOUND,
     EVENTKIND_SCORE,
+    EVENTKIND_DESTROY,
     EVENTKIND_COUNT,
 } EventKind;
 

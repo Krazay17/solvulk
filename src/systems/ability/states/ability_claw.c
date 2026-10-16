@@ -142,7 +142,6 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
         return;
     }
 
-    int weaponId = slot > 5 ? ability->right_weapon : ability->left_weapon;
     switch (prog.stage)
     {
     case 0:

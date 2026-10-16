@@ -335,6 +335,7 @@ void Sol_User_Tick(double dt)
 {
     User_Input();
     UserHit_Update(&sol_user.user_hit);
+    Entity_Actions();
     World *menu = Sol_GetWorldByIdx(sol_user.menu_world);
     World *game = Sol_GetWorldByIdx(sol_user.game_world);
     World *hud  = Sol_GetWorldByIdx(sol_user.hud_world);
@@ -350,6 +351,7 @@ void Sol_User_Tick(double dt)
             if (c->dirty && sol_user.inventory.open)
                 Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
         }
+        forc(game, 0, SlRules) Sol_Ui_Sync_Rules(hud, game, dt);
     }
 
     ShowHealthbar_OnDistance(game, id);
@@ -392,7 +394,6 @@ void Sol_User_Tick(double dt)
         }
     }
 
-    Entity_Actions();
     User_Debug(dt);
 }
 
@@ -413,15 +414,15 @@ void Sol_User_PostTick(double dt)
         g_solView.target = vecAdd(c->pos, c->dir);
     }
 
-    forc(game, id, ScCombat)
-    {
-        static float last_damage = 0;
-        if (c->damageDone != last_damage)
-        {
-            last_damage = c->damageDone;
-            Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
-        }
-    }
+    // forc(game, id, ScCombat)
+    // {
+    //     static float last_damage = 0;
+    //     if (c->damageDone != last_damage)
+    //     {
+    //         last_damage = c->damageDone;
+    //         Sol_Audio_Play(SOL_AUDIO_HIT, 0.2f, 0, 32);
+    //     }
+    // }
 }
 void Sol_User_Draw(double dt)
 {

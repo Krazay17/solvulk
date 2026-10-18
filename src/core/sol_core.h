@@ -18,6 +18,11 @@ typedef enum
     WORLDID_COUNT,
 } WorldIdx;
 
+typedef struct
+{
+    int id;
+    int world_idx;
+} DebugEnt;
 
 typedef struct SolState
 {
@@ -39,6 +44,8 @@ typedef struct SolState
     int windowWidth, windowHeight;
     int windowX, windowY;
     void *g_hwnd;
+    
+    DebugEnt debug_ent;
 } SolState;
 
 typedef struct SolData

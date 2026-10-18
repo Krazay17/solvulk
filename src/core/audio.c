@@ -226,15 +226,16 @@ static ScAudioHandle Sol_Audio_Alloc(SoundKind id, bool is3d, float volume, u32 
     return INVALID_AUDIO_HANDLE;
 }
 
-void Audio_Update_Listener(vec3s listenerPos, vec3s listenerDir)
+void Sol_Audio_UpdateListener(vec3s pos, vec3s dir)
 {
-    ma_engine_listener_set_position(&audio_engine, 0, listenerPos.x, listenerPos.y, listenerPos.z);
-    ma_engine_listener_set_direction(&audio_engine, 0, listenerDir.x, listenerDir.y, listenerDir.z);
+    ma_engine_listener_set_position(&audio_engine, 0, pos.x, pos.y, pos.z);
+    ma_engine_listener_set_direction(&audio_engine, 0, dir.x, dir.y, dir.z);
+
 }
 
 void Sol_Update_Audio_FromView()
 {
-    Audio_Update_Listener(g_solView.pos, g_solView.dir);
+    Sol_Audio_UpdateListener(g_solView.pos, g_solView.dir);
 }
 
 // --- Loading ---

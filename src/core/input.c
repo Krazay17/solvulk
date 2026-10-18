@@ -16,6 +16,7 @@ static int keyMap[256] = {
     ['W'] = SOL_KEY_W,    ['A'] = SOL_KEY_A,     ['S'] = SOL_KEY_S,    ['D'] = SOL_KEY_D,   [70] = SOL_KEY_F,
     [32] = SOL_KEY_SPACE, [27] = SOL_KEY_ESCAPE, [16] = SOL_KEY_SHIFT, [17] = SOL_KEY_CTRL, [18] = SOL_KEY_ALT,
     [81] = SOL_KEY_Q,     [69] = SOL_KEY_E,      [71] = SOL_KEY_G,     [9] = SOL_KEY_TAB,   [67] = SOL_KEY_C,
+    [82] = SOL_KEY_R,
 };
 
 static bool rawKeys[SOL_KEY_COUNT];

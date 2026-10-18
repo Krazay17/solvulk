@@ -1,9 +1,9 @@
 #include "sol/types.h"
 #include "estate.h"
 
-#define AI_ALPHA 0.166f // 0.166f
+#define AI_ALPHA 0.2166f // 0.166f
 #define AI_GAMMA 0.966f // 0.966f
-#define AI_EXPLORE 0.166f // 0.166f
+#define AI_EXPLORE 0.2166f // 0.166f
 
 // extern const AiStateFuncs search_state;
 // extern const AiStateFuncs retreat_state;

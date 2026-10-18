@@ -111,7 +111,6 @@ void Sol_Tick(double dt, double time)
     Worlds_PostTick(solState.worlds, solState.worldCount, dt);
     Sol_User_PostTick(dt);
 
-    Sol_Update_Audio_FromView();
     Sol_Render_CheckGpuUploads();
     Sol_Begin_Draw();
     Sol_Render_DrawSkybox();

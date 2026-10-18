@@ -114,6 +114,13 @@ void Create_Game()
         ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime = 2.0f;
     }
+    {
+        vec3s spawn_pos                        = {0, 4, 5};
+        int id                                 = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+        Sol_Comp_Get(world, id, ScModel)->kind = MODELKIND_EVANRIGGED;
+        ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
+        combat->respawnTime                    = 2.0f;
+    }
 }
 
 void Create_Game2()

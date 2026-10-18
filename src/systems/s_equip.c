@@ -7,6 +7,7 @@
  */
 #include "world.h"
 #include "sol_math.h"
+#include "model.h"
 
 const WeaponKind item_weapon_map[ITEMKIND_COUNT] = {
     [ITEMKIND_CLAW]   = WEAPONKIND_CLAW,   //
@@ -21,7 +22,7 @@ void Weapon_Update(World *world, double dt)
         int id       = set->dense[i];
         ScWeapon *sc = &set->data[i];
 
-        Xform blade_xform = Sol_Weapon_BladeXform(world, id);
+        Xform trail_xform = Sol_Model_GetBoneXform(world, id, "Trail");
         if (sc->update_trail)
         {
             forc(world, id, ScRibbon)
@@ -30,10 +31,8 @@ void Weapon_Update(World *world, double dt)
                 while (c->_accum >= c->rate)
                 {
                     c->_accum -= c->rate;
-                    float spin = Sol_QuatGetRoll(blade_xform.rot, WORLD_FWD, WORLD_UP);
-
-                    spin += glm_rad(90.0f);
-                    Sol_Ribbon_Addpoint(&c->ribbon, blade_xform.pos, 0, spin);
+                    float spin = Sol_QuatGetRoll(trail_xform.rot, WORLD_FWD, WORLD_UP);
+                    Sol_Ribbon_Addpoint(&c->ribbon, trail_xform.pos, 0, spin);
                 }
             }
         }
@@ -75,27 +74,36 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     char *bone = slot > 5 ? "weapon.R" : "weapon.L";
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
     parent->localQuat  = GLMS_QUAT_IDENTITY;
-    parent->localScale = (vec3s){1, 1, 1};
+    parent->localScale = (vec3s){1, 0, 1};
 
     ScRibbon *ribbon       = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL);
     ribbon->rate           = 0.01f;
     ribbon->ribbon.texture = SOL_TEXTURE_WEAPONTRAIL;
 
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
     switch (kind)
     {
     case WEAPONKIND_CLAW: {
-        ScModel *model = Sol_Comp_Add(world, id, ScModel);
-        model->kind    = MODELKIND_WEAPONBLADE;
+        model->kind = MODELKIND_WEAPONBLADE;
         Sol_Comp_Add(world, id, ScAnim);
     }
     break;
     case WEAPONKIND_SCYTHE: {
-        ScModel *model         = Sol_Comp_Add(world, id, ScModel);
-        model->kind            = MODELKIND_SCYTHE;
-        ribbon->ribbon.texture = SOL_TEXTURE_SQUARERING;
+        model->kind                 = MODELKIND_SCYTHE;
+        ribbon->ribbon.thickness[0] = 1.3f;
+        ribbon->ribbon.texture      = SOL_TEXTURE_SQUARERING;
         glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
     }
     break;
+    }
+    SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
+    for (int i = 0; i < skeleton->boneCount; i++)
+    {
+        char blade_name[] = "Blade";
+        if (strncmp(skeleton->bones[i].name, blade_name, 5) == 0 && weapon->trace_point_count < MAX_WEAPON_BLADE_BONES)
+        {
+            weapon->trace_bones_idx[weapon->trace_point_count++] = i;
+        }
     }
 
     return id;
@@ -157,20 +165,49 @@ void Sol_Weapon_TrailsOff(World *world, int id)
 SolRay Sol_Weapon_Ray(World *world, int id, int right_hand, float power)
 {
     SolRay ray;
-    const char *bone = right_hand ? "weapon.R" : "weapon.L";
-    Xform hand_xform = Sol_Model_GetBoneXform(world, id, bone);
+    ray.start = Sol_Model_GetBoneXform(world, id, "Blade.001").pos;
     forc(world, id, ScEquip)
     {
-        Xform blade_xform = Sol_Weapon_BladeXform(world, right_hand ? c->right_weapon : c->left_weapon);
-        SolDistDir dd     = Sol_GetDistDir(blade_xform.pos, hand_xform.pos);
-        ray.dir           = dd.dir;
-        ray.dist          = dd.dist;
-        ray.start         = hand_xform.pos;
-        ray.mask          = COLLAYER_ALL;
-        ray.radius        = 0.4f;
-        ray.ignoreEnt     = id;
+        vec3s blade_pos = Sol_Weapon_BladeXform(world, right_hand ? c->right_weapon : c->left_weapon).pos;
+        SolDistDir dd   = Sol_GetDistDir(blade_pos, ray.start);
+        ray.dir         = dd.dir;
+        ray.dist        = dd.dist;
+        ray.mask        = COLLAYER_ALL;
+        ray.radius      = 0.4f;
+        ray.ignoreEnt   = id;
         return ray;
     }
 
     return ray;
+}
+
+int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen)
+{
+    int hits = 0;
+    forc(world, id, ScWeapon)
+    {
+        for (int i = 0; i < c->trace_point_count - 1; i++)
+        {
+            int boneA = c->trace_bones_idx[i];
+            int boneB = c->trace_bones_idx[i + 1];
+            SolRay ray;
+            ray.start      = Sol_Model_GetBoneByIdx(world, id, boneA);
+            vec3s next_pos = Sol_Model_GetBoneByIdx(world, id, boneB);
+            SolDistDir dd  = Sol_GetDistDir(next_pos, ray.start);
+            ray.dir        = dd.dir;
+            ray.dist       = dd.dist;
+            ray.mask       = COLLAYER_ALL;
+            ray.radius     = 0.4f;
+            ray.ignoreEnt  = id;
+            hits += Sol_Combat_DamageCast(world, id, ray, hit, hitgen);
+        }
+        return hits;
+    }
+}
+
+void Sol_Weapon_PlayAudio(World *world, int id)
+{
+    ScAudio *audio = Sol_Comp_Add(world, id, ScAudio);
+
+    // memcpy(audio->bone_follow, )
 }

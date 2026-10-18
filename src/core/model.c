@@ -20,6 +20,7 @@ const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_WORLD1]   = "World1.glb", //
     [MODELKIND_CONE]     = "Cone.glb",   //
     [MODELKIND_CYLINDER] = "Cylinder.glb",
+    [MODELKIND_GATE]     = "Gate.glb",
 #endif
     // [MODELKIND_ZORGON]      = "Zorgon.glb",
     // [SOL_MODEL_BOX]         = "Box.glb",
@@ -34,7 +35,8 @@ const char *model_path[MODELKIND_COUNT] = {
     // [MODELKIND_SHIELD]      = "FireShield.glb",
     // [MODELKIND_FROSTSWORD]  = "FrostSword.glb",
     // [MODELKIND_EVAN]        = "Evan.glb",
-    // [MODELKIND_EVANRIGGED]  = "EvanRigged.glb",
+    [MODELKIND_EVANRIGGED] = "EvanRigged.glb",
+    [MODELKIND_JUMPPAD]    = "JumpPad.glb",
 };
 
 ScModelData loaded_models[MODELKIND_COUNT];
@@ -234,6 +236,7 @@ static SolSkeleton ParseSkeleton(cgltf_data *data)
         else
             bone->restScale = (vec3s){{1, 1, 1}};
     }
+
     static const struct
     {
         const char *name;

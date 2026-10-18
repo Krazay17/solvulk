@@ -58,8 +58,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .vel    = cmd->aimdir,
         };
         hit.damage.buffMask |= (1u << BUFFKIND_STUN);
-        int hits =
-            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
+        int hits = 0;
+        forc(world, id, ScEquip) hits =
+            Sol_Weapon_Trace(world, slot > 5 ? c->right_weapon : c->left_weapon, hit, data->hitgen);
         if (hits > 0)
         {
             HitPause(data);
@@ -84,8 +85,11 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .vel    = cmd->aimdir,
         };
         hit.damage.effectMask |= EFFECTMASK_PULL;
-        int hits =
-            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
+        int hits = 0;
+
+        forc(world, id, ScEquip) hits =
+            Sol_Weapon_Trace(world, slot > 5 ? c->right_weapon : c->left_weapon, hit, data->hitgen);
+
         if (hits)
         {
             HitPause(data);
@@ -127,14 +131,14 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 
         forc(world, id, ScBody3)
         {
-            int hits;
-            hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 0, data->power), hit, data->hitgen);
+            int hits                      = 0;
+            forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->left_weapon, hit, data->hitgen);
             if (hits > 0)
             {
                 c->vel = GLMS_VEC3_ZERO;
                 HitPause(data);
             }
-            hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 1, data->power), hit, data->hitgen2);
+            forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen);
             if (hits > 0)
             {
                 c->vel = GLMS_VEC3_ZERO;

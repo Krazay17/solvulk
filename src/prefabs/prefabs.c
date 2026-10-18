@@ -139,10 +139,11 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     Sol_Inv_Equip(world, id, 5, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
     Sol_Inv_Equip(world, id, 6, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
 
-    for (int i = 0; i < 14; i++)
-    {
-        Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
-    }
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0);
 
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
     solb_push(view3->views_b, healthbar);
@@ -481,9 +482,9 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_combat         = 10.0f;
     }
 
-    ScRibbon *ribbon         = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
-    ribbon->rate             = 0.02f;
-    ribbon->ribbon.thickness = size;
+    ScRibbon *ribbon            = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
+    ribbon->rate                = 0.02f;
+    ribbon->ribbon.thickness[0] = size;
     Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0, 0);
 
     return id;
@@ -614,18 +615,6 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
     view2->count    = 2;
     view2->views[0] = bg;
     view2->views[1] = slot_view;
-
-    // forc(Sol_GetWorldByIdx(ent_world_idx), ent_id, ScAbility)
-    // {
-    //     for (int i = 0; i < slot_count; i++)
-    //     {
-    //         if (c->base_actions[slots[i]] == 0)
-    //             continue;
-    //         vec3s card_pos = pos;
-    //         card_pos.x += i * dims.x;
-    //         Sol_User_AddItemLoose(&(SolItem){.item_kind = c->base_actions[slots[i]]});
-    //     }
-    // }
 
     return id;
 }
@@ -826,4 +815,16 @@ int Sol_Prefab_RulesWindow(World *world, vec3s pos)
     view2->views[0] = (View2){.kind = VIEW2KIND_RULESWINDOW};
 
     return id;
+}
+
+int Sol_Prefab_GravPad(World *world, vec3s pos, versors rot)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
+    ScBody3 *body3 = Sol_Comp_Add(world, id, ScBody3);
+    body3->dims    = (vec3s){1.0f, 0.3f, 4.0f};
+    body3->shape   = SHAPE3_CYL;
+    model->kind    = MODELKIND_JUMPPAD;
+    Sol_Comp_Add(world, id, ScAnim);
 }

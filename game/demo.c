@@ -11,10 +11,8 @@ void Create_Menu()
 {
     World *world        = World_Create();
     sol_user.menu_world = world->index;
-    Sol_Sys_Add(world, WORLDSYS_INTERACT);
-    Sol_Sys_Add(world, WORLDSYS_HOOK);
-    Sol_Sys_Add(world, WORLDSYS_BODY2);
-    Sol_Sys_Add(world, WORLDSYS_VIEW2);
+    Sol_Sys_Add_Ui(world);
+
     GridMaker grid = {.cols = 1, .start = (vec2s){1130.0f, 100.0f}, .spacing = (vec2s){120.0f, 60.0f}};
 
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "QUIT", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_Quit);
@@ -32,12 +30,7 @@ void Create_Hud()
 {
     World *world       = World_Create();
     sol_user.hud_world = world->index;
-    Sol_Sys_Add(world, WORLDSYS_INTERACT);
-    Sol_Sys_Add(world, WORLDSYS_HOOK);
-    Sol_Sys_Add(world, WORLDSYS_BODY2);
-    Sol_Sys_Add(world, WORLDSYS_VIEW2);
-    Sol_Sys_Add(world, WORLDSYS_ABILITYBAR);
-    Sol_Sys_Add(world, WORLDSYS_REF);
+    Sol_Sys_Add_Ui(world);
 
     Sol_Prefab_Crosshair(world);
 

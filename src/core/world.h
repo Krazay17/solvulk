@@ -52,9 +52,10 @@ typedef enum
     X(SYS_AI, PHASE_STEP, Ai_Step)                                                                                     \
     X(SYS_SCORE, PHASE_STEP, Score_Update)                                                                             \
     X(SYS_RULES, PHASE_STEP, Rules_Update)                                                                             \
+    X(SYS_AUDIO, PHASE_STEP, Audio_Update)                                                                             \
     X(SYS_FX, PHASE_STEP, Fx_Update)                                                                                   \
-    X(SYS_EVENT, PHASE_STEP, Event_Step)                                                                    \
-    X(SYS_EVENTCLEAR, PHASE_STEP, Event_Clear)                                                               \
+    X(SYS_EVENT, PHASE_STEP, Event_Step)                                                                               \
+    X(SYS_EVENTCLEAR, PHASE_STEP, Event_Clear)                                                                         \
                                                                                                                        \
     X(SYS_UI, PHASE_POST, Ui_Update)                                                                                   \
     X(SYS_HOOK, PHASE_POST, Hook_Tick)                                                                                 \
@@ -340,3 +341,6 @@ void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent);
 void Sol_Ui_CloseInv(World *hud, vec3s *inv_pos);
 void Sol_Ui_Sync_Rules(World *hud, World *game, double dt);
 void Sol_Inv_AllDirty(World *world);
+vec3s Sol_Cmd_GetDir(World *world, int id);
+vec3s Sol_Model_GetBoneByIdx(World *world, int id, u32 boneIdx);
+int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen);

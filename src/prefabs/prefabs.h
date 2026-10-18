@@ -20,3 +20,4 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
 int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory);
 int Sol_Prefab_InventoryWindow(World *world, vec3s pos);
 int Sol_Prefab_RulesWindow(World *world, vec3s pos);
+int Sol_Prefab_GravPad(World *world, vec3s pos, versors rot);

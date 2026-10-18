@@ -104,6 +104,7 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
             [ANIM_ATTACK_2HSCYTHE]      = 47,
             [ANIM_ATTACK_2HSCYTHE_JUMP] = 48,
             [ANIM_ATTACK_2HSCYTHE_SLAM] = 49,
+            [ANIM_2HHEAL]               = 50,
         },
     [MODELKIND_ZORGON] =
         {
@@ -197,6 +198,10 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
 
             default: // LOOP
                 layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
+                if(world->index == solState.debug_ent.world_idx && id == solState.debug_ent.id)
+                {
+                    sollog(layer->currentSeek);
+                }
                 break;
             }
 
@@ -379,6 +384,11 @@ void Anim_Tick(World *world, double dt)
                 {
                 case ABILITY_STATE_IDLE:
                     break;
+                case ABILITY_STATE_HEAL: {
+                    ability_anim.anim = ANIM_2HHEAL;
+                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                }
+                break;
                 case ABILITY_STATE_CLAW_CHARGE: {
 
                     ability_anim.layerId  = data->stage > 0 ? ANIM_LAYER_OVERRIDE : ANIM_LAYER_UPPER;
@@ -387,7 +397,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_FIREBALL_CHARGE: {
-                    ability_anim.layerId = ANIM_LAYER_UPPER;
+                    ability_anim.layerId  = ANIM_LAYER_UPPER;
                     ability_anim.playKind = ANIMPLAYKIND_NOLOOP;
                 }
                 break;
@@ -400,7 +410,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_CLAW_DASH: {
-                    ability_anim.speed = 1.1 + Sol_Ability_GetCurrentBaseDuration(world, id,  j) - data->conf.duration;
+                    ability_anim.speed = 1.1 + Sol_Ability_GetCurrentBaseDuration(world, id, j) - data->conf.duration;
                 }
                 break;
                 case ABILITY_STATE_FIREBALL: {
@@ -414,7 +424,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_SHIELD: {
-                    ability_anim.speed   = 0.85f + Sol_Ability_GetCurrentBaseDuration(world, id, j) - data->conf.duration;
+                    ability_anim.speed = 0.85f + Sol_Ability_GetCurrentBaseDuration(world, id, j) - data->conf.duration;
                     ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
                 break;

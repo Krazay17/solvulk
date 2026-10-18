@@ -207,8 +207,8 @@ static inline void Hook_SetPlayerFov(World *w, int a, int b)
 }
 static inline void Hook_ClearEnts(World *w, int a, int b)
 {
-    World *game  = Sol_User_GetGameWorld();
-    int i        = 1;
+    World *game = Sol_User_GetGameWorld();
+    int i       = 1;
     while (i < game->entCount)
     {
         int id         = game->dense[i];
@@ -273,7 +273,16 @@ static inline void Hook_Test(World *w, int a, int b)
     ScCmd *cmd    = Sol_Comp_Get(game, id, ScCmd);
     vec3s fwd_pos = vecAdd(pos, vecSca(cmd->aimdir, 3.0f));
 
-    int ent        = Sol_Create_Ent(game, fwd_pos);
-    ScModel *model = Sol_Comp_Add(game, ent, ScModel);
-    model->kind    = MODELKIND_SCYTHE;
+    Sol_Prefab_GravPad(game, fwd_pos, (versors){0,0,0,1});
+    // int ent = Sol_Create_Ent(game, fwd_pos);
+
+    // solState.debug_ent.id        = ent;
+    // solState.debug_ent.world_idx = game->index;
+
+    // ScModel *model = Sol_Comp_Add(game, ent, ScModel);
+    // // ScBody3 *body3 = Sol_Comp_Add(game, ent, ScBody3);
+    // // body3->dims    = (vec3s){1, 2, 1};
+    // // body3->shape   = SHAPE3;
+    // model->kind = MODELKIND_JUMPPAD;
+    // Sol_Comp_Add(game, ent, ScAnim);
 }

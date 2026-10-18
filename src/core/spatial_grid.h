@@ -17,6 +17,8 @@
 #define SPATIAL_UNPACK_IDX(id) ((id) & 0xFFFF)
 #define SPATIAL_UNPACK_ID(id) (((id) >> 16) & 0xFFFF)
 
+#define MAX_GRID_CELLS 0xffffff
+
 typedef struct
 {
     ivec3s step;
@@ -65,16 +67,38 @@ static inline uint32_t SpatialGrid_Resize(SpatialGrid *grid, vec3s min, vec3s ma
     if (cell_size <= 0.0f)
         return 0;
 
+    float ex = (max.x - min.x) / cell_size;
+    float ey = (max.y - min.y) / cell_size;
+    float ez = (max.z - min.z) / cell_size;
+
+    // rejects NaN, inf, and negative extents
+    if (!(ex >= 0.0f && ey >= 0.0f && ez >= 0.0f) || !isfinite(ex) || !isfinite(ey) || !isfinite(ez))
+        return 0;
+
+    uint64_t dx = (uint64_t)ceilf(ex);
+    if (dx < 1)
+        dx = 1;
+    uint64_t dy = (uint64_t)ceilf(ey);
+    if (dy < 1)
+        dy = 1;
+    uint64_t dz = (uint64_t)ceilf(ez);
+    if (dz < 1)
+        dz = 1;
+
+    uint64_t count = dx * dy * dz; // safe unless each is > ~2M, check below
+    if (dx > 4096 || dy > 4096 || dz > 4096 || count > MAX_GRID_CELLS)
+    {
+        fprintf(stderr, "SpatialGrid: bounds too large (%llu x %llu x %llu)\n", (unsigned long long)dx,
+                (unsigned long long)dy, (unsigned long long)dz);
+        return 0; // caller must handle "no grid"
+    }
+
     grid->min           = min;
     grid->max           = max;
     grid->cell_size     = cell_size;
     grid->cell_size_inv = 1.0f / cell_size;
-
-    grid->dims.x = (uint32_t)ceilf((max.x - min.x) * grid->cell_size_inv);
-    grid->dims.y = (uint32_t)ceilf((max.y - min.y) * grid->cell_size_inv);
-    grid->dims.z = (uint32_t)ceilf((max.z - min.z) * grid->cell_size_inv);
-
-    grid->cell_count = grid->dims.x * grid->dims.y * grid->dims.z;
+    grid->dims          = (ivec3s){(int)dx, (int)dy, (int)dz};
+    grid->cell_count    = (uint32_t)count;
 
     // solb_reserve is a no-op if existing capacity already covers this size —
     // only actually reallocs when cell_count grew past current capacity.
@@ -104,8 +128,7 @@ static inline void SpatialGrid_Deinit(SpatialGrid *grid)
     free(grid);
 }
 
-static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *mins, vec3s *maxs,
-                                                uint32_t item_count)
+static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *mins, vec3s *maxs, uint32_t item_count)
 {
     if (item_count == 0)
         return;
@@ -115,8 +138,8 @@ static inline void SpatialGrid_FitBoundsToItems(SpatialGrid *grid, vec3s *mins, 
 
     for (uint32_t i = 1; i < item_count; i++)
     {
-        min           = glms_vec3_minv(min, mins[i]);
-        max           = glms_vec3_maxv(max, maxs[i]);
+        min = glms_vec3_minv(min, mins[i]);
+        max = glms_vec3_maxv(max, maxs[i]);
     }
 
     // small margin so items exactly on the boundary don't clamp oddly
@@ -138,7 +161,14 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
     {
         ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
         ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
+        min_cell.x      = max(min_cell.x, 0);
+        max_cell.x      = min(max_cell.x, grid->dims.x - 1);
 
+        min_cell.y      = max(min_cell.y, 0);
+        max_cell.y      = min(max_cell.y, grid->dims.y - 1);
+
+        min_cell.z      = max(min_cell.z, 0);
+        max_cell.z      = min(max_cell.z, grid->dims.z - 1);
         for (int z = min_cell.z; z <= max_cell.z; z++)
             for (int y = min_cell.y; y <= max_cell.y; y++)
                 for (int x = min_cell.x; x <= max_cell.x; x++)
@@ -160,7 +190,7 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
 
     for (uint32_t i = 0; i < item_count; i++)
     {
-        uint32_t id       = ids[i];
+        uint32_t id     = ids[i];
         ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
         ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
 

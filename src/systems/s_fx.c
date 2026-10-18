@@ -132,7 +132,8 @@ static inline void Lightning_Hit(World *world, SolEvent event)
 
 static inline void Local_Hit(World *world, SolEvent event)
 {
-    Sol_Audio_Play(SOL_AUDIO_HIT, 0.3f, 0, 32);
+    if (!Sol_Comp_Has(world, event.target, ScStage))
+        Sol_Audio_Play(SOL_AUDIO_HIT, 0.3f, 0, 32);
 
     forc(world, event.target, ScView3)
     {

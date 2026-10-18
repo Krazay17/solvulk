@@ -173,6 +173,12 @@ typedef struct
             int bolt;
             int bolt_state;
         } bolt;
+        struct
+        {
+            float accum;
+            float rate;
+            float amount;
+        } heal;
     } as;
 
     AbilityConfig conf;
@@ -343,7 +349,8 @@ typedef struct ScTimer
 
 typedef struct ScAudio
 {
-    int count, handle;
+    int handle;
+    char bone_follow[32];
 } ScAudio;
 
 typedef struct ScParent
@@ -554,10 +561,13 @@ typedef struct ScUiItem
     u32 uid;
 } ScUiItem;
 
+#define MAX_WEAPON_BLADE_BONES 6
 typedef struct
 {
     WeaponKind kind;
     int equipped_slot;
+    int trace_bones_idx[MAX_WEAPON_BLADE_BONES];
+    int trace_point_count;
     bool update_trail;
     bool extending;
 } ScWeapon;
@@ -642,13 +652,14 @@ typedef struct Ribbon
 {
     RibbonKind kind;
     vec3s points[MAX_RIBBON_SEGMENTS];
-    float thickness;
+    float thickness[MAX_RIBBON_SEGMENTS];
+    bool nonuniform_thickness;
+    float spin[MAX_RIBBON_SEGMENTS];
     vec4s color;
     u32 texture;
     float lifespan;
     u32 entA, entB;
     RibbonFlag flags;
-    float spin[MAX_RIBBON_SEGMENTS];
     u32 sheets;
     float pan;
     float alpha_curve;
@@ -850,7 +861,7 @@ void Sol_Comp_RemE(World *world, int id, u64 idx);
 // use c->
 #define forc(w, id, type) for (type *c = Sol_Comp_Get(w, id, type); c; c = NULL)
 
-// set->, c->
+// set->, i , c->
 #define for_set(w, type)                                                                                               \
     for (SparseSet_##type *set = Sol_Comp_Set(w, type); set; set = NULL)                                               \
         for (int i = 0; i < set->cnt; i++)                                                                             \

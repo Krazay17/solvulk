@@ -278,7 +278,7 @@ typedef struct
     vec4s posB;
     vec4s colorA;
     vec4s colorB;
-    vec4s uv;
+    vec4s uv; 
     vec4s dirA; // NEW: Shared tangent at point A
     vec4s dirB; // NEW: Shared tangent at point B
     float spinA;

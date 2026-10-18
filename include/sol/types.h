@@ -36,7 +36,7 @@
 #define PHYSXMASK(g, m) ((g << 16) | m)
 #define PHYSX_GET_LAYER(packed) (((u32)(packed) >> 16) & 0xFFFF)
 #define PHYSX_GET_FILTER(packed) ((u32)(packed) & 0xFFFF)
-#define ABILITY_SLOTS 7
+#define ABILITY_SLOTS 8
 #define MAX_TOOLTIP_ALPHA 0.9f
 #define MAX_TOOLTIP_LINES 10
 
@@ -85,6 +85,7 @@ typedef struct SolHit
 typedef enum
 {
     ABILITY_STATE_IDLE,
+    ABILITY_STATE_HEAL,
 
     ABILITY_STATE_CLAW,
     ABILITY_STATE_CLAW_CHARGE,
@@ -106,7 +107,6 @@ typedef enum
 
     ABILITY_STATE_COUNT,
 } AbilityState;
-
 
 typedef enum
 {
@@ -136,6 +136,7 @@ typedef struct UserInput
 {
     vec2s mouse;
     bool mouse_locked;
+    bool was_locked;
     u64 user_actions;
     u64 just_actions;
     u64 prev_actions;
@@ -288,6 +289,7 @@ typedef enum Shape3
     SHAPE3_SPH,
     SHAPE3_CAP,
     SHAPE3_BOX,
+    SHAPE3_CYL,
     SHAPE3_CNT,
 } Shape3;
 
@@ -527,6 +529,7 @@ typedef enum
     ANIM_ATTACK_2HSCYTHE,
     ANIM_ATTACK_2HSCYTHE_JUMP,
     ANIM_ATTACK_2HSCYTHE_SLAM,
+    ANIM_2HHEAL,
     ANIM_DEATH,
     ANIM_STUN,
     ANIM_ABILITY0,
@@ -550,6 +553,7 @@ typedef enum
     MODELKIND_ZORGON,
     MODELKIND_WEAPONBLADE,
     MODELKIND_CYLINDER,
+    MODELKIND_GATE,
     MODELKIND_BOLT,
     MODELKIND_SCYTHE,
     MODELKIND_WALL,
@@ -558,6 +562,7 @@ typedef enum
     MODELKIND_FROSTSWORD,
     MODELKIND_EVAN,
     MODELKIND_EVANRIGGED,
+    MODELKIND_JUMPPAD,
     MODELKIND_WORLD4,
     MODELKIND_BOX,
     MODELKIND_CONE,
@@ -780,6 +785,7 @@ typedef enum
     ACTION_ABILITY5,
     ACTION_ABILITY6,
     ACTION_ABILITY7,
+    ACTION_ABILITY8,
     ACTION_FWD,
     ACTION_BWD,
     ACTION_LEFT,
@@ -818,6 +824,7 @@ typedef enum
     SOL_KEY_G,
     SOL_KEY_Q,
     SOL_KEY_E,
+    SOL_KEY_R,
     SOL_KEY_TAB,
     SOL_KEY_SPACE,
     SOL_KEY_ESCAPE,
@@ -875,7 +882,7 @@ typedef enum ItemKind
     ITEMKIND_BOLT,
     ITEMKIND_CRYSTAL,
     ITEMKIND_COUNT,
-}ItemKind;
+} ItemKind;
 typedef struct SolItem
 {
     ItemKind item_kind;
@@ -982,7 +989,7 @@ typedef enum AiActions
 
     AIACTION_COUNT,
 } AiActions;
-#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (6 + 6 + 4 + 1))
+#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (6 + 7 + 4 + 1))
 typedef union {
     struct
     {
@@ -991,7 +998,7 @@ typedef union {
         u32 moveState : 2;   // GROUNDED, FALL, WALLRUN, SLIDING
 
         u32 targetDist : 2;  // 4 Distances
-        u32 targetState : 3; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, FIRING, CHARGING, DODGING
+        u32 targetState : 4; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, FIRING, CHARGING, DODGING
         u32 targetLos : 1;
 
         u32 wallFront : 1;
@@ -1010,9 +1017,10 @@ typedef enum
     AIACTIONC_RELEASE,
     AIACTIONC_ABILITY_MELEE,
     AIACTIONC_ABILITY_RANGED,
+    AIACTIONC_ABILITY_HEAL,
     AIACTIONC_COUNT,
 } AiActionsC;
-#define AIKNOW_COMBATSTATE_COUNT (1 << (3 + 3 + 2))
+#define AIKNOW_COMBATSTATE_COUNT (1 << (3 + 3 + 4))
 typedef union {
     struct
     {
@@ -1024,6 +1032,7 @@ typedef union {
 
         u32 winning : 1;
         u32 energy : 1; // High, Low
+        u32 health : 2; // High, Low
     };
     u32 raw;
 } AiKnowStateC;
@@ -1034,6 +1043,7 @@ typedef struct
     u32 surrounding; // FREE, LEDGEFRONT, LEDGEBACK, STUCK
     u32 moveState;   // GROUNDED, FALL, WALLRUN, SLIDING
     u32 energy;      // High, Low
+    u32 health;      // Full, 0.66, 0.33, 0.0
 
     u32 targetDist;  // 4 Distances
     u32 targetState; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, CHARGING, FIRING, DODGING

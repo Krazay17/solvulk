@@ -199,6 +199,11 @@ void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent)
     {
         int ref_id = ref_set->dense[i];
         ScRef *ref = &ref_set->data[i];
+        if(ref->ent_world != game->index)
+        {
+            Sol_Destroy_Ent(hud, ref_id);
+            continue;
+        }
         switch (ref->kind)
         {
         case REFKIND_ABILITYBAR: {
@@ -256,6 +261,45 @@ void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent)
         }
     }
 }
+
+// void Sol_Ui_RemoveStaleRefs(World *hud, World *game, int user_ent)
+// {
+//     SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
+//     ScInventory *inv = Sol_Comp_Get(game, user_ent, ScInventory);
+//     for (int i = ref_set->cnt - 1; i >= 0; i--)
+//     {
+//         int ref_id = ref_set->dense[i];
+//         ScRef *ref = &ref_set->data[i];
+//         switch (ref->kind)
+//         {
+//         case REFKIND_ABILITYBAR: {
+//             forc(hud, ref_id, ScAbilitybar)
+//             {
+//                 vec3s bar_pos = hud->xform.pos[ref_id];
+//                 for (int j = 0; j < c->slot_count; j++)
+//                 {
+//                     int s        = c->ability_slots[j];
+//                     vec3s offset = bar_pos;
+//                     offset.x += j * c->slot_dims.x;
+//                     slot_pos[s] = offset;
+//                 }
+//             }
+//         }
+//         break;
+//         case REFKIND_INVENTORY: {
+//             inv_window_pos = hud->xform.pos[ref_id];
+//             inv_id         = ref_id;
+//         }
+//         break;
+//         case REFKIND_ITEM: {
+//             if (!Sol_Inv_GetItem_FromId(inv, ref->uid))
+//                 Sol_Destroy_Ent(hud, ref_id);
+//         }
+//         break;
+//         }
+//     }
+
+// }
 
 void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s inv_pos)
 {
@@ -429,7 +473,7 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR && ref->kind != REFKIND_ENERGYBAR)
             continue;
         int ref_id    = ref_set->dense[i];
-        bool is_alive = (ref->ent_id == user_ent);
+        bool is_alive = (ref->ent_id == user_ent && ref->ent_world == game->index);
         if (!is_alive)
         {
             Sol_Destroy_Ent(hud, ref_id);
@@ -608,6 +652,7 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
     bool existing_window = false;
     for_set(hud, ScRef)
     {
+        int id = set->dense[i];
         switch (c->kind)
         {
         case REFKIND_RULESWINDOW: {

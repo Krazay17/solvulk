@@ -302,7 +302,7 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                 Ribbon r = {
                     .points[0]    = prev_anchor,
                     .points[15]   = anchor3,
-                    .thickness    = 0.3f,
+                    .thickness[0]    = 0.3f,
                     .texture      = SOL_TEXTURE_LIGHTNING,
                     .color        = VEC4_WHITE,
                     .pan          = 6.0f,

@@ -25,6 +25,10 @@ const struct ModelKindData
         {
             .yaw_offset = GLM_PI_2f,
         },
+    [MODELKIND_EVANRIGGED] =
+        {
+            .y_offset = -1.0f,
+        },
 };
 
 void Model_Render(World *world, double dt)
@@ -202,6 +206,61 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
     glm_mat4_quat(rotationMat, result.rot.raw);
 
     result.sca = xform.sca;
+
+    return result;
+}
+
+vec3s Sol_Model_GetBoneByIdx(World *world, int id, u32 boneIdx)
+{
+    vec3s result          = {0};
+    ScModel *model        = Sol_Comp_Get(world, id, ScModel);
+    SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
+    Xform xform           = Xform_GetDraw(world, id);
+    ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
+
+    mat4 bindPose;
+    glm_mat4_inv(skeleton->bones[boneIdx].inverseBind, bindPose);
+
+    mat4 boneModelSpace;
+
+    if (anim)
+    {
+        glm_mat4_mul(anim->pose.bones[boneIdx], bindPose, boneModelSpace);
+    }
+    else
+    {
+        glm_mat4_copy(bindPose, boneModelSpace);
+    }
+
+    /*
+     * Build the entity's world transform.
+     */
+    mat4 entityWorld;
+    glm_mat4_identity(entityWorld);
+
+    xform.pos.y += model_kinds[model->kind].y_offset;
+
+    vec3 actualDrawPos = {xform.pos.x, xform.pos.y + (model->yOffset * xform.sca.y), xform.pos.z};
+
+    glm_translate(entityWorld, actualDrawPos);
+
+    glm_quat_rotate(entityWorld, xform.rot.raw, entityWorld);
+
+    glm_scale(entityWorld, xform.sca.raw);
+
+    /*
+     * EntityWorld * BoneModelSpace
+     */
+    mat4 finalWorldMat;
+
+    glm_mat4_mul(entityWorld, boneModelSpace, finalWorldMat);
+
+    /*
+     * Position.
+     */
+    result.x = finalWorldMat[3][0];
+    result.y = finalWorldMat[3][1];
+    result.z = finalWorldMat[3][2];
 
     return result;
 }

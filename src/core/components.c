@@ -25,6 +25,14 @@ void ScInventory_Init(World *world, int id, ScInventory *c)
     memset(c->equipped_items, -1, sizeof(c->equipped_items));
 }
 
+void ScAnim_Init(World *world, int id, ScAnim *c)
+{
+    c->layers[0] = (AnimLayer){.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f};
+    c->layers[1] = (AnimLayer){.animId = -1, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f};
+    c->layers[2] = (AnimLayer){.animId = -1, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f};
+    c->layers[3] = (AnimLayer){.animId = -1, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f};
+}
+
 void SlRules_Init(World *world, SlRules *self)
 {
 }
@@ -76,7 +84,7 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     }
 
     {
-        float cell_size    = 5.0f;
+        float cell_size    = 10.0f;
         self->grid_dynamic = malloc(sizeof(SpatialGrid));
         vec3s min          = {-512.0f, -512.0f, -32.0f};
         vec3s max          = {512.0f, 512.0f, 256.0f};
@@ -84,7 +92,7 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     }
 
     {
-        float cell_size   = 5.0f;
+        float cell_size   = 10.0f;
         self->grid_static = malloc(sizeof(SpatialGrid));
         vec3s min         = {-512.0f, -512.0f, -32.0f};
         vec3s max         = {512.0f, 512.0f, 256.0f};

@@ -134,6 +134,15 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
 
     if (ai->learning.prev_knows_combat.attack & 2)
         ai->learning.reward_combat -= 0.1f * fdt;
+    if (ai->learning.action_combat == AIACTIONC_ABILITY_HEAL)
+    {
+        float heal_reward = -5.0f;
+        forc(world, id, ScCombat)
+        {
+            heal_reward += c->healthMax - c->health;
+        }
+        ai->learning.reward_combat += heal_reward * fdt;
+    }
 
     // if (ai->learning.prev_knows_move.danger &&
     //     ((ai->learning.action_move == AIACTION_DODGEFWD) || (ai->learning.action_move == AIACTION_DODGEBWD) ||
@@ -164,6 +173,7 @@ u32 GetCombatActionMask(World *world, int id, ScAi *ai)
         mask |= BITC(AIACTIONC_CHARGE);
         mask |= BITC(AIACTIONC_ABILITY_MELEE);
         mask |= BITC(AIACTIONC_ABILITY_RANGED);
+        mask |= BITC(AIACTIONC_ABILITY_HEAL);
     }
     return mask;
 }
@@ -283,14 +293,13 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
         else
             knows.danger = 2;
     }
-    ScMove3 *move3 = Sol_Comp_Get(world, id, ScMove3);
-    if (move3)
+    forc(world, id, ScMove3)
     {
-        if (move3->state == MOVE_SLIDE)
+        if (c->state == MOVE_SLIDE)
             knows.moveState = 3;
-        else if (move3->state == MOVE_WALLRUN)
+        else if (c->state == MOVE_WALLRUN)
             knows.moveState = 2;
-        else if (move3->state == MOVE_FALL)
+        else if (c->state == MOVE_FALL)
             knows.moveState = 1;
     }
 
@@ -368,7 +377,9 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     ScAbility *target_ability = Sol_Comp_Get(world, target, ScAbility);
     if (target_ability)
     {
-        if (Sol_Ability_GetIsDashing(target_ability))
+        if (target_ability->state[7] != 0)
+            knows.targetState = 8;
+        else if (Sol_Ability_GetIsDashing(target_ability))
             knows.targetState = 7;
         else if (Sol_Ability_IsCharging(world, target))
             knows.targetState = 5;
@@ -376,12 +387,23 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
             knows.targetState = 6;
     }
 
-    ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
-    knows.energy     = 0;
+    ScCombat *combat                    = Sol_Comp_Get(world, id, ScCombat);
+    knows.energy                        = 0;
+    static const float health_states[4] = {1.0f, 0.66f, 0.33f, 0.0f};
+    knows.health                        = 0;
     if (combat)
     {
         if (combat->energy < 40.0f)
             knows.energy = 1;
+        float t_health = combat->health / combat->healthMax;
+        for (int i = 0; i < sizeof(health_states) / sizeof(health_states[0]); i++)
+        {
+            if (t_health >= health_states[i])
+            {
+                knows.health = i;
+                break;
+            }
+        }
     }
     ScCombat *target_combat = Sol_Comp_Get(world, target, ScCombat);
     if (combat && target_combat)
@@ -456,6 +478,7 @@ AiKnowStateC KnowsC(AiKnows *s)
     knows.targetDist = s->targetDist;
     knows.winning    = s->winning;
     knows.energy     = s->energy;
+    knows.health     = s->health;
 
     return knows;
 }
@@ -502,7 +525,7 @@ void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
     ai->learning.prev_knows_combat.raw = next_knows_combat.raw;
 }
 
-const u32 slot_action[4] = {ACTION_ABILITY1, ACTION_ABILITY2, ACTION_ABILITY3, ACTION_ABILITY4};
+const u32 slot_action[5] = {ACTION_ABILITY1, ACTION_ABILITY2, ACTION_ABILITY3, ACTION_ABILITY4, ACTION_ABILITY8};
 void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKnowStateC next_knows_combat)
 {
     cmd->actionState &= (BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
@@ -588,8 +611,12 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
         ai->learning.reward_combat -= 5.0f;
         break;
     case AIACTIONC_ABILITY_MELEE:
-        cmd->actionState |= BITC(slot_action[0]) | BITC(slot_action[2]) | BITC(slot_action[3]);
+        cmd->actionState |= BITC(slot_action[0]); //| BITC(slot_action[2]) | BITC(slot_action[3]);
         ai->learning.reward_combat -= 5.0f;
+        break;
+    case AIACTIONC_ABILITY_HEAL:
+        cmd->actionState |= (1u << slot_action[4]);
+        ai->learning.actionTimer = 0.5f;
         break;
     }
 }

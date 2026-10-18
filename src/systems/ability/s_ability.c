@@ -170,6 +170,7 @@ const u32 item_ability_map[ITEMKIND_COUNT][3] = {
 
 const AbilityStateFunc *ability_state_func[ABILITY_STATE_COUNT] = {
     [ABILITY_STATE_IDLE] = &ability_idle_state, //
+    [ABILITY_STATE_HEAL] = &ability_heal_state, //
 
     [ABILITY_STATE_CLAW]        = &ability_claw_state,        //
     [ABILITY_STATE_CLAW_CHARGE] = &ability_claw_charge_state, //
@@ -201,7 +202,7 @@ static inline u32 Get_SlotState(World *world, int id, int slot)
 }
 
 #define SHARED_LOCKOUT_COUNT 5
-#define SHARED_LOCKOUT ((1u << 0) | (1u << 1u) | (1u << 2) | (1u << 3) | (1u << 4))
+#define SHARED_LOCKOUT ((1u << 0) | (1u << 1u) | (1u << 2u) | (1u << 3u) | (1u << 4u) | (1u << 7u))
 void Ability_Update(World *world, double dt)
 {
     float fdt = (float)dt;
@@ -239,7 +240,10 @@ void Ability_Update(World *world, double dt)
 
                 forc(world, id, ScInventory) if (c->equipped_items[j] >= 0) slot_item = c->items[c->equipped_items[j]];
 
-                if (Sol_Ability_SetState(world, id, item_ability_map[slot_item.item_kind][slot_kind_map[j]], j, false))
+                AbilityState state =
+                    j == 7 ? ABILITY_STATE_HEAL : item_ability_map[slot_item.item_kind][slot_kind_map[j]];
+
+                if (Sol_Ability_SetState(world, id, state, j, false))
                     break;
             }
         }
@@ -422,12 +426,12 @@ bool Sol_Ability_AnyActive(World *world, int id)
 {
     forc(world, id, ScAbility)
     {
-        for (int s = 5; s < ABILITY_SLOTS; s++)
+        for (int s = 5; s < ABILITY_SLOTS - 1; s++)
         {
             if (c->state[s] != 0 && c->stateData[s].stage > 0)
                 return true;
         }
-        for (int s = 0; s < ABILITY_SLOTS - 2; s++)
+        for (int s = 0; s < ABILITY_SLOTS - 3; s++)
         {
             if (c->state[s] != 0)
                 return true;

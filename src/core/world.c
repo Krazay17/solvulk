@@ -115,7 +115,7 @@ void Sol_Sys_Add(World *world, SolSys system)
 }
 
 void Sol_Sys_Add_Ui(World *world)
-{    
+{
     Sol_Sys_Add(world, SYS_INTERACT);
     Sol_Sys_Add(world, SYS_DRAG);
     Sol_Sys_Add(world, SYS_HOOK);
@@ -280,7 +280,7 @@ void Sol_Destroy_Ent(World *w, int entId)
     if (!w || entId < 1 || entId > w->maxEntities)
         return;
 
-    Sol_Event_Push(w, EVENTKIND_DESTROY, (SolEvent){.target = entId, .pos = w->xform.pos[entId]});
+    // Sol_Event_Push(w, EVENTKIND_DESTROY, (SolEvent){.target = entId, .pos = w->xform.pos[entId]});
     // for (int i = 0; i < solb_count(w->ons[ONSKIND_DESTROY]); i++)
     // {
     //     if (w->ons[ONSKIND_DESTROY][i])
@@ -319,6 +319,8 @@ int Sol_Duplicate_Ent(World *world, int id, World *target_world, vec3s pos)
     int new_id = Sol_Create_Ent(target_world, pos);
     for (int i = 0; i < COMPONENT_COUNT; i++)
     {
+        if (i == HAS_ScEquip)
+            continue;
         if (Sol_Comp_HasE(world, id, i))
         {
             BaseSparseSet *src_set = (BaseSparseSet *)world->components[i];

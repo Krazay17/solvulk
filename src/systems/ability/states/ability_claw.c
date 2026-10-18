@@ -117,11 +117,14 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             .power  = 0.5f,
             .kind   = HITKIND_MELEE_HIT,
         };
-        int hits;
-        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, true, data->power), hit, data->hitgen);
+        int hits       = 0;
+        ScEquip *equip = Sol_Comp_Get(world, id, ScEquip);
+        if (!equip)
+            return;
+        hits = Sol_Weapon_Trace(world, equip->right_weapon, hit, data->hitgen);
         if (hits > 0)
             HitPause(data);
-        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, false, data->power), hit, data->hitgen2);
+        hits = Sol_Weapon_Trace(world, equip->right_weapon, hit, data->hitgen);
         if (hits > 0)
             HitPause(data);
         break;
@@ -186,8 +189,9 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             .vel    = cmd->aimdir,
         };
 
-        int hits =
-            Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power), hit, data->hitgen);
+        int hits = 0;
+        forc(world, id, ScEquip) hits =
+            Sol_Weapon_Trace(world, slot > 5 ? c->right_weapon : c->left_weapon, hit, data->hitgen);
         if (hits > 0)
         {
             HitPause(data);

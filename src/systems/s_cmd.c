@@ -29,3 +29,12 @@ void Sol_Cmd_Clear(World *world, int id)
         *c = (ScCmd){0};
     }
 }
+
+vec3s Sol_Cmd_GetDir(World *world, int id)
+{
+    forc(world, id, ScCmd)
+    {
+        return c->lookdir;
+    }
+    return WORLD_FWD;
+}

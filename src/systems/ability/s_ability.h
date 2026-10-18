@@ -14,6 +14,7 @@
 extern const u32 slot_kind_map[7];
 
 extern const AbilityStateFunc ability_idle_state;
+extern const AbilityStateFunc ability_heal_state;
 
 extern const AbilityStateFunc ability_claw_state;
 extern const AbilityStateFunc ability_claw_charge_state;
@@ -33,6 +34,7 @@ extern const AbilityStateFunc ability_dash_state;
 extern const AbilityStateFunc ability_scythe_charge_state;
 extern const AbilityStateFunc ability_scythe_spell_state;
 extern const AbilityStateFunc ability_scythe_dash_state;
+
 
 static inline void HitPause(AbilityStateData *data)
 {

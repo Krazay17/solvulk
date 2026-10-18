@@ -41,6 +41,7 @@ static const SolActions key_binds[SOL_KEY_COUNT] = {
     [SOL_KEY_SHIFT] = ACTION_ABILITY5, //
     [SOL_KEY_Q]     = ACTION_ABILITY6, //
     [SOL_KEY_E]     = ACTION_ABILITY7, //
+    [SOL_KEY_R]     = ACTION_ABILITY8, //
 
     [SOL_KEY_W]     = ACTION_FWD,      //
     [SOL_KEY_A]     = ACTION_LEFT,     //
@@ -341,7 +342,35 @@ void Sol_User_Tick(double dt)
     World *hud  = Sol_GetWorldByIdx(sol_user.hud_world);
     int id      = sol_user.view_ent;
 
-    if (hud)
+    if (menu)
+    {
+        if (sol_user.user_input.just_actions & (1u << USERACTION_ESCAPE))
+        {
+            bool menuActive = solState.worlds[0]->doesSimulate;
+            menuActive ^= 1;
+            solState.worlds[0]->doesSimulate = menuActive;
+            solState.worlds[0]->doesRender   = menuActive;
+            Sol_Input_SetLocked(!menuActive);
+        }
+    }
+
+    if (game)
+    {
+        ShowHealthbar_OnDistance(game, id);
+        Sol_Audio_UpdateListener(Sol_Body3_GetHead(game, id), Sol_Cmd_GetDir(game, id));
+
+        if (Sol_Input_KeyPressed(SOL_KEY_5))
+        {
+            if (Sol_Buff_HasBuff(game, id, BUFFKIND_INVULN))
+                Sol_Buff_Rem(game, id, BUFFKIND_INVULN);
+            else
+            {
+                Sol_Buff_Next(game, id, BUFFKIND_INVULN)->inf = true;
+            }
+        }
+    }
+
+    if (hud && game)
     {
         Sol_Ui_User_Update(hud, game, id);
         forc(game, id, ScInventory)
@@ -351,46 +380,25 @@ void Sol_User_Tick(double dt)
             if (c->dirty && sol_user.inventory.open)
                 Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
         }
-        forc(game, 0, SlRules) Sol_Ui_Sync_Rules(hud, game, dt);
-    }
 
-    ShowHealthbar_OnDistance(game, id);
+        //        forc(game, 0, SlRules) Sol_Ui_Sync_Rules(hud, game, dt);
 
-    if (menu && Sol_Input_KeyPressed(SOL_KEY_ESCAPE))
-    {
-        bool menuActive = solState.worlds[0]->doesSimulate;
-        menuActive ^= 1;
-        solState.worlds[0]->doesSimulate = menuActive;
-        solState.worlds[0]->doesRender   = menuActive;
-        Sol_Input_SetLocked(!menuActive);
-    }
-
-    if (game && Sol_Input_KeyPressed(SOL_KEY_5))
-    {
-        if (Sol_Buff_HasBuff(game, id, BUFFKIND_INVULN))
-            Sol_Buff_Rem(game, id, BUFFKIND_INVULN);
-        else
-        {
-            Sol_Buff_Next(game, id, BUFFKIND_INVULN)->inf = true;
-        }
-    }
-
-    if (hud)
-    {
         if (sol_user.user_input.user_actions & (1u << USERACTION_INVENTORY))
         {
             if (!sol_user.inventory.open)
             {
                 Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
-                sol_user.inventory.open = true;
+                sol_user.inventory.open        = true;
+                sol_user.user_input.was_locked = sol_user.user_input.mouse_locked;
+                Sol_Input_SetLocked(false);
             }
-            Sol_Input_SetLocked(false);
         }
         else if (sol_user.inventory.open)
         {
             Sol_Ui_CloseInv(hud, &sol_user.inventory.pos);
             sol_user.inventory.open = false;
-            Sol_Input_SetLocked(true);
+            if (sol_user.user_input.was_locked)
+                Sol_Input_SetLocked(true);
         }
     }
 
@@ -450,19 +458,18 @@ void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)
     if (solState.worldCount == 0 || sol_user.game_world == idx || solState.worldCount - 1 < idx)
         return;
 
-    u32 last_world_idx = sol_user.game_world;
-    World *last_world  = solState.worlds[last_world_idx];
+    World *last_world = solState.worlds[sol_user.game_world];
 
     last_world->doesSimulate = sim_last;
     last_world->doesRender   = false;
 
-    sol_user.game_world        = idx;
-    World *target_world        = solState.worlds[sol_user.game_world];
+    World *target_world        = solState.worlds[idx];
     target_world->doesSimulate = true;
     target_world->doesRender   = true;
-    SparseSet_ScPlayer *set    = Sol_Comp_Set(last_world, ScPlayer);
-    int last_id                = set->dense[0];
-    sol_user.view_ent          = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
+
+    int last_id         = sol_user.view_ent;
+    sol_user.game_world = idx;
+    sol_user.view_ent   = Sol_Duplicate_Ent(last_world, last_id, target_world, pos);
     Sol_Destroy_Ent(last_world, last_id);
 }
 void Sol_User_AddItem(SolItem *item)

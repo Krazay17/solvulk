@@ -136,10 +136,20 @@ bool Sol_Ribbon_Draw(World *world, double dt, Ribbon *r)
     {
         for (int p = 1; p < r->_point_count; p++)
         {
-            float tA     = r->_point_elapsed[p - 1] / r->lifespan;
-            float tB     = r->_point_elapsed[p] / r->lifespan;
-            float scaleA = r->thickness * EvaluateCurve(r->scale_curve, tA);
-            float scaleB = r->thickness * EvaluateCurve(r->scale_curve, tB);
+            float tA = r->_point_elapsed[p - 1] / r->lifespan;
+            float tB = r->_point_elapsed[p] / r->lifespan;
+            float scaleA;
+            float scaleB;
+            if (r->nonuniform_thickness)
+            {
+                scaleA = r->thickness[p - 1] * EvaluateCurve(r->scale_curve, tA);
+                scaleB = r->thickness[p] * EvaluateCurve(r->scale_curve, tB);
+            }
+            else
+            {
+                scaleA = r->thickness[0] * EvaluateCurve(r->scale_curve, tA);
+                scaleB = r->thickness[0] * EvaluateCurve(r->scale_curve, tB);
+            }
             float alphaA = EvaluateCurve(r->alpha_curve, tA);
             float alphaB = EvaluateCurve(r->alpha_curve, tB);
 

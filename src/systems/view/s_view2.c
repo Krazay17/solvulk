@@ -63,10 +63,10 @@ static void DrawAbilitybar(World *world, int id, float fdt, View2 *view)
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
     if (!ref)
         return;
-    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    World *ref_world = Sol_GetWorldByIdx(ref->world);
     if (!ref_world)
         return;
-    ScAbility *ability = Sol_Comp_Get(ref_world, ref->ent_id, ScAbility);
+    ScAbility *ability = Sol_Comp_Get(ref_world, ref->id, ScAbility);
     if (!ability)
         return;
     ScAbilitybar *abilitybar = Sol_Comp_Get(world, id, ScAbilitybar);
@@ -239,10 +239,10 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
     ScRef *ref = Sol_Comp_Get(world, id, ScRef);
     if (!ref)
         return;
-    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    World *ref_world = Sol_GetWorldByIdx(ref->world);
     if (!ref_world)
         return;
-    ScCombat *combat = Sol_Comp_Get(ref_world, ref->ent_id, ScCombat);
+    ScCombat *combat = Sol_Comp_Get(ref_world, ref->id, ScCombat);
     if (!combat || combat->health <= 0.0f)
         return;
 

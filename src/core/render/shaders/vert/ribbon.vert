@@ -10,11 +10,8 @@ struct RibbonSeg {
     vec4 colorA;
     vec4 colorB;
     vec4 uv;
-    vec4 dirA;
-    vec4 dirB;
-
-    float spinA;
-    float spinB;
+    vec4 axisA;
+    vec4 axisB;
 
     uint textureId;
     uint flags;
@@ -39,34 +36,34 @@ layout(set = 2, binding = 0) readonly buffer RibbonSSBO {
 };
 
 
-float LerpAngle(float a, float b, float t)
-{
-    const float PI    = 3.14159265359;
-    const float TWO_PI = 6.28318530718;
+// float LerpAngle(float a, float b, float t)
+// {
+//     const float PI    = 3.14159265359;
+//     const float TWO_PI = 6.28318530718;
 
-    float delta = mod(b - a + PI, TWO_PI) - PI;
+//     float delta = mod(b - a + PI, TWO_PI) - PI;
 
-    return a + delta * t;
-}
+//     return a + delta * t;
+// }
 
 
-vec3 MakeRibbonSide(vec3 tangent, float spin)
-{
-    vec3 refUp = vec3(0.0, 1.0, 0.0);
+// vec3 MakeRibbonSide(vec3 tangent, float spin)
+// {
+//     vec3 refUp = vec3(0.0, 1.0, 0.0);
 
-    // Avoid degeneracy when tangent is parallel to world up.
-    if (abs(dot(tangent, refUp)) > 0.99)
-        refUp = vec3(1.0, 0.0, 0.0);
+//     // Avoid degeneracy when tangent is parallel to world up.
+//     if (abs(dot(tangent, refUp)) > 0.99)
+//         refUp = vec3(1.0, 0.0, 0.0);
 
-    // Base width direction perpendicular to the ribbon.
-    vec3 side = normalize(cross(tangent, refUp));
+//     // Base width direction perpendicular to the ribbon.
+//     vec3 side = normalize(cross(tangent, refUp));
 
-    // Rotate the width direction around the ribbon tangent.
-    float s = sin(spin);
-    float c = cos(spin);
+//     // Rotate the width direction around the ribbon tangent.
+//     float s = sin(spin);
+//     float c = cos(spin);
 
-    return side * c + cross(tangent, side) * s;
-}
+//     return side * c + cross(tangent, side) * s;
+// }
 
 
 const vec2 CORNERS[6] = vec2[](
@@ -91,33 +88,19 @@ void main()
     vec3 basePos = mix(seg.posA.xyz, seg.posB.xyz, tSeg);
     float halfW  = mix(seg.posA.w, seg.posB.w, tSeg);
 
-    // Interpolate the endpoint roll across the segment.
-    float spin = LerpAngle(seg.spinA, seg.spinB, tSeg);
-
-    // Use the shared tangent at the appropriate endpoint.
-    vec3 segDir = normalize(
-        (tSeg < 0.5) ? seg.dirA.xyz : seg.dirB.xyz
-    );
-
-    bool alignWorldUp = (seg.flags & 1u) != 0u;
+    vec3 axis = mix(seg.axisA.xyz, seg.axisB.xyz, tSeg); // tSeg is exactly 0 or 1
 
     vec3 sideDir;
-
-    if (alignWorldUp)
+    if ((seg.flags & 1u) != 0u)
     {
-        sideDir = MakeRibbonSide(segDir, spin);
+        sideDir = axis;
     }
     else
     {
         vec3 viewDir = normalize(cameraPos.xyz - basePos);
-
-        sideDir = cross(segDir, viewDir);
-
-        float lenSq = dot(sideDir, sideDir);
-
-        sideDir = (lenSq > 0.0001)
-            ? normalize(sideDir)
-            : vec3(1.0, 0.0, 0.0);
+        sideDir = cross(axis, viewDir);
+        float l = dot(sideDir, sideDir);
+        sideDir = (l > 0.0001) ? sideDir * inversesqrt(l) : vec3(1.0, 0.0, 0.0);
     }
 
     vec3 worldPos = basePos + sideDir * (sideSign * halfW);

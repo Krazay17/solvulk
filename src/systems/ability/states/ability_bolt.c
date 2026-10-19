@@ -109,7 +109,7 @@ static void BoltHit(World *world, int a, int b)
     ScRef *ref = Sol_Comp_Get(world, a, ScRef);
     if (!ref)
         return;
-    ScAbility *ability = Sol_Comp_Get(world, ref->ent_id, ScAbility);
+    ScAbility *ability = Sol_Comp_Get(world, ref->id, ScAbility);
     if (!ability)
         return;
 
@@ -240,12 +240,12 @@ static void Enter(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         break;
     }
 
-    int bolt    = Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir, bolt_speed,
-                                           0.25f, BoltHit);
-    ScRef *ref  = Sol_Comp_Add(world, bolt, ScRef);
-    ref->kind   = REFKIND_ABILITY;
-    ref->index  = slot;
-    ref->ent_id = id;
+    int bolt   = Sol_Prefab_LightningBolt(world, id, Sol_Combat_GetShoot(world, id, 1.5f).pos, cmd->aimdir, bolt_speed,
+                                          0.25f, BoltHit);
+    ScRef *ref = Sol_Comp_Add(world, bolt, ScRef);
+    ref->kind  = REFKIND_ABILITY;
+    ref->index = slot;
+    ref->id    = id;
     data->as.bolt.bolt           = bolt;
     data->as.bolt.bolt_state     = 0;
     data->as.bolt.current_anchor = 0;
@@ -302,7 +302,7 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                 Ribbon r = {
                     .points[0]    = prev_anchor,
                     .points[15]   = anchor3,
-                    .thickness[0]    = 0.3f,
+                    .thickness[0] = 0.3f,
                     .texture      = SOL_TEXTURE_LIGHTNING,
                     .color        = VEC4_WHITE,
                     .pan          = 6.0f,

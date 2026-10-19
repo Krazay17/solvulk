@@ -167,7 +167,7 @@ void Projectile_Step(World *world, double dt)
             while (ribbon->_accum >= ribbon->rate)
             {
                 ribbon->_accum -= ribbon->rate;
-                Sol_Ribbon_Addpoint(&ribbon->ribbon, xform.pos, 0, 0);
+                Sol_Ribbon_Addpoint(&ribbon->ribbon, xform.pos,  WORLD_UP);
             }
         }
 

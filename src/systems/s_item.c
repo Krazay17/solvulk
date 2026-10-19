@@ -98,10 +98,10 @@ AbilityConfig Sol_Item_ApplyMods(AbilityConfig conf, SolItem item)
 SolItem *Sol_Item_Resolve(World *world, ScRef *ref)
 {
     SolItem *item    = NULL;
-    World *ref_world = Sol_GetWorldByIdx(ref->ent_world);
+    World *ref_world = Sol_GetWorldByIdx(ref->world);
     if (!ref_world)
         return item;
-    forc(ref_world, ref->ent_id, ScInventory)
+    forc(ref_world, ref->id, ScInventory)
     {
         item = Sol_Inv_GetItem_FromId(c, ref->uid);
     }

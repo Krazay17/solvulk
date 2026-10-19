@@ -29,7 +29,7 @@ void Abilitybar_Update(World *world, double dt)
         ScRef *ref               = Sol_Comp_Get(world, id, ScRef);
         if (!ref)
             continue;
-        World *game_world = Sol_GetWorldByIdx(ref->ent_world);
+        World *game_world = Sol_GetWorldByIdx(ref->world);
         if (!game_world)
             continue;
 
@@ -91,16 +91,16 @@ void Abilitybar_Update(World *world, double dt)
 
             if (new_item == 0)
             {
-                Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, -1);
+                Sol_Inv_Equip(game_world, ref->id, ability_slot, -1);
                 continue;
             }
 
             ScRef *item_ref = Sol_Comp_Get(world, new_item, ScRef);
             if (!item_ref || item_ref->kind != REFKIND_ITEM)
                 continue;
-            forc(game_world, ref->ent_id, ScInventory)
+            forc(game_world, ref->id, ScInventory)
             {
-                Sol_Inv_Equip(game_world, ref->ent_id, ability_slot, item_ref->index);
+                Sol_Inv_Equip(game_world, ref->id, ability_slot, item_ref->index);
                 item_ref->flags = ITEM_ABILITYBAR;
             }
         }
@@ -179,7 +179,7 @@ static int Ui_FindItemCard(World *hud, u32 world_id, u32 ent_id, u32 card_id)
     {
         int ref_id = ref_set->dense[i];
         ScRef *ref = &ref_set->data[i];
-        if (ref->kind == REFKIND_ITEM && ref->ent_world == world_id && ref->ent_id == ent_id && ref->uid == card_id)
+        if (ref->kind == REFKIND_ITEM && ref->world == world_id && ref->id == ent_id && ref->uid == card_id)
             return ref_id;
     }
     return -1;
@@ -192,14 +192,13 @@ void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent)
         return;
     inv->dirty_equip              = false;
     vec3s slot_pos[ABILITY_SLOTS] = {0};
-    int grid_n                    = 0;
 
     SparseSet_ScRef *ref_set = Sol_Comp_Set(hud, ScRef);
     for (int i = ref_set->cnt - 1; i >= 0; i--)
     {
         int ref_id = ref_set->dense[i];
         ScRef *ref = &ref_set->data[i];
-        if(ref->ent_world != game->index)
+        if (ref->world != game->index)
         {
             Sol_Destroy_Ent(hud, ref_id);
             continue;
@@ -230,36 +229,53 @@ void Sol_Ui_Sync_AbilityItems(World *hud, World *game, int user_ent)
     int equipped_count = 0;
     for (int j = 0; j < ABILITY_SLOTS; j++)
     {
+        int equip_idx = inv->equipped_items[j];
         if (inv->equipped_items[j] >= 0)
-            equipped_count++;
-    }
-
-    int item_count = solb_count(inv->items);
-    for (int i = 0; i < item_count; i++)
-    {
-        SolItem *item = &inv->items[i];
-        if (Ui_FindItemCard(hud, game->index, user_ent, item->uid) >= 0)
-            continue;
-        for (int j = 0; j < ABILITY_SLOTS; j++)
         {
-            if (inv->equipped_items[j] == i)
-            {
-                int card_id = Sol_Prefab_AbilityCard(hud, GLMS_VEC3_ZERO, item);
-
-                ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
-                *card_ref       = (ScRef){
-                    .ent_id    = user_ent,
-                    .ent_world = game->index,
-                    .kind      = REFKIND_ITEM,
-                    .uid       = item->uid,
-                    .index     = i,
-                    .flags     = ITEM_ABILITYBAR,
-                };
-                vec3s *pos = &hud->xform.pos[card_id];
-                *pos       = slot_pos[j];
-            }
+            equipped_count++;
+            SolItem *item = &inv->items[equip_idx];
+            if (Ui_FindItemCard(hud, game->index, user_ent, item->uid) >= 0)
+                continue;
+            int card_id     = Sol_Prefab_AbilityCard(hud, GLMS_VEC3_ZERO, item);
+            ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
+            *card_ref       = (ScRef){
+                .id    = user_ent,
+                .world = game->index,
+                .kind  = REFKIND_ITEM,
+                .uid   = item->uid,
+                .index = equip_idx,
+                .flags = ITEM_ABILITYBAR,
+            };
+            hud->xform.pos[card_id] = slot_pos[j];
         }
     }
+
+    // int item_count = solb_count(inv->items);
+    // for (int i = 0; i < item_count; i++)
+    // {
+    //     SolItem *item = &inv->items[i];
+    //     if (Ui_FindItemCard(hud, game->index, user_ent, item->uid) >= 0)
+    //         continue;
+    //     for (int j = 0; j < ABILITY_SLOTS; j++)
+    //     {
+    //         if (inv->equipped_items[j] == i)
+    //         {
+    //             int card_id = Sol_Prefab_AbilityCard(hud, GLMS_VEC3_ZERO, item);
+
+    //             ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
+    //             *card_ref       = (ScRef){
+    //                 .id    = user_ent,
+    //                 .world = game->index,
+    //                 .kind      = REFKIND_ITEM,
+    //                 .uid       = item->uid,
+    //                 .index     = i,
+    //                 .flags     = ITEM_ABILITYBAR,
+    //             };
+    //             vec3s *pos = &hud->xform.pos[card_id];
+    //             *pos       = slot_pos[j];
+    //         }
+    //     }
+    // }
 }
 
 // void Sol_Ui_RemoveStaleRefs(World *hud, World *game, int user_ent)
@@ -354,7 +370,9 @@ void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s inv_pos)
         inv_id         = Sol_Prefab_InventoryWindow(hud, inv_window_pos);
 
         *Sol_Comp_Add(hud, inv_id, ScRef) = (ScRef){
-            .kind = REFKIND_INVENTORY,
+            .kind  = REFKIND_INVENTORY,
+            .id    = user_ent,
+            .world = game->index,
         };
     }
 
@@ -405,11 +423,11 @@ void Sol_Ui_Sync_Inventory(World *hud, World *game, int user_ent, vec3s inv_pos)
 
         ScRef *card_ref = Sol_Comp_Add(hud, card_id, ScRef);
         *card_ref       = (ScRef){
-            .ent_id    = user_ent,
-            .ent_world = game->index,
-            .kind      = REFKIND_ITEM,
-            .uid       = item->uid,
-            .index     = i,
+            .id    = user_ent,
+            .world = game->index,
+            .kind  = REFKIND_ITEM,
+            .uid   = item->uid,
+            .index = i,
         };
         vec3s *pos = &hud->xform.pos[card_id];
         if (bar_slot >= 0)
@@ -473,7 +491,7 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR && ref->kind != REFKIND_ENERGYBAR)
             continue;
         int ref_id    = ref_set->dense[i];
-        bool is_alive = (ref->ent_id == user_ent && ref->ent_world == game->index);
+        bool is_alive = (ref->id == user_ent && ref->world == game->index);
         if (!is_alive)
         {
             Sol_Destroy_Ent(hud, ref_id);
@@ -484,7 +502,7 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         case REFKIND_HEALTHBAR: {
             player_healthbar = true;
             ScView2 *view2   = Sol_Comp_Get(hud, ref_id, ScView2);
-            ScCombat *combat = Sol_Comp_Get(game, ref->ent_id, ScCombat);
+            ScCombat *combat = Sol_Comp_Get(game, ref->id, ScCombat);
             if (combat && view2)
                 snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->health);
         }
@@ -496,7 +514,7 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         case REFKIND_ENERGYBAR: {
             player_energybar = true;
             ScView2 *view2   = Sol_Comp_Get(hud, ref_id, ScView2);
-            ScCombat *combat = Sol_Comp_Get(game, ref->ent_id, ScCombat);
+            ScCombat *combat = Sol_Comp_Get(game, ref->id, ScCombat);
             if (combat && view2)
                 snprintf(view2->views[5].text, sizeof(view2->views[5].text), "%.0f", combat->energy);
         }
@@ -510,9 +528,9 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         int healthbar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){0, 1, 0, 1});
 
         *Sol_Comp_Add(hud, healthbar_id, ScRef) = (ScRef){
-            .kind      = REFKIND_HEALTHBAR,
-            .ent_world = game->index,
-            .ent_id    = user_ent,
+            .kind  = REFKIND_HEALTHBAR,
+            .world = game->index,
+            .id    = user_ent,
         };
     }
     if (!player_energybar && Sol_Comp_Has(game, user_ent, ScCombat))
@@ -522,9 +540,9 @@ void Sol_Ui_User_Update(World *hud, World *game, int user_ent)
         int energybar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){1, 1, 0, 1});
 
         *Sol_Comp_Add(hud, energybar_id, ScRef) = (ScRef){
-            .kind      = REFKIND_ENERGYBAR,
-            .ent_world = game->index,
-            .ent_id    = user_ent,
+            .kind  = REFKIND_ENERGYBAR,
+            .world = game->index,
+            .id    = user_ent,
         };
     }
     if (!player_abilitybar && Sol_Comp_Has(game, user_ent, ScAbility))
@@ -565,7 +583,7 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
         if (ref->kind != REFKIND_HEALTHBAR && ref->kind != REFKIND_ABILITYBAR && ref->kind != REFKIND_ENERGYBAR)
             continue;
         int ref_id     = ref_set->dense[i];
-        int ent_id     = ref->ent_id;
+        int ent_id     = ref->id;
         int player_idx = player_set->sparse[ent_id];
         bool is_alive  = (player_idx >= 0 && player_idx < player_set->cnt && player_set->dense[player_idx] == ent_id);
         if (!is_alive)
@@ -596,9 +614,9 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
             int healthbar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){0, 1, 0, 1});
 
             *Sol_Comp_Add(hud, healthbar_id, ScRef) = (ScRef){
-                .kind      = REFKIND_HEALTHBAR,
-                .ent_world = game->index,
-                .ent_id    = player_ent,
+                .kind  = REFKIND_HEALTHBAR,
+                .world = game->index,
+                .id    = player_ent,
             };
         }
     }
@@ -614,9 +632,9 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
             int energybar_id = Sol_Prefab_PowerVial(hud, (vec3s){x, y, 0}, (vec4s){1, 1, 0, 1});
 
             *Sol_Comp_Add(hud, energybar_id, ScRef) = (ScRef){
-                .kind      = REFKIND_ENERGYBAR,
-                .ent_world = game->index,
-                .ent_id    = player_ent,
+                .kind  = REFKIND_ENERGYBAR,
+                .world = game->index,
+                .id    = player_ent,
             };
         }
     }
@@ -666,6 +684,7 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
         int window_id = Sol_Prefab_RulesWindow(hud, (vec3s){0, 0, 0});
         ScRef *ref    = Sol_Comp_Add(hud, window_id, ScRef);
         ref->kind     = REFKIND_RULESWINDOW;
+        ref->world    = game->index;
     }
 }
 

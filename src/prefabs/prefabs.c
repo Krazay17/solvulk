@@ -141,6 +141,7 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0);
@@ -378,7 +379,7 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
 
     int id               = Sol_Create_Ent(world, pos);
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->flags |= INTERACTFLAG_DRAGGABLE;
+    interact->flags |= INTERACTFLAG_ONLYDRAGGABLE;
 
     ScBody2 *body = Sol_Comp_Add(world, id, ScBody2);
     *body         = (ScBody2){
@@ -485,7 +486,7 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     ScRibbon *ribbon            = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
     ribbon->rate                = 0.02f;
     ribbon->ribbon.thickness[0] = size;
-    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0, 0);
+    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, WORLD_UP);
 
     return id;
 }
@@ -600,9 +601,9 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
     };
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->flags      = INTERACTFLAG_DRAGGABLE;
+    interact->flags      = INTERACTFLAG_ONLYDRAGGABLE;
 
-    *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ABILITYBAR, .ent_world = ent_world_idx, .ent_id = ent_id};
+    *Sol_Comp_Add(world, id, ScRef) = (ScRef){.kind = REFKIND_ABILITYBAR, .world = ent_world_idx, .id = ent_id};
 
     ScAbilitybar *ability_bar = Sol_Comp_Add(world, id, ScAbilitybar);
     ability_bar->slot_dims    = slot_dims;
@@ -628,7 +629,7 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
     int id = Sol_Create_Ent(world, pos);
 
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
-    interact->flags      = INTERACTFLAG_DRAGGABLE;
+    interact->flags      = INTERACTFLAG_ONLYDRAGGABLE;
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .zindex   = layer,
@@ -730,7 +731,7 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
     ribbon->rate          = 0.033f;
     ribbon->ribbon.sheets = 2;
     ribbon->ribbon.flags  = 1;
-    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, 0.0f, 0);
+    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, WORLD_UP);
 
     return id;
 }

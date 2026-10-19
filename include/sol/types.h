@@ -756,6 +756,7 @@ typedef struct UserHit
     World *target_world;
     World *focus_world;
     World *grab_world;
+    vec2s down_pos;
 } UserHit;
 
 typedef enum

@@ -16,6 +16,7 @@
 #include "prefabs.h"
 
 #define USER_SETTINGS_FILENAME "UserData"
+#define DRAG_EPSILON 1.0f
 
 UserCore sol_user  = {.view_world = -1, .view_ent = -1, .menu_world = -1, .game_world = -1, .hud_world = -1};
 UserData user_data = {.user_config.look_sens = 0.001f};
@@ -78,7 +79,7 @@ void UserHit_Update(UserHit *user_hit)
         }
     }
 
-    if (user_hit->grab > 0 && !grab)
+    if (user_hit->grab > 0 && (!grab && !down))
     {
         user_hit->grab       = 0;
         user_hit->grab_world = NULL;
@@ -93,10 +94,11 @@ void UserHit_Update(UserHit *user_hit)
     {
         user_hit->focus       = user_hit->target;
         user_hit->focus_world = user_hit->target_world;
+        user_hit->down_pos    = sol_user.user_input.mouse;
         if (grab)
         {
-            user_hit->grab       = user_hit->target;
-            user_hit->grab_world = user_hit->target_world;
+            user_hit->grab       = user_hit->focus;
+            user_hit->grab_world = user_hit->focus_world;
             Sol_Interact_BeginDrag(user_hit->grab_world, user_hit->grab,
                                    (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
         }
@@ -106,8 +108,25 @@ void UserHit_Update(UserHit *user_hit)
         Sol_Interact_Drag(user_hit->grab_world, user_hit->grab,
                           (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
     else if (user_hit->focus)
+    {
         Sol_Interact_Down(user_hit->focus_world, user_hit->focus,
                           (vec3s){sol_user.user_input.mouse.x, sol_user.user_input.mouse.y});
+        forc(user_hit->focus_world, user_hit->focus, ScInteract)
+        {
+            if (c->flags & INTERACTFLAG_ONLYDRAGGABLE)
+            {
+                vec2s delta = glms_vec2_sub(user_hit->down_pos, sol_user.user_input.mouse);
+                float d2    = glms_vec2_dot(delta, delta);
+                if (d2 > DRAG_EPSILON)
+                {
+                    user_hit->grab       = user_hit->focus;
+                    user_hit->grab_world = user_hit->focus_world;
+                    Sol_Interact_BeginDrag(user_hit->grab_world, user_hit->grab,
+                                           (vec3s){user_hit->down_pos.x, user_hit->down_pos.y});
+                }
+            }
+        }
+    }
     else if (user_hit->target)
         Sol_Interact_Post(user_hit->target_world, user_hit->target, (1u << INTERACT_HOVERED));
 }
@@ -381,7 +400,7 @@ void Sol_User_Tick(double dt)
                 Sol_Ui_Sync_Inventory(hud, game, id, sol_user.inventory.pos);
         }
 
-        //        forc(game, 0, SlRules) Sol_Ui_Sync_Rules(hud, game, dt);
+        forc(game, 0, SlRules) Sol_Ui_Sync_Rules(hud, game, dt);
 
         if (sol_user.user_input.user_actions & (1u << USERACTION_INVENTORY))
         {

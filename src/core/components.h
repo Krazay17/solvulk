@@ -539,7 +539,8 @@ typedef struct ScHook
 typedef struct ScRef
 {
     RefKind kind;
-    u32 ent_world, ent_id;
+    u32 id;
+    u32 world;
     u32 flags;
     u32 index;
     u32 uid;
@@ -638,9 +639,6 @@ typedef enum
     RIBBONKIND_FIRE,
     RIBBONKIND_LIGHTNING,
     RIBBONKIND_WEAPON_TRAIL,
-    RIBBONKIND_LIGHTNING_WEAPON_TRAIL,
-    RIBBONKIND_WEAPON_TRAIL_RED,
-    RIBBONKIND_WEAPON_TRAIL_COLORRING,
     RIBBONKIND_COUNT,
 } RibbonKind;
 typedef enum
@@ -654,7 +652,8 @@ typedef struct Ribbon
     vec3s points[MAX_RIBBON_SEGMENTS];
     float thickness[MAX_RIBBON_SEGMENTS];
     bool nonuniform_thickness;
-    float spin[MAX_RIBBON_SEGMENTS];
+    vec3s side[MAX_RIBBON_SEGMENTS];
+    
     vec4s color;
     u32 texture;
     float lifespan;
@@ -664,9 +663,10 @@ typedef struct Ribbon
     float pan;
     float alpha_curve;
     float scale_curve;
-
+    
     int _point_count;
     float _point_elapsed[MAX_RIBBON_SEGMENTS];
+    float _dist_origin;
     float _elapsed;
     float _update_timer;
 } Ribbon;

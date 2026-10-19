@@ -101,7 +101,6 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 
         float duration_delta = data->accum / dash_stage_time[data->stage];
         vec3s dir            = cmd->lookdir;
-        // dir.y                = dir.y > 0 ? 0 : dir.y;
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
         {
@@ -124,7 +123,7 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         hits = Sol_Weapon_Trace(world, equip->right_weapon, hit, data->hitgen);
         if (hits > 0)
             HitPause(data);
-        hits = Sol_Weapon_Trace(world, equip->right_weapon, hit, data->hitgen);
+        hits = Sol_Weapon_Trace(world, equip->left_weapon, hit, data->hitgen2);
         if (hits > 0)
             HitPause(data);
         break;

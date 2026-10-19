@@ -138,7 +138,7 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
                 c->vel = GLMS_VEC3_ZERO;
                 HitPause(data);
             }
-            forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen);
+            forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen2);
             if (hits > 0)
             {
                 c->vel = GLMS_VEC3_ZERO;
@@ -196,17 +196,15 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
                 data->hitPause = 0.1f;
             }
         }
-        int hits;
-        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 0, data->power), hit, data->hitgen);
+        int hits                      = 0;
+        forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->left_weapon, hit, data->hitgen);
         if (hits > 0)
         {
-            body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
-        hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, 1, data->power), hit, data->hitgen2);
+        forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen2);
         if (hits > 0)
         {
-            body->vel = GLMS_VEC3_ZERO;
             HitPause(data);
         }
     }

@@ -31,8 +31,8 @@ void Weapon_Update(World *world, double dt)
                 while (c->_accum >= c->rate)
                 {
                     c->_accum -= c->rate;
-                    float spin = Sol_QuatGetRoll(trail_xform.rot, WORLD_FWD, WORLD_UP);
-                    Sol_Ribbon_Addpoint(&c->ribbon, trail_xform.pos, 0, spin);
+                    vec3s side = glms_quat_rotatev(trail_xform.rot, WORLD_UP);
+                    Sol_Ribbon_Addpoint(&c->ribbon, trail_xform.pos, side);
                 }
             }
         }
@@ -95,6 +95,8 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
         glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
     }
     break;
+    default:
+        model->kind = MODELKIND_WEAPONBLADE;
     }
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
     for (int i = 0; i < skeleton->boneCount; i++)

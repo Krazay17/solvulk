@@ -310,6 +310,7 @@ typedef struct ScModel
     ModelKind kind;
     vec4s color;
     bool is2d;
+    bool transparent;
     float xOffset, yOffset, yawOffset;
 } ScModel;
 
@@ -633,44 +634,6 @@ typedef struct SlContacts2
     SolContact *contacts;
 } SlContacts2;
 
-typedef enum
-{
-    RIBBONKIND_BASIC,
-    RIBBONKIND_FIRE,
-    RIBBONKIND_LIGHTNING,
-    RIBBONKIND_WEAPON_TRAIL,
-    RIBBONKIND_COUNT,
-} RibbonKind;
-typedef enum
-{
-    RIBBONFLAG_NOFACECAM = 1,
-} RibbonFlag;
-#define MAX_RIBBON_SEGMENTS 64
-typedef struct Ribbon
-{
-    RibbonKind kind;
-    vec3s points[MAX_RIBBON_SEGMENTS];
-    float thickness[MAX_RIBBON_SEGMENTS];
-    bool nonuniform_thickness;
-    vec3s side[MAX_RIBBON_SEGMENTS];
-    
-    vec4s color;
-    u32 texture;
-    float lifespan;
-    u32 entA, entB;
-    RibbonFlag flags;
-    u32 sheets;
-    float pan;
-    float alpha_curve;
-    float scale_curve;
-    
-    int _point_count;
-    float _point_elapsed[MAX_RIBBON_SEGMENTS];
-    float _dist_origin;
-    float _elapsed;
-    float _update_timer;
-} Ribbon;
-
 typedef struct
 {
     Ribbon *ribbons;
@@ -774,7 +737,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScBuff, HAS_ScBuff, Add_None)                                                                                    \
     X(ScTimer, HAS_ScTimer, Add_None)                                                                                  \
     X(ScAudio, HAS_ScAudio, Add_None)                                                                                  \
-    X(ScParent, HAS_ScParent, Add_None)                                                                                \
+    X(ScParent, HAS_ScParent, ScParent_Init)                                                                                \
     X(ScOwner, HAS_ScOwner, Add_None)                                                                                  \
     X(ScCombat, HAS_ScCombat, Add_None)                                                                                \
     X(ScReplication, HAS_ScReplication, Add_None)                                                                      \

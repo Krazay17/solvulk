@@ -115,65 +115,65 @@ static TextBounds ParseBounds(const char *p, const char *end)
     return bounds;
 }
 
-ShaderPushTexts Prepare_Text(const char *str, SolFontDesc desc)
-{
-    float       x     = desc.x;
-    float       y     = desc.y;
-    float       size  = desc.size;
-    vec4s       color = desc.color;
-    SolFontKind kind  = desc.kind;
-    SolFont    *font  = &loaded_fonts[kind];
-    u32         len   = (u32)strlen(str);
+// ShaderPushTexts Prepare_Text(const char *str, SolFontDesc desc)
+// {
+//     float       x     = desc.x;
+//     float       y     = desc.y;
+//     float       size  = desc.size;
+//     vec4s       color = desc.color;
+//     SolFontKind kind  = desc.kind;
+//     SolFont    *font  = &loaded_fonts[kind];
+//     u32         len   = (u32)strlen(str);
 
-    static ShaderPushText push[256] = {0};
+//     static ShaderPushText push[256] = {0};
 
-    ShaderPushTexts result = {
-        .push  = push,
-        .count = 0,
-    };
+//     ShaderPushTexts result = {
+//         .push  = push,
+//         .count = 0,
+//     };
 
-    float cursorX  = x;
-    float baseSize = size / 32.0f; // Calculate once outside the loop
-    u32   index    = 0;
-    for (const char *c = str; *c; c++)
-    {
-        if (*c == ' ')
-        {
-            cursorX += font->glyph[' '].yadvance * size;
-            continue;
-        }
-        if ((unsigned char)*c >= 256)
-            continue;
+//     float cursorX  = x;
+//     float baseSize = size / 32.0f; // Calculate once outside the loop
+//     u32   index    = 0;
+//     for (const char *c = str; *c; c++)
+//     {
+//         if (*c == ' ')
+//         {
+//             cursorX += font->glyph[' '].yadvance * size;
+//             continue;
+//         }
+//         if ((unsigned char)*c >= 256)
+//             continue;
 
-        SolGlyph *g = &font->glyph[(unsigned char)*c];
-        // Ensure we are actually getting valid glyph data
-        if (g->uw == 0)
-            continue;
+//         SolGlyph *g = &font->glyph[(unsigned char)*c];
+//         // Ensure we are actually getting valid glyph data
+//         if (g->uw == 0)
+//             continue;
 
-        float pad = 0.2f * baseSize * (224.0f / 32.0f);
+//         float pad = 0.2f * baseSize * (224.0f / 32.0f);
 
-        push[index].x = cursorX + g->xoffset * size - pad;
-        push[index].y = y - g->ytop * size - pad;
-        push[index].w = g->uw * 224.0f * baseSize + pad * 2.0f;
-        push[index].h = g->vh * 224.0f * baseSize + pad * 2.0f;
+//         push[index].x = cursorX + g->xoffset * size - pad;
+//         push[index].y = y - g->ytop * size - pad;
+//         push[index].w = g->uw * 224.0f * baseSize + pad * 2.0f;
+//         push[index].h = g->vh * 224.0f * baseSize + pad * 2.0f;
 
-        push[index].r = color.r;
-        push[index].g = color.g;
-        push[index].b = color.b;
-        push[index].a = color.a;
+//         push[index].r = color.r;
+//         push[index].g = color.g;
+//         push[index].b = color.b;
+//         push[index].a = color.a;
 
-        push[index].u  = g->u;
-        push[index].v  = 1.0f - g->v - g->vh;
-        push[index].uw = g->uw;
-        push[index].vh = g->vh;
+//         push[index].u  = g->u;
+//         push[index].v  = 1.0f - g->v - g->vh;
+//         push[index].uw = g->uw;
+//         push[index].vh = g->vh;
 
-        index++;
-        cursorX += g->yadvance * size;
-    }
+//         index++;
+//         cursorX += g->yadvance * size;
+//     }
 
-    result.count = index;
-    return result;
-}
+//     result.count = index;
+//     return result;
+// }
 
 float Sol_MeasureText(const char *str, float size, SolFontKind kind)
 {

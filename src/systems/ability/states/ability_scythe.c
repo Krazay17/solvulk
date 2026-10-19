@@ -134,16 +134,10 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             int hits                      = 0;
             forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->left_weapon, hit, data->hitgen);
             if (hits > 0)
-            {
-                c->vel = GLMS_VEC3_ZERO;
                 HitPause(data);
-            }
             forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen2);
             if (hits > 0)
-            {
-                c->vel = GLMS_VEC3_ZERO;
                 HitPause(data);
-            }
 
             float stage_delta = glm_clamp(data->accum / dash_stage_time[1], 0.0f, 1.0f);
 
@@ -166,7 +160,10 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
 
             float boost = Sol_Math_Lerp_Clamped(25.0f, 3.0f, stage_delta);
 
-            c->vel = glms_vec3_scale(jump_dir, boost);
+            if (data->hitPause == 0)
+                c->vel = glms_vec3_scale(jump_dir, boost);
+            else
+                c->vel = GLMS_VEC3_ZERO;
         }
     }
     break;
@@ -199,14 +196,10 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
         int hits                      = 0;
         forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->left_weapon, hit, data->hitgen);
         if (hits > 0)
-        {
             HitPause(data);
-        }
         forc(world, id, ScEquip) hits = Sol_Weapon_Trace(world, c->right_weapon, hit, data->hitgen2);
         if (hits > 0)
-        {
             HitPause(data);
-        }
     }
     break;
     case 3:

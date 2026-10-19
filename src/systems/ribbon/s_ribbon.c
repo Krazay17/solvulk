@@ -1,3 +1,11 @@
+/*
+ * File: s_ribbon.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-19
+ *
+ */
+#include "s_ribbon.h"
 #include "world.h"
 #include "sol_math.h"
 #include "render/render.h"
@@ -44,20 +52,6 @@ Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
         },
 };
 
-#define UNITS_PER_REPEAT 5.0f
-
-enum
-{
-    RIBBONFLAG_AXIS = (1u << 0),
-};
-
-typedef struct
-{
-    float width[MAX_RIBBON_SEGMENTS];
-    float alpha[MAX_RIBBON_SEGMENTS];
-    float dist[MAX_RIBBON_SEGMENTS];
-} RibbonPointData;
-
 void SlRibbon_Init(World *world, SlRibbon *self)
 {
     solb_init(self->ribbons, 64);
@@ -66,6 +60,15 @@ void SlRibbon_Deinit(SlRibbon *self)
 {
     solb_free(self->ribbons);
 }
+
+#define UNITS_PER_REPEAT 5.0f
+
+typedef struct
+{
+    float width[MAX_RIBBON_SEGMENTS];
+    float alpha[MAX_RIBBON_SEGMENTS];
+    float dist[MAX_RIBBON_SEGMENTS];
+} RibbonPointData;
 
 static void Ribbon_RemoveFirstSegment(Ribbon *r)
 {
@@ -86,7 +89,7 @@ static void Ribbon_RemoveFirstSegment(Ribbon *r)
         memmove(&r->thickness[0], &r->thickness[1], n * sizeof(r->thickness[0]));
     r->_point_count--;
 }
-void Sol_Ribbon_GenerateJitter(Ribbon *r, float jitter_mag)
+static void GenerateJitter(Ribbon *r, float jitter_mag)
 {
     vec3s start = r->points[0];
     vec3s end   = r->points[r->_point_count - 1]; // Keep the current target
@@ -122,6 +125,38 @@ static vec3s Ribbon_Dir(vec3s from, vec3s to, vec3s fallback)
     return (l > 1e-6f) ? vecSca(d, 1.0f / l) : fallback;
 }
 
+// Project side into the plane perpendicular to the path, then roll about the path.
+static vec3s RollSide(vec3s side, vec3s t, float rad)
+{
+    vec3s v = vecSub(side, vecSca(t, glms_vec3_dot(side, t)));
+    float l = vecLen(v);
+    if (l < 1e-4f)
+        return side;
+    v = vecSca(v, 1.0f / l);
+    return vecAdd(vecSca(v, cosf(rad)), vecSca(vecCross(t, v), sinf(rad)));
+}
+
+static void Ribbon_BuildTangents(const Ribbon *r, vec3s *tangent)
+{
+    const int n = r->_point_count;
+    for (int i = 0; i < n; i++)
+    {
+        vec3s fallback = (i > 0) ? tangent[i - 1] : WORLD_FWD;
+        tangent[i]     = Ribbon_Dir(r->points[i > 0 ? i - 1 : i], r->points[i < n - 1 ? i + 1 : i], fallback);
+    }
+}
+
+static void Ribbon_ApplyMiter(const Ribbon *r, const vec3s *tangent, RibbonPointData *pd)
+{
+    const int n = r->_point_count;
+    for (int i = 0; i < n; i++)
+    {
+        vec3s d0 = (i > 0) ? Ribbon_Dir(r->points[i - 1], r->points[i], tangent[i]) : tangent[i];
+        vec3s d1 = (i < n - 1) ? Ribbon_Dir(r->points[i], r->points[i + 1], tangent[i]) : tangent[i];
+        float c  = fminf(fmaxf(glms_vec3_dot(tangent[i], d0), 0.0f), fmaxf(glms_vec3_dot(tangent[i], d1), 0.0f));
+        pd->width[i] /= fmaxf(c, 0.3f);
+    }
+}
 // Per-point width, alpha and path distance (shared by every ribbon type)
 static void Ribbon_BuildPointData(const Ribbon *r, RibbonPointData *pd)
 {
@@ -139,7 +174,7 @@ static void Ribbon_BuildPointData(const Ribbon *r, RibbonPointData *pd)
 
 // Writes one SSBO segment per point pair. `axis[i]` is whatever the shader
 // expects for these flags (tangent for camera-facing, blade axis for AXIS).
-static void Ribbon_EmitSegments(const Ribbon *r, u32 flags, const vec3s *axis, const RibbonPointData *pd)
+static void Ribbon_EmitSegments(const Ribbon *r, const vec3s *axis, const RibbonPointData *pd)
 {
     for (int p = 1; p < r->_point_count; p++)
     {
@@ -168,7 +203,7 @@ static void Ribbon_EmitSegments(const Ribbon *r, u32 flags, const vec3s *axis, c
             .axisB     = {axis[p].x, axis[p].y, axis[p].z, 0.0f},
             .colorA    = cA,
             .colorB    = cB,
-            .flags     = flags,
+            .flags     = r->flags,
             .textureId = r->texture,
             .panSpeed  = r->pan,
             .uv        = {u1 - u0, 1.0f, u0, 0.0f},
@@ -176,55 +211,55 @@ static void Ribbon_EmitSegments(const Ribbon *r, u32 flags, const vec3s *axis, c
     }
 }
 
-// Camera-facing ribbon: axis = path tangent, shader builds side from the view.
-bool Sol_Ribbon_Draw(World *world, double dt, Ribbon *r)
+static void Draw(World *world, double dt, Ribbon *r)
 {
     const int n = r->_point_count;
     if (n <= 1)
-        return false;
+        return;
 
     RibbonPointData pd;
     Ribbon_BuildPointData(r, &pd);
 
-    // One tangent per point, shared by both neighbouring segments
     vec3s tangent[MAX_RIBBON_SEGMENTS];
-    for (int i = 0; i < n; i++)
+
+    // Camera-facing: one sheet, tangent is the axis
+    if (!(r->flags & RIBBONFLAG_NOFACECAM))
     {
-        vec3s fallback = (i > 0) ? tangent[i - 1] : WORLD_FWD;
-        tangent[i]     = Ribbon_Dir(r->points[i > 0 ? i - 1 : i], r->points[i < n - 1 ? i + 1 : i], fallback);
+        Ribbon_BuildTangents(r, tangent);
+        Ribbon_ApplyMiter(r, tangent, &pd);
+        Ribbon_EmitSegments(r, tangent, &pd);
+        return;
     }
 
-    // Miter compensation so bends don't pinch
-    for (int i = 0; i < n; i++)
-    {
-        vec3s d0 = (i > 0) ? Ribbon_Dir(r->points[i - 1], r->points[i], tangent[i]) : tangent[i];
-        vec3s d1 = (i < n - 1) ? Ribbon_Dir(r->points[i], r->points[i + 1], tangent[i]) : tangent[i];
-        float c  = fminf(fmaxf(glms_vec3_dot(tangent[i], d0), 0.0f), fmaxf(glms_vec3_dot(tangent[i], d1), 0.0f));
-        pd.width[i] /= fmaxf(c, 0.3f);
-    }
+    // Blade mode: sheet 0 uses the stored axis as-is
+    Ribbon_EmitSegments(r, r->side, &pd);
+    if (r->sheets == 0)
+        return;
 
-    Ribbon_EmitSegments(r, r->flags & ~RIBBONFLAG_AXIS, tangent, &pd);
-    return true;
+    // Extra sheets: roll the original side[] about the tangent
+    Ribbon_BuildTangents(r, tangent);
+
+    vec3s rolled[MAX_RIBBON_SEGMENTS];
+    const int total = (int)r->sheets + 1;
+    for (int s = 1; s < total; s++)
+    {
+        float roll = GLM_PIf * (float)s / (float)total;   // even spacing over 180°
+        for (int i = 0; i < n; i++)
+            rolled[i] = RollSide(r->side[i], tangent[i], roll);
+        Ribbon_EmitSegments(r, rolled, &pd);
+    }
 }
 
-// Weapon trail: side[] (blade axis from the bone) is the width direction.
-// No tangents, no miter, nothing to derive.
-bool Sol_Ribbon_Draw_WeaponTrail(World *world, double dt, Ribbon *r)
+static void Draw_Lightning(World *world, double dt, Ribbon *r)
 {
-    if (r->_point_count <= 1)
-        return false;
-
-    RibbonPointData pd;
-    Ribbon_BuildPointData(r, &pd);
-
-    Ribbon_EmitSegments(r, r->flags | RIBBONFLAG_AXIS, r->side, &pd);
-    return true;
+    GenerateJitter(r, 0.33f);
+    Draw(world, dt, r);
 }
 
-static const bool (*ribbon_draw[RIBBONKIND_COUNT])(World *world, double dt, Ribbon *r) = {
-    [RIBBONKIND_BASIC]        = Sol_Ribbon_Draw,
-    [RIBBONKIND_LIGHTNING]    = Sol_Ribbon_Draw,
-    [RIBBONKIND_WEAPON_TRAIL] = Sol_Ribbon_Draw_WeaponTrail,
+const void (*ribbon_draw_kind[RIBBONKIND_COUNT])(World *world, double dt, Ribbon *r) = {
+    [RIBBONKIND_BASIC]        = Draw,
+    [RIBBONKIND_WEAPON_TRAIL] = Draw,
+    [RIBBONKIND_LIGHTNING]    = Draw_Lightning,
 };
 
 void Ribbon_Update(World *world, double dt)
@@ -239,10 +274,10 @@ void Ribbon_Update(World *world, double dt)
         while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
 
-        if (ribbon_draw[r->kind])
-            ribbon_draw[r->kind](world, dt, r);
+        if (ribbon_draw_kind[r->kind])
+            ribbon_draw_kind[r->kind](world, dt, r);
         else
-            Sol_Ribbon_Draw(world, dt, r);
+            Draw(world, dt, r);
 
         if (r->_point_count > 1)
             sl->ribbons[write++] = *r;
@@ -261,11 +296,28 @@ void Ribbon_Update(World *world, double dt)
         while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
 
-        if (ribbon_draw[r->kind])
-            ribbon_draw[r->kind](world, dt, r);
+        if (ribbon_draw_kind[r->kind])
+            ribbon_draw_kind[r->kind](world, dt, r);
         else
-            Sol_Ribbon_Draw(world, dt, r);
+            Draw(world, dt, r);
     }
+}
+
+ScRibbon *Sol_Ribbon_AddKind(World *world, int id, RibbonKind kind)
+{
+    Ribbon r         = ribbon_kinds[kind];
+    r.kind           = kind;
+    ScRibbon *ribbon = Sol_Comp_Add(world, id, ScRibbon);
+    ribbon->ribbon   = r;
+    return ribbon;
+}
+
+Ribbon *Sol_Ribbon_Next(World *world)
+{
+    SlRibbon *sl = Sol_Comp_Get(world, 0, SlRibbon);
+    Ribbon *r    = solb_next(sl->ribbons);
+    *r           = (Ribbon){0};
+    return r;
 }
 
 void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s posA, vec3s posB)
@@ -275,6 +327,7 @@ void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s posA, vec3s posB)
     r.kind       = kind;
     Sol_Ribbon_Addpoint(&r, posA, WORLD_UP);
     Sol_Ribbon_Addpoint(&r, posB, WORLD_UP);
+
     solb_push(sl->ribbons, r);
 }
 
@@ -286,28 +339,10 @@ void Sol_Ribbon_SpawnE(World *world, RibbonKind kind, u32 entA, u32 entB)
     r.entA       = entA;
     r.entB       = entB;
 
-    r.points[0]    = world->xform.pos[entA];
-    r.points[1]    = world->xform.pos[entB];
-    r._point_count = 2;
+    Sol_Ribbon_Addpoint(&r, world->xform.pos[entA], WORLD_UP);
+    Sol_Ribbon_Addpoint(&r, world->xform.pos[entB], WORLD_UP);
 
     solb_push(sl->ribbons, r);
-}
-
-Ribbon *Sol_Ribbon_Next(World *world)
-{
-    SlRibbon *sl = Sol_Comp_Get(world, 0, SlRibbon);
-    Ribbon *r    = solb_next(sl->ribbons);
-    *r           = (Ribbon){0};
-    return r;
-}
-
-ScRibbon *Sol_Ribbon_AddKind(World *world, int id, RibbonKind kind)
-{
-    Ribbon r         = ribbon_kinds[kind];
-    r.kind           = kind;
-    ScRibbon *ribbon = Sol_Comp_Add(world, id, ScRibbon);
-    ribbon->ribbon   = r;
-    return ribbon;
 }
 
 // return current point idx

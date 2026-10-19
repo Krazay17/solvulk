@@ -21,6 +21,11 @@
 typedef struct ScModelData ScModelData;
 
 // 1. Define category pipeline lists
+#define SOL_MODEL_PIPELINES(X)                                                                                         \
+    X(PIPE_MODEL, "shaders/model.vert.spv", "shaders/model.frag.spv")                                                  \
+    X(PIPE_MODEL_SKINNED, "shaders/model_skinned.vert.spv", "shaders/model.frag.spv")                                  \
+    X(PIPE_MODEL_TRANSPARENT, "shaders/model.vert.spv", "shaders/model.frag.spv")
+
 #define SOL_TEXT_PIPELINES(X)                                                                                          \
     X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")                                                 \
     X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                \
@@ -47,7 +52,9 @@ typedef struct ScModelData ScModelData;
     X(PIPE_RIBBON_FRONT, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")
 
 // 2. Compile-time element counter trick
+// put 0 so every X_COUNT macro does +1 to it
 #define X_COUNT(id, ...) +1
+#define PIPE_MODEL_COUNT (0 SOL_MODEL_PIPELINES(X_COUNT))
 #define PIPE_TEXT_COUNT (0 SOL_TEXT_PIPELINES(X_COUNT))
 #define PIPE_SPHERE_COUNT (0 SOL_SPHERE_PIPELINES(X_COUNT))
 #define PIPE_QUAD_COUNT (0 SOL_QUAD_PIPELINES(X_COUNT))
@@ -58,17 +65,20 @@ typedef struct ScModelData ScModelData;
 
 typedef enum
 {
+    // PIPE_MODEL,
+    // PIPE_MODEL_SKINNED,
+    // PIPE_MODEL_TRANSPARENT,
     PIPE_SKYBOX,
-    PIPE_MODEL,
-    PIPE_MODEL_SKINNED,
-    PIPE_MODEL_TRANSPARENT,
     PIPE_RECT,
     PIPE_LINE,
 
-    SOL_TEXT_PIPELINES(X_ENUM)
-    SOL_SPHERE_PIPELINES(X_ENUM) SOL_QUAD_PIPELINES(X_ENUM) SOL_RIBBON_PIPELINES(X_ENUM)
+    SOL_MODEL_PIPELINES(X_ENUM)
+    SOL_TEXT_PIPELINES(X_ENUM) SOL_SPHERE_PIPELINES(X_ENUM) SOL_QUAD_PIPELINES(X_ENUM) SOL_RIBBON_PIPELINES(X_ENUM)
 
         PIPE_COUNT,
+
+    PIPE_MODEL_START = PIPE_MODEL,
+    PIPE_MODEL_END   = PIPE_MODEL_START + PIPE_MODEL_COUNT,
 
     PIPE_TEXT_START = PIPE_TEXT,
     PIPE_TEXT_END   = PIPE_TEXT_START + PIPE_TEXT_COUNT,
@@ -83,7 +93,7 @@ typedef enum
     PIPE_RIBBON_END   = PIPE_RIBBON_START + PIPE_RIBBON_COUNT,
 } PipelineId;
 
-typedef struct ViewSSBO
+typedef struct SolView
 {
     mat4s proj;
     mat4s view;
@@ -95,9 +105,19 @@ typedef struct ViewSSBO
     float nearClip;
     float farClip;
     float roll;
-} ViewSSBO;
+} SolView;
+extern SolView g_solView;
 
-extern ViewSSBO g_solView;
+typedef struct
+{
+    mat4s viewProjection;
+    mat4s view;
+    mat4s proj;
+    vec4s cameraPos;
+    vec4s sun;
+    float aspect;
+} SceneUBO;
+SceneUBO *Sol_Render_GetNext_Scene();
 
 typedef struct
 {
@@ -115,18 +135,18 @@ typedef struct RenderVert
     vec4s color;
 } RenderVert;
 
-typedef struct
-{
-    float x, y, w, h;
-    float u, v, uw, vh;
-    float r, g, b, a;
-} ShaderPushText;
+// typedef struct
+// {
+//     float x, y, w, h;
+//     float u, v, uw, vh;
+//     float r, g, b, a;
+// } ShaderPushText;
 
-typedef struct
-{
-    ShaderPushText *push;
-    u32 count;
-} ShaderPushTexts;
+// typedef struct
+// {
+//     ShaderPushText *push;
+//     u32 count;
+// } ShaderPushTexts;
 
 typedef struct
 {
@@ -148,6 +168,7 @@ typedef struct
 extern RectQueue rectQueue[];
 static inline RectSSBO *Sol_Render_GetNext_Rect(u32 layer)
 {
+    assert(layer >= 0 && layer < UILAYER_COUNT && "INVALID RECT LAYER");
     assert(rectQueue[layer].count < MAX_RECT_INSTANCES && "rectQueue[layer] Full");
     RectSSBO *ssbo = &rectQueue[layer].instances[rectQueue[layer].count++];
     *ssbo          = (RectSSBO){0};
@@ -168,7 +189,9 @@ static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
 {
     assert(layer >= 0 && layer < UILAYER_COUNT && "INVALID FONT LAYER");
     assert(font2dQueue[layer].count < MAX_FONT_INSTANCES && "font2dQueue[layer] Full");
-    return &font2dQueue[layer].instances[font2dQueue[layer].count++];
+    FontSSBO *ssbo = &font2dQueue[layer].instances[font2dQueue[layer].count++];
+    *ssbo          = (FontSSBO){0};
+    return ssbo;
 }
 
 typedef struct
@@ -182,58 +205,56 @@ typedef struct
     float hitTime;
     u32 _padding[2];
 } ModelSSBO;
-
 typedef struct
 {
     u32 count;
     ModelKind handles[MAX_MODEL_INSTANCES];
     ModelSSBO instances[MAX_MODEL_INSTANCES];
 } ModelQueue;
-
-extern ModelQueue modelQueues[1];
-
-static inline ModelSSBO *Sol_Render_GetNextModel(u32 pipe, ModelKind handle)
-{
-    ModelQueue *q = &modelQueues[pipe];
-    int count     = q->count;
-    if (count >= MAX_MODEL_INSTANCES)
-        return NULL;
-
-    q->handles[count] = handle;
-    ModelSSBO *buffer = &q->instances[count];
-    *buffer           = (ModelSSBO){0};
-    q->count++;
-    return buffer;
-}
-
 typedef struct
 {
     u32 count;
-    ModelSSBO modelSSBO[MAX_MODEL_INSTANCES];
     ModelKind handles[MAX_MODEL_INSTANCES];
-} ModelSubmission;
-
-typedef struct
-{
-    u32 count;
-    ModelSSBO modelSSBO[MAX_MODEL_INSTANCES];
+    ModelSSBO instances[MAX_MODEL_INSTANCES];
     const SolPose *bones[MAX_MODEL_INSTANCES];
-    ModelKind handles[MAX_MODEL_INSTANCES];
-} ModelSkinnedSubmission;
+} ModelQueueSkinned;
+extern ModelQueue modelQueue;
+extern ModelQueue modelQueueTransparent;
+extern ModelQueueSkinned modelQueueSkinning;
+// extern ModelQueue modelQueues[PIPE_MODEL_COUNT];
+// static inline ModelSSBO *Sol_Render_GetNextModel(u32 pipe, ModelKind handle)
+// {
+//     u32 idx = pipe - PIPE_MODEL_START;
+//     assert(idx < PIPE_MODEL_COUNT);
+//     ModelQueue *q = &modelQueues[idx];
+//     int count     = q->count;
+//     if (count >= MAX_MODEL_INSTANCES)
+//         return NULL;
 
-extern ModelSubmission modelQueue;
-extern ModelSkinnedSubmission skinningQueue;
-
-static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSSBO, SolPose *pose)
+//     q->handles[count] = handle;
+//     ModelSSBO *buffer = &q->instances[count];
+//     *buffer           = (ModelSSBO){0};
+//     q->count++;
+//     return buffer;
+// }
+static inline void Sol_Render_PushModel(ModelKind handle, ModelSSBO *modelSSBO, SolPose *pose, bool transparent)
 {
     if (pose)
     {
-        if (skinningQueue.count >= MAX_MODEL_INSTANCES)
+        if (modelQueueSkinning.count >= MAX_MODEL_INSTANCES)
             return;
-        u32 idx                      = skinningQueue.count++;
-        skinningQueue.handles[idx]   = handle;
-        skinningQueue.bones[idx]     = pose;
-        skinningQueue.modelSSBO[idx] = *modelSSBO;
+        u32 idx                           = modelQueueSkinning.count++;
+        modelQueueSkinning.handles[idx]   = handle;
+        modelQueueSkinning.bones[idx]     = pose;
+        modelQueueSkinning.instances[idx] = *modelSSBO;
+    }
+    else if (transparent)
+    {
+        if (modelQueue.count >= MAX_MODEL_INSTANCES)
+            return;
+        u32 idx                   = modelQueueTransparent.count++;
+        modelQueueTransparent.handles[idx]   = handle;
+        modelQueueTransparent.instances[idx] = *modelSSBO;
     }
     else
     {
@@ -241,7 +262,7 @@ static inline void Sol_Render_GetNext_Model(ModelKind handle, ModelSSBO *modelSS
             return;
         u32 idx                   = modelQueue.count++;
         modelQueue.handles[idx]   = handle;
-        modelQueue.modelSSBO[idx] = *modelSSBO;
+        modelQueue.instances[idx] = *modelSSBO;
     }
 }
 
@@ -256,7 +277,8 @@ typedef struct SphereSSBO
 
 typedef struct
 {
-    SphereSSBO *instances;
+    u32 count;
+    SphereSSBO instances[MAX_QUAD_INSTANCES];
 } SphereQueue;
 
 extern SphereQueue sphereQueues[PIPE_SPHERE_COUNT];
@@ -265,7 +287,7 @@ static inline SphereSSBO *Sol_Render_GetNextSphere(PipelineId kind)
     u32 idx = kind - PIPE_SPHERE_START;
     assert(idx < PIPE_SPHERE_COUNT);
     SphereQueue *q   = &sphereQueues[idx];
-    SphereSSBO *ssbo = solb_next(q->instances);
+    SphereSSBO *ssbo = &q->instances[q->count++];
     *ssbo            = (SphereSSBO){0};
     return ssbo;
 }
@@ -279,17 +301,17 @@ typedef struct
     vec4s colorA;
     vec4s colorB;
     vec4s uv;
-    vec4s axisA; // NEW: Shared tangent at point A
-    vec4s axisB; // NEW: Shared tangent at point B
+    vec4s axisA; // Shared tangent at point A
+    vec4s axisB; // Shared tangent at point B
 
     uint32_t textureId;
     uint32_t flags;
     float panSpeed;
 } RibbonSegSSBO;
-
 typedef struct
 {
-    RibbonSegSSBO *instances;
+    u32 count;
+    RibbonSegSSBO instances[MAX_QUAD_INSTANCES];
 } RibbonQueue;
 
 extern RibbonQueue ribbonQueues[PIPE_RIBBON_COUNT];
@@ -298,7 +320,7 @@ static inline RibbonSegSSBO *Sol_Render_GetNext_RibbonSeg(PipelineId kind)
     u32 idx = kind - PIPE_RIBBON_START;
     assert(idx < PIPE_RIBBON_COUNT && "Ribbon idx OOB");
     RibbonQueue *q      = &ribbonQueues[idx];
-    RibbonSegSSBO *ssbo = solb_next(q->instances);
+    RibbonSegSSBO *ssbo = &q->instances[q->count++];
     *ssbo               = (RibbonSegSSBO){0};
     return ssbo;
 }
@@ -323,7 +345,8 @@ typedef struct QuadSSBO
 } QuadSSBO;
 typedef struct
 {
-    QuadSSBO *instances;
+    u32 count;
+    QuadSSBO instances[MAX_QUAD_INSTANCES];
 } QuadQueue;
 
 extern QuadQueue quadQueues[PIPE_QUAD_COUNT];
@@ -332,22 +355,10 @@ static inline QuadSSBO *Sol_Render_GetNextQuad(PipelineId kind)
     u32 idx = kind - PIPE_QUAD_START;
     assert(idx < PIPE_QUAD_COUNT && "QuadKind OOB");
     QuadQueue *q   = &quadQueues[idx];
-    QuadSSBO *ssbo = solb_next(q->instances);
+    QuadSSBO *ssbo = &q->instances[q->count++];
     *ssbo          = (QuadSSBO){0};
     return ssbo;
 }
-
-typedef struct
-{
-    mat4s viewProjection;
-    mat4s view;
-    mat4s proj;
-    vec4s cameraPos;
-    vec4s sun;
-    float aspect;
-} SceneUBO;
-
-SceneUBO *Sol_Render_GetNext_Scene();
 
 int Sol_Render_Init();
 int Sol_Render_GPU_Init(void *hwnd, void *hInstance);

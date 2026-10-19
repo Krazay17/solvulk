@@ -576,7 +576,49 @@ typedef enum
     MODELKIND_WORLD10,
     MODELKIND_COUNT,
 } ModelKind;
+typedef enum
+{
+    RIBBONKIND_BASIC,
+    RIBBONKIND_FIRE,
+    RIBBONKIND_LIGHTNING,
+    RIBBONKIND_WEAPON_TRAIL,
+    RIBBONKIND_COUNT,
+} RibbonKind;
+typedef enum
+{
+    RIBBONFLAG_NOFACECAM = (1u << 0),
+} RibbonFlag;
+#define MAX_RIBBON_SEGMENTS 64
+typedef struct Ribbon
+{
+    RibbonKind kind;
+    vec3s points[MAX_RIBBON_SEGMENTS];
+    float thickness[MAX_RIBBON_SEGMENTS];
+    bool nonuniform_thickness;
+    vec3s side[MAX_RIBBON_SEGMENTS];
+    
+    vec4s color;
+    u32 texture;
+    float lifespan;
+    u32 entA, entB;
+    RibbonFlag flags;
+    u32 sheets;
+    float pan;
+    float alpha_curve;
+    float scale_curve;
+    
+    int _point_count;
+    float _point_elapsed[MAX_RIBBON_SEGMENTS];
+    float _dist_origin;
+    float _elapsed;
+    float _update_timer;
+} Ribbon;
 
+typedef struct
+{
+    u32 kind;
+    float last_hit_time;
+} SolModel;
 typedef struct SolVertex
 {
     vec3 position;

@@ -8,6 +8,7 @@
 #include "world.h"
 #include "sol_math.h"
 #include "model.h"
+#include "ribbon/s_ribbon.h"
 
 const WeaponKind item_weapon_map[ITEMKIND_COUNT] = {
     [ITEMKIND_CLAW]   = WEAPONKIND_CLAW,   //
@@ -31,7 +32,7 @@ void Weapon_Update(World *world, double dt)
                 while (c->_accum >= c->rate)
                 {
                     c->_accum -= c->rate;
-                    vec3s side = glms_quat_rotatev(trail_xform.rot, WORLD_UP);
+                    vec3s side = glms_quat_rotatev(trail_xform.rot, WORLD_DOWN);
                     Sol_Ribbon_Addpoint(&c->ribbon, trail_xform.pos, side);
                 }
             }
@@ -96,7 +97,8 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     }
     break;
     default:
-        model->kind = MODELKIND_WEAPONBLADE;
+        model->kind        = MODELKIND_WEAPONBLADE;
+        model->transparent = true;
     }
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
     for (int i = 0; i < skeleton->boneCount; i++)

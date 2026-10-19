@@ -13,6 +13,7 @@
 #include "estate.h"
 #include "prefabs.h"
 #include "render/render.h"
+#include "ribbon/s_ribbon.h"
 
 #define MIN_POWER 0.2f
 
@@ -198,7 +199,7 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
     case 1: {
         if (data->as.bolt.bolt_state == 3)
         {
-            vec3s pos = Sol_Body3_GetHead(world, id);
+            vec3s pos = world->xform.pos[id];
             if (GetBoltD2(world, pos, data) < 0.5f)
             {
                 BoltDelete(world, data);
@@ -207,9 +208,8 @@ static void Charge(World *world, int id, ScAbility *ability, ScCmd *cmd, int slo
             ScBody3 *body3 = Sol_Comp_Get(world, data->as.bolt.bolt, ScBody3);
             if (body3)
             {
-                vec3s to_player = glms_vec3_normalize(
-                    glms_vec3_sub(Sol_Body3_GetHead(world, id), world->xform.pos[data->as.bolt.bolt]));
-                body3->vel = glms_vec3_scale(to_player, bolt_speed);
+                vec3s to_player = glms_vec3_normalize(glms_vec3_sub(pos, world->xform.pos[data->as.bolt.bolt]));
+                body3->vel      = glms_vec3_scale(to_player, bolt_speed);
             }
         }
     }
@@ -306,28 +306,22 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                     .texture      = SOL_TEXTURE_LIGHTNING,
                     .color        = VEC4_WHITE,
                     .pan          = 6.0f,
-                    .sheets       = 2,
-                    .flags        = 1,
                     ._point_count = 16,
                 };
-
-                Sol_Ribbon_GenerateJitter(&r, 0.33f);
-                Sol_Ribbon_Draw(world, dt, &r);
+                ribbon_draw_kind[RIBBONKIND_LIGHTNING](world, dt, &r);
             }
             vec3s anchor_pos3 = {anchor4.x, anchor4.y, anchor4.z};
             Ribbon r          = {
                 .points[0]    = anchor_pos3,
                 .points[15]   = hand_pos,
-                .thickness    = 0.1f,
+                .thickness[0] = 0.1f,
                 .texture      = SOL_TEXTURE_LIGHTNING,
                 .color        = VEC4_WHITE,
                 .pan          = 6.0f,
-                .flags        = 1,
+                .flags        = 0,
                 ._point_count = 16,
-                .sheets       = 2,
             };
-            Sol_Ribbon_GenerateJitter(&r, 0.33f);
-            Sol_Ribbon_Draw(world, dt, &r);
+            ribbon_draw_kind[RIBBONKIND_LIGHTNING](world, dt, &r);
         }
         break;
         case 2: {
@@ -335,14 +329,15 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
             vec3s fwd       = Sol_Comp_Get(world, id, ScCmd)->lookdir;
             vec4s rot4      = Sol_Rot_FromVecs(fwd, WORLD_UP);
 
-            vec4s model_sca                             = {0.5f, 0.0f, 0.5f, 1.0f};
-            model_sca.y                                 = data->power * 1.0f;
-            *Sol_Render_GetNextModel(0, MODELKIND_BOLT) = (ModelSSBO){
+            vec4s model_sca      = {0.5f, 0.0f, 0.5f, 1.0f};
+            model_sca.y          = data->power * 1.0f;
+            ModelSSBO model_ssbo = {
                 .color    = {1.0f, 1.0f, 1.0f, 1.0f},
                 .position = hand_pos4,
                 .scale    = model_sca,
                 .rotation = rot4,
             };
+            Sol_Render_PushModel(MODELKIND_BOLT, &model_ssbo, NULL, 1);
 
             versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
             versors cross_rot = glms_quat_mul(to_versors(rot4), roll_90);

@@ -36,15 +36,13 @@ static inline void Bolt_Draw(World *world, int id, const View3 *view)
     vec4s rot4 = {xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
 
     vec4s model_sca      = {0.5f, 1.0f, 0.5f, 1.0f};
-    ModelSSBO *model     = Sol_Render_GetNextModel(0, MODELKIND_BOLT);
     ModelSSBO model_ssbo = {
         .color    = {1.0f, 1.0f, 1.0f, 1.0f},
         .position = pos4,
         .scale    = glms_vec4_scale(model_sca, xform.sca.x),
         .rotation = rot4,
     };
-    *model = model_ssbo;
-    // Sol_Render_GetNext_Model(MODELKIND_BOLT, &model_ssbo, NULL);
+    Sol_Render_PushModel(MODELKIND_BOLT, &model_ssbo, NULL, true);
 
     versors roll_90   = glms_quatv(GLM_PI_2f, (vec3s){0.0f, 1.0f, 0.0f});
     versors cross_rot = glms_quat_mul(to_versors(rot4), roll_90);

@@ -203,12 +203,13 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, int slot, f
     }
     break;
     case 2: {
-        *Sol_Render_GetNextModel(0, MODELKIND_CONE) = (ModelSSBO){
+        ModelSSBO model_ssbo = {
             .position = {pos.x, pos.y, pos.z, 1.0f},
             .rotation = rot,
             .scale    = {1.0f, 1.0f, 1.0f, 1.0f},
             .color    = {1, 0.2f, 0, 1},
         };
+        Sol_Render_PushModel(MODELKIND_CONE, &model_ssbo, NULL, 1);
         Sol_Emitter_Push(world,
                          &(Emitter){
                              .kind        = EMITKIND_CONE,

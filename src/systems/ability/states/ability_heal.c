@@ -1,6 +1,7 @@
 #include "ability/s_ability.h"
 #include "world.h"
 #include "render/render.h"
+#include "ribbon/s_ribbon.h"
 
 static void Update(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot, float dt)
 {
@@ -49,13 +50,12 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
         .color                = VEC4_WHITE,
         .pan                  = 4.0f,
         .sheets               = 2,
-        .flags                = 1,
         ._point_count         = 2,
     };
 
-    Sol_Ribbon_Draw(world, dt, &r);
+    ribbon_draw_kind[RIBBONKIND_BASIC](world, dt, &r);
     r.points[0] = posR;
-    Sol_Ribbon_Draw(world, dt, &r);
+    ribbon_draw_kind[RIBBONKIND_BASIC](world, dt, &r);
 }
 static DefendResult Defend(World *world, int id, ScAbility *ability, SolHit *hit, int slot)
 {

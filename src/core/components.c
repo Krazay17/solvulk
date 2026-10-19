@@ -33,6 +33,13 @@ void ScAnim_Init(World *world, int id, ScAnim *c)
     c->layers[3] = (AnimLayer){.animId = -1, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f};
 }
 
+void ScParent_Init(World *world, int id, ScParent *c)
+{
+    c->localScale.x = 1.0f;
+    c->localScale.y = 1.0f;
+    c->localScale.z = 1.0f;
+}
+
 void SlRules_Init(World *world, SlRules *self)
 {
 }

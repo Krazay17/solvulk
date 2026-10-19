@@ -31,6 +31,14 @@ const struct ModelKindData
         },
 };
 
+static void Draw(World *world, double dt, SolModel *model)
+{
+}
+
+const void (*model_kind_draw[MODELKIND_COUNT])(World *world, double dt, SolModel *model) = {
+    [MODELKIND_DUDE] = Draw,
+};
+
 void Model_Render(World *world, double dt)
 {
     float fdt = world->fdt;
@@ -89,12 +97,12 @@ void Model_Render(World *world, double dt)
         if (Sol_Comp_Has(world, id, ScAnim))
         {
             ScAnim *anim = Sol_Comp_Get(world, id, ScAnim);
-            Sol_Render_GetNext_Model(model->kind, &modelSSBO, &anim->pose);
+            Sol_Render_PushModel(model->kind, &modelSSBO, &anim->pose, false);
         }
+        else if (model->transparent)
+            Sol_Render_PushModel(model->kind, &modelSSBO, NULL, true);
         else
-        {
-            Sol_Render_GetNext_Model(model->kind, &modelSSBO, NULL);
-        }
+            Sol_Render_PushModel(model->kind, &modelSSBO, NULL, false);
     }
 }
 

@@ -21,3 +21,6 @@
 #include "render/render.h"
 #include "platform/platform.h"
 #include "spatial_grid.h"
+
+#include "ribbon/s_ribbon.h"
+#include "model/s_model.h"

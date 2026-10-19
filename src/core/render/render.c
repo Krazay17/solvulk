@@ -13,7 +13,7 @@
 #include "model.h"
 #include "string.h"
 
-ViewSSBO g_solView = {
+SolView g_solView = {
     .pos      = {0.0f, 0.0f, -5.0f},
     .dir      = {0.0f, 0.0f, 1.0f},
     .target   = {0.0f, 0.0f, 0.0f},
@@ -23,31 +23,32 @@ ViewSSBO g_solView = {
     .farClip  = 2500.0f,
 };
 
-ModelSubmission modelQueue;
-ModelSkinnedSubmission skinningQueue;
+ModelQueue modelQueue;
+ModelQueue modelQueueTransparent;
+ModelQueueSkinned modelQueueSkinning;
+// ModelQueue modelQueues[PIPE_MODEL_COUNT];
 
 RectQueue rectQueue[UILAYER_COUNT];
 FontQueue font2dQueue[UILAYER_COUNT];
 
-ModelQueue modelQueues[1];
 QuadQueue quadQueues[PIPE_QUAD_COUNT];
 SphereQueue sphereQueues[PIPE_SPHERE_COUNT];
 RibbonQueue ribbonQueues[PIPE_RIBBON_COUNT];
 
 int Sol_Render_Init()
 {
-    for (int i = 0; i < PIPE_SPHERE_COUNT; i++)
-    {
-        solb_init(sphereQueues[i].instances, 128);
-    }
-    for (int i = 0; i < PIPE_QUAD_COUNT; i++)
-    {
-        solb_init(quadQueues[i].instances, 128);
-    }
-    for (int i = 0; i < PIPE_RIBBON_COUNT; i++)
-    {
-        solb_init(ribbonQueues[i].instances, 128);
-    }
+    // for (int i = 0; i < PIPE_SPHERE_COUNT; i++)
+    // {
+    //     solb_init(sphereQueues[i].instances, 128);
+    // }
+    // for (int i = 0; i < PIPE_QUAD_COUNT; i++)
+    // {
+    //     solb_init(quadQueues[i].instances, 128);
+    // }
+    // for (int i = 0; i < PIPE_RIBBON_COUNT; i++)
+    // {
+    //     solb_init(ribbonQueues[i].instances, 128);
+    // }
     // solb_init(modelQueues[0].instances, 128);
     // solb_init(modelQueues[0].handles, 128);
     return 0;
@@ -190,7 +191,7 @@ void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride)
 
 void Flush_ModelsTransparent(u32 *model_que_offset)
 {
-    int count = modelQueues[0].count;
+    int count = modelQueueTransparent.count;
     if (count == 0)
         return;
 
@@ -198,7 +199,7 @@ void Flush_ModelsTransparent(u32 *model_que_offset)
 
     uint32_t counts[MODELKIND_COUNT] = {0};
     for (int i = 0; i < count; i++)
-        counts[modelQueues[0].handles[i]]++;
+        counts[modelQueueTransparent.handles[i]]++;
 
     uint32_t offsets[MODELKIND_COUNT] = {0};
     for (int i = 1; i < MODELKIND_COUNT; i++)
@@ -209,9 +210,9 @@ void Flush_ModelsTransparent(u32 *model_que_offset)
 
     for (int i = 0; i < count; i++)
     {
-        ModelKind h        = modelQueues[0].handles[i];
+        ModelKind h        = modelQueueTransparent.handles[i];
         uint32_t globalIdx = *model_que_offset + cursors[h];
-        ssbo[globalIdx]    = modelQueues[0].instances[i];
+        ssbo[globalIdx]    = modelQueueTransparent.instances[i];
         cursors[h]++;
     }
 
@@ -224,7 +225,7 @@ void Flush_ModelsTransparent(u32 *model_que_offset)
     }
 
     *model_que_offset += count;
-    modelQueues[0].count = 0;
+    modelQueueTransparent.count = 0;
 }
 
 void Flush_Models(void)
@@ -233,7 +234,7 @@ void Flush_Models(void)
     u32 model_que_offset = 0;
 
     // Early exit only if both queues are empty
-    if (modelQueue.count == 0 && skinningQueue.count == 0)
+    if (modelQueue.count == 0 && modelQueueSkinning.count == 0)
         return;
 
     ModelSSBO *modelGpu = Sol_GetDescriptorMapping(DESC_MODEL_SSBO);
@@ -261,7 +262,7 @@ void Flush_Models(void)
         {
             ModelKind h = modelQueue.handles[i];
             // Since model_que_offset is 0 here, we map straight to the buffer start
-            modelGpu[cursors[h]] = modelQueue.modelSSBO[i];
+            modelGpu[cursors[h]] = modelQueue.instances[i];
             cursors[h]++;
         }
 
@@ -282,14 +283,14 @@ void Flush_Models(void)
     // ==========================================
     // 2. SKINNED MODELS PASS
     // ==========================================
-    if (skinningQueue.count > 0)
+    if (modelQueueSkinning.count > 0)
     {
         SolPose *boneGpu = Sol_GetDescriptorMapping(DESC_SKINNING_SSBO);
 
         // Count per handle
         uint32_t counts[MODELKIND_COUNT] = {0};
-        for (int i = 0; i < skinningQueue.count; i++)
-            counts[skinningQueue.handles[i]]++;
+        for (int i = 0; i < modelQueueSkinning.count; i++)
+            counts[modelQueueSkinning.handles[i]]++;
 
         // Prefix sum (Local to skinning allocation space)
         uint32_t offsets[MODELKIND_COUNT] = {0};
@@ -299,17 +300,17 @@ void Flush_Models(void)
         uint32_t cursors[MODELKIND_COUNT];
         memcpy(cursors, offsets, sizeof(offsets));
 
-        for (int i = 0; i < skinningQueue.count; i++)
+        for (int i = 0; i < modelQueueSkinning.count; i++)
         {
-            ModelKind h = skinningQueue.handles[i];
+            ModelKind h = modelQueueSkinning.handles[i];
 
             // GLOBAL INDEX = Current Queue Offset + Local Sorted Bucket Index
             uint32_t globalIdx = model_que_offset + cursors[h];
 
             // Write both model params and transformations to mirrored index offsets
-            modelGpu[globalIdx] = skinningQueue.modelSSBO[i];
-            if (skinningQueue.bones[i])
-                boneGpu[globalIdx] = *skinningQueue.bones[i];
+            modelGpu[globalIdx] = modelQueueSkinning.instances[i];
+            if (modelQueueSkinning.bones[i])
+                boneGpu[globalIdx] = *modelQueueSkinning.bones[i];
 
             cursors[h]++;
         }
@@ -325,8 +326,8 @@ void Flush_Models(void)
         }
 
         // Clean up allocation pointers
-        model_que_offset += skinningQueue.count;
-        skinningQueue.count = 0;
+        model_que_offset += modelQueueSkinning.count;
+        modelQueueSkinning.count = 0;
     }
     Flush_ModelsTransparent(&model_que_offset);
 }
@@ -341,7 +342,7 @@ void Flush_Spheres(void)
     for (int pipe = PIPE_SPHERE_START; pipe < PIPE_SPHERE_END; pipe++)
     {
         SphereQueue *q = &sphereQueues[pipe - PIPE_SPHERE_START];
-        u32 count      = solb_count(q->instances);
+        u32 count      = q->count;
         if (count > 0 && currentOffset + count < MAX_QUAD_INSTANCES)
         {
             memcpy(gpu + currentOffset, q->instances, sizeof(SphereSSBO) * count);
@@ -349,7 +350,7 @@ void Flush_Spheres(void)
             vkCmdDraw(cmd, 6, count, 0, currentOffset);
 
             currentOffset += count;
-            solb_set_count(q->instances, 0);
+            q->count = 0;
         }
     }
 }
@@ -363,7 +364,7 @@ void Flush_Quads()
     for (int pipe = PIPE_QUAD_START; pipe < PIPE_QUAD_END; pipe++)
     {
         QuadQueue *q = &quadQueues[pipe - PIPE_QUAD_START];
-        u32 count    = solb_count(q->instances);
+        u32 count    = q->count;
         if (count > 0 && currentOffset + count < MAX_QUAD_INSTANCES)
         {
             memcpy(gpu + currentOffset, q->instances, sizeof(QuadSSBO) * count);
@@ -371,7 +372,7 @@ void Flush_Quads()
             vkCmdDraw(cmd, 6, count, 0, currentOffset);
 
             currentOffset += count;
-            solb_set_count(q->instances, 0);
+            q->count = 0;
         }
     }
 }
@@ -385,14 +386,14 @@ void Flush_Ribbons()
     for (int pipe = PIPE_RIBBON_START; pipe < PIPE_RIBBON_END; pipe++)
     {
         RibbonQueue *q = &ribbonQueues[pipe - PIPE_RIBBON_START];
-        u32 count      = solb_count(q->instances);
+        u32 count      = q->count;
         if (count > 0)
         {
             memcpy(gpu + currentOffset, q->instances, sizeof(RibbonSegSSBO) * count);
             Sol_Render_Bind_Pipeline(cmd, pipe);
             vkCmdDraw(cmd, 6, count, 0, currentOffset);
             currentOffset += count;
-            solb_set_count(q->instances, 0);
+            q->count = 0;
         }
     }
 }

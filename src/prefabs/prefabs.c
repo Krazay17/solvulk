@@ -483,10 +483,10 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
         ailearn->reward_combat         = 10.0f;
     }
 
-    ScRibbon *ribbon            = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
-    ribbon->rate                = 0.02f;
-    ribbon->ribbon.thickness[0] = size;
-    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, WORLD_UP);
+    Ribbon *r       = Sol_Ribbon_AddKind(world, id, RIBBONKIND_FIRE);
+    r->rate         = 0.02f;
+    r->thickness[0] = size;
+    Sol_Ribbon_Addpoint(r, pos, WORLD_UP);
 
     return id;
 }
@@ -727,11 +727,11 @@ int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, floa
     };
     solb_push(view3->views_b, bolt);
 
-    ScRibbon *ribbon      = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING);
-    ribbon->rate          = 0.033f;
-    ribbon->ribbon.sheets = 2;
-    ribbon->ribbon.flags  = 1;
-    Sol_Ribbon_Addpoint(&ribbon->ribbon, pos, WORLD_UP);
+    Ribbon *ribbon = Sol_Ribbon_AddKind(world, id, RIBBONKIND_LIGHTNING);
+    ribbon->rate   = 0.033f;
+    ribbon->sheets = 2;
+    ribbon->flags  = RIBBONFLAG_NOFACECAM;
+    Sol_Ribbon_Addpoint(ribbon, pos, WORLD_UP);
 
     return id;
 }

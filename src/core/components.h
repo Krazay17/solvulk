@@ -641,9 +641,7 @@ typedef struct
 
 typedef struct
 {
-    Ribbon ribbon;
-    float rate;
-    float _accum;
+    Ribbon *ribbons;
 } ScRibbon;
 
 typedef enum
@@ -737,7 +735,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScBuff, HAS_ScBuff, Add_None)                                                                                    \
     X(ScTimer, HAS_ScTimer, Add_None)                                                                                  \
     X(ScAudio, HAS_ScAudio, Add_None)                                                                                  \
-    X(ScParent, HAS_ScParent, ScParent_Init)                                                                                \
+    X(ScParent, HAS_ScParent, ScParent_Init)                                                                           \
     X(ScOwner, HAS_ScOwner, Add_None)                                                                                  \
     X(ScCombat, HAS_ScCombat, Add_None)                                                                                \
     X(ScReplication, HAS_ScReplication, Add_None)                                                                      \

@@ -13,42 +13,42 @@
 Ribbon ribbon_kinds[RIBBONKIND_COUNT] = {
     [RIBBONKIND_BASIC] =
         {
-            .color       = {1.0f, 1.0f, 1.0f, 1.0f},
-            .lifespan    = 5.0f,
-            .scale_curve = CURVE_LINEAR_FADEOUT,
-            .alpha_curve = CURVE_LINEAR_FADEOUT,
-            .texture     = SOL_TEXTURE_BEAM,
-            .thickness   = 1.0f,
-            .pan         = 1.0f,
+            .color        = {1.0f, 1.0f, 1.0f, 1.0f},
+            .lifespan     = 5.0f,
+            .scale_curve  = CURVE_LINEAR_FADEOUT,
+            .alpha_curve  = CURVE_LINEAR_FADEOUT,
+            .texture      = SOL_TEXTURE_BEAM,
+            .thickness[0] = 1.0f,
+            .pan          = 1.0f,
         },
     [RIBBONKIND_FIRE] =
         {
-            .color       = {1.0f, 0.0f, 0.0f, 1.0f},
-            .lifespan    = 1.0f,
-            .scale_curve = CURVE_LINEAR_FADEOUT,
-            .alpha_curve = CURVE_LINEAR_FADEOUT,
-            .texture     = SOL_TEXTURE_FOGSTRIP,
-            .thickness   = 0.8f,
-            .pan         = 1.0f,
+            .color        = {1.0f, 0.0f, 0.0f, 1.0f},
+            .lifespan     = 1.0f,
+            .scale_curve  = CURVE_LINEAR_FADEOUT,
+            .alpha_curve  = CURVE_LINEAR_FADEOUT,
+            .texture      = SOL_TEXTURE_FOGSTRIP,
+            .thickness[0] = 0.8f,
+            .pan          = 1.0f,
         },
     [RIBBONKIND_LIGHTNING] =
         {
-            .color       = {1.0f, 1.0f, 1.0f, 1.0f},
-            .lifespan    = 0.3f,
-            .scale_curve = CURVE_LINEAR_FADEOUT,
-            .alpha_curve = CURVE_LINEAR_FADEOUT,
-            .texture     = SOL_TEXTURE_LIGHTNING,
-            .thickness   = 1.0f,
-            .pan         = 2.0f,
+            .color        = {1.0f, 1.0f, 1.0f, 1.0f},
+            .lifespan     = 0.3f,
+            .scale_curve  = CURVE_LINEAR_FADEOUT,
+            .alpha_curve  = CURVE_LINEAR_FADEOUT,
+            .texture      = SOL_TEXTURE_LIGHTNING,
+            .thickness[0] = 1.0f,
+            .pan          = 2.0f,
         },
     [RIBBONKIND_WEAPON_TRAIL] =
         {
-            .color       = {1.0f, 1.0f, 1.0f, 1.0f},
-            .lifespan    = 0.4f,
-            .alpha_curve = CURVE_LINEAR_FADEOUT,
-            .texture     = SOL_TEXTURE_WEAPONTRAIL,
-            .flags       = 1,
-            .thickness   = 1.0f,
+            .color        = {1.0f, 1.0f, 1.0f, 1.0f},
+            .lifespan     = 0.4f,
+            .alpha_curve  = CURVE_LINEAR_FADEOUT,
+            .texture      = SOL_TEXTURE_WEAPONTRAIL,
+            .thickness[0] = 1.0f,
+            .flags        = RIBBONFLAG_NOFACECAM,
         },
 };
 
@@ -183,11 +183,11 @@ static void Ribbon_EmitSegments(const Ribbon *r, const vec3s *axis, const Ribbon
 
         // Head trim: shrink the oldest segment toward its newer end as it fades.
         // Distance is trimmed too so the texture doesn't stretch.
-        if (p == 1)
-        {
-            pA = vecAdd(pB, vecSca(vecSub(pA, pB), pd->alpha[0]));
-            dA = dB - (dB - dA) * pd->alpha[0];
-        }
+        // if (p == 1)
+        // {
+        //     pA = vecAdd(pB, vecSca(vecSub(pA, pB), pd->alpha[0]));
+        //     dA = dB - (dB - dA) * pd->alpha[0];
+        // }
 
         vec4s cA = r->color, cB = r->color;
         cA.w *= pd->alpha[p - 1];
@@ -243,7 +243,7 @@ static void Draw(World *world, double dt, Ribbon *r)
     const int total = (int)r->sheets + 1;
     for (int s = 1; s < total; s++)
     {
-        float roll = GLM_PIf * (float)s / (float)total;   // even spacing over 180°
+        float roll = GLM_PIf * (float)s / (float)total; // even spacing over 180°
         for (int i = 0; i < n; i++)
             rolled[i] = RollSide(r->side[i], tangent[i], roll);
         Ribbon_EmitSegments(r, rolled, &pd);
@@ -256,7 +256,7 @@ static void Draw_Lightning(World *world, double dt, Ribbon *r)
     Draw(world, dt, r);
 }
 
-const void (*ribbon_draw_kind[RIBBONKIND_COUNT])(World *world, double dt, Ribbon *r) = {
+void (*const ribbon_draw_kind[RIBBONKIND_COUNT])(World *world, double dt, Ribbon *r) = {
     [RIBBONKIND_BASIC]        = Draw,
     [RIBBONKIND_WEAPON_TRAIL] = Draw,
     [RIBBONKIND_LIGHTNING]    = Draw_Lightning,
@@ -274,13 +274,14 @@ void Ribbon_Update(World *world, double dt)
         while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
             Ribbon_RemoveFirstSegment(r);
 
-        if (ribbon_draw_kind[r->kind])
-            ribbon_draw_kind[r->kind](world, dt, r);
-        else
-            Draw(world, dt, r);
+        ribbon_draw_kind[r->kind] ? ribbon_draw_kind[r->kind](world, dt, r) : Draw(world, dt, r);
 
         if (r->_point_count > 1)
-            sl->ribbons[write++] = *r;
+        {
+            if (write != i)
+                sl->ribbons[write] = *r;
+            write++;
+        }
     }
     solb_set_count(sl->ribbons, write);
 
@@ -289,42 +290,56 @@ void Ribbon_Update(World *world, double dt)
     {
         int id       = set->dense[i];
         ScRibbon *sc = &set->data[i];
-        int write    = 0;
-        Ribbon *r    = &sc->ribbon;
-        for (int p = 0; p < r->_point_count; p++)
-            r->_point_elapsed[p] += dt;
-        while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
-            Ribbon_RemoveFirstSegment(r);
+        for (int j = 0; j < solb_count(sc->ribbons); j++)
+        {
+            Ribbon *r = &sc->ribbons[j];
+            for (int p = 0; p < r->_point_count; p++)
+                r->_point_elapsed[p] += dt;
+            while (r->lifespan > 0 && r->_point_count > 1 && r->_point_elapsed[0] >= r->lifespan)
+                Ribbon_RemoveFirstSegment(r);
 
-        if (ribbon_draw_kind[r->kind])
-            ribbon_draw_kind[r->kind](world, dt, r);
-        else
-            Draw(world, dt, r);
+            if (r->rate > 0)
+            {
+                r->_accum += dt;
+                while (r->_accum >= r->rate)
+                {
+                    r->_accum -= r->rate;
+                    Sol_Ribbon_Addpoint(r, world->xform.draw_pos[id], WORLD_UP);
+                }
+            }
+
+            ribbon_draw_kind[r->kind] ? ribbon_draw_kind[r->kind](world, dt, r) : Draw(world, dt, r);
+        }
     }
 }
 
-ScRibbon *Sol_Ribbon_AddKind(World *world, int id, RibbonKind kind)
+Ribbon Ribbon_Make(RibbonKind kind)
 {
-    Ribbon r         = ribbon_kinds[kind];
-    r.kind           = kind;
-    ScRibbon *ribbon = Sol_Comp_Add(world, id, ScRibbon);
-    ribbon->ribbon   = r;
-    return ribbon;
+    Ribbon r = ribbon_kinds[kind];
+    r.kind   = kind;
+    return r;
 }
 
-Ribbon *Sol_Ribbon_Next(World *world)
+Ribbon *Sol_Ribbon_AddKind(World *world, int id, RibbonKind kind)
+{
+    ScRibbon *sc = Sol_Comp_Add(world, id, ScRibbon);
+    Ribbon *r    = solb_next(sc->ribbons);
+    *r           = Ribbon_Make(kind);
+    return r;
+}
+
+Ribbon *Sol_Ribbon_Next(World *world, RibbonKind kind)
 {
     SlRibbon *sl = Sol_Comp_Get(world, 0, SlRibbon);
     Ribbon *r    = solb_next(sl->ribbons);
-    *r           = (Ribbon){0};
+    *r           = Ribbon_Make(kind);
     return r;
 }
 
 void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s posA, vec3s posB)
 {
     SlRibbon *sl = Sol_Comp_Get(world, 0, SlRibbon);
-    Ribbon r     = ribbon_kinds[kind];
-    r.kind       = kind;
+    Ribbon r     = Ribbon_Make(kind);
     Sol_Ribbon_Addpoint(&r, posA, WORLD_UP);
     Sol_Ribbon_Addpoint(&r, posB, WORLD_UP);
 
@@ -334,8 +349,7 @@ void Sol_Ribbon_Spawn(World *world, RibbonKind kind, vec3s posA, vec3s posB)
 void Sol_Ribbon_SpawnE(World *world, RibbonKind kind, u32 entA, u32 entB)
 {
     SlRibbon *sl = Sol_Comp_Get(world, 0, SlRibbon);
-    Ribbon r     = ribbon_kinds[kind];
-    r.kind       = kind;
+    Ribbon r     = Ribbon_Make(kind);
     r.entA       = entA;
     r.entB       = entB;
 
@@ -343,6 +357,28 @@ void Sol_Ribbon_SpawnE(World *world, RibbonKind kind, u32 entA, u32 entB)
     Sol_Ribbon_Addpoint(&r, world->xform.pos[entB], WORLD_UP);
 
     solb_push(sl->ribbons, r);
+}
+
+Ribbon *Sol_Ribbon_Find(ScRibbon *sc, RibbonKind kind)
+{
+    for (int i = 0; i < solb_count(sc->ribbons); i++)
+    {
+        Ribbon *r = &sc->ribbons[i];
+        if (r->kind == kind)
+            return r;
+    }
+    return NULL;
+}
+
+bool Sol_Ribbon_Due(Ribbon *r, float dt, float interval)
+{
+    r->_accum += dt;
+    if (r->_accum < interval)
+        return false;
+    r->_accum -= interval;
+    if (r->_accum > interval)
+        r->_accum = 0;
+    return true;
 }
 
 // return current point idx

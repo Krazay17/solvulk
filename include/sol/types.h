@@ -576,6 +576,7 @@ typedef enum
     MODELKIND_WORLD10,
     MODELKIND_COUNT,
 } ModelKind;
+
 typedef enum
 {
     RIBBONKIND_BASIC,
@@ -606,7 +607,9 @@ typedef struct Ribbon
     float pan;
     float alpha_curve;
     float scale_curve;
+    float rate;
     
+    float _accum;
     int _point_count;
     float _point_elapsed[MAX_RIBBON_SEGMENTS];
     float _dist_origin;
@@ -619,6 +622,7 @@ typedef struct
     u32 kind;
     float last_hit_time;
 } SolModel;
+
 typedef struct SolVertex
 {
     vec3 position;

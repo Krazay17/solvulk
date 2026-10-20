@@ -95,13 +95,19 @@ static void Dash(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot,
             Sol_Event_Push(world, EVENTKIND_FX,
                            (SolEvent){.as.fx.kind = FXKIND_SWORDSWING, .pos = Sol_Body3_GetHead(world, id)});
 
-            forc(world, Sol_Equip_GetId(world, id, 5), ScWeapon) c->update_trail = true;
-            forc(world, Sol_Equip_GetId(world, id, 6), ScWeapon) c->update_trail = true;
+            forc(world, id, ScEquip)
+            {
+                int left  = c->left_weapon;
+                int right = c->right_weapon;
+
+                forc(world, left, ScWeapon) c->update_trail  = true;
+                forc(world, right, ScWeapon) c->update_trail = true;
+            }
         }
 
         float duration_delta = data->accum / dash_stage_time[data->stage];
         vec3s dir            = cmd->lookdir;
-        ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
+        ScBody3 *body3       = Sol_Comp_Get(world, id, ScBody3);
         if (body3)
         {
             if (data->hitPause == 0)

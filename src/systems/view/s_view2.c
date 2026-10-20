@@ -263,7 +263,7 @@ static void PowerBar(World *world, int id, float fdt, View2 *view)
     ssbo->uv        = view->textureUV;
 }
 
-const void (*draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
+void (*const draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
     [VIEW2KIND_RECT]        = DrawRect,
     [VIEW2KIND_SLIDER]      = DrawSlider,
     [VIEW2KIND_SLIDER_FILL] = DrawSliderFill,

@@ -281,7 +281,7 @@ static void GeneratePoints(vec3s prev, vec3s next, vec3s *out_pos)
 static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
 {
     AbilityStateData *data = &ability->stateData[slot];
-    vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, slot > 5 ? "hand.R" : "hand.L").pos;
+    vec3s hand_pos         = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L").pos;
     vec3s bolt_pos         = world->xform.pos[data->as.bolt.bolt];
     data->drawAccum += dt;
     switch (data->stage)
@@ -299,28 +299,22 @@ static void Draw(World *world, int id, ScAbility *ability, int slot, float dt)
                 vec3s anchor3     = data->as.bolt.anchor[i];
                 anchor4           = (vec4s){anchor3.x, anchor3.y, anchor3.z, 0.3f};
 
-                Ribbon r = {
-                    .points[0]    = prev_anchor,
-                    .points[15]   = anchor3,
-                    .thickness[0] = 0.3f,
-                    .texture      = SOL_TEXTURE_LIGHTNING,
-                    .color        = VEC4_WHITE,
-                    .pan          = 6.0f,
-                    ._point_count = 16,
-                };
+                Ribbon r       = Ribbon_Make(RIBBONKIND_LIGHTNING);
+                r.points[0]    = prev_anchor;
+                r.points[15]   = anchor3;
+                r.thickness[0] = 0.35f;
+                r.pan          = 6.0f;
+                r._point_count = 16;
                 ribbon_draw_kind[RIBBONKIND_LIGHTNING](world, dt, &r);
             }
             vec3s anchor_pos3 = {anchor4.x, anchor4.y, anchor4.z};
-            Ribbon r          = {
-                .points[0]    = anchor_pos3,
-                .points[15]   = hand_pos,
-                .thickness[0] = 0.1f,
-                .texture      = SOL_TEXTURE_LIGHTNING,
-                .color        = VEC4_WHITE,
-                .pan          = 6.0f,
-                .flags        = 0,
-                ._point_count = 16,
-            };
+            Ribbon r          = Ribbon_Make(RIBBONKIND_LIGHTNING);
+            r.points[0]       = anchor_pos3;
+            r.points[15]      = hand_pos;
+            r.thickness[0]    = 0.1f;
+            r.texture         = SOL_TEXTURE_LIGHTNING;
+            r.pan             = 6.0f;
+            r._point_count    = 16;
             ribbon_draw_kind[RIBBONKIND_LIGHTNING](world, dt, &r);
         }
         break;

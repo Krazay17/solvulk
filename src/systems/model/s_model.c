@@ -35,7 +35,7 @@ static void Draw(World *world, double dt, SolModel *model)
 {
 }
 
-const void (*model_kind_draw[MODELKIND_COUNT])(World *world, double dt, SolModel *model) = {
+void (*const model_kind_draw[MODELKIND_COUNT])(World *world, double dt, SolModel *model) = {
     [MODELKIND_DUDE] = Draw,
 };
 

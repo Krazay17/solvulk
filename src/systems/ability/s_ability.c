@@ -303,6 +303,8 @@ bool Sol_Ability_SetState(World *world, int id, AbilityState target_state, int s
         ability->prio_slot = slot;
         for (int i = 0; i < ABILITY_SLOTS; i++)
         {
+            if (i != slot)
+                Sol_Ability_SetState(world, id, 0, i, true);
             AbilityStateData *data = &ability->stateData[i];
             data->hitPause         = 0;
         }
@@ -393,10 +395,8 @@ DefendResult Sol_Ability_TryDefend(World *world, int id, SolHit *hit)
         for (int i = 0; i < ABILITY_SLOTS; i++)
         {
             const AbilityStateFunc *f = ability_state_func[ability->state[i]];
-            if (!f || !f->defend)
-                return DEFENDKIND_NONE;
-
-            return f->defend(world, id, ability, hit, i);
+            if (f && f->defend)
+                return f->defend(world, id, ability, hit, i);
         }
     }
     return DEFENDKIND_NONE;

@@ -16,15 +16,17 @@ void Rules_FFA(World *world, double dt, SlRules *rules)
     }
 }
 
-const void (*Rules[RULESKIND_COUNT])(World *world, double dt, SlRules *rules) = {
+void (*const rules_kind_update[RULESKIND_COUNT])(World *world, double dt, SlRules *rules) = {
     [RULESKIND_FFA] = Rules_FFA,
 };
 
 void Rules_Update(World *world, double dt)
 {
     SlRules *rules = Sol_Comp_Get(world, 0, SlRules);
-    if (Rules[rules->kind])
-        Rules[rules->kind](world, dt, rules);
+    if (rules_kind_update[rules->kind])
+        rules_kind_update[rules->kind](world, dt, rules);
+    else
+        Rules_FFA(world, dt, rules);
 }
 
 void Rules_Draw(World *world, double dt)

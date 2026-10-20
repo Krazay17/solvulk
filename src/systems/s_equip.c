@@ -28,12 +28,11 @@ void Weapon_Update(World *world, double dt)
         {
             forc(world, id, ScRibbon)
             {
-                c->_accum += dt;
-                while (c->_accum >= c->rate)
+                Ribbon *r = Sol_Ribbon_Find(c, RIBBONKIND_WEAPON_TRAIL);
+                if (Sol_Ribbon_Due(r, dt, 0.01f))
                 {
-                    c->_accum -= c->rate;
                     vec3s side = glms_quat_rotatev(trail_xform.rot, WORLD_DOWN);
-                    Sol_Ribbon_Addpoint(&c->ribbon, trail_xform.pos, side);
+                    Sol_Ribbon_Addpoint(r, trail_xform.pos, side);
                 }
             }
         }
@@ -77,9 +76,8 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     parent->localQuat  = GLMS_QUAT_IDENTITY;
     parent->localScale = (vec3s){1, 0, 1};
 
-    ScRibbon *ribbon       = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL);
-    ribbon->rate           = 0.01f;
-    ribbon->ribbon.texture = SOL_TEXTURE_WEAPONTRAIL;
+    Ribbon *ribbon  = Sol_Ribbon_AddKind(world, id, RIBBONKIND_WEAPON_TRAIL);
+    ribbon->texture = SOL_TEXTURE_WEAPONTRAIL;
 
     ScModel *model = Sol_Comp_Add(world, id, ScModel);
     switch (kind)
@@ -90,9 +88,9 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     }
     break;
     case WEAPONKIND_SCYTHE: {
-        model->kind                 = MODELKIND_SCYTHE;
-        ribbon->ribbon.thickness[0] = 1.3f;
-        ribbon->ribbon.texture      = SOL_TEXTURE_SQUARERING;
+        model->kind          = MODELKIND_SCYTHE;
+        ribbon->thickness[0] = 1.3f;
+        ribbon->texture      = SOL_TEXTURE_SQUARERING;
         glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
     }
     break;

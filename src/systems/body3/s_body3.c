@@ -807,6 +807,19 @@ void Body3_UpdateSub(World *world, double dt)
         Resolve_Contact(world, spatial->contacts[i]);
     }
 
+#pragma omp for schedule(dynamic)
+        for (i = body_count - 1; i >= 0; i--)
+        {
+            int id        = set->dense[i];
+            ScBody3 *body = &set->data[i];
+            Xform xform   = Xform_Get(world, id);
+            if(fabs(xform.pos.x) > 1024.0f || fabs(xform.pos.y) > 1024.0f || fabs(xform.pos.z) > 1024.0f )
+            {
+                world->xform.pos[id] = world->xform.home_pos[id];
+                body->vel = GLMS_VEC3_ZERO;
+            }
+        }
+
     Prof_EndEz(&prof_body3, true, fdt);
 }
 

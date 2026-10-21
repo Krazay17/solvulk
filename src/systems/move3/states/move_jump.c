@@ -23,8 +23,7 @@ void Move_Jump_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
     // else if (cmd->actionState & BITC(ACTION_JUMP) && data->elapsed > JUMP_DURATION * 0.1f)
     //     if (Sol_Move3_SetState(world, id, MOVE_WALLRUN))
     //         return;
-
-    float alpha = 1.0f - (data->elapsed / JUMP_DURATION);
+    float alpha = glm_clamp_zo(1.0f - (data->elapsed / JUMP_DURATION));
 
     body3->vel = Sol_Math_DampDir(body3->vel, WORLD_UP, alpha, DAMPING, dt);
 }
@@ -65,7 +64,6 @@ bool Move_Jump_CanExit(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 next
     case MOVE_WALLRUN:
     case MOVE_WALLJUMP:
         return true;
-        break;
     }
     return move->stateData[move->state].elapsed > JUMP_DURATION;
 }
@@ -84,9 +82,9 @@ bool Move_Jump_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 las
 }
 
 const MoveStateFuncs move_jump_funcs = {
-    .update   = Move_Jump_Update,
-    .enter    = Move_Jump_Enter,
-    .exit     = Move_Jump_Exit,
-    .canExit  = Move_Jump_CanExit,
-    .canEnter = Move_Jump_CanEnter,
+    .update         = Move_Jump_Update,
+    .enter          = Move_Jump_Enter,
+    .exit           = Move_Jump_Exit,
+    .canExit        = Move_Jump_CanExit,
+    .canEnter       = Move_Jump_CanEnter,
 };

@@ -667,6 +667,17 @@ void Sol_Ui_PlayerWorldOverlay(World *hud, World *game)
 
 void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
 {
+    enum
+    {
+        BORDER,
+        TITLE,
+        ROW1,
+        ROW2,
+        ROW3,
+        ROW4,
+        VIEWCOUNT,
+        ROWCOUNT = ROW4 - TITLE,
+    };
     bool existing_window = false;
     for_set(hud, ScRef)
     {
@@ -675,13 +686,63 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
         {
         case REFKIND_RULESWINDOW: {
             existing_window = true;
+            ScView2 *view2  = Sol_Comp_Get(hud, id, ScView2);
+            forc(game, 0, SlRules)
+            {
+                switch (c->kind)
+                {
+                case RULESKIND_FFA:
+                    snprintf(view2->views[1].text, sizeof(view2->views[1].text), "Kills to win: %d",
+                             c->as.ffa.winning_kills);
+
+                    char names[VIEWCOUNT][32] = {0};
+                    int kills[VIEWCOUNT]      = {0};
+
+                    for_set(game, ScScore)
+                    {
+                        int score_ent_id     = set->dense[i];
+                        int current_kills    = c->kills;
+                        char name_buffer[32] = "Unknown";
+                        forc(game, score_ent_id, ScMeta) memcpy(name_buffer, c->name, sizeof(name_buffer));
+
+                        for (int j = 0; j < ROWCOUNT; j++)
+                        {
+                            if (current_kills > kills[j])
+                            {
+                                for (int k = ROWCOUNT - 1; k > j; k--)
+                                {
+                                    kills[k] = kills[k - 1];
+                                    memcpy(names[k], names[k - 1], sizeof(names[k]));
+                                }
+
+                                kills[j] = current_kills;
+                                snprintf(names[j], sizeof(names[j]), "%s", name_buffer);
+                                break;
+                            }
+                        }
+                    }
+                    for (int j = 0; j < ROWCOUNT; j++)
+                    {
+                        u32 view_index = j + ROW1;
+                        if (kills[j] > 0)
+                        {
+                            snprintf(view2->views[view_index].text, sizeof(view2->views[view_index].text), "%s: %d",
+                                     names[j], kills[j]);
+                        }
+                        else
+                            snprintf(view2->views[view_index].text, sizeof(view2->views[view_index].text), "-");
+                    }
+
+                    break;
+                }
+            }
         }
         break;
         }
     }
     if (!existing_window)
     {
-        int window_id = Sol_Prefab_RulesWindow(hud, (vec3s){0, 0, 0});
+        int window_id = Sol_Prefab_RulesWindow(hud, (vec3s){0, 0, 0}, VIEWCOUNT);
         ScRef *ref    = Sol_Comp_Add(hud, window_id, ScRef);
         ref->kind     = REFKIND_RULESWINDOW;
         ref->world    = game->index;

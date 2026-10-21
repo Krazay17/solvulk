@@ -40,6 +40,13 @@ void ScParent_Init(World *world, int id, ScParent *c)
     c->localScale.z = 1.0f;
 }
 
+void ScTeam_Init(World *world, int id, ScTeam *c)
+{
+    c->team        = -1;
+    c->faction     = -1;
+    c->party_count = 0;
+}
+
 void SlRules_Init(World *world, SlRules *self)
 {
 }
@@ -93,16 +100,16 @@ void SlSpatial_Init(World *world, SlSpatial *self)
     {
         float cell_size    = 10.0f;
         self->grid_dynamic = malloc(sizeof(SpatialGrid));
-        vec3s min          = {-512.0f, -512.0f, -32.0f};
-        vec3s max          = {512.0f, 512.0f, 256.0f};
+        vec3s min          = {-512.0f, -256.0f, -512.0f};
+        vec3s max          = {512.0f, 256.0f, 512.0f};
         SpatialGrid_Init(self->grid_dynamic, min, max, cell_size);
     }
 
     {
         float cell_size   = 10.0f;
         self->grid_static = malloc(sizeof(SpatialGrid));
-        vec3s min         = {-512.0f, -512.0f, -32.0f};
-        vec3s max         = {512.0f, 512.0f, 256.0f};
+        vec3s min         = {-512.0f, -256.0f, -512.0f};
+        vec3s max         = {512.0f, 256.0f, 512.0f};
         SpatialGrid_Init(self->grid_static, min, max, cell_size);
     }
 }

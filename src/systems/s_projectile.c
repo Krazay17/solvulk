@@ -154,7 +154,7 @@ void Projectile_Step(World *world, double dt)
         if (!body3)
             continue;
         Xform xform = Xform_Get(world, id);
-        if (xform.pos.y < -15.0f || fabs(xform.pos.x) > 500.0f || fabs(xform.pos.z) > 500.0f)
+        if (fabs(xform.pos.y) > 256.0f || fabs(xform.pos.x) > 512.0f || fabs(xform.pos.z) > 512.0f)
         {
             Sol_Destroy_Ent(world, id);
             continue;

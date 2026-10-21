@@ -23,7 +23,6 @@ const MoveState MOVE_STATE_PRIORITY[MOVE_STATE_COUNT] = {
     MOVE_STUN,     //
     MOVE_DASH,     //
     MOVE_LANDING,  //
-    MOVE_MANTLE,   //
     MOVE_WALLJUMP, //
     MOVE_WALLRUN,  //
     MOVE_JUMP,     //

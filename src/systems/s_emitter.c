@@ -31,20 +31,7 @@ const Emitter emitter_kinds[EMITTERKIND_COUNT] = {
             .alpha_curve = CURVE_SMOOTH_INOUT,
             .scale_curve = CURVE_QUICKIN_SLOWOUT,
         },
-    [EMITTERKIND_SPHERE_BURST_FRACTAL] =
-        {
-            .ttl         = 0.3f,
-            .burst       = 10,
-            .rate        = 0.1f,
-            .speed       = 5.0f,
-            .kind        = EMITKIND_SPHERE,
-            .p_kind      = PARTICLE_FRACTAL,
-            .p_lifespan  = 1.0f,
-            .p_scale     = 3.0f,
-            .p_color     = {1, 1, 1, 1},
-            .alpha_curve = CURVE_EASE_OUT,
-            .scale_curve = CURVE_QUICKIN_SLOWOUT,
-        },
+
     [EMITTERKIND_SMOKE_BURST] =
         {
             .ttl         = 0.2f,
@@ -90,22 +77,18 @@ enum RenderKind
     RENDERKIND_RIBBON,
 };
 const u32 particle_pipekind[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] = RENDERKIND_QUAD,   //
     [PARTICLE_SMOKE]   = RENDERKIND_QUAD,   //
     [PARTICLE_SPARK]   = RENDERKIND_QUAD,   //
     [PARTICLE_BLOOD]   = RENDERKIND_QUAD,   //
     [PARTICLE_FIRE]    = RENDERKIND_QUAD,   //
     [PARTICLE_SPHERE]  = RENDERKIND_SPHERE, //
-    [PARTICLE_PLASMA]  = RENDERKIND_SPHERE, //
 };
 
 const u32 particle_renderkind[PARTICLE_COUNT] = {
-    [PARTICLE_FRACTAL] = PIPE_FRACTAL_PYRAMID, //
     [PARTICLE_SMOKE]   = PIPE_QUAD,            //
     [PARTICLE_BLOOD]   = PIPE_QUAD,            //
     [PARTICLE_FIRE]    = PIPE_QUAD,            //
     [PARTICLE_SPHERE]  = PIPE_SPHERE,          //
-    [PARTICLE_PLASMA]  = PIPE_PLASMA,          //
     [PARTICLE_SPARK]   = PIPE_QUAD,            //
 };
 

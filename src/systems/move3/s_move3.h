@@ -5,6 +5,7 @@
 
 #define WALKABLE_SLOPE 0.7f
 #define MAX_WALK_DISTANCE_BUFFER 0.2f
+#define WALLTRACE_ADDDIST 0.5f
 
 typedef struct ScMove3 ScMove3;
 

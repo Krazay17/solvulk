@@ -12,11 +12,11 @@
 #include "font.h"
 #include "model.h"
 
-#define MAX_MODEL_INSTANCES 0xafffu
-#define MAX_RECT_INSTANCES 0xafffu
-#define MAX_FONT_INSTANCES 0xafffu
-#define MAX_QUAD_INSTANCES 0xfffffu
-#define MAX_BUFFER_VERTS 0xfffffu
+#define MAX_MODEL_INSTANCES 0xfffu
+#define MAX_RECT_INSTANCES 0xfffu
+#define MAX_FONT_INSTANCES 0xffffu
+#define MAX_QUAD_INSTANCES 0xffffu
+#define MAX_BUFFER_VERTS 0xffffu
 
 typedef struct ScModelData ScModelData;
 
@@ -33,12 +33,8 @@ typedef struct ScModelData ScModelData;
 
 #define SOL_SPHERE_PIPELINES(X)                                                                                        \
     X(PIPE_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")                                               \
-    X(PIPE_DEBUG_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere_debug.frag.spv")                                   \
-    X(PIPE_SPHERE_FX, "shaders/sphere.vert.spv", "shaders/sphere_fx.frag.spv")                                         \
-    X(PIPE_FIREBALL, "shaders/sphere.vert.spv", "shaders/sphere_fireball.frag.spv")                                    \
-    X(PIPE_PLASMA, "shaders/sphere.vert.spv", "shaders/sphere_plasma.frag.spv")                                        \
-    X(PIPE_PARTICLE_DRAGON, "shaders/sphere.vert.spv", "shaders/sphere_dragon.frag.spv")                               \
-    X(PIPE_FRACTAL_PYRAMID, "shaders/sphere.vert.spv", "shaders/sphere_pyramid.frag.spv")
+    X(PIPE_FIREBALL, "shaders/sphere.vert.spv", "shaders/fireball.frag.spv")                                           \
+    X(PIPE_SPHERE_FX, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")
 
 #define SOL_QUAD_PIPELINES(X)                                                                                          \
     X(PIPE_QUAD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                   \
@@ -252,7 +248,7 @@ static inline void Sol_Render_PushModel(ModelKind handle, ModelSSBO *modelSSBO, 
     {
         if (modelQueue.count >= MAX_MODEL_INSTANCES)
             return;
-        u32 idx                   = modelQueueTransparent.count++;
+        u32 idx                              = modelQueueTransparent.count++;
         modelQueueTransparent.handles[idx]   = handle;
         modelQueueTransparent.instances[idx] = *modelSSBO;
     }

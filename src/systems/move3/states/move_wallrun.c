@@ -16,7 +16,6 @@
 #define COYOTE_TIMER 0.15f
 #define BOOST_TIMEOUT 2.0f
 #define BOOST_AMOUNT 9.0f
-#define DISTANCE_CHECK 0.15f
 
 static bool CheckEnergy(World *world, int id)
 {
@@ -33,8 +32,9 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
 
     vec3s dims   = Sol_Comp_Get(world, id, ScBody3)->dims;
-    float radius = dims.x + addRadius;
+    float radius = dims.x + WALLTRACE_ADDDIST;
     Xform xform  = Xform_Get(world, id);
+    vec3s lookdir = glms_quat_rotatev(xform.rot, WORLD_FWD);
     for (int i = -1; i < 2; i++)
     {
         for (int j = 1; j < 9; j++)
@@ -45,8 +45,8 @@ static bool CheckWall(World *world, int id, ScMove3 *move, SolRayResult *result,
             SolRay ray = {.start = finalPos, .dist = radius + 0.1f, .dir = rotated_offset, .ignoreEnt = id, .mask = 1};
             bool hit   = Sol_Raycast1(world, ray, result);
             float dot  = glms_vec3_dot(result->norm, WORLD_UP);
-            // float lookDot = vecDot(cmd->lookdir, result->norm);
-            if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE)
+            float lookDot = vecDot(lookdir, result->norm);
+            if (hit && dot > MIN_WALL_ANGLE && dot < MAX_WALL_ANGLE && lookDot < 0.5f)
             {
                 MoveStateData *data         = &move->stateData[MOVE_WALLRUN];
                 move->lastTouch             = Sol_AddScaledDir(ray.start, ray.dir, result->t);
@@ -71,18 +71,21 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
 
     vec3s project;
     vec3s targetVel;
-    vec3s lookdir      = cmd->lookdir;
+    vec3s lookdir      = glms_quat_rotatev(world->xform.rot[id], WORLD_FWD);
     vec3s wishdir      = cmd->wishdir;
-    lookdir.y          = 0;
-    lookdir            = vecNorm(lookdir);
-    float lookIntoWall = -glms_vec3_dot(lookdir, data->as.wallrun.wallNormal);
+    // lookdir.y          = 0;
+    // lookdir            = vecNorm(lookdir);
+    float lookIntoWall = glms_vec3_dot(lookdir, data->as.wallrun.wallNormal);
 
-    if (lookIntoWall > 0.7f)
+    if (lookIntoWall < -0.8f)
     {
-        project   = glms_vec3_sub(lookdir, glms_vec3_scale(data->as.wallrun.wallNormal, -lookIntoWall));
-        project.y = lookIntoWall;
+        project   = glms_vec3_sub(lookdir, glms_vec3_scale(data->as.wallrun.wallNormal, lookIntoWall));
+        
+        project.y = -lookIntoWall;
         project   = glms_vec3_normalize(project);
         targetVel = glms_vec3_scale(project, targetSpeed);
+        if (move_mantle_funcs.canEnter(world, id, move, cmd, MOVE_WALLRUN))
+            Sol_Move3_SetState(world, id, MOVE_MANTLE);
     }
     else
     {
@@ -92,8 +95,9 @@ void RunVel(World *world, int id, float boost, ScMove3 *move, ScCmd *cmd)
         targetVel            = glms_vec3_scale(project, targetSpeed);
         targetVel.y          = prevvel.y;
     }
+    
 
-    body->vel = targetVel;
+    body->vel = glms_vec3_add(glms_vec3_scale(data->as.wallrun.wallNormal, -1.2f), targetVel);
 }
 
 void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float dt)
@@ -103,7 +107,7 @@ void Move_Wallrun_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float 
     data->accum += dt;
 
     SolRayResult result = {0};
-    bool goodWall       = CheckWall(world, id, move, &result, DISTANCE_CHECK + 0.1f);
+    bool goodWall       = CheckWall(world, id, move, &result, WALLTRACE_ADDDIST + 0.1f);
     if (goodWall)
     {
         data->accum = 0;
@@ -120,6 +124,7 @@ void Move_Wallrun_Enter(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3 *body       = Sol_Comp_Get(world, id, ScBody3);
     MoveStateData *data = &move->stateData[MOVE_WALLRUN];
+    move->wantsJump = false;
 
     if (body->vel.y < 0.0f)
         body->vel.y = 0.0f;
@@ -147,7 +152,7 @@ bool Move_Wallrun_CanEnter(World *world, int id, ScMove3 *move, ScCmd *cmd, u32 
     if (move->airtime > 0 && (cmd->actionState & BITC(ACTION_JUMP)))
     {
         SolRayResult result = {0};
-        if (CheckWall(world, id, move, &result, DISTANCE_CHECK))
+        if (CheckWall(world, id, move, &result, WALLTRACE_ADDDIST))
             data->coyote = COYOTE_TIMER;
         return data->coyote;
     }

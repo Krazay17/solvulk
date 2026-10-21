@@ -172,7 +172,7 @@ void Combat_Update(World *world, double dt)
                 OnRespawn(world, id, combat);
         }
         vec3s pos = world->xform.pos[id];
-        if (pos.y < -15.0f)
+        if (pos.y < -80.0f)
         {
             combat->health = 0;
         }
@@ -403,6 +403,7 @@ float Sol_Combat_Heal(World *world, int id, int source, float amount)
     combat->healingTaken += healing_done;
 
     forc(world, source, ScCombat) c->healingDone += healing_done;
+    Sol_Event_Push(world, EVENTKIND_HEAL, (SolEvent){.dealer = source, .target = id, .as.heal.amount = healing_done});
 
     return healing_done;
 }

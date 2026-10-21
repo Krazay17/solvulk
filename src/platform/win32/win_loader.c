@@ -118,5 +118,6 @@ SolResource Sol_LoadResource(const char *prefix, const char *resourceName)
     res.data = LockResource(hLoaded);
     res.size = SizeofResource(hmod, hResource);
 
+
     return res;
 }

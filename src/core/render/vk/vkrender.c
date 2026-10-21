@@ -159,18 +159,6 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 3,
         },
-    [PIPE_DEBUG_SPHERE] =
-        {
-            .vertResource      = "sphere.vert.spv",
-            .fragResource      = "sphere.frag.spv",
-            .depthTest         = 1,
-            .depthWrite        = 1,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 3,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        },
     [PIPE_SPHERE] =
         {
             .vertResource      = "sphere.vert.spv",
@@ -207,18 +195,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descCount         = 3,
             .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         },
-    [PIPE_PLASMA] =
-        {
-            .vertResource      = "sphere.vert.spv",
-            .fragResource      = "plasma2.frag.spv",
-            .depthTest         = 1,
-            .depthWrite        = 1,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 3,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        },
+    // [PIPE_PLASMA] =
+    //     {
+    //         .vertResource      = "sphere.vert.spv",
+    //         .fragResource      = "plasma2.frag.spv",
+    //         .depthTest         = 1,
+    //         .depthWrite        = 1,
+    //         .blendMode         = BLEND_ALPHA,
+    //         .cullMode          = VK_CULL_MODE_BACK_BIT,
+    //         .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+    //         .descCount         = 3,
+    //         .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //     },
     [PIPE_QUAD] =
         {
             .vertResource      = "quad.vert.spv",
@@ -231,18 +219,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
             .descCount         = 4,
         },
-    [PIPE_FRACTAL_PYRAMID] =
-        {
-            .vertResource      = "quad.vert.spv",
-            .fragResource      = "fractal_pyramid.frag.spv",
-            .depthTest         = 1,
-            .depthWrite        = 0,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_NONE,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
-            .descCount         = 4,
-        },
+    // [PIPE_FRACTAL_PYRAMID] =
+    //     {
+    //         .vertResource      = "quad.vert.spv",
+    //         .fragResource      = "fractal_pyramid.frag.spv",
+    //         .depthTest         = 1,
+    //         .depthWrite        = 0,
+    //         .blendMode         = BLEND_ALPHA,
+    //         .cullMode          = VK_CULL_MODE_NONE,
+    //         .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //         .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_QUAD_SSBO, DESC_IMAGES},
+    //         .descCount         = 4,
+    //     },
     [PIPE_QUAD_ADD] =
         {
             .vertResource      = "quad.vert.spv",
@@ -330,18 +318,18 @@ static SolPipelineConfig pipe_config[PIPE_COUNT] = {
             .descId            = {DESC_SCENE_UBO},
             .descCount         = 1,
         },
-    [PIPE_PARTICLE_DRAGON] =
-        {
-            .vertResource      = "sphere.vert.spv",
-            .fragResource      = "particle_dragon.frag.spv",
-            .depthTest         = 1,
-            .depthWrite        = 1,
-            .blendMode         = BLEND_ALPHA,
-            .cullMode          = VK_CULL_MODE_BACK_BIT,
-            .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
-            .descCount         = 3,
-            .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        },
+    // [PIPE_PARTICLE_DRAGON] =
+    //     {
+    //         .vertResource      = "sphere.vert.spv",
+    //         .fragResource      = "particle_dragon.frag.spv",
+    //         .depthTest         = 1,
+    //         .depthWrite        = 1,
+    //         .blendMode         = BLEND_ALPHA,
+    //         .cullMode          = VK_CULL_MODE_BACK_BIT,
+    //         .descId            = {DESC_GAME_UBO, DESC_SCENE_UBO, DESC_SPHERE_SSBO},
+    //         .descCount         = 3,
+    //         .primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //     },
 
 };
 
@@ -494,7 +482,7 @@ int Sol_Render_BuildPipes()
     for (int i = 0; i < PIPE_COUNT; i++)
     {
         printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].vertResource);
-        printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].fragResource);
+        printf("Pipe:%d FragShader:%s\n", i, pipe_config[i].fragResource);
         if (Sol_Pipeline_Build(&solvkstate, &pipe_config[i], &pipes[i]) != 0)
         {
             Sol_MessageBox("PIPE ERROR", NULL);
@@ -607,8 +595,8 @@ void Render_ModelTransparent(ModelKind handle, uint32_t instanceCount, uint32_t 
     SolGpuModel *model = &gpuModels[handle];
     for (int m = 0; m < model->mesh_count; m++)
     {
-        vkCmdPushConstants(cmd, pipes[PIPE_MODEL_TRANSPARENT].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SolMaterial),
-                           &model->meshes[m].material);
+        vkCmdPushConstants(cmd, pipes[PIPE_MODEL_TRANSPARENT].layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                           sizeof(SolMaterial), &model->meshes[m].material);
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &model->meshes[m].vertexBuffer, offsets);
         vkCmdBindIndexBuffer(cmd, model->meshes[m].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -815,6 +803,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
 {
     if (!config)
         return 0;
+    VkResult r;
     VkDescriptorSetLayout layouts[DESC_COUNT];
     u32 layoutCount = 0;
     for (int i = 0; i < config->descCount; i++)
@@ -829,6 +818,9 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     // --- load shader bytecode ---
     SolResource vertRes = Sol_LoadResource("shaders/", config->vertResource);
     SolResource fragRes = Sol_LoadResource("shaders/", config->fragResource);
+
+    printf("  vert size=%zu frag size=%zu magic=%08x\n", vertRes.size, fragRes.size,
+           fragRes.data ? *(uint32_t *)fragRes.data : 0);
 
     if (!vertRes.data || !fragRes.data)
         return 1;
@@ -845,9 +837,19 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     fragModuleInfo.pCode                    = (uint32_t *)fragRes.data;
 
     VkShaderModule vertModule, fragModule;
-    vkCreateShaderModule(vkstate->device, &vertModuleInfo, NULL, &vertModule);
-    vkCreateShaderModule(vkstate->device, &fragModuleInfo, NULL, &fragModule);
+    r = vkCreateShaderModule(vkstate->device, &vertModuleInfo, NULL, &vertModule);
+    if (r != VK_SUCCESS)
+    {
+        printf("vert module failed: %d\n", r);
+        return 1;
+    }
 
+    r = vkCreateShaderModule(vkstate->device, &fragModuleInfo, NULL, &fragModule);
+    if (r != VK_SUCCESS)
+    {
+        printf("frag module failed: %d\n", r);
+        return 1;
+    }
     // --- shader stages ---
     VkPipelineShaderStageCreateInfo vertStage = {0};
     vertStage.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -989,8 +991,12 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     pipelineLayoutInfo.pSetLayouts                = layouts;
     pipelineLayoutInfo.pushConstantRangeCount     = config->pushRangeSize > 0 ? 1 : 0;
     pipelineLayoutInfo.pPushConstantRanges        = config->pushRangeSize > 0 ? &pushRange : NULL;
-    vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, &out->layout);
-
+    r = vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, &out->layout);
+    if (r != VK_SUCCESS)
+    {
+        printf("layout failed: %d\n", r);
+        return 1;
+    }
     // --- dynamic rendering info (replaces render pass) ---
     VkPipelineRenderingCreateInfo renderingInfo = {0};
     renderingInfo.sType                         = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;

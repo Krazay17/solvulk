@@ -153,6 +153,9 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
 
+    ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
+    snprintf(meta->name, sizeof(meta->name), "Dude");
+
     return id;
 }
 
@@ -491,59 +494,6 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     return id;
 }
 
-int Sol_Prefab_PlasmaOrb(World *world, int owner, vec3s pos, vec3s dir, float speed, float size)
-{
-    int id = Sol_Create_Ent(world, pos);
-
-    vec3s dims          = {size, size, size};
-    ScBody3 *owner_body = Sol_Comp_Get(world, owner, ScBody3);
-
-    *Sol_Comp_Add(world, id, ScOwner) = (ScOwner){
-        .ownerId = owner,
-    };
-
-    *Sol_Comp_Add(world, id, ScBody3) = (ScBody3){
-        .dims      = dims,
-        .gravity   = GLMS_VEC3_ZERO,
-        .is_sensor = true,
-        .ignoreEnt = owner,
-        .vel       = vecSca(dir, speed),
-        .mask      = PHYSXMASK(COLLAYER_PROJECTILE, 0),
-    };
-
-    ScView3 *view3   = Sol_Comp_Add(world, id, ScView3);
-    View3 plasma_orb = {
-        .kind  = VIEW3KIND_PLASMAORB,
-        .color = VEC4_RED,
-        .scale = size,
-    };
-    solb_push(view3->views_b, plasma_orb);
-
-    *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
-        .kind   = PROJECTILEKIND_PLASMAORB,
-        .radius = size,
-        .hitgen = Sol_Hitgen_Start(world),
-    };
-
-    ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
-    if (ai)
-    {
-        ScAilearn *ailearn             = Sol_Comp_Add(world, id, ScAilearn);
-        ailearn->prev_knows_move.raw   = ai->learning.prev_knows_move.raw;
-        ailearn->prev_knows_combat.raw = ai->learning.prev_knows_combat.raw;
-        ailearn->action_move           = ai->learning.action_move;
-        ailearn->action_combat         = ai->learning.action_combat;
-        ailearn->reward_move           = 5.0f;
-        ailearn->reward_combat         = 10.0f;
-    }
-
-    ScTimer *timer  = Sol_Comp_Add(world, id, ScTimer);
-    timer->destroy  = true;
-    timer->duration = 2.0f;
-
-    return id;
-}
-
 int Sol_Prefab_Crystal(World *world, vec3s pos)
 {
     return 0;
@@ -676,23 +626,6 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
     return id;
 }
 
-int Sol_Prefab_DragonOrb(World *world, vec3s pos)
-{
-    int id = Sol_Create_Ent(world, pos);
-
-    *Sol_Comp_Add(world, id, ScBody3) = sphere_body;
-
-    ScView3 *view3   = Sol_Comp_Add(world, id, ScView3);
-    View3 dragon_orb = {
-        .kind  = VIEW3KIND_DRAGONORB,
-        .color = {1, 1, 1, 1},
-        .scale = 1.0f,
-    };
-    solb_push(view3->views_b, dragon_orb);
-
-    return id;
-}
-
 int Sol_Prefab_LightningBolt(World *world, int owner, vec3s pos, vec3s dir, float speed, float scale, Hook hook)
 {
     int id = Sol_Create_Ent(world, pos);
@@ -794,7 +727,7 @@ int Sol_Prefab_InventoryWindow(World *world, vec3s pos)
     return id;
 }
 
-int Sol_Prefab_RulesWindow(World *world, vec3s pos)
+int Sol_Prefab_RulesWindow(World *world, vec3s pos, u32 view_count)
 {
     int id = Sol_Create_Ent(world, pos);
 
@@ -811,9 +744,18 @@ int Sol_Prefab_RulesWindow(World *world, vec3s pos)
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->flags |= INTERACTFLAG_DRAGGABLE;
 
-    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
-    view2->count    = 1;
-    view2->views[0] = (View2){.kind = VIEW2KIND_RULESWINDOW};
+    const float text_size = 14.0f;
+    ScView2 *view2        = Sol_Comp_Add(world, id, ScView2);
+    view2->count          = view_count;
+    view2->views[0]       = (View2){.kind = VIEW2KIND_RULESWINDOW};
+    for (int i = 1; i < view_count; i++)
+    {
+        view2->views[i] = (View2){.kind      = VIEW2KIND_TEXT,
+                                  .textWidth = 16.0f,
+                                  .dims      = {text_size},
+                                  .offset    = {0, text_size * i},
+                                  .color     = VEC4_GREEN};
+    }
 
     return id;
 }

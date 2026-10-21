@@ -18,8 +18,9 @@ static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 {
     ScBody3 *body       = Sol_Comp_Get(world, id, ScBody3);
     Xform xform         = Xform_Get(world, id);
+    vec3s fwd = glms_quat_rotatev(xform.rot, WORLD_FWD);
     MoveStateData *data = &move->stateData[MOVE_MANTLE];
-    vec3s basePos       = vecAdd(xform.pos, vecSca(WORLD_UP, body->dims.y));
+    vec3s basePos       = vecAdd(xform.pos, vecSca(WORLD_UP, body->dims.y + 0.1f));
 
     if (Sol_Raycast1(world, (SolRay){.start = xform.pos, .dir = WORLD_UP, .dist = body->dims.y, .ignoreEnt = id},
                      &(SolRayResult){0}))
@@ -27,17 +28,18 @@ static bool CheckWall(World *world, int id, ScMove3 *move, ScCmd *cmd)
 
     vec3s goodPos   = {0};
     u32 mantleSpace = 0;
+    float radius    = body->dims.x * 2.0f + WALLTRACE_ADDDIST;
     // Trace top down to find ledge
     for (int i = 0; i < RAY_COUNT; i++)
     {
-        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT * 1.0f));
+        float offset = (float)i * (body->dims.y / ((float)RAY_COUNT));
         vec3s pos    = basePos;
         pos.y -= offset;
         SolRay ray = {
             .start     = pos,
-            .dist      = body->dims.x * 1.5f,
+            .dist      = radius,
             .ignoreEnt = id,
-            .dir       = Sol_Vec3_FromYawPitch(cmd->yaw, 0),
+            .dir       = fwd,
             .mask      = 1,
         };
         SolRayResult rayResult;
@@ -70,8 +72,8 @@ void Move_Mantle_Update(World *world, int id, ScMove3 *move, ScCmd *cmd, float d
     float speed     = MANTLE_SPEED;
     if (data->as.mantle.doRoll)
     {
-        targetPos = vecAdd(targetPos, vecSca(Sol_Vec3_FromYawPitch(cmd->yaw, 0), 1.0f));
-        speed += 2.0f;
+        targetPos = vecAdd(targetPos, vecSca(Sol_Vec3_FromYawPitch(cmd->yaw, 0), body->dims.x * 2.0f));
+        speed += 3.0f;
     }
     if (pos.y < targetPos.y)
     {

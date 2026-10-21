@@ -45,10 +45,10 @@ typedef struct ScMeta
 
 typedef struct ScTeam
 {
-    u32 faction;
-    u32 team;
-    u32 party[4];
-    u32 party_count;
+    int team;
+    int faction;
+    int party[4];
+    int party_count;
 } ScTeam;
 
 typedef struct ScPlayer
@@ -659,6 +659,7 @@ typedef enum
 {
     RULESKIND_FFA,
     RULESKIND_TDM,
+    RULESKIND_CRYSTALPUSH,
     RULESKIND_COUNT,
 } RulesKind;
 typedef enum
@@ -672,8 +673,13 @@ typedef struct
     union {
         struct
         {
-            int winning_kills;
+            u32 winning_kills;
         } ffa;
+        struct
+        {
+            u32 teams_count;
+            u32 winning_kills;
+        } tdm;
     } as;
     RulesKind kind;
     RulesPhase phase;

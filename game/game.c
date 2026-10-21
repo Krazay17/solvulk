@@ -75,6 +75,11 @@ void Create_Game()
     World *world        = World_Create_AllSys();
     sol_user.game_world = world->index;
 
+    forc(world, 0, SlRules)
+    {
+        c->as.ffa.winning_kills = 10;
+        c->kind                 = RULESKIND_FFA;
+    }
     { // Player
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
         sol_user.view_ent = id;
@@ -96,7 +101,7 @@ void Create_Game()
     { // Level
         int level1          = Sol_Create_Ent(world, (vec3s){0, 0, 0});
         ScModel *levelModel = Sol_Comp_Add(world, level1, ScModel);
-        levelModel->kind    = MODELKIND_WORLD10;
+        levelModel->kind    = MODELKIND_WORLD11;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
     }
@@ -106,6 +111,7 @@ void Create_Game()
         int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
         ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime = 2.0f;
+        Sol_Comp_Rem(world, id, ScMeta);
     }
     for (int j = -2; j < 2; j++)
     {
@@ -113,6 +119,7 @@ void Create_Game()
         int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
         ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime = 2.0f;
+        Sol_Comp_Rem(world, id, ScMeta);
     }
     {
         vec3s spawn_pos                        = {0, 4, 5};
@@ -120,6 +127,7 @@ void Create_Game()
         Sol_Comp_Get(world, id, ScModel)->kind = MODELKIND_EVANRIGGED;
         ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime                    = 2.0f;
+        Sol_Comp_Rem(world, id, ScMeta);
     }
 }
 

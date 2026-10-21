@@ -223,8 +223,8 @@ void Move3_EvaluateState(World *world, int id, ScMove3 *move, ScCmd *cmd)
                 continue;
         if (target_state_func->canEnter && !target_state_func->canEnter(world, id, move, cmd, current_state))
             continue;
-        if (current_state == target_state)
-            break;
+        // if (current_state == target_state)
+        //     break;
         Move3_CommitState(world, id, target_state, current_state_func, target_state_func, move, cmd);
         break;
     }

@@ -197,11 +197,9 @@ typedef enum
 
 typedef enum
 {
-    PARTICLE_FRACTAL,
     PARTICLE_SPHERE,
     PARTICLE_SPARK,
     PARTICLE_FIRE,
-    PARTICLE_PLASMA,
     PARTICLE_BLOOD,
     PARTICLE_SPHERE_INOUT,
     PARTICLE_SMOKE,
@@ -225,7 +223,6 @@ typedef enum
     EMITTERKIND_BURST,
     EMITTERKIND_SPHERE,
     EMITTERKIND_BURST_FIRE,
-    EMITTERKIND_SPHERE_BURST_FRACTAL,
     EMITTERKIND_SHOCK_PULSE,
     EMITTERKIND_SMOKE_BURST,
     EMITTERKIND_COUNT,
@@ -277,9 +274,6 @@ typedef enum
     VIEW3KIND_SPHERE,
     VIEW3KIND_FIREBALL,
     VIEW3KIND_POWERBAR,
-    VIEW3KIND_PYRAMID,
-    VIEW3KIND_DRAGONORB,
-    VIEW3KIND_PLASMAORB,
     VIEW3KIND_BOLT,
     VIEW3KIND_COUNT,
 } View3Kind;
@@ -574,6 +568,7 @@ typedef enum
     MODELKIND_WORLD8,
     MODELKIND_WORLD9,
     MODELKIND_WORLD10,
+    MODELKIND_WORLD11,
     MODELKIND_COUNT,
 } ModelKind;
 
@@ -948,6 +943,7 @@ typedef enum
 typedef enum
 {
     EVENTKIND_HIT,
+    EVENTKIND_HEAL,
     EVENTKIND_DEATH,
     EVENTKIND_FX,
     EVENTKIND_SOUND,
@@ -986,6 +982,10 @@ typedef struct SolEvent
             float amount;
             float power;
         } hit;
+        struct
+        {
+            float amount;
+        } heal;
         struct
         {
             DeathKind kind;
@@ -1029,14 +1029,14 @@ typedef enum AiActions
     AIACTION_CROUCHBWD,
     AIACTION_CROUCHLEFT,
     AIACTION_CROUCHRIGHT,
-    AIACTION_DODGEFWD,
-    AIACTION_DODGEBWD,
-    AIACTION_DODGELEFT,
-    AIACTION_DODGERIGHT,
+    // AIACTION_DODGEFWD,
+    // AIACTION_DODGEBWD,
+    // AIACTION_DODGELEFT,
+    // AIACTION_DODGERIGHT,
 
     AIACTION_COUNT,
 } AiActions;
-#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (6 + 7 + 4 + 1))
+#define AIKNOW_MOVEMENTSTATE_COUNT (1 << (6 + 6 + 4 + 1))
 typedef union {
     struct
     {
@@ -1046,7 +1046,6 @@ typedef union {
 
         u32 targetDist : 2;  // 4 Distances
         u32 targetState : 4; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, FIRING, CHARGING, DODGING
-        u32 targetLos : 1;
 
         u32 wallFront : 1;
         u32 wallLeft : 1;
@@ -1063,11 +1062,12 @@ typedef enum
     AIACTIONC_CHARGE,
     AIACTIONC_RELEASE,
     AIACTIONC_ABILITY_MELEE,
+    AIACTIONC_ABILITY_SHIFT,
     AIACTIONC_ABILITY_RANGED,
     AIACTIONC_ABILITY_HEAL,
     AIACTIONC_COUNT,
 } AiActionsC;
-#define AIKNOW_COMBATSTATE_COUNT (1 << (3 + 3 + 4))
+#define AIKNOW_COMBATSTATE_COUNT (1 << (3 + 6 + 4))
 typedef union {
     struct
     {
@@ -1075,7 +1075,7 @@ typedef union {
         u32 attack : 2; // READY, ATTACKING, CHARGING, CHARGINGLONG
 
         u32 targetDist : 2; // 4 Distances
-        u32 targetLos : 1;
+        u32 targetState : 4; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, FIRING, CHARGING, DODGING
 
         u32 winning : 1;
         u32 energy : 1; // High, Low
@@ -1093,12 +1093,11 @@ typedef struct
     u32 health;      // Full, 0.66, 0.33, 0.0
 
     u32 targetDist;  // 4 Distances
-    u32 targetState; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, CHARGING, FIRING, DODGING
-    bool targetLos;  // Line of sight
+    u32 targetState; // AWAY, TOWARDS, LEFT, RIGHT, ABOVE, CHARGING, FIRING, DODGING, 16 = NOLOS
     bool winning;    // Combat health lead
 
     u32 wallMask; // Bitmask for walls: Front(1), Back(2), Right(4), Left(8)
-    bool danger;  // Nearby projectile threat
+    u32 danger;  // Nearby projectile threat
 } AiKnows;
 
 typedef struct QTable

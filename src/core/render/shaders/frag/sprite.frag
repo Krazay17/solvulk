@@ -18,7 +18,7 @@ layout(set = 1, binding = 0) uniform Scene {
     vec4 sun;
 } scene;
 
-layout(set = 3, binding = 0) uniform sampler2D textures[64];
+layout(set = 3, binding = 0) uniform sampler2D textures[128];
 
 
 void main() {

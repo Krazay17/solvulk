@@ -26,10 +26,7 @@ typedef struct ScModelData ScModelData;
     X(PIPE_MODEL_SKINNED, "shaders/model_skinned.vert.spv", "shaders/model.frag.spv")                                  \
     X(PIPE_MODEL_TRANSPARENT, "shaders/model.vert.spv", "shaders/model.frag.spv")
 
-#define SOL_TEXT_PIPELINES(X)                                                                                          \
-    X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")                                                 \
-    X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                \
-    X(PIPE_TEXT_3D_FRONT, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")
+#define SOL_TEXT_PIPELINES(X) X(PIPE_TEXT, "shaders/text2d.vert.spv", "shaders/text2d.frag.spv")
 
 #define SOL_SPHERE_PIPELINES(X)                                                                                        \
     X(PIPE_SPHERE, "shaders/sphere.vert.spv", "shaders/sphere.frag.spv")                                               \
@@ -40,7 +37,9 @@ typedef struct ScModelData ScModelData;
     X(PIPE_QUAD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                                   \
     X(PIPE_QUAD_ADD, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                               \
     X(PIPE_QUAD_FRONT, "shaders/quad.vert.spv", "shaders/sprite.frag.spv")                                             \
-    X(PIPE_HEALTHBAR, "shaders/quad.vert.spv", "shaders/healthbar.frag.spv")
+    X(PIPE_HEALTHBAR, "shaders/quad.vert.spv", "shaders/healthbar.frag.spv")                                           \
+    X(PIPE_TEXT_3D, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")                                                \
+    X(PIPE_TEXT_3D_FRONT, "shaders/quad.vert.spv", "shaders/text3d.frag.spv")
 
 #define SOL_RIBBON_PIPELINES(X)                                                                                        \
     X(PIPE_RIBBON, "shaders/ribbon.vert.spv", "shaders/sprite.frag.spv")                                               \

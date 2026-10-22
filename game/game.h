@@ -99,6 +99,9 @@ static inline void Hook_SpawnDudes(World *w, int a, int b)
         ScCombat *combat     = Sol_Comp_Add(game, id, ScCombat);
         combat->respawnTime  = 3.0f;
         combat->random_spawn = true;
+
+        ScMeta *meta = Sol_Comp_Add(game, id, ScMeta);
+        Sol_Ai_RandomName(meta->name, sizeof(meta->name));
     }
 }
 static inline void Hook_DebugToggle(World *w, int a, int b)
@@ -273,7 +276,9 @@ static inline void Hook_Test(World *w, int a, int b)
     ScCmd *cmd    = Sol_Comp_Get(game, id, ScCmd);
     vec3s fwd_pos = vecAdd(pos, vecSca(cmd->aimdir, 3.0f));
 
-    Sol_Prefab_GravPad(game, fwd_pos, (versors){0,0,0,1});
+    Sol_Prefab_Pickup(game, fwd_pos);
+
+    // Sol_Prefab_GravPad(game, fwd_pos, (versors){0, 0, 0, 1});
     // int ent = Sol_Create_Ent(game, fwd_pos);
 
     // solState.debug_ent.id        = ent;

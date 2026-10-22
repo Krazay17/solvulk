@@ -408,29 +408,19 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
     SolFont *font      = &loaded_fonts[desc.font];
     SolTextureId atlas = font->textureId;
 
-    // Total width in world units (advance * size) for horizontal centering
-    float totalWidth = 0.0f;
-    for (const char *c = str; *c; c++)
-    {
-        unsigned char ch = (unsigned char)*c;
-        if (ch >= 128)
-            continue;
-        totalWidth += font->glyph[ch].yadvance * desc.size;
-    }
+    float scale = desc.size / font->fontSize;
 
-    // Layout basis vectors.
-    // Billboard mode: use camera right + world up so all chars share the same axes
-    //                 and stay on a line facing the camera.
-    // Quat mode:      use local x/y axes; the rotation quaternion is applied per glyph in the shader.
+    // Use the 3D-specific measurement function
+    float totalWidth = Sol_MeasureText3D(str, desc.size, desc.font);
+
     vec3s right = (vec3s){{1.0f, 0.0f, 0.0f}};
     vec3s up    = (vec3s){{0.0f, 1.0f, 0.0f}};
     if (desc.billboard)
     {
         right = g_solView.right;
-        // up stays world-str stays vertically aligned with screen
     }
 
-    float cursorX = -totalWidth * 0.5f; // centered horizontally
+    float cursorX = -totalWidth * 0.5f;
 
     for (const char *c = str; *c; c++)
     {
@@ -438,31 +428,25 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
         if (ch >= 128)
             continue;
 
-        // Whitespace: advance cursor, no draw
         if (ch == ' ')
         {
-            cursorX += font->glyph[' '].yadvance * desc.size;
+            cursorX += font->glyph[' '].xadvance * scale;
             continue;
         }
 
         SolGlyph *g = &font->glyph[ch];
         if (g->uw == 0.0f)
-        { // unknown / unloaded glyph
-            cursorX += g->yadvance * desc.size;
+        {
+            cursorX += g->xadvance * scale;
             continue;
         }
 
-        // --- Compute glyph quad in world units ---
-        // Plane bounds give where to draw the glyph relative to its origin (in EM units).
-        // Multiply by desc.size to convert EM to world units.
-        float gw = (g->xright - g->xoffset) * desc.size; // glyph width
-        float gh = (g->ytop - g->yoffset) * desc.size;   // glyph height
+        float gw = (g->xright - g->xoffset) * scale;
+        float gh = (g->ytop - g->yoffset) * scale;
 
-        // Glyph center (in 2D layout space, str origin)
-        float cx = cursorX + (g->xoffset + g->xright) * 0.5f * desc.size;
-        float cy = (g->yoffset + g->ytop) * 0.5f * desc.size;
+        float cx = cursorX + (g->xoffset + g->xright) * 0.5f * scale;
+        float cy = (g->yoffset + g->ytop) * 0.5f * scale;
 
-        // Project the 2D layout position into world space using the basis vectors.
         vec3s glyphPos;
         if (desc.billboard)
         {
@@ -470,7 +454,6 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
         }
         else
         {
-            // Quat mode: rotate the local (cx, cy, 0) by the orientation, then offset from origin.
             vec3s local = {{cx, cy, 0.0f}};
             vec3s rotated;
             glm_quat_rotatev(desc.rotation.raw, local.raw, rotated.raw);
@@ -479,37 +462,38 @@ void Sol_Render_DrawText3D(const char *str, Text3DDesc desc)
 
         float halfWidth  = gw * 0.5f;
         float halfHeight = gh * 0.5f;
-        // OUTLINE
+
         PipelineId pipe = desc.inFront ? PIPE_TEXT_3D_FRONT : PIPE_TEXT_3D;
-        QuadSSBO *q     = Sol_Render_GetNextQuad(pipe);
+
+        // --- OUTLINE PASS ---
+        QuadSSBO *q = Sol_Render_GetNextQuad(pipe);
         if (!q)
             break;
-
         q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
-        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
+        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}}
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
         q->color     = (vec4s){0, 0, 0, 1.0f};
-        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->rect      = (vec4s){0, 0, halfWidth * 1.1f, halfHeight * 1.1f};
+        q->uv        = (vec4s){{g->uw, g->vh, g->u, 1.0f - g->v - g->vh}};
+        q->rect      = (vec4s){0, 0, gw * 1.1f, gh * 1.1f};
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;
 
+        // --- MAIN TEXT PASS ---
         q = Sol_Render_GetNextQuad(pipe);
         if (!q)
             break;
-
         q->pos       = (vec4s){{glyphPos.x, glyphPos.y, glyphPos.z, 1.0f}};
-        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}} // FACECAM: rot.x = spin angle (0 = no spin)
+        q->rot       = desc.billboard ? (vec4s){{0, 0, 0, 0}}
                                       : (vec4s){{desc.rotation.x, desc.rotation.y, desc.rotation.z, desc.rotation.w}};
         q->color     = desc.color;
-        q->uv        = (vec4s){{g->u, 1.0f - g->v - g->vh, g->uw, g->vh}};
-        q->rect      = (vec4s){0, 0, halfWidth, halfHeight};
+        q->uv        = (vec4s){{g->uw, g->vh, g->u, 1.0f - g->v - g->vh}};
+        q->rect      = (vec4s){0, 0, gw, gh};
         q->type      = desc.billboard ? QUADTYPE_FACECAM : QUADTYPE_QUAT;
         q->textureId = atlas;
         q->flags     = 0;
 
-        cursorX += g->yadvance * desc.size;
+        cursorX += g->xadvance * scale;
     }
 }
 
@@ -523,20 +507,24 @@ void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
     SolFont *font     = &loaded_fonts[desc.kind];
     float text_length = Sol_MeasureText(str, desc.size, desc.kind);
     float cursorX     = desc.x;
-    float baseSize    = desc.size / 32.0f;
-    float pad         = 0.2f * baseSize * (224.0f / 32.0f);
+
+    // For 2D pixels, baseSize scaling uses the standard 32.0f atlas baseline ratio
+    float baseSize = desc.size / 32.0f;
+    float pad      = 0.2f * baseSize * (224.0f / 32.0f);
 
     for (const char *c = str; *c; c++)
     {
-        if (*c == ' ')
-        {
-            cursorX += font->glyph[' '].yadvance * desc.size;
-            continue;
-        }
-        if ((unsigned char)*c >= 128)
+        unsigned char ch = (unsigned char)*c;
+        if (ch >= 128)
             continue;
 
-        SolGlyph *g = &font->glyph[(unsigned char)*c];
+        if (ch == ' ')
+        {
+            cursorX += font->glyph[' '].xadvance * desc.size;
+            continue;
+        }
+
+        SolGlyph *g = &font->glyph[ch];
         if (g->uw == 0.0f)
             continue;
 
@@ -561,6 +549,6 @@ void Sol_Render_DrawText2D(const char *str, SolFontDesc desc)
 
         ssbo->outline = desc.outline;
 
-        cursorX += g->yadvance * desc.size;
+        cursorX += g->xadvance * desc.size;
     }
 }

@@ -35,7 +35,7 @@ typedef struct
     float xright;
     float ytop;
     float yoffset;
-    float yadvance;
+    float xadvance;
 } SolGlyph;
 
 typedef struct
@@ -48,9 +48,11 @@ typedef struct SolFont
     SolGlyph glyph[128];
     TextBounds bounds;
     SolTextureId textureId;
+    float fontSize;
 } SolFont;
 
 extern SolFont loaded_fonts[SOL_FONT_COUNT];
 
 int Sol_Fonts_Init();
 float Sol_MeasureText(const char *str, float size, SolFontKind id);
+float Sol_MeasureText3D(const char *str, float size, SolFontKind kind);

@@ -49,6 +49,7 @@ typedef enum
     X(SYS_PROJECTILE, PHASE_STEP, Projectile_Step)                                                                     \
     X(SYS_ZONE, PHASE_STEP, Zone_Update)                                                                               \
     X(SYS_COMBAT, PHASE_STEP, Combat_Update)                                                                           \
+    X(SYS_PICKUP, PHASE_STEP, Pickup_Update)                                                                           \
     X(SYS_AI, PHASE_STEP, Ai_Step)                                                                                     \
     X(SYS_SCORE, PHASE_STEP, Score_Update)                                                                             \
     X(SYS_RULES, PHASE_STEP, Rules_Update)                                                                             \
@@ -337,3 +338,4 @@ void Sol_Inv_AllDirty(World *world);
 vec3s Sol_Cmd_GetDir(World *world, int id);
 vec3s Sol_Model_GetBoneByIdx(World *world, int id, u32 boneIdx);
 int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen);
+void Sol_Ai_RandomName(char *dest, size_t size);

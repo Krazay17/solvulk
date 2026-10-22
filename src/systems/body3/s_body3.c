@@ -623,9 +623,6 @@ const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
 // };
 
 static SolProfiler prof_body3       = {.name = "Body3"};
-static SolProfiler prof_dynamic     = {.name = "Dynamic"};
-static SolProfiler prof_static      = {.name = "StaticTable"};
-static SolProfiler prof_static_test = {.name = "StaticTest"};
 
 const float max_grid_d2 = 512.0f * 512.0f;
 void Body3_UpdateSub(World *world, double dt)
@@ -660,7 +657,10 @@ void Body3_UpdateSub(World *world, double dt)
         body3->vel     = glms_vec3_add(body3->vel, glms_vec3_scale(accel, fdt));
         *xform.pos     = vecAdd(*xform.pos, vecSca(body3->vel, fdt));
         if (glms_vec3_norm2(*xform.pos) > max_grid_d2)
+        {
             *xform.pos = world->xform.home_pos[id];
+            body3->vel = GLMS_VEC3_ZERO;
+        }
     }
 
     solb_reserve(spatial->build_ids, body_count);
@@ -772,12 +772,9 @@ void Body3_UpdateSub(World *world, double dt)
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
             Xform xform   = Xform_Get(world, id);
-            Prof_Begin(&prof_static);
             vec3s min = glms_vec3_sub(xform.pos, body->dims);
             vec3s max = glms_vec3_add(xform.pos, body->dims);
             int hits  = SpatialGrid_Query(spatial->grid_static, min, max, id_buf);
-            Prof_EndEz(&prof_static, true, fdt / body_count);
-            Prof_Begin(&prof_static_test);
             for (int j = 0; j < hits; j++)
             {
                 int idB        = SPATIAL_UNPACK_ID(id_buf->ids[j]);
@@ -792,7 +789,6 @@ void Body3_UpdateSub(World *world, double dt)
                     solb_push(local_buf->contacts, contact);
                 }
             }
-            Prof_EndEz(&prof_static_test, true, fdt / body_count);
         }
 
 #pragma omp critical
@@ -806,19 +802,6 @@ void Body3_UpdateSub(World *world, double dt)
     {
         Resolve_Contact(world, spatial->contacts[i]);
     }
-
-#pragma omp for schedule(dynamic)
-        for (i = body_count - 1; i >= 0; i--)
-        {
-            int id        = set->dense[i];
-            ScBody3 *body = &set->data[i];
-            Xform xform   = Xform_Get(world, id);
-            if(fabs(xform.pos.x) > 1024.0f || fabs(xform.pos.y) > 1024.0f || fabs(xform.pos.z) > 1024.0f )
-            {
-                world->xform.pos[id] = world->xform.home_pos[id];
-                body->vel = GLMS_VEC3_ZERO;
-            }
-        }
 
     Prof_EndEz(&prof_body3, true, fdt);
 }

@@ -8,7 +8,7 @@ layout(location = 4) in vec4 fragExtra;
 layout(location = 5) flat in uint fragTextureId;
 layout(location = 6) flat in uint fragFlags;
 
-layout(set = 2, binding = 0) uniform sampler2D textures[64];
+layout(set = 2, binding = 0) uniform sampler2D textures[128];
 
 layout(location = 0) out vec4 outColor;
 

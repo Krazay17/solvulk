@@ -68,6 +68,12 @@ static inline isDestroyed FireballHit(World *w, int a, ScProjectile *projectile,
     return true;
 }
 
+static void Fireball_Update(World *world, int id, double dt, ScProjectile *p)
+{
+    if (p->radius < p->target_radius)
+        p->radius = fminf(p->target_radius, p->radius + (float)dt);
+}
+
 static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projectile, SolHit hit)
 {
     ScOwner *owner = Sol_Comp_Get(world, a, ScOwner);
@@ -142,6 +148,10 @@ static inline isDestroyed LightningBoltHit(World *world, int id, ScProjectile *p
     return false;
 }
 
+static void (*const projectile_kind_update[PROJECTILEKIND_COUNT])(World *world, int id, double dt, ScProjectile *p) = {
+    [PROJECTILEKIND_FIREBALL] = Fireball_Update,
+};
+
 void Projectile_Step(World *world, double dt)
 {
     float fdt                   = (float)dt;
@@ -160,6 +170,8 @@ void Projectile_Step(World *world, double dt)
             continue;
         }
 
+        if (projectile_kind_update[projectile->kind])
+            projectile_kind_update[projectile->kind](world, id, dt, projectile);
 
         vec3s vel = body3->vel;
         float v2  = glms_vec3_norm2(body3->vel);

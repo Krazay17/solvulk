@@ -3,7 +3,7 @@
 #include "render/render.h"
 #include "sol_user.h"
 
-static inline void Sphere_Draw(World *world, int id, const View3 *view)
+static void Sphere_Draw(World *world, int id, const View3 *view)
 {
     Xform xform        = Xform_GetDraw(world, id);
     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_SPHERE);
@@ -11,23 +11,7 @@ static inline void Sphere_Draw(World *world, int id, const View3 *view)
     sphere->color      = view->color;
 }
 
-// static inline void DragonOrb_Draw(World *world, int id, const View3 *view)
-// {
-//     Xform xform        = Xform_GetDraw(world, id);
-//     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PARTICLE_DRAGON);
-//     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
-//     sphere->color      = view->color;
-// }
-
-// static inline void PlasmaOrb_Draw(World *world, int id, const View3 *view)
-// {
-//     Xform xform        = Xform_GetDraw(world, id);
-//     SphereSSBO *sphere = Sol_Render_GetNextSphere(PIPE_PLASMA);
-//     sphere->pos        = (vec4s){xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
-//     sphere->color      = view->color;
-// }
-
-static inline void Bolt_Draw(World *world, int id, const View3 *view)
+static void Bolt_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
 
@@ -60,10 +44,14 @@ static inline void Bolt_Draw(World *world, int id, const View3 *view)
     }
 }
 
-static inline void Fireball_Draw(World *world, int id, const View3 *view)
+static void Fireball_Draw(World *world, int id, const View3 *view)
 {
     Xform xform = Xform_GetDraw(world, id);
-    vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
+    float scale = view->scale;
+
+    forc(world, id, ScProjectile) scale = c->radius;
+
+    vec4s pos = {xform.pos.x, xform.pos.y, xform.pos.z, scale};
 
     *Sol_Render_GetNextSphere(PIPE_FIREBALL) = (SphereSSBO){
         .color = view->color,
@@ -71,7 +59,7 @@ static inline void Fireball_Draw(World *world, int id, const View3 *view)
     };
 }
 
-static inline void Powerbar_Draw(World *world, int id, const View3 *view)
+static void Powerbar_Draw(World *world, int id, const View3 *view)
 {
     ScCombat *combat = Sol_Comp_Get(world, id, ScCombat);
 
@@ -99,27 +87,33 @@ static inline void Powerbar_Draw(World *world, int id, const View3 *view)
         .extra = (vec4s){fill, fillB, 0.0f, 0.0f},
         .type  = QUADTYPE_FACECAM,
     };
+    forc(world, id, ScMeta)
+    {
+        const float name_size = 0.25f;
+
+        *Sol_Render_GetNextQuad(PIPE_QUAD) = (QuadSSBO){
+            .pos   = pos4,
+            .rect  = (vec4s){0.0f, 0.225f, Sol_MeasureText3D(c->name, name_size, SOL_FONT_ICE), name_size},
+            .color = VEC4_BLACK,
+            .uv    = (vec4s){1.0f, 1.0f, 0.0f, 0.0f},
+            .type  = QUADTYPE_FACECAM,
+        };
+        vec3s pos = {pos4.x, pos4.y, pos4.z};
+        pos.y += 0.125f;
+        Sol_Render_DrawText3D(c->name, (Text3DDesc){.pos       = pos,
+                                                    .size      = 0.25f,
+                                                    .color     = VEC4_GREEN,
+                                                    .billboard = true,
+                                                    .inFront   = true,
+                                                    .font      = SOL_FONT_ICE});
+    }
 }
-
-// static inline void Pyramid_Draw(World *world, int id, const View3 *view)
-// {
-//     Xform xform = Xform_GetDraw(world, id);
-//     vec4s pos   = {xform.pos.x, xform.pos.y, xform.pos.z, view->scale};
-
-//     QuadSSBO *push = Sol_Render_GetNextQuad(PIPE_FRACTAL_PYRAMID);
-//     *push          = (QuadSSBO){
-//         .pos   = (vec4s){pos.x, pos.y, pos.z, view->scale},
-//         .rect  = {0, 0, 7.0f, 7.0f},
-//         .color = {1, 1, 1, 1},
-//         .uv    = (vec4s){0.0f, 0.0f, 1.0f, 1.0f},
-//     };
-// }
 
 static void (*const draw_func[VIEW3KIND_COUNT])(World *, int, const View3 *) = {
     [VIEW3KIND_SPHERE]   = Sphere_Draw,
     [VIEW3KIND_FIREBALL] = Fireball_Draw,
     [VIEW3KIND_POWERBAR] = Powerbar_Draw,
-    // [VIEW3KIND_PYRAMID]  = Pyramid_Draw,
+    [VIEW3KIND_BOLT]     = Bolt_Draw,
 };
 
 void View3_Draw(World *world, double dt)
@@ -136,21 +130,7 @@ void View3_Draw(World *world, double dt)
             view->_elapsed += dt;
             if ((view->duration > 0) && view->_elapsed >= view->duration)
                 continue;
-            switch (view->kind)
-            {
-            case VIEW3KIND_FIREBALL:
-                Fireball_Draw(world, id, view);
-                break;
-            case VIEW3KIND_SPHERE:
-                Sphere_Draw(world, id, view);
-                break;
-            case VIEW3KIND_POWERBAR:
-                Powerbar_Draw(world, id, view);
-                break;
-            case VIEW3KIND_BOLT:
-                Bolt_Draw(world, id, view);
-                break;
-            }
+            draw_func[view->kind] ? draw_func[view->kind](world, id, view) : Sphere_Draw(world, id, view);
         }
     }
 }

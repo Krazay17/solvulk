@@ -33,7 +33,7 @@ static vec3s GetProjectilePos(World *world, int id, float power, int slot)
     vec3s pos = Sol_Model_GetBoneXform(world, id, slot > 5 ? "weapon.R" : "weapon.L").pos;
     if (glms_vec3_norm2(pos) == 0.0f)
         pos = Sol_Body3_GetHead(world, id);
-    pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.5f)));
+    pos = vecAdd(pos, vecSca(WORLD_UP, (power * 0.2f)));
     return pos;
 }
 
@@ -198,7 +198,7 @@ void Ability_Fireball_Draw(World *world, int id, ScAbility *ability, int slot, f
     case 0: {
         *Sol_Render_GetNextSphere(PIPE_FIREBALL) = (SphereSSBO){
             .color = VEC4_RED,
-            .pos   = (vec4s){pos.x, pos.y, pos.z, data->power * 0.5f},
+            .pos   = (vec4s){pos.x, pos.y, pos.z, data->power * 0.33f},
         };
     }
     break;

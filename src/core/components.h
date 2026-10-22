@@ -465,6 +465,7 @@ typedef struct ScProjectile
     SolHit hit;
     SolHit aoe_hit;
     float radius;
+    float target_radius;
     float power;
     Hook hook;
 } ScProjectile;
@@ -554,6 +555,15 @@ typedef struct ScAbilitybar
     int ability_slots[ABILITY_SLOTS];
     int slotted_ents[ABILITY_SLOTS];
 } ScAbilitybar;
+
+typedef struct ScPickup
+{
+    SolItem item;
+    float range;
+    float respawn_time;
+    bool does_respawn;
+    bool random_respawn;
+} ScPickup;
 
 typedef struct ScUiItem
 {
@@ -763,6 +773,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScEquip, HAS_ScEquip, Add_None)                                                                                  \
     X(ScUiItem, HAS_ScUiItem, Add_None)                                                                                \
     X(ScScore, HAS_ScScore, Add_None)                                                                                  \
+    X(ScPickup, HAS_ScPickup, Add_None)                                                                                \
     X(ScBuilder, HAS_ScBuilder, Add_None)
 
 typedef enum
@@ -831,5 +842,5 @@ void Sol_Comp_RemE(World *world, int id, u64 idx);
 // set->, i , c->
 #define for_set(w, type)                                                                                               \
     for (SparseSet_##type *set = Sol_Comp_Set(w, type); set; set = NULL)                                               \
-        for (int i = 0; i < set->cnt; i++)                                                                             \
+        for (int i = set->cnt - 1; i >= 0; i--)                                                                        \
             for (type *c = &set->data[i]; c; c = NULL)

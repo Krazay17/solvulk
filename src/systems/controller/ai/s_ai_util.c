@@ -176,6 +176,11 @@ u32 GetMoveActionMask(World *world, int id, ScAi *ai)
     //                 BITC(AIACTION_DODGERIGHT);
     //     }
     // }
+    forc(world, id, ScAbility)
+    {
+        if (Sol_Ability_GetIsDashing(c))
+            return mask;
+    }
     mask |= BITC(AIACTION_NONE);
     mask |= BITC(AIACTION_FWD) | BITC(AIACTION_BWD) | BITC(AIACTION_LEFT) | BITC(AIACTION_RIGHT);
     mask |= BITC(AIACTION_JUMPFWD) | BITC(AIACTION_JUMPBWD) | BITC(AIACTION_JUMPLEFT) | BITC(AIACTION_JUMPRIGHT);

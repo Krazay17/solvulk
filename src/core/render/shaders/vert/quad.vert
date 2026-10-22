@@ -1,5 +1,4 @@
 #version 450
-
 layout(location = 0) out vec2 fragUV;
 layout(location = 1) out vec4 fragColor;
 layout(location = 2) out vec4 fragExtra;

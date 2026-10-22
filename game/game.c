@@ -111,7 +111,6 @@ void Create_Game()
         int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
         ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime = 2.0f;
-        Sol_Comp_Rem(world, id, ScMeta);
     }
     for (int j = -2; j < 2; j++)
     {
@@ -119,7 +118,6 @@ void Create_Game()
         int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
         ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime = 2.0f;
-        Sol_Comp_Rem(world, id, ScMeta);
     }
     {
         vec3s spawn_pos                        = {0, 4, 5};
@@ -127,7 +125,8 @@ void Create_Game()
         Sol_Comp_Get(world, id, ScModel)->kind = MODELKIND_EVANRIGGED;
         ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
         combat->respawnTime                    = 2.0f;
-        Sol_Comp_Rem(world, id, ScMeta);
+        ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
+        strncpy(meta->name, "Evan", sizeof(meta->name));
     }
 }
 

@@ -21,3 +21,4 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory);
 int Sol_Prefab_InventoryWindow(World *world, vec3s pos);
 int Sol_Prefab_RulesWindow(World *world, vec3s pos, u32 view_count);
 int Sol_Prefab_GravPad(World *world, vec3s pos, versors rot);
+int Sol_Prefab_Pickup(World *world, vec3s pos);

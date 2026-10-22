@@ -269,6 +269,8 @@ void Sol_Combat_Reflect(World *world, int projectile, int reflector, vec3s pos)
         body3->ignoreEnt = reflector;
     }
 
+    Sol_Comp_Rem(world, projectile, ScAilearn);
+
     Sol_Event_Push(world, EVENTKIND_FX, (SolEvent){.as.fx.kind = FXKIND_PARRY, .pos = pos});
 }
 

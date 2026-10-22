@@ -16,6 +16,16 @@ const ScCamera player_camera = {
     // .y_offset         = 0.5f,
 };
 
+static const ScBody3 ball_body = {
+    .shape       = SHAPE3_SPH,
+    .mass        = 1.0f,
+    .invMass     = 1.0f,
+    .restitution = 0.5f,
+    .gravity     = SOL_GRAVITY,
+    .dims        = {0.5f},
+    .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+};
+
 static const ScBody3 wizard_body = {
     .shape       = SHAPE3_CAP,
     .mass        = 1.0f,
@@ -152,9 +162,6 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 
     Sol_Comp_Add(world, id, ScTeam);
     Sol_Comp_Add(world, id, ScCmd);
-
-    ScMeta *meta = Sol_Comp_Add(world, id, ScMeta);
-    snprintf(meta->name, sizeof(meta->name), "Dude");
 
     return id;
 }
@@ -470,8 +477,9 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
         .kind   = PROJECTILEKIND_FIREBALL,
-        .radius = size,
+        .radius = size * 0.2f,
         .hitgen = Sol_Hitgen_Start(world),
+        .target_radius = size,
     };
 
     ScAi *ai = Sol_Comp_Get(world, owner, ScAi);
@@ -770,4 +778,21 @@ int Sol_Prefab_GravPad(World *world, vec3s pos, versors rot)
     body3->shape   = SHAPE3_CYL;
     model->kind    = MODELKIND_JUMPPAD;
     Sol_Comp_Add(world, id, ScAnim);
+}
+
+int Sol_Prefab_Pickup(World *world, vec3s pos)
+{
+    float size       = 0.5f;
+    int id           = Sol_Create_Ent(world, pos);
+    ScPickup *pickup = Sol_Comp_Add(world, id, ScPickup);
+    pickup->item     = (SolItem){.item_kind = ITEMKIND_FIREBALL, .effectMask = EFFECTMASK_KNOCKUP};
+    pickup->range    = size;
+
+    ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
+    View3 sphere   = {.color = VEC4_WHITE, .kind = VIEW3KIND_SPHERE, .scale = size};
+    solb_push(view3->views_b, sphere);
+
+    *Sol_Comp_Add(world, id, ScBody3) = ball_body;
+
+    return id;
 }

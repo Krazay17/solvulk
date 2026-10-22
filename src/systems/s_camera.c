@@ -12,21 +12,17 @@ void Camera_Tick(World *world, double dt)
         int id           = set->dense[i];
         ScCamera *camera = &set->data[i];
         Xform xform      = Xform_GetDraw(world, id);
-        ScBody3 *body3   = Sol_Comp_Get(world, id, ScBody3);
 
-        vec3s head    = Sol_Body3_GetHead(world, id);
-        vec3s lookdir = WORLD_FWD;
+        vec3s head = xform.pos;
         head.y += camera->y_offset;
+        forc(world, id, ScBody3) head.y += c->dims.y;
 
-        if (Sol_Comp_Has(world, id, ScCmd))
-        {
-            ScCmd *cmd = Sol_Comp_Get(world, id, ScCmd);
-            lookdir    = cmd->lookdir;
-        }
+        vec3s lookdir = WORLD_FWD;
+        forc(world, id, ScCmd) lookdir = c->lookdir;
 
         vec3s invDir    = glms_vec3_scale(lookdir, -1.0f);
         vec3s offsetvec = glms_vec3_cross(lookdir, WORLD_UP);
-        offsetvec = glms_vec3_normalize(offsetvec);
+        offsetvec       = glms_vec3_normalize(offsetvec);
 
         if (camera->desired_distance <= 0)
         {

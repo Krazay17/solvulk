@@ -7,7 +7,7 @@ const char *font_path[SOL_FONT_COUNT] = {
     [SOL_FONT_ICE] = "atlas.json",
 };
 
-static void       Parse_Font(SolResource metrics, int id);
+static void Parse_Font(SolResource metrics, int id);
 static TextBounds ParseBounds(const char *p, const char *end);
 
 SolFont loaded_fonts[SOL_FONT_COUNT];
@@ -25,10 +25,15 @@ int Sol_Fonts_Init()
 
 static void Parse_Font(SolResource metrics, int id)
 {
-    SolFont *font      = &loaded_fonts[id];
-    font->textureId    = id;
-    SolGlyph   *glyphs = font->glyph;
-    const char *json   = metrics.data;
+    SolFont *font    = &loaded_fonts[id];
+    font->textureId  = id;
+    SolGlyph *glyphs = font->glyph;
+    const char *json = metrics.data;
+
+    const char *metrics_ptr = strstr(json, "\"metrics\":");
+    const char *em_ptr      = metrics_ptr ? strstr(metrics_ptr, "\"emSize\":") : NULL;
+
+    font->fontSize = em_ptr ? strtof(em_ptr + 9, NULL) : 1.0f;
 
     float atlasW = 224.0f;
     float atlasH = 224.0f;
@@ -46,8 +51,8 @@ static void Parse_Font(SolResource metrics, int id)
         p = obj + 1;
 
         // find end of glyph block
-        const char *end   = p;
-        int         depth = 1;
+        const char *end = p;
+        int depth       = 1;
         while (*end && depth > 0)
         {
             if (*end == '{')
@@ -85,7 +90,7 @@ static void Parse_Font(SolResource metrics, int id)
         glyphs[charId].xright   = pl.r;
         glyphs[charId].ytop     = pl.t;
         glyphs[charId].yoffset  = pl.b;
-        glyphs[charId].yadvance = adv ? strtof(adv + 10, NULL) : 0.0f;
+        glyphs[charId].xadvance = adv ? strtof(adv + 10, NULL) : 0.0f;
 
         p = end;
     }
@@ -93,9 +98,9 @@ static void Parse_Font(SolResource metrics, int id)
 
 static TextBounds ParseBounds(const char *p, const char *end)
 {
-    TextBounds  bounds = {0};
-    const char *open   = strchr(p, '{');
-    const char *close  = open ? strchr(open, '}') : NULL;
+    TextBounds bounds = {0};
+    const char *open  = strchr(p, '{');
+    const char *close = open ? strchr(open, '}') : NULL;
     if (!open || !close || open > end)
         return bounds;
 
@@ -177,13 +182,40 @@ static TextBounds ParseBounds(const char *p, const char *end)
 
 float Sol_MeasureText(const char *str, float size, SolFontKind kind)
 {
-    float width = 0.0f;
+    if (!str || str[0] == '\0')
+        return 0.0f;
+
+    float width   = 0.0f;
+    SolFont *font = &loaded_fonts[kind];
+
     for (const char *c = str; *c; c++)
     {
-        int id = (int)*c;
-        if (id < 0 || id >= 128)
+        unsigned char ch = (unsigned char)*c;
+        if (ch >= 128)
             continue;
-        width += loaded_fonts[kind].glyph[id].yadvance * size;
+
+        // xadvance is in em units, multiplying by pixel size gives pixel width
+        width += font->glyph[ch].xadvance * size;
+    }
+    return width;
+}
+
+float Sol_MeasureText3D(const char *str, float size, SolFontKind kind)
+{
+    if (!str || str[0] == '\0')
+        return 0.0f;
+
+    float width   = 0.0f;
+    SolFont *font = &loaded_fonts[kind];
+    float scale   = size / font->fontSize;
+
+    for (const char *c = str; *c; c++)
+    {
+        unsigned char ch = (unsigned char)*c;
+        if (ch >= 128)
+            continue;
+
+        width += font->glyph[ch].xadvance * scale;
     }
     return width;
 }

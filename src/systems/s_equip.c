@@ -203,8 +203,9 @@ int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen)
             ray.ignoreEnt  = id;
             hits += Sol_Combat_DamageCast(world, id, ray, hit, hitgen);
         }
-        return hits;
     }
+
+    return hits;
 }
 
 void Sol_Weapon_PlayAudio(World *world, int id)

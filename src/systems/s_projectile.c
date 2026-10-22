@@ -8,6 +8,7 @@
 #include "world.h"
 #include "sol_math.h"
 #include "sol_core.h"
+#include "ribbon/s_ribbon.h"
 
 typedef bool isDestroyed;
 
@@ -72,6 +73,12 @@ static void Fireball_Update(World *world, int id, double dt, ScProjectile *p)
 {
     if (p->radius < p->target_radius)
         p->radius = fminf(p->target_radius, p->radius + (float)dt);
+    forc(world, id, ScRibbon)
+    {
+        Ribbon *r = Sol_Ribbon_Find(c, RIBBONKIND_WEAPON_TRAIL);
+        if (r)
+            r->thickness[0] = p->radius;
+    }
 }
 
 static inline isDestroyed PlasmaOrbHit(World *world, int a, ScProjectile *projectile, SolHit hit)

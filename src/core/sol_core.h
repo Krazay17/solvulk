@@ -44,7 +44,7 @@ typedef struct SolState
     int windowWidth, windowHeight;
     int windowX, windowY;
     void *g_hwnd;
-    
+
     DebugEnt debug_ent;
 } SolState;
 
@@ -101,3 +101,7 @@ void Sol_Debug_Add(const char *text, float value);
 void Sol_Debug_AddText(const char *label, const char *value);
 void Sol_Debug_Draw(double dt);
 void Sol_FPS(double dt);
+
+int sollog_init();
+void sollog_close();
+void sollogf(const char *fmt, ...);

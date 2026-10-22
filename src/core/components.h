@@ -433,8 +433,7 @@ typedef struct
 } View2;
 typedef struct ScView2
 {
-    View2 views[MAX_VIEWS];
-    u8 count;
+    View2 *views;
 } ScView2;
 
 typedef enum
@@ -678,7 +677,9 @@ typedef enum
     RULESPHASE_ACTIVE,
     RULESPHASE_END,
 } RulesPhase;
-typedef struct
+typedef struct SlRules SlRules;
+typedef void (*RulesOnWin)(World *world, SlRules *rules);
+struct SlRules
 {
     union {
         struct
@@ -694,7 +695,9 @@ typedef struct
     RulesKind kind;
     RulesPhase phase;
     int winner;
-} SlRules;
+    
+    RulesOnWin on_win;
+};
 
 typedef struct
 {

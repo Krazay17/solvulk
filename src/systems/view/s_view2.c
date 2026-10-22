@@ -31,7 +31,7 @@ static void Draw_RulesWindow(World *world, int id, float fdt, View2 *view)
     frame->flags     = 0;
     frame->pos       = pos4;
     frame->rect      = (vec4s){0, 0, UISCALE(width), UISCALE(height)};
-    frame->color        = (vec4s){1, 1, 1, 0.4f};
+    frame->color     = (vec4s){1, 1, 1, 0.4f};
     frame->textureId = SOL_TEXTURE_GREENFRAME;
 }
 static void Draw_Inventory(World *world, int id, float fdt, View2 *view)
@@ -216,7 +216,27 @@ static void DrawSlider(World *world, int id, float fdt, View2 *view)
 static void DrawCircle(World *world, int id, float fdt, View2 *view)
 {
 }
-
+static void RulesText(World *world, int id, float fdt, View2 *view)
+{
+    if (view->text[0] == '\0')
+        return;
+    float textWidth = Sol_MeasureText(view->text, view->dims.x, SOL_FONT_ICE);
+    vec3s pos       = world->xform.draw_pos[id];
+    pos.x += view->offset.x;
+    pos.y += view->offset.y;
+    RectSSBO *rect = Sol_Render_GetNext_Rect(maxf(0, view->layer - 1));
+    rect->color    = (vec4s){0.3f, 0.3f, 0.3f, 0.3f};
+    rect->pos      = (vec4s){UISCALE(pos.x), UISCALE(pos.y), 0.0f, 1.0f};
+    rect->rect     = (vec4s){0, -view->dims.x, textWidth, view->dims.x};
+    Sol_Render_DrawText2D(view->text, (SolFontDesc){
+                                          .layer = view->layer,
+                                          .x     = UISCALE(pos.x),
+                                          .y     = UISCALE(pos.y),
+                                          .size  = UISCALE(view->dims.x),
+                                          .color = view->color,
+                                          .kind  = SOL_FONT_ICE,
+                                      });
+}
 static void DrawText(World *world, int id, float fdt, View2 *view)
 {
     if (view->text[0] == '\0')
@@ -273,6 +293,7 @@ void (*const draw_funcs[VIEW2KIND_COUNT])(World *, int, float, View2 *) = {
     [VIEW2KIND_ABILITYBAR]  = DrawAbilitybar,
     [VIEW2KIND_INVENTORY]   = Draw_Inventory,
     [VIEW2KIND_RULESWINDOW] = Draw_RulesWindow,
+    [VIEW2KIND_RULES_TEXT]  = RulesText,
 };
 
 void View2_Draw(World *world, double dt)
@@ -283,7 +304,7 @@ void View2_Draw(World *world, double dt)
     {
         int id            = set->dense[i];
         ScView2 *viewComp = &set->data[i];
-        for (int j = 0; j < viewComp->count; j++)
+        for (int j = 0; j < solb_count(viewComp->views); j++)
         {
             View2 *view = &viewComp->views[j];
             if (draw_funcs[view->kind])

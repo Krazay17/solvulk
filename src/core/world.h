@@ -75,7 +75,6 @@ typedef enum
     X(SYS_DEBUG_DRAW3, PHASE_RENDER3, Debug_Draw3)                                                                     \
                                                                                                                        \
     X(SYS_SCOREBOARD_DRAW, PHASE_RENDER2, Scoreboard_Draw)                                                             \
-    X(SYS_RULES_DRAW, PHASE_RENDER2, Rules_Draw)                                                                       \
     X(SYS_VIEW2_DRAW, PHASE_RENDER2, View2_Draw)                                                                       \
     X(SYS_DEBUG_DRAW2, PHASE_RENDER2, Debug_Draw2)
 
@@ -339,3 +338,4 @@ vec3s Sol_Cmd_GetDir(World *world, int id);
 vec3s Sol_Model_GetBoneByIdx(World *world, int id, u32 boneIdx);
 int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen);
 void Sol_Ai_RandomName(char *dest, size_t size);
+void Sol_Combat_Respawn(World *world, int id, ScCombat *combat);

@@ -254,6 +254,18 @@ void Entity_Actions()
             body3->vel     = GLMS_VEC3_ZERO;
         }
     }
+    if (Sol_Input_KeyDown(SOL_KEY_F))
+    {
+        SolRayResult result;
+        forc(world, id, ScCmd)
+        {
+            sollog(Sol_Raycast1D(world, (SolRay){.start     = (vec3s){0,80.0f,0},
+                                                 .dir       = WORLD_DOWN,
+                                                 .dist      = 91.0f,
+                                                 .mask      = COLLAYER_WORLD,
+                                                 .ignoreEnt = id}, &result, 0.1f));
+        }
+    }
 }
 
 void User_Debug(double dt)

@@ -159,16 +159,16 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
 
     for (uint32_t i = 0; i < item_count; i++)
     {
-        ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
-        ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
-        min_cell.x      = max(min_cell.x, 0);
-        max_cell.x      = min(max_cell.x, grid->dims.x - 1);
+ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
+ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
 
-        min_cell.y      = max(min_cell.y, 0);
-        max_cell.y      = min(max_cell.y, grid->dims.y - 1);
+min_cell.x = max(min_cell.x, 0);
+min_cell.y = max(min_cell.y, 0);
+min_cell.z = max(min_cell.z, 0);
 
-        min_cell.z      = max(min_cell.z, 0);
-        max_cell.z      = min(max_cell.z, grid->dims.z - 1);
+max_cell.x = min(max_cell.x, grid->dims.x - 1);
+max_cell.y = min(max_cell.y, grid->dims.y - 1);
+max_cell.z = min(max_cell.z, grid->dims.z - 1);
         for (int z = min_cell.z; z <= max_cell.z; z++)
             for (int y = min_cell.y; y <= max_cell.y; y++)
                 for (int x = min_cell.x; x <= max_cell.x; x++)
@@ -191,8 +191,16 @@ static inline uint32_t SpatialGrid_Build(SpatialGrid *grid, uint32_t *ids, vec3s
     for (uint32_t i = 0; i < item_count; i++)
     {
         uint32_t id     = ids[i];
-        ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
-        ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
+ivec3s min_cell = SpatialGrid_WorldToCell(grid, mins[i]);
+ivec3s max_cell = SpatialGrid_WorldToCell(grid, maxs[i]);
+
+min_cell.x = max(min_cell.x, 0);
+min_cell.y = max(min_cell.y, 0);
+min_cell.z = max(min_cell.z, 0);
+
+max_cell.x = min(max_cell.x, grid->dims.x - 1);
+max_cell.y = min(max_cell.y, grid->dims.y - 1);
+max_cell.z = min(max_cell.z, grid->dims.z - 1);
 
         for (int z = min_cell.z; z <= max_cell.z; z++)
             for (int y = min_cell.y; y <= max_cell.y; y++)
@@ -310,36 +318,85 @@ static inline bool GridDDA_InBounds(const GridDDA *it, const SpatialGrid *grid)
 // Advances to the next cell boundary crossed; returns the ray distance at which it happened.
 static inline float GridDDA_Step(GridDDA *it)
 {
+    if (it->step.x == 0 && it->step.y == 0 && it->step.z == 0)
+        return INFINITY;
+
+    if (it->step.x == 0)
+        it->tMax.x = INFINITY;
+    if (it->step.y == 0)
+        it->tMax.y = INFINITY;
+    if (it->step.z == 0)
+        it->tMax.z = INFINITY;
+
     float t;
-    if (it->tMax.x < it->tMax.y)
+
+    if (it->tMax.x < it->tMax.y && it->tMax.x < it->tMax.z)
     {
-        if (it->tMax.x < it->tMax.z)
-        {
-            t = it->tMax.x;
-            it->cell.x += it->step.x;
-            it->tMax.x += it->tDelta.x;
-        }
-        else
-        {
-            t = it->tMax.z;
-            it->cell.z += it->step.z;
-            it->tMax.z += it->tDelta.z;
-        }
+        t = it->tMax.x;
+        it->cell.x += it->step.x;
+        it->tMax.x += it->tDelta.x;
+    }
+    else if (it->tMax.y < it->tMax.z)
+    {
+        t = it->tMax.y;
+        it->cell.y += it->step.y;
+        it->tMax.y += it->tDelta.y;
     }
     else
     {
-        if (it->tMax.y < it->tMax.z)
-        {
-            t = it->tMax.y;
-            it->cell.y += it->step.y;
-            it->tMax.y += it->tDelta.y;
-        }
-        else
-        {
-            t = it->tMax.z;
-            it->cell.z += it->step.z;
-            it->tMax.z += it->tDelta.z;
-        }
+        t = it->tMax.z;
+        it->cell.z += it->step.z;
+        it->tMax.z += it->tDelta.z;
     }
+
     return t;
+}
+
+static bool GridDDA_ClipRay(
+    const SpatialGrid *grid,
+    vec3s origin,
+    vec3s dir,
+    float max_dist,
+    float *t_enter,
+    float *t_exit)
+{
+    float o[3]  = {origin.x, origin.y, origin.z};
+    float d[3]  = {dir.x, dir.y, dir.z};
+    float mn[3] = {grid->min.x, grid->min.y, grid->min.z};
+    float mx[3] = {grid->max.x, grid->max.y, grid->max.z};
+
+    float tmin = 0.0f;
+    float tmax = max_dist;
+
+    for (int i = 0; i < 3; i++)
+    {
+        // Ray is parallel to this pair of AABB faces.
+        if (fabsf(d[i]) < 1e-8f)
+        {
+            if (o[i] < mn[i] || o[i] > mx[i])
+                return false;
+
+            continue;
+        }
+
+        float t1 = (mn[i] - o[i]) / d[i];
+        float t2 = (mx[i] - o[i]) / d[i];
+
+        if (t1 > t2)
+        {
+            float tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+        }
+
+        tmin = fmaxf(tmin, t1);
+        tmax = fminf(tmax, t2);
+
+        if (tmin > tmax)
+            return false;
+    }
+
+    *t_enter = tmin;
+    *t_exit  = tmax;
+    return true;
 }

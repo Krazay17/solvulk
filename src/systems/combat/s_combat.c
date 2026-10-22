@@ -33,12 +33,11 @@ void SlChainhit_Deinit(SlChainhit *self)
     solb_free(self->chainhits);
 }
 
-static vec3s RandomSpawn(World *world, int id, ScCombat *combat)
+static vec3s RandomSpawn(World *world, int id)
 {
     vec3s pos     = world->xform.home_pos[id];
     bool found    = false;
     float start_y = 200.0f;
-    // Cap attempts to prevent frame freezes
     const int MAX_TRIES = 20;
     for (int attempt = 0; attempt < MAX_TRIES && !found; attempt++)
     {
@@ -47,13 +46,12 @@ static vec3s RandomSpawn(World *world, int id, ScCombat *combat)
         pos.y = start_y;
 
         SolRayResult result;
-        // Extended ray distance to reach ground below Y = 0
-        SolRay ray = {.start = pos, .dir = WORLD_DOWN, .dist = start_y + 10.0f};
+        SolRay ray = {.start = pos, .dir = WORLD_DOWN, .dist = start_y + 100.0f, .mask = COLLAYER_WORLD, .ignoreEnt = id};
 
-        if (Sol_Raycast1D(world, ray, &result, 0.5f) && result.t > 0.0f)
+        if (Sol_Raycast1D(world, ray, &result, 0.5f))
         {
-            // Snap Y to the actual ground hit position + slight offset
-            pos.y = pos.y - result.t + 0.5f;
+            pos = result.pos;
+            pos.y += 0.5f;
             found = true;
         }
     }
@@ -65,19 +63,21 @@ static vec3s RandomSpawn(World *world, int id, ScCombat *combat)
     return pos;
 }
 
-static void OnRespawn(World *world, int id, ScCombat *combat)
+void Sol_Combat_Respawn(World *world, int id, ScCombat *combat)
 {
-    Sol_Xform_Teleport(world, id, combat->random_spawn ? RandomSpawn(world, id, combat) : world->xform.home_pos[id]);
-    combat->health  = combat->healthMax;
-    combat->energy  = combat->energyMax;
-    combat->mana    = combat->manaMax;
-    combat->is_dead = false;
+    Sol_Xform_Teleport(world, id, combat->random_spawn ? RandomSpawn(world, id) : world->xform.home_pos[id]);
+    combat->health = combat->healthMax;
+    combat->energy = combat->energyMax;
+    combat->mana   = combat->manaMax;
 
-    ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
-    if (body3)
+    if (combat->is_dead)
     {
-        body3->vel  = GLMS_VEC3_ZERO;
-        body3->mask = body3->base_mask;
+        forc(world, id, ScBody3)
+        {
+            c->vel  = GLMS_VEC3_ZERO;
+            c->mask = c->base_mask;
+        }
+        combat->is_dead = false;
     }
 }
 
@@ -169,7 +169,7 @@ void Combat_Update(World *world, double dt)
         {
             OnDeath(world, id, combat, 0);
             if (combat->respawnTime && (world->tickTime >= (combat->deathTime + combat->respawnTime)))
-                OnRespawn(world, id, combat);
+                Sol_Combat_Respawn(world, id, combat);
         }
         vec3s pos = world->xform.pos[id];
         if (pos.y < -80.0f)

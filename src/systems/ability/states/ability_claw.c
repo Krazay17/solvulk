@@ -54,21 +54,24 @@ static void Spell(World *world, int id, ScAbility *ability, ScCmd *cmd, int slot
         ScBody3 *body3 = Sol_Comp_Get(world, id, ScBody3);
         if (prog.advanced)
         {
-            Sol_Weapon_TrailOn(world, id, slot > 5);
+            forc(world, id, ScEquip)
+            {
+                int right                                    = c->right_weapon;
+                forc(world, right, ScWeapon) c->update_trail = true;
+            }
         }
         if (body3)
         {
             body3->vel.y = 5.0f;
         }
+        SolHit hit = {
+            .dealer = id,
+            .damage = data->conf.damage,
+            .power  = data->power,
+            .kind   = HITKIND_MELEE_HIT,
+        };
 
-        int hits = Sol_Combat_DamageCast(world, id, Sol_Weapon_Ray(world, id, slot > 5, data->power),
-                                         (SolHit){
-                                             .damage = data->conf.damage,
-                                             .power  = data->power,
-                                             .dealer = id,
-                                             .kind   = HITKIND_MELEE_HIT,
-                                         },
-                                         data->hitgen);
+        int hits = Sol_Weapon_Trace(world, Sol_Equip_GetId(world, id, 6), hit, data->hitgen);
         if (hits > 0)
             HitPause(data);
         break;

@@ -75,16 +75,19 @@ static inline void Hook_SpawnWizard(World *w, int a, int b)
 }
 static inline void Hook_SpawnDude(World *w, int a, int b)
 {
-    World *world = Sol_User_GetGameWorld();
-    float time   = world->tickTime;
+    World *game = Sol_User_GetGameWorld();
+    float time  = game->tickTime;
 
     vec3s spawn_pos = {sinf(time) * 2, 5.0f, cosf(time) * 2.0f};
-    int id          = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-    ScAi *ai        = Sol_Comp_Add(world, id, ScAi);
+    int id          = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
+    ScAi *ai        = Sol_Comp_Add(game, id, ScAi);
     ai->aggroRange  = 100.0f;
 
-    ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+    ScCombat *combat    = Sol_Comp_Add(game, id, ScCombat);
     combat->respawnTime = 3.0f;
+
+    ScMeta *meta = Sol_Comp_Add(game, id, ScMeta);
+    Sol_Ai_RandomName(meta->name, sizeof(meta->name));
 }
 static inline void Hook_SpawnDudes(World *w, int a, int b)
 {
@@ -266,6 +269,30 @@ static inline void Hook_Chill(World *w, int a, int b)
         ai->inactive = interact->state & (1u << INTERACT_ACTIVE);
         Sol_Cmd_Clear(game, id);
     }
+}
+
+static void OnRulesWin(World *w, SlRules *rules)
+{
+    for_set(w, ScScore)
+    {
+        int id           = set->dense[i];
+        c->kills         = 0;
+        c->deaths        = 0;
+        w->xform.pos[id] = w->xform.home_pos[id];
+        forc(w, id, ScCombat)
+        {
+            Sol_Combat_Respawn(w, id, c);
+        }
+
+        Sol_Ability_SetAllIdle(w, id);
+        Sol_Comp_Rem(w, id, ScBuff);
+    }
+    for_set(w, ScProjectile)
+    {
+        int id = set->dense[i];
+        Sol_Destroy_Ent(w, id);
+    }
+    rules->phase = RULESPHASE_ACTIVE;
 }
 
 static inline void Hook_Test(World *w, int a, int b)

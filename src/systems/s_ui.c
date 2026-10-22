@@ -675,8 +675,14 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
         ROW2,
         ROW3,
         ROW4,
+        ROW5,
+        ROW6,
+        ROW7,
+        ROW8,
+        ROW9,
+        ROW10,
         VIEWCOUNT,
-        ROWCOUNT = ROW4 - TITLE,
+        ROWCOUNT = ROW10 - TITLE,
     };
     bool existing_window = false;
     for_set(hud, ScRef)

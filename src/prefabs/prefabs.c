@@ -24,6 +24,7 @@ static const ScBody3 ball_body = {
     .gravity     = SOL_GRAVITY,
     .dims        = {0.5f},
     .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    .base_mask   = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
 };
 
 static const ScBody3 wizard_body = {
@@ -89,16 +90,7 @@ static const ScBody3 dude_body = {
     .gravity     = SOL_GRAVITY,
     .dims        = {0.4f, 1.0f, 0.4f},
     .mask        = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
-};
-
-static const ScBody3 sphere_body = {
-    .shape       = SHAPE3_SPH,
-    .mass        = 1.0f,
-    .invMass     = 1.0f,
-    .restitution = 0.5f,
-    .gravity     = SOL_GRAVITY,
-    .dims        = {1.0f, 1.0f, 1.0f},
-    .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    .base_mask   = PHYSXMASK(COLLAYER_PAWN, COLLAYER_ALL),
 };
 
 static const ScMove3 dude_move = {
@@ -199,9 +191,8 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 int Sol_Prefab_Crosshair(World *world)
 {
     int id                = Sol_Create_Ent(world, (vec3s){(float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0});
-    ScView2 *buttonView2  = Sol_Comp_Add(world, id, ScView2);
-    buttonView2->count    = 1;
-    buttonView2->views[0] = (View2){
+    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {
         .kind       = VIEW2KIND_RECT,
         .textureID  = SOL_TEXTURE_CROSSHAIR,
         .offset     = {-9.0f, -9.0f},
@@ -212,6 +203,7 @@ int Sol_Prefab_Crosshair(World *world)
         .hoverColor = {1, 1, 1, 1},
         .textureUV  = {1, 1, 0, 0},
     };
+    solb_push(sc_view->views, view0);
 
     return id;
 }
@@ -237,9 +229,8 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
     };
 
-    ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
-    view->count    = 4;
-    view->views[0] = (View2){
+    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -248,7 +239,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
-    view->views[1] = (View2){
+    View2 view1 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -258,7 +249,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
-    view->views[2] = (View2){
+    View2 view2 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -267,7 +258,7 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .border      = 3.0f,
     };
-    view->views[3] = (View2){
+    View2 view3 = {
         .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
         .dims        = {14.0f},
@@ -276,7 +267,11 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .offset      = {dims.x * 0.5f, dims.y * 0.5f},
     };
-    strncpy(view->views[3].text, text, sizeof(view->views[3].text));
+    strncpy(view3.text, text, sizeof(view3.text));
+    solb_push(sc_view->views, view0);
+    solb_push(sc_view->views, view1);
+    solb_push(sc_view->views, view2);
+    solb_push(sc_view->views, view3);
 
     return id;
 }
@@ -312,9 +307,8 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
 
     *Sol_Comp_Add(world, id, ScHook) = (ScHook){.held = func};
 
-    ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
-    view->count    = 8;
-    view->views[0] = (View2){
+    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -323,13 +317,13 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .activeColor = {0.0f, 1.0f, 0.0f, 1.0f},
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
     };
-    view->views[1] = (View2){
+    View2 view1 = {
         .layer = layer,
         .kind  = VIEW2KIND_SLIDER_FILL,
         .dims  = {dims.x, dims.y},
         .color = {0.1f, 0.1f, 0.7f, 1.0f},
     };
-    view->views[2] = (View2){
+    View2 view2 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -339,7 +333,7 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .textureID   = SOL_TEXTURE_SWIRLFRAME,
     };
-    view->views[3] = (View2){
+    View2 view3 = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -349,27 +343,27 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .border      = 3.0f,
     };
 
-    view->views[4] = (View2){
+    View2 view4 = {
         .layer = layer,
         .kind  = VIEW2KIND_SLIDER,
         .dims  = {dims.x, dims.y},
         .color = {0.1f, 0.1f, 0.7f, 1.0f},
     };
-    view->views[5] = (View2){
+    View2 view5 = {
         .layer     = layer,
         .kind      = VIEW2KIND_SLIDER,
         .dims      = {dims.x, dims.y},
         .color     = {0.5f, 0.1f, 0.7f, 1.0f},
         .textureID = SOL_TEXTURE_SWIRLFRAME,
     };
-    view->views[6] = (View2){
+    View2 view6 = {
         .layer  = layer,
         .kind   = VIEW2KIND_SLIDER,
         .dims   = {dims.x, dims.y},
         .color  = {0.0f, 0.0f, 0.0f, 1.0f},
         .border = 3.0f,
     };
-    view->views[7] = (View2){
+    View2 view7 = {
         .layer       = layer,
         .kind        = VIEW2KIND_TEXT,
         .dims        = {14.0f},
@@ -378,7 +372,17 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
         .downColor   = {0.0f, 0.0f, 0.0f, 1.0f},
         .offset      = {dims.x * 0.5f, dims.y * 0.5f},
     };
-    strncpy(view->views[7].text, text, sizeof(view->views[7].text));
+    strncpy(view7.text, text, sizeof(view7.text));
+
+    solb_push(sc_view->views, view0);
+    solb_push(sc_view->views, view1);
+    solb_push(sc_view->views, view2);
+    solb_push(sc_view->views, view3);
+    solb_push(sc_view->views, view4);
+    solb_push(sc_view->views, view5);
+    solb_push(sc_view->views, view6);
+    solb_push(sc_view->views, view7);
+
 
     return id;
 }
@@ -399,22 +403,21 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
         .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    ScView2 *view  = Sol_Comp_Add(world, id, ScView2);
-    view->count    = 6;
-    view->views[0] = (View2){
+    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
         .color      = {0.0f, 0.0f, 0.0f, 1.0f},
         .hoverColor = {1, 1, 1, 0.5f},
     };
-    view->views[1] = (View2){
+    View2 view1 = {
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
         .color      = {0.2f, 0.2f, 0.2f, 1.0f},
         .hoverColor = {1, 1, 1, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
     };
-    view->views[2] = (View2){
+    View2 view2 = {
         .kind       = VIEW2KIND_POWERBAR,
         .dims       = {dims.x, dims.y},
         .color      = {1.0f, 0.0f, 0.0f, 1.0f},
@@ -422,7 +425,7 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
         .hoverColor = {1, 1, 0, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
     };
-    view->views[3] = (View2){
+    View2 view3 = {
         .kind       = VIEW2KIND_POWERBAR,
         .dims       = {dims.x, dims.y},
         .color      = color,
@@ -430,19 +433,25 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
         .hoverColor = {1, 1, 0, 0.5f},
         .textureID  = SOL_TEXTURE_HEALTH,
     };
-    view->views[4] = (View2){
+    View2 view4 = {
         .kind   = VIEW2KIND_RECT,
         .dims   = {dims.x, dims.y},
         .color  = {0.0f, 0.0f, 0.0f, 1.0f},
         .border = 2.0f,
     };
-    view->views[5] = (View2){
+    View2 view5 = {
         .layer  = UILAYER_3,
         .kind   = VIEW2KIND_TEXT,
         .dims   = {dims.y * 0.5f},
         .offset = {dims.x * 0.5f, dims.y * 0.5f},
         .color  = {1.0f, 0.0f, 0.0f, 1.0f},
     };
+    solb_push(sc_view->views, view0);
+    solb_push(sc_view->views, view1);
+    solb_push(sc_view->views, view2);
+    solb_push(sc_view->views, view3);
+    solb_push(sc_view->views, view4);
+    solb_push(sc_view->views, view5);
 
     return id;
 }
@@ -476,9 +485,9 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     solb_push(view3->views_b, fireball);
 
     *Sol_Comp_Add(world, id, ScProjectile) = (ScProjectile){
-        .kind   = PROJECTILEKIND_FIREBALL,
-        .radius = size * 0.2f,
-        .hitgen = Sol_Hitgen_Start(world),
+        .kind          = PROJECTILEKIND_FIREBALL,
+        .radius        = size * 0.33f,
+        .hitgen        = Sol_Hitgen_Start(world),
         .target_radius = size,
     };
 
@@ -536,9 +545,9 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->flags      = INTERACTFLAG_DRAGGABLE;
 
-    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
-    view2->count    = 1;
-    view2->views[0] = (View2){.kind = VIEW2KIND_INVENTORY};
+    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {.kind = VIEW2KIND_INVENTORY};
+    solb_push(sc_view->views, view0);
 
     return id;
 }
@@ -571,9 +580,8 @@ int Sol_Prefab_AbilityBar(World *world, vec3s pos, int ent_id, int ent_world_idx
     View2 bg        = {.dims = dims, .color = VEC4_BLACK, .hoverColor = VEC4_WHITE};
     View2 slot_view = {.kind = VIEW2KIND_ABILITYBAR, .dims = dims, .color = VEC4_BLACK, .layer = UILAYER_2};
     ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
-    view2->count    = 2;
-    view2->views[0] = bg;
-    view2->views[1] = slot_view;
+    solb_push(view2->views, bg);
+    solb_push(view2->views, slot_view);
 
     return id;
 }
@@ -602,35 +610,32 @@ int Sol_Prefab_AbilityCard(World *world, vec3s pos, SolItem *item)
         .kind = TOOLTIPKIND_CARD,
     };
 
-    *Sol_Comp_Add(world, id, ScView2) = (ScView2){
-        .count = 2,
-        .views[0] =
-            {
-                .layer       = layer,
-                .kind        = VIEW2KIND_RECT,
-                .dims        = {dims.x, dims.y},
-                .textureID   = texture,
-                .textureUV   = {1.0f, 0.816f, 0, 0},
-                .flags       = 1,
-                .targetFill  = 1.0f,
-                .color       = {1, 1, 1, 1},
-                .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
-                .activeColor = {1, 1, 1, 1},
-                .downColor   = {1, 1, 1, 1},
-            },
-        .views[1] =
-            {
-                .layer       = layer,
-                .kind        = VIEW2KIND_RECT,
-                .dims        = {dims.x, dims.y},
-                .textureID   = SOL_TEXTURE_BORDER,
-                .color       = rarity_color[item->rarity],
-                .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
-                .activeColor = {1, 1, 1, 1},
-                .downColor   = {1, 1, 1, 1},
-            },
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view       = {
+        .layer       = layer,
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .textureID   = texture,
+        .textureUV   = {1.0f, 0.816f, 0, 0},
+        .flags       = 1,
+        .targetFill  = 1.0f,
+        .color       = {1, 1, 1, 1},
+        .hoverColor  = {0.5f, 0.5f, 0.5f, 1.0f},
+        .activeColor = {1, 1, 1, 1},
+        .downColor   = {1, 1, 1, 1},
     };
-
+    View2 view2 = {
+        .layer       = layer,
+        .kind        = VIEW2KIND_RECT,
+        .dims        = {dims.x, dims.y},
+        .textureID   = SOL_TEXTURE_BORDER,
+        .color       = rarity_color[item->rarity],
+        .hoverColor  = {1.0f, 1.0f, 1.0f, 1.0f},
+        .activeColor = {1, 1, 1, 1},
+        .downColor   = {1, 1, 1, 1},
+    };
+    solb_push(sc_view->views, view);
+    solb_push(sc_view->views, view2);
     return id;
 }
 
@@ -694,8 +699,7 @@ int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
         .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    ScView2 *view2 = Sol_Comp_Add(world, id, ScView2);
-    view2->count   = 2;
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
     View2 fill     = {
         .kind      = VIEW2KIND_POWERBAR,
         .color     = color,
@@ -704,9 +708,9 @@ int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
         .fillSpeed = 5.0f,
         .flags     = 0b111,
     };
-    View2 frame     = {.kind = VIEW2KIND_RECT, .color = color, .dims = dims, .textureID = Sol_TEXTURE_HEALTHVIAL};
-    view2->views[0] = fill;
-    view2->views[1] = frame;
+    View2 frame = {.kind = VIEW2KIND_RECT, .color = color, .dims = dims, .textureID = Sol_TEXTURE_HEALTHVIAL};
+    solb_push(sc_view->views, fill);
+    solb_push(sc_view->views, frame);
 
     return id;
 }
@@ -728,9 +732,9 @@ int Sol_Prefab_InventoryWindow(World *world, vec3s pos)
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->flags |= INTERACTFLAG_DRAGGABLE;
 
-    ScView2 *view2  = Sol_Comp_Add(world, id, ScView2);
-    view2->count    = 1;
-    view2->views[0] = (View2){.kind = VIEW2KIND_INVENTORY};
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view     = {.kind = VIEW2KIND_INVENTORY};
+    solb_push(sc_view->views, view);
 
     return id;
 }
@@ -739,7 +743,7 @@ int Sol_Prefab_RulesWindow(World *world, vec3s pos, u32 view_count)
 {
     int id = Sol_Create_Ent(world, pos);
 
-    vec2s dims = {200.0f, 200.0f};
+    vec2s dims = {220.0f, 200.0f};
 
     *Sol_Comp_Add(world, id, ScBody2) = (ScBody2){
         .zindex   = UILAYER_1,
@@ -752,17 +756,19 @@ int Sol_Prefab_RulesWindow(World *world, vec3s pos, u32 view_count)
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->flags |= INTERACTFLAG_DRAGGABLE;
 
-    const float text_size = 14.0f;
-    ScView2 *view2        = Sol_Comp_Add(world, id, ScView2);
-    view2->count          = view_count;
-    view2->views[0]       = (View2){.kind = VIEW2KIND_RULESWINDOW};
+    const float text_size = 16.0f;
+    ScView2 *sc_view        = Sol_Comp_Add(world, id, ScView2);
+    View2 view0 = {.kind = VIEW2KIND_RULESWINDOW};
+    solb_push(sc_view->views, view0);
+    float y_offset_start  = 10.0f;
     for (int i = 1; i < view_count; i++)
     {
-        view2->views[i] = (View2){.kind      = VIEW2KIND_TEXT,
-                                  .textWidth = 16.0f,
-                                  .dims      = {text_size},
-                                  .offset    = {0, text_size * i},
-                                  .color     = VEC4_GREEN};
+        View2 view = {.kind      = VIEW2KIND_RULES_TEXT,
+                      .textWidth = 16.0f,
+                      .dims      = {text_size},
+                      .offset    = {8.0f, y_offset_start + (text_size * i)},
+                      .color     = VEC4_GREEN};
+        solb_push(sc_view->views, view);
     }
 
     return id;

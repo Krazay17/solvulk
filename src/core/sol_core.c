@@ -33,43 +33,45 @@ int Sol_Init(void *hwnd, void *hInstance)
     solState.g_hwnd = hwnd;
     int result;
 
+    result = sollog_init();
+    if (result != 0)
+        printf("Log failed to init, code: %d\n", result);
+
     result = Sol_Core_Init();
     if (result != 0)
-        printf("Core failed to init, code: %d\n", result);
+        sollogf("Core failed to init, code: %d\n", result);
 
     result = Sol_User_Init();
     if (result != 0)
-        printf("User failed to init, code: %d\n", result);
+        sollogf("User failed to init, code: %d\n", result);
 
     result = Sol_Net_Init();
     if (result != 0)
-        printf("Net failed to init, code: %d\n", result);
+        sollogf("Net failed to init, code: %d\n", result);
 
     result = Sol_Audio_Init();
     if (result != 0)
-        printf("Audio failed to init, code:%d\n", result);
+        sollogf("Audio failed to init, code:%d\n", result);
 
     result = Sol_Textures_Init();
     if (result != 0)
-        printf("Texturesult failed to init, code:%d\n", result);
+        sollogf("Texturesult failed to init, code:%d\n", result);
 
     result = Sol_Fonts_Init();
     if (result != 0)
-        printf("Fonts failed to init, code:%d\n", result);
+        sollogf("Fonts failed to init, code:%d\n", result);
 
     result = Sol_Models_Init();
     if (result != 0)
-        printf("Models failed to init, code:%d\n", result);
+        sollogf("Models failed to init, code:%d\n", result);
 
     result = Sol_Render_Init();
     if (result != 0)
-        printf("Render failed to init, code:%d\n", result);
-    printf("Passed Render Init\n");
+        sollogf("Render failed to init, code:%d\n", result);
 
     result = Sol_Render_GPU_Init(hwnd, hInstance);
     if (result != 0)
-        printf("Render failed to init, code:%d\n", result);
-    printf("Passed Render GPU Init\n");
+        sollogf("Render failed to init, code:%d\n", result);
 
     solState.debug     = false;
     solState.isRunning = true;
@@ -142,6 +144,7 @@ void Sol_Destroy()
     }
     Sol_Core_Deinit();
     solState.isRunning = false;
+    sollog_close();
     Sol_Quit();
 }
 

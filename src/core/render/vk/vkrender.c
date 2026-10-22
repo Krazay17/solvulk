@@ -819,9 +819,8 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     SolResource vertRes = Sol_LoadResource("shaders/", config->vertResource);
     SolResource fragRes = Sol_LoadResource("shaders/", config->fragResource);
 
-    printf("  vert size=%zu frag size=%zu magic=%08x\n", vertRes.size, fragRes.size,
+    sollogf("vert size=%zu frag size=%zu magic=%08x", vertRes.size, fragRes.size,
            fragRes.data ? *(uint32_t *)fragRes.data : 0);
-
     if (!vertRes.data || !fragRes.data)
         return 1;
 
@@ -840,16 +839,17 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     r = vkCreateShaderModule(vkstate->device, &vertModuleInfo, NULL, &vertModule);
     if (r != VK_SUCCESS)
     {
-        printf("vert module failed: %d\n", r);
+        sollogf("vert module failed: %d\n", r);
         return 1;
     }
 
     r = vkCreateShaderModule(vkstate->device, &fragModuleInfo, NULL, &fragModule);
     if (r != VK_SUCCESS)
     {
-        printf("frag module failed: %d\n", r);
+        sollogf("frag module failed: %d\n", r);
         return 1;
     }
+
     // --- shader stages ---
     VkPipelineShaderStageCreateInfo vertStage = {0};
     vertStage.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -994,7 +994,7 @@ int Sol_Pipeline_Build(SolVkState *vkstate, SolPipelineConfig *config, SolPipe *
     r = vkCreatePipelineLayout(vkstate->device, &pipelineLayoutInfo, NULL, &out->layout);
     if (r != VK_SUCCESS)
     {
-        printf("layout failed: %d\n", r);
+        sollogf("layout failed: %d\n", r);
         return 1;
     }
     // --- dynamic rendering info (replaces render pass) ---

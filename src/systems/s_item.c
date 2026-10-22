@@ -180,4 +180,5 @@ int Sol_Inv_AddItem(World *world, int id, SolItem *item, bool try_equip)
 }
 int Sol_Inv_RemItem(World *world, int id, u32 idx)
 {
+    return 0;
 }

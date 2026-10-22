@@ -253,12 +253,6 @@ struct AnimMap
     float speed;
     float seek;
 } ability_anim_map[ABILITY_STATE_COUNT] = {
-    [ABILITY_STATE_CLAW] =
-        {
-            .hand_anim[0][0] = ANIM_ATTACK_LEFT,
-            .hand_anim[1][0] = ANIM_ATTACK_RIGHT,
-            .seek            = 0.1f,
-        },
     [ABILITY_STATE_CLAW_DASH] =
         {
             .hand_anim[0][0] = ANIM_SPINSLASH,
@@ -418,7 +412,7 @@ void Anim_Tick(World *world, double dt)
                 }
                 break;
                 case ABILITY_STATE_CLAW: {
-                    ability_anim.anim  = j > 5 ? ANIM_RIGHTUPPERCUT : ANIM_LEFTUPPERCUT;
+                    ability_anim.anim  = ANIM_RIGHTUPPERCUT;
                     ability_anim.seek  = 0.2f;
                     ability_anim.speed = data->stage == 0 ? 0.7f : 0.8f;
                 }

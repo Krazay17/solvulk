@@ -1,17 +1,45 @@
+/*
+ * File: s_rules.c
+ * Author: Josh Massarella
+ * GitHub: https://github.com/Krazay17
+ * Created: 2026-10-22
+ *
+ */
 #include "world.h"
+
+static void EndPhase(World *world, SlRules *rules)
+{
+    if (rules->phase == RULESPHASE_END)
+        return;
+
+    rules->phase = RULESPHASE_END;
+    rules->on_win(world, rules);
+}
 
 static void FFA(World *world, double dt, SlRules *rules)
 {
-    SparseSet_ScScore *score_set = Sol_Comp_Set(world, ScScore);
-    for (int i = 0; i < score_set->cnt; i++)
+    if (rules->as.ffa.winning_kills == 0)
+        return;
+    switch (rules->phase)
     {
-        int id         = score_set->dense[i];
-        ScScore *score = &score_set->data[i];
-        if (score->kills >= rules->as.ffa.winning_kills)
+    case RULESPHASE_ACTIVE: {
+        SparseSet_ScScore *score_set = Sol_Comp_Set(world, ScScore);
+        for (int i = 0; i < score_set->cnt; i++)
         {
-            rules->winner = id;
-            rules->phase  = RULESPHASE_END;
+            int id         = score_set->dense[i];
+            ScScore *score = &score_set->data[i];
+            if (score->kills >= rules->as.ffa.winning_kills)
+            {
+                rules->winner = id;
+                EndPhase(world, rules);
+                break;
+            }
         }
+    }
+    break;
+    case RULESPHASE_END: {
+    }
+    break;
     }
 }
 
@@ -43,19 +71,10 @@ static void CrystalPush(World *world, double dt, SlRules *rules)
 {
 }
 
-static void Draw_FFA(World *world, double dt, SlRules *rules)
-{
-}
-
 void (*const rules_kind_update[RULESKIND_COUNT])(World *world, double dt, SlRules *rules) = {
     [RULESKIND_FFA]         = FFA,
     [RULESKIND_TDM]         = TDM,
     [RULESKIND_CRYSTALPUSH] = CrystalPush,
-};
-void (*const rules_kind_draw[RULESKIND_COUNT])(World *world, double dt, SlRules *rules) = {
-    [RULESKIND_FFA] = Draw_FFA,
-    // [RULESKIND_TDM]         = TDM,
-    // [RULESKIND_CRYSTALPUSH] = CrystalPush,
 };
 
 void Rules_Update(World *world, double dt)
@@ -65,13 +84,4 @@ void Rules_Update(World *world, double dt)
         rules_kind_update[rules->kind](world, dt, rules);
     else
         FFA(world, dt, rules);
-}
-
-void Rules_Draw(World *world, double dt)
-{
-    SlRules *rules = Sol_Comp_Get(world, 0, SlRules);
-    if (rules_kind_draw[rules->kind])
-        rules_kind_draw[rules->kind](world, dt, rules);
-    else
-        Draw_FFA(world, dt, rules);
 }

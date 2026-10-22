@@ -622,7 +622,7 @@ const ShapeTriTest shape_tri_test[SHAPE3_CNT] = {
 //     [SHAPE3_CAP] = Ray_Intersect_Capsule,
 // };
 
-static SolProfiler prof_body3       = {.name = "Body3"};
+static SolProfiler prof_body3 = {.name = "Body3"};
 
 const float max_grid_d2 = 512.0f * 512.0f;
 void Body3_UpdateSub(World *world, double dt)
@@ -772,9 +772,9 @@ void Body3_UpdateSub(World *world, double dt)
             int id        = set->dense[i];
             ScBody3 *body = &set->data[i];
             Xform xform   = Xform_Get(world, id);
-            vec3s min = glms_vec3_sub(xform.pos, body->dims);
-            vec3s max = glms_vec3_add(xform.pos, body->dims);
-            int hits  = SpatialGrid_Query(spatial->grid_static, min, max, id_buf);
+            vec3s min     = glms_vec3_sub(xform.pos, body->dims);
+            vec3s max     = glms_vec3_add(xform.pos, body->dims);
+            int hits      = SpatialGrid_Query(spatial->grid_static, min, max, id_buf);
             for (int j = 0; j < hits; j++)
             {
                 int idB        = SPATIAL_UNPACK_ID(id_buf->ids[j]);
@@ -994,43 +994,56 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 
     // --- Static geometry (triangles) ---
     {
-        GridDDA dda     = GridDDA_Init(grid_static, ray.start, ray.dir);
-        float current_t = 0.0f;
-
-        while (GridDDA_InBounds(&dda, grid_static) && current_t <= outResult->t)
+        float t_enter, t_exit;
+        if (GridDDA_ClipRay(grid_static, ray.start, ray.dir, ray.dist, &t_enter, &t_exit))
         {
-            uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_static, dda.cell.x, dda.cell.y, dda.cell.z);
-            uint32_t start    = grid_static->cell_offsets[cell_idx];
-            uint32_t end      = grid_static->cell_offsets[cell_idx + 1];
+            float start_t = t_enter;
+            if (t_enter > 0.0f)
+                start_t += 1e-4f;
 
-            for (uint32_t i = start; i < end; i++)
+            if (start_t <= t_exit)
             {
-                uint32_t packed = grid_static->ids[i];
-                int entId       = SPATIAL_UNPACK_ID(packed);
-                int triIdx      = SPATIAL_UNPACK_IDX(packed);
+                vec3s start_pos = glms_vec3_add(ray.start, glms_vec3_scale(ray.dir, start_t));
 
-                if (entId == ray.ignoreEnt)
-                    continue;
-
-                SolTri *tri = &spatial->tris_static[triIdx];
-
-                float t    = outResult->t;
-                vec3s norm = {0};
-                vec3s pos  = {0};
-                if (Ray_Intersect_Tri(ray.start, ray.dir, t, tri, &t, &norm, &pos) && t < outResult->t)
+                GridDDA dda     = GridDDA_Init(grid_static, start_pos, ray.dir);
+                float current_t = start_t;
+                float limit     = fminf(t_exit, outResult->t);
+                while (GridDDA_InBounds(&dda, grid_static) && current_t <= limit)
                 {
-                    outResult->hit   = true;
-                    outResult->t     = t;
-                    outResult->norm  = norm;
-                    outResult->pos   = pos;
-                    outResult->entId = entId;
+                    uint32_t cell_idx = SpatialGrid_GetCellIdx(grid_static, dda.cell.x, dda.cell.y, dda.cell.z);
+                    uint32_t start    = grid_static->cell_offsets[cell_idx];
+                    uint32_t end      = grid_static->cell_offsets[cell_idx + 1];
+
+                    for (uint32_t i = start; i < end; i++)
+                    {
+                        uint32_t packed = grid_static->ids[i];
+                        int entId       = SPATIAL_UNPACK_ID(packed);
+                        int triIdx      = SPATIAL_UNPACK_IDX(packed);
+
+                        if (entId == ray.ignoreEnt)
+                            continue;
+
+                        SolTri *tri = &spatial->tris_static[triIdx];
+
+                        float t    = outResult->t;
+                        vec3s norm = {0};
+                        vec3s pos  = {0};
+                        if (Ray_Intersect_Tri(ray.start, ray.dir, t, tri, &t, &norm, &pos) && t < outResult->t)
+                        {
+                            outResult->hit   = true;
+                            outResult->t     = t;
+                            outResult->norm  = norm;
+                            outResult->pos   = pos;
+                            outResult->entId = entId;
+                        }
+                    }
+
+                    current_t = GridDDA_Step(&dda) + start_t;
+
+                    if (outResult->hit && outResult->t <= current_t)
+                        break;
                 }
             }
-
-            current_t = GridDDA_Step(&dda);
-
-            if (outResult->hit && outResult->t <= current_t)
-                break;
         }
     }
 

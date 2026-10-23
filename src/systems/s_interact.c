@@ -14,7 +14,6 @@
 #include "profiler.h"
 
 static SolProfiler profile = {.name = "Interact"};
-const float drag_dist2     = 100.0f;
 
 static void Cmd_Update(World *world, SparseSet_ScInteract *set_interact)
 {

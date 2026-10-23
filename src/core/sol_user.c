@@ -259,11 +259,15 @@ void Entity_Actions()
         SolRayResult result;
         forc(world, id, ScCmd)
         {
-            sollog(Sol_Raycast1D(world, (SolRay){.start     = (vec3s){0,80.0f,0},
-                                                 .dir       = WORLD_DOWN,
-                                                 .dist      = 91.0f,
-                                                 .mask      = COLLAYER_WORLD,
-                                                 .ignoreEnt = id}, &result, 0.1f));
+            bool hit = Sol_Raycast1D(world,
+                                     (SolRay){.start     = Sol_Body3_GetHead(world, id),
+                                              .dir       = c->aimdir,
+                                              .dist      = 25.0f,
+                                              .mask      = COLLAYER_ALL,
+                                              .ignoreEnt = id},
+                                     &result, 0.1f);
+            if (hit)
+                sollog(Sol_Combat_Hostile(world, id, result.entId));
         }
     }
 }
@@ -482,6 +486,16 @@ World *Sol_User_GetGameWorld()
     if (sol_user.game_world < 0)
         return NULL;
     return solState.worlds[sol_user.game_world];
+}
+
+GameEnt Sol_User_GetGameEnt()
+{
+    GameEnt game_ent = {0};
+    if (sol_user.game_world < 0 || sol_user.view_ent <= 0)
+        return game_ent;
+    game_ent.world = Sol_GetWorldByIdx(sol_user.game_world);
+    game_ent.id    = sol_user.view_ent;
+    return game_ent;
 }
 
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos)

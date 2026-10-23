@@ -13,6 +13,7 @@ layout(location = 3) flat out int   instanceIndex;
 layout(location = 4) flat out uint  flags;
 layout(location = 5) flat out float fragHitTime;
 layout(location = 6) out vec2 fragUV;
+layout(location = 7) flat out vec4 color2Out;
 
 layout(set = 0, binding = 0) uniform GameData {
     mat4 dummy;
@@ -31,10 +32,11 @@ struct ModelData {
     vec4 scale;
     vec4 rotation;
     vec4 color;
+    vec4 color2;
     vec4 material;
     uint flags;
     float hitTime;
-    uint _padding[2];
+    uint _padding[6];
 };
 
 layout(set = 2, binding = 0) readonly buffer Models {
@@ -168,4 +170,5 @@ void main()
     instanceIndex = gl_InstanceIndex;
     flags         = inst.flags;
     fragHitTime   = inst.hitTime;
+    color2Out     = inst.color2;
 }

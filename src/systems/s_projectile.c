@@ -217,9 +217,7 @@ void Projectile_Step(World *world, double dt)
         for (int j = 0; j < hits; j++)
         {
             SolRayResult result = results[j];
-
-            // Skip owner collision
-            if (result.entId == ownerId)
+            if (ownerId == result.entId)
                 continue;
 
             hit.target = result.entId;

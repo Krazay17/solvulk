@@ -80,6 +80,7 @@ static const ScAi wizard_ai = {
 
 static const ScModel dude_model = {
     .kind = MODELKIND_DUDE,
+    .scale = 1.0f,
 };
 
 static const ScBody3 dude_body = {
@@ -106,16 +107,6 @@ static const ScCombat dude_combat = {
     .respawnTime = 2.0f,
 };
 
-static const ScAnim anim_default = {
-    .layers =
-        {
-            [0] = {.animId = 0, .currentAnim = 0, .blendFactor = 1.0f, .weight = 1.0f},
-            [1] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-            [2] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-            [3] = {.animId = -1, .currentAnim = -1, .blendFactor = 1.0f, .weight = 1.0f},
-        },
-};
-
 int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
 {
     int id = Sol_Create_Ent(world, pos);
@@ -123,7 +114,7 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     Xform_SetSca(world, id, glms_vec3_fill(1.1f));
 
     *Sol_Comp_Add(world, id, ScModel) = dude_model;
-    *Sol_Comp_Add(world, id, ScAnim)  = anim_default;
+    Sol_Comp_Add(world, id, ScAnim);
     *Sol_Comp_Add(world, id, ScBody3) = dude_body;
 
     ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
@@ -152,7 +143,8 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     solb_push(view3->views_b, healthbar);
     solb_push(view3->views_b, energybar);
 
-    Sol_Comp_Add(world, id, ScTeam);
+    ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
+    sollog(team->team);
     Sol_Comp_Add(world, id, ScCmd);
 
     return id;
@@ -170,11 +162,11 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
     ScTeam *team = Sol_Comp_Add(world, id, ScTeam);
     team->team   = 1;
 
-    Sol_Comp_Add(world, id, ScModel)->kind = MODELKIND_WIZARD;
-    *Sol_Comp_Add(world, id, ScAnim)       = anim_default;
-
     ScView3 *view3 = Sol_Comp_Add(world, id, ScView3);
     solb_push(view3->views_b, healthbar);
+
+    Sol_Comp_Add(world, id, ScModel)->kind = MODELKIND_WIZARD;
+    *Sol_Comp_Add(world, id, ScAnim);
 
     *Sol_Comp_Add(world, id, ScCombat) = wizard_combat;
     *Sol_Comp_Add(world, id, ScBody3)  = wizard_body;
@@ -190,9 +182,9 @@ int Sol_Prefab_Wizard(World *world, vec3s pos, float scale)
 
 int Sol_Prefab_Crosshair(World *world)
 {
-    int id                = Sol_Create_Ent(world, (vec3s){(float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0});
-    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {
+    int id           = Sol_Create_Ent(world, (vec3s){(float)WINDOW_WIDTH / 2.0f, (float)WINDOW_HEIGHT / 2.0f, 0});
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view0      = {
         .kind       = VIEW2KIND_RECT,
         .textureID  = SOL_TEXTURE_CROSSHAIR,
         .offset     = {-9.0f, -9.0f},
@@ -229,8 +221,8 @@ int Sol_Prefab_Button(World *world, vec3s pos, const char *text, u32 interact_fl
         .mask   = PHYSXMASK(COLLAYER_WORLD, COLLAYER_WORLD),
     };
 
-    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view0      = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -307,8 +299,8 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
 
     *Sol_Comp_Add(world, id, ScHook) = (ScHook){.held = func};
 
-    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view0      = {
         .layer       = layer,
         .kind        = VIEW2KIND_RECT,
         .dims        = {dims.x, dims.y},
@@ -383,7 +375,6 @@ int Sol_Prefab_Slider(World *world, vec3s pos, const char *text, u32 interact_fl
     solb_push(sc_view->views, view6);
     solb_push(sc_view->views, view7);
 
-
     return id;
 }
 
@@ -403,8 +394,8 @@ int Sol_Prefab_Powerbar(World *world, vec3s pos, vec4s color, float dim_y)
         .mask        = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
     };
 
-    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view0      = {
         .kind       = VIEW2KIND_RECT,
         .dims       = {dims.x, dims.y},
         .color      = {0.0f, 0.0f, 0.0f, 1.0f},
@@ -511,11 +502,6 @@ int Sol_Prefab_Fireball(World *world, int owner, vec3s pos, vec3s dir, float spe
     return id;
 }
 
-int Sol_Prefab_Crystal(World *world, vec3s pos)
-{
-    return 0;
-}
-
 int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
 {
     int id     = Sol_Create_Ent(world, pos);
@@ -545,8 +531,8 @@ int Sol_Prefab_Inventory(World *world, vec3s pos, const ScInventory *inventory)
     ScInteract *interact = Sol_Comp_Add(world, id, ScInteract);
     interact->flags      = INTERACTFLAG_DRAGGABLE;
 
-    ScView2 *sc_view  = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {.kind = VIEW2KIND_INVENTORY};
+    ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
+    View2 view0      = {.kind = VIEW2KIND_INVENTORY};
     solb_push(sc_view->views, view0);
 
     return id;
@@ -700,7 +686,7 @@ int Sol_Prefab_PowerVial(World *world, vec3s pos, vec4s color)
     };
 
     ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
-    View2 fill     = {
+    View2 fill       = {
         .kind      = VIEW2KIND_POWERBAR,
         .color     = color,
         .dims      = dims,
@@ -733,7 +719,7 @@ int Sol_Prefab_InventoryWindow(World *world, vec3s pos)
     interact->flags |= INTERACTFLAG_DRAGGABLE;
 
     ScView2 *sc_view = Sol_Comp_Add(world, id, ScView2);
-    View2 view     = {.kind = VIEW2KIND_INVENTORY};
+    View2 view       = {.kind = VIEW2KIND_INVENTORY};
     solb_push(sc_view->views, view);
 
     return id;
@@ -757,10 +743,10 @@ int Sol_Prefab_RulesWindow(World *world, vec3s pos, u32 view_count)
     interact->flags |= INTERACTFLAG_DRAGGABLE;
 
     const float text_size = 16.0f;
-    ScView2 *sc_view        = Sol_Comp_Add(world, id, ScView2);
-    View2 view0 = {.kind = VIEW2KIND_RULESWINDOW};
+    ScView2 *sc_view      = Sol_Comp_Add(world, id, ScView2);
+    View2 view0           = {.kind = VIEW2KIND_RULESWINDOW};
     solb_push(sc_view->views, view0);
-    float y_offset_start  = 10.0f;
+    float y_offset_start = 10.0f;
     for (int i = 1; i < view_count; i++)
     {
         View2 view = {.kind      = VIEW2KIND_RULES_TEXT,
@@ -799,6 +785,81 @@ int Sol_Prefab_Pickup(World *world, vec3s pos)
     solb_push(view3->views_b, sphere);
 
     *Sol_Comp_Add(world, id, ScBody3) = ball_body;
+
+    return id;
+}
+
+int Sol_Prefab_Minion(World *world, vec3s pos, versors rot, int team)
+{
+    int id               = Sol_Create_Ent(world, pos);
+    world->xform.rot[id] = rot;
+
+    Sol_Comp_Add(world, id, ScCmd);
+    *Sol_Comp_Add(world, id, ScBody3)      = dude_body;
+    Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
+
+    *Sol_Comp_Add(world, id, ScCombat) = (ScCombat){
+        .healthMax = 50.0f,
+        .health    = 50.0f,
+    };
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
+    model->kind    = MODELKIND_WIZARD;
+    model->color   = team == 0 ? VEC4_RED : VEC4_GREEN;
+    model->scale = 0.8f;
+    
+    Sol_Comp_Add(world, id, ScAnim);
+    ScTeam *sc_team = Sol_Comp_Add(world, id, ScTeam);
+    sc_team->team   = team;
+
+    Sol_Comp_Add(world, id, ScCrystalPush)->kind = CRYSTALPUSHKIND_MINION;
+
+    ScView3 *sc_view = Sol_Comp_Add(world, id, ScView3);
+    solb_push(sc_view->views_b, healthbar);
+
+    *Sol_Comp_Add(world, id, ScAi) = (ScAi){
+        .kind       = AIKIND_WIZARD,
+        .aggroRange = 15.0f,
+    };
+
+    *Sol_Comp_Add(world, id, ScInventory);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+    Sol_Comp_Add(world, id, ScAbility);
+
+    return id;
+}
+
+int Sol_Prefab_Crystal(World *world, vec3s pos, int team)
+{
+    int id = Sol_Create_Ent(world, pos);
+
+    ScBody3 *sc_body = Sol_Comp_Add(world, id, ScBody3);
+    *sc_body         = (ScBody3){
+        .dims      = {3.0f, 5.0f, 3.0f},
+        .shape     = SHAPE3_CAP,
+        .mask      = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+        .base_mask = PHYSXMASK(COLLAYER_ALL, COLLAYER_ALL),
+    };
+
+    *Sol_Comp_Add(world, id, ScCombat) = (ScCombat){
+        .healthMax   = 500.0f,
+        .health      = 500.0f,
+        .healthRegen = 1.0f,
+    };
+
+    Sol_Comp_Add(world, id, ScModel)->kind       = MODELKIND_CRYSTAL;
+    Sol_Comp_Add(world, id, ScCrystalPush)->kind = CRYSTALPUSHKIND_CRYSTAL;
+
+    ScTeam *sc_team = Sol_Comp_Add(world, id, ScTeam);
+    sc_team->team   = team;
+
+    ScView3 *sc_view = Sol_Comp_Add(world, id, ScView3);
+    solb_push(sc_view->views_b, healthbar);
 
     return id;
 }

@@ -83,12 +83,14 @@ typedef struct AiBrain
     float target_dist;
     float target_prev_dist;
     float dropAggroTimer;
+    vec3s goal_pos;
 } AiBrain;
 typedef struct AiLearning
 {
     float actionTimer;
     float reward_move;
     float reward_combat;
+    float distance_to_goal;
     AiKnowStateM prev_knows_move;
     AiKnowStateC prev_knows_combat;
     AiActions action_move;
@@ -128,11 +130,9 @@ typedef struct ScBody2
     int zindex;
 } ScBody2;
 
-// #define MAX_INVENTORY_ITEMS 0xffff
 typedef struct ScInventory
 {
-    //  int item_count;
-    SolItem *items;
+    SolItem *items; // sol_buffer
     int equipped_items[ABILITY_SLOTS];
     u32 next_item_id;
 
@@ -312,6 +312,7 @@ typedef struct ScModel
     bool is2d;
     bool transparent;
     float xOffset, yOffset, yawOffset;
+    float scale;
 } ScModel;
 
 typedef struct ScAnim
@@ -655,6 +656,16 @@ typedef struct
 
 typedef enum
 {
+    CRYSTALPUSHKIND_MINION,
+    CRYSTALPUSHKIND_CRYSTAL,
+} CrystalPushKind;
+typedef struct
+{
+    CrystalPushKind kind;
+} ScCrystalPush;
+
+typedef enum
+{
     CHAINHITKIND_LIGHTNING,
     CHAINHITKIND_COUNT,
 } ChainhitKind;
@@ -691,11 +702,31 @@ struct SlRules
             u32 teams_count;
             u32 winning_kills;
         } tdm;
+        struct
+        {
+            int crystal_a;
+            int crystal_b;
+            float wave_rate;
+            float minion_rate;
+            int wave_minion_count;
+            vec3s spawn_a_minion;
+            vec3s spawn_b_minion;
+
+            vec3s spawn_a_player;
+            vec3s spawn_b_player;
+
+            float _wave_accum;
+            float _minion_accum;
+            int _pending_minion_count;
+        } crystal_push;
     } as;
     RulesKind kind;
     RulesPhase phase;
     int winner;
-    
+    int winner_team;
+    int red_wins;
+    int green_wins;
+
     RulesOnWin on_win;
 };
 
@@ -736,7 +767,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScCmd, HAS_ScCmd, Add_None)                                                                                      \
     X(ScUi, HAS_ScUi, Add_None)                                                                                        \
     X(ScMeta, HAS_ScMeta, Add_None)                                                                                    \
-    X(ScTeam, HAS_ScTeam, Add_None)                                                                                    \
+    X(ScTeam, HAS_ScTeam, ScTeam_Init)                                                                                 \
     X(ScPlayer, HAS_ScPlayer, Add_None)                                                                                \
     X(ScRemote, HAS_ScRemote, Add_None)                                                                                \
     X(ScAi, HAS_ScAi, Add_None)                                                                                        \
@@ -744,7 +775,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScBody2, HAS_ScBody2, Add_None)                                                                                  \
     X(ScBody3, HAS_ScBody3, Add_None)                                                                                  \
     X(ScStage, HAS_ScStage, Add_None)                                                                                  \
-    X(ScModel, HAS_ScModel, Add_None)                                                                                  \
+    X(ScModel, HAS_ScModel, ScModel_Init)                                                                              \
     X(ScAnim, HAS_ScAnim, Add_None)                                                                                    \
     X(ScCamera, HAS_ScCamera, Add_None)                                                                                \
     X(ScInteract, HAS_ScInteract, Add_None)                                                                            \
@@ -777,6 +808,7 @@ typedef void (*ComponentInitFn)(World *world, int id, void *c);
     X(ScUiItem, HAS_ScUiItem, Add_None)                                                                                \
     X(ScScore, HAS_ScScore, Add_None)                                                                                  \
     X(ScPickup, HAS_ScPickup, Add_None)                                                                                \
+    X(ScCrystalPush, HAS_ScCrystalPush, Add_None)                                                                      \
     X(ScBuilder, HAS_ScBuilder, Add_None)
 
 typedef enum

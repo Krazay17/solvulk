@@ -3,27 +3,7 @@
 #include "sol_math.h"
 #include "sol_core.h"
 
-const char *aiaction_name[AIACTION_COUNT] = {
-    [AIACTION_NONE]        = "AIACTION_NONE",
-    [AIACTION_FWD]         = "AIACTION_FWD",
-    [AIACTION_BWD]         = "AIACTION_BWD",
-    [AIACTION_LEFT]        = "AIACTION_LEFT",
-    [AIACTION_RIGHT]       = "AIACTION_RIGHT",
-    [AIACTION_JUMPFWD]     = "AIACTION_JUMPFWD",
-    [AIACTION_JUMPBWD]     = "AIACTION_JUMPBWD",
-    [AIACTION_JUMPLEFT]    = "AIACTION_JUMPLEFT",
-    [AIACTION_JUMPRIGHT]   = "AIACTION_JUMPRIGHT",
-    [AIACTION_CROUCHFWD]   = "AIACTION_CROUCHFWD",
-    [AIACTION_CROUCHBWD]   = "AIACTION_CROUCHBWD",
-    [AIACTION_CROUCHLEFT]  = "AIACTION_CROUCHLEFT",
-    [AIACTION_CROUCHRIGHT] = "AIACTION_CROUCHRIGHT",
-    // [AIACTION_DODGEFWD]    = "AIACTION_DODGEFWD",
-    // [AIACTION_DODGEBWD]    = "AIACTION_DODGEBWD",
-    // [AIACTION_DODGELEFT]   = "AIACTION_DODGELEFT",
-    // [AIACTION_DODGERIGHT]  = "AIACTION_DODGERIGHT",
-};
-
-void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
+static void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 {
     AiStateData *data = &ai->stateData[ai->state];
     ScCmd *cmd        = Sol_Comp_Get(world, id, ScCmd);
@@ -61,18 +41,18 @@ void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
         line->bColor  = VEC4_GREEN;
     }
 
-    Fill_Reward(world, id, ai, dt);
+    Fill_Reward(world, id, ai, ai->brain.target, dt);
     data->accum += dt;
     if (data->accum >= ai->learning.actionTimer)
     {
         data->accum -= ai->learning.actionTimer;
         // ai->learning.actionTimer = Sol_Math_RandRange2(0.05f, 0.2f);
         ai->learning.actionTimer = 0.1f;
-        Submit_Learn(world, id, ai, cmd);
+        Submit_Learn(world, id, ai, cmd, ai->brain.target, (float *)solData.qtable.q, (float *)solData.qtable.qc);
     }
 }
 
-void Ai_Aggro_Enter(World *world, int id, ScAi *ai)
+static void Ai_Aggro_Enter(World *world, int id, ScAi *ai)
 {
     AiStateData *data = &ai->stateData[ai->state];
     ScCmd *cmd        = Sol_Comp_Get(world, id, ScCmd);
@@ -82,22 +62,22 @@ void Ai_Aggro_Enter(World *world, int id, ScAi *ai)
     cmd->isStrafing = true;
 }
 
-void Ai_Aggro_Exit(World *world, int id, ScAi *ai)
+static void Ai_Aggro_Exit(World *world, int id, ScAi *ai)
 {
 }
 
-bool Ai_Aggro_CanExit(World *world, int id, ScAi *ai, u32 next)
+static bool Ai_Aggro_CanExit(World *world, int id, ScAi *ai, u32 next)
 {
     return true;
 }
 
-bool Ai_Aggro_CanEnter(World *world, int id, ScAi *ai, u32 last)
+static bool Ai_Aggro_CanEnter(World *world, int id, ScAi *ai, u32 last)
 {
     AiStateData *data = &ai->stateData[ai->state];
     return ai->brain.target != 0;
 }
 
-void Ai_Wizard_Aggro_Update(World *world, int id, ScAi *ai, float dt)
+static void Ai_Wizard_Aggro_Update(World *world, int id, ScAi *ai, float dt)
 {
     Ai_Aggro_Update(world, id, ai, dt);
 }

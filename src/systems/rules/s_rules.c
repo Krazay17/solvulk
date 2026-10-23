@@ -5,6 +5,7 @@
  * Created: 2026-10-22
  *
  */
+#include "s_rules.h"
 #include "world.h"
 
 static void EndPhase(World *world, SlRules *rules)
@@ -67,15 +68,20 @@ static void TDM(World *world, double dt, SlRules *rules)
         }
 }
 
-static void CrystalPush(World *world, double dt, SlRules *rules)
-{
-}
-
 void (*const rules_kind_update[RULESKIND_COUNT])(World *world, double dt, SlRules *rules) = {
     [RULESKIND_FFA]         = FFA,
     [RULESKIND_TDM]         = TDM,
     [RULESKIND_CRYSTALPUSH] = CrystalPush,
 };
+
+void (*const rules_kind_start[RULESKIND_COUNT])(World *world) = {
+    [RULESKIND_CRYSTALPUSH] = CrystalPush_Start,
+};
+
+void Sol_Rules_Start(World *world, RulesKind kind)
+{
+    rules_kind_start[kind](world);
+}
 
 void Rules_Update(World *world, double dt)
 {

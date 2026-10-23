@@ -11,6 +11,8 @@ layout(location = 3) flat out int instanceIndex;
 layout(location = 4) flat out uint flags;
 layout(location = 5) flat out float fragHitTime;
 layout(location = 6) out vec2 fragUV;
+layout(location = 7) flat out vec4 color2Out;
+
 
 layout(set = 1, binding = 0) uniform Scene {
     mat4 viewProj;
@@ -25,10 +27,11 @@ struct ModelData {
     vec4 scale;
     vec4 rotation;
     vec4 color;
+    vec4 color2;
     vec4 material;
     uint flags;
     float hitTime;
-    uint _padding[2];
+    uint _padding[6];
 };
 
 const uint FLAG_2D = 1u << 2;
@@ -122,4 +125,6 @@ void main()
         fragWorldPos = worldPos;
         fragNormal   = rotatedNormal;
     }
+
+    color2Out = inst.color2;
 }

@@ -14,6 +14,7 @@ layout(location = 3) flat in int instanceIndex;
 layout(location = 4) flat in uint flags;
 layout(location = 5) flat in float fragHitTime;
 layout(location = 6) in vec2 fragUV;
+layout(location = 7) flat in vec4 color2In;
 
 layout(location = 0) out vec4 outColor;
 
@@ -169,7 +170,12 @@ void main()
     if (material.emissiveTextureId != 0u)
         emissive *= texture(textures[material.emissiveTextureId], fragUV).rgb;
 
+    if(dot(color2In.xyz, color2In.xyz) > 0.0)
+        emissive *= color2In.xyz;
+
     finalRGB += emissive;
+
+    
 
     // --- Visual Flags & Hit FX ---
     if ((flags & FLAG_FRESNEL) != 0u)

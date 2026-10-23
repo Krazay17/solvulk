@@ -47,6 +47,12 @@ void ScTeam_Init(World *world, int id, ScTeam *c)
     c->party_count = 0;
 }
 
+void ScModel_Init(World *world, int id, ScModel *c)
+{
+    c->scale = 1.0f;
+    c->color = VEC4_WHITE;
+}
+
 void SlRules_Init(World *world, SlRules *self)
 {
 }

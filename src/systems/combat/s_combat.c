@@ -35,9 +35,9 @@ void SlChainhit_Deinit(SlChainhit *self)
 
 static vec3s RandomSpawn(World *world, int id)
 {
-    vec3s pos     = world->xform.home_pos[id];
-    bool found    = false;
-    float start_y = 200.0f;
+    vec3s pos           = world->xform.home_pos[id];
+    bool found          = false;
+    float start_y       = 200.0f;
     const int MAX_TRIES = 20;
     for (int attempt = 0; attempt < MAX_TRIES && !found; attempt++)
     {
@@ -46,7 +46,8 @@ static vec3s RandomSpawn(World *world, int id)
         pos.y = start_y;
 
         SolRayResult result;
-        SolRay ray = {.start = pos, .dir = WORLD_DOWN, .dist = start_y + 100.0f, .mask = COLLAYER_WORLD, .ignoreEnt = id};
+        SolRay ray = {
+            .start = pos, .dir = WORLD_DOWN, .dist = start_y + 100.0f, .mask = COLLAYER_WORLD, .ignoreEnt = id};
 
         if (Sol_Raycast1D(world, ray, &result, 0.5f))
         {
@@ -65,7 +66,8 @@ static vec3s RandomSpawn(World *world, int id)
 
 void Sol_Combat_Respawn(World *world, int id, ScCombat *combat)
 {
-    Sol_Xform_Teleport(world, id, combat->random_spawn ? RandomSpawn(world, id) : world->xform.home_pos[id]);
+    vec3s spawn_pos = combat->random_spawn ? RandomSpawn(world, id) : world->xform.home_pos[id];
+    Sol_Xform_Teleport(world, id, spawn_pos);
     combat->health = combat->healthMax;
     combat->energy = combat->energyMax;
     combat->mana   = combat->manaMax;
@@ -79,6 +81,8 @@ void Sol_Combat_Respawn(World *world, int id, ScCombat *combat)
         }
         combat->is_dead = false;
     }
+
+    Sol_Event_Push(world, EVENTKIND_RESPAWN, (SolEvent){.dealer = id});
 }
 
 static void OnDeath(World *world, int id, ScCombat *combat, u32 kind)
@@ -168,8 +172,13 @@ void Combat_Update(World *world, double dt)
         if (combat->health <= 0)
         {
             OnDeath(world, id, combat, 0);
-            if (combat->respawnTime && (world->tickTime >= (combat->deathTime + combat->respawnTime)))
-                Sol_Combat_Respawn(world, id, combat);
+            if (combat->respawnTime)
+            {
+                if (world->tickTime >= (combat->deathTime + combat->respawnTime))
+                    Sol_Combat_Respawn(world, id, combat);
+            }
+            else if (world->tickTime >= (combat->deathTime + 100.0f))
+                Sol_Destroy_Ent(world, id);
         }
         vec3s pos = world->xform.pos[id];
         if (pos.y < -80.0f)
@@ -181,6 +190,8 @@ void Combat_Update(World *world, double dt)
             combat->energy = minf(combat->energy + (dt * (10.0f + combat->energyRegen)), combat->energyMax);
         else
             combat->energyRegenDelay -= dt;
+        if (combat->healthRegen)
+            Apply_Heal(combat, combat->healthRegen * dt);
     }
 }
 
@@ -241,7 +252,7 @@ bool Sol_Combat_Hostile(World *world, int idA, int idB)
         return false;
     ScTeam *teamA = Sol_Comp_Get(world, final_A, ScTeam);
     ScTeam *teamB = Sol_Comp_Get(world, final_B, ScTeam);
-    if (teamA && teamB && teamA->team != 0 && teamB->team != 0 && teamA->team == teamB->team)
+    if (teamA && teamB && teamA->team >= 0 && teamB->team >= 0 && teamA->team == teamB->team)
         return false;
 
     return true;
@@ -299,7 +310,7 @@ float Sol_Combat_Hit(World *world, SolHit hit)
         Sol_Combat_AddEnergy(world, dealer, damage * 0.25f);
         damage_done = Apply_Heal(combat, damage);
     }
-    else
+    else if(Sol_Combat_Hostile(world, ownerId, target))
     {
         if (Sol_Ability_TryDefend(world, target, &hit) == DEFENDKIND_CONSUMED)
             return 0.0f;

@@ -3,6 +3,26 @@
 #include "world.h"
 #include "sol_core.h"
 
+const char *aiaction_name[AIACTION_COUNT] = {
+    [AIACTION_NONE]        = "AIACTION_NONE",
+    [AIACTION_FWD]         = "AIACTION_FWD",
+    [AIACTION_BWD]         = "AIACTION_BWD",
+    [AIACTION_LEFT]        = "AIACTION_LEFT",
+    [AIACTION_RIGHT]       = "AIACTION_RIGHT",
+    [AIACTION_JUMPFWD]     = "AIACTION_JUMPFWD",
+    [AIACTION_JUMPBWD]     = "AIACTION_JUMPBWD",
+    [AIACTION_JUMPLEFT]    = "AIACTION_JUMPLEFT",
+    [AIACTION_JUMPRIGHT]   = "AIACTION_JUMPRIGHT",
+    [AIACTION_CROUCHFWD]   = "AIACTION_CROUCHFWD",
+    [AIACTION_CROUCHBWD]   = "AIACTION_CROUCHBWD",
+    [AIACTION_CROUCHLEFT]  = "AIACTION_CROUCHLEFT",
+    [AIACTION_CROUCHRIGHT] = "AIACTION_CROUCHRIGHT",
+    // [AIACTION_DODGEFWD]    = "AIACTION_DODGEFWD",
+    // [AIACTION_DODGEBWD]    = "AIACTION_DODGEBWD",
+    // [AIACTION_DODGELEFT]   = "AIACTION_DODGELEFT",
+    // [AIACTION_DODGERIGHT]  = "AIACTION_DODGERIGHT",
+};
+
 int Find_Target(World *world, int id, ScAi *ai, ScCmd *cmd, int team)
 {
     int bestId       = 0;
@@ -22,7 +42,7 @@ int Find_Target(World *world, int id, ScAi *ai, ScCmd *cmd, int team)
             continue;
         }
         ScTeam *teamB = &set_team->data[i];
-        if (team != 0 && teamB->team == team)
+        if (team >= 0 && teamB->team == team)
             continue;
 
         Xform xformB = Xform_Get(world, idB);
@@ -81,6 +101,22 @@ void Fill_Brain(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
     }
     if (brain->target)
     {
+        forc(world, brain->target, ScTeam)
+        {
+            if (c->team >= 0 && team->team >= 0 && c->team == team->team)
+            {
+                brain->target = 0;
+                return;
+            }
+        }
+        forc(world, brain->target, ScCombat)
+        {
+            if (c->is_dead)
+            {
+                brain->target = 0;
+                return;
+            }
+        }
         vec3s target_pos        = world->xform.pos[brain->target];
         brain->target_pos       = target_pos;
         brain->target_dir       = vecNorm(vecSub(target_pos, pos));
@@ -89,7 +125,7 @@ void Fill_Brain(World *world, int id, ScAi *ai, ScCmd *cmd, float fdt)
     }
 }
 
-void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
+void Fill_Reward(World *world, int id, ScAi *ai, int target, float fdt)
 {
     SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
     int count       = solb_count(events->events);
@@ -129,13 +165,14 @@ void Fill_Reward(World *world, int id, ScAi *ai, float fdt)
         }
     }
 
-    AiBrain *brain = &ai->brain;
-    vec3s last_pos = world->xform.last_pos[id];
-    vec3s pos      = world->xform.pos[id];
+    vec3s last_pos                = world->xform.last_pos[id];
+    vec3s pos                     = world->xform.pos[id];
+    vec3s delta                   = vecSub(ai->brain.goal_pos, pos);
+    float d2                      = vecDot(delta, delta);
+    float closer_reward           = ai->learning.distance_to_goal - d2;
+    ai->learning.distance_to_goal = d2;
 
-    float closer_reward = (brain->target_prev_dist - brain->target_dist);
-    ai->learning.reward_move += closer_reward;
-    ai->learning.reward_move -= brain->target_dist * 0.2f * fdt;
+    ai->learning.reward_move += closer_reward * 10.0f;
 }
 
 u32 GetCombatActionMask(World *world, int id, ScAi *ai)
@@ -245,18 +282,18 @@ void Q_Learn_Table(QTable *qt, u32 state, u32 action, u32 next_state, float rewa
 }
 
 static const float dist_map[3] = {4.0f, 12.0f, 22.0f};
-AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
+AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd, int target)
 {
-    AiKnows knows    = {0};
-    AiBrain *brain   = &ai->brain;
-    vec3s pos        = world->xform.pos[id];
-    int target       = brain->target;
-    vec3s target_pos = world->xform.pos[target];
+    AiKnows knows     = {0};
+    vec3s pos         = world->xform.pos[id];
+    vec3s target_pos  = world->xform.pos[target];
+    vec3s delta       = vecSub(target_pos, pos);
+    float target_dist = glms_vec3_norm(delta);
 
     knows.targetDist = 3;
     for (int i = 0; i < 3; i++)
     {
-        if (brain->target_dist <= dist_map[i])
+        if (target_dist <= dist_map[i])
         {
             knows.targetDist = i;
             break;
@@ -326,7 +363,7 @@ AiKnows Get_Knows(World *world, int id, ScAi *ai, ScCmd *cmd)
     else if (target_body)
     {
         vec3s target_vel = target_body->vel;
-        vec3s to_target  = glms_vec3_sub(brain->target_pos, pos);
+        vec3s to_target  = glms_vec3_sub(target_pos, pos);
         float dist_sq    = glms_vec3_norm2(to_target);
 
         if (dist_sq > 0.0001f)
@@ -489,45 +526,16 @@ void Learn_Table(float *table, u32 num_actions, u32 next_knows, u32 action, u32 
     row[action] += alpha * (target_q - current_q);
 }
 
-void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd)
+void Convert_AiActionsM(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move)
 {
-    if (!solData.qtable.q || !solData.qtable.qc)
-        return;
-    AiKnows knows                  = Get_Knows(world, id, ai, cmd);
-    AiKnowStateM next_knows_move   = KnowsM(&knows);
-    AiKnowStateC next_knows_combat = KnowsC(&knows);
-    if (next_knows_move.raw && ai->learning.prev_knows_move.raw)
-        Learn_Table((float *)solData.qtable.q, AIACTION_COUNT, next_knows_move.raw, ai->learning.action_move,
-                    ai->learning.prev_knows_move.raw, ai->learning.reward_move, AI_ALPHA, AI_GAMMA);
-    if (next_knows_combat.raw && ai->learning.prev_knows_combat.raw)
-        Learn_Table((float *)solData.qtable.qc, AIACTIONC_COUNT, next_knows_combat.raw, ai->learning.action_combat,
-                    ai->learning.prev_knows_combat.raw, ai->learning.reward_combat, AI_ALPHA, AI_GAMMA);
-    ai->learning.reward_move   = 0;
-    ai->learning.reward_combat = 0;
-    ai->learning.action_move =
-        Q_SelectAction_Array((float *)solData.qtable.q, AIACTION_COUNT, ai->learning.prev_knows_move.raw, AI_EXPLORE,
-                             GetMoveActionMask(world, id, ai));
-    ai->learning.action_combat =
-        Q_SelectAction_Array((float *)solData.qtable.qc, AIACTIONC_COUNT, ai->learning.prev_knows_combat.raw,
-                             AI_EXPLORE, GetCombatActionMask(world, id, ai));
-    Convert_AiActions(ai, cmd, next_knows_move, next_knows_combat);
-    ai->learning.prev_knows_move.raw   = next_knows_move.raw;
-    ai->learning.prev_knows_combat.raw = next_knows_combat.raw;
-}
-
-const u32 slot_action[6] = {ACTION_ABILITY1, ACTION_ABILITY2, ACTION_ABILITY3,
-                            ACTION_ABILITY4, ACTION_ABILITY5, ACTION_ABILITY8};
-void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKnowStateC next_knows_combat)
-{
-    cmd->actionState &= (BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
     cmd->isStrafing = true;
-    AiBrain *brain  = &ai->brain;
-    vec3s fwd       = cmd->lookdir;
-    fwd.y           = 0;
-    fwd             = vecNorm(fwd);
-    vec3s bwd       = glms_vec3_scale(fwd, -1.0f);
-    vec3s left      = cmd->leftdir;
-    vec3s right     = glms_vec3_scale(left, -1.0f);
+    cmd->actionState &= (BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
+    vec3s fwd   = cmd->lookdir;
+    fwd.y       = 0;
+    fwd         = vecNorm(fwd);
+    vec3s bwd   = glms_vec3_scale(fwd, -1.0f);
+    vec3s left  = cmd->leftdir;
+    vec3s right = glms_vec3_scale(left, -1.0f);
 
     switch (ai->learning.action_move)
     {
@@ -567,18 +575,14 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
                        : (ai->learning.action_move == AIACTION_CROUCHRIGHT) ? right
                                                                             : fwd;
         break;
-        // case AIACTION_DODGEFWD:
-        // case AIACTION_DODGEBWD:
-        // case AIACTION_DODGELEFT:
-        // case AIACTION_DODGERIGHT:
-        //     cmd->actionState |= BITC(ACTION_ABILITY5);
-        //     cmd->wishdir             = (ai->learning.action_move == AIACTION_DODGEBWD)     ? bwd
-        //                                : (ai->learning.action_move == AIACTION_DODGELEFT)  ? left
-        //                                : (ai->learning.action_move == AIACTION_DODGERIGHT) ? right
-        //                                                                                    : fwd;
-        //     ai->learning.actionTimer = 0.4f;
-        //     break;
     }
+}
+
+const u32 slot_action[6] = {ACTION_ABILITY1, ACTION_ABILITY2, ACTION_ABILITY3,
+                            ACTION_ABILITY4, ACTION_ABILITY5, ACTION_ABILITY8};
+void Convert_AiActionsC(ScAi *ai, ScCmd *cmd, AiKnowStateC next_knows_combat)
+{
+    cmd->actionState &= (BITC(ACTION_ABILITY6) | BITC(ACTION_ABILITY7));
 
     switch (ai->learning.action_combat)
     {
@@ -615,5 +619,43 @@ void Convert_AiActions(ScAi *ai, ScCmd *cmd, AiKnowStateM next_knows_move, AiKno
         cmd->actionState |= (1u << slot_action[5]);
         ai->learning.actionTimer = 1.0f;
         break;
+    }
+}
+
+void Submit_Learn(World *world, int id, ScAi *ai, ScCmd *cmd, int target, float *move_table, float *combat_table)
+{
+    AiKnows knows = Get_Knows(world, id, ai, cmd, target);
+
+    if (move_table)
+    {
+        AiKnowStateM next_knows_move = KnowsM(&knows);
+
+        if (next_knows_move.raw && ai->learning.prev_knows_move.raw)
+            Learn_Table(move_table, AIACTION_COUNT, next_knows_move.raw, ai->learning.action_move,
+                        ai->learning.prev_knows_move.raw, ai->learning.reward_move, AI_ALPHA, AI_GAMMA);
+
+        ai->learning.reward_move = 0;
+
+        ai->learning.action_move = Q_SelectAction_Array(move_table, AIACTION_COUNT, ai->learning.prev_knows_move.raw,
+                                                        AI_EXPLORE, GetMoveActionMask(world, id, ai));
+
+        Convert_AiActionsM(ai, cmd, next_knows_move);
+        ai->learning.prev_knows_move.raw = next_knows_move.raw;
+    }
+    if (combat_table)
+    {
+        AiKnowStateC next_knows_combat = KnowsC(&knows);
+
+        if (next_knows_combat.raw && ai->learning.prev_knows_combat.raw)
+            Learn_Table(combat_table, AIACTIONC_COUNT, next_knows_combat.raw, ai->learning.action_combat,
+                        ai->learning.prev_knows_combat.raw, ai->learning.reward_combat, AI_ALPHA, AI_GAMMA);
+
+        ai->learning.reward_combat = 0;
+
+        ai->learning.action_combat =
+            Q_SelectAction_Array(combat_table, AIACTIONC_COUNT, ai->learning.prev_knows_combat.raw, AI_EXPLORE,
+                                 GetCombatActionMask(world, id, ai));
+        Convert_AiActionsC(ai, cmd, next_knows_combat);
+        ai->learning.prev_knows_combat.raw = next_knows_combat.raw;
     }
 }

@@ -191,14 +191,15 @@ static inline FontSSBO *Sol_Render_GetNext_Font(u32 layer)
 
 typedef struct
 {
-    vec4s position;
-    vec4s scale;
-    vec4s rotation;
-    vec4s color;
-    vec4s material;
-    u32 flags;
-    float hitTime;
-    u32 _padding[2];
+    vec4s position; //16
+    vec4s scale; // 32
+    vec4s rotation; // 48
+    vec4s color; // 64
+    vec4s color2; // 80
+    vec4s material; // 96
+    u32 flags; // 100
+    float hitTime; // 104
+    u32 _padding[6]; // 128
 } ModelSSBO;
 typedef struct
 {

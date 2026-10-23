@@ -15,6 +15,7 @@ const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_WEAPONBLADE] = "WeaponBlade.glb",
     [MODELKIND_BOLT]        = "Bolt.glb",
     [MODELKIND_SCYTHE]      = "Scythe.glb",
+    [MODELKIND_CRYSTAL]     = "Crystal.glb",
 #ifndef SOL_BUILD_DEMO
     [MODELKIND_WIZARD]   = "Wizard.glb", //
     [MODELKIND_WORLD0]   = "World0.glb", //

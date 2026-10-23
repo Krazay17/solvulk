@@ -39,6 +39,12 @@ typedef struct UserData
     bool unlocked_items[ITEMKIND_COUNT];
 } UserData;
 
+typedef struct
+{
+    int id;
+    World *world;
+} GameEnt;
+
 extern UserData user_data;
 extern UserCore sol_user;
 
@@ -55,3 +61,4 @@ World *Sol_User_GetGameWorld();
 void Sol_User_EnterGameWorld(u32 idx, bool sim_last, vec3s pos);
 void Sol_User_AddItem(SolItem *item);
 void Sol_User_AddItemLoose(SolItem *item);
+GameEnt Sol_User_GetGameEnt();

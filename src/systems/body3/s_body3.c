@@ -962,14 +962,13 @@ bool Sol_Raycast1(World *world, SolRay ray, SolRayResult *outResult)
 
                     float t    = outResult->t;
                     vec3s norm = {0};
-                    if (Ray_Intersect_Capsule(ray.start, ray.dir, t, top, bottom, radius, outResult) &&
-                        t < outResult->t)
+                    if (Ray_Intersect_Capsule(ray.start, ray.dir, t, top, bottom, radius, outResult))
                     {
                         outResult->hit   = true;
                         outResult->entId = id;
                     }
-                    break;
                 }
+                break;
                 case SHAPE3_SPH: {
 
                     if (Ray_Intersect_Sphere(ray.start, ray.dir, ray.dist, xform.pos, body->dims.x, outResult))

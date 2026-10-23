@@ -697,7 +697,7 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
             {
                 switch (c->kind)
                 {
-                case RULESKIND_FFA:
+                case RULESKIND_FFA: {
                     snprintf(view2->views[1].text, sizeof(view2->views[1].text), "Kills to win: %d",
                              c->as.ffa.winning_kills);
 
@@ -738,8 +738,36 @@ void Sol_Ui_Sync_Rules(World *hud, World *game, double dt)
                         else
                             snprintf(view2->views[view_index].text, sizeof(view2->views[view_index].text), "-");
                     }
+                }
+                break;
+                case RULESKIND_CRYSTALPUSH: {
+                    snprintf(view2->views[1].text, sizeof(view2->views[1].text), "Red Wins: %d", c->red_wins);
+                    snprintf(view2->views[2].text, sizeof(view2->views[2].text), "Green Wins: %d", c->green_wins);
 
-                    break;
+                    int greenCount = 0;
+                    int redCount   = 0;
+
+                    for_set(game, ScCrystalPush)
+                    {
+                        int id = set->dense[i];
+                        forc(game, id, ScTeam)
+                        {
+                            if (c->team == 0)
+                                redCount++;
+                            else if (c->team == 1)
+                                greenCount++;
+                        }
+                    }
+                    snprintf(view2->views[3].text, sizeof(view2->views[3].text), "Green Minions: %d", greenCount);
+                    snprintf(view2->views[4].text, sizeof(view2->views[4].text), "Red Minions: %d", redCount);
+
+                    snprintf(view2->views[5].text, sizeof(view2->views[5].text), "Next Wave: %.02f",
+                             c->as.crystal_push.wave_rate - c->as.crystal_push._wave_accum);
+
+                    snprintf(view2->views[6].text, sizeof(view2->views[6].text), "Minions per wave: %d",
+                             c->as.crystal_push.wave_minion_count);
+                }
+                break;
                 }
             }
         }

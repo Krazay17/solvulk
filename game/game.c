@@ -60,6 +60,11 @@ void Create_Menu()
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Dudes", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_SpawnDudes);
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "Reflect", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_TestReflect);
     Sol_Prefab_Button(world, Sol_Grid_Next(&grid), "TakeDamage", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_TakeDamage);
+    {
+        int team_slider =
+            Sol_Prefab_Slider(world, Sol_Grid_Next(&grid), "Team", INTERACTFLAG_DRAGGABLE, UILAYER_4, Hook_TeamChange);
+        forc(world, team_slider, ScSlider) c->step = 0.5f;
+    }
 }
 
 void Create_Hud()
@@ -75,13 +80,22 @@ void Create_Game()
     World *world        = World_Create_AllSys();
     sol_user.game_world = world->index;
 
-    forc(world, 0, SlRules)
-    {
-        c->as.ffa.winning_kills = 10;
-        c->kind                 = RULESKIND_FFA;
-        c->phase                = RULESPHASE_ACTIVE;
-        c->on_win               = OnRulesWin;
-    }
+    Sol_Rules_Start(world, RULESKIND_CRYSTALPUSH);
+    forc(world, 0, SlRules)c->on_win = OnRulesWin;
+    // forc(world, 0, SlRules)
+    // {
+    //     c->as.crystal_push.wave_rate         = 25.0f;
+    //     c->as.crystal_push._wave_accum       = c->as.crystal_push.wave_rate;
+    //     c->as.crystal_push.wave_minion_count = 3;
+    //     c->as.crystal_push.minion_rate       = 1.0f;
+
+    //     c->as.crystal_push.crystal_a = Sol_Prefab_Crystal(world, (vec3s){0, 3, -90.0f}, 0);
+    //     c->as.crystal_push.crystal_b = Sol_Prefab_Crystal(world, (vec3s){0, 3, 90.0f}, 1);
+
+    //     c->kind   = RULESKIND_CRYSTALPUSH;
+    //     c->on_win = OnRulesWin;
+
+    // }
     { // Player
         int id            = Sol_Prefab_Dude(world, (vec3s){0, 6, -5}, 1.0f);
         sol_user.view_ent = id;
@@ -106,29 +120,6 @@ void Create_Game()
         levelModel->kind    = MODELKIND_WORLD11;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
-    }
-    for (int j = -2; j < 2; j++)
-    {
-        vec3s spawn_pos     = {-10, 4, j * 2};
-        int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-        ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
-        combat->respawnTime = 2.0f;
-    }
-    for (int j = -2; j < 2; j++)
-    {
-        vec3s spawn_pos     = {10, 4, j * 2};
-        int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-        ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
-        combat->respawnTime = 2.0f;
-    }
-    { // Evan dude
-        vec3s spawn_pos                        = {0, 4, 5};
-        int id                                 = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
-        Sol_Comp_Get(world, id, ScModel)->kind = MODELKIND_EVANRIGGED;
-        ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
-        combat->respawnTime                    = 2.0f;
-        ScMeta *meta                           = Sol_Comp_Add(world, id, ScMeta);
-        strncpy(meta->name, "Evan", sizeof(meta->name));
     }
 }
 
@@ -160,5 +151,28 @@ void Create_Game3()
         levelModel->kind    = MODELKIND_WORLD10;
         ScStage *stage      = Sol_Comp_Add(world, level1, ScStage);
         stage->isDirty      = true;
+    }
+    for (int j = -2; j < 2; j++)
+    {
+        vec3s spawn_pos     = {-10, 4, j * 2};
+        int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+        ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+        combat->respawnTime = 2.0f;
+    }
+    for (int j = -2; j < 2; j++)
+    {
+        vec3s spawn_pos     = {10, 4, j * 2};
+        int id              = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+        ScCombat *combat    = Sol_Comp_Add(world, id, ScCombat);
+        combat->respawnTime = 2.0f;
+    }
+    { // Evan dude
+        vec3s spawn_pos                        = {0, 4, 5};
+        int id                                 = Sol_Prefab_Dude(world, spawn_pos, 1.0f);
+        Sol_Comp_Get(world, id, ScModel)->kind = MODELKIND_EVANRIGGED;
+        ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
+        combat->respawnTime                    = 2.0f;
+        ScMeta *meta                           = Sol_Comp_Add(world, id, ScMeta);
+        strncpy(meta->name, "Evan", sizeof(meta->name));
     }
 }

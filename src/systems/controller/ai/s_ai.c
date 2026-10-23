@@ -13,8 +13,9 @@
 #include "profiler.h"
 
 const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
-    AISTATE_DEAD,
-    AISTATE_AGGRO, //
+    AISTATE_DEAD,         //
+    AISTATE_AGGRO,        //
+    AISTATE_CRYSTAL_PUSH, //
     // AISTATE_RETREAT, //
     // AISTATE_SEARCH,  //
     AISTATE_PATROL, //
@@ -22,10 +23,11 @@ const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
 };
 
 const AiStateFuncs *ai_funcs_base[AISTATE_COUNT] = {
-    [AISTATE_IDLE]   = &ai_idle_state,   //
-    [AISTATE_PATROL] = &ai_patrol_state, //
-    [AISTATE_AGGRO]  = &ai_aggro_state,  //
-    [AISTATE_DEAD]   = &ai_dead,
+    [AISTATE_IDLE]         = &ai_idle_state,   //
+    [AISTATE_PATROL]       = &ai_patrol_state, //
+    [AISTATE_AGGRO]        = &ai_aggro_state,  //
+    [AISTATE_CRYSTAL_PUSH] = &ai_crystal_push, //
+    [AISTATE_DEAD]         = &ai_dead,         //
     // [AISTATE_SEARCH]  = &search_state,  //
     // [AISTATE_RETREAT] = &retreat_state, //
 };
@@ -89,17 +91,17 @@ void Ai_Step(World *world, double dt)
 {
     Prof_Begin(&ai_prof);
     float fdt       = (float)dt;
-    SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
-    for (int i = 0; i < solb_count(events->events); i++)
-    {
-        SolEvent *event = &events->events[i];
-        if (event->kind == EVENTKIND_DEATH)
-        {
-            // ScAi *ai = Sol_Comp_Get(world, event->entA, ScAi);
-            // if (ai && ai->brain.target == event->entB)
-            //     ai->brain.target = 0;
-        }
-    }
+    // SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
+    // for (int i = 0; i < solb_count(events->events); i++)
+    // {
+    //     SolEvent *event = &events->events[i];
+    //     if (event->kind == EVENTKIND_DEATH)
+    //     {
+    //         ScAi *ai = Sol_Comp_Get(world, event->dealer, ScAi);
+    //         if (ai && ai->brain.target == event->target)
+    //             ai->brain.target = 0;
+    //     }
+    // }
 
     SparseSet_ScAi *set = Sol_Comp_Set(world, ScAi);
     int count           = set->cnt;

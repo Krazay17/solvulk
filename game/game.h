@@ -156,6 +156,33 @@ static inline void Hook_Healthbar(World *w, int a, int b)
     }
 }
 
+static inline void Hook_TeamChange(World *w, int a, int b)
+{
+    GameEnt game = Sol_User_GetGameEnt();
+    ScTeam *team = Sol_Comp_Get(game.world, game.id, ScTeam);
+    if (!team)
+        return;
+    forc(w, a, ScSlider)
+    {
+        sollog(c->value);
+        if (c->value == 0.0f)
+        {
+            team->team = -1;
+            forc(game.world, game.id, ScModel)c->color = VEC4_WHITE;
+        }
+        else if (c->value <= 0.5f)
+        {
+            team->team = 0;
+            forc(game.world, game.id, ScModel)c->color = VEC4_RED;
+        }
+        else if (c->value <= 1.0f)
+        {
+            team->team = 1;
+            forc(game.world, game.id, ScModel)c->color = VEC4_GREEN;
+        }
+    }
+}
+
 static inline void Hook_SetVolume(World *w, int a, int b)
 {
     ScSlider *slider = Sol_Comp_Get(w, a, ScSlider);
@@ -273,17 +300,20 @@ static inline void Hook_Chill(World *w, int a, int b)
 
 static void OnRulesWin(World *w, SlRules *rules)
 {
-    for_set(w, ScScore)
+    for_set(w, ScCrystalPush)
     {
-        int id           = set->dense[i];
-        c->kills         = 0;
-        c->deaths        = 0;
-        w->xform.pos[id] = w->xform.home_pos[id];
-        forc(w, id, ScCombat)
+        int id = set->dense[i];
+        Sol_Destroy_Ent(w, id);
+    }
+    for_set(w, ScCombat)
+    {
+        int id = set->dense[i];
+        forc(w, id, ScScore)
         {
-            Sol_Combat_Respawn(w, id, c);
+            c->kills  = 0;
+            c->deaths = 0;
         }
-
+        Sol_Combat_Respawn(w, id, c);
         Sol_Ability_SetAllIdle(w, id);
         Sol_Comp_Rem(w, id, ScBuff);
     }
@@ -292,7 +322,8 @@ static void OnRulesWin(World *w, SlRules *rules)
         int id = set->dense[i];
         Sol_Destroy_Ent(w, id);
     }
-    rules->phase = RULESPHASE_ACTIVE;
+
+    Sol_Rules_Start(w, rules->kind);
 }
 
 static inline void Hook_Test(World *w, int a, int b)

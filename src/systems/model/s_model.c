@@ -15,7 +15,7 @@ const struct ModelKindData
         },
     [MODELKIND_WIZARD] =
         {
-            .y_offset = -1.5f,
+            .y_offset = -1.15f,
         },
     [MODELKIND_ZORGON] =
         {
@@ -50,6 +50,7 @@ void Model_Render(World *world, double dt)
         ScModel *model      = &set->data[i];
         ModelSSBO modelSSBO = {0};
         modelSSBO.color     = model->color;
+        modelSSBO.color2    = model->color;
 
         Xform xform = Xform_GetDraw(world, id);
 
@@ -92,7 +93,8 @@ void Model_Render(World *world, double dt)
         {
             modelSSBO.position = (vec4s){pos.x, pos.y, pos.z, 1.0f};
             modelSSBO.rotation = (vec4s){xform.rot.x, xform.rot.y, xform.rot.z, xform.rot.w};
-            modelSSBO.scale    = (vec4s){xform.sca.x, xform.sca.y, xform.sca.z, 1.0f};
+            modelSSBO.scale =
+                (vec4s){xform.sca.x * model->scale, xform.sca.y * model->scale, xform.sca.z * model->scale, 1.0f};
         }
         if (Sol_Comp_Has(world, id, ScAnim))
         {
@@ -123,6 +125,7 @@ Xform Sol_Model_GetBoneXform(World *world, int id, const char *name)
 
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
     Xform xform           = Xform_GetDraw(world, id);
+    xform.sca             = vecSca(xform.sca, model->scale);
 
     // Find the bone by exact name.
     int boneIdx = -1;
@@ -224,6 +227,7 @@ vec3s Sol_Model_GetBoneByIdx(World *world, int id, u32 boneIdx)
     ScModel *model        = Sol_Comp_Get(world, id, ScModel);
     SolSkeleton *skeleton = &loaded_models[model->kind].skeleton;
     Xform xform           = Xform_GetDraw(world, id);
+    xform.sca             = vecSca(xform.sca, model->scale);
     ScAnim *anim          = Sol_Comp_Get(world, id, ScAnim);
 
     mat4 bindPose;

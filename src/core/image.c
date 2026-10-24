@@ -37,6 +37,7 @@ const char *image_path[SOL_TEXTURE_COUNT] = {
     [SOL_TEXTURE_DASH_CARD]        = "DashCard.png",
     [Sol_TEXTURE_HEALTHVIAL]       = "HealthVial.png",
     [Sol_TEXTURE_HEALTHVIALFILL]   = "HealthVialFill.png",
+    [SOL_TEXTURE_STAFFICON]        = "StaffIcon.png",
 
 #ifndef SOL_BUILD_DEMO
     [SOL_TEXTURE_SPIN_CARD]    = "TornadoCard.png",

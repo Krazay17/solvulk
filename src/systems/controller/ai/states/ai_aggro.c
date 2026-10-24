@@ -46,8 +46,7 @@ static void Ai_Aggro_Update(World *world, int id, ScAi *ai, float dt)
     if (data->accum >= ai->learning.actionTimer)
     {
         data->accum -= ai->learning.actionTimer;
-        // ai->learning.actionTimer = Sol_Math_RandRange2(0.05f, 0.2f);
-        ai->learning.actionTimer = 0.1f;
+        ai->learning.actionTimer = Sol_Math_RandRange2(0.05f, 0.2f);
         Submit_Learn(world, id, ai, cmd, ai->brain.target, (float *)solData.qtable.q, (float *)solData.qtable.qc);
     }
 }

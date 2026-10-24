@@ -112,6 +112,7 @@ typedef enum
 {
     WEAPONKIND_CLAW = 1,
     WEAPONKIND_SCYTHE,
+    WEAPONKIND_STAFF,
     WEAPONKIND_COUNT,
 } WeaponKind;
 typedef struct
@@ -309,6 +310,7 @@ typedef enum
 {
     AISTATE_IDLE,
     AISTATE_PATROL,
+    AISTATE_GOHOME,
     AISTATE_SEARCH,
     AISTATE_AGGRO,
     AISTATE_CRYSTAL_PUSH,
@@ -319,6 +321,7 @@ typedef enum
 typedef enum
 {
     AIKIND_WIZARD,
+    AIKIND_BOZZER,
     AIKIND_COUNT,
 } AiKind;
 
@@ -523,6 +526,7 @@ typedef enum
     ANIM_ATTACK_RIGHT_SCYTHE,
     ANIM_ATTACK_LEFT_SCYTHE,
     ANIM_ATTACK_2HSCYTHE,
+    ANIM_ATTACK_2HSTAFF,
     ANIM_ATTACK_2HSCYTHE_JUMP,
     ANIM_ATTACK_2HSCYTHE_SLAM,
     ANIM_2HHEAL,
@@ -550,6 +554,8 @@ typedef enum
     MODELKIND_WEAPONBLADE,
     MODELKIND_CYLINDER,
     MODELKIND_GATE,
+    MODELKIND_BOZZER,
+    MODELKIND_STAFF,
     MODELKIND_CRYSTAL,
     MODELKIND_BOLT,
     MODELKIND_SCYTHE,
@@ -620,6 +626,12 @@ typedef struct
     u32 kind;
     float last_hit_time;
 } SolModel;
+
+typedef struct ModelPrefab
+{
+    char  name[32];
+    vec3s pos;
+} ModelPrefab;
 
 typedef struct SolVertex
 {
@@ -692,6 +704,7 @@ typedef enum
     SOL_TEXTURE_CLOUD1,
     SOL_TEXTURE_HEALTH,
     SOL_TEXTURE_SPIKEFRAMEFILLED,
+    SOL_TEXTURE_STAFFICON,
     SOL_TEXTURE_CLOUD2,
     SOL_TEXTURE_BEAM,
     SOL_TEXTURE_IMPACT,
@@ -925,6 +938,7 @@ typedef enum ItemKind
     ITEMKIND_SCYTHE,
     ITEMKIND_FIREBALL,
     ITEMKIND_BOLT,
+    ITEMKIND_STAFF,
     ITEMKIND_CRYSTAL,
     ITEMKIND_COUNT,
 } ItemKind;

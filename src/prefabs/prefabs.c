@@ -74,12 +74,13 @@ static const View3 energybar = {
 };
 
 static const ScAi wizard_ai = {
-    .kind       = AIKIND_WIZARD,
-    .aggroRange = 20.0f,
+    .kind             = AIKIND_WIZARD,
+    .aggroRange       = 20.0f,
+    .available_states = (1u << AISTATE_AGGRO),
 };
 
 static const ScModel dude_model = {
-    .kind = MODELKIND_DUDE,
+    .kind  = MODELKIND_DUDE,
     .scale = 1.0f,
 };
 
@@ -126,16 +127,12 @@ int Sol_Prefab_Dude(World *world, vec3s pos, float scale)
     *Sol_Comp_Add(world, id, ScCamera) = player_camera;
 
     ScInventory *inv = Sol_Comp_Add(world, id, ScInventory);
-    Sol_Inv_Equip(world, id, 0, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
-    Sol_Inv_Equip(world, id, 1, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0));
-    Sol_Inv_Equip(world, id, 4, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
-    Sol_Inv_Equip(world, id, 5, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
-    Sol_Inv_Equip(world, id, 6, Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 0));
 
-    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
-    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
-    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_SCYTHE}, 0);
-    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_CLAW}, 1);
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 1);
+
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
     Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0);
 
@@ -805,8 +802,8 @@ int Sol_Prefab_Minion(World *world, vec3s pos, versors rot, int team)
     ScModel *model = Sol_Comp_Add(world, id, ScModel);
     model->kind    = MODELKIND_WIZARD;
     model->color   = team == 0 ? VEC4_RED : VEC4_GREEN;
-    model->scale = 0.8f;
-    
+    model->scale   = 0.8f;
+
     Sol_Comp_Add(world, id, ScAnim);
     ScTeam *sc_team = Sol_Comp_Add(world, id, ScTeam);
     sc_team->team   = team;
@@ -817,8 +814,9 @@ int Sol_Prefab_Minion(World *world, vec3s pos, versors rot, int team)
     solb_push(sc_view->views_b, healthbar);
 
     *Sol_Comp_Add(world, id, ScAi) = (ScAi){
-        .kind       = AIKIND_WIZARD,
-        .aggroRange = 15.0f,
+        .kind             = AIKIND_WIZARD,
+        .aggroRange       = 15.0f,
+        .available_states = (1u << AISTATE_CRYSTAL_PUSH) | (1u << AISTATE_AGGRO),
     };
 
     *Sol_Comp_Add(world, id, ScInventory);
@@ -852,7 +850,10 @@ int Sol_Prefab_Crystal(World *world, vec3s pos, int team)
         .healthRegen = 1.0f,
     };
 
-    Sol_Comp_Add(world, id, ScModel)->kind       = MODELKIND_CRYSTAL;
+    ScModel *model = Sol_Comp_Add(world, id, ScModel);
+    model->kind    = MODELKIND_CRYSTAL;
+    model->color   = team == 0 ? VEC4_RED : VEC4_GREEN;
+
     Sol_Comp_Add(world, id, ScCrystalPush)->kind = CRYSTALPUSHKIND_CRYSTAL;
 
     ScTeam *sc_team = Sol_Comp_Add(world, id, ScTeam);
@@ -860,6 +861,45 @@ int Sol_Prefab_Crystal(World *world, vec3s pos, int team)
 
     ScView3 *sc_view = Sol_Comp_Add(world, id, ScView3);
     solb_push(sc_view->views_b, healthbar);
+
+    return id;
+}
+
+int Sol_Prefab_Bozzer(World *world, vec3s pos)
+{
+    int id               = Sol_Create_Ent(world, pos);
+    vec3s delta          = vecSub(GLMS_VEC3_ZERO, pos);
+    float d2             = vecDot(delta, delta);
+    float dist           = sqrt(d2);
+    vec3s dir            = vecSca(delta, 1.0f / dist);
+    dir.y                = 0;
+    world->xform.rot[id] = Sol_Quat_FromLookDir(dir);
+    world->xform.sca[id] = (vec3s){2.0f, 2.0f, 2.0f};
+
+    Sol_Comp_Add(world, id, ScCmd);
+    Sol_Comp_Add(world, id, ScMove3)->kind = MOVEMENTKIND_WIZARD;
+    ScCombat *combat                       = Sol_Comp_Add(world, id, ScCombat);
+    combat->healthMax                      = 250.0f;
+    combat->health                         = combat->healthMax;
+    ScModel *model                         = Sol_Comp_Add(world, id, ScModel);
+    ScView3 *sc_view                       = Sol_Comp_Add(world, id, ScView3);
+    solb_push(sc_view->views_b, healthbar);
+    model->kind  = MODELKIND_BOZZER;
+    model->color = VEC4_WHITE;
+    Sol_Comp_Add(world, id, ScAnim);
+
+    ScBody3 *body = Sol_Comp_Add(world, id, ScBody3);
+    *body         = dude_body;
+    body->dims.x  = 0.5f;
+    body->dims.y  = 3.0f;
+
+    ScAi *ai             = Sol_Comp_Add(world, id, ScAi);
+    ai->aggroRange       = 25.0f;
+    ai->kind             = AIKIND_BOZZER;
+    ai->available_states = (1u << AISTATE_AGGRO);
+    ScTeam *team         = Sol_Comp_Add(world, id, ScTeam);
+
+    Sol_Inv_AddItem(world, id, &(SolItem){.item_kind = ITEMKIND_STAFF}, 1);
 
     return id;
 }

@@ -100,6 +100,7 @@ typedef struct ScAi
 {
     u8 kind;
     bool inactive;
+    u32 available_states;
     AiState state;
     AiStateData stateData[AISTATE_COUNT];
     float maxHomeRange;
@@ -706,6 +707,7 @@ struct SlRules
         {
             int crystal_a;
             int crystal_b;
+            int bosses[4];
             float wave_rate;
             float minion_rate;
             int wave_minion_count;
@@ -718,6 +720,7 @@ struct SlRules
             float _wave_accum;
             float _minion_accum;
             int _pending_minion_count;
+
         } crystal_push;
     } as;
     RulesKind kind;

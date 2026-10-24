@@ -18,7 +18,7 @@
 #define MAX_QUAD_INSTANCES 0xffffu
 #define MAX_BUFFER_VERTS 0xffffu
 
-typedef struct ScModelData ScModelData;
+typedef struct SolModelData SolModelData;
 
 // 1. Define category pipeline lists
 #define SOL_MODEL_PIPELINES(X)                                                                                         \
@@ -371,6 +371,6 @@ float Sol_Render_GetAspect(void);
 void Sol_Render_DrawSkybox(void);
 void Sol_Render_DrawLines(const SolLine *lines, int count, size_t stride);
 void Sol_Render_UploadImage(u32 width, u32 height, const void *pixels, u32 id, u8 unorm);
-void Sol_Render_UploadModel(ScModelData *model, u32 kind);
+void Sol_Render_UploadModel(SolModelData *model, u32 kind);
 void Sol_Render_DrawText2D(const char *str, SolFontDesc desc);
 void Sol_Render_DrawText3D(const char *str, Text3DDesc desc);

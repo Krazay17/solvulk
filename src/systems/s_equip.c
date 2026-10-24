@@ -13,6 +13,7 @@
 const WeaponKind item_weapon_map[ITEMKIND_COUNT] = {
     [ITEMKIND_CLAW]   = WEAPONKIND_CLAW,   //
     [ITEMKIND_SCYTHE] = WEAPONKIND_SCYTHE, //
+    [ITEMKIND_STAFF]  = WEAPONKIND_STAFF,  //
 };
 
 void Weapon_Update(World *world, double dt)
@@ -71,7 +72,8 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
     ScParent *parent      = Sol_Comp_Add(world, id, ScParent);
     parent->parentId      = owner;
 
-    char *bone = slot > 5 ? "weapon.R" : "weapon.L";
+    char *bone = equip->right_weapon ? slot > 5 ? "weapon.R" : "weapon.L" : "weapon.2h";
+
     memcpy(parent->boneFollow, bone, sizeof(parent->boneFollow));
     parent->localQuat  = GLMS_QUAT_IDENTITY;
     parent->localScale = (vec3s){1, 0, 1};
@@ -92,6 +94,13 @@ int Sol_Equip_Item(World *world, int owner, u32 item_kind, int slot)
         ribbon->thickness[0] = 1.3f;
         ribbon->texture      = SOL_TEXTURE_SQUARERING;
         glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
+    }
+    break;
+    case WEAPONKIND_STAFF: {
+        model->kind          = MODELKIND_STAFF;
+        // glm_euler_zyx_quat((vec3){glm_rad(90.0f), 0.0f, glm_rad(180.0f)}, parent->localQuat.raw);
+        ribbon->thickness[0] = 2.0f;
+        ribbon->texture      = SOL_TEXTURE_SQUARERING;
     }
     break;
     default:

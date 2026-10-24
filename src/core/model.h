@@ -84,13 +84,7 @@ typedef struct SolMesh
     SolMaterial material;
 } SolMesh;
 
-typedef struct ModelPrefab
-{
-    char  name[32];
-    vec3s pos;
-} ModelPrefab;
-
-typedef struct ScModelData
+typedef struct SolModelData
 {
     ModelKind    kind;
     SolVertex   *vertices;
@@ -109,7 +103,7 @@ typedef struct ScModelData
 
     mat4s *jointMatrices;
     bool needsGpuUpload;
-} ScModelData;
+} SolModelData;
 
 typedef struct BoneMask
 {
@@ -146,7 +140,7 @@ typedef struct ScModelDataMasks
 //     mat4     *outBones;                      // final skinning matrices
 // } PoseRequest;
 
-extern ScModelData      loaded_models[MODELKIND_COUNT];
+extern SolModelData      loaded_models[MODELKIND_COUNT];
 extern ScModelDataMasks model_masks[MODELKIND_COUNT];
 extern const char       *model_path[MODELKIND_COUNT];
 extern const u32         model_anim_map[MODELKIND_COUNT][ANIM_COUNT];

@@ -16,6 +16,7 @@ const u32 AI_STATE_PRIORITY[AISTATE_COUNT] = {
     AISTATE_DEAD,         //
     AISTATE_AGGRO,        //
     AISTATE_CRYSTAL_PUSH, //
+    AISTATE_GOHOME,
     // AISTATE_RETREAT, //
     // AISTATE_SEARCH,  //
     AISTATE_PATROL, //
@@ -68,7 +69,10 @@ static void Evaluate_State(World *world, int id, ScAi *ai)
 
     for (int i = 0; i < AISTATE_COUNT; i++)
     {
-        u32 target_state                      = AI_STATE_PRIORITY[i];
+        u32 target_state = AI_STATE_PRIORITY[i];
+        if (target_state != AISTATE_DEAD && target_state != AISTATE_IDLE &&
+            !(ai->available_states & (1u << target_state)))
+            continue;
         const AiStateFuncs target_state_funcs = Ai_Get_Funcs(ai->kind, target_state);
 
         if (current_state_funcs.canExit && !current_state_funcs.canExit(world, id, ai, target_state))
@@ -90,7 +94,7 @@ SolProfiler ai_prof = {.name = "AiStep"};
 void Ai_Step(World *world, double dt)
 {
     Prof_Begin(&ai_prof);
-    float fdt       = (float)dt;
+    float fdt = (float)dt;
     // SlEvent *events = Sol_Comp_Get(world, 0, SlEvent);
     // for (int i = 0; i < solb_count(events->events); i++)
     // {

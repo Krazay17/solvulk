@@ -481,8 +481,8 @@ int Sol_Render_BuildPipes()
     printf("Building pipelines\n");
     for (int i = 0; i < PIPE_COUNT; i++)
     {
-        printf("Pipe:%d VertShader:%s\n", i, pipe_config[i].vertResource);
-        printf("Pipe:%d FragShader:%s\n", i, pipe_config[i].fragResource);
+        sollogf("Pipe:%d VertShader:%s\n", i, pipe_config[i].vertResource);
+        sollogf("Pipe:%d FragShader:%s\n", i, pipe_config[i].fragResource);
         if (Sol_Pipeline_Build(&solvkstate, &pipe_config[i], &pipes[i]) != 0)
         {
             Sol_MessageBox("PIPE ERROR", NULL);
@@ -1174,7 +1174,7 @@ int Sol_BufferDescriptor_Build(SolVkState *vkstate, const SolDescriptorConfig *c
     return 0;
 }
 
-void Sol_Render_UploadModel(ScModelData *model, u32 kind)
+void Sol_Render_UploadModel(SolModelData *model, u32 kind)
 {
     // 1. Pre-cleanup to prevent memory leaks if overwriting an existing ID
     if (gpuModels[kind].meshes != NULL)

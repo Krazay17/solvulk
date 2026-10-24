@@ -16,6 +16,8 @@ const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_BOLT]        = "Bolt.glb",
     [MODELKIND_SCYTHE]      = "Scythe.glb",
     [MODELKIND_CRYSTAL]     = "Crystal.glb",
+    [MODELKIND_BOZZER]      = "Bozzer.glb",
+    [MODELKIND_STAFF]       = "Staff.glb",
 #ifndef SOL_BUILD_DEMO
     [MODELKIND_WIZARD]   = "Wizard.glb", //
     [MODELKIND_WORLD0]   = "World0.glb", //
@@ -41,24 +43,24 @@ const char *model_path[MODELKIND_COUNT] = {
     [MODELKIND_JUMPPAD]    = "JumpPad.glb",
 };
 
-ScModelData loaded_models[MODELKIND_COUNT];
+SolModelData loaded_models[MODELKIND_COUNT];
 
-static ScModelData *Parse_Model(SolResource res, u32 id);
+static SolModelData *Parse_Model(SolResource res, u32 id);
 static SolSkeleton ParseSkeleton(cgltf_data *data);
 ScModelDataMasks model_masks[MODELKIND_COUNT];
 
 static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *outVertexCount, uint32_t *outIndexCount,
                             uint32_t *prefabCount);
-static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
+static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff);
 static void Sample_Channel(SolAnimChannel *ch, float t, float *out);
 
-void Sol_FreeModel(ScModelData *model)
+void Sol_FreeModel(SolModelData *model)
 {
     free(model->vertices);
     free(model->indices);
     free(model->meshes);
     free(model->tris);
-    memset(model, 0, sizeof(ScModelData));
+    memset(model, 0, sizeof(SolModelData));
 }
 
 int Sol_Models_Init()
@@ -68,15 +70,15 @@ int Sol_Models_Init()
         if (!model_path[i])
             continue;
         SolResource res       = Sol_LoadResource("models/", model_path[i]);
-        ScModelData *model    = Parse_Model(res, i);
+        SolModelData *model   = Parse_Model(res, i);
         model->needsGpuUpload = true;
     }
     return 0;
 }
 
-static ScModelData *Parse_Model(SolResource res, u32 id)
+static SolModelData *Parse_Model(SolResource res, u32 id)
 {
-    ScModelData *model = &loaded_models[id];
+    SolModelData *model = &loaded_models[id];
 
     cgltf_options options = {0};
     cgltf_data *data      = NULL;
@@ -105,7 +107,7 @@ static ScModelData *Parse_Model(SolResource res, u32 id)
         for (cgltf_size n = 0; n < scene->nodes_count; n++)
         {
             cgltf_node *node = scene->nodes[n];
-            if (strncmp(node->name, "PREFAB", 6) == 0)
+            if (strncmp(node->name, "PREFAB_", 6) == 0)
             {
                 ModelPrefab *p = &model->prefabs[foundPrefab];
                 strncpy(p->name, node->name, sizeof(p->name) - 1);
@@ -368,7 +370,7 @@ static void CountNodeMeshes(cgltf_node *node, uint32_t *outMeshCount, uint32_t *
 
 // Recursively process a node and its children, baking the world transform
 // into each vertex.
-static void ProcessNode(cgltf_node *node, ScModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
+static void ProcessNode(cgltf_node *node, SolModelData *model, uint32_t *meshIdx, uint32_t *vOff, uint32_t *iOff)
 {
     if (node->mesh)
     {
@@ -649,8 +651,8 @@ static _Thread_local AnimScratchBuffer g_animScratch;
 void Sol_Skeleton_Pose(int model_handle, SolPose *outPose, AnimLayer *layers, SolPoseE *lastPose, bool *hasLastPose,
                        float pitch)
 {
-    ScModelData *model = &loaded_models[model_handle];
-    SolSkeleton *skel  = &model->skeleton;
+    SolModelData *model = &loaded_models[model_handle];
+    SolSkeleton *skel   = &model->skeleton;
 
     AnimScratchBuffer *s = &g_animScratch;
 
@@ -812,8 +814,8 @@ int Sol_Skeleton_FindBone(SolSkeleton *skel, const char *name)
 void Transform_Tris_LocalToWorld(SolTri *group, int id, int offset, ModelKind handle, versors quat, vec3s scale,
                                  vec3s pos)
 {
-    ScModelData *model = &loaded_models[handle];
-    mat3s rot          = glms_quat_mat3(quat);
+    SolModelData *model = &loaded_models[handle];
+    mat3s rot           = glms_quat_mat3(quat);
     for (int i = 0; i < model->tri_count; i++)
     {
         SolTri src  = model->tris[i];

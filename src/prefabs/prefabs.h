@@ -22,3 +22,4 @@ int Sol_Prefab_GravPad(World *world, vec3s pos, versors rot);
 int Sol_Prefab_Pickup(World *world, vec3s pos);
 int Sol_Prefab_Minion(World *world, vec3s pos, versors rot, int team);
 int Sol_Prefab_Crystal(World *world, vec3s pos, int team);
+int Sol_Prefab_Bozzer(World *world, vec3s pos);

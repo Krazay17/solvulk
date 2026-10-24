@@ -146,6 +146,15 @@ const u32 model_anim_map[MODELKIND_COUNT][ANIM_COUNT] = {
             [ANIM_DEATH]            = 23,
             [ANIM_STUN]             = 28,
         },
+    [MODELKIND_BOZZER] =
+        {
+            [ANIM_IDLE]           = 0,
+            [ANIM_WALK_FWD]       = 1,
+            [ANIM_WALK_BWD]       = 1,
+            [ANIM_WALK_LEFT]      = 1,
+            [ANIM_WALK_RIGHT]     = 1,
+            [ANIM_ATTACK_2HSTAFF] = 3,
+        },
 };
 
 static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
@@ -161,7 +170,7 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
         if (!model)
             continue;
 
-        ScModelData *m = &loaded_models[model->kind];
+        SolModelData *m = &loaded_models[model->kind];
 
         for (int L = 0; L < ANIM_LAYER_COUNT; L++)
         {
@@ -198,7 +207,7 @@ static void Anim_Solver(SparseSet_ScAnim *set, World *world, float fdt)
 
             default: // LOOP
                 layer->currentSeek = fmodf(fmodf(newSeek, dur) + dur, dur);
-                if(world->index == solState.debug_ent.world_idx && id == solState.debug_ent.id)
+                if (world->index == solState.debug_ent.world_idx && id == solState.debug_ent.id)
                 {
                     sollog(layer->currentSeek);
                 }
@@ -379,7 +388,7 @@ void Anim_Tick(World *world, double dt)
                 case ABILITY_STATE_IDLE:
                     break;
                 case ABILITY_STATE_HEAL: {
-                    ability_anim.anim = ANIM_2HHEAL;
+                    ability_anim.anim    = ANIM_2HHEAL;
                     ability_anim.layerId = ANIM_LAYER_UPPER;
                 }
                 break;

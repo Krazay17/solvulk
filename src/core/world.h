@@ -340,3 +340,4 @@ int Sol_Weapon_Trace(World *world, int id, SolHit hit, u32 hitgen);
 void Sol_Ai_RandomName(char *dest, size_t size);
 void Sol_Combat_Respawn(World *world, int id, ScCombat *combat);
 void Sol_Rules_Start(World *world, RulesKind kind);
+ModelPrefab *Sol_Model_GetPrefab(ScModel *model, const char *name);

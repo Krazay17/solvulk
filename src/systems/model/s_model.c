@@ -29,6 +29,10 @@ const struct ModelKindData
         {
             .y_offset = -1.0f,
         },
+        [MODELKIND_BOZZER] =
+        {
+            .y_offset = -3.0f,
+        }
 };
 
 static void Draw(World *world, double dt, SolModel *model)
@@ -289,4 +293,16 @@ float Sol_GetBoneRoll(vec3s tangent, vec3s boneUp)
     vec3s up   = vecNorm(vecCross(side, tangent));
 
     return atan2f(vecDot(boneUp, side), vecDot(boneUp, up));
+}
+
+ModelPrefab *Sol_Model_GetPrefab(ScModel *model, const char *name)
+{
+    SolModelData *model_data = &loaded_models[model->kind];
+    for (int i = 0; i < model_data->prefab_count; i++)
+    {
+        ModelPrefab *prefab = &model_data->prefabs[i];
+        if (strcmp(name, prefab->name) == 0)
+            return prefab;
+    }
+    return NULL;
 }

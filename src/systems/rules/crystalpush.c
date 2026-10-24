@@ -92,6 +92,27 @@ void CrystalPush(World *world, double dt, SlRules *rules)
     }
 }
 
+static vec3s FindBossPos(World *world, int idx)
+{
+    vec3s pos = {0};
+    for_set(world, ScStage)
+    {
+        int id = set->dense[i];
+        forc(world, id, ScModel)
+        {
+            char buffer[32] = "PREFAB_Boss1";
+            snprintf(buffer, sizeof(buffer), "PREFAB_Boss%d", idx);
+            ModelPrefab *prefab = Sol_Model_GetPrefab(c, buffer);
+            if (prefab)
+            {
+                pos = prefab->pos;
+                return pos;
+            }
+        }
+    }
+    return pos;
+}
+
 void CrystalPush_Start(World *world)
 {
     forc(world, 0, SlRules)
@@ -99,13 +120,18 @@ void CrystalPush_Start(World *world)
         c->kind  = RULESKIND_CRYSTALPUSH;
         c->phase = RULESPHASE_ACTIVE;
 
-        c->as.crystal_push.wave_rate         = 10.0f;
+        c->as.crystal_push.wave_rate         = 20.0f;
         c->as.crystal_push._wave_accum       = c->as.crystal_push.wave_rate;
-        c->as.crystal_push.wave_minion_count = 20;
-        c->as.crystal_push.minion_rate       = 0.5f;
+        c->as.crystal_push.wave_minion_count = 6;
+        c->as.crystal_push.minion_rate       = 1.0f;
 
         c->as.crystal_push.spawn_a_player = (vec3s){0, 3, -80.0f};
         c->as.crystal_push.spawn_b_player = (vec3s){0, 3, 80.0f};
+
+        c->as.crystal_push.bosses[0] = Sol_Prefab_Bozzer(world, FindBossPos(world, 0));
+        c->as.crystal_push.bosses[1] = Sol_Prefab_Bozzer(world, FindBossPos(world, 1));
+        c->as.crystal_push.bosses[2] = Sol_Prefab_Bozzer(world, FindBossPos(world, 2));
+        c->as.crystal_push.bosses[3] = Sol_Prefab_Bozzer(world, FindBossPos(world, 3));
 
         c->as.crystal_push.crystal_a = Sol_Prefab_Crystal(world, (vec3s){0, 3, -90.0f}, 0);
         c->as.crystal_push.crystal_b = Sol_Prefab_Crystal(world, (vec3s){0, 3, 90.0f}, 1);

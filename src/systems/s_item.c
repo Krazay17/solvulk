@@ -166,11 +166,12 @@ int Sol_Inv_AddItem(World *world, int id, SolItem *item, bool try_equip)
 
     if (try_equip)
     {
+        const u32 equip_order[ABILITY_SLOTS] = {5,4, 0, 1, 2, 3, 6};
         for (int i = 0; i < ABILITY_SLOTS; i++)
         {
-            if (c->equipped_items[i] <= -1)
+            if (c->equipped_items[equip_order[i]] <= -1)
             {
-                Sol_Inv_Equip(world, id, i, idx);
+                Sol_Inv_Equip(world, id, equip_order[i], idx);
                 break;
             }
         }

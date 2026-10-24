@@ -78,10 +78,11 @@ static inline void Hook_SpawnDude(World *w, int a, int b)
     World *game = Sol_User_GetGameWorld();
     float time  = game->tickTime;
 
-    vec3s spawn_pos = {sinf(time) * 2, 5.0f, cosf(time) * 2.0f};
-    int id          = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
-    ScAi *ai        = Sol_Comp_Add(game, id, ScAi);
-    ai->aggroRange  = 100.0f;
+    vec3s spawn_pos      = {sinf(time) * 2, 5.0f, cosf(time) * 2.0f};
+    int id               = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
+    ScAi *ai             = Sol_Comp_Add(game, id, ScAi);
+    ai->aggroRange       = 100.0f;
+    ai->available_states = (1u << AISTATE_AGGRO) | (1u << AISTATE_PATROL);
 
     ScCombat *combat    = Sol_Comp_Add(game, id, ScCombat);
     combat->respawnTime = 3.0f;
@@ -94,10 +95,11 @@ static inline void Hook_SpawnDudes(World *w, int a, int b)
     World *game = Sol_User_GetGameWorld();
     for (int i = 0; i < 200; i++)
     {
-        vec3s spawn_pos = {sinf((float)i) * 80.0f, 100.f, cosf((float)i) * 80.0f};
-        int id          = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
-        ScAi *ai        = Sol_Comp_Add(game, id, ScAi);
-        ai->aggroRange  = 100.0f;
+        vec3s spawn_pos      = {sinf((float)i) * 80.0f, 100.f, cosf((float)i) * 80.0f};
+        int id               = Sol_Prefab_Dude(game, spawn_pos, 1.0f);
+        ScAi *ai             = Sol_Comp_Add(game, id, ScAi);
+        ai->aggroRange       = 100.0f;
+        ai->available_states = (1u << AISTATE_AGGRO) | (1u << AISTATE_PATROL);
 
         ScCombat *combat     = Sol_Comp_Add(game, id, ScCombat);
         combat->respawnTime  = 3.0f;
@@ -167,18 +169,18 @@ static inline void Hook_TeamChange(World *w, int a, int b)
         sollog(c->value);
         if (c->value == 0.0f)
         {
-            team->team = -1;
-            forc(game.world, game.id, ScModel)c->color = VEC4_WHITE;
+            team->team                                  = -1;
+            forc(game.world, game.id, ScModel) c->color = VEC4_WHITE;
         }
         else if (c->value <= 0.5f)
         {
-            team->team = 0;
-            forc(game.world, game.id, ScModel)c->color = VEC4_RED;
+            team->team                                  = 0;
+            forc(game.world, game.id, ScModel) c->color = VEC4_RED;
         }
         else if (c->value <= 1.0f)
         {
-            team->team = 1;
-            forc(game.world, game.id, ScModel)c->color = VEC4_GREEN;
+            team->team                                  = 1;
+            forc(game.world, game.id, ScModel) c->color = VEC4_GREEN;
         }
     }
 }
@@ -212,6 +214,7 @@ static inline void Hook_AddItem(World *w, int a, int b)
         Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_FIREBALL}, 0);
         Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_BOLT}, 0);
         Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_CRYSTAL}, 0);
+        Sol_Inv_AddItem(game, id, &(SolItem){.item_kind = ITEMKIND_STAFF}, 0);
     }
 }
 
@@ -324,6 +327,14 @@ static void OnRulesWin(World *w, SlRules *rules)
     }
 
     Sol_Rules_Start(w, rules->kind);
+}
+
+static inline void Hook_ForceRulesRestart(World *w, int a, int b)
+{
+    World *game    = Sol_User_GetGameWorld();
+    SlRules *rules = Sol_Comp_Get(game, 0, SlRules);
+    if (rules)
+        OnRulesWin(game, rules);
 }
 
 static inline void Hook_Test(World *w, int a, int b)

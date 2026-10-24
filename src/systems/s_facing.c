@@ -3,8 +3,8 @@
  * Author: Josh Massarella
  * GitHub: https://github.com/Krazay17
  * Created: 2026-10-09
- * 
-*/
+ *
+ */
 #include "world.h"
 #include "sol_math.h"
 
@@ -17,6 +17,9 @@ void Facing_Tick(World *world, double dt)
     {
         int id     = set->dense[i];
         ScCmd *cmd = &set->data[i];
+        
+        if (!Sol_CanMove(world, id))
+            continue;
 
         // MODE 1: Strafing / Aiming — Snap or smooth towards camera yaw
         if (cmd->isStrafing)
@@ -32,8 +35,8 @@ void Facing_Tick(World *world, double dt)
             float turn_speed = 10.0f;
             float factor     = 1.0f - expf(-turn_speed * fdt);
 
-            versors rot = glms_quat_slerp(world->xform.rot[id], target_quat, factor);
-            cmd->yaw = Sol_YawFromQuat(rot.raw);
+            versors rot          = glms_quat_slerp(world->xform.rot[id], target_quat, factor);
+            cmd->yaw             = Sol_YawFromQuat(rot.raw);
             world->xform.rot[id] = rot;
         }
     }
